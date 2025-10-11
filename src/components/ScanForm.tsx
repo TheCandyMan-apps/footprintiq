@@ -28,6 +28,13 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if at least username or basic info is provided
+    if (!formData.username && (!formData.firstName || !formData.lastName || !formData.email)) {
+      alert("Please provide either a username or your basic information (name and email)");
+      return;
+    }
+    
     onSubmit(formData);
   };
 
@@ -37,11 +44,32 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
         <div className="text-center mb-8">
           <h2 className="text-3xl font-bold mb-3">Start Your Digital Footprint Scan</h2>
           <p className="text-muted-foreground">
-            Enter your information to see where your data appears online
+            Search by username or personal details to find your online presence
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="username">Username</Label>
+            <Input
+              id="username"
+              type="text"
+              placeholder="Search social media profiles"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+              className="bg-secondary border-border"
+            />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or search by personal details</span>
+            </div>
+          </div>
+
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name</Label>
@@ -50,7 +78,6 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
                 placeholder="John"
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                required
                 className="bg-secondary border-border"
               />
             </div>
@@ -62,7 +89,6 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
                 placeholder="Doe"
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                required
                 className="bg-secondary border-border"
               />
             </div>
@@ -76,31 +102,18 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
               placeholder="john.doe@example.com"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
               className="bg-secondary border-border"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number (Optional)</Label>
+            <Label htmlFor="phone">Phone Number</Label>
             <Input
               id="phone"
               type="tel"
               placeholder="+1 (555) 000-0000"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="bg-secondary border-border"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="username">Username (Optional)</Label>
-            <Input
-              id="username"
-              type="text"
-              placeholder="Search for social media profiles"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               className="bg-secondary border-border"
             />
           </div>
@@ -118,7 +131,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            We respect your privacy. Your information is only used for the scan and is not stored or shared.
+            Provide at least a username or your basic information. We respect your privacy - data is only used for the scan.
           </p>
         </form>
       </Card>
