@@ -1,1 +1,13 @@
 project_id = "byuzgvauaeldjqxlrjci"
+
+[functions.osint-scan]
+verify_jwt = false
+
+[functions.correlation-engine]
+verify_jwt = false
+
+[functions.automated-removal]
+verify_jwt = false
+
+[functions.monitoring-scheduler]
+verify_jwt = false
