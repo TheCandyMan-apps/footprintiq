@@ -1,0 +1,163 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { scanId } = await req.json();
+
+    console.log('Starting behavioral analysis for scan:', scanId);
+
+    // Fetch scan data with all related information
+    const { data: scan, error: scanError } = await supabase
+      .from('scans')
+      .select('*')
+      .eq('id', scanId)
+      .single();
+
+    if (scanError) throw scanError;
+
+    // Fetch social profiles
+    const { data: socialProfiles, error: profilesError } = await supabase
+      .from('social_profiles')
+      .select('*')
+      .eq('scan_id', scanId);
+
+    if (profilesError) throw profilesError;
+
+    // Fetch data sources
+    const { data: dataSources, error: sourcesError } = await supabase
+      .from('data_sources')
+      .select('*')
+      .eq('scan_id', scanId);
+
+    if (sourcesError) throw sourcesError;
+
+    // Fetch correlation data
+    const { data: correlationData, error: correlationError } = await supabase.functions.invoke(
+      'correlation-engine',
+      { body: { scanId } }
+    );
+
+    if (correlationError) throw correlationError;
+
+    // Analyze behavioral patterns using Lovable AI
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
+
+    const analysisPrompt = `Analyze the following digital identity for authenticity and detect potential catfish indicators:
+
+USER DATA:
+- Name: ${scan.first_name} ${scan.last_name}
+- Email: ${scan.email || 'N/A'}
+- Phone: ${scan.phone || 'N/A'}
+- Username: ${scan.username || 'N/A'}
+
+SOCIAL PROFILES FOUND (${socialProfiles?.length || 0}):
+${socialProfiles?.map(p => `- ${p.platform}: ${p.username} (${p.profile_url})`).join('\n')}
+
+DATA SOURCES (${dataSources?.length || 0}):
+${dataSources?.map(d => `- ${d.name} (${d.category}): ${d.risk_level} risk`).join('\n')}
+
+CORRELATION DATA:
+${JSON.stringify(correlationData, null, 2)}
+
+Perform a comprehensive catfish detection analysis including:
+
+1. **Identity Consistency Score (0-100)**: How consistent is the identity across platforms?
+2. **Profile Age Analysis**: Are profiles new or established? Suspicious timing?
+3. **Activity Pattern Analysis**: Normal human behavior or bot-like?
+4. **Cross-Platform Verification**: Do the profiles link back to each other naturally?
+5. **Red Flags Detected**: List any suspicious indicators
+6. **Authenticity Confidence (0-100)**: Overall confidence this is a real person
+7. **Catfish Risk Level**: LOW, MEDIUM, HIGH, or CRITICAL
+
+Provide structured analysis with specific evidence for each point.`;
+
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert in digital forensics, OSINT, and catfish detection. Provide detailed, evidence-based analysis.'
+          },
+          {
+            role: 'user',
+            content: analysisPrompt
+          }
+        ],
+      }),
+    });
+
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('AI API error:', aiResponse.status, errorText);
+      throw new Error(`AI API error: ${aiResponse.status}`);
+    }
+
+    const aiData = await aiResponse.json();
+    const analysis = aiData.choices[0].message.content;
+
+    // Parse the analysis to extract scores
+    const identityConsistencyMatch = analysis.match(/Identity Consistency Score.*?(\d+)/i);
+    const authenticityMatch = analysis.match(/Authenticity Confidence.*?(\d+)/i);
+    const riskLevelMatch = analysis.match(/Catfish Risk Level.*?(LOW|MEDIUM|HIGH|CRITICAL)/i);
+
+    const identityConsistency = identityConsistencyMatch ? parseInt(identityConsistencyMatch[1]) : 50;
+    const authenticityScore = authenticityMatch ? parseInt(authenticityMatch[1]) : 50;
+    const catfishRisk = riskLevelMatch ? riskLevelMatch[1] : 'MEDIUM';
+
+    console.log('Behavioral analysis completed:', {
+      identityConsistency,
+      authenticityScore,
+      catfishRisk
+    });
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        analysis,
+        scores: {
+          identityConsistency,
+          authenticityScore,
+          catfishRisk,
+        },
+        correlationData,
+        scanData: {
+          socialProfilesCount: socialProfiles?.length || 0,
+          dataSourcesCount: dataSources?.length || 0,
+          identityGraph: correlationData?.identityGraph,
+        },
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in behavioral-analysis:', error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    );
+  }
+});

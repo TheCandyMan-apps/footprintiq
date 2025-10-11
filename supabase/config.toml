@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.reverse-image-search]
 verify_jwt = false
+
+[functions.behavioral-analysis]
+verify_jwt = true

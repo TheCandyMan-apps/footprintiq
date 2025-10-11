@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { AIAnalysis } from "@/components/AIAnalysis";
+import { CatfishDetection } from '@/components/CatfishDetection';
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -269,6 +270,11 @@ const ResultsDetail = () => {
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
+        </div>
+
+        {/* Catfish Detection */}
+        <div className="mb-8">
+          <CatfishDetection scanId={scanId!} />
         </div>
 
         {/* AI Analysis */}
