@@ -128,7 +128,7 @@ const Auth = () => {
       <Card className="w-full max-w-md p-8 bg-gradient-card border-border shadow-card">
         <div className="text-center mb-8">
           <Shield className="w-16 h-16 mx-auto mb-4 text-primary" />
-          <h1 className="text-3xl font-bold mb-2">Clean My Cloud</h1>
+          <h1 className="text-3xl font-bold mb-2">footprintiq</h1>
           <p className="text-muted-foreground">
             Protect your privacy across the internet
           </p>
