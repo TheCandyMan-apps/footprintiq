@@ -48,6 +48,12 @@ export const Hero = ({ onStartScan }: HeroProps) => {
             size="lg" 
             variant="outline"
             className="text-lg px-8 py-6 h-auto"
+            onClick={() => {
+              document.getElementById('how-it-works')?.scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+              });
+            }}
           >
             Learn More
           </Button>
