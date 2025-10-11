@@ -12,6 +12,12 @@ interface ReverseImageRequest {
   scanId: string;
 }
 
+interface FaceCheckResult {
+  score: number;
+  url: string;
+  base64: string;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -23,63 +29,124 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { imageUrl, scanId }: ReverseImageRequest = await req.json();
-    console.log('Starting reverse image search for scan:', scanId);
+    console.log('Starting FaceCheck.ID reverse image search for scan:', scanId);
 
-    const GOOGLE_API_KEY = Deno.env.get('GOOGLE_CLOUD_API_KEY');
-    const GOOGLE_CX = Deno.env.get('GOOGLE_SEARCH_CX');
-
+    const FACECHECK_API_TOKEN = Deno.env.get('FACECHECK_API_TOKEN');
     const results = [];
 
-    // Google Reverse Image Search using Custom Search API
-    if (GOOGLE_API_KEY && GOOGLE_CX) {
-      console.log('Using Google Custom Search for reverse image search...');
+    if (FACECHECK_API_TOKEN) {
+      console.log('Using FaceCheck.ID for facial recognition search...');
       try {
-        const searchUrl = `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&searchType=image&imgSize=large&q=${encodeURIComponent(imageUrl)}`;
+        // Fetch the image from the URL
+        console.log('Fetching image from:', imageUrl);
+        const imageResponse = await fetch(imageUrl);
+        if (!imageResponse.ok) {
+          throw new Error(`Failed to fetch image: ${imageResponse.statusText}`);
+        }
+        const imageBlob = await imageResponse.blob();
+
+        // Upload image to FaceCheck.ID
+        const formData = new FormData();
+        formData.append('images', imageBlob, 'image.jpg');
         
-        const response = await fetch(searchUrl);
+        const uploadResponse = await fetch('https://facecheck.id/api/upload_pic', {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'Authorization': FACECHECK_API_TOKEN,
+          },
+          body: formData,
+        });
+
+        const uploadData = await uploadResponse.json();
         
-        if (response.ok) {
-          const data = await response.json();
-          
-          if (data.items && data.items.length > 0) {
-            for (const item of data.items.slice(0, 10)) {
+        if (uploadData.error) {
+          throw new Error(`FaceCheck upload error: ${uploadData.error} (${uploadData.code})`);
+        }
+
+        const id_search = uploadData.id_search;
+        console.log(`Image uploaded successfully. id_search: ${id_search}`);
+
+        // Poll for search results
+        let searchComplete = false;
+        let attempts = 0;
+        const maxAttempts = 60; // 60 seconds timeout
+
+        while (!searchComplete && attempts < maxAttempts) {
+          const searchResponse = await fetch('https://facecheck.id/api/search', {
+            method: 'POST',
+            headers: {
+              'accept': 'application/json',
+              'Authorization': FACECHECK_API_TOKEN,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              id_search: id_search,
+              with_progress: true,
+              status_only: false,
+              demo: false, // Set to false for real search
+            }),
+          });
+
+          const searchData = await searchResponse.json();
+
+          if (searchData.error) {
+            throw new Error(`FaceCheck search error: ${searchData.error} (${searchData.code})`);
+          }
+
+          if (searchData.output && searchData.output.items) {
+            console.log(`Search completed. Found ${searchData.output.items.length} matches.`);
+            
+            // Process results
+            for (const item of searchData.output.items as FaceCheckResult[]) {
+              const riskLevel = item.score > 80 ? 'high' : item.score > 50 ? 'medium' : 'low';
               results.push({
-                name: item.title || 'Unknown Source',
-                category: 'Image Search',
-                url: item.link,
-                risk_level: 'medium' as const,
-                data_found: ['Profile Photo', 'Visual Match'],
+                name: new URL(item.url).hostname,
+                category: 'Facial Recognition',
+                url: item.url,
+                risk_level: riskLevel as 'low' | 'medium' | 'high',
+                data_found: ['Profile Photo', 'Facial Match', `${item.score}% confidence`],
               });
             }
+            searchComplete = true;
+          } else {
+            console.log(`Search in progress: ${searchData.progress || 0}%`);
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+            attempts++;
           }
         }
+
+        if (!searchComplete) {
+          console.log('Search timed out after 60 seconds');
+        }
       } catch (error) {
-        console.error('Google search error:', error);
+        console.error('FaceCheck.ID search error:', error);
+        // Don't throw, just log and continue with empty results
       }
     } else {
-      console.log('Google API credentials not configured, using mock results');
+      console.log('FaceCheck.ID API token not configured, using mock results');
       // Mock results for demonstration
       const mockImageResults = [
         {
-          name: 'Social Media Platform A',
-          category: 'Image Search',
-          url: 'https://example-social-a.com/profile',
-          risk_level: 'medium' as const,
-          data_found: ['Profile Photo', 'Visual Match'],
+          name: 'Facebook',
+          category: 'Facial Recognition',
+          url: 'https://facebook.com/profile/example',
+          risk_level: 'high' as const,
+          data_found: ['Profile Photo', 'Facial Match', '95% confidence'],
         },
         {
-          name: 'Professional Network',
-          category: 'Image Search',
-          url: 'https://example-professional.com/profile',
-          risk_level: 'low' as const,
-          data_found: ['Profile Photo'],
+          name: 'LinkedIn',
+          category: 'Facial Recognition',
+          url: 'https://linkedin.com/in/example',
+          risk_level: 'medium' as const,
+          data_found: ['Profile Photo', 'Facial Match', '78% confidence'],
         },
         {
-          name: 'Public Forum',
-          category: 'Image Search',
-          url: 'https://example-forum.com/user',
+          name: 'Instagram',
+          category: 'Facial Recognition',
+          url: 'https://instagram.com/example',
           risk_level: 'medium' as const,
-          data_found: ['Avatar', 'Visual Match'],
+          data_found: ['Profile Photo', 'Facial Match', '65% confidence'],
         },
       ];
       results.push(...mockImageResults);
