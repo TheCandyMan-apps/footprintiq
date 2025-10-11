@@ -16,6 +16,7 @@ const scanSteps = [
   { icon: Search, label: "Searching public records", key: "public" },
   { icon: Database, label: "Scanning data broker sites", key: "brokers" },
   { icon: Globe, label: "Checking social networks", key: "social" },
+  { icon: Search, label: "Reverse image search", key: "image" },
   { icon: Shield, label: "Analyzing exposure risk", key: "analyze" },
 ];
 
@@ -111,21 +112,57 @@ export const ScanProgress = ({ onComplete, scanData, userId }: ScanProgressProps
 
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Step 4: Calculate privacy score
+        // Step 4: Reverse image search
         setCurrentStep(3);
+        setProgress(75);
+
+        let imageResults = 0;
+
+        if (scanData.imageFile) {
+          const fileExt = scanData.imageFile.name.split('.').pop();
+          const fileName = `${scan.id}_${Date.now()}.${fileExt}`;
+          const filePath = `${userId}/${fileName}`;
+
+          // Upload image to Supabase Storage
+          const { error: uploadError } = await supabase.storage
+            .from('scan-images')
+            .upload(filePath, scanData.imageFile);
+
+          if (!uploadError) {
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('scan-images')
+              .getPublicUrl(filePath);
+
+            // Call reverse image search edge function
+            const { data: imageSearchData, error: imageSearchError } = await supabase.functions
+              .invoke('reverse-image-search', {
+                body: { imageUrl: publicUrl, scanId: scan.id }
+              });
+
+            if (!imageSearchError && imageSearchData) {
+              imageResults = imageSearchData.resultsCount || 0;
+            }
+          }
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Step 5: Calculate privacy score
+        setCurrentStep(4);
         setProgress(90);
 
         const highRiskCount = mockDataSources.filter(ds => ds.risk_level === 'high').length;
         const mediumRiskCount = mockDataSources.filter(ds => ds.risk_level === 'medium').length;
         const lowRiskCount = mockDataSources.filter(ds => ds.risk_level === 'low').length;
         
-        const privacyScore = Math.max(0, 100 - (highRiskCount * 15 + mediumRiskCount * 10 + lowRiskCount * 5 + socialProfileCount * 2));
+        const privacyScore = Math.max(0, 100 - (highRiskCount * 15 + mediumRiskCount * 10 + lowRiskCount * 5 + socialProfileCount * 2 + imageResults * 3));
 
         const { error: updateError } = await supabase
           .from("scans")
           .update({
             privacy_score: privacyScore,
-            total_sources_found: mockDataSources.length + socialProfileCount,
+            total_sources_found: mockDataSources.length + socialProfileCount + imageResults,
             high_risk_count: highRiskCount,
             medium_risk_count: mediumRiskCount,
             low_risk_count: lowRiskCount,
