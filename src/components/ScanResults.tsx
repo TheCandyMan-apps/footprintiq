@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle2, ExternalLink, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface DataSource {
@@ -12,6 +12,16 @@ interface DataSource {
   dataFound: string[];
   riskLevel: "high" | "medium" | "low";
   url: string;
+}
+
+interface SocialMediaProfile {
+  id: string;
+  platform: string;
+  username: string;
+  profileUrl: string;
+  found: boolean;
+  followers?: string;
+  lastActive?: string;
 }
 
 const mockResults: DataSource[] = [
@@ -57,15 +67,124 @@ const mockResults: DataSource[] = [
   },
 ];
 
+const mockSocialProfiles: SocialMediaProfile[] = [
+  {
+    id: "s1",
+    platform: "Twitter/X",
+    username: "@username",
+    profileUrl: "https://twitter.com/username",
+    found: true,
+    followers: "1.2K",
+    lastActive: "2 days ago",
+  },
+  {
+    id: "s2",
+    platform: "Instagram",
+    username: "@username",
+    profileUrl: "https://instagram.com/username",
+    found: true,
+    followers: "3.5K",
+    lastActive: "1 day ago",
+  },
+  {
+    id: "s3",
+    platform: "Facebook",
+    username: "username",
+    profileUrl: "https://facebook.com/username",
+    found: true,
+    lastActive: "1 week ago",
+  },
+  {
+    id: "s4",
+    platform: "LinkedIn",
+    username: "username",
+    profileUrl: "https://linkedin.com/in/username",
+    found: true,
+    lastActive: "3 days ago",
+  },
+  {
+    id: "s5",
+    platform: "TikTok",
+    username: "@username",
+    profileUrl: "https://tiktok.com/@username",
+    found: true,
+    followers: "892",
+    lastActive: "5 hours ago",
+  },
+  {
+    id: "s6",
+    platform: "Reddit",
+    username: "u/username",
+    profileUrl: "https://reddit.com/user/username",
+    found: true,
+    lastActive: "12 hours ago",
+  },
+  {
+    id: "s7",
+    platform: "GitHub",
+    username: "username",
+    profileUrl: "https://github.com/username",
+    found: true,
+    followers: "45",
+    lastActive: "2 weeks ago",
+  },
+  {
+    id: "s8",
+    platform: "YouTube",
+    username: "@username",
+    profileUrl: "https://youtube.com/@username",
+    found: true,
+    followers: "567",
+    lastActive: "1 month ago",
+  },
+  {
+    id: "s9",
+    platform: "Pinterest",
+    username: "username",
+    profileUrl: "https://pinterest.com/username",
+    found: false,
+  },
+  {
+    id: "s10",
+    platform: "Snapchat",
+    username: "username",
+    profileUrl: "https://snapchat.com/add/username",
+    found: false,
+  },
+  {
+    id: "s11",
+    platform: "Discord",
+    username: "username#1234",
+    profileUrl: "https://discord.com",
+    found: true,
+  },
+  {
+    id: "s12",
+    platform: "Twitch",
+    username: "username",
+    profileUrl: "https://twitch.tv/username",
+    found: false,
+  },
+];
+
 export const ScanResults = () => {
   const { toast } = useToast();
   const [removedSources, setRemovedSources] = useState<Set<string>>(new Set());
+  const [removedProfiles, setRemovedProfiles] = useState<Set<string>>(new Set());
 
   const handleRemovalRequest = (sourceId: string, sourceName: string) => {
     setRemovedSources(prev => new Set(prev).add(sourceId));
     toast({
       title: "Removal Request Initiated",
       description: `We've started the removal process for ${sourceName}. This may take 7-30 days.`,
+    });
+  };
+
+  const handleProfileRemoval = (profileId: string, platform: string) => {
+    setRemovedProfiles(prev => new Set(prev).add(profileId));
+    toast({
+      title: "Profile Deletion Started",
+      description: `We're helping you delete your ${platform} profile. You'll receive instructions via email.`,
     });
   };
 
@@ -80,6 +199,9 @@ export const ScanResults = () => {
 
   const activeResults = mockResults.filter(r => !removedSources.has(r.id));
   const removedCount = removedSources.size;
+  const foundProfiles = mockSocialProfiles.filter(p => p.found);
+  const activeProfiles = foundProfiles.filter(p => !removedProfiles.has(p.id));
+  const profileRemovedCount = removedProfiles.size;
 
   return (
     <div className="min-h-screen px-6 py-20">
@@ -90,7 +212,7 @@ export const ScanResults = () => {
             <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
             <h2 className="text-3xl font-bold mb-3">Scan Complete</h2>
             <p className="text-lg text-muted-foreground mb-6">
-              We found your personal information on <span className="text-foreground font-semibold">{mockResults.length} websites</span>
+              We found your personal information on <span className="text-foreground font-semibold">{mockResults.length} websites</span> and <span className="text-foreground font-semibold">{foundProfiles.length} social media platforms</span>
             </p>
             
             <div className="grid md:grid-cols-3 gap-4 max-w-2xl mx-auto">
@@ -116,9 +238,70 @@ export const ScanResults = () => {
           </div>
         </Card>
 
-        {/* Results List */}
+        {/* Social Media Results */}
+        {foundProfiles.length > 0 && (
+          <div className="space-y-4 mb-8">
+            <div className="flex items-center gap-3 mb-4">
+              <Users className="w-6 h-6 text-primary" />
+              <h3 className="text-xl font-semibold">Social Media Profiles Found</h3>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-4">
+              {activeProfiles.map((profile) => (
+                <Card key={profile.id} className="p-4 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-semibold">{profile.platform}</h4>
+                        <Badge variant="secondary" className="text-xs">Active</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-1">{profile.username}</p>
+                      {profile.followers && (
+                        <p className="text-xs text-muted-foreground">{profile.followers} followers</p>
+                      )}
+                      {profile.lastActive && (
+                        <p className="text-xs text-muted-foreground">Last active: {profile.lastActive}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => window.open(profile.profileUrl, '_blank')}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="accent"
+                        size="sm"
+                        onClick={() => handleProfileRemoval(profile.id, profile.platform)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+
+            {profileRemovedCount > 0 && (
+              <Card className="p-4 bg-accent/10 border-accent/20">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-accent" />
+                  <div>
+                    <p className="text-sm font-medium">
+                      {profileRemovedCount} profile deletion {profileRemovedCount === 1 ? 'request' : 'requests'} initiated
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* Data Broker Results */}
         <div className="space-y-4">
-          <h3 className="text-xl font-semibold mb-4">Data Sources Found</h3>
+          <h3 className="text-xl font-semibold mb-4">Data Broker Sources Found</h3>
           
           {activeResults.map((source) => (
             <Card key={source.id} className="p-6 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">

@@ -14,6 +14,7 @@ export interface ScanFormData {
   lastName: string;
   email: string;
   phone?: string;
+  username?: string;
 }
 
 export const ScanForm = ({ onSubmit }: ScanFormProps) => {
@@ -22,6 +23,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     lastName: "",
     email: "",
     phone: "",
+    username: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -87,6 +89,18 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
               placeholder="+1 (555) 000-0000"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              className="bg-secondary border-border"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="username">Username (Optional)</Label>
+            <Input
+              id="username"
+              type="text"
+              placeholder="Search for social media profiles"
+              value={formData.username}
+              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               className="bg-secondary border-border"
             />
           </div>
