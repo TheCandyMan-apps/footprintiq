@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { AIAnalysis } from "@/components/AIAnalysis";
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -268,6 +269,11 @@ const ResultsDetail = () => {
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
+        </div>
+
+        {/* AI Analysis */}
+        <div className="mb-8">
+          <AIAnalysis scanId={scanId!} />
         </div>
 
         {/* Summary Card */}
