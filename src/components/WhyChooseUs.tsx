@@ -47,7 +47,7 @@ export const WhyChooseUs = () => {
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             Why Choose{" "}
             <span className="bg-gradient-accent bg-clip-text text-transparent">
-              TrueMatch
+              footprintiq
             </span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
