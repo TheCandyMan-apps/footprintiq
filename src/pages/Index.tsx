@@ -1,13 +1,35 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { Hero } from "@/components/Hero";
+import { ScanForm, type ScanFormData } from "@/components/ScanForm";
+import { ScanProgress } from "@/components/ScanProgress";
+import { ScanResults } from "@/components/ScanResults";
+
+type Step = "hero" | "form" | "scanning" | "results";
 
 const Index = () => {
+  const [currentStep, setCurrentStep] = useState<Step>("hero");
+  const [scanData, setScanData] = useState<ScanFormData | null>(null);
+
+  const handleStartScan = () => {
+    setCurrentStep("form");
+  };
+
+  const handleFormSubmit = (data: ScanFormData) => {
+    setScanData(data);
+    setCurrentStep("scanning");
+  };
+
+  const handleScanComplete = () => {
+    setCurrentStep("results");
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
+    <main className="min-h-screen bg-background">
+      {currentStep === "hero" && <Hero onStartScan={handleStartScan} />}
+      {currentStep === "form" && <ScanForm onSubmit={handleFormSubmit} />}
+      {currentStep === "scanning" && <ScanProgress onComplete={handleScanComplete} />}
+      {currentStep === "results" && <ScanResults />}
+    </main>
   );
 };
 
