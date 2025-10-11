@@ -1,34 +1,27 @@
-import { useState } from "react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Hero } from "@/components/Hero";
-import { ScanForm, type ScanFormData } from "@/components/ScanForm";
-import { ScanProgress } from "@/components/ScanProgress";
-import { ScanResults } from "@/components/ScanResults";
-
-type Step = "hero" | "form" | "scanning" | "results";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
-  const [currentStep, setCurrentStep] = useState<Step>("hero");
-  const [scanData, setScanData] = useState<ScanFormData | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/dashboard");
+      }
+    });
+  }, [navigate]);
 
   const handleStartScan = () => {
-    setCurrentStep("form");
-  };
-
-  const handleFormSubmit = (data: ScanFormData) => {
-    setScanData(data);
-    setCurrentStep("scanning");
-  };
-
-  const handleScanComplete = () => {
-    setCurrentStep("results");
+    navigate("/auth");
   };
 
   return (
     <main className="min-h-screen bg-background">
-      {currentStep === "hero" && <Hero onStartScan={handleStartScan} />}
-      {currentStep === "form" && <ScanForm onSubmit={handleFormSubmit} />}
-      {currentStep === "scanning" && <ScanProgress onComplete={handleScanComplete} />}
-      {currentStep === "results" && <ScanResults searchData={scanData} />}
+      <Hero onStartScan={handleStartScan} />
     </main>
   );
 };
