@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Hero } from "@/components/Hero";
+import { HowItWorks } from "@/components/HowItWorks";
+import { WhyChooseUs } from "@/components/WhyChooseUs";
+import { Pricing } from "@/components/Pricing";
 import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
@@ -22,6 +25,9 @@ const Index = () => {
   return (
     <main className="min-h-screen bg-background">
       <Hero onStartScan={handleStartScan} />
+      <HowItWorks />
+      <WhyChooseUs />
+      <Pricing />
     </main>
   );
 };
