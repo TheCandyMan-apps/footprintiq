@@ -14,7 +14,291 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      data_sources: {
+        Row: {
+          category: string
+          data_found: string[]
+          first_seen: string
+          id: string
+          last_checked: string
+          name: string
+          risk_level: Database["public"]["Enums"]["risk_level"]
+          scan_id: string
+          url: string
+        }
+        Insert: {
+          category: string
+          data_found?: string[]
+          first_seen?: string
+          id?: string
+          last_checked?: string
+          name: string
+          risk_level: Database["public"]["Enums"]["risk_level"]
+          scan_id: string
+          url: string
+        }
+        Update: {
+          category?: string
+          data_found?: string[]
+          first_seen?: string
+          id?: string
+          last_checked?: string
+          name?: string
+          risk_level?: Database["public"]["Enums"]["risk_level"]
+          scan_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_sources_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      removal_requests: {
+        Row: {
+          completed_at: string | null
+          id: string
+          notes: string | null
+          requested_at: string
+          scan_id: string
+          source_id: string
+          source_name: string
+          source_type: string
+          status: Database["public"]["Enums"]["removal_status"]
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          scan_id: string
+          source_id: string
+          source_name: string
+          source_type: string
+          status?: Database["public"]["Enums"]["removal_status"]
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          notes?: string | null
+          requested_at?: string
+          scan_id?: string
+          source_id?: string
+          source_name?: string
+          source_type?: string
+          status?: Database["public"]["Enums"]["removal_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "removal_requests_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_comparisons: {
+        Row: {
+          created_at: string
+          first_scan_id: string
+          id: string
+          improvement_percentage: number | null
+          latest_scan_id: string
+          sources_removed: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          first_scan_id: string
+          id?: string
+          improvement_percentage?: number | null
+          latest_scan_id: string
+          sources_removed?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          first_scan_id?: string
+          id?: string
+          improvement_percentage?: number | null
+          latest_scan_id?: string
+          sources_removed?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_comparisons_first_scan_id_fkey"
+            columns: ["first_scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_comparisons_latest_scan_id_fkey"
+            columns: ["latest_scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scans: {
+        Row: {
+          created_at: string
+          email: string | null
+          first_name: string | null
+          high_risk_count: number | null
+          id: string
+          last_name: string | null
+          low_risk_count: number | null
+          medium_risk_count: number | null
+          phone: string | null
+          privacy_score: number | null
+          scan_type: Database["public"]["Enums"]["scan_type"]
+          total_sources_found: number | null
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          high_risk_count?: number | null
+          id?: string
+          last_name?: string | null
+          low_risk_count?: number | null
+          medium_risk_count?: number | null
+          phone?: string | null
+          privacy_score?: number | null
+          scan_type: Database["public"]["Enums"]["scan_type"]
+          total_sources_found?: number | null
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          first_name?: string | null
+          high_risk_count?: number | null
+          id?: string
+          last_name?: string | null
+          low_risk_count?: number | null
+          medium_risk_count?: number | null
+          phone?: string | null
+          privacy_score?: number | null
+          scan_type?: Database["public"]["Enums"]["scan_type"]
+          total_sources_found?: number | null
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      social_profiles: {
+        Row: {
+          first_seen: string
+          followers: string | null
+          found: boolean
+          id: string
+          last_active: string | null
+          platform: string
+          profile_url: string
+          scan_id: string
+          username: string
+        }
+        Insert: {
+          first_seen?: string
+          followers?: string | null
+          found?: boolean
+          id?: string
+          last_active?: string | null
+          platform: string
+          profile_url: string
+          scan_id: string
+          username: string
+        }
+        Update: {
+          first_seen?: string
+          followers?: string | null
+          found?: boolean
+          id?: string
+          last_active?: string | null
+          platform?: string
+          profile_url?: string
+          scan_id?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_profiles_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          subscription_expires_at: string | null
+          subscription_tier: Database["public"]["Enums"]["subscription_tier"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          subscription_expires_at?: string | null
+          subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          subscription_expires_at?: string | null
+          subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +307,10 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      removal_status: "pending" | "in_progress" | "completed" | "failed"
+      risk_level: "low" | "medium" | "high"
+      scan_type: "username" | "personal_details" | "both"
+      subscription_tier: "free" | "premium" | "family"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +437,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      removal_status: ["pending", "in_progress", "completed", "failed"],
+      risk_level: ["low", "medium", "high"],
+      scan_type: ["username", "personal_details", "both"],
+      subscription_tier: ["free", "premium", "family"],
+    },
   },
 } as const
