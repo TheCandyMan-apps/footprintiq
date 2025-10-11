@@ -4,6 +4,11 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import type { ScanFormData } from "./ScanForm";
+
+interface ScanResultsProps {
+  searchData: ScanFormData | null;
+}
 
 interface DataSource {
   id: string;
@@ -167,10 +172,119 @@ const mockSocialProfiles: SocialMediaProfile[] = [
   },
 ];
 
-export const ScanResults = () => {
+export const ScanResults = ({ searchData }: ScanResultsProps) => {
   const { toast } = useToast();
   const [removedSources, setRemovedSources] = useState<Set<string>>(new Set());
   const [removedProfiles, setRemovedProfiles] = useState<Set<string>>(new Set());
+
+  const searchedUsername = searchData?.username || "username";
+  
+  // Generate social profiles based on the searched username
+  const generateSocialProfiles = (username: string): SocialMediaProfile[] => {
+    const cleanUsername = username.startsWith('@') ? username.slice(1) : username;
+    
+    return [
+      {
+        id: "s1",
+        platform: "Twitter/X",
+        username: `@${cleanUsername}`,
+        profileUrl: `https://twitter.com/${cleanUsername}`,
+        found: true,
+        followers: "1.2K",
+        lastActive: "2 days ago",
+      },
+      {
+        id: "s2",
+        platform: "Instagram",
+        username: `@${cleanUsername}`,
+        profileUrl: `https://instagram.com/${cleanUsername}`,
+        found: true,
+        followers: "3.5K",
+        lastActive: "1 day ago",
+      },
+      {
+        id: "s3",
+        platform: "Facebook",
+        username: cleanUsername,
+        profileUrl: `https://facebook.com/${cleanUsername}`,
+        found: true,
+        lastActive: "1 week ago",
+      },
+      {
+        id: "s4",
+        platform: "LinkedIn",
+        username: cleanUsername,
+        profileUrl: `https://linkedin.com/in/${cleanUsername}`,
+        found: true,
+        lastActive: "3 days ago",
+      },
+      {
+        id: "s5",
+        platform: "TikTok",
+        username: `@${cleanUsername}`,
+        profileUrl: `https://tiktok.com/@${cleanUsername}`,
+        found: true,
+        followers: "892",
+        lastActive: "5 hours ago",
+      },
+      {
+        id: "s6",
+        platform: "Reddit",
+        username: `u/${cleanUsername}`,
+        profileUrl: `https://reddit.com/user/${cleanUsername}`,
+        found: true,
+        lastActive: "12 hours ago",
+      },
+      {
+        id: "s7",
+        platform: "GitHub",
+        username: cleanUsername,
+        profileUrl: `https://github.com/${cleanUsername}`,
+        found: true,
+        followers: "45",
+        lastActive: "2 weeks ago",
+      },
+      {
+        id: "s8",
+        platform: "YouTube",
+        username: `@${cleanUsername}`,
+        profileUrl: `https://youtube.com/@${cleanUsername}`,
+        found: true,
+        followers: "567",
+        lastActive: "1 month ago",
+      },
+      {
+        id: "s9",
+        platform: "Pinterest",
+        username: cleanUsername,
+        profileUrl: `https://pinterest.com/${cleanUsername}`,
+        found: false,
+      },
+      {
+        id: "s10",
+        platform: "Snapchat",
+        username: cleanUsername,
+        profileUrl: `https://snapchat.com/add/${cleanUsername}`,
+        found: false,
+      },
+      {
+        id: "s11",
+        platform: "Discord",
+        username: `${cleanUsername}#1234`,
+        profileUrl: "https://discord.com",
+        found: true,
+      },
+      {
+        id: "s12",
+        platform: "Twitch",
+        username: cleanUsername,
+        profileUrl: `https://twitch.tv/${cleanUsername}`,
+        found: false,
+      },
+    ];
+  };
+
+  const mockSocialProfiles = generateSocialProfiles(searchedUsername);
 
   const handleRemovalRequest = (sourceId: string, sourceName: string) => {
     setRemovedSources(prev => new Set(prev).add(sourceId));

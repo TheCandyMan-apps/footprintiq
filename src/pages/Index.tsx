@@ -28,7 +28,7 @@ const Index = () => {
       {currentStep === "hero" && <Hero onStartScan={handleStartScan} />}
       {currentStep === "form" && <ScanForm onSubmit={handleFormSubmit} />}
       {currentStep === "scanning" && <ScanProgress onComplete={handleScanComplete} />}
-      {currentStep === "results" && <ScanResults />}
+      {currentStep === "results" && <ScanResults searchData={scanData} />}
     </main>
   );
 };
