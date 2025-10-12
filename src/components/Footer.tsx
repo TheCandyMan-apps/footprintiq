@@ -16,13 +16,13 @@ export const Footer = () => {
               Take control of your digital footprint with comprehensive privacy protection and automated data removal.
             </p>
             <div className="flex gap-3">
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="https://twitter.com/footprintiq" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <Twitter className="w-5 h-5" />
               </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="https://linkedin.com/company/footprintiq" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <Linkedin className="w-5 h-5" />
               </a>
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+              <a href="https://github.com/footprintiq" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                 <Github className="w-5 h-5" />
               </a>
             </div>
@@ -43,10 +43,10 @@ export const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Resources</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Privacy Guide</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Data Broker List</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Help Center</a></li>
+              <li><a href="https://blog.footprintiq.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Blog</a></li>
+              <li><a href="https://guides.footprintiq.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Privacy Guide</a></li>
+              <li><a href="https://guides.footprintiq.com/data-brokers" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Data Broker List</a></li>
+              <li><a href="https://help.footprintiq.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Help Center</a></li>
             </ul>
           </div>
 
@@ -54,10 +54,10 @@ export const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Legal</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Cookie Policy</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">GDPR Compliance</a></li>
+              <li><Link to="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms-of-service" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+              <li><Link to="/privacy-policy#cookies" className="hover:text-primary transition-colors">Cookie Policy</Link></li>
+              <li><Link to="/privacy-policy#gdpr" className="hover:text-primary transition-colors">GDPR Compliance</Link></li>
             </ul>
           </div>
         </div>

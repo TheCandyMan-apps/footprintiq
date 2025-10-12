@@ -61,7 +61,7 @@ export const Pricing = () => {
 
   const handleCTA = (tierName: string) => {
     if (tierName === "Enterprise") {
-      window.location.href = "mailto:sales@example.com";
+      window.location.href = "mailto:sales@footprintiq.com";
     } else {
       navigate("/auth");
     }
