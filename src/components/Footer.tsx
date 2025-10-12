@@ -39,14 +39,12 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Resources */}
+          {/* Company */}
           <div>
-            <h3 className="font-semibold mb-4">Resources</h3>
+            <h3 className="font-semibold mb-4">Company</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="https://blog.footprintiq.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Blog</a></li>
-              <li><a href="https://guides.footprintiq.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Privacy Guide</a></li>
-              <li><a href="https://guides.footprintiq.com/data-brokers" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Data Broker List</a></li>
-              <li><a href="https://help.footprintiq.com" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Help Center</a></li>
+              <li><Link to="/#features" className="hover:text-primary transition-colors">About Us</Link></li>
+              <li><a href="mailto:support@footprintiq.com" className="hover:text-primary transition-colors">Contact</a></li>
             </ul>
           </div>
 
