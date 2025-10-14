@@ -32,7 +32,9 @@ const Index = () => {
       <Header />
       <Hero onStartScan={handleStartScan} />
       <TrustSignals />
-      <HowItWorks />
+      <section id="how-it-works">
+        <HowItWorks />
+      </section>
       <section id="features">
         <WhyChooseUs />
       </section>

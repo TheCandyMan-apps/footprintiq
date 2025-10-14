@@ -32,9 +32,27 @@ export const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Product</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/#how-it-works" className="hover:text-primary transition-colors">How It Works</Link></li>
-              <li><Link to="/#features" className="hover:text-primary transition-colors">Features</Link></li>
-              <li><Link to="/#pricing" className="hover:text-primary transition-colors">Pricing</Link></li>
+              <li>
+                <Link to="/" onClick={() => {
+                  setTimeout(() => {
+                    document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }} className="hover:text-primary transition-colors">How It Works</Link>
+              </li>
+              <li>
+                <Link to="/" onClick={() => {
+                  setTimeout(() => {
+                    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }} className="hover:text-primary transition-colors">Features</Link>
+              </li>
+              <li>
+                <Link to="/" onClick={() => {
+                  setTimeout(() => {
+                    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }} className="hover:text-primary transition-colors">Pricing</Link>
+              </li>
               <li><Link to="/auth" className="hover:text-primary transition-colors">Get Started</Link></li>
             </ul>
           </div>
@@ -43,7 +61,13 @@ export const Footer = () => {
           <div>
             <h3 className="font-semibold mb-4">Company</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/#features" className="hover:text-primary transition-colors">About Us</Link></li>
+              <li>
+                <Link to="/" onClick={() => {
+                  setTimeout(() => {
+                    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                  }, 100);
+                }} className="hover:text-primary transition-colors">About Us</Link>
+              </li>
               <li><a href="mailto:support@footprintiq.com" className="hover:text-primary transition-colors">Contact</a></li>
             </ul>
           </div>
