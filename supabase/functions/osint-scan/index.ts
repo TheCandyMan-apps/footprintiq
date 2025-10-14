@@ -35,7 +35,7 @@ serve(async (req) => {
     const PIPL_KEY = Deno.env.get('PIPL_KEY');
     const WHITEPAGES_KEY = Deno.env.get('WHITEPAGES_KEY');
     const HUNTER_IO_KEY = Deno.env.get('HUNTER_IO_KEY');
-    const HIBP_KEY = Deno.env.get('HAVE_I_BEEN_PWNED_KEY');
+    const HIBP_KEY = Deno.env.get('HIBP_API_KEY');
     const CLEARBIT_KEY = Deno.env.get('CLEARBIT_KEY');
 
     const results = {
