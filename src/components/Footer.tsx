@@ -68,7 +68,8 @@ export const Footer = () => {
                   }, 100);
                 }} className="hover:text-primary transition-colors">About Us</Link>
               </li>
-              <li><a href="mailto:support@footprintiq.com" className="hover:text-primary transition-colors">Contact</a></li>
+              <li><Link to="/support" className="hover:text-primary transition-colors">Support</Link></li>
+              <li><a href="mailto:support@footprintiq.app" className="hover:text-primary transition-colors">Contact</a></li>
             </ul>
           </div>
 
@@ -90,8 +91,8 @@ export const Footer = () => {
             <p>© 2025 footprintiq. All rights reserved.</p>
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4" />
-              <a href="mailto:support@footprintiq.com" className="hover:text-primary transition-colors">
-                support@footprintiq.com
+              <a href="mailto:support@footprintiq.app" className="hover:text-primary transition-colors">
+                support@footprintiq.app
               </a>
             </div>
           </div>

@@ -50,6 +50,12 @@ export const Header = () => {
               Pricing
             </button>
             <Link
+              to="/support"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Support
+            </Link>
+            <Link
               to="/auth"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
@@ -97,6 +103,13 @@ export const Header = () => {
             >
               Pricing
             </button>
+            <Link
+              to="/support"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Support
+            </Link>
             <Link
               to="/auth"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
