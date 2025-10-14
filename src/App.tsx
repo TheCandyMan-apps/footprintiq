@@ -12,6 +12,8 @@ import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Support from "./pages/Support";
+import SupportConfirmation from "./pages/SupportConfirmation";
+import MyTickets from "./pages/MyTickets";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +32,8 @@ const App = () => (
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/support/confirmation" element={<SupportConfirmation />} />
+          <Route path="/my-tickets" element={<MyTickets />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

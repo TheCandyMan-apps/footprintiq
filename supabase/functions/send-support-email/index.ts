@@ -13,8 +13,11 @@ interface SupportEmailRequest {
   name: string;
   email: string;
   issueType: string;
+  priority: string;
   subject: string;
   message: string;
+  ticketNumber?: string;
+  attachments?: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -23,22 +26,38 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { name, email, issueType, subject, message }: SupportEmailRequest = await req.json();
+    const { 
+      name, 
+      email, 
+      issueType, 
+      priority,
+      subject, 
+      message,
+      ticketNumber,
+      attachments
+    }: SupportEmailRequest = await req.json();
+
+    const attachmentsList = attachments && attachments.length > 0
+      ? `<h3>Attachments:</h3><ul>${attachments.map(url => `<li><a href="${url}">${url}</a></li>`).join('')}</ul>`
+      : '';
 
     // Send email to support
     const emailResponse = await resend.emails.send({
       from: "footprintiq Support <onboarding@resend.dev>",
       to: ["support@footprintiq.app"],
       replyTo: email,
-      subject: `[${issueType.toUpperCase()}] ${subject}`,
+      subject: `[${priority.toUpperCase()}] [${issueType.toUpperCase()}] ${subject}`,
       html: `
         <h2>New Support Request</h2>
+        <p><strong>Ticket Number:</strong> ${ticketNumber || 'N/A'}</p>
         <p><strong>From:</strong> ${name} (${email})</p>
+        <p><strong>Priority:</strong> ${priority.toUpperCase()}</p>
         <p><strong>Issue Type:</strong> ${issueType}</p>
         <p><strong>Subject:</strong> ${subject}</p>
         <hr />
         <h3>Message:</h3>
         <p style="white-space: pre-wrap;">${message}</p>
+        ${attachmentsList}
         <hr />
         <p style="color: #666; font-size: 12px;">This email was sent from the footprintiq support form.</p>
       `,
@@ -48,18 +67,41 @@ const handler = async (req: Request): Promise<Response> => {
     await resend.emails.send({
       from: "footprintiq Support <onboarding@resend.dev>",
       to: [email],
-      subject: "We've received your support request",
+      subject: `Support Ticket Created: ${ticketNumber || 'Pending'}`,
       html: `
-        <h2>Thank you for contacting us, ${name}!</h2>
-        <p>We have received your support request and will get back to you as soon as possible.</p>
-        <p><strong>Issue Type:</strong> ${issueType}</p>
-        <p><strong>Subject:</strong> ${subject}</p>
-        <hr />
-        <h3>Your Message:</h3>
-        <p style="white-space: pre-wrap;">${message}</p>
-        <hr />
-        <p>If you need immediate assistance, you can reach us at <a href="mailto:support@footprintiq.app">support@footprintiq.app</a></p>
-        <p>Best regards,<br>The footprintiq Team</p>
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #3b82f6;">Support Ticket Confirmation</h1>
+          
+          <p>Hello ${name},</p>
+          
+          <p>Thank you for contacting footprintiq Support. We have received your support request and will get back to you as soon as possible.</p>
+          
+          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            ${ticketNumber ? `<p><strong>Ticket Number:</strong> ${ticketNumber}</p>` : ''}
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Issue Type:</strong> ${issueType}</p>
+            <p><strong>Priority:</strong> ${priority.toUpperCase()}</p>
+          </div>
+          
+          <h3>Your Message:</h3>
+          <p style="white-space: pre-wrap;">${message}</p>
+          
+          ${attachmentsList}
+          
+          <p style="margin-top: 30px;">We'll review your request and respond according to the priority level:</p>
+          <ul>
+            <li><strong>Urgent:</strong> 1-2 hours</li>
+            <li><strong>High:</strong> 4-8 hours</li>
+            <li><strong>Normal:</strong> 1-2 business days</li>
+            <li><strong>Low:</strong> 2-3 business days</li>
+          </ul>
+          
+          <p>If you need to provide additional information, please reply to this email with your ticket number.</p>
+          
+          <p>If you need immediate assistance, you can reach us at <a href="mailto:support@footprintiq.app">support@footprintiq.app</a></p>
+          
+          <p>Best regards,<br>The footprintiq Support Team</p>
+        </div>
       `,
     });
 

@@ -272,6 +272,57 @@ export type Database = {
           },
         ]
       }
+      support_tickets: {
+        Row: {
+          attachments: Json | null
+          created_at: string
+          email: string
+          id: string
+          issue_type: string
+          message: string
+          name: string
+          priority: string
+          resolved_at: string | null
+          status: string
+          subject: string
+          ticket_number: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          created_at?: string
+          email: string
+          id?: string
+          issue_type: string
+          message: string
+          name: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject: string
+          ticket_number: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          created_at?: string
+          email?: string
+          id?: string
+          issue_type?: string
+          message?: string
+          name?: string
+          priority?: string
+          resolved_at?: string | null
+          status?: string
+          subject?: string
+          ticket_number?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -304,7 +355,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_ticket_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       removal_status: "pending" | "in_progress" | "completed" | "failed"

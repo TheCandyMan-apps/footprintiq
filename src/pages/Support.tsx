@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -9,27 +9,91 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Mail, MessageSquare } from "lucide-react";
+import { Upload, Mail, MessageSquare, Clock, Ticket, Save } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const supportSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
   issueType: z.string().min(1, "Please select an issue type"),
+  priority: z.string().min(1, "Please select a priority"),
   subject: z.string().trim().min(1, "Subject is required").max(200, "Subject must be less than 200 characters"),
   message: z.string().trim().min(10, "Message must be at least 10 characters").max(2000, "Message must be less than 2000 characters"),
 });
+
+const RESPONSE_TIMES = {
+  low: "2-3 business days",
+  normal: "1-2 business days",
+  high: "4-8 hours",
+  urgent: "1-2 hours"
+};
 
 const Support = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [issueType, setIssueType] = useState("");
+  const [priority, setPriority] = useState("normal");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Auto-save draft to localStorage
+  useEffect(() => {
+    const saveDraft = () => {
+      if (name || email || subject || message) {
+        setAutoSaving(true);
+        localStorage.setItem('support_draft', JSON.stringify({
+          name, email, issueType, priority, subject, message
+        }));
+        setTimeout(() => setAutoSaving(false), 1000);
+      }
+    };
+
+    const timer = setTimeout(saveDraft, 2000);
+    return () => clearTimeout(timer);
+  }, [name, email, issueType, priority, subject, message]);
+
+  // Load draft on mount
+  useEffect(() => {
+    const draft = localStorage.getItem('support_draft');
+    if (draft) {
+      try {
+        const parsed = JSON.parse(draft);
+        setName(parsed.name || "");
+        setEmail(parsed.email || "");
+        setIssueType(parsed.issueType || "");
+        setPriority(parsed.priority || "normal");
+        setSubject(parsed.subject || "");
+        setMessage(parsed.message || "");
+      } catch (e) {
+        console.error('Failed to load draft:', e);
+      }
+    }
+  }, []);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+      
+      if (totalSize > 10 * 1024 * 1024) { // 10MB limit
+        toast({
+          title: "Files Too Large",
+          description: "Total file size must be under 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      setAttachments(files);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +103,7 @@ const Support = () => {
       name,
       email,
       issueType,
+      priority,
       subject,
       message,
     });
@@ -56,34 +121,75 @@ const Support = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.functions.invoke('send-support-email', {
+      // Upload attachments if any
+      const uploadedFiles: string[] = [];
+      for (const file of attachments) {
+        const fileName = `${Date.now()}-${file.name}`;
+        const { error: uploadError, data } = await supabase.storage
+          .from('scan-images')
+          .upload(`support/${fileName}`, file);
+        
+        if (!uploadError && data) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('scan-images')
+            .getPublicUrl(data.path);
+          uploadedFiles.push(publicUrl);
+        }
+      }
+
+      // Get current user if authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Generate ticket number
+      const { data: ticketData, error: ticketError } = await supabase
+        .rpc('generate_ticket_number');
+
+      if (ticketError) throw ticketError;
+
+      // Create support ticket
+      const { data: ticket, error: insertError } = await supabase
+        .from('support_tickets')
+        .insert({
+          user_id: user?.id || null,
+          ticket_number: ticketData,
+          name: result.data.name,
+          email: result.data.email,
+          issue_type: result.data.issueType,
+          priority: result.data.priority,
+          subject: result.data.subject,
+          message: result.data.message,
+          attachments: uploadedFiles,
+          status: 'open'
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Send email notification
+      await supabase.functions.invoke('send-support-email', {
         body: {
           name: result.data.name,
           email: result.data.email,
           issueType: result.data.issueType,
+          priority: result.data.priority,
           subject: result.data.subject,
           message: result.data.message,
+          ticketNumber: ticket.ticket_number,
+          attachments: uploadedFiles,
         },
       });
 
-      if (error) throw error;
+      // Clear draft
+      localStorage.removeItem('support_draft');
 
-      toast({
-        title: "Message Sent!",
-        description: "We've received your message and will get back to you shortly.",
-      });
-
-      // Reset form
-      setName("");
-      setEmail("");
-      setIssueType("");
-      setSubject("");
-      setMessage("");
+      // Navigate to confirmation
+      navigate(`/support/confirmation?ticket=${ticket.ticket_number}`);
     } catch (error) {
-      console.error('Error sending support email:', error);
+      console.error('Error submitting support ticket:', error);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again or email us directly at support@footprintiq.app",
+        description: "Failed to submit ticket. Please try again or email us directly at support@footprintiq.app",
         variant: "destructive",
       });
     } finally {
@@ -104,9 +210,24 @@ const Support = () => {
           <p className="text-lg text-muted-foreground">
             Need help? We're here to assist you. Fill out the form below and we'll get back to you as soon as possible.
           </p>
+          <Button
+            variant="outline"
+            onClick={() => navigate('/my-tickets')}
+            className="mt-4"
+          >
+            <Ticket className="w-4 h-4 mr-2" />
+            View My Tickets
+          </Button>
         </div>
 
         <Card className="p-8 bg-gradient-card border-border shadow-card">
+          {autoSaving && (
+            <Alert className="mb-4">
+              <Save className="w-4 h-4" />
+              <AlertDescription>Draft saved automatically</AlertDescription>
+            </Alert>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
@@ -136,23 +257,46 @@ const Support = () => {
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="issueType">Issue Type *</Label>
-              <Select value={issueType} onValueChange={setIssueType} required>
-                <SelectTrigger id="issueType">
-                  <SelectValue placeholder="Select an issue type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="technical">Technical Issue</SelectItem>
-                  <SelectItem value="billing">Billing & Payments</SelectItem>
-                  <SelectItem value="account">Account Access</SelectItem>
-                  <SelectItem value="scan">Scan Results</SelectItem>
-                  <SelectItem value="privacy">Privacy Concerns</SelectItem>
-                  <SelectItem value="removal">Data Removal Request</SelectItem>
-                  <SelectItem value="feature">Feature Request</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="issueType">Issue Type *</Label>
+                <Select value={issueType} onValueChange={setIssueType} required>
+                  <SelectTrigger id="issueType">
+                    <SelectValue placeholder="Select an issue type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="technical">Technical Issue</SelectItem>
+                    <SelectItem value="billing">Billing & Payments</SelectItem>
+                    <SelectItem value="account">Account Access</SelectItem>
+                    <SelectItem value="scan">Scan Results</SelectItem>
+                    <SelectItem value="privacy">Privacy Concerns</SelectItem>
+                    <SelectItem value="removal">Data Removal Request</SelectItem>
+                    <SelectItem value="feature">Feature Request</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="priority">Priority *</Label>
+                <Select value={priority} onValueChange={setPriority} required>
+                  <SelectTrigger id="priority">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low - General inquiry</SelectItem>
+                    <SelectItem value="normal">Normal - Standard issue</SelectItem>
+                    <SelectItem value="high">High - Important issue</SelectItem>
+                    <SelectItem value="urgent">Urgent - Critical issue</SelectItem>
+                  </SelectContent>
+                </Select>
+                {priority && (
+                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Est. response: {RESPONSE_TIMES[priority as keyof typeof RESPONSE_TIMES]}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div>
@@ -182,6 +326,33 @@ const Support = () => {
               <p className="text-xs text-muted-foreground mt-2">
                 {message.length}/2000 characters
               </p>
+            </div>
+
+            <div>
+              <Label htmlFor="attachments">Attachments (Optional)</Label>
+              <div className="mt-2">
+                <Input
+                  id="attachments"
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  accept="image/*,.pdf,.doc,.docx"
+                  className="cursor-pointer"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  <Upload className="w-3 h-3 inline mr-1" />
+                  Max 10MB total. Accepted: images, PDF, Word documents
+                </p>
+                {attachments.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {attachments.map((file, idx) => (
+                      <p key={idx} className="text-xs text-muted-foreground">
+                        • {file.name} ({(file.size / 1024).toFixed(1)} KB)
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
