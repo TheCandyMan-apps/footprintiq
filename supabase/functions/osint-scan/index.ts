@@ -162,27 +162,116 @@ serve(async (req) => {
       }
     }
 
-    // 5. Hunter.io Email Search
+    // 5. Hunter.io Email Intelligence
     if (HUNTER_IO_KEY && scanData.email) {
       console.log('Searching Hunter.io...');
+      const dataFound: string[] = [];
+      
       try {
-        const hunterResponse = await fetch(
+        // Email Verification
+        const verifyResponse = await fetch(
           `https://api.hunter.io/v2/email-verifier?email=${encodeURIComponent(scanData.email)}&api_key=${HUNTER_IO_KEY}`
         );
 
-        if (hunterResponse.ok) {
-          const hunterData = await hunterResponse.json();
-          results.emailData = hunterData.data;
+        if (verifyResponse.ok) {
+          const verifyData = await verifyResponse.json();
+          results.emailData = verifyData.data;
+          dataFound.push('Email Verification', 'Sources');
+        }
+
+        // Person Enrichment
+        const personResponse = await fetch(
+          `https://api.hunter.io/v2/people/find?email=${encodeURIComponent(scanData.email)}&api_key=${HUNTER_IO_KEY}`
+        );
+
+        if (personResponse.ok) {
+          const personData = await personResponse.json();
+          if (personData.data) {
+            dataFound.push('Person Profile', 'Job Title', 'Social Links');
+          }
+        }
+
+        // Combined Enrichment (Person + Company)
+        const combinedResponse = await fetch(
+          `https://api.hunter.io/v2/combined/find?email=${encodeURIComponent(scanData.email)}&api_key=${HUNTER_IO_KEY}`
+        );
+
+        if (combinedResponse.ok) {
+          const combinedData = await combinedResponse.json();
+          if (combinedData.data) {
+            dataFound.push('Company Info', 'Organization Details');
+          }
+        }
+
+        // Domain Search (extract domain from email)
+        const domain = scanData.email.split('@')[1];
+        if (domain) {
+          const domainResponse = await fetch(
+            `https://api.hunter.io/v2/domain-search?domain=${domain}&api_key=${HUNTER_IO_KEY}`
+          );
+
+          if (domainResponse.ok) {
+            const domainData = await domainResponse.json();
+            if (domainData.data && domainData.data.emails) {
+              dataFound.push(`${domainData.data.emails.length} Related Emails`, 'Company Domain');
+            }
+          }
+
+          // Company Enrichment
+          const companyResponse = await fetch(
+            `https://api.hunter.io/v2/companies/find?domain=${domain}&api_key=${HUNTER_IO_KEY}`
+          );
+
+          if (companyResponse.ok) {
+            const companyData = await companyResponse.json();
+            if (companyData.data) {
+              dataFound.push('Company Profile', 'Industry', 'Size');
+            }
+          }
+        }
+
+        if (dataFound.length > 0) {
           results.dataSources.push({
             name: 'Hunter.io',
             category: 'Email Intelligence',
             url: 'https://hunter.io',
             risk_level: 'medium',
-            data_found: ['Email Status', 'Sources', 'Associated Domain'],
+            data_found: dataFound,
           });
         }
       } catch (error) {
         console.error('Hunter.io error:', error);
+      }
+    }
+
+    // 5b. Hunter.io Email Finder (if name is provided without email)
+    if (HUNTER_IO_KEY && !scanData.email && scanData.firstName && scanData.lastName) {
+      console.log('Attempting Hunter.io email discovery...');
+      try {
+        // Try common domains if we have enough info
+        const commonDomains = ['gmail.com', 'outlook.com', 'yahoo.com'];
+        
+        for (const domain of commonDomains) {
+          const finderResponse = await fetch(
+            `https://api.hunter.io/v2/email-finder?domain=${domain}&first_name=${encodeURIComponent(scanData.firstName)}&last_name=${encodeURIComponent(scanData.lastName)}&api_key=${HUNTER_IO_KEY}`
+          );
+
+          if (finderResponse.ok) {
+            const finderData = await finderResponse.json();
+            if (finderData.data && finderData.data.email) {
+              results.dataSources.push({
+                name: 'Hunter.io Email Discovery',
+                category: 'Email Intelligence',
+                url: 'https://hunter.io',
+                risk_level: 'medium',
+                data_found: ['Potential Email', 'Confidence Score', 'Sources'],
+              });
+              break;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Hunter.io finder error:', error);
       }
     }
 
