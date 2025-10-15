@@ -11,6 +11,7 @@ interface ScanProgressProps {
   scanData: ScanFormData;
   userId: string;
   subscriptionTier: string;
+  isAdmin?: boolean;
 }
 
 const scanSteps = [
@@ -21,7 +22,7 @@ const scanSteps = [
   { icon: Shield, label: "Analyzing exposure risk", key: "analyze" },
 ];
 
-export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier }: ScanProgressProps) => {
+export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, isAdmin = false }: ScanProgressProps) => {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const { toast } = useToast();
@@ -133,8 +134,8 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier }:
 
         if (finalError) throw finalError;
 
-        // For free users, limit the data shown
-        if (subscriptionTier === "free") {
+        // For free users (non-admin), limit the data shown
+        if (!isAdmin && subscriptionTier === "free") {
           // Limit data sources to 3
           const { data: allDataSources } = await supabase
             .from("data_sources")
@@ -185,7 +186,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier }:
     };
 
     performScan();
-  }, [onComplete, scanData, userId, subscriptionTier, toast]);
+  }, [onComplete, scanData, userId, subscriptionTier, isAdmin, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6">

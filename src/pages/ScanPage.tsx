@@ -15,6 +15,7 @@ const ScanPage = () => {
   const [scanData, setScanData] = useState<ScanFormData | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [scanCount, setScanCount] = useState<number>(0);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -28,15 +29,16 @@ const ScanPage = () => {
       
       setUser(session.user);
       
-      // Get user subscription tier
+      // Get user subscription tier and role
       const { data: userRole } = await supabase
         .from("user_roles")
-        .select("subscription_tier")
+        .select("subscription_tier, role")
         .eq("user_id", session.user.id)
         .single();
       
       if (userRole) {
         setSubscriptionTier(userRole.subscription_tier);
+        setIsAdmin(userRole.role === 'admin');
       }
       
       // Get scan count
@@ -62,8 +64,8 @@ const ScanPage = () => {
   }, [navigate]);
 
   const handleFormSubmit = (data: ScanFormData) => {
-    // Check if free user has exceeded scan limit
-    if (subscriptionTier === "free" && scanCount >= 1) {
+    // Admin users have unrestricted access
+    if (!isAdmin && subscriptionTier === "free" && scanCount >= 1) {
       toast({
         title: "Scan Limit Reached",
         description: "Free users get 1 scan. Upgrade to Premium for unlimited scans and full data access.",
@@ -100,6 +102,7 @@ const ScanPage = () => {
             scanData={scanData}
             userId={user.id}
             subscriptionTier={subscriptionTier}
+            isAdmin={isAdmin}
           />
         )}
       </main>
