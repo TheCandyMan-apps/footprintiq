@@ -269,6 +269,13 @@ const BlogPost = () => {
 
           <h1 className="text-4xl md:text-5xl font-bold mb-8">{post.title}</h1>
 
+          {/* 
+            SECURITY NOTE: Blog content is static and hardcoded by developers only.
+            This content is NOT user-generated or CMS-managed. All blog posts are
+            defined in the blogPosts object above and can only be modified by developers
+            with repository access. If this changes (e.g., adding a CMS), implement
+            DOMPurify sanitization or migrate to react-markdown.
+          */}
           <div
             className="prose prose-lg max-w-none prose-headings:font-bold prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-4 prose-h3:text-2xl prose-h3:mt-8 prose-h3:mb-3 prose-p:text-muted-foreground prose-p:leading-relaxed prose-li:text-muted-foreground prose-strong:text-foreground prose-a:text-primary prose-a:no-underline hover:prose-a:underline"
             dangerouslySetInnerHTML={{ __html: post.content }}
