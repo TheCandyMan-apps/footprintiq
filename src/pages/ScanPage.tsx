@@ -4,6 +4,7 @@ import { SEO } from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { ScanForm, type ScanFormData } from "@/components/ScanForm";
 import { ScanProgress } from "@/components/ScanProgress";
+import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { useToast } from "@/hooks/use-toast";
 import type { User } from "@supabase/supabase-js";
 
@@ -16,6 +17,7 @@ const ScanPage = () => {
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [scanCount, setScanCount] = useState<number>(0);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState<boolean>(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -66,12 +68,7 @@ const ScanPage = () => {
   const handleFormSubmit = (data: ScanFormData) => {
     // Admin users have unrestricted access
     if (!isAdmin && subscriptionTier === "free" && scanCount >= 1) {
-      toast({
-        title: "Scan Limit Reached",
-        description: "Free users get 1 scan. Upgrade to Premium for unlimited scans and full data access.",
-        variant: "destructive",
-      });
-      navigate("/scan#pricing");
+      setShowUpgradeDialog(true);
       return;
     }
     
@@ -105,6 +102,10 @@ const ScanPage = () => {
             isAdmin={isAdmin}
           />
         )}
+        <UpgradeDialog 
+          open={showUpgradeDialog} 
+          onOpenChange={setShowUpgradeDialog} 
+        />
       </main>
     </>
   );
