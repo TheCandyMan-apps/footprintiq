@@ -359,9 +359,10 @@ serve(async (req) => {
         : scanData.username;
 
       try {
-        // Start Sherlock Actor run
+        // Start Sherlock Actor run (using misceres/sherlock)
+        console.log(`Attempting to start Sherlock Actor for username: ${cleanUsername}`);
         const actorRunResponse = await fetch(
-          'https://api.apify.com/v2/acts/curious_coder~sherlock/runs',
+          'https://api.apify.com/v2/acts/misceres~sherlock/runs',
           {
             method: 'POST',
             headers: {
@@ -374,92 +375,102 @@ serve(async (req) => {
           }
         );
 
-        if (actorRunResponse.ok) {
-          const runData = await actorRunResponse.json();
-          const runId = runData.data.id;
-          console.log(`Sherlock Actor run started: ${runId}`);
+        console.log(`Sherlock Actor API response status: ${actorRunResponse.status}`);
+        
+        if (!actorRunResponse.ok) {
+          const errorText = await actorRunResponse.text();
+          console.error(`Sherlock Actor start failed: ${actorRunResponse.status} - ${errorText}`);
+          throw new Error(`Failed to start Sherlock Actor: ${actorRunResponse.status}`);
+        }
 
-          // Wait for the run to complete (poll status)
-          let isRunning = true;
-          let attempts = 0;
-          const maxAttempts = 30; // Max 60 seconds (30 attempts * 2 seconds)
+        const runData = await actorRunResponse.json();
+        const runId = runData.data.id;
+        console.log(`Sherlock Actor run started: ${runId}`);
 
-          while (isRunning && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
-            
-            const statusResponse = await fetch(
-              `https://api.apify.com/v2/acts/curious_coder~sherlock/runs/${runId}`,
-              {
-                headers: {
-                  'Authorization': `Bearer ${APIFY_API_TOKEN}`,
-                },
-              }
-            );
+        // Wait for the run to complete (poll status)
+        let isRunning = true;
+        let attempts = 0;
+        const maxAttempts = 30; // Max 60 seconds (30 attempts * 2 seconds)
 
-            if (statusResponse.ok) {
-              const statusData = await statusResponse.json();
-              const status = statusData.data.status;
-              console.log(`Sherlock Actor status: ${status}`);
+        while (isRunning && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+          
+          const statusResponse = await fetch(
+            `https://api.apify.com/v2/acts/misceres~sherlock/runs/${runId}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${APIFY_API_TOKEN}`,
+              },
+            }
+          );
 
-              if (status === 'SUCCEEDED') {
-                isRunning = false;
-                
-                // Fetch results from default dataset
-                const datasetId = statusData.data.defaultDatasetId;
-                const resultsResponse = await fetch(
-                  `https://api.apify.com/v2/datasets/${datasetId}/items`,
-                  {
-                    headers: {
-                      'Authorization': `Bearer ${APIFY_API_TOKEN}`,
-                    },
-                  }
-                );
+          if (statusResponse.ok) {
+            const statusData = await statusResponse.json();
+            const status = statusData.data.status;
+            console.log(`Sherlock Actor status: ${status}`);
 
-                if (resultsResponse.ok) {
-                  const resultsData = await resultsResponse.json();
-                  console.log(`Sherlock found ${resultsData.length} result sets`);
+            if (status === 'SUCCEEDED') {
+              isRunning = false;
+              
+              // Fetch results from default dataset
+              const datasetId = statusData.data.defaultDatasetId;
+              const resultsResponse = await fetch(
+                `https://api.apify.com/v2/datasets/${datasetId}/items`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${APIFY_API_TOKEN}`,
+                  },
+                }
+              );
 
-                  // Process Sherlock results
-                  for (const result of resultsData) {
-                    if (result.links && Array.isArray(result.links)) {
-                      for (const link of result.links) {
-                        try {
-                          // Extract platform name from URL
-                          const url = new URL(link);
-                          let platform = url.hostname.replace('www.', '').split('.')[0];
-                          platform = platform.charAt(0).toUpperCase() + platform.slice(1);
+              if (resultsResponse.ok) {
+                const resultsData = await resultsResponse.json();
+                console.log(`Sherlock found ${resultsData.length} result sets`);
 
-                          results.socialProfiles.push({
-                            platform: platform,
-                            username: result.username || cleanUsername,
-                            profile_url: link,
-                            found: true,
-                            first_seen: new Date().toISOString(),
-                            is_verified: false,
-                            metadata: {
-                              source: 'Apify Sherlock Actor',
-                              discovered_at: new Date().toISOString(),
-                              original_username: cleanUsername,
-                            },
-                          });
-                        } catch (urlError) {
-                          console.error('Error parsing Sherlock URL:', urlError);
-                        }
+                // Process Sherlock results
+                for (const result of resultsData) {
+                  if (result.links && Array.isArray(result.links)) {
+                    for (const link of result.links) {
+                      try {
+                        // Extract platform name from URL
+                        const url = new URL(link);
+                        let platform = url.hostname.replace('www.', '').split('.')[0];
+                        platform = platform.charAt(0).toUpperCase() + platform.slice(1);
+
+                        results.socialProfiles.push({
+                          platform: platform,
+                          username: result.username || cleanUsername,
+                          profile_url: link,
+                          found: true,
+                          first_seen: new Date().toISOString(),
+                          is_verified: false,
+                          metadata: {
+                            source: 'Apify Sherlock Actor',
+                            discovered_at: new Date().toISOString(),
+                            original_username: cleanUsername,
+                          },
+                        });
+                      } catch (urlError) {
+                        console.error('Error parsing Sherlock URL:', urlError);
                       }
                     }
                   }
                 }
-              } else if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
-                console.error(`Sherlock Actor run ${status}`);
-                isRunning = false;
+              } else {
+                console.error(`Failed to fetch Sherlock results: ${resultsResponse.status}`);
               }
+            } else if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
+              console.error(`Sherlock Actor run ${status}`);
+              isRunning = false;
             }
-            attempts++;
+          } else {
+            console.error(`Failed to check Sherlock status: ${statusResponse.status}`);
           }
+          attempts++;
+        }
 
-          if (attempts >= maxAttempts) {
-            console.warn('Sherlock Actor timed out after 60 seconds');
-          }
+        if (attempts >= maxAttempts) {
+          console.warn('Sherlock Actor timed out after 60 seconds');
         }
       } catch (error) {
         console.error('Apify Sherlock error:', error);
