@@ -35,9 +35,12 @@ const App = () => (
           <Route path="/scan" element={<ScanPage />} />
           <Route path="/results/:scanId" element={<ResultsDetail />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/terms" element={<TermsOfService />} />
           <Route path="/responsible-use" element={<ResponsibleUse />} />
           <Route path="/data-sources" element={<DataSources />} />
+          <Route path="/how-we-source-data" element={<DataSources />} />
           <Route path="/support" element={<Support />} />
           <Route path="/support/confirmation" element={<SupportConfirmation />} />
           <Route path="/my-tickets" element={<MyTickets />} />
