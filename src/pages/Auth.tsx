@@ -9,6 +9,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { z } from "zod";
+
+const authSchema = z.object({
+  email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
+  password: z.string().min(6, "Password must be at least 6 characters").max(72, "Password must be less than 72 characters"),
+});
+
+const signUpSchema = authSchema.extend({
+  fullName: z.string().trim().min(1, "Full name is required").max(100, "Full name must be less than 100 characters"),
+});
 
 const Auth = () => {
   const [email, setEmail] = useState("");
@@ -36,13 +46,27 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form data
+    const result = signUpSchema.safeParse({ email, password, fullName });
+    
+    if (!result.success) {
+      const firstError = result.error.errors[0];
+      toast({
+        title: "Validation Error",
+        description: firstError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: result.data.email,
+      password: result.data.password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: result.data.fullName },
         emailRedirectTo: `${window.location.origin}/dashboard`,
       },
     });
@@ -65,11 +89,25 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form data
+    const result = authSchema.safeParse({ email, password });
+    
+    if (!result.success) {
+      const firstError = result.error.errors[0];
+      toast({
+        title: "Validation Error",
+        description: firstError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setLoading(true);
 
     const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+      email: result.data.email,
+      password: result.data.password,
     });
 
     setLoading(false);
@@ -185,6 +223,7 @@ const Auth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    maxLength={255}
                   />
                 </div>
                 <div>
@@ -195,6 +234,8 @@ const Auth = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    minLength={6}
+                    maxLength={72}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
@@ -249,6 +290,7 @@ const Auth = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
+                    maxLength={100}
                   />
                 </div>
                 <div>
@@ -259,6 +301,7 @@ const Auth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    maxLength={255}
                   />
                 </div>
                 <div>
@@ -270,6 +313,7 @@ const Auth = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
+                    maxLength={72}
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>

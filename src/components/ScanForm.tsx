@@ -4,19 +4,41 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { ArrowRight, Upload, X } from "lucide-react";
+import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
 
 interface ScanFormProps {
   onSubmit: (data: ScanFormData) => void;
 }
 
 export interface ScanFormData {
-  firstName: string;
-  lastName: string;
-  email: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
   phone?: string;
   username?: string;
   imageFile?: File;
 }
+
+const scanFormSchema = z.object({
+  firstName: z.string().trim().max(100, "First name must be less than 100 characters").optional(),
+  lastName: z.string().trim().max(100, "Last name must be less than 100 characters").optional(),
+  email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters").optional().or(z.literal("")),
+  phone: z.string().trim().regex(/^[\d\s\+\-\(\)]*$/, "Invalid phone number format").max(20, "Phone number must be less than 20 characters").optional().or(z.literal("")),
+  username: z.string().trim().min(1).max(50, "Username must be less than 50 characters").optional().or(z.literal("")),
+  imageFile: z.instanceof(File).optional(),
+}).refine(
+  (data) => {
+    // Must have at least one of: image, username, or basic info (first name + last name + email)
+    const hasImage = !!data.imageFile;
+    const hasUsername = !!data.username && data.username.length > 0;
+    const hasBasicInfo = !!data.firstName && !!data.lastName && !!data.email && data.email.length > 0;
+    return hasImage || hasUsername || hasBasicInfo;
+  },
+  {
+    message: "Please provide either an image, a username, or your basic information (name and email)",
+  }
+);
 
 export const ScanForm = ({ onSubmit }: ScanFormProps) => {
   const [formData, setFormData] = useState<ScanFormData>({
@@ -27,10 +49,31 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     username: "",
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file size (10MB limit)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "Image must be under 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Please upload an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setFormData({ ...formData, imageFile: file });
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -48,13 +91,20 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if at least username, basic info, or image is provided
-    if (!formData.imageFile && !formData.username && (!formData.firstName || !formData.lastName || !formData.email)) {
-      alert("Please provide either an image, a username, or your basic information (name and email)");
+    // Validate form with zod
+    const result = scanFormSchema.safeParse(formData);
+    
+    if (!result.success) {
+      const firstError = result.error.errors[0];
+      toast({
+        title: "Validation Error",
+        description: firstError.message,
+        variant: "destructive",
+      });
       return;
     }
     
-    onSubmit(formData);
+    onSubmit(result.data);
   };
 
   return (
@@ -124,6 +174,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
               value={formData.username}
               onChange={(e) => setFormData({ ...formData, username: e.target.value })}
               className="bg-secondary border-border"
+              maxLength={50}
             />
           </div>
 
@@ -145,6 +196,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
                 value={formData.firstName}
                 onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 className="bg-secondary border-border"
+                maxLength={100}
               />
             </div>
             
@@ -156,6 +208,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
                 value={formData.lastName}
                 onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 className="bg-secondary border-border"
+                maxLength={100}
               />
             </div>
           </div>
@@ -169,6 +222,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="bg-secondary border-border"
+              maxLength={255}
             />
           </div>
 
@@ -181,6 +235,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               className="bg-secondary border-border"
+              maxLength={20}
             />
           </div>
 

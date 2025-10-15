@@ -1,22 +1,22 @@
 project_id = "byuzgvauaeldjqxlrjci"
 
 [functions.osint-scan]
-verify_jwt = false
+verify_jwt = true
 
 [functions.correlation-engine]
-verify_jwt = false
+verify_jwt = true
 
 [functions.automated-removal]
-verify_jwt = false
+verify_jwt = true
 
 [functions.monitoring-scheduler]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ai-analysis]
 verify_jwt = true
 
 [functions.reverse-image-search]
-verify_jwt = false
+verify_jwt = true
 
 [functions.behavioral-analysis]
 verify_jwt = true

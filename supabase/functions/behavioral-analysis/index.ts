@@ -12,16 +12,22 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: req.headers.get('Authorization')! },
+        },
+      }
+    );
 
     const { scanId } = await req.json();
 
     console.log('Starting behavioral analysis for scan:', scanId);
 
-    // Fetch scan data with all related information
-    const { data: scan, error: scanError } = await supabase
+    // Fetch scan data with all related information (RLS automatically enforces ownership)
+    const { data: scan, error: scanError } = await supabaseClient
       .from('scans')
       .select('*')
       .eq('id', scanId)
@@ -30,7 +36,7 @@ serve(async (req) => {
     if (scanError) throw scanError;
 
     // Fetch social profiles
-    const { data: socialProfiles, error: profilesError } = await supabase
+    const { data: socialProfiles, error: profilesError } = await supabaseClient
       .from('social_profiles')
       .select('*')
       .eq('scan_id', scanId);
@@ -38,7 +44,7 @@ serve(async (req) => {
     if (profilesError) throw profilesError;
 
     // Fetch data sources
-    const { data: dataSources, error: sourcesError } = await supabase
+    const { data: dataSources, error: sourcesError } = await supabaseClient
       .from('data_sources')
       .select('*')
       .eq('scan_id', scanId);
@@ -46,7 +52,7 @@ serve(async (req) => {
     if (sourcesError) throw sourcesError;
 
     // Fetch correlation data
-    const { data: correlationData, error: correlationError } = await supabase.functions.invoke(
+    const { data: correlationData, error: correlationError } = await supabaseClient.functions.invoke(
       'correlation-engine',
       { body: { scanId } }
     );
