@@ -3,50 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <title>FootprintIQ - Digital Footprint Scanner & OSINT Privacy Protection</title>
-    <meta name="description" content="Remove your personal data from 100+ data brokers and people search sites. footprintiq provides comprehensive privacy protection with automated removal, continuous monitoring, and AI-powered detection." />
-    <meta name="keywords" content="digital footprint, online privacy, data broker removal, personal data protection, OSINT scan, privacy monitoring, remove personal information" />
-    <meta name="author" content="footprintiq" />
-    <link rel="canonical" href="https://footprintiq.com/" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Preload critical font -->
+    <link rel="preload" href="/fonts/inter-var.woff2" as="font" type="font/woff2" crossorigin />
+    
+    <!-- Default meta (overridden by Helmet) -->
+    <title>FootprintIQ — Digital Footprint Scanner & OSINT Privacy Protection</title>
+    <meta name="description" content="Scan emails, usernames, domains, phones and IPs with trusted OSINT sources like Have I Been Pwned, Shodan and VirusTotal. Remove your personal data from 100+ data brokers." />
+    <meta name="keywords" content="digital footprint scanner, OSINT privacy, email breach check, username search, domain intelligence, IP exposure, phone OSINT, data broker removal" />
+    <meta name="author" content="FootprintIQ" />
+    
+    <!-- Analytics - Privacy-friendly Plausible -->
+    <script defer data-domain="footprintiq.app" src="https://plausible.io/js/script.js"></script>
 
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://footprintiq.com/" />
-    <meta property="og:title" content="footprintiq - Control Your Digital Footprint" />
-    <meta property="og:description" content="Remove your personal data from data brokers and people search sites. Automated privacy protection with continuous monitoring." />
-    <meta property="og:image" content="https://footprintiq.com/og-image.jpg" />
+    <!-- Note: Open Graph and Twitter tags managed by react-helmet-async in components -->
 
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://footprintiq.com/" />
-    <meta name="twitter:title" content="footprintiq - Control Your Digital Footprint" />
-    <meta name="twitter:description" content="Remove your personal data from data brokers and people search sites. Automated privacy protection with continuous monitoring." />
-    <meta name="twitter:image" content="https://footprintiq.com/twitter-image.jpg" />
-
-    <!-- Structured Data -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "footprintiq",
-      "applicationCategory": "SecurityApplication",
-      "description": "Comprehensive digital footprint management and privacy protection service that removes personal data from data brokers and monitors online presence.",
-      "offers": {
-        "@type": "AggregateOffer",
-        "priceCurrency": "USD",
-        "lowPrice": "0",
-        "highPrice": "99",
-        "offerCount": "3"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "1247"
-      }
-    }
-    </script>
+    <!-- Note: Structured data managed by react-helmet-async in components -->
   </head>
 
   <body>

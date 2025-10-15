@@ -17,33 +17,62 @@ export default function Home() {
     navigate('/scan');
   };
 
-  const faqStructuredData = {
+  const structuredData = {
     "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
+    "@graph": [
       {
-        "@type": "Question",
-        "name": "Is my data private when using FootprintIQ?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes — we query reputable OSINT providers and never store or sell your personal data. Your privacy is our top priority. All scans are encrypted and securely processed."
-        }
+        "@type": "SoftwareApplication",
+        "name": "FootprintIQ",
+        "applicationCategory": "SecurityApplication",
+        "operatingSystem": "Web",
+        "description": "Scan your digital footprint with trusted OSINT sources. Check email breaches, usernames, domains, IPs, and phones. Remove personal data from 100+ data brokers automatically.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "description": "Free tier available with Pro plans for advanced features"
+        },
+        "url": "https://footprintiq.app/"
       },
       {
-        "@type": "Question",
-        "name": "Is FootprintIQ free to use?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes! The free tier runs comprehensive checks across email breaches, username searches, and basic domain intelligence. Pro plans unlock deeper historical sources, continuous monitoring, and automated data removal from 100+ data brokers."
-        }
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is my data private when using FootprintIQ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes — we query reputable OSINT providers and never store or sell your personal data. Your privacy is our top priority. All scans are encrypted and securely processed."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is FootprintIQ free to use?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes! The free tier runs comprehensive checks across email breaches, username searches, and basic domain intelligence. Pro plans unlock deeper historical sources, continuous monitoring, and automated data removal from 100+ data brokers."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What OSINT sources does FootprintIQ use?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "FootprintIQ uses trusted OSINT sources including Have I Been Pwned for breach detection, Shodan for IP and device exposure, VirusTotal for domain and file reputation, plus 100+ data broker databases for comprehensive digital footprint analysis."
+            }
+          }
+        ]
       },
       {
-        "@type": "Question",
-        "name": "What OSINT sources does FootprintIQ use?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "FootprintIQ uses trusted OSINT sources including Have I Been Pwned for breach detection, Shodan for IP and device exposure, VirusTotal for domain and file reputation, plus 100+ data broker databases for comprehensive digital footprint analysis."
-        }
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://footprintiq.app/"
+          }
+        ]
       }
     ]
   };
@@ -51,10 +80,11 @@ export default function Home() {
   return (
     <>
       <SEO
-        title="FootprintIQ — Digital Footprint Scanner & OSINT Privacy Protection"
-        description="Scan your digital footprint with trusted OSINT sources. Check email breaches, usernames, domains, IPs, and phones. Remove personal data from 100+ data brokers automatically."
-        canonical="https://footprintiq.com/"
-        structuredData={faqStructuredData}
+        title="FootprintIQ — Check Your Digital Footprint & Online Privacy"
+        description="Scan emails, usernames, domains, phones and IPs with trusted OSINT sources like Have I Been Pwned, Shodan and VirusTotal. Remove your personal data from 100+ data brokers."
+        canonical="https://footprintiq.app/"
+        ogImage="https://footprintiq.app/og-image.jpg"
+        structuredData={structuredData}
       />
       <Header />
       <Hero onStartScan={handleStartScan} />
@@ -71,30 +101,84 @@ export default function Home() {
       <Testimonials />
       
       <main className="px-6 py-16 mx-auto max-w-5xl">
-        <section className="mt-10 grid gap-6 md:grid-cols-2">
-          <div>
-            <h2 className="text-2xl font-semibold">What you can scan</h2>
-            <ul className="mt-3 list-disc ml-6 text-muted-foreground">
-              <li>Email breach checks &amp; identity enrichment</li>
-              <li>Username presence across major platforms</li>
-              <li>Domain reputation, tech stack &amp; DNS history</li>
-              <li>IP exposure &amp; open ports (Shodan)</li>
-              <li>Phone number intelligence &amp; carrier checks</li>
-            </ul>
+        <section className="mt-10">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              What You Can Scan with FootprintIQ
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              Comprehensive OSINT scanning across multiple data types to uncover your complete digital footprint
+            </p>
           </div>
-          <div>
-            <h2 className="text-2xl font-semibold">Why it matters</h2>
-            <ul className="mt-3 list-disc ml-6 text-muted-foreground">
-              <li>Reduce risk from exposed data</li>
-              <li>Protect your brand &amp; personal privacy</li>
-              <li>Get step-by-step cleanup actions</li>
-            </ul>
+          
+          <div className="grid gap-6 md:grid-cols-2 mb-12">
+            <div className="p-6 rounded-xl bg-card border border-border">
+              <h3 className="text-xl font-semibold mb-4">What You Can Scan</h3>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span><strong>Email breach checks</strong> — Identity enrichment via Have I Been Pwned</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span><strong>Username presence</strong> — Search across major social platforms</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span><strong>Domain reputation</strong> — Tech stack, DNS history &amp; VirusTotal analysis</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span><strong>IP exposure</strong> — Open ports &amp; device scanning via Shodan</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span><strong>Phone intelligence</strong> — Carrier checks &amp; number validation</span>
+                </li>
+              </ul>
+            </div>
+            
+            <div className="p-6 rounded-xl bg-card border border-border">
+              <h3 className="text-xl font-semibold mb-4">Why It Matters</h3>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span><strong>Reduce risk</strong> from exposed personal data and security breaches</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span><strong>Protect privacy</strong> for yourself, your family, and your brand</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span><strong>Get actionable steps</strong> with detailed cleanup instructions</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary mt-1">•</span>
+                  <span><strong>Monitor continuously</strong> with automated tracking of new exposures</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="text-center">
+            <Link 
+              to="/scan" 
+              className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-6 py-3 font-semibold hover:bg-primary/90 transition-colors"
+            >
+              Run a Free Scan
+            </Link>
           </div>
         </section>
 
-        <Link to="/scan" className="inline-flex mt-10 rounded-lg border border-border px-4 py-2 hover:bg-muted transition-colors">
-          Run a free scan
-        </Link>
+        {/* Privacy Trust Note */}
+        <section className="mt-16 p-6 rounded-xl bg-muted/50 border border-border">
+          <p className="text-center text-muted-foreground">
+            <strong className="text-foreground">Your Privacy is Protected:</strong> We never sell your data. 
+            All scan queries are transient and encrypted. We only query reputable OSINT providers and 
+            delete search data after delivering your results.
+          </p>
+        </section>
       </main>
       
       <FAQ />

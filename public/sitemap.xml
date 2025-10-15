@@ -1,63 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://footprintiq.com/</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://footprintiq.app/</loc>
+    <lastmod>2025-10-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://footprintiq.com/scan</loc>
-    <lastmod>2025-01-15</lastmod>
-    <changefreq>monthly</changefreq>
+    <loc>https://footprintiq.app/scan</loc>
+    <lastmod>2025-10-15</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://footprintiq.com/auth</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://footprintiq.app/privacy-policy</loc>
+    <lastmod>2025-10-15</lastmod>
     <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/terms-of-service</loc>
+    <lastmod>2025-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/responsible-use</loc>
+    <lastmod>2025-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/data-sources</loc>
+    <lastmod>2025-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/blog</loc>
+    <lastmod>2025-10-15</lastmod>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://footprintiq.com/privacy-policy</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://footprintiq.app/blog/what-is-digital-footprint</loc>
+    <lastmod>2025-10-15</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://footprintiq.com/terms-of-service</loc>
-    <lastmod>2025-01-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://footprintiq.com/support</loc>
-    <lastmod>2025-01-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://footprintiq.com/blog</loc>
-    <lastmod>2025-01-15</lastmod>
-    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://footprintiq.com/blog/what-is-digital-footprint</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://footprintiq.app/blog/check-email-breach</loc>
+    <lastmod>2025-10-15</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://footprintiq.com/blog/check-email-breach</loc>
-    <lastmod>2025-01-15</lastmod>
+    <loc>https://footprintiq.app/blog/osint-beginners-guide</loc>
+    <lastmod>2025-10-15</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://footprintiq.com/blog/osint-beginners-guide</loc>
-    <lastmod>2025-01-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
   </url>
 </urlset>

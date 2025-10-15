@@ -12,6 +12,8 @@ import ResultsDetail from "./pages/ResultsDetail";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import ResponsibleUse from "./pages/ResponsibleUse";
+import DataSources from "./pages/DataSources";
 import Support from "./pages/Support";
 import SupportConfirmation from "./pages/SupportConfirmation";
 import MyTickets from "./pages/MyTickets";
@@ -34,6 +36,8 @@ const App = () => (
           <Route path="/results/:scanId" element={<ResultsDetail />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/responsible-use" element={<ResponsibleUse />} />
+          <Route path="/data-sources" element={<DataSources />} />
           <Route path="/support" element={<Support />} />
           <Route path="/support/confirmation" element={<SupportConfirmation />} />
           <Route path="/my-tickets" element={<MyTickets />} />

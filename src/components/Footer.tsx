@@ -73,14 +73,14 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* Legal */}
+          {/* Legal & Trust */}
           <div>
-            <h3 className="font-semibold mb-4">Legal</h3>
+            <h3 className="font-semibold mb-4">Legal & Trust</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms-of-service" className="hover:text-primary transition-colors">Terms of Service</Link></li>
-              <li><Link to="/privacy-policy#cookies" className="hover:text-primary transition-colors">Cookie Policy</Link></li>
-              <li><Link to="/privacy-policy#gdpr" className="hover:text-primary transition-colors">GDPR Compliance</Link></li>
+              <li><Link to="/responsible-use" className="hover:text-primary transition-colors">Responsible Use</Link></li>
+              <li><Link to="/data-sources" className="hover:text-primary transition-colors">How We Source Data</Link></li>
             </ul>
           </div>
         </div>

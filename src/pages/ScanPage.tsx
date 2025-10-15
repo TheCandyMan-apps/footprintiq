@@ -87,9 +87,27 @@ const ScanPage = () => {
   return (
     <>
       <SEO
-        title="Start Your Digital Footprint Scan | FootprintIQ OSINT Scanner"
-        description="Run a comprehensive OSINT scan to check your digital footprint. Detect email breaches, exposed data, and vulnerabilities across 100+ sources. Free privacy check."
-        canonical="https://footprintiq.com/scan"
+        title="Scanner · FootprintIQ — Check Email, Username, Domain, Phone, IP"
+        description="Run a free OSINT scan to check your digital footprint. Detect email breaches via Have I Been Pwned, username exposure, domain intelligence, IP leaks via Shodan, and phone data."
+        canonical="https://footprintiq.app/scan"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://footprintiq.app/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Scanner",
+              "item": "https://footprintiq.app/scan"
+            }
+          ]
+        }}
       />
       <main className="min-h-screen bg-background">
         {currentStep === "form" && <ScanForm onSubmit={handleFormSubmit} />}

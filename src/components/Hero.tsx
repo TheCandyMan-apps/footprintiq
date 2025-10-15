@@ -24,14 +24,15 @@ export const Hero = ({ onStartScan }: HeroProps) => {
         </div>
         
         <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-          Take Control of Your
+          FootprintIQ — Check Your Digital Footprint
           <br />
-          <span className="bg-gradient-accent bg-clip-text text-transparent">Digital Footprint</span>
+          <span className="bg-gradient-accent bg-clip-text text-transparent">(Email, Username, Domain, Phone, IP)</span>
         </h1>
         
         <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-          Discover where your personal data exists online and remove it from data brokers, 
-          people search sites, and more. Track your progress over time.
+          Scan with trusted OSINT sources like Have I Been Pwned, Shodan, and VirusTotal. 
+          Discover email breaches, username exposure, domain intelligence, IP leaks, and phone data. 
+          Remove your personal information from 100+ data brokers automatically.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
