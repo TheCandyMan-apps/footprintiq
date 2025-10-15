@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const pricingTiers = [
   {
@@ -58,13 +60,35 @@ const pricingTiers = [
 
 export const Pricing = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const handleCTA = (tierName: string) => {
+  const handleCTA = async (tierName: string) => {
     if (tierName === "Enterprise") {
       window.location.href = "mailto:sales@footprintiq.com";
-    } else {
-      navigate("/auth");
+      return;
     }
+
+    if (tierName === "Pro") {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/auth");
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke("create-checkout");
+      if (error || !data?.url) {
+        toast({
+          title: "Checkout error",
+          description: error?.message || "We couldn't start the checkout. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.open(data.url, "_blank");
+      return;
+    }
+
+    // Free plan
+    navigate("/auth");
   };
 
   return (
