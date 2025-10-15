@@ -1,5 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { SEO } from "@/components/SEO";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
 import { HowItWorks } from "@/components/HowItWorks";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
@@ -54,6 +56,7 @@ export default function Home() {
         canonical="https://footprintiq.com/"
         structuredData={faqStructuredData}
       />
+      <Header />
       <Hero onStartScan={handleStartScan} />
       <TrustSignals />
       <HowItWorks />
@@ -89,6 +92,7 @@ export default function Home() {
       </main>
       
       <FAQ />
+      <Footer />
     </>
   );
 }
