@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import type { ScanFormData } from "./ScanForm";
 
 interface ScanResultsProps {
   searchData: ScanFormData | null;
+  scanId: string;
 }
 
 interface DataSource {
@@ -29,262 +31,85 @@ interface SocialMediaProfile {
   lastActive?: string;
 }
 
-const mockResults: DataSource[] = [
-  {
-    id: "1",
-    name: "PeopleSearchNow",
-    category: "People Search",
-    dataFound: ["Name", "Email", "Phone", "Address"],
-    riskLevel: "high",
-    url: "https://example.com",
-  },
-  {
-    id: "2",
-    name: "WhitePages",
-    category: "Public Records",
-    dataFound: ["Name", "Phone", "Age"],
-    riskLevel: "high",
-    url: "https://example.com",
-  },
-  {
-    id: "3",
-    name: "Spokeo",
-    category: "Data Broker",
-    dataFound: ["Name", "Email", "Relatives"],
-    riskLevel: "medium",
-    url: "https://example.com",
-  },
-  {
-    id: "4",
-    name: "BeenVerified",
-    category: "Background Check",
-    dataFound: ["Name", "Address History"],
-    riskLevel: "medium",
-    url: "https://example.com",
-  },
-  {
-    id: "5",
-    name: "Intelius",
-    category: "Data Broker",
-    dataFound: ["Name", "Email"],
-    riskLevel: "low",
-    url: "https://example.com",
-  },
-];
-
-const mockSocialProfiles: SocialMediaProfile[] = [
-  {
-    id: "s1",
-    platform: "Twitter/X",
-    username: "@username",
-    profileUrl: "https://twitter.com/username",
-    found: true,
-    followers: "1.2K",
-    lastActive: "2 days ago",
-  },
-  {
-    id: "s2",
-    platform: "Instagram",
-    username: "@username",
-    profileUrl: "https://instagram.com/username",
-    found: true,
-    followers: "3.5K",
-    lastActive: "1 day ago",
-  },
-  {
-    id: "s3",
-    platform: "Facebook",
-    username: "username",
-    profileUrl: "https://facebook.com/username",
-    found: true,
-    lastActive: "1 week ago",
-  },
-  {
-    id: "s4",
-    platform: "LinkedIn",
-    username: "username",
-    profileUrl: "https://linkedin.com/in/username",
-    found: true,
-    lastActive: "3 days ago",
-  },
-  {
-    id: "s5",
-    platform: "TikTok",
-    username: "@username",
-    profileUrl: "https://tiktok.com/@username",
-    found: true,
-    followers: "892",
-    lastActive: "5 hours ago",
-  },
-  {
-    id: "s6",
-    platform: "Reddit",
-    username: "u/username",
-    profileUrl: "https://reddit.com/user/username",
-    found: true,
-    lastActive: "12 hours ago",
-  },
-  {
-    id: "s7",
-    platform: "GitHub",
-    username: "username",
-    profileUrl: "https://github.com/username",
-    found: true,
-    followers: "45",
-    lastActive: "2 weeks ago",
-  },
-  {
-    id: "s8",
-    platform: "YouTube",
-    username: "@username",
-    profileUrl: "https://youtube.com/@username",
-    found: true,
-    followers: "567",
-    lastActive: "1 month ago",
-  },
-  {
-    id: "s9",
-    platform: "Pinterest",
-    username: "username",
-    profileUrl: "https://pinterest.com/username",
-    found: false,
-  },
-  {
-    id: "s10",
-    platform: "Snapchat",
-    username: "username",
-    profileUrl: "https://snapchat.com/add/username",
-    found: false,
-  },
-  {
-    id: "s11",
-    platform: "Discord",
-    username: "username#1234",
-    profileUrl: "https://discord.com",
-    found: true,
-  },
-  {
-    id: "s12",
-    platform: "Twitch",
-    username: "username",
-    profileUrl: "https://twitch.tv/username",
-    found: false,
-  },
-];
-
-export const ScanResults = ({ searchData }: ScanResultsProps) => {
+export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
   const { toast } = useToast();
   const [removedSources, setRemovedSources] = useState<Set<string>>(new Set());
   const [removedProfiles, setRemovedProfiles] = useState<Set<string>>(new Set());
+  const [dataSources, setDataSources] = useState<DataSource[]>([]);
+  const [socialProfiles, setSocialProfiles] = useState<SocialMediaProfile[]>([]);
+  const [scanData, setScanData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const searchedUsername = searchData?.username || "username";
-  
-  // Generate social profiles based on the searched username
-  const generateSocialProfiles = (username: string): SocialMediaProfile[] => {
-    const cleanUsername = username.startsWith('@') ? username.slice(1) : username;
-    
-    return [
-      {
-        id: "s1",
-        platform: "Twitter/X",
-        username: `@${cleanUsername}`,
-        profileUrl: `https://twitter.com/${cleanUsername}`,
-        found: true,
-        followers: "1.2K",
-        lastActive: "2 days ago",
-      },
-      {
-        id: "s2",
-        platform: "Instagram",
-        username: `@${cleanUsername}`,
-        profileUrl: `https://instagram.com/${cleanUsername}`,
-        found: true,
-        followers: "3.5K",
-        lastActive: "1 day ago",
-      },
-      {
-        id: "s3",
-        platform: "Facebook",
-        username: cleanUsername,
-        profileUrl: `https://facebook.com/${cleanUsername}`,
-        found: true,
-        lastActive: "1 week ago",
-      },
-      {
-        id: "s4",
-        platform: "LinkedIn",
-        username: cleanUsername,
-        profileUrl: `https://linkedin.com/in/${cleanUsername}`,
-        found: true,
-        lastActive: "3 days ago",
-      },
-      {
-        id: "s5",
-        platform: "TikTok",
-        username: `@${cleanUsername}`,
-        profileUrl: `https://tiktok.com/@${cleanUsername}`,
-        found: true,
-        followers: "892",
-        lastActive: "5 hours ago",
-      },
-      {
-        id: "s6",
-        platform: "Reddit",
-        username: `u/${cleanUsername}`,
-        profileUrl: `https://reddit.com/user/${cleanUsername}`,
-        found: true,
-        lastActive: "12 hours ago",
-      },
-      {
-        id: "s7",
-        platform: "GitHub",
-        username: cleanUsername,
-        profileUrl: `https://github.com/${cleanUsername}`,
-        found: true,
-        followers: "45",
-        lastActive: "2 weeks ago",
-      },
-      {
-        id: "s8",
-        platform: "YouTube",
-        username: `@${cleanUsername}`,
-        profileUrl: `https://youtube.com/@${cleanUsername}`,
-        found: true,
-        followers: "567",
-        lastActive: "1 month ago",
-      },
-      {
-        id: "s9",
-        platform: "Pinterest",
-        username: cleanUsername,
-        profileUrl: `https://pinterest.com/${cleanUsername}`,
-        found: false,
-      },
-      {
-        id: "s10",
-        platform: "Snapchat",
-        username: cleanUsername,
-        profileUrl: `https://snapchat.com/add/${cleanUsername}`,
-        found: false,
-      },
-      {
-        id: "s11",
-        platform: "Discord",
-        username: `${cleanUsername}#1234`,
-        profileUrl: "https://discord.com",
-        found: true,
-      },
-      {
-        id: "s12",
-        platform: "Twitch",
-        username: cleanUsername,
-        profileUrl: `https://twitch.tv/${cleanUsername}`,
-        found: false,
-      },
-    ];
-  };
+  useEffect(() => {
+    const fetchScanResults = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch scan data
+        const { data: scan, error: scanError } = await supabase
+          .from('scans')
+          .select('*')
+          .eq('id', scanId)
+          .single();
 
-  const mockSocialProfiles = generateSocialProfiles(searchedUsername);
+        if (scanError) throw scanError;
+        setScanData(scan);
+
+        // Fetch data sources
+        const { data: sources, error: sourcesError } = await supabase
+          .from('data_sources')
+          .select('*')
+          .eq('scan_id', scanId);
+
+        if (sourcesError) throw sourcesError;
+        
+        // Transform data sources to match interface
+        const transformedSources: DataSource[] = sources.map(source => ({
+          id: source.id,
+          name: source.name,
+          category: source.category,
+          dataFound: source.data_found || [],
+          riskLevel: source.risk_level as "high" | "medium" | "low",
+          url: source.url
+        }));
+        setDataSources(transformedSources);
+
+        // Fetch social profiles
+        const { data: profiles, error: profilesError } = await supabase
+          .from('social_profiles')
+          .select('*')
+          .eq('scan_id', scanId);
+
+        if (profilesError) throw profilesError;
+        
+        // Transform social profiles to match interface
+        const transformedProfiles: SocialMediaProfile[] = profiles.map(profile => ({
+          id: profile.id,
+          platform: profile.platform,
+          username: profile.username,
+          profileUrl: profile.profile_url,
+          found: profile.found,
+          followers: profile.followers,
+          lastActive: profile.metadata && typeof profile.metadata === 'object' && 'last_active' in profile.metadata 
+            ? profile.metadata.last_active as string 
+            : undefined
+        }));
+        setSocialProfiles(transformedProfiles);
+        
+      } catch (error) {
+        console.error('Error fetching scan results:', error);
+        toast({
+          title: "Error loading results",
+          description: "Failed to load scan results. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchScanResults();
+  }, [scanId, toast]);
 
   const handleRemovalRequest = (sourceId: string, sourceName: string) => {
     setRemovedSources(prev => new Set(prev).add(sourceId));
@@ -311,11 +136,22 @@ export const ScanResults = ({ searchData }: ScanResultsProps) => {
     }
   };
 
-  const activeResults = mockResults.filter(r => !removedSources.has(r.id));
+  const activeResults = dataSources.filter(r => !removedSources.has(r.id));
   const removedCount = removedSources.size;
-  const foundProfiles = mockSocialProfiles.filter(p => p.found);
+  const foundProfiles = socialProfiles.filter(p => p.found);
   const activeProfiles = foundProfiles.filter(p => !removedProfiles.has(p.id));
   const profileRemovedCount = removedProfiles.size;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen px-6 py-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading scan results...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen px-6 py-20">
@@ -326,19 +162,19 @@ export const ScanResults = ({ searchData }: ScanResultsProps) => {
             <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-4" />
             <h2 className="text-3xl font-bold mb-3">Scan Complete</h2>
             <p className="text-lg text-muted-foreground mb-6">
-              We found your personal information on <span className="text-foreground font-semibold">{mockResults.length} websites</span> and <span className="text-foreground font-semibold">{foundProfiles.length} social media platforms</span>
+              We found your personal information on <span className="text-foreground font-semibold">{dataSources.length} websites</span> and <span className="text-foreground font-semibold">{foundProfiles.length} social media platforms</span>
             </p>
             
             <div className="grid md:grid-cols-3 gap-4 max-w-2xl mx-auto">
               <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
                 <div className="text-2xl font-bold text-destructive">
-                  {mockResults.filter(r => r.riskLevel === "high").length}
+                  {dataSources.filter(r => r.riskLevel === "high").length}
                 </div>
                 <div className="text-sm text-muted-foreground">High Risk</div>
               </div>
               <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
                 <div className="text-2xl font-bold text-primary">
-                  {mockResults.filter(r => r.riskLevel === "medium").length}
+                  {dataSources.filter(r => r.riskLevel === "medium").length}
                 </div>
                 <div className="text-sm text-muted-foreground">Medium Risk</div>
               </div>

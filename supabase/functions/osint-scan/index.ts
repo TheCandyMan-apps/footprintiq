@@ -477,8 +477,8 @@ serve(async (req) => {
       }
     }
 
-    // 7. Fallback: Manual social platform checks (if Sherlock not available)
-    if (!APIFY_API_TOKEN && scanData.username) {
+    // 7. Fallback: Manual social platform checks (always run as backup)
+    if (scanData.username) {
       console.log('Searching social platforms (manual checks)...');
       const cleanUsername = scanData.username.startsWith('@') 
         ? scanData.username.slice(1) 
@@ -504,12 +504,14 @@ serve(async (req) => {
 
       for (const platform of socialPlatforms) {
         try {
+          console.log(`Checking ${platform.name} for ${cleanUsername}...`);
           if (platform.check) {
             const response = await fetch(platform.check, {
               method: 'GET',
               redirect: 'follow',
             });
             
+            console.log(`${platform.name} response status: ${response.status}`);
             if (response.ok || response.status === 200) {
               let metadata: any = {
                 status_code: response.status,
