@@ -359,15 +359,14 @@ serve(async (req) => {
         : scanData.username;
 
       try {
-        // Start Sherlock Actor run (using misceres/sherlock)
-        console.log(`Attempting to start Sherlock Actor for username: ${cleanUsername}`);
+        // Start Sherlock Actor run using the correct API format
+        console.log(`Starting Sherlock Actor for username: ${cleanUsername}`);
         const actorRunResponse = await fetch(
-          'https://api.apify.com/v2/acts/misceres~sherlock/runs',
+          `https://api.apify.com/v2/acts/misceres~sherlock/runs?token=${APIFY_API_TOKEN}`,
           {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${APIFY_API_TOKEN}`,
             },
             body: JSON.stringify({
               usernames: [cleanUsername],
@@ -375,64 +374,57 @@ serve(async (req) => {
           }
         );
 
-        console.log(`Sherlock Actor API response status: ${actorRunResponse.status}`);
+        console.log(`Sherlock Actor response status: ${actorRunResponse.status}`);
         
         if (!actorRunResponse.ok) {
           const errorText = await actorRunResponse.text();
-          console.error(`Sherlock Actor start failed: ${actorRunResponse.status} - ${errorText}`);
+          console.error(`Sherlock Actor failed: ${actorRunResponse.status} - ${errorText}`);
           throw new Error(`Failed to start Sherlock Actor: ${actorRunResponse.status}`);
         }
 
         const runData = await actorRunResponse.json();
         const runId = runData.data.id;
-        console.log(`Sherlock Actor run started: ${runId}`);
+        const defaultDatasetId = runData.data.defaultDatasetId;
+        console.log(`Sherlock Actor started - Run ID: ${runId}, Dataset ID: ${defaultDatasetId}`);
 
-        // Wait for the run to complete (poll status)
-        let isRunning = true;
+        // Poll for completion
         let attempts = 0;
-        const maxAttempts = 30; // Max 60 seconds (30 attempts * 2 seconds)
+        const maxAttempts = 30;
+        let runCompleted = false;
 
-        while (isRunning && attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+        while (attempts < maxAttempts && !runCompleted) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
           
           const statusResponse = await fetch(
-            `https://api.apify.com/v2/acts/misceres~sherlock/runs/${runId}`,
-            {
-              headers: {
-                'Authorization': `Bearer ${APIFY_API_TOKEN}`,
-              },
-            }
+            `https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_API_TOKEN}`
           );
 
           if (statusResponse.ok) {
             const statusData = await statusResponse.json();
             const status = statusData.data.status;
-            console.log(`Sherlock Actor status: ${status}`);
+            console.log(`Sherlock status (attempt ${attempts + 1}): ${status}`);
 
             if (status === 'SUCCEEDED') {
-              isRunning = false;
+              runCompleted = true;
               
-              // Fetch results from default dataset
-              const datasetId = statusData.data.defaultDatasetId;
+              // Fetch dataset items using the API endpoint you provided
+              console.log(`Fetching results from dataset: ${defaultDatasetId}`);
               const resultsResponse = await fetch(
-                `https://api.apify.com/v2/datasets/${datasetId}/items`,
-                {
-                  headers: {
-                    'Authorization': `Bearer ${APIFY_API_TOKEN}`,
-                  },
-                }
+                `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?token=${APIFY_API_TOKEN}`
               );
 
               if (resultsResponse.ok) {
                 const resultsData = await resultsResponse.json();
-                console.log(`Sherlock found ${resultsData.length} result sets`);
+                console.log(`Sherlock found ${resultsData.length} result items`);
+                console.log('Sample result:', JSON.stringify(resultsData[0], null, 2));
 
-                // Process Sherlock results
+                // Process results
                 for (const result of resultsData) {
                   if (result.links && Array.isArray(result.links)) {
+                    console.log(`Processing ${result.links.length} links for username: ${result.username || cleanUsername}`);
+                    
                     for (const link of result.links) {
                       try {
-                        // Extract platform name from URL
                         const url = new URL(link);
                         let platform = url.hostname.replace('www.', '').split('.')[0];
                         platform = platform.charAt(0).toUpperCase() + platform.slice(1);
@@ -445,36 +437,41 @@ serve(async (req) => {
                           first_seen: new Date().toISOString(),
                           is_verified: false,
                           metadata: {
-                            source: 'Apify Sherlock Actor',
+                            source: 'Apify Sherlock',
                             discovered_at: new Date().toISOString(),
-                            original_username: cleanUsername,
                           },
                         });
                       } catch (urlError) {
-                        console.error('Error parsing Sherlock URL:', urlError);
+                        console.error('Error parsing URL:', link, urlError);
                       }
                     }
                   }
                 }
+                
+                console.log(`Added ${results.socialProfiles.length} social profiles from Sherlock`);
               } else {
-                console.error(`Failed to fetch Sherlock results: ${resultsResponse.status}`);
+                const errorText = await resultsResponse.text();
+                console.error(`Failed to fetch results: ${resultsResponse.status} - ${errorText}`);
               }
             } else if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
-              console.error(`Sherlock Actor run ${status}`);
-              isRunning = false;
+              console.error(`Sherlock run ${status}`);
+              runCompleted = true;
             }
           } else {
-            console.error(`Failed to check Sherlock status: ${statusResponse.status}`);
+            console.error(`Status check failed: ${statusResponse.status}`);
           }
+          
           attempts++;
         }
 
-        if (attempts >= maxAttempts) {
-          console.warn('Sherlock Actor timed out after 60 seconds');
+        if (!runCompleted) {
+          console.warn(`Sherlock timed out after ${maxAttempts * 2} seconds`);
         }
       } catch (error) {
-        console.error('Apify Sherlock error:', error);
+        console.error('Apify Sherlock error:', error instanceof Error ? error.message : error);
       }
+    } else if (!APIFY_API_TOKEN && scanData.username) {
+      console.log('APIFY_API_TOKEN not configured - skipping Sherlock Actor');
     }
 
     // 7. Fallback: Manual social platform checks (always run as backup)
