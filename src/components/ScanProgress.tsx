@@ -10,6 +10,7 @@ interface ScanProgressProps {
   onComplete: (scanId: string) => void;
   scanData: ScanFormData;
   userId: string;
+  subscriptionTier: string;
 }
 
 const scanSteps = [
@@ -20,7 +21,7 @@ const scanSteps = [
   { icon: Shield, label: "Analyzing exposure risk", key: "analyze" },
 ];
 
-export const ScanProgress = ({ onComplete, scanData, userId }: ScanProgressProps) => {
+export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier }: ScanProgressProps) => {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const { toast } = useToast();
@@ -51,66 +52,37 @@ export const ScanProgress = ({ onComplete, scanData, userId }: ScanProgressProps
 
         if (scanError) throw scanError;
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Step 2: Scan data brokers
+        // Step 2: Call OSINT scan edge function for real data
         setCurrentStep(1);
-        setProgress(35);
+        setProgress(30);
 
-        const mockDataSources = [
-          { name: "PeopleSearchNow", category: "People Search", url: "https://example.com", risk_level: "high" as const, data_found: ["Name", "Email", "Phone", "Address"] },
-          { name: "WhitePages", category: "Public Records", url: "https://example.com", risk_level: "high" as const, data_found: ["Name", "Phone", "Age"] },
-          { name: "Spokeo", category: "Data Broker", url: "https://example.com", risk_level: "medium" as const, data_found: ["Name", "Email", "Relatives"] },
-          { name: "BeenVerified", category: "Background Check", url: "https://example.com", risk_level: "medium" as const, data_found: ["Name", "Address History"] },
-          { name: "Intelius", category: "Data Broker", url: "https://example.com", risk_level: "low" as const, data_found: ["Name", "Email"] },
-        ];
+        console.log('Invoking osint-scan edge function...');
+        const { data: osintResult, error: osintError } = await supabase.functions.invoke('osint-scan', {
+          body: {
+            scanId: scan.id,
+            scanType,
+            username: scanData.username,
+            firstName: scanData.firstName,
+            lastName: scanData.lastName,
+            email: scanData.email,
+            phone: scanData.phone,
+          }
+        });
 
-        const { error: dataSourceError } = await supabase
-          .from("data_sources")
-          .insert(mockDataSources.map(ds => ({
-            scan_id: scan.id,
-            ...ds,
-          })));
-
-        if (dataSourceError) throw dataSourceError;
-
-        await new Promise(resolve => setTimeout(resolve, 2500));
-
-        // Step 3: Scan social media
-        setCurrentStep(2);
-        setProgress(65);
-
-        let socialProfileCount = 0;
-
-        if (scanData.username) {
-          const cleanUsername = scanData.username.startsWith('@') 
-            ? scanData.username.slice(1) 
-            : scanData.username;
-
-          const mockSocialProfiles = [
-            { platform: "Twitter/X", username: `@${cleanUsername}`, profile_url: `https://twitter.com/${cleanUsername}`, found: true, followers: "1.2K", last_active: "2 days ago" },
-            { platform: "Instagram", username: `@${cleanUsername}`, profile_url: `https://instagram.com/${cleanUsername}`, found: true, followers: "3.5K", last_active: "1 day ago" },
-            { platform: "Facebook", username: cleanUsername, profile_url: `https://facebook.com/${cleanUsername}`, found: true, last_active: "1 week ago" },
-            { platform: "LinkedIn", username: cleanUsername, profile_url: `https://linkedin.com/in/${cleanUsername}`, found: true, last_active: "3 days ago" },
-            { platform: "TikTok", username: `@${cleanUsername}`, profile_url: `https://tiktok.com/@${cleanUsername}`, found: true, followers: "892", last_active: "5 hours ago" },
-            { platform: "Reddit", username: `u/${cleanUsername}`, profile_url: `https://reddit.com/user/${cleanUsername}`, found: true, last_active: "12 hours ago" },
-            { platform: "GitHub", username: cleanUsername, profile_url: `https://github.com/${cleanUsername}`, found: true, followers: "45", last_active: "2 weeks ago" },
-            { platform: "YouTube", username: `@${cleanUsername}`, profile_url: `https://youtube.com/@${cleanUsername}`, found: true, followers: "567", last_active: "1 month ago" },
-          ];
-
-          const { error: socialError } = await supabase
-            .from("social_profiles")
-            .insert(mockSocialProfiles.map(sp => ({
-              scan_id: scan.id,
-              ...sp,
-            })));
-
-          if (socialError) throw socialError;
-
-          socialProfileCount = mockSocialProfiles.length;
+        if (osintError) {
+          console.error('OSINT scan error:', osintError);
+          throw new Error('Failed to complete OSINT scan');
         }
 
+        console.log('OSINT scan completed:', osintResult);
+
         await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Step 3: Progress update
+        setCurrentStep(2);
+        setProgress(65);
 
         // Step 4: Reverse image search
         setCurrentStep(3);
@@ -148,28 +120,51 @@ export const ScanProgress = ({ onComplete, scanData, userId }: ScanProgressProps
 
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Step 5: Calculate privacy score
+        // Step 5: Finalize
         setCurrentStep(4);
         setProgress(90);
 
-        const highRiskCount = mockDataSources.filter(ds => ds.risk_level === 'high').length;
-        const mediumRiskCount = mockDataSources.filter(ds => ds.risk_level === 'medium').length;
-        const lowRiskCount = mockDataSources.filter(ds => ds.risk_level === 'low').length;
-        
-        const privacyScore = Math.max(0, 100 - (highRiskCount * 15 + mediumRiskCount * 10 + lowRiskCount * 5 + socialProfileCount * 2 + imageResults * 3));
-
-        const { error: updateError } = await supabase
+        // Get the updated scan data with results from osint-scan function
+        const { data: finalScan, error: finalError } = await supabase
           .from("scans")
-          .update({
-            privacy_score: privacyScore,
-            total_sources_found: mockDataSources.length + socialProfileCount + imageResults,
-            high_risk_count: highRiskCount,
-            medium_risk_count: mediumRiskCount,
-            low_risk_count: lowRiskCount,
-          })
-          .eq("id", scan.id);
+          .select("*")
+          .eq("id", scan.id)
+          .single();
 
-        if (updateError) throw updateError;
+        if (finalError) throw finalError;
+
+        // For free users, limit the data shown
+        if (subscriptionTier === "free") {
+          // Limit data sources to 3
+          const { data: allDataSources } = await supabase
+            .from("data_sources")
+            .select("*")
+            .eq("scan_id", scan.id);
+          
+          if (allDataSources && allDataSources.length > 3) {
+            const idsToKeep = allDataSources.slice(0, 3).map(ds => ds.id);
+            await supabase
+              .from("data_sources")
+              .delete()
+              .eq("scan_id", scan.id)
+              .not("id", "in", `(${idsToKeep.join(",")})`);
+          }
+
+          // Limit social profiles to 3
+          const { data: allSocial } = await supabase
+            .from("social_profiles")
+            .select("*")
+            .eq("scan_id", scan.id);
+          
+          if (allSocial && allSocial.length > 3) {
+            const idsToKeep = allSocial.slice(0, 3).map(sp => sp.id);
+            await supabase
+              .from("social_profiles")
+              .delete()
+              .eq("scan_id", scan.id)
+              .not("id", "in", `(${idsToKeep.join(",")})`);
+          }
+        }
 
         await new Promise(resolve => setTimeout(resolve, 1500));
 
@@ -190,7 +185,7 @@ export const ScanProgress = ({ onComplete, scanData, userId }: ScanProgressProps
     };
 
     performScan();
-  }, [onComplete, scanData, userId, toast]);
+  }, [onComplete, scanData, userId, subscriptionTier, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6">

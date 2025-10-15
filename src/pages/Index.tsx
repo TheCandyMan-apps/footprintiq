@@ -59,9 +59,15 @@ export default function Home() {
       <Header />
       <Hero onStartScan={handleStartScan} />
       <TrustSignals />
-      <HowItWorks />
-      <WhyChooseUs />
-      <Pricing />
+      <div id="how-it-works">
+        <HowItWorks />
+      </div>
+      <div id="features">
+        <WhyChooseUs />
+      </div>
+      <div id="pricing">
+        <Pricing />
+      </div>
       <Testimonials />
       
       <main className="px-6 py-16 mx-auto max-w-5xl">
