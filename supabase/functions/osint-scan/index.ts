@@ -49,6 +49,7 @@ serve(async (req) => {
     const HUNTER_IO_KEY = Deno.env.get('HUNTER_IO_KEY');
     const HIBP_KEY = Deno.env.get('HIBP_API_KEY');
     const CLEARBIT_KEY = Deno.env.get('CLEARBIT_KEY');
+    const APIFY_API_TOKEN = Deno.env.get('APIFY_API_TOKEN');
 
     const results = {
       dataSources: [] as any[],
@@ -350,9 +351,124 @@ serve(async (req) => {
       }
     }
 
-    // 6. Sherlock-style username search across social platforms
-    if (scanData.username) {
-      console.log('Searching social platforms...');
+    // 6. Apify Sherlock Actor - comprehensive username search
+    if (APIFY_API_TOKEN && scanData.username) {
+      console.log('Running Apify Sherlock Actor for username reconnaissance...');
+      const cleanUsername = scanData.username.startsWith('@') 
+        ? scanData.username.slice(1) 
+        : scanData.username;
+
+      try {
+        // Start Sherlock Actor run
+        const actorRunResponse = await fetch(
+          'https://api.apify.com/v2/acts/curious_coder~sherlock/runs',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${APIFY_API_TOKEN}`,
+            },
+            body: JSON.stringify({
+              usernames: [cleanUsername],
+            }),
+          }
+        );
+
+        if (actorRunResponse.ok) {
+          const runData = await actorRunResponse.json();
+          const runId = runData.data.id;
+          console.log(`Sherlock Actor run started: ${runId}`);
+
+          // Wait for the run to complete (poll status)
+          let isRunning = true;
+          let attempts = 0;
+          const maxAttempts = 30; // Max 60 seconds (30 attempts * 2 seconds)
+
+          while (isRunning && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+            
+            const statusResponse = await fetch(
+              `https://api.apify.com/v2/acts/curious_coder~sherlock/runs/${runId}`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${APIFY_API_TOKEN}`,
+                },
+              }
+            );
+
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+              const status = statusData.data.status;
+              console.log(`Sherlock Actor status: ${status}`);
+
+              if (status === 'SUCCEEDED') {
+                isRunning = false;
+                
+                // Fetch results from default dataset
+                const datasetId = statusData.data.defaultDatasetId;
+                const resultsResponse = await fetch(
+                  `https://api.apify.com/v2/datasets/${datasetId}/items`,
+                  {
+                    headers: {
+                      'Authorization': `Bearer ${APIFY_API_TOKEN}`,
+                    },
+                  }
+                );
+
+                if (resultsResponse.ok) {
+                  const resultsData = await resultsResponse.json();
+                  console.log(`Sherlock found ${resultsData.length} result sets`);
+
+                  // Process Sherlock results
+                  for (const result of resultsData) {
+                    if (result.links && Array.isArray(result.links)) {
+                      for (const link of result.links) {
+                        try {
+                          // Extract platform name from URL
+                          const url = new URL(link);
+                          let platform = url.hostname.replace('www.', '').split('.')[0];
+                          platform = platform.charAt(0).toUpperCase() + platform.slice(1);
+
+                          results.socialProfiles.push({
+                            platform: platform,
+                            username: result.username || cleanUsername,
+                            profile_url: link,
+                            found: true,
+                            first_seen: new Date().toISOString(),
+                            is_verified: false,
+                            metadata: {
+                              source: 'Apify Sherlock Actor',
+                              discovered_at: new Date().toISOString(),
+                              original_username: cleanUsername,
+                            },
+                          });
+                        } catch (urlError) {
+                          console.error('Error parsing Sherlock URL:', urlError);
+                        }
+                      }
+                    }
+                  }
+                }
+              } else if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
+                console.error(`Sherlock Actor run ${status}`);
+                isRunning = false;
+              }
+            }
+            attempts++;
+          }
+
+          if (attempts >= maxAttempts) {
+            console.warn('Sherlock Actor timed out after 60 seconds');
+          }
+        }
+      } catch (error) {
+        console.error('Apify Sherlock error:', error);
+      }
+    }
+
+    // 7. Fallback: Manual social platform checks (if Sherlock not available)
+    if (!APIFY_API_TOKEN && scanData.username) {
+      console.log('Searching social platforms (manual checks)...');
       const cleanUsername = scanData.username.startsWith('@') 
         ? scanData.username.slice(1) 
         : scanData.username;
