@@ -80,15 +80,58 @@ const Support = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      const totalSize = files.reduce((sum, f) => sum + f.size, 0);
       
-      if (totalSize > 10 * 1024 * 1024) { // 10MB limit
+      // Validation constants
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB per file
+      const MAX_FILES = 5;
+      const ALLOWED_TYPES = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf',
+        'text/plain',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+
+      // Check number of files
+      if (files.length > MAX_FILES) {
         toast({
-          title: "Files Too Large",
-          description: "Total file size must be under 10MB",
+          title: "Too Many Files",
+          description: `Maximum ${MAX_FILES} files allowed`,
           variant: "destructive",
         });
         return;
+      }
+
+      // Validate each file
+      for (const file of files) {
+        if (file.size > MAX_FILE_SIZE) {
+          toast({
+            title: "File Too Large",
+            description: `${file.name} exceeds 10MB limit`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (!ALLOWED_TYPES.includes(file.type)) {
+          toast({
+            title: "Invalid File Type",
+            description: `${file.name} type not allowed. Accepted: images, PDF, Word documents`,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Check for invalid characters in filename
+        const sanitized = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        if (sanitized !== file.name) {
+          toast({
+            title: "Invalid Filename",
+            description: `${file.name} contains invalid characters. Only letters, numbers, dots, dashes and underscores allowed`,
+            variant: "destructive",
+          });
+          return;
+        }
       }
       
       setAttachments(files);
@@ -121,13 +164,29 @@ const Support = () => {
     setLoading(true);
 
     try {
+      // Get current user if authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+
       // Upload attachments if any
       const uploadedFiles: string[] = [];
       for (const file of attachments) {
-        const fileName = `${Date.now()}-${file.name}`;
+        // Sanitize filename
+        const sanitizeFilename = (filename: string): string => {
+          let safe = filename.replace(/[\\/]/g, '_');
+          safe = safe.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const ext = safe.split('.').pop() || '';
+          const name = safe.substring(0, safe.lastIndexOf('.')) || safe;
+          return `${name.substring(0, 100)}.${ext}`;
+        };
+
+        // Use user-scoped folder path
+        const userId = user?.id || 'anonymous';
+        const sanitizedName = sanitizeFilename(file.name);
+        const fileName = `${userId}/support/${Date.now()}-${sanitizedName}`;
+        
         const { error: uploadError, data } = await supabase.storage
           .from('scan-images')
-          .upload(`support/${fileName}`, file);
+          .upload(fileName, file);
         
         if (!uploadError && data) {
           const { data: { publicUrl } } = supabase.storage
@@ -136,9 +195,6 @@ const Support = () => {
           uploadedFiles.push(publicUrl);
         }
       }
-
-      // Get current user if authenticated
-      const { data: { user } } = await supabase.auth.getUser();
 
       // Generate ticket number
       const { data: ticketData, error: ticketError } = await supabase
