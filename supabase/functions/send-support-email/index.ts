@@ -37,54 +37,66 @@ const handler = async (req: Request): Promise<Response> => {
       attachments
     }: SupportEmailRequest = await req.json();
 
+    // HTML escape function to prevent XSS
+    const escapeHtml = (text: string): string => {
+      const map: Record<string, string> = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      };
+      return text.replace(/[&<>"']/g, (m) => map[m]);
+    };
+
     const attachmentsList = attachments && attachments.length > 0
-      ? `<h3>Attachments:</h3><ul>${attachments.map(url => `<li><a href="${url}">${url}</a></li>`).join('')}</ul>`
+      ? `<h3>Attachments:</h3><ul>${attachments.map(url => `<li><a href="${escapeHtml(url)}">${escapeHtml(url)}</a></li>`).join('')}</ul>`
       : '';
 
-    // Send email to support
+    // Send email to support (all user inputs are escaped)
     const emailResponse = await resend.emails.send({
       from: "footprintiq Support <onboarding@resend.dev>",
       to: ["support@footprintiq.app"],
       replyTo: email,
-      subject: `[${priority.toUpperCase()}] [${issueType.toUpperCase()}] ${subject}`,
+      subject: `[${escapeHtml(priority.toUpperCase())}] [${escapeHtml(issueType.toUpperCase())}] ${escapeHtml(subject)}`,
       html: `
         <h2>New Support Request</h2>
-        <p><strong>Ticket Number:</strong> ${ticketNumber || 'N/A'}</p>
-        <p><strong>From:</strong> ${name} (${email})</p>
-        <p><strong>Priority:</strong> ${priority.toUpperCase()}</p>
-        <p><strong>Issue Type:</strong> ${issueType}</p>
-        <p><strong>Subject:</strong> ${subject}</p>
+        <p><strong>Ticket Number:</strong> ${escapeHtml(ticketNumber || 'N/A')}</p>
+        <p><strong>From:</strong> ${escapeHtml(name)} (${escapeHtml(email)})</p>
+        <p><strong>Priority:</strong> ${escapeHtml(priority.toUpperCase())}</p>
+        <p><strong>Issue Type:</strong> ${escapeHtml(issueType)}</p>
+        <p><strong>Subject:</strong> ${escapeHtml(subject)}</p>
         <hr />
         <h3>Message:</h3>
-        <p style="white-space: pre-wrap;">${message}</p>
+        <p style="white-space: pre-wrap;">${escapeHtml(message)}</p>
         ${attachmentsList}
         <hr />
         <p style="color: #666; font-size: 12px;">This email was sent from the footprintiq support form.</p>
       `,
     });
 
-    // Send confirmation to user
+    // Send confirmation to user (all user inputs are escaped)
     await resend.emails.send({
       from: "footprintiq Support <onboarding@resend.dev>",
       to: [email],
-      subject: `Support Ticket Created: ${ticketNumber || 'Pending'}`,
+      subject: `Support Ticket Created: ${escapeHtml(ticketNumber || 'Pending')}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #3b82f6;">Support Ticket Confirmation</h1>
           
-          <p>Hello ${name},</p>
+          <p>Hello ${escapeHtml(name)},</p>
           
           <p>Thank you for contacting footprintiq Support. We have received your support request and will get back to you as soon as possible.</p>
           
           <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            ${ticketNumber ? `<p><strong>Ticket Number:</strong> ${ticketNumber}</p>` : ''}
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p><strong>Issue Type:</strong> ${issueType}</p>
-            <p><strong>Priority:</strong> ${priority.toUpperCase()}</p>
+            ${ticketNumber ? `<p><strong>Ticket Number:</strong> ${escapeHtml(ticketNumber)}</p>` : ''}
+            <p><strong>Subject:</strong> ${escapeHtml(subject)}</p>
+            <p><strong>Issue Type:</strong> ${escapeHtml(issueType)}</p>
+            <p><strong>Priority:</strong> ${escapeHtml(priority.toUpperCase())}</p>
           </div>
           
           <h3>Your Message:</h3>
-          <p style="white-space: pre-wrap;">${message}</p>
+          <p style="white-space: pre-wrap;">${escapeHtml(message)}</p>
           
           ${attachmentsList}
           

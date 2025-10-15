@@ -40,7 +40,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const scanData: ScanRequest = await req.json();
-    console.log('Starting OSINT scan:', maskPII(scanData));
+    console.log('Starting OSINT scan - Scan ID:', scanData.scanId);
 
     // API Keys (will be set by user)
     const PEOPLE_DATA_LABS_KEY = Deno.env.get('PEOPLE_DATA_LABS_KEY');

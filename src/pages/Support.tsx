@@ -43,12 +43,12 @@ const Support = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Auto-save draft to localStorage
+  // Auto-save draft to sessionStorage (cleared when browser closes)
   useEffect(() => {
     const saveDraft = () => {
       if (name || email || subject || message) {
         setAutoSaving(true);
-        localStorage.setItem('support_draft', JSON.stringify({
+        sessionStorage.setItem('support_draft', JSON.stringify({
           name, email, issueType, priority, subject, message
         }));
         setTimeout(() => setAutoSaving(false), 1000);
@@ -61,7 +61,7 @@ const Support = () => {
 
   // Load draft on mount
   useEffect(() => {
-    const draft = localStorage.getItem('support_draft');
+    const draft = sessionStorage.getItem('support_draft');
     if (draft) {
       try {
         const parsed = JSON.parse(draft);
@@ -181,7 +181,7 @@ const Support = () => {
       });
 
       // Clear draft
-      localStorage.removeItem('support_draft');
+      sessionStorage.removeItem('support_draft');
 
       // Navigate to confirmation
       navigate(`/support/confirmation?ticket=${ticket.ticket_number}`);
