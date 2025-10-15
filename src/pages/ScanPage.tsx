@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { SEO } from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
 import { ScanForm, type ScanFormData } from "@/components/ScanForm";
 import { ScanProgress } from "@/components/ScanProgress";
@@ -47,16 +48,23 @@ const ScanPage = () => {
   }
 
   return (
-    <main className="min-h-screen bg-background">
-      {currentStep === "form" && <ScanForm onSubmit={handleFormSubmit} />}
-      {currentStep === "scanning" && scanData && (
-        <ScanProgress 
-          onComplete={handleScanComplete} 
-          scanData={scanData}
-          userId={user.id}
-        />
-      )}
-    </main>
+    <>
+      <SEO
+        title="Start Your Digital Footprint Scan | FootprintIQ OSINT Scanner"
+        description="Run a comprehensive OSINT scan to check your digital footprint. Detect email breaches, exposed data, and vulnerabilities across 100+ sources. Free privacy check."
+        canonical="https://footprintiq.com/scan"
+      />
+      <main className="min-h-screen bg-background">
+        {currentStep === "form" && <ScanForm onSubmit={handleFormSubmit} />}
+        {currentStep === "scanning" && scanData && (
+          <ScanProgress 
+            onComplete={handleScanComplete} 
+            scanData={scanData}
+            userId={user.id}
+          />
+        )}
+      </main>
+    </>
   );
 };
 

@@ -1,14 +1,24 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /my-tickets
+Disallow: /results/
+
+Sitemap: https://footprintiq.com/sitemap.xml
+
+# Allow common search engine bots
 User-agent: Googlebot
 Allow: /
 
 User-agent: Bingbot
 Allow: /
 
+User-agent: Slurp
+Allow: /
+
+# Social media crawlers for link previews
 User-agent: Twitterbot
 Allow: /
 
 User-agent: facebookexternalhit
-Allow: /
-
-User-agent: *
 Allow: /

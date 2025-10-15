@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { SEO } from "@/components/SEO";
 import { Hero } from "@/components/Hero";
 import { HowItWorks } from "@/components/HowItWorks";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
@@ -11,20 +11,49 @@ import { TrustSignals } from "@/components/TrustSignals";
 export default function Home() {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    document.title = "FootprintIQ — Check Your Digital Footprint";
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute("content", "Scan emails, usernames, domains, phones and IPs with trusted OSINT sources like Have I Been Pwned, Shodan and VirusTotal.");
-    }
-  }, []);
-
   const handleStartScan = () => {
     navigate('/scan');
   };
 
+  const faqStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is my data private when using FootprintIQ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes — we query reputable OSINT providers and never store or sell your personal data. Your privacy is our top priority. All scans are encrypted and securely processed."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is FootprintIQ free to use?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! The free tier runs comprehensive checks across email breaches, username searches, and basic domain intelligence. Pro plans unlock deeper historical sources, continuous monitoring, and automated data removal from 100+ data brokers."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What OSINT sources does FootprintIQ use?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "FootprintIQ uses trusted OSINT sources including Have I Been Pwned for breach detection, Shodan for IP and device exposure, VirusTotal for domain and file reputation, plus 100+ data broker databases for comprehensive digital footprint analysis."
+        }
+      }
+    ]
+  };
+
   return (
     <>
+      <SEO
+        title="FootprintIQ — Digital Footprint Scanner & OSINT Privacy Protection"
+        description="Scan your digital footprint with trusted OSINT sources. Check email breaches, usernames, domains, IPs, and phones. Remove personal data from 100+ data brokers automatically."
+        canonical="https://footprintiq.com/"
+        structuredData={faqStructuredData}
+      />
       <Hero onStartScan={handleStartScan} />
       <TrustSignals />
       <HowItWorks />
