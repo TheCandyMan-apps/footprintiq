@@ -115,9 +115,9 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error("Error in send-support-email function:", error);
+    console.error("Error in send-support-email function:", error instanceof Error ? error.message : 'Unknown error');
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'An error occurred sending your support request. Please try again.' }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

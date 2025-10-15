@@ -29,7 +29,23 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { imageUrl, scanId }: ReverseImageRequest = await req.json();
-    console.log('Starting FaceCheck.ID reverse image search for scan:', scanId);
+    
+    // Validate user ownership
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const { data: { user } } = await supabase.auth.getUser(authHeader.split('Bearer ')[1]);
+      if (user) {
+        const { data: scan } = await supabase.from('scans').select('user_id').eq('id', scanId).single();
+        if (scan && scan.user_id !== user.id) {
+          return new Response(
+            JSON.stringify({ error: 'Access denied' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+    }
+    
+    console.log('Starting reverse image search for scan:', scanId);
 
     const FACECHECK_API_TOKEN = Deno.env.get('FACECHECK_API_TOKEN');
     const results = [];
@@ -94,8 +110,8 @@ serve(async (req) => {
             throw new Error(`FaceCheck search error: ${searchData.error} (${searchData.code})`);
           }
 
-          if (searchData.output && searchData.output.items) {
-            console.log(`Search completed. Found ${searchData.output.items.length} matches.`);
+        if (searchData.output && searchData.output.items) {
+            console.log('Search completed - matches found:', searchData.output.items.length);
             
             // Process results
             for (const item of searchData.output.items as FaceCheckResult[]) {
@@ -120,7 +136,7 @@ serve(async (req) => {
           console.log('Search timed out after 60 seconds');
         }
       } catch (error) {
-        console.error('FaceCheck.ID search error:', error);
+        console.error('Image search error:', error instanceof Error ? error.message : 'Unknown error');
         // Don't throw, just log and continue with empty results
       }
     } else {
@@ -178,10 +194,9 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Reverse image search error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Reverse image search error:', error instanceof Error ? error.message : 'Unknown error');
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An error occurred processing image search' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

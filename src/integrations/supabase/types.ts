@@ -359,6 +359,22 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      grant_admin_role: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
+      has_role: {
+        Args: { _role: string; _user_id: string }
+        Returns: boolean
+      }
+      update_user_subscription: {
+        Args: {
+          _expires_at?: string
+          _new_tier: Database["public"]["Enums"]["subscription_tier"]
+          _user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       removal_status: "pending" | "in_progress" | "completed" | "failed"

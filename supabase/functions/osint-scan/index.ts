@@ -17,6 +17,18 @@ interface ScanRequest {
   phone?: string;
 }
 
+// Helper to mask PII in logs
+const maskPII = (data: any) => {
+  return {
+    scanId: data.scanId,
+    scanType: data.scanType,
+    hasEmail: !!data.email,
+    hasPhone: !!data.phone,
+    hasUsername: !!data.username,
+    hasName: !!(data.firstName || data.lastName)
+  };
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -28,7 +40,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const scanData: ScanRequest = await req.json();
-    console.log('Starting OSINT scan:', scanData.scanId);
+    console.log('Starting OSINT scan:', maskPII(scanData));
 
     // API Keys (will be set by user)
     const PEOPLE_DATA_LABS_KEY = Deno.env.get('PEOPLE_DATA_LABS_KEY');
@@ -407,10 +419,9 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Scan error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Scan error:', error instanceof Error ? error.message : 'Unknown error');
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An error occurred processing your scan request' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

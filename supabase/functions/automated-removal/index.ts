@@ -40,6 +40,13 @@ const REMOVAL_PROCEDURES = {
   },
 };
 
+// Helper to mask email in logs
+const maskEmail = (email: string) => {
+  if (!email) return '';
+  const [local, domain] = email.split('@');
+  return `${local.slice(0, 2)}***@${domain}`;
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -51,7 +58,23 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { removalRequestId, userEmail, userName } = await req.json();
-    console.log('Processing automated removal:', removalRequestId);
+    
+    // Validate user ownership
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const { data: { user } } = await supabase.auth.getUser(authHeader.split('Bearer ')[1]);
+      if (user) {
+        const { data: request } = await supabase.from('removal_requests').select('user_id').eq('id', removalRequestId).single();
+        if (request && request.user_id !== user.id) {
+          return new Response(
+            JSON.stringify({ error: 'Access denied' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+    }
+    
+    console.log('Processing automated removal:', removalRequestId, 'email:', maskEmail(userEmail));
 
     // Get removal request details
     const { data: request, error: requestError } = await supabase
@@ -111,11 +134,7 @@ serve(async (req) => {
 
     // Send email notification with instructions
     // (Would integrate with email service like SendGrid/Resend)
-    console.log('Removal request updated:', {
-      requestId: removalRequestId,
-      status: removalStatus,
-      automated: procedure.automated,
-    });
+    console.log('Removal request updated - status:', removalStatus, 'automated:', procedure.automated);
 
     return new Response(
       JSON.stringify({
@@ -128,10 +147,9 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Automated removal error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Automated removal error:', error instanceof Error ? error.message : 'Unknown error');
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An error occurred processing removal request' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

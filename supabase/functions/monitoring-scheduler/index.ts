@@ -17,6 +17,21 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { action, userId, scanId, frequency } = await req.json();
+    
+    // Validate user ownership for non-execute actions
+    if (action !== 'execute') {
+      const authHeader = req.headers.get('Authorization');
+      if (authHeader) {
+        const { data: { user } } = await supabase.auth.getUser(authHeader.split('Bearer ')[1]);
+        if (user && userId !== user.id) {
+          return new Response(
+            JSON.stringify({ error: 'Access denied' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+    }
+    
     console.log('Monitoring scheduler action:', action);
 
     if (action === 'schedule') {
@@ -141,10 +156,9 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Monitoring scheduler error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Monitoring scheduler error:', error instanceof Error ? error.message : 'Unknown error');
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An error occurred processing monitoring request' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

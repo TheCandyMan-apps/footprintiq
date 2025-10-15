@@ -17,6 +17,22 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { scanId } = await req.json();
+    
+    // Validate user ownership
+    const authHeader = req.headers.get('Authorization');
+    if (authHeader) {
+      const { data: { user } } = await supabase.auth.getUser(authHeader.split('Bearer ')[1]);
+      if (user) {
+        const { data: scan } = await supabase.from('scans').select('user_id').eq('id', scanId).single();
+        if (scan && scan.user_id !== user.id) {
+          return new Response(
+            JSON.stringify({ error: 'Access denied' }),
+            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+    }
+    
     console.log('Running correlation engine for scan:', scanId);
 
     // Get scan data
@@ -169,11 +185,7 @@ serve(async (req) => {
       })),
     };
 
-    console.log('Correlation analysis complete:', {
-      totalMatches,
-      confidence: correlations.confidence,
-      duplicates: duplicateProfiles.length,
-    });
+    console.log('Correlation analysis complete - matches:', totalMatches, 'confidence:', correlations.confidence);
 
     return new Response(
       JSON.stringify({
@@ -186,10 +198,9 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Correlation engine error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    console.error('Correlation engine error:', error instanceof Error ? error.message : 'Unknown error');
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'An error occurred processing correlation analysis' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
