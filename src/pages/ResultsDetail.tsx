@@ -28,6 +28,7 @@ interface DataSource {
   url: string;
   risk_level: string;
   data_found: string[];
+  metadata?: any;
 }
 
 interface SocialProfile {
@@ -38,6 +39,13 @@ interface SocialProfile {
   found: boolean;
   followers?: string;
   last_active?: string;
+  is_verified?: boolean;
+  account_id?: string;
+  full_name?: string;
+  bio?: string;
+  avatar_url?: string;
+  account_type?: string;
+  metadata?: any;
 }
 
 interface Scan {
@@ -345,41 +353,94 @@ const ResultsDetail = () => {
             
             <div className="grid md:grid-cols-2 gap-4">
               {socialProfiles.map((profile) => (
-                <Card key={profile.id} className="p-4 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
+                <Card key={profile.id} className="p-5 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
+                  <div className="flex gap-4">
+                    {profile.avatar_url && (
+                      <img 
+                        src={profile.avatar_url} 
+                        alt={`${profile.username} avatar`}
+                        className="w-16 h-16 rounded-full object-cover"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <h4 className="font-semibold">{profile.platform}</h4>
+                        {profile.is_verified && (
+                          <Badge variant="default" className="text-xs">Verified</Badge>
+                        )}
                         <Badge variant="secondary" className="text-xs">Active</Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-1">{profile.username}</p>
-                      {profile.followers && (
-                        <p className="text-xs text-muted-foreground">{profile.followers} followers</p>
+                      
+                      {profile.full_name && (
+                        <p className="text-sm font-medium mb-1">{profile.full_name}</p>
                       )}
-                      {profile.last_active && (
-                        <p className="text-xs text-muted-foreground">Last active: {profile.last_active}</p>
+                      <p className="text-sm text-muted-foreground mb-2">@{profile.username}</p>
+                      
+                      {profile.bio && (
+                        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{profile.bio}</p>
                       )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(profile.profile_url, '_blank')}
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="accent"
-                        size="sm"
-                        onClick={() => handleRemovalRequest(profile.id, profile.platform, 'social_media')}
-                        disabled={isRemovalRequested(profile.id, 'social_media')}
-                      >
-                        {isRemovalRequested(profile.id, 'social_media') ? (
-                          <CheckCircle2 className="w-4 h-4" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
+                      
+                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground mb-3">
+                        {profile.account_id && (
+                          <span>ID: {profile.account_id}</span>
                         )}
-                      </Button>
+                        {profile.followers && (
+                          <span>{profile.followers} followers</span>
+                        )}
+                        {profile.last_active && (
+                          <span>Active: {profile.last_active}</span>
+                        )}
+                      </div>
+
+                      {profile.metadata && Object.keys(profile.metadata).length > 0 && (
+                        <details className="text-xs mb-3">
+                          <summary className="cursor-pointer text-primary hover:underline">
+                            View Metadata
+                          </summary>
+                          <div className="mt-2 p-3 bg-background/50 rounded-md max-h-40 overflow-y-auto">
+                            <table className="w-full text-xs">
+                              <tbody>
+                                {Object.entries(profile.metadata)
+                                  .filter(([_, value]) => value !== null && value !== undefined)
+                                  .map(([key, value]) => (
+                                    <tr key={key} className="border-b border-border/50 last:border-0">
+                                      <td className="py-1 pr-3 font-medium text-muted-foreground capitalize">
+                                        {key.replace(/_/g, ' ')}
+                                      </td>
+                                      <td className="py-1 break-all">
+                                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </details>
+                      )}
+
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(profile.profile_url, '_blank')}
+                          className="flex-1"
+                        >
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                          View Profile
+                        </Button>
+                        <Button 
+                          variant="accent"
+                          size="sm"
+                          onClick={() => handleRemovalRequest(profile.id, profile.platform, 'social_media')}
+                          disabled={isRemovalRequested(profile.id, 'social_media')}
+                        >
+                          {isRemovalRequested(profile.id, 'social_media') ? (
+                            <CheckCircle2 className="w-4 h-4" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </Card>
@@ -395,7 +456,7 @@ const ResultsDetail = () => {
           <div className="space-y-4">
             {dataSources.map((source) => (
               <Card key={source.id} className="p-6 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex flex-col gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h4 className="text-lg font-semibold">{source.name}</h4>
@@ -404,26 +465,63 @@ const ResultsDetail = () => {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mb-3">{source.category}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {source.data_found.map((data, idx) => (
-                        <span 
-                          key={idx} 
-                          className="px-3 py-1 rounded-full bg-secondary text-xs"
-                        >
-                          {data}
-                        </span>
-                      ))}
+                    
+                    <div className="mb-3">
+                      <p className="text-xs font-semibold text-muted-foreground mb-2">Data Found:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {source.data_found.map((data, idx) => (
+                          <span 
+                            key={idx} 
+                            className="px-3 py-1 rounded-full bg-secondary text-xs"
+                          >
+                            {data}
+                          </span>
+                        ))}
+                      </div>
                     </div>
+
+                    {source.metadata && Object.keys(source.metadata).length > 0 && (
+                      <details className="text-sm">
+                        <summary className="cursor-pointer text-primary hover:underline font-medium mb-2">
+                          View Detailed Metadata
+                        </summary>
+                        <div className="mt-3 p-4 bg-background/50 rounded-md max-h-60 overflow-y-auto">
+                          <table className="w-full text-sm">
+                            <tbody>
+                              {Object.entries(source.metadata)
+                                .filter(([_, value]) => value !== null && value !== undefined && value !== '')
+                                .map(([key, value]) => (
+                                  <tr key={key} className="border-b border-border/50 last:border-0">
+                                    <td className="py-2 pr-4 font-medium text-muted-foreground capitalize align-top">
+                                      {key.replace(/_/g, ' ')}
+                                    </td>
+                                    <td className="py-2 break-all">
+                                      {typeof value === 'object' ? (
+                                        <pre className="text-xs bg-background/50 p-2 rounded overflow-x-auto">
+                                          {JSON.stringify(value, null, 2)}
+                                        </pre>
+                                      ) : (
+                                        String(value)
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </details>
+                    )}
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-2 border-t border-border/50">
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => window.open(source.url, '_blank')}
+                      className="flex-1"
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
-                      View
+                      View Source
                     </Button>
                     <Button 
                       variant="accent"

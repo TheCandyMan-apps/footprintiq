@@ -83,6 +83,19 @@ serve(async (req) => {
               url: 'https://peopledatalabs.com',
               risk_level: 'high',
               data_found: Object.keys(person).filter(k => person[k]),
+              metadata: {
+                full_name: person.full_name || null,
+                location: person.location_name || null,
+                job_title: person.job_title || null,
+                company: person.job_company_name || null,
+                linkedin_url: person.linkedin_url || null,
+                facebook_url: person.facebook_url || null,
+                twitter_url: person.twitter_url || null,
+                emails: person.emails || [],
+                phone_numbers: person.phone_numbers || [],
+                industry: person.industry || null,
+                confidence: pdlData.likelihood || null,
+              },
             });
           }
         }
@@ -112,6 +125,17 @@ serve(async (req) => {
               url: 'https://pipl.com',
               risk_level: 'high',
               data_found: ['Full Identity Profile', 'Contact Info', 'Social Profiles'],
+              metadata: {
+                names: piplData.person.names || [],
+                addresses: piplData.person.addresses || [],
+                phones: piplData.person.phones || [],
+                emails: piplData.person.emails || [],
+                jobs: piplData.person.jobs || [],
+                educations: piplData.person.educations || [],
+                images: piplData.person.images || [],
+                urls: piplData.person.urls || [],
+                match_confidence: piplData.match_requirements?.match_confidence || null,
+              },
             });
           }
         }
@@ -137,6 +161,16 @@ serve(async (req) => {
             url: 'https://pro.whitepages.com',
             risk_level: 'medium',
             data_found: ['Phone Number', 'Carrier', 'Location', 'Line Type'],
+            metadata: {
+              phone_number: wpData.phone_number || null,
+              is_valid: wpData.is_valid || null,
+              country_code: wpData.country_calling_code || null,
+              line_type: wpData.line_type || null,
+              carrier: wpData.carrier || null,
+              location: wpData.current_addresses?.[0]?.city || null,
+              is_prepaid: wpData.is_prepaid || null,
+              belongs_to: wpData.belongs_to || [],
+            },
           });
         }
       } catch (error) {
@@ -167,6 +201,22 @@ serve(async (req) => {
             url: 'https://haveibeenpwned.com',
             risk_level: 'high',
             data_found: [`Found in ${breaches.length} data breaches`],
+            metadata: {
+              breach_count: breaches.length,
+              breaches: breaches.map((b: any) => ({
+                name: b.Name,
+                title: b.Title,
+                domain: b.Domain,
+                breach_date: b.BreachDate,
+                added_date: b.AddedDate,
+                modified_date: b.ModifiedDate,
+                pwn_count: b.PwnCount,
+                description: b.Description,
+                data_classes: b.DataClasses,
+                is_verified: b.IsVerified,
+                is_sensitive: b.IsSensitive,
+              })),
+            },
           });
         }
       } catch (error) {
@@ -249,6 +299,19 @@ serve(async (req) => {
             url: 'https://hunter.io',
             risk_level: 'medium',
             data_found: dataFound,
+            metadata: {
+              email: scanData.email,
+              result: results.emailData?.result || null,
+              score: results.emailData?.score || null,
+              regexp: results.emailData?.regexp || null,
+              gibberish: results.emailData?.gibberish || null,
+              disposable: results.emailData?.disposable || null,
+              webmail: results.emailData?.webmail || null,
+              mx_records: results.emailData?.mx_records || null,
+              smtp_server: results.emailData?.smtp_server || null,
+              smtp_check: results.emailData?.smtp_check || null,
+              sources: results.emailData?.sources || [],
+            },
           });
         }
       } catch (error) {
@@ -316,27 +379,86 @@ serve(async (req) => {
         try {
           if (platform.check) {
             const response = await fetch(platform.check, {
-              method: 'HEAD',
+              method: 'GET',
               redirect: 'follow',
             });
             
             if (response.ok || response.status === 200) {
+              let metadata: any = {
+                status_code: response.status,
+                found_at: new Date().toISOString(),
+              };
+
+              // Try to extract additional data from API responses
+              try {
+                const data = await response.json();
+                
+                // GitHub specific enrichment
+                if (platform.name === 'GitHub' && data.login) {
+                  metadata = {
+                    ...metadata,
+                    account_id: data.id?.toString(),
+                    full_name: data.name || null,
+                    bio: data.bio || null,
+                    avatar_url: data.avatar_url || null,
+                    followers: data.followers?.toString() || null,
+                    following: data.following || null,
+                    public_repos: data.public_repos || null,
+                    company: data.company || null,
+                    location: data.location || null,
+                    blog: data.blog || null,
+                    created_at: data.created_at || null,
+                  };
+                }
+
+                // Reddit specific enrichment
+                if (platform.name === 'Reddit' && data.data) {
+                  const user = data.data;
+                  metadata = {
+                    ...metadata,
+                    account_id: user.id || null,
+                    full_name: user.subreddit?.title || null,
+                    karma: user.total_karma || null,
+                    avatar_url: user.icon_img || null,
+                    created_at: user.created ? new Date(user.created * 1000).toISOString() : null,
+                    is_verified: user.verified || false,
+                    is_gold: user.is_gold || false,
+                  };
+                }
+              } catch (parseError) {
+                // If we can't parse JSON, just use basic metadata
+                console.log(`Could not parse ${platform.name} data`);
+              }
+
               results.socialProfiles.push({
                 platform: platform.name,
                 username: cleanUsername,
                 profile_url: platform.url,
                 found: true,
                 first_seen: new Date().toISOString(),
+                is_verified: metadata.is_verified || false,
+                account_id: metadata.account_id || null,
+                full_name: metadata.full_name || null,
+                bio: metadata.bio || null,
+                avatar_url: metadata.avatar_url || null,
+                account_type: metadata.account_type || 'personal',
+                followers: metadata.followers || null,
+                metadata: metadata,
               });
             }
           } else {
-            // For platforms without API, mark as potential
+            // For platforms without API, mark as potential with basic metadata
             results.socialProfiles.push({
               platform: platform.name,
               username: cleanUsername,
               profile_url: platform.url,
               found: true,
               first_seen: new Date().toISOString(),
+              is_verified: false,
+              metadata: {
+                check_method: 'manual',
+                note: 'Platform requires manual verification',
+              },
             });
           }
         } catch (error) {

@@ -21,6 +21,7 @@ export type Database = {
           first_seen: string
           id: string
           last_checked: string
+          metadata: Json | null
           name: string
           risk_level: Database["public"]["Enums"]["risk_level"]
           scan_id: string
@@ -32,6 +33,7 @@ export type Database = {
           first_seen?: string
           id?: string
           last_checked?: string
+          metadata?: Json | null
           name: string
           risk_level: Database["public"]["Enums"]["risk_level"]
           scan_id: string
@@ -43,6 +45,7 @@ export type Database = {
           first_seen?: string
           id?: string
           last_checked?: string
+          metadata?: Json | null
           name?: string
           risk_level?: Database["public"]["Enums"]["risk_level"]
           scan_id?: string
@@ -230,33 +233,54 @@ export type Database = {
       }
       social_profiles: {
         Row: {
+          account_id: string | null
+          account_type: string | null
+          avatar_url: string | null
+          bio: string | null
           first_seen: string
           followers: string | null
           found: boolean
+          full_name: string | null
           id: string
+          is_verified: boolean | null
           last_active: string | null
+          metadata: Json | null
           platform: string
           profile_url: string
           scan_id: string
           username: string
         }
         Insert: {
+          account_id?: string | null
+          account_type?: string | null
+          avatar_url?: string | null
+          bio?: string | null
           first_seen?: string
           followers?: string | null
           found?: boolean
+          full_name?: string | null
           id?: string
+          is_verified?: boolean | null
           last_active?: string | null
+          metadata?: Json | null
           platform: string
           profile_url: string
           scan_id: string
           username: string
         }
         Update: {
+          account_id?: string | null
+          account_type?: string | null
+          avatar_url?: string | null
+          bio?: string | null
           first_seen?: string
           followers?: string | null
           found?: boolean
+          full_name?: string | null
           id?: string
+          is_verified?: boolean | null
           last_active?: string | null
+          metadata?: Json | null
           platform?: string
           profile_url?: string
           scan_id?: string
