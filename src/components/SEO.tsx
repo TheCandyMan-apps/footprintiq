@@ -18,8 +18,8 @@ interface SEOProps {
 export const SEO = ({
   title = "FootprintIQ — Check Your Digital Footprint & Online Privacy",
   description = "Scan emails, usernames, domains, phones and IPs with trusted OSINT sources like Have I Been Pwned, Shodan and VirusTotal. Remove your personal data from 100+ data brokers.",
-  canonical = "https://footprintiq.com/",
-  ogImage = "https://footprintiq.com/og-image.jpg",
+  canonical = "https://footprintiq.app/",
+  ogImage = "https://footprintiq.app/og-image.jpg",
   ogType = "website",
   article,
   structuredData,

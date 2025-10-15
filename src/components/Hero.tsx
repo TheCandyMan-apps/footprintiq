@@ -10,9 +10,13 @@ export const Hero = ({ onStartScan }: HeroProps) => {
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-20"
-        style={{ backgroundImage: `url(${heroImage})` }}
+      <img
+        src={heroImage}
+        alt="Digital privacy protection background"
+        className="absolute inset-0 w-full h-full object-cover opacity-20"
+        width={1920}
+        height={1080}
+        loading="eager"
       />
       <div className="absolute inset-0 bg-gradient-hero" />
       
