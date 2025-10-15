@@ -9,6 +9,44 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting: Track submissions by IP address
+const rateLimitMap = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const MAX_REQUESTS_PER_WINDOW = 5; // 5 submissions per hour
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = rateLimitMap.get(ip) || [];
+  
+  // Remove timestamps outside the current window
+  const recentTimestamps = timestamps.filter(
+    (timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS
+  );
+  
+  // Check if limit exceeded
+  if (recentTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    return false;
+  }
+  
+  // Add current timestamp and update map
+  recentTimestamps.push(now);
+  rateLimitMap.set(ip, recentTimestamps);
+  
+  // Cleanup old entries periodically (every 100 requests)
+  if (rateLimitMap.size > 100) {
+    for (const [key, value] of rateLimitMap.entries()) {
+      const filtered = value.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+      if (filtered.length === 0) {
+        rateLimitMap.delete(key);
+      } else {
+        rateLimitMap.set(key, filtered);
+      }
+    }
+  }
+  
+  return true;
+}
+
 interface SupportEmailRequest {
   name: string;
   email: string;
@@ -26,6 +64,28 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Rate limiting: Extract IP address and check rate limit
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || 
+               req.headers.get("x-real-ip") || 
+               "unknown";
+    
+    if (!checkRateLimit(ip)) {
+      console.warn(`Rate limit exceeded for IP: ${ip}`);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many support requests. Please try again later.',
+          retryAfter: '1 hour'
+        }),
+        {
+          status: 429,
+          headers: { 
+            "Content-Type": "application/json", 
+            "Retry-After": "3600",
+            ...corsHeaders 
+          },
+        }
+      );
+    }
     const { 
       name, 
       email, 
