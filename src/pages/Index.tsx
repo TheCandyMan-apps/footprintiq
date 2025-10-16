@@ -80,8 +80,8 @@ export default function Home() {
   return (
     <>
       <SEO
-        title="FootprintIQ — Check Your Digital Footprint & Online Privacy"
-        description="Scan emails, usernames, domains, phones and IPs with trusted OSINT sources like Have I Been Pwned, Shodan and VirusTotal. Remove your personal data from 100+ data brokers."
+        title="FootprintIQ — Digital Footprint Scanner & OSINT Privacy Protection"
+        description="Scan emails, usernames, domains, phones and IPs with trusted OSINT sources. Check breaches via Have I Been Pwned, Shodan, VirusTotal. Remove data from 100+ brokers."
         canonical="https://footprintiq.app/"
         ogImage="https://footprintiq.app/og-image.jpg"
         structuredData={structuredData}
