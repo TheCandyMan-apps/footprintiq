@@ -20,6 +20,8 @@ import MyTickets from "./pages/MyTickets";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import UsernamePage from "./pages/UsernamePage";
+import ApiDocs from "./pages/docs/ApiDocs";
+import PersonaDnaLaunch from "./pages/blog/PersonaDnaLaunch";
 
 const queryClient = new QueryClient();
 
@@ -46,8 +48,10 @@ const App = () => (
           <Route path="/support/confirmation" element={<SupportConfirmation />} />
           <Route path="/my-tickets" element={<MyTickets />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/persona-dna-and-evidence-packs" element={<PersonaDnaLaunch />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
+          <Route path="/docs/api" element={<ApiDocs />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

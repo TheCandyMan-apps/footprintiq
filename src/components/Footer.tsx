@@ -57,6 +57,17 @@ export const Footer = () => {
             </ul>
           </div>
 
+          {/* Resources */}
+          <div>
+            <h3 className="font-semibold mb-4">Resources</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/blog" className="hover:text-primary transition-colors">Blog</Link></li>
+              <li><Link to="/docs/api" className="hover:text-primary transition-colors">API Docs</Link></li>
+              <li><Link to="/blog/persona-dna-and-evidence-packs" className="hover:text-primary transition-colors">Persona DNA Launch</Link></li>
+              <li><Link to="/how-we-source-data" className="hover:text-primary transition-colors">How We Source Data</Link></li>
+            </ul>
+          </div>
+
           {/* Company */}
           <div>
             <h3 className="font-semibold mb-4">Company</h3>

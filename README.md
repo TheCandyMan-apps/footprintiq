@@ -4,6 +4,15 @@
 
 **URL**: https://lovable.dev/projects/93bce7e7-a3f9-4ffb-8036-32425962a83f
 
+## 📘 API Docs & Launch Blog
+
+FootprintIQ now includes comprehensive API documentation and a launch blog post:
+
+- **[API Documentation](/docs/api):** Complete REST API reference with authentication, endpoints, and examples
+- **[Persona DNA Launch Blog](/blog/persona-dna-and-evidence-packs):** Announcement of Atlas Expansion features
+
+Both pages are fully SEO optimized with structured data, OG tags, and canonical URLs.
+
 ## How can I edit this code?
 
 There are several ways of editing your application.

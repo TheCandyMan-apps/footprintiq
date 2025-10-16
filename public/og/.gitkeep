@@ -1,0 +1,18 @@
+# OG Images Directory
+
+Place Open Graph images here for social media sharing.
+
+## Required Image
+
+**persona-dna.webp**
+- Dimensions: 1200x630px
+- Format: WebP
+- Max size: 400 KB
+- Used for: `/docs/api` and `/blog/persona-dna-and-evidence-packs` pages
+
+To create this image, design a visual representing:
+- Digital identity/network connections
+- Privacy-focused OSINT intelligence
+- FootprintIQ branding
+
+Use tools like Figma, Canva, or Adobe Express.

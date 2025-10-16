@@ -1,0 +1,82 @@
+==========================================
+TWITTER/X POST
+==========================================
+
+🚀 Introducing Persona DNA & Evidence Packs — the future of OSINT.
+
+Privacy-preserving identity mapping, AI-driven risk scoring, and forensic reports.
+
+Try it now 👉 https://footprintiq.app
+
+#OSINT #CyberSecurity #AI #PrivacyTech
+
+
+==========================================
+LINKEDIN POST
+==========================================
+
+Today we're thrilled to unveil FootprintIQ's Atlas Expansion — featuring Persona DNA (your privacy-preserving digital fingerprint), Predictive Risk Index, and one-click Evidence Packs.
+
+🧬 Persona DNA maps connections between emails, usernames, and online accounts without storing PII
+🛡️ Predictive Risk Index scores threats 0-100 using AI-driven analysis
+📄 Evidence Packs deliver forensic-ready reports for compliance and legal proceedings
+
+Early results:
+• 60% faster incident response
+• $47K+ fraud prevented through linked account detection
+• 20+ hours saved per legal case
+
+Built for security teams, fraud analysts, and investigators who need accurate OSINT intelligence without compromising privacy.
+
+Learn more: https://footprintiq.app/blog/persona-dna-and-evidence-packs
+
+#OSINT #DigitalFootprint #CyberSecurity #AI #PrivacyTech #FraudPrevention
+
+
+==========================================
+TWITTER/X THREAD
+==========================================
+
+1/6 🧵 We're launching Persona DNA today — the most advanced privacy-first identity correlation engine ever built.
+
+Here's what it means for OSINT 👇
+
+2/6 Traditional tools show isolated data:
+❌ john@email.com found in 3 breaches
+❌ @johndoe on Twitter
+❌ johndoe.com registered 2015
+
+Persona DNA connects them:
+✅ All 3 belong to same person (87% confidence)
+✅ Maps full digital identity
+✅ Zero PII stored
+
+3/6 Use cases we're already seeing:
+
+🔍 Fraud teams: Link fake accounts to prevent $47K+ in losses
+🛡️ SOC teams: Flag high-risk employees before they click phishing links
+⚖️ Legal: Generate court-admissible Evidence Packs in 1 click
+
+4/6 Privacy commitment:
+• Publicly available data only
+• Cryptographic hashing (no raw PII)
+• Real-time computation (no data retention)
+• GDPR Article 25 compliant
+• Annual third-party security audits
+
+5/6 Now available via API:
+
+curl -X POST https://api.footprintiq.app/v1/findings \
+  -H "Authorization: Bearer YOUR_KEY" \
+  -d '{"target": "user@example.com", "include_persona": true}'
+
+Full docs: https://footprintiq.app/docs/api
+
+6/6 Try it free:
+→ 10 scans/month included
+→ No credit card required
+→ Pro tier: $49/month unlimited
+
+Start now: https://footprintiq.app
+
+#OSINT #CyberSecurity #PrivacyTech
