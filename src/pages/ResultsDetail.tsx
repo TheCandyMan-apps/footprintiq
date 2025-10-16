@@ -285,9 +285,10 @@ const ResultsDetail = () => {
     } as Finding)),
     ...socialProfiles.map(profile => ({
       id: profile.id,
+      type: 'social_media' as const,
       title: `${profile.platform}: @${profile.username}`,
       description: profile.profile_url,
-      severity: 'low',
+      severity: 'low' as const,
       confidence: 0.8,
       provider: 'Social Profile',
       providerCategory: profile.platform,
@@ -337,6 +338,17 @@ const ResultsDetail = () => {
           <AIAnalysis scanId={scanId!} />
         </div>
 
+        {/* Export Controls */}
+        {findingsForExport.length > 0 && (
+          <div className="mb-8">
+            <ExportControls 
+              findings={findingsForExport}
+              redactPII={redactPII}
+              onRedactToggle={setRedactPII}
+            />
+          </div>
+        )}
+
         {/* Timeline & Graph - Enhanced Intelligence */}
         {(dataSources.length > 0 || socialProfiles.length > 0) && (
           <div className="grid md:grid-cols-2 gap-6 mb-8">
@@ -361,24 +373,7 @@ const ResultsDetail = () => {
               )}
             />
             <GraphExplorer 
-              {...buildGraph(
-                dataSources.map(source => ({
-                  id: source.id,
-                  type: 'breach' as const,
-                  title: source.name,
-                  description: source.category,
-                  severity: source.risk_level as any,
-                  confidence: 0.9,
-                  provider: 'OSINT Scan',
-                  providerCategory: source.category,
-                  evidence: source.data_found.map(d => ({ key: 'Data', value: d })),
-                  impact: `Found on ${source.name}`,
-                  remediation: ['Request removal from this source'],
-                  tags: [source.category],
-                  observedAt: new Date().toISOString(),
-                  url: source.url
-                } as Finding))
-              )}
+              {...buildGraph(findingsForExport)}
             />
           </div>
         )}
