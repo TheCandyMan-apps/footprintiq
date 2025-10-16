@@ -14,6 +14,19 @@ export const GraphExplorer = ({ nodes, edges }: GraphExplorerProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
 
+  // Resolve CSS HSL variables to actual color strings for canvas
+  const cssHsl = (varName: string) => {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    return v ? `hsl(${v})` : '#000';
+  };
+  const typeToVar: Record<GraphNode['type'], string> = {
+    username: '--chart-1',
+    email: '--chart-2',
+    domain: '--chart-3',
+    ip: '--chart-4',
+    phone: '--chart-5',
+  };
+
   useEffect(() => {
     if (!canvasRef.current) return;
     
@@ -32,12 +45,12 @@ export const GraphExplorer = ({ nodes, edges }: GraphExplorerProps) => {
     const height = 400;
 
     // Clear canvas with background color
-    ctx.fillStyle = 'hsl(var(--background))';
+    ctx.fillStyle = cssHsl('--background');
     ctx.fillRect(0, 0, width, height);
 
     // Show message if no nodes
     if (nodes.length === 0) {
-      ctx.fillStyle = 'hsl(var(--muted-foreground))';
+      ctx.fillStyle = cssHsl('--muted-foreground');
       ctx.font = '14px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('No relationship data available', width / 2, height / 2);
@@ -57,14 +70,14 @@ export const GraphExplorer = ({ nodes, edges }: GraphExplorerProps) => {
     });
 
     // Draw edges
-    ctx.strokeStyle = 'hsl(var(--border))';
+    ctx.strokeStyle = cssHsl('--border');
     edges.forEach(edge => {
       const source = positions.get(edge.source);
       const target = positions.get(edge.target);
       if (!source || !target) return;
 
       ctx.lineWidth = Math.min(edge.weight, 5);
-      ctx.globalAlpha = 0.3 + (edge.weight / 10);
+      ctx.globalAlpha = Math.min(1, 0.3 + (edge.weight / 10));
       ctx.beginPath();
       ctx.moveTo(source.x, source.y);
       ctx.lineTo(target.x, target.y);
@@ -82,18 +95,18 @@ export const GraphExplorer = ({ nodes, edges }: GraphExplorerProps) => {
       if (avgConfidence * 100 < confidenceFilter) return;
 
       // Draw circle
-      ctx.fillStyle = node.color;
+      ctx.fillStyle = cssHsl(typeToVar[node.type]);
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, 15, 0, 2 * Math.PI);
       ctx.fill();
 
       // Draw white border
-      ctx.strokeStyle = 'hsl(var(--background))';
+      ctx.strokeStyle = cssHsl('--background');
       ctx.lineWidth = 2;
       ctx.stroke();
 
       // Draw label
-      ctx.fillStyle = 'hsl(var(--foreground))';
+      ctx.fillStyle = cssHsl('--foreground');
       ctx.font = '11px sans-serif';
       ctx.textAlign = 'center';
       const label = node.label.length > 15 ? node.label.substring(0, 12) + '...' : node.label;
