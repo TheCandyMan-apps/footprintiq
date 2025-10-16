@@ -384,7 +384,7 @@ export type Database = {
         Returns: string
       }
       grant_admin_role: {
-        Args: { _user_id: string }
+        Args: { _caller_token?: string; _user_id: string }
         Returns: boolean
       }
       has_role: {

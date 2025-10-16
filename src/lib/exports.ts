@@ -91,13 +91,22 @@ export function exportAsPDF(findings: Finding[], redactPII: boolean = true): voi
 }
 
 /**
- * Helper: Escape CSV field
+ * Helper: Escape CSV field and prevent CSV injection
  */
 function escapeCSV(field: string): string {
-  if (field.includes(',') || field.includes('"') || field.includes('\n')) {
-    return `"${field.replace(/"/g, '""')}"`;
+  // Prevent CSV injection by prefixing dangerous characters
+  const dangerousChars = ['=', '+', '-', '@', '\t', '\r'];
+  let sanitized = field;
+  
+  if (dangerousChars.some(char => sanitized.startsWith(char))) {
+    sanitized = "'" + sanitized; // Prefix with single quote to neutralize formulas
   }
-  return field;
+  
+  // Escape quotes and wrap if contains special chars
+  if (sanitized.includes(',') || sanitized.includes('"') || sanitized.includes('\n')) {
+    return `"${sanitized.replace(/"/g, '""')}"`;
+  }
+  return sanitized;
 }
 
 /**

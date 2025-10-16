@@ -300,10 +300,17 @@ Guidelines:
     });
 
   } catch (error: any) {
-    console.error("Insight stream error:", error);
+    // Log full error details server-side for debugging
+    console.error("[INSIGHT-ERROR]", error);
+    
+    // Return fallback with generic error message to client
     const fallback = generateFallbackInsight([]);
     return new Response(
-      JSON.stringify({ type: "done", data: fallback }),
+      JSON.stringify({ 
+        type: "done", 
+        data: fallback,
+        error: "Unable to generate AI insights at this time"
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
