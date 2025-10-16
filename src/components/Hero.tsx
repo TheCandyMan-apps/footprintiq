@@ -34,11 +34,19 @@ export const Hero = ({ onStartScan }: HeroProps) => {
           <span className="bg-gradient-accent bg-clip-text text-transparent">(Email, Username, Domain, Phone, IP)</span>
         </h1>
         
-        <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
+        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
           Scan with trusted OSINT sources like Have I Been Pwned, Shodan, and VirusTotal. 
           Discover email breaches, username exposure, domain intelligence, IP leaks, and phone data. 
           Remove your personal information from 100+ data brokers automatically.
         </p>
+        
+        {/* Privacy Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 mb-12 rounded-full bg-primary/5 border border-primary/20">
+          <Shield className="w-4 h-4 text-primary" />
+          <span className="text-sm text-muted-foreground">
+            <strong className="text-foreground">Privacy First:</strong> We never sell your data — all scans are transient
+          </span>
+        </div>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
           <Button 

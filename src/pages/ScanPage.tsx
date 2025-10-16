@@ -87,8 +87,8 @@ const ScanPage = () => {
   return (
     <>
       <SEO
-        title="Scanner · FootprintIQ — Check Email, Username, Domain, Phone, IP"
-        description="Run a free OSINT scan to check your digital footprint. Detect email breaches via Have I Been Pwned, username exposure, domain intelligence, IP leaks via Shodan, and phone data."
+        title="Scan Your Digital Footprint — FootprintIQ OSINT Scanner"
+        description="Free OSINT scanner for emails, usernames, domains, phones and IPs. Check data breaches with Have I Been Pwned, Shodan, VirusTotal and more."
         canonical="https://footprintiq.app/scan"
         structuredData={{
           "@context": "https://schema.org",
@@ -103,7 +103,7 @@ const ScanPage = () => {
             {
               "@type": "ListItem",
               "position": 2,
-              "name": "Scanner",
+              "name": "Scan",
               "item": "https://footprintiq.app/scan"
             }
           ]

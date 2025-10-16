@@ -52,15 +52,26 @@ export default function UsernamePage() {
   return (
     <>
       <SEO
-        title="Username Search · FootprintIQ — Check Username Across 500+ Platforms"
-        description="Search for a username across 500+ social media, gaming, dev, and professional platforms. Discover your online presence and digital footprint instantly."
+        title="Username Search — Find Social Media Profiles Across 500+ Platforms"
+        description="Search usernames across Instagram, Twitter, TikTok, Reddit, GitHub and 500+ platforms. OSINT username intelligence for investigators and privacy researchers."
         canonical="https://footprintiq.app/usernames"
         structuredData={{
           "@context": "https://schema.org",
-          "@type": "WebApplication",
-          "name": "Username Search",
-          "applicationCategory": "SecurityApplication",
-          "description": "Check username availability across 500+ platforms"
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://footprintiq.app/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Username Search",
+              "item": "https://footprintiq.app/usernames"
+            }
+          ]
         }}
       />
       <Header />
