@@ -82,12 +82,99 @@ export function exportAsCSV(findings: Finding[], redactPII: boolean = true): voi
 }
 
 /**
- * Export findings as PDF (TODO: implement with jspdf or pdfmake)
+ * Export findings as PDF using jsPDF
  */
 export function exportAsPDF(findings: Finding[], redactPII: boolean = true): void {
-  // TODO: Implement PDF generation
-  // For now, show a placeholder
-  alert('PDF export coming soon! Use JSON or CSV export for now.');
+  import('jspdf').then(({ jsPDF }) => {
+    import('jspdf-autotable').then((autoTable) => {
+      const data = redactPII ? redactFindings(findings, true) : findings;
+      const doc = new jsPDF();
+      
+      // Add title
+      doc.setFontSize(20);
+      doc.text('FootprintIQ Scan Report', 14, 22);
+      
+      // Add metadata
+      doc.setFontSize(10);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 32);
+      doc.text(`Total Findings: ${data.length}`, 14, 38);
+      
+      // Group findings by severity
+      const critical = data.filter(f => f.severity === 'critical').length;
+      const high = data.filter(f => f.severity === 'high').length;
+      const medium = data.filter(f => f.severity === 'medium').length;
+      const low = data.filter(f => f.severity === 'low').length;
+      
+      doc.text(`Critical: ${critical} | High: ${high} | Medium: ${medium} | Low: ${low}`, 14, 44);
+      
+      // Prepare table data
+      const tableData = data.map(finding => [
+        finding.severity.toUpperCase(),
+        finding.type,
+        finding.title,
+        finding.provider,
+        finding.confidence.toFixed(2),
+        finding.observedAt.split('T')[0]
+      ]);
+      
+      // Add table
+      (doc as any).autoTable({
+        startY: 50,
+        head: [['Severity', 'Type', 'Title', 'Provider', 'Confidence', 'Date']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { fillColor: [59, 130, 246] },
+        styles: { fontSize: 8 },
+        columnStyles: {
+          0: { cellWidth: 22 },
+          1: { cellWidth: 28 },
+          2: { cellWidth: 55 },
+          3: { cellWidth: 30 },
+          4: { cellWidth: 22 },
+          5: { cellWidth: 25 }
+        }
+      });
+      
+      // Add detailed findings on new pages
+      let yPos = (doc as any).lastAutoTable.finalY + 20;
+      
+      data.forEach((finding, index) => {
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text(`${index + 1}. ${finding.title}`, 14, yPos);
+        yPos += 7;
+        
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        const splitDescription = doc.splitTextToSize(finding.description, 180);
+        doc.text(splitDescription, 14, yPos);
+        yPos += splitDescription.length * 5 + 3;
+        
+        doc.text(`Impact: ${finding.impact}`, 14, yPos);
+        yPos += 6;
+        
+        if (finding.remediation.length > 0) {
+          doc.text('Remediation:', 14, yPos);
+          yPos += 5;
+          finding.remediation.forEach(step => {
+            const splitStep = doc.splitTextToSize(`• ${step}`, 175);
+            doc.text(splitStep, 18, yPos);
+            yPos += splitStep.length * 5;
+          });
+        }
+        
+        yPos += 8;
+      });
+      
+      // Save the PDF
+      doc.save(`footprintiq-scan-${Date.now()}.pdf`);
+    });
+  });
 }
 
 /**

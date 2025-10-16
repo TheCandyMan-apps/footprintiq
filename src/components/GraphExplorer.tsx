@@ -21,22 +21,38 @@ export const GraphExplorer = ({ nodes, edges }: GraphExplorerProps) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set canvas size
-    canvas.width = canvas.offsetWidth;
-    canvas.height = 400;
+    // Set canvas size with proper device pixel ratio for crisp rendering
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = 400 * dpr;
+    ctx.scale(dpr, dpr);
 
-    // Clear canvas
+    const width = rect.width;
+    const height = 400;
+
+    // Clear canvas with background color
     ctx.fillStyle = 'hsl(var(--background))';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, width, height);
+
+    // Show message if no nodes
+    if (nodes.length === 0) {
+      ctx.fillStyle = 'hsl(var(--muted-foreground))';
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('No relationship data available', width / 2, height / 2);
+      ctx.fillText('Graph will appear when entities are detected in findings', width / 2, height / 2 + 20);
+      return;
+    }
 
     // Simple force-directed layout simulation
     const positions = new Map<string, { x: number; y: number }>();
     nodes.forEach((node, idx) => {
       const angle = (idx / nodes.length) * 2 * Math.PI;
-      const radius = Math.min(canvas.width, canvas.height) * 0.35;
+      const radius = Math.min(width, height) * 0.35;
       positions.set(node.id, {
-        x: canvas.width / 2 + radius * Math.cos(angle),
-        y: canvas.height / 2 + radius * Math.sin(angle)
+        x: width / 2 + radius * Math.cos(angle),
+        y: height / 2 + radius * Math.sin(angle)
       });
     });
 
@@ -71,9 +87,14 @@ export const GraphExplorer = ({ nodes, edges }: GraphExplorerProps) => {
       ctx.arc(pos.x, pos.y, 15, 0, 2 * Math.PI);
       ctx.fill();
 
+      // Draw white border
+      ctx.strokeStyle = 'hsl(var(--background))';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
       // Draw label
       ctx.fillStyle = 'hsl(var(--foreground))';
-      ctx.font = '10px sans-serif';
+      ctx.font = '11px sans-serif';
       ctx.textAlign = 'center';
       const label = node.label.length > 15 ? node.label.substring(0, 12) + '...' : node.label;
       ctx.fillText(label, pos.x, pos.y + 30);
