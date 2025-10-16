@@ -1,64 +1,86 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimelineEvent } from "@/lib/timeline";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 
 interface TimelineChartProps {
   events: TimelineEvent[];
 }
 
 export const TimelineChart = ({ events }: TimelineChartProps) => {
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'hsl(var(--destructive))';
-      case 'high': return 'hsl(var(--destructive) / 0.7)';
-      case 'medium': return 'hsl(var(--primary))';
-      case 'low': return 'hsl(var(--accent))';
-      default: return 'hsl(var(--muted))';
-    }
+  // Transform events into stacked severity data
+  const severityColors = {
+    critical: "hsl(var(--destructive))",
+    high: "hsl(var(--chart-1))",
+    medium: "hsl(var(--chart-3))",
+    low: "hsl(var(--chart-4))",
+    info: "hsl(var(--muted))",
   };
 
-  const chartData = events.map(event => ({
-    date: new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    count: event.count,
-    severity: event.severity,
-    fill: getSeverityColor(event.severity)
+  // Group by date and severity
+  const dateMap = new Map<string, Record<string, number>>();
+  
+  events.forEach((event) => {
+    const date = new Date(event.date).toLocaleDateString();
+    if (!dateMap.has(date)) {
+      dateMap.set(date, { critical: 0, high: 0, medium: 0, low: 0, info: 0 });
+    }
+    
+    const severityCounts = dateMap.get(date)!;
+    event.findings.forEach((finding) => {
+      severityCounts[finding.severity] = (severityCounts[finding.severity] || 0) + 1;
+    });
+  });
+
+  const chartData = Array.from(dateMap.entries()).map(([date, severities]) => ({
+    date,
+    ...severities,
   }));
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Finding Timeline</CardTitle>
+        <CardTitle>Timeline Analysis</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Findings over time, stacked by severity
+        </p>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <AreaChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+          <BarChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
             <XAxis 
               dataKey="date" 
-              stroke="hsl(var(--muted-foreground))"
-              fontSize={12}
+              className="text-xs"
+              tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
             <YAxis 
-              stroke="hsl(var(--muted-foreground))"
-              fontSize={12}
+              className="text-xs"
+              tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
-            <Tooltip
-              contentStyle={{
+            <Tooltip 
+              contentStyle={{ 
                 backgroundColor: 'hsl(var(--background))',
                 border: '1px solid hsl(var(--border))',
-                borderRadius: '8px'
+                borderRadius: '0.5rem'
               }}
-              labelStyle={{ color: 'hsl(var(--foreground))' }}
             />
-            <Area 
-              type="monotone" 
-              dataKey="count" 
-              stroke="hsl(var(--primary))"
-              fill="hsl(var(--primary) / 0.2)"
-              strokeWidth={2}
-            />
-          </AreaChart>
+            <Legend />
+            <Bar dataKey="critical" stackId="severity" fill={severityColors.critical} name="Critical" />
+            <Bar dataKey="high" stackId="severity" fill={severityColors.high} name="High" />
+            <Bar dataKey="medium" stackId="severity" fill={severityColors.medium} name="Medium" />
+            <Bar dataKey="low" stackId="severity" fill={severityColors.low} name="Low" />
+            <Bar dataKey="info" stackId="severity" fill={severityColors.info} name="Info" />
+          </BarChart>
         </ResponsiveContainer>
+
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-2">
+          {Object.entries(severityColors).map(([severity, color]) => (
+            <div key={severity} className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: color }} />
+              <span className="text-xs capitalize">{severity}</span>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   );

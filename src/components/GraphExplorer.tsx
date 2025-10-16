@@ -13,6 +13,8 @@ export const GraphExplorer = ({ nodes, edges }: GraphExplorerProps) => {
   const [confidenceFilter, setConfidenceFilter] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
+  const [nodePositions, setNodePositions] = useState<Map<string, { x: number; y: number }>>(new Map());
 
   // Resolve CSS HSL variables to actual color strings for canvas
   const cssHsl = (varName: string) => {
@@ -68,6 +70,7 @@ export const GraphExplorer = ({ nodes, edges }: GraphExplorerProps) => {
         y: height / 2 + radius * Math.sin(angle)
       });
     });
+    setNodePositions(positions);
 
     // Draw edges
     ctx.strokeStyle = cssHsl('--border');
@@ -112,7 +115,75 @@ export const GraphExplorer = ({ nodes, edges }: GraphExplorerProps) => {
       const label = node.label.length > 15 ? node.label.substring(0, 12) + '...' : node.label;
       ctx.fillText(label, pos.x, pos.y + 30);
     });
-  }, [nodes, edges, confidenceFilter]);
+
+    // Highlight hovered node
+    if (hoveredNode) {
+      const pos = positions.get(hoveredNode.id);
+      if (pos) {
+        ctx.strokeStyle = cssHsl('--primary');
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 18, 0, 2 * Math.PI);
+        ctx.stroke();
+      }
+    }
+  }, [nodes, edges, confidenceFilter, hoveredNode]);
+
+  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // Check if click is on a node
+    for (const [nodeId, pos] of nodePositions) {
+      const dx = x - pos.x;
+      const dy = y - pos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= 15) {
+        const node = nodes.find((n) => n.id === nodeId);
+        if (node) {
+          setSelectedNode(node);
+          return;
+        }
+      }
+    }
+
+    setSelectedNode(null);
+  };
+
+  const handleCanvasMouseMove = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    // Check if hovering over a node
+    for (const [nodeId, pos] of nodePositions) {
+      const dx = x - pos.x;
+      const dy = y - pos.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance <= 15) {
+        const node = nodes.find((n) => n.id === nodeId);
+        if (node && node.id !== hoveredNode?.id) {
+          setHoveredNode(node);
+          canvas.style.cursor = 'pointer';
+          return;
+        }
+      }
+    }
+
+    if (hoveredNode) {
+      setHoveredNode(null);
+      canvas.style.cursor = 'default';
+    }
+  };
 
   const filteredNodes = nodes.filter(node => {
     const avgConfidence = node.findings.reduce((sum, f) => sum + f.confidence, 0) / node.findings.length;
@@ -136,7 +207,29 @@ export const GraphExplorer = ({ nodes, edges }: GraphExplorerProps) => {
         </div>
       </CardHeader>
       <CardContent>
-        <canvas ref={canvasRef} className="w-full h-[400px] border border-border rounded-lg" />
+        <canvas 
+          ref={canvasRef} 
+          className="w-full h-[400px] border border-border rounded-lg"
+          onClick={handleCanvasClick}
+          onMouseMove={handleCanvasMouseMove}
+        />
+        
+        {selectedNode && (
+          <div className="mt-4 p-4 bg-muted rounded-lg border">
+            <h4 className="font-semibold mb-2">{selectedNode.label}</h4>
+            <p className="text-sm text-muted-foreground mb-2">Type: {selectedNode.type}</p>
+            <p className="text-sm mb-2">
+              <strong>Findings:</strong> {selectedNode.findings.length}
+            </p>
+            <div className="text-xs text-muted-foreground">
+              <p className="font-medium mb-1">Why linked?</p>
+              <p>
+                This {selectedNode.type} appears in {selectedNode.findings.length} finding(s).
+                Connections indicate shared evidence across multiple data sources.
+              </p>
+            </div>
+          </div>
+        )}
         
         <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-2">
           <div className="flex items-center gap-2">

@@ -22,6 +22,7 @@ import BlogPost from "./pages/BlogPost";
 import UsernamePage from "./pages/UsernamePage";
 import ApiDocs from "./pages/docs/ApiDocs";
 import PersonaDnaLaunch from "./pages/blog/PersonaDnaLaunch";
+import Analyst from "./pages/Analyst";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
           <Route path="/docs/api" element={<ApiDocs />} />
+          <Route path="/analyst" element={<Analyst />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
