@@ -36,17 +36,8 @@ interface ScanRequest {
   phone?: string;
 }
 
-// Helper to mask PII in logs
-const maskPII = (data: any) => {
-  return {
-    scanId: data.scanId,
-    scanType: data.scanType,
-    hasEmail: !!data.email,
-    hasPhone: !!data.phone,
-    hasUsername: !!data.username,
-    hasName: !!(data.firstName || data.lastName)
-  };
-};
+// Import shared PII masking utility
+import { maskPII } from "../_shared/maskPII.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -76,7 +67,7 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    console.log('Starting OSINT scan - Scan ID:', scanData.scanId);
+    console.log('Starting OSINT scan:', maskPII(scanData));
 
     // API Keys (will be set by user)
     const PEOPLE_DATA_LABS_KEY = Deno.env.get('PEOPLE_DATA_LABS_KEY');

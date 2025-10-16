@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { maskEmail, maskIP } from "../_shared/maskPII.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -9,39 +11,45 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-// Rate limiting: Track submissions by IP address
-const rateLimitMap = new Map<string, number[]>();
+// Database-backed rate limiting
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 const MAX_REQUESTS_PER_WINDOW = 5; // 5 submissions per hour
 
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const timestamps = rateLimitMap.get(ip) || [];
+/**
+ * Check if IP has exceeded rate limit using database
+ */
+async function checkRateLimit(ip: string): Promise<boolean> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  const cutoffTime = new Date(Date.now() - RATE_LIMIT_WINDOW_MS).toISOString();
   
-  // Remove timestamps outside the current window
-  const recentTimestamps = timestamps.filter(
-    (timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS
-  );
+  // Count recent requests from this IP
+  const { data: recentAttempts, error } = await supabase
+    .from('email_rate_limit')
+    .select('*')
+    .eq('ip', ip)
+    .gte('created_at', cutoffTime);
   
-  // Check if limit exceeded
-  if (recentTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
-    return false;
+  if (error) {
+    console.error('Rate limit check error:', error.message);
+    // Fail open to avoid blocking legitimate users on DB errors
+    return true;
+  }
+
+  if (recentAttempts && recentAttempts.length >= MAX_REQUESTS_PER_WINDOW) {
+    console.warn(`Rate limit exceeded for IP: ${maskIP(ip)}`);
+    return false; // Rate limit exceeded
   }
   
-  // Add current timestamp and update map
-  recentTimestamps.push(now);
-  rateLimitMap.set(ip, recentTimestamps);
+  // Log this attempt
+  const { error: insertError } = await supabase
+    .from('email_rate_limit')
+    .insert({ ip, created_at: new Date().toISOString() });
   
-  // Cleanup old entries periodically (every 100 requests)
-  if (rateLimitMap.size > 100) {
-    for (const [key, value] of rateLimitMap.entries()) {
-      const filtered = value.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
-      if (filtered.length === 0) {
-        rateLimitMap.delete(key);
-      } else {
-        rateLimitMap.set(key, filtered);
-      }
-    }
+  if (insertError) {
+    console.error('Failed to log rate limit attempt:', insertError.message);
   }
   
   return true;
@@ -69,8 +77,8 @@ const handler = async (req: Request): Promise<Response> => {
                req.headers.get("x-real-ip") || 
                "unknown";
     
-    if (!checkRateLimit(ip)) {
-      console.warn(`Rate limit exceeded for IP: ${ip}`);
+    const rateLimitOk = await checkRateLimit(ip);
+    if (!rateLimitOk) {
       return new Response(
         JSON.stringify({ 
           error: 'Too many support requests. Please try again later.',
@@ -86,6 +94,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       );
     }
+    
     const { 
       name, 
       email, 
@@ -96,6 +105,10 @@ const handler = async (req: Request): Promise<Response> => {
       ticketNumber,
       attachments
     }: SupportEmailRequest = await req.json();
+
+    console.log(
+      `Processing support request from: ${maskEmail(email)} (IP: ${maskIP(ip)})`
+    );
 
     // HTML escape function to prevent XSS
     const escapeHtml = (text: string): string => {
@@ -177,7 +190,7 @@ const handler = async (req: Request): Promise<Response> => {
       `,
     });
 
-    console.log("Support emails sent successfully:", emailResponse);
+    console.log("Support emails sent successfully - Ticket:", ticketNumber || 'N/A');
 
     return new Response(JSON.stringify(emailResponse), {
       status: 200,

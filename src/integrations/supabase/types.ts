@@ -35,6 +35,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_grant_tokens: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          expires_at: string
+          id: string
+          token_hash: string
+          used_at: string | null
+          used_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          token_hash: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          token_hash?: string
+          used_at?: string | null
+          used_by?: string | null
+        }
+        Relationships: []
+      }
       data_sources: {
         Row: {
           category: string
@@ -81,6 +111,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_rate_limit: {
+        Row: {
+          created_at: string
+          id: string
+          ip: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -400,6 +448,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_scan_pii: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       generate_ticket_number: {
         Args: Record<PropertyKey, never>
         Returns: string

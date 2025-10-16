@@ -47,12 +47,8 @@ const REMOVAL_PROCEDURES = {
   },
 };
 
-// Helper to mask email in logs
-const maskEmail = (email: string) => {
-  if (!email) return '';
-  const [local, domain] = email.split('@');
-  return `${local.slice(0, 2)}***@${domain}`;
-};
+// Import shared PII masking utilities
+import { maskEmail } from "../_shared/maskPII.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
