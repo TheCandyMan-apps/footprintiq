@@ -13,6 +13,7 @@ import { MonitoringToggle } from "@/components/MonitoringToggle";
 import { clusterFindingsByDate } from "@/lib/timeline";
 import { buildGraph } from "@/lib/graph";
 import { Finding } from "@/lib/ufm";
+import { ExportControls } from "@/components/ExportControls";
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -98,6 +99,7 @@ const ResultsDetail = () => {
   const [dataSources, setDataSources] = useState<DataSource[]>([]);
   const [socialProfiles, setSocialProfiles] = useState<SocialProfile[]>([]);
   const [removalRequests, setRemovalRequests] = useState<RemovalRequest[]>([]);
+  const [redactPII, setRedactPII] = useState(true);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -263,6 +265,45 @@ const ResultsDetail = () => {
     );
   };
 
+  // Build findings array for exports and graph
+  const findingsForExport: Finding[] = [
+    ...dataSources.map(source => ({
+      id: source.id,
+      type: 'breach' as const,
+      title: source.name,
+      description: source.category,
+      severity: source.risk_level as any,
+      confidence: 0.9,
+      provider: 'OSINT Scan',
+      providerCategory: source.category,
+      evidence: source.data_found.map(d => ({ key: 'data', value: d })),
+      impact: `Found on ${source.name}`,
+      remediation: ['Request removal from this source'],
+      tags: [source.category],
+      observedAt: new Date().toISOString(),
+      url: source.url
+    } as Finding)),
+    ...socialProfiles.map(profile => ({
+      id: profile.id,
+      title: `${profile.platform}: @${profile.username}`,
+      description: profile.profile_url,
+      severity: 'low',
+      confidence: 0.8,
+      provider: 'Social Profile',
+      providerCategory: profile.platform,
+      evidence: [
+        { key: 'username', value: profile.username },
+        { key: 'url', value: profile.profile_url },
+        ...(profile.full_name ? [{ key: 'name', value: profile.full_name }] : []),
+      ],
+      impact: `Profile found on ${profile.platform}`,
+      remediation: [],
+      tags: [profile.platform],
+      observedAt: new Date().toISOString(),
+      url: profile.profile_url
+    } as Finding))
+  ];
+
   if (loading || !scan) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -297,7 +338,7 @@ const ResultsDetail = () => {
         </div>
 
         {/* Timeline & Graph - Enhanced Intelligence */}
-        {dataSources.length > 0 && (
+        {(dataSources.length > 0 || socialProfiles.length > 0) && (
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             <TimelineChart 
               events={clusterFindingsByDate(
