@@ -6,15 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Search, CheckCircle, XCircle, AlertCircle, ExternalLink } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, CheckCircle, XCircle, AlertCircle, ExternalLink, Upload } from "lucide-react";
 import { checkUsernameAvailability, usernameSources, UsernameCheckResult } from "@/lib/usernameSources";
 import { useToast } from "@/hooks/use-toast";
+import { UpgradeDialog } from "@/components/UpgradeDialog";
 
 export default function UsernamePage() {
   const [username, setUsername] = useState("");
+  const [bulkUsernames, setBulkUsernames] = useState("");
   const [results, setResults] = useState<UsernameCheckResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const { toast } = useToast();
 
   const categories = ["all", ...new Set(usernameSources.map(s => s.category))];
@@ -35,6 +40,16 @@ export default function UsernamePage() {
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleBulkSearch = async () => {
+    // Pro feature gate
+    setShowUpgrade(true);
+    toast({ 
+      title: "Pro Feature", 
+      description: "Bulk username checking is available in Pro plan",
+      variant: "default"
+    });
   };
 
   const filteredResults = selectedCategory === "all" 
@@ -87,19 +102,47 @@ export default function UsernamePage() {
           </div>
 
           <Card className="p-6 mb-8">
-            <div className="flex gap-4">
-              <Input
-                placeholder="Enter username to search..."
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="flex-1"
-              />
-              <Button onClick={handleSearch} disabled={isSearching} size="lg">
-                <Search className="w-4 h-4 mr-2" />
-                {isSearching ? "Searching..." : "Search"}
-              </Button>
-            </div>
+            <Tabs defaultValue="single" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="single">Single Username</TabsTrigger>
+                <TabsTrigger value="bulk">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Bulk Check (Pro)
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="single" className="space-y-4">
+                <div className="flex gap-4">
+                  <Input
+                    placeholder="Enter username to search..."
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                    className="flex-1"
+                  />
+                  <Button onClick={handleSearch} disabled={isSearching} size="lg">
+                    <Search className="w-4 h-4 mr-2" />
+                    {isSearching ? "Searching..." : "Search"}
+                  </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="bulk" className="space-y-4">
+                <Textarea
+                  placeholder="Enter usernames (one per line or comma-separated)..."
+                  value={bulkUsernames}
+                  onChange={(e) => setBulkUsernames(e.target.value)}
+                  className="min-h-[120px]"
+                />
+                <Button onClick={handleBulkSearch} disabled={isSearching} size="lg" className="w-full">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Check All Usernames
+                </Button>
+                <p className="text-xs text-muted-foreground text-center">
+                  💎 Pro feature: Check up to 100 usernames at once
+                </p>
+              </TabsContent>
+            </Tabs>
           </Card>
 
           {results.length > 0 && (
@@ -162,6 +205,11 @@ export default function UsernamePage() {
         </div>
       </main>
       <Footer />
+      <UpgradeDialog 
+        open={showUpgrade} 
+        onOpenChange={setShowUpgrade}
+        feature="Bulk username checking"
+      />
     </>
   );
 }

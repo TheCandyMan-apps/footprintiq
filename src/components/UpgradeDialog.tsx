@@ -13,9 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 interface UpgradeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  feature?: string;
 }
 
-export const UpgradeDialog = ({ open, onOpenChange }: UpgradeDialogProps) => {
+export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: UpgradeDialogProps) => {
   const { toast } = useToast();
 
   const handleUpgrade = async () => {
@@ -38,10 +39,10 @@ export const UpgradeDialog = ({ open, onOpenChange }: UpgradeDialogProps) => {
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
             <Zap className="w-6 h-6 text-primary" />
-            Scan Limit Reached
+            Upgrade to Pro
           </DialogTitle>
           <DialogDescription className="text-base pt-2">
-            You've used your free scan. Upgrade to Pro for unlimited scans and advanced features!
+            {feature} is a Pro feature. Upgrade now to unlock unlimited privacy protection.
           </DialogDescription>
         </DialogHeader>
 

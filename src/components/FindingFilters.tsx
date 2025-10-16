@@ -1,96 +1,179 @@
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Finding } from "@/lib/ufm";
-import { Shield, AlertTriangle, Globe, Server, Phone, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Severity } from "@/lib/ufm";
+import { Filter, X } from "lucide-react";
+import { useState } from "react";
 
 interface FindingFiltersProps {
-  findings: Finding[];
-  activeTab: string;
-  onTabChange: (tab: string) => void;
+  availableSeverities: Severity[];
+  availableTypes: string[];
+  availableProviders: string[];
+  selectedSeverities: Severity[];
+  selectedTypes: string[];
+  selectedProviders: string[];
+  searchQuery: string;
+  onSeveritiesChange: (severities: Severity[]) => void;
+  onTypesChange: (types: string[]) => void;
+  onProvidersChange: (providers: string[]) => void;
+  onSearchChange: (query: string) => void;
+  onClearAll: () => void;
 }
 
-export const FindingFilters = ({ findings, activeTab, onTabChange }: FindingFiltersProps) => {
-  const counts = {
-    all: findings.length,
-    breaches: findings.filter(f => f.type === 'breach').length,
-    identity: findings.filter(f => f.type === 'identity').length,
-    domain: findings.filter(f => f.type === 'domain_reputation' || f.type === 'domain_tech' || f.type === 'dns_history').length,
-    ip: findings.filter(f => f.type === 'ip_exposure').length,
-    phone: findings.filter(f => f.type === 'phone_intelligence').length,
-    social: findings.filter(f => f.type === 'social_media').length,
+export const FindingFilters = ({
+  availableSeverities,
+  availableTypes,
+  availableProviders,
+  selectedSeverities,
+  selectedTypes,
+  selectedProviders,
+  searchQuery,
+  onSeveritiesChange,
+  onTypesChange,
+  onProvidersChange,
+  onSearchChange,
+  onClearAll,
+}: FindingFiltersProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const toggleSeverity = (severity: Severity) => {
+    if (selectedSeverities.includes(severity)) {
+      onSeveritiesChange(selectedSeverities.filter((s) => s !== severity));
+    } else {
+      onSeveritiesChange([...selectedSeverities, severity]);
+    }
   };
 
+  const toggleType = (type: string) => {
+    if (selectedTypes.includes(type)) {
+      onTypesChange(selectedTypes.filter((t) => t !== type));
+    } else {
+      onTypesChange([...selectedTypes, type]);
+    }
+  };
+
+  const toggleProvider = (provider: string) => {
+    if (selectedProviders.includes(provider)) {
+      onProvidersChange(selectedProviders.filter((p) => p !== provider));
+    } else {
+      onProvidersChange([...selectedProviders, provider]);
+    }
+  };
+
+  const hasActiveFilters =
+    selectedSeverities.length > 0 ||
+    selectedTypes.length > 0 ||
+    selectedProviders.length > 0 ||
+    searchQuery.length > 0;
+
   return (
-    <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-      <TabsList className="grid grid-cols-7 w-full h-auto">
-        <TabsTrigger value="all" className="flex flex-col gap-1 py-2">
-          <div className="flex items-center gap-1">
-            <Shield className="w-4 h-4" />
-            <span className="hidden sm:inline">Overview</span>
-          </div>
-          <Badge variant="secondary" className="text-xs">{counts.all}</Badge>
-        </TabsTrigger>
-        
-        <TabsTrigger value="breaches" className="flex flex-col gap-1 py-2">
-          <div className="flex items-center gap-1">
-            <AlertTriangle className="w-4 h-4" />
-            <span className="hidden sm:inline">Breaches</span>
-          </div>
-          {counts.breaches > 0 && (
-            <Badge variant="destructive" className="text-xs">{counts.breaches}</Badge>
+    <div className="space-y-4 p-4 border border-border rounded-lg bg-card">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Filter className="w-4 h-4" />
+          <Label className="text-base font-semibold">Filters</Label>
+          {hasActiveFilters && (
+            <Badge variant="secondary" className="ml-2">
+              Active
+            </Badge>
           )}
-        </TabsTrigger>
-        
-        <TabsTrigger value="identity" className="flex flex-col gap-1 py-2">
-          <div className="flex items-center gap-1">
-            <User className="w-4 h-4" />
-            <span className="hidden sm:inline">Identity</span>
-          </div>
-          {counts.identity > 0 && (
-            <Badge variant="secondary" className="text-xs">{counts.identity}</Badge>
+        </div>
+        <div className="flex items-center gap-2">
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClearAll}
+              className="h-8"
+            >
+              <X className="w-4 h-4 mr-1" />
+              Clear All
+            </Button>
           )}
-        </TabsTrigger>
-        
-        <TabsTrigger value="domain" className="flex flex-col gap-1 py-2">
-          <div className="flex items-center gap-1">
-            <Globe className="w-4 h-4" />
-            <span className="hidden sm:inline">Domain</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="h-8"
+          >
+            {isExpanded ? "Collapse" : "Expand"}
+          </Button>
+        </div>
+      </div>
+
+      <Input
+        placeholder="Search findings..."
+        value={searchQuery}
+        onChange={(e) => onSearchChange(e.target.value)}
+        className="w-full"
+      />
+
+      {isExpanded && (
+        <>
+          <Separator />
+
+          {/* Severity Filters */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Severity</Label>
+            <div className="flex flex-wrap gap-2">
+              {availableSeverities.map((severity) => (
+                <Badge
+                  key={severity}
+                  variant={
+                    selectedSeverities.includes(severity) ? "default" : "outline"
+                  }
+                  className="cursor-pointer capitalize"
+                  onClick={() => toggleSeverity(severity)}
+                >
+                  {severity}
+                </Badge>
+              ))}
+            </div>
           </div>
-          {counts.domain > 0 && (
-            <Badge variant="secondary" className="text-xs">{counts.domain}</Badge>
-          )}
-        </TabsTrigger>
-        
-        <TabsTrigger value="ip" className="flex flex-col gap-1 py-2">
-          <div className="flex items-center gap-1">
-            <Server className="w-4 h-4" />
-            <span className="hidden sm:inline">IP</span>
+
+          <Separator />
+
+          {/* Type Filters */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Finding Type</Label>
+            <div className="flex flex-wrap gap-2">
+              {availableTypes.map((type) => (
+                <Badge
+                  key={type}
+                  variant={selectedTypes.includes(type) ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleType(type)}
+                >
+                  {type.replace(/_/g, " ")}
+                </Badge>
+              ))}
+            </div>
           </div>
-          {counts.ip > 0 && (
-            <Badge variant="secondary" className="text-xs">{counts.ip}</Badge>
-          )}
-        </TabsTrigger>
-        
-        <TabsTrigger value="phone" className="flex flex-col gap-1 py-2">
-          <div className="flex items-center gap-1">
-            <Phone className="w-4 h-4" />
-            <span className="hidden sm:inline">Phone</span>
+
+          <Separator />
+
+          {/* Provider Filters */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Provider</Label>
+            <div className="flex flex-wrap gap-2">
+              {availableProviders.map((provider) => (
+                <Badge
+                  key={provider}
+                  variant={
+                    selectedProviders.includes(provider) ? "default" : "outline"
+                  }
+                  className="cursor-pointer"
+                  onClick={() => toggleProvider(provider)}
+                >
+                  {provider}
+                </Badge>
+              ))}
+            </div>
           </div>
-          {counts.phone > 0 && (
-            <Badge variant="secondary" className="text-xs">{counts.phone}</Badge>
-          )}
-        </TabsTrigger>
-        
-        <TabsTrigger value="social" className="flex flex-col gap-1 py-2">
-          <div className="flex items-center gap-1">
-            <User className="w-4 h-4" />
-            <span className="hidden sm:inline">Social</span>
-          </div>
-          {counts.social > 0 && (
-            <Badge variant="secondary" className="text-xs">{counts.social}</Badge>
-          )}
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+        </>
+      )}
+    </div>
   );
 };
