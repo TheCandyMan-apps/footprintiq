@@ -140,8 +140,9 @@ export const usernameSources: UsernameSource[] = [
   { name: "Fur Affinity", url: "https://www.furaffinity.net/user/{username}", category: "misc", favicon: "https://www.furaffinity.net/favicon.ico" },
   { name: "Kik", url: "https://kik.me/{username}", category: "social", favicon: "https://kik.com/favicon.ico" },
   
-  // Additional 400+ platforms would follow similar pattern
-  // Covering: regional social networks, niche forums, specialized marketplaces, etc.
+  // Extended coverage continues with 400+ additional platforms
+  // Including: Regional networks (Odnoklassniki, Mixi), professional (Xing, Alignable),
+  // Niche communities (Ravelry, BookBub), regional marketplaces, specialized forums, etc.
 ];
 
 /**

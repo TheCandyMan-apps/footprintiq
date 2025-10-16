@@ -54,6 +54,18 @@ export const analytics = {
     trackEvent("blog_post_viewed", { slug });
   },
 
+  exportJson: () => {
+    trackEvent("export_json");
+  },
+
+  exportCsv: () => {
+    trackEvent("export_csv");
+  },
+
+  exportPdf: () => {
+    trackEvent("export_pdf");
+  },
+
   trackEvent: (eventName: string, props?: Record<string, string | number>) => {
     trackEvent(eventName, props);
   },
