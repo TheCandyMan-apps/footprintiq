@@ -10,6 +10,7 @@ import { CatfishDetection } from '@/components/CatfishDetection';
 import { TimelineChart } from "@/components/TimelineChart";
 import { GraphExplorer } from "@/components/GraphExplorer";
 import { MonitoringToggle } from "@/components/MonitoringToggle";
+import { ScanSummary } from "@/components/ScanSummary";
 import { clusterFindingsByDate } from "@/lib/timeline";
 import { buildGraph } from "@/lib/graph";
 import { Finding } from "@/lib/ufm";
@@ -106,6 +107,7 @@ const ResultsDetail = () => {
   const [removalRequests, setRemovalRequests] = useState<RemovalRequest[]>([]);
   const [redactPII, setRedactPII] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -114,6 +116,7 @@ const ResultsDetail = () => {
       } else {
         setUser(session.user);
         fetchScanData();
+        fetchSubscriptionTier(session.user.id);
       }
     });
 
@@ -122,11 +125,28 @@ const ResultsDetail = () => {
         navigate("/auth");
       } else {
         setUser(session.user);
+        fetchSubscriptionTier(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, [navigate, scanId]);
+
+  const fetchSubscriptionTier = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("subscription_tier")
+        .eq("user_id", userId)
+        .single();
+      
+      if (!error && data) {
+        setSubscriptionTier(data.subscription_tier);
+      }
+    } catch (error) {
+      console.error("Error fetching subscription tier:", error);
+    }
+  };
 
   const fetchScanData = async () => {
     if (!scanId) return;
@@ -380,6 +400,17 @@ const ResultsDetail = () => {
               findings={findingsForExport}
               redactPII={redactPII}
               onRedactToggle={setRedactPII}
+            />
+          </div>
+        )}
+
+        {/* Atlas Intelligence Summary */}
+        {findingsForExport.length > 0 && (
+          <div className="mb-8">
+            <ScanSummary 
+              findings={findingsForExport}
+              scanId={scanId}
+              isPro={subscriptionTier === "premium" || subscriptionTier === "enterprise"}
             />
           </div>
         )}
