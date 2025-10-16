@@ -7,6 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { AIAnalysis } from "@/components/AIAnalysis";
 import { CatfishDetection } from '@/components/CatfishDetection';
+import { TimelineChart } from "@/components/TimelineChart";
+import { GraphExplorer } from "@/components/GraphExplorer";
+import { MonitoringToggle } from "@/components/MonitoringToggle";
+import { clusterFindingsByDate } from "@/lib/timeline";
+import { buildGraph } from "@/lib/graph";
+import { Finding } from "@/lib/ufm";
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -290,6 +296,52 @@ const ResultsDetail = () => {
           <AIAnalysis scanId={scanId!} />
         </div>
 
+        {/* Timeline & Graph - Enhanced Intelligence */}
+        {dataSources.length > 0 && (
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            <TimelineChart 
+              events={clusterFindingsByDate(
+                dataSources.map(source => ({
+                  id: source.id,
+                  type: 'breach' as const,
+                  title: source.name,
+                  description: source.category,
+                  severity: source.risk_level as any,
+                  confidence: 0.9,
+                  provider: 'OSINT Scan',
+                  providerCategory: source.category,
+                  evidence: source.data_found.map(d => ({ key: 'Data', value: d })),
+                  impact: `Found on ${source.name}`,
+                  remediation: ['Request removal from this source'],
+                  tags: [source.category],
+                  observedAt: new Date().toISOString(),
+                  url: source.url
+                } as Finding))
+              )}
+            />
+            <GraphExplorer 
+              {...buildGraph(
+                dataSources.map(source => ({
+                  id: source.id,
+                  type: 'breach' as const,
+                  title: source.name,
+                  description: source.category,
+                  severity: source.risk_level as any,
+                  confidence: 0.9,
+                  provider: 'OSINT Scan',
+                  providerCategory: source.category,
+                  evidence: source.data_found.map(d => ({ key: 'Data', value: d })),
+                  impact: `Found on ${source.name}`,
+                  remediation: ['Request removal from this source'],
+                  tags: [source.category],
+                  observedAt: new Date().toISOString(),
+                  url: source.url
+                } as Finding))
+              )}
+            />
+          </div>
+        )}
+
         {/* Summary Card */}
         <Card className="p-8 mb-8 bg-gradient-card border-border shadow-card">
           <div className="text-center">
@@ -342,6 +394,13 @@ const ResultsDetail = () => {
             </div>
           </div>
         </Card>
+
+        {/* Monitoring Toggle */}
+        {user && scanId && (
+          <div className="mb-8">
+            <MonitoringToggle scanId={scanId} userId={user.id} />
+          </div>
+        )}
 
         {/* Social Media Results */}
         {socialProfiles.length > 0 && (

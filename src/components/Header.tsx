@@ -50,6 +50,18 @@ export const Header = () => {
               Pricing
             </button>
             <Link
+              to="/dashboard"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Dashboard
+            </Link>
+            <Link
+              to="/blog"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Blog
+            </Link>
+            <Link
               to="/support"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
@@ -103,6 +115,20 @@ export const Header = () => {
             >
               Pricing
             </button>
+            <Link
+              to="/dashboard"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Dashboard
+            </Link>
+            <Link
+              to="/blog"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Blog
+            </Link>
             <Link
               to="/support"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
