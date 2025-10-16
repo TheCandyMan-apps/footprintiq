@@ -12,6 +12,14 @@ export interface UsernameSource {
   checkPattern?: string; // Optional: text pattern to verify account exists
 }
 
+export interface UsernameCheckResult {
+  source: UsernameSource;
+  status: 'found' | 'suspicious' | 'not_found';
+  url: string;
+  avatar?: string;
+  bio?: string;
+}
+
 export const usernameSources: UsernameSource[] = [
   // ===== SOCIAL MEDIA =====
   { name: "Instagram", url: "https://www.instagram.com/{username}", category: "social", favicon: "https://www.instagram.com/favicon.ico" },
@@ -147,9 +155,9 @@ export async function checkUsernameAvailability(
     concurrency?: number;
     timeout?: number;
   } = {}
-): Promise<Array<{ source: UsernameSource; status: 'found' | 'suspicious' | 'not_found'; url: string }>> {
+): Promise<UsernameCheckResult[]> {
   const { concurrency = 10, timeout = 7000 } = options;
-  const results: Array<{ source: UsernameSource; status: 'found' | 'suspicious' | 'not_found'; url: string }> = [];
+  const results: UsernameCheckResult[] = [];
   
   // Process in batches
   for (let i = 0; i < sources.length; i += concurrency) {

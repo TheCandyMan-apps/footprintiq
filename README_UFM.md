@@ -1,85 +1,250 @@
-# Unified Finding Model (UFM) Documentation
+# Unified Finding Model (UFM) - Technical Documentation
 
 ## Overview
 
-The UFM standardizes OSINT findings from multiple providers into a consistent format for analysis, correlation, and display.
+The Unified Finding Model (UFM) standardizes security and privacy findings from diverse OSINT data providers into a single, consistent schema. This enables cross-provider correlation, severity normalization, and unified reporting across all scan types.
 
 ## Architecture
 
 ```
-Provider APIs → Normalizers → UFM Findings → Orchestrator → UI
+┌─────────────────┐
+│  Provider APIs  │ (HIBP, Shodan, VirusTotal, BuiltWith, etc.)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   Normalizers   │ (src/lib/normalize/*.ts)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  UFM Findings   │ (src/lib/ufm.ts)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Orchestrator   │ (src/lib/orchestrate.ts)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│   UI Layer      │ (FindingCard, ScanSummary, etc.)
+└─────────────────┘
 ```
 
-## Finding Schema
+## UFM Finding Schema
 
 ```typescript
-{
-  id: string;              // Unique: "provider_type_unique"
-  type: FindingType;       // breach | identity | domain_reputation | etc.
-  title: string;           // User-facing title
-  description: string;     // Detailed explanation
-  severity: Severity;      // critical | high | medium | low | info
-  confidence: number;      // 0.0 - 1.0
-  provider: string;        // "Have I Been Pwned"
-  providerCategory: string; // "Breach Detection"
-  evidence: Evidence[];    // Key-value pairs
-  impact: string;          // Business impact
-  remediation: string[];   // Action steps
-  tags: string[];          // Filterable tags
-  relatedTo?: string[];    // Correlated finding IDs
-  observedAt: string;      // ISO timestamp
-  url?: string;            // Provider link
-  raw?: any;               // Original response
+interface Finding {
+  id: string;                    // Unique identifier: "provider_type_unique"
+  type: FindingType;             // breach, identity, domain_reputation, etc.
+  title: string;                 // Human-readable title
+  description: string;           // Detailed description of the finding
+  severity: Severity;            // critical, high, medium, low, info
+  confidence: number;            // 0.0 to 1.0
+  provider: string;              // "hibp", "shodan", "virustotal", etc.
+  providerCategory: string;      // "breach", "infrastructure", "threat_intel"
+  evidence: Evidence[];          // Key-value pairs with metadata
+  impact: string;                // Real-world impact description
+  remediation: string[];         // Step-by-step remediation actions
+  tags: string[];                // Searchable tags
+  relatedTo?: string[];          // IDs of related findings
+  observedAt: string;            // ISO 8601 timestamp
+  expiresAt?: string;            // Optional expiration
+  url?: string;                  // Provider reference URL
+  raw?: any;                     // Original provider response
 }
 ```
 
-## Default Confidence Scores
+## Severity Levels
 
-- HIBP: 0.95 (verified breaches)
-- Shodan: 0.9 (direct observation)
-- VirusTotal: 0.8 (aggregated)
-- SecurityTrails: 0.8 (DNS records)
-- BuiltWith: 0.75 (fingerprinting)
-- People Data Labs: 0.7 (enrichment)
-- IPQualityScore: 0.75 (reputation)
+| Severity | Description | Use Cases |
+|----------|-------------|-----------|
+| `critical` | Immediate action required | Active breach, exposed credentials, critical vulns |
+| `high` | Significant risk | Data broker presence, open sensitive ports |
+| `medium` | Moderate concern | Outdated software, weak configs |
+| `low` | Minor issue | Info disclosure, old DNS records |
+| `info` | Informational | Tech stack detection, historical data |
 
-## Adding a Provider
+## Provider Normalizers
 
-1. **Create Normalizer** (`src/lib/normalize/[provider].ts`):
+Each provider has a dedicated normalizer in `src/lib/normalize/[provider].ts`:
+
+### Example: HIBP Normalizer
+
 ```typescript
-export interface ProviderResult { /* ... */ }
+// src/lib/normalize/hibp.ts
+import { Finding, generateFindingId } from "@/lib/ufm";
 
-export function normalizeProvider(result: ProviderResult, query: string): Finding[] {
-  return [{
-    id: generateFindingId("provider", "type", unique),
+export function normalizeHibp(data: any, email: string): Finding[] {
+  return data.map((breach: any) => ({
+    id: generateFindingId("hibp", "breach", breach.Name),
     type: "breach",
-    title: "...",
-    // ... map all required fields
-  }];
+    title: `Data breach: ${breach.Name}`,
+    description: breach.Description,
+    severity: breach.IsSensitive ? "critical" : "high",
+    confidence: 1.0,
+    provider: "hibp",
+    providerCategory: "breach",
+    evidence: [
+      { key: "email", value: email },
+      { key: "breach_date", value: breach.BreachDate },
+      { key: "compromised_data", value: breach.DataClasses }
+    ],
+    impact: `Your email was exposed in the ${breach.Name} breach.`,
+    remediation: [
+      "Change passwords for affected accounts",
+      "Enable 2FA where possible",
+      "Monitor for suspicious activity"
+    ],
+    tags: ["breach", "email", ...breach.DataClasses],
+    observedAt: new Date().toISOString(),
+    url: `https://haveibeenpwned.com/breach/${breach.Name}`
+  }));
 }
 ```
 
-2. **Update Orchestrator** (`src/lib/orchestrate.ts`):
+### Existing Normalizers
+
+- **HIBP** (`hibp.ts`): Email breach detection
+- **Shodan** (`shodan.ts`): IP/port exposure, device fingerprinting
+- **VirusTotal** (`virustotal.ts`): Domain/file reputation
+- **BuiltWith** (`builtwith.ts`): Tech stack detection
+- **PDL** (`pdl.ts`): Identity enrichment
+- **IPQS** (`ipqs.ts`): Phone/IP fraud scores
+- **SecurityTrails** (planned): DNS history
+
+## Orchestration Layer
+
+The orchestrator (`src/lib/orchestrate.ts`) performs:
+
+1. **Normalization**: Calls all provider normalizers
+2. **Deduplication**: Removes duplicate findings by ID
+3. **Sorting**: Orders by severity → confidence
+4. **Correlation**: Links related findings across providers
+5. **Scoring**: Calculates overall risk score
+
 ```typescript
-if (results.newProvider && input.email) {
-  findings.push(...normalizeNewProvider(results.newProvider, input.email));
+// src/lib/orchestrate.ts
+export function orchestrateScan(input: ScanInput, results: ProviderResults): OrchestratedResults {
+  const findings: Finding[] = [
+    ...normalizeHibp(results.hibp, input.email),
+    ...normalizeShodan(results.shodan, input.ip),
+    ...normalizeVirusTotal(results.virustotal, input.domain),
+    // ... other providers
+  ];
+
+  const dedupedFindings = deduplicateFindings(findings);
+  const sortedFindings = sortFindings(dedupedFindings);
+  const correlations = correlateFindings(sortedFindings);
+
+  return {
+    findings: sortedFindings,
+    summary: calculateSummary(sortedFindings),
+    correlations
+  };
 }
 ```
 
-3. **Add to ProviderResults interface**
+## Adding a New Provider
 
-## Correlation Rules
+1. **Create Normalizer**: Add `src/lib/normalize/[provider].ts`
+   ```typescript
+   export function normalizeMyProvider(data: any, input: string): Finding[] {
+     // Transform provider data into UFM findings
+   }
+   ```
 
-- **Breaches ↔ Identity**: Breaches may have exposed enrichment data
-- **Domain Reputation ↔ Tech Stack**: Vulnerable technologies contribute to security issues
-- **IP Exposure ↔ Domain**: Infrastructure linkage
+2. **Update Orchestrator**: Import and call in `orchestrateScan()`
+   ```typescript
+   import { normalizeMyProvider } from "./normalize/myprovider";
+   // ...
+   ...normalizeMyProvider(results.myprovider, input.domain)
+   ```
 
-## Risk Score Calculation
+3. **Add to Types**: Update `ProviderResults` interface
+   ```typescript
+   interface ProviderResults {
+     // ... existing
+     myprovider?: any;
+   }
+   ```
 
+## UI Components
+
+### FindingCard
+Displays individual findings with:
+- Severity badge and confidence %
+- Evidence list (copyable)
+- Remediation checklist
+- Provider attribution
+- Timestamp
+
+### ScanSummary
+Shows aggregate view:
+- Overall risk score (0-100)
+- Severity breakdown chart
+- Top 3 priority actions
+- Finding counts by type
+
+### ExportControls
+Export functionality:
+- JSON (raw findings)
+- CSV (flattened table)
+- PDF (formatted report)
+- PII redaction toggle
+
+## PII Redaction
+
+All exports support PII masking (`src/lib/redact.ts`):
+
+```typescript
+redactEmail("user@example.com")    // → "u***@e***.com"
+redactPhone("+1234567890")         // → "+1******7890"
+redactIP("192.168.1.100")          // → "192.168.*.*"
 ```
-Score = 100 - (Σ(severity_weight × confidence) / max_possible_risk × 100)
+
+## Username Intelligence
+
+The username module (`src/lib/usernameSources.ts`) extends UFM:
+
+```typescript
+// Username findings are normalized as:
+{
+  type: "social_media",
+  provider: "username_check",
+  evidence: [
+    { key: "platform", value: "Instagram" },
+    { key: "profile_url", value: "https://..." },
+    { key: "status", value: "found" }
+  ]
+}
 ```
 
-Weights: critical=25, high=15, medium=8, low=3, info=1
+## Best Practices
 
-Lower scores = higher risk (0 = critical, 100 = perfect)
+1. **Consistent Severity**: Use severity guidelines strictly
+2. **Actionable Remediation**: Provide concrete steps, not vague advice
+3. **Evidence Preservation**: Include raw data in `evidence` array
+4. **Correlation IDs**: Link related findings via `relatedTo`
+5. **Expiration Dates**: Set `expiresAt` for time-sensitive findings
+6. **Provider Attribution**: Always credit original source
+
+## Performance Considerations
+
+- **Concurrency**: Username checks use 10 concurrent requests
+- **Timeouts**: 7s per external API call
+- **Caching**: Consider Redis for repeated scans
+- **Rate Limiting**: Respect provider limits (30 req/min default)
+
+## Security Notes
+
+- Never log PII in plaintext
+- Hash identifiers in logs (use request IDs)
+- Validate all external data before normalization
+- Sanitize HTML in `description` fields
+- Use circuit breakers for flaky providers
+
+---
+
+**For questions or contributions**, see main README.md or contact security@footprintiq.app

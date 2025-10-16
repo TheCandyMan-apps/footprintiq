@@ -19,6 +19,7 @@ import SupportConfirmation from "./pages/SupportConfirmation";
 import MyTickets from "./pages/MyTickets";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import UsernamePage from "./pages/UsernamePage";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +47,7 @@ const App = () => (
           <Route path="/my-tickets" element={<MyTickets />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
+          <Route path="/usernames" element={<UsernamePage />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

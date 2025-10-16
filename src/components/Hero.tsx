@@ -17,6 +17,7 @@ export const Hero = ({ onStartScan }: HeroProps) => {
         width={1920}
         height={1080}
         loading="eager"
+        decoding="async"
       />
       <div className="absolute inset-0 bg-gradient-hero" />
       
