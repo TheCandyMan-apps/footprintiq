@@ -14,6 +14,8 @@ import { clusterFindingsByDate } from "@/lib/timeline";
 import { buildGraph } from "@/lib/graph";
 import { Finding } from "@/lib/ufm";
 import { ExportControls } from "@/components/ExportControls";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { exportAsJSON, exportAsCSV, exportAsPDF } from "@/lib/exports";
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -24,7 +26,10 @@ import {
   ArrowLeft,
   TrendingUp,
   Shield,
-  Info
+  Info,
+  FileJson,
+  FileSpreadsheet,
+  FileText
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
@@ -266,6 +271,16 @@ const ResultsDetail = () => {
   };
 
   // Build findings array for exports and graph
+  const extractDomain = (urlStr?: string) => {
+    if (!urlStr) return '';
+    try {
+      const host = new URL(urlStr).hostname;
+      return host.replace(/^www\./, '');
+    } catch {
+      return '';
+    }
+  };
+
   const findingsForExport: Finding[] = [
     ...dataSources.map(source => ({
       id: source.id,
@@ -276,7 +291,10 @@ const ResultsDetail = () => {
       confidence: 0.9,
       provider: 'OSINT Scan',
       providerCategory: source.category,
-      evidence: source.data_found.map(d => ({ key: 'data', value: d })),
+      evidence: [
+        ...source.data_found.map(d => ({ key: 'data', value: d })),
+        ...(source.url ? [{ key: 'domain', value: extractDomain(source.url) }] : []),
+      ],
       impact: `Found on ${source.name}`,
       remediation: ['Request removal from this source'],
       tags: [source.category],
@@ -295,6 +313,7 @@ const ResultsDetail = () => {
       evidence: [
         { key: 'username', value: profile.username },
         { key: 'url', value: profile.profile_url },
+        ...(profile.profile_url ? [{ key: 'domain', value: extractDomain(profile.profile_url) }] : []),
         ...(profile.full_name ? [{ key: 'name', value: profile.full_name }] : []),
       ],
       impact: `Profile found on ${profile.platform}`,
@@ -322,10 +341,26 @@ const ResultsDetail = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Button>
-          <Button variant="outline" onClick={handleExportReport}>
-            <Download className="w-4 h-4 mr-2" />
-            Export Report
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Export</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => { exportAsPDF(findingsForExport, redactPII); toast({ title: "Exported", description: "PDF downloaded." }); }}>
+                <FileText className="w-4 h-4 mr-2" /> PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { exportAsCSV(findingsForExport, redactPII); toast({ title: "Exported", description: "CSV downloaded." }); }}>
+                <FileSpreadsheet className="w-4 h-4 mr-2" /> CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => { exportAsJSON(findingsForExport, redactPII); toast({ title: "Exported", description: "JSON downloaded." }); }}>
+                <FileJson className="w-4 h-4 mr-2" /> JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Catfish Detection */}
