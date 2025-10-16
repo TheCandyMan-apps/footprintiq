@@ -1,0 +1,4 @@
+# Fonts directory
+# TODO: Add self-hosted WOFF2 fonts here for better performance
+# Current: Using Google Fonts CDN
+# Future: Download Inter WOFF2 and preload in index.html

@@ -53,4 +53,8 @@ export const analytics = {
   blogPostViewed: (slug: string) => {
     trackEvent("blog_post_viewed", { slug });
   },
+
+  trackEvent: (eventName: string, props?: Record<string, string | number>) => {
+    trackEvent(eventName, props);
+  },
 };
