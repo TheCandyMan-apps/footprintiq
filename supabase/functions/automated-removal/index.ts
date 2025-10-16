@@ -1,10 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const RequestSchema = z.object({
+  removalRequestId: z.string().uuid({ message: "Invalid removal request ID format" }),
+  userEmail: z.string().email({ message: "Invalid email address" }).max(255),
+  userName: z.string().min(1).max(200),
+});
 
 // Data broker opt-out endpoints and procedures
 const REMOVAL_PROCEDURES = {
@@ -53,11 +60,27 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json();
+    const validation = RequestSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validation.error.issues 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    const { removalRequestId, userEmail, userName } = validation.data;
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { removalRequestId, userEmail, userName } = await req.json();
     
     // Validate user ownership
     const authHeader = req.headers.get('Authorization');

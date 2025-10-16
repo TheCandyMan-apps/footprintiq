@@ -1,11 +1,30 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const ScanRequestSchema = z.object({
+  scanId: z.string().uuid({ message: "Invalid scan ID format" }),
+  scanType: z.enum(['username', 'personal_details', 'both'], { 
+    errorMap: () => ({ message: "Invalid scan type" })
+  }),
+  username: z.string().min(1).max(100).optional(),
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).optional(),
+  email: z.string().email({ message: "Invalid email address" }).max(255).optional(),
+  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }).optional(),
+}).refine(
+  (data) => {
+    // At least one identifier must be provided
+    return data.username || data.email || data.phone || data.firstName;
+  },
+  { message: "At least one identifier (username, email, phone, or name) must be provided" }
+);
 
 interface ScanRequest {
   scanId: string;
@@ -35,11 +54,28 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json();
+    const validation = ScanRequestSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validation.error.issues 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    const scanData = validation.data;
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const scanData: ScanRequest = await req.json();
+    
     console.log('Starting OSINT scan - Scan ID:', scanData.scanId);
 
     // API Keys (will be set by user)

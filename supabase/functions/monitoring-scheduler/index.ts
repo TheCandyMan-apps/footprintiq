@@ -1,10 +1,35 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const ScheduleSchema = z.object({
+  action: z.literal('schedule'),
+  userId: z.string().uuid(),
+  scanId: z.string().uuid(),
+  frequency: z.enum(['daily', 'weekly', 'monthly']).optional(),
+});
+
+const ExecuteSchema = z.object({
+  action: z.literal('execute'),
+});
+
+const CompareSchema = z.object({
+  action: z.literal('compare'),
+  userId: z.string().uuid(),
+  firstScanId: z.string().uuid(),
+  latestScanId: z.string().uuid(),
+});
+
+const RequestSchema = z.discriminatedUnion('action', [
+  ScheduleSchema,
+  ExecuteSchema,
+  CompareSchema,
+]);
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,18 +37,36 @@ serve(async (req) => {
   }
 
   try {
+    const body = await req.json();
+    const validation = RequestSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validation.error.issues 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    const data = validation.data;
+    const action = data.action;
+    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { action, userId, scanId, frequency } = await req.json();
     
     // Validate user ownership for non-execute actions
     if (action !== 'execute') {
       const authHeader = req.headers.get('Authorization');
       if (authHeader) {
         const { data: { user } } = await supabase.auth.getUser(authHeader.split('Bearer ')[1]);
-        if (user && userId !== user.id) {
+        const userId = 'userId' in data ? data.userId : null;
+        if (user && userId && userId !== user.id) {
           return new Response(
             JSON.stringify({ error: 'Access denied' }),
             { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -35,14 +78,15 @@ serve(async (req) => {
     console.log('Monitoring scheduler action:', action);
 
     if (action === 'schedule') {
-      // Schedule continuous monitoring for a user
-      // This would integrate with a cron job or scheduled task
+      if (!('userId' in data) || !('scanId' in data)) {
+        throw new Error('Invalid schedule data');
+      }
       
       const monitoringConfig = {
-        user_id: userId,
-        original_scan_id: scanId,
-        frequency: frequency || 'weekly', // daily, weekly, monthly
-        next_scan_date: calculateNextScanDate(frequency),
+        user_id: data.userId,
+        original_scan_id: data.scanId,
+        frequency: data.frequency || 'weekly',
+        next_scan_date: calculateNextScanDate(data.frequency || 'weekly'),
         active: true,
       };
 
@@ -54,7 +98,7 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           config: monitoringConfig,
-          message: `Monitoring scheduled: ${frequency} scans`,
+          message: `Monitoring scheduled: ${data.frequency || 'weekly'} scans`,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -94,8 +138,11 @@ serve(async (req) => {
       );
 
     } else if (action === 'compare') {
-      // Compare two scans and detect changes
-      const { firstScanId, latestScanId } = await req.json();
+      if (!('firstScanId' in data) || !('latestScanId' in data) || !('userId' in data)) {
+        throw new Error('Invalid compare data');
+      }
+      
+      const { firstScanId, latestScanId, userId } = data;
 
       // Get both scans
       const { data: firstScan } = await supabase

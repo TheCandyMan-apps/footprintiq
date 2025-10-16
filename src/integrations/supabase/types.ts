@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_grant_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          success: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          success?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          success?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
       data_sources: {
         Row: {
           category: string

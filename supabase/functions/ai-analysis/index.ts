@@ -1,11 +1,16 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const RequestSchema = z.object({
+  scanId: z.string().uuid({ message: "Invalid scan ID format" }),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -13,11 +18,23 @@ serve(async (req) => {
   }
 
   try {
-    const { scanId } = await req.json();
-
-    if (!scanId) {
-      throw new Error('Scan ID is required');
+    const body = await req.json();
+    const validation = RequestSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validation.error.issues 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
+    
+    const { scanId } = validation.data;
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',

@@ -1,17 +1,25 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface InsightRequest {
-  findings: any[];
-  redact?: boolean;
-  provider?: "openai" | "groq";
-  model?: string;
-}
+const FindingSchema = z.object({
+  type: z.string().max(100),
+  severity: z.string().max(50),
+  title: z.string().max(500),
+  provider: z.string().max(100).optional(),
+});
+
+const RequestSchema = z.object({
+  findings: z.array(FindingSchema).max(1000),
+  redact: z.boolean().optional().default(true),
+  provider: z.enum(["openai", "groq"]).optional().default("openai"),
+  model: z.string().max(100).optional(),
+});
 
 // Rate limiting (in-memory, 30 req/min per IP)
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
@@ -99,7 +107,23 @@ serve(async (req) => {
   }
 
   try {
-    const { findings, redact = true, provider = "openai", model }: InsightRequest = await req.json();
+    const body = await req.json();
+    const validation = RequestSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input', 
+          details: validation.error.issues 
+        }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    const { findings, redact, provider, model } = validation.data;
     
     if (!findings || findings.length === 0) {
       const fallback = generateFallbackInsight([]);
