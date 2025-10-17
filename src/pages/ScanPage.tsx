@@ -32,15 +32,23 @@ const ScanPage = () => {
       setUser(session.user);
       
       // Get user subscription tier and role
-      const { data: userRole } = await supabase
+      const { data: userRole, error: roleError } = await supabase
         .from("user_roles")
         .select("subscription_tier, role")
         .eq("user_id", session.user.id)
-        .single();
+        .maybeSingle();
+      
+      if (roleError) {
+        console.warn("user_roles fetch error:", roleError);
+      }
       
       if (userRole) {
         setSubscriptionTier(userRole.subscription_tier);
         setIsAdmin(userRole.role === 'admin');
+      } else {
+        // default to free when no row exists
+        setSubscriptionTier("free");
+        setIsAdmin(false);
       }
       
       // Get scan count

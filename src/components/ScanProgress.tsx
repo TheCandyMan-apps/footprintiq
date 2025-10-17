@@ -39,9 +39,9 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
 
   useEffect(() => {
     let isMounted = true;
+    let createdScanId: string | null = null;
     
     const performScan = async () => {
-      let createdScanId: string | null = null;
       try {
         if (!isMounted) return;
         // Step 1: Create scan record
@@ -174,7 +174,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           .from("scans")
           .select("*")
           .eq("id", scan.id)
-          .single();
+          .maybeSingle();
 
         if (finalError) throw finalError;
 
@@ -244,13 +244,21 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
       }
     };
 
+    // Safety net: never hang more than 35s
+    const t = window.setTimeout(() => {
+      if (isMounted && createdScanId) {
+        setProgress(100);
+        onComplete(createdScanId);
+      }
+    }, 35000);
+
     performScan();
 
     return () => {
       isMounted = false;
+      clearTimeout(t);
     };
   }, [onComplete, scanData, userId, subscriptionTier, isAdmin, toast]);
-
   return (
     <div className="min-h-screen flex items-center justify-center px-6">
       <Card className="w-full max-w-2xl p-8 bg-gradient-card border-border shadow-card">
