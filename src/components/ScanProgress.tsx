@@ -74,17 +74,19 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         // Fire-and-forget: kick off OSINT scan in the background and immediately navigate to results
         // This prevents the UI from hanging if providers are slow
         try {
-          void supabase.functions.invoke('osint-scan', {
-            body: {
-              scanId: scan.id,
-              scanType,
-              username: scanData.username,
-              firstName: scanData.firstName,
-              lastName: scanData.lastName,
-              email: scanData.email,
-              phone: scanData.phone,
-            }
-          }).catch((e) => console.warn('Background OSINT scan error:', e?.message || e));
+          // Build payload without empty strings to satisfy function validation
+          const body: Record<string, any> = {
+            scanId: scan.id,
+            scanType,
+          };
+          if (scanData.username && scanData.username.trim()) body.username = scanData.username.trim();
+          if (scanData.firstName && scanData.firstName.trim()) body.firstName = scanData.firstName.trim();
+          if (scanData.lastName && scanData.lastName.trim()) body.lastName = scanData.lastName.trim();
+          if (scanData.email && scanData.email.trim()) body.email = scanData.email.trim();
+          if (scanData.phone && scanData.phone.trim()) body.phone = scanData.phone.trim();
+
+          void supabase.functions.invoke('osint-scan', { body })
+            .catch((e) => console.warn('Background OSINT scan error:', e?.message || e));
         } catch (e: any) {
           console.warn('Failed to start background OSINT scan:', e?.message || e);
         }

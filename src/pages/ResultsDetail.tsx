@@ -108,6 +108,7 @@ const ResultsDetail = () => {
   const [redactPII, setRedactPII] = useState(true);
   const [loading, setLoading] = useState(true);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
+  const [pollTries, setPollTries] = useState(0);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -198,6 +199,11 @@ const ResultsDetail = () => {
       if (requestsError) throw requestsError;
       setRemovalRequests(requests || []);
 
+      // If background job is still populating, poll briefly for results
+      if (((sources?.length ?? 0) === 0) && ((profiles?.length ?? 0) === 0) && pollTries < 30) {
+        setPollTries(pollTries + 1);
+        setTimeout(fetchScanData, 1500);
+      }
     } catch (error: any) {
       console.error("Error fetching scan data:", error);
       toast({
