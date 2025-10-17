@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -108,9 +108,13 @@ const ResultsDetail = () => {
   const [redactPII, setRedactPII] = useState(true);
   const [loading, setLoading] = useState(true);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
-  const [pollTries, setPollTries] = useState(0);
+  const pollTriesRef = useRef(0);
+  const pollTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
+    // Reset poll counter when scanId changes
+    pollTriesRef.current = 0;
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate("/auth");
@@ -130,7 +134,13 @@ const ResultsDetail = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      // Clear any pending poll timeout on unmount
+      if (pollTimeoutRef.current !== null) {
+        clearTimeout(pollTimeoutRef.current);
+      }
+    };
   }, [navigate, scanId]);
 
   const fetchSubscriptionTier = async (userId: string) => {
@@ -163,8 +173,11 @@ const ResultsDetail = () => {
         .maybeSingle();
 
       if (!scanData) {
-        // Poll briefly until the background task populates the scan
-        setTimeout(fetchScanData, 1200);
+        // Poll briefly until the background task populates the scan (max 20 tries)
+        if (pollTriesRef.current < 20) {
+          pollTriesRef.current++;
+          pollTimeoutRef.current = window.setTimeout(fetchScanData, 1500);
+        }
         return;
       }
 
@@ -199,10 +212,11 @@ const ResultsDetail = () => {
       if (requestsError) throw requestsError;
       setRemovalRequests(requests || []);
 
-      // If background job is still populating, poll briefly for results
-      if (((sources?.length ?? 0) === 0) && ((profiles?.length ?? 0) === 0) && pollTries < 30) {
-        setPollTries(pollTries + 1);
-        setTimeout(fetchScanData, 1500);
+      // If background job is still populating, poll briefly for results (max 20 tries)
+      const hasData = (sources?.length ?? 0) > 0 || (profiles?.length ?? 0) > 0;
+      if (!hasData && pollTriesRef.current < 20) {
+        pollTriesRef.current++;
+        pollTimeoutRef.current = window.setTimeout(fetchScanData, 2000);
       }
     } catch (error: any) {
       console.error("Error fetching scan data:", error);
