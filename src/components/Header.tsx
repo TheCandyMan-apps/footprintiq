@@ -130,6 +130,16 @@ export const Header = () => {
                       Manage Subscription
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      navigate('/');
+                    }} 
+                    className="cursor-pointer"
+                  >
+                    Sign Out
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
@@ -225,6 +235,16 @@ export const Header = () => {
                     Manage Subscription
                   </button>
                 )}
+                <button
+                  onClick={async () => {
+                    await supabase.auth.signOut();
+                    setMobileMenuOpen(false);
+                    navigate('/');
+                  }}
+                  className="text-left text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Sign Out
+                </button>
                 <div className="text-xs text-muted-foreground pt-2 border-t">
                   {user.email} ({isPremium ? "Pro" : "Free"})
                 </div>

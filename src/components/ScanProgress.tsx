@@ -28,8 +28,11 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   const { toast } = useToast();
 
   useEffect(() => {
+    let isMounted = true;
+    
     const performScan = async () => {
       try {
+        if (!isMounted) return;
         // Step 1: Create scan record
         setCurrentStep(0);
         setProgress(10);
@@ -59,6 +62,8 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         setCurrentStep(1);
         setProgress(30);
 
+        if (!isMounted) return;
+
         console.log('Invoking osint-scan edge function...');
         const { data: osintResult, error: osintError } = await supabase.functions.invoke('osint-scan', {
           body: {
@@ -72,9 +77,11 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           }
         });
 
+        if (!isMounted) return;
+
         if (osintError) {
           console.error('OSINT scan error:', osintError);
-          throw new Error('Failed to complete OSINT scan');
+          throw new Error('Failed to complete OSINT scan: ' + (osintError.message || 'Unknown error'));
         }
 
         console.log('OSINT scan completed:', osintResult);
@@ -169,23 +176,33 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
 
         await new Promise(resolve => setTimeout(resolve, 1500));
 
+        if (!isMounted) return;
+
         setProgress(100);
 
         setTimeout(() => {
-          onComplete(scan.id);
+          if (isMounted) {
+            onComplete(scan.id);
+          }
         }, 500);
 
       } catch (error: any) {
+        if (!isMounted) return;
+        
         console.error("Scan error:", error);
         toast({
           title: "Scan failed",
-          description: error.message,
+          description: error.message || "An unexpected error occurred during scanning",
           variant: "destructive",
         });
       }
     };
 
     performScan();
+
+    return () => {
+      isMounted = false;
+    };
   }, [onComplete, scanData, userId, subscriptionTier, isAdmin, toast]);
 
   return (
