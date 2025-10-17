@@ -69,52 +69,32 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         if (scanError) throw scanError;
         createdScanId = scan.id;
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Step 2: Call OSINT scan edge function for real data
-        setCurrentStep(1);
-        setProgress(30);
-
-        if (!isMounted) return;
-
-        console.log('Invoking osint-scan edge function...');
+        // Fire-and-forget: kick off OSINT scan in the background and immediately navigate to results
+        // This prevents the UI from hanging if providers are slow
         try {
-          const res = await withTimeout(
-            supabase.functions.invoke('osint-scan', {
-              body: {
-                scanId: scan.id,
-                scanType,
-                username: scanData.username,
-                firstName: scanData.firstName,
-                lastName: scanData.lastName,
-                email: scanData.email,
-                phone: scanData.phone,
-              }
-            }),
-            25000,
-            'OSINT scan'
-          );
-
-          if (!isMounted) return;
-
-          const osintResult = res.data;
-          const osintError = res.error as any;
-
-          if (osintError) {
-            console.error('OSINT scan error:', osintError);
-            throw new Error('Failed to complete OSINT scan: ' + (osintError.message || 'Unknown error'));
-          }
-
-          console.log('OSINT scan completed:', osintResult);
+          void supabase.functions.invoke('osint-scan', {
+            body: {
+              scanId: scan.id,
+              scanType,
+              username: scanData.username,
+              firstName: scanData.firstName,
+              lastName: scanData.lastName,
+              email: scanData.email,
+              phone: scanData.phone,
+            }
+          }).catch((e) => console.warn('Background OSINT scan error:', e?.message || e));
         } catch (e: any) {
-          if (!isMounted) return;
-          console.warn('OSINT scan timed out or failed:', e?.message || e);
-          toast({
-            title: 'Scan is taking longer',
-            description: 'We will finalize results in the background.',
-            variant: 'default',
-          });
+          console.warn('Failed to start background OSINT scan:', e?.message || e);
         }
+
+        // Immediately complete and go to results; data will populate as the background task finishes
+        setCurrentStep(4);
+        setProgress(100);
+        setTimeout(() => {
+          if (isMounted) onComplete(scan.id);
+        }, 300);
+        return;
+
 
         await new Promise(resolve => setTimeout(resolve, 2000));
 
