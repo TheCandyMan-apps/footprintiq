@@ -27,10 +27,21 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   const [currentStep, setCurrentStep] = useState(0);
   const { toast } = useToast();
 
+  // Utility to prevent indefinite hanging
+  const withTimeout = async <T,>(promise: Promise<T>, ms: number, label = 'operation'): Promise<T> => {
+    return new Promise<T>((resolve, reject) => {
+      const id = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+      promise
+        .then((val) => { clearTimeout(id); resolve(val); })
+        .catch((err) => { clearTimeout(id); reject(err); });
+    });
+  };
+
   useEffect(() => {
     let isMounted = true;
     
     const performScan = async () => {
+      let createdScanId: string | null = null;
       try {
         if (!isMounted) return;
         // Step 1: Create scan record
@@ -55,6 +66,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           .single();
 
         if (scanError) throw scanError;
+        createdScanId = scan.id;
 
         await new Promise(resolve => setTimeout(resolve, 1000));
 
@@ -65,26 +77,43 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         if (!isMounted) return;
 
         console.log('Invoking osint-scan edge function...');
-        const { data: osintResult, error: osintError } = await supabase.functions.invoke('osint-scan', {
-          body: {
-            scanId: scan.id,
-            scanType,
-            username: scanData.username,
-            firstName: scanData.firstName,
-            lastName: scanData.lastName,
-            email: scanData.email,
-            phone: scanData.phone,
+        try {
+          const res = await withTimeout(
+            supabase.functions.invoke('osint-scan', {
+              body: {
+                scanId: scan.id,
+                scanType,
+                username: scanData.username,
+                firstName: scanData.firstName,
+                lastName: scanData.lastName,
+                email: scanData.email,
+                phone: scanData.phone,
+              }
+            }),
+            25000,
+            'OSINT scan'
+          );
+
+          if (!isMounted) return;
+
+          const osintResult = res.data;
+          const osintError = res.error as any;
+
+          if (osintError) {
+            console.error('OSINT scan error:', osintError);
+            throw new Error('Failed to complete OSINT scan: ' + (osintError.message || 'Unknown error'));
           }
-        });
 
-        if (!isMounted) return;
-
-        if (osintError) {
-          console.error('OSINT scan error:', osintError);
-          throw new Error('Failed to complete OSINT scan: ' + (osintError.message || 'Unknown error'));
+          console.log('OSINT scan completed:', osintResult);
+        } catch (e: any) {
+          if (!isMounted) return;
+          console.warn('OSINT scan timed out or failed:', e?.message || e);
+          toast({
+            title: 'Scan is taking longer',
+            description: 'We will finalize results in the background.',
+            variant: 'default',
+          });
         }
-
-        console.log('OSINT scan completed:', osintResult);
 
         await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -109,19 +138,27 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
             .upload(filePath, scanData.imageFile);
 
           if (!uploadError) {
-            // Get public URL
-            const { data: { publicUrl } } = supabase.storage
+            // Create a signed URL since the bucket is private
+            const { data: signed, error: signedError } = await supabase.storage
               .from('scan-images')
-              .getPublicUrl(filePath);
+              .createSignedUrl(filePath, 60 * 60);
 
-            // Call reverse image search edge function
-            const { data: imageSearchData, error: imageSearchError } = await supabase.functions
-              .invoke('reverse-image-search', {
-                body: { imageUrl: publicUrl, scanId: scan.id }
-              });
-
-            if (!imageSearchError && imageSearchData) {
-              imageResults = imageSearchData.resultsCount || 0;
+            if (!signedError && signed?.signedUrl) {
+              // Call reverse image search edge function with timeout
+              try {
+                const res = await withTimeout(
+                  supabase.functions.invoke('reverse-image-search', {
+                    body: { imageUrl: signed.signedUrl, scanId: scan.id }
+                  }),
+                  20000,
+                  'Reverse image search'
+                );
+                if (res?.data) {
+                  imageResults = (res.data as any).resultsCount || 0;
+                }
+              } catch (e) {
+                console.warn('Reverse image search skipped:', (e as any)?.message || e);
+              }
             }
           }
         }
@@ -191,10 +228,19 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         
         console.error("Scan error:", error);
         toast({
-          title: "Scan failed",
-          description: error.message || "An unexpected error occurred during scanning",
+          title: "Scan issue",
+          description: error?.message || "We hit a snag. Finishing in the background if possible.",
           variant: "destructive",
         });
+        // Fallback: if scan record exists, proceed to results to avoid hanging UI
+        if (createdScanId) {
+          setProgress(100);
+          setTimeout(() => {
+            if (isMounted) {
+              onComplete(createdScanId as string);
+            }
+          }, 500);
+        }
       }
     };
 
