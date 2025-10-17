@@ -25,6 +25,7 @@ const scanSteps = [
 export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, isAdmin = false }: ScanProgressProps) => {
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Utility to prevent indefinite hanging
@@ -240,6 +241,8 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
               onComplete(createdScanId as string);
             }
           }, 500);
+        } else {
+          setErrorMsg("We couldn’t start the scan. Please return to the form and try again.");
         }
       }
     };
@@ -268,6 +271,20 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
             This may take a few moments while we search across the web
           </p>
         </div>
+
+        {errorMsg && (
+          <div className="mb-6 p-4 rounded-md border border-destructive/30 bg-destructive/10 text-destructive">
+            {errorMsg}
+            <div className="mt-3">
+              <button
+                className="px-4 py-2 rounded-md bg-primary text-primary-foreground"
+                onClick={() => (window.location.href = '/scan')}
+              >
+                Return to form
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-8">
           <Progress value={progress} className="h-2" />
