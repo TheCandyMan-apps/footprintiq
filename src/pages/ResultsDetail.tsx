@@ -147,12 +147,17 @@ const ResultsDetail = () => {
     try {
       const { data, error } = await supabase
         .from("user_roles")
-        .select("subscription_tier")
+        .select("role, subscription_tier")
         .eq("user_id", userId)
         .single();
       
       if (!error && data) {
-        setSubscriptionTier(data.subscription_tier);
+        // Admins get premium access
+        if (data.role === 'admin') {
+          setSubscriptionTier('premium');
+        } else {
+          setSubscriptionTier(data.subscription_tier);
+        }
       }
     } catch (error) {
       console.error("Error fetching subscription tier:", error);
@@ -173,13 +178,13 @@ const ResultsDetail = () => {
         .maybeSingle();
 
       if (!scanData) {
-        // Poll briefly until the background task populates the scan (max 40 tries)
-        if (pollTriesRef.current < 40) {
+        // Poll less frequently until the background task populates the scan (max 20 tries)
+        if (pollTriesRef.current < 20) {
           pollTriesRef.current++;
           if (pollTimeoutRef.current !== null) {
             clearTimeout(pollTimeoutRef.current);
           }
-          pollTimeoutRef.current = window.setTimeout(fetchScanData, 2000);
+          pollTimeoutRef.current = window.setTimeout(fetchScanData, 5000);
         }
         return;
       }
@@ -215,14 +220,14 @@ const ResultsDetail = () => {
       if (requestsError) throw requestsError;
       setRemovalRequests(requests || []);
 
-      // If background job is still populating, poll briefly for results (max 60 tries)
+      // If background job is still populating, poll less frequently (max 30 tries)
       const hasData = (sources?.length ?? 0) > 0 || (profiles?.length ?? 0) > 0;
-      if (!hasData && pollTriesRef.current < 60) {
+      if (!hasData && pollTriesRef.current < 30) {
         pollTriesRef.current++;
         if (pollTimeoutRef.current !== null) {
           clearTimeout(pollTimeoutRef.current);
         }
-        pollTimeoutRef.current = window.setTimeout(fetchScanData, 2500);
+        pollTimeoutRef.current = window.setTimeout(fetchScanData, 5000);
       }
     } catch (error: any) {
       console.error("Error fetching scan data:", error);

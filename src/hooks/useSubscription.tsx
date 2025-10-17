@@ -27,6 +27,18 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      // Check if user is admin first
+      const { data: roleData } = await supabase
+        .from('user_roles')
+        .select('role, subscription_tier')
+        .eq('user_id', session.user.id)
+        .single();
+
+      if (roleData?.role === 'admin') {
+        setSubscriptionTier('premium');
+        return;
+      }
+
       const { data } = await supabase.functions.invoke('check-subscription');
       if (data?.subscribed && data?.product_id) {
         // Map product_id to tier if needed, default to premium for any active subscription

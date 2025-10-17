@@ -32,6 +32,21 @@ export async function validateSubscription(
     );
   }
 
+  // Check if user is admin - admins bypass all subscription checks
+  const { data: roleCheck } = await supabaseClient
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .single();
+
+  if (roleCheck?.role === 'admin') {
+    console.log(`Admin user ${user.id} bypassing subscription check`);
+    return {
+      userId: user.id,
+      tier: 'admin'
+    };
+  }
+
   // Check subscription tier using database function
   const { data, error } = await supabaseClient.rpc('has_subscription_tier', {
     _user_id: user.id,
