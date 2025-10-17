@@ -159,7 +159,13 @@ const ResultsDetail = () => {
         .from("scans")
         .select("*")
         .eq("id", scanId)
-        .single();
+        .maybeSingle();
+
+      if (!scanData) {
+        // Poll briefly until the background task populates the scan
+        setTimeout(fetchScanData, 1200);
+        return;
+      }
 
       if (scanError) throw scanError;
       setScan(scanData);

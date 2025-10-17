@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Search, Database, Globe, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 import type { ScanFormData } from "./ScanForm";
 
 interface ScanProgressProps {
@@ -27,6 +28,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   const [currentStep, setCurrentStep] = useState(0);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Utility to prevent indefinite hanging
   const withTimeout = async <T,>(promise: Promise<T>, ms: number, label = 'operation'): Promise<T> => {
@@ -91,7 +93,11 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         setCurrentStep(4);
         setProgress(100);
         setTimeout(() => {
-          if (isMounted) onComplete(scan.id);
+          if (isMounted) {
+            onComplete(scan.id);
+            // direct navigation fallback
+            try { navigate(`/results/${scan.id}`); } catch {}
+          }
         }, 300);
         return;
 
@@ -232,6 +238,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
       if (isMounted && createdScanId) {
         setProgress(100);
         onComplete(createdScanId);
+        try { navigate(`/results/${createdScanId}`); } catch {}
       }
     }, 35000);
 
