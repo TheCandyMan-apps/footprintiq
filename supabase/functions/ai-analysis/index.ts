@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateSubscription } from "../_shared/validateSubscription.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +19,10 @@ serve(async (req) => {
   }
 
   try {
+    // Validate premium subscription
+    const { userId } = await validateSubscription(req, 'premium');
+    console.log('Premium feature access granted for user:', userId);
+
     const body = await req.json();
     const validation = RequestSchema.safeParse(body);
     

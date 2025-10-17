@@ -464,6 +464,10 @@ export type Database = {
         Args: { _role: string; _user_id: string }
         Returns: boolean
       }
+      has_subscription_tier: {
+        Args: { _required_tier: string; _user_id: string }
+        Returns: boolean
+      }
       update_user_subscription: {
         Args: {
           _expires_at?: string

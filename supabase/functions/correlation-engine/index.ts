@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateSubscription } from "../_shared/validateSubscription.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -17,6 +18,10 @@ serve(async (req) => {
   }
 
   try {
+    // Validate premium subscription
+    const { userId } = await validateSubscription(req, 'premium');
+    console.log('Premium feature access granted for user:', userId);
+
     const body = await req.json();
     const validation = RequestSchema.safeParse(body);
     
@@ -39,19 +44,13 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Validate user ownership
-    const authHeader = req.headers.get('Authorization');
-    if (authHeader) {
-      const { data: { user } } = await supabase.auth.getUser(authHeader.split('Bearer ')[1]);
-      if (user) {
-        const { data: scan } = await supabase.from('scans').select('user_id').eq('id', scanId).single();
-        if (scan && scan.user_id !== user.id) {
-          return new Response(
-            JSON.stringify({ error: 'Access denied' }),
-            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-      }
+    // Validate user ownership via RLS (userId already validated above)
+    const { data: scanCheck } = await supabase.from('scans').select('user_id').eq('id', scanId).eq('user_id', userId).single();
+    if (!scanCheck) {
+      return new Response(
+        JSON.stringify({ error: 'Scan not found or access denied' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
     console.log('Running correlation engine for scan:', scanId);
