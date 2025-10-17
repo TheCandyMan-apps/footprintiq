@@ -41,24 +41,30 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    // Set up auth state listener FIRST to avoid missing events
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      // Only synchronous state updates here per best practices
       setUser(session?.user ?? null);
-      if (session?.user) {
-        await refreshSubscription();
-      }
-      setIsLoading(false);
-    };
 
-    initializeAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null);
       if (session?.user) {
-        await refreshSubscription();
+        // Defer any additional async work to avoid deadlocks
+        setTimeout(() => {
+          refreshSubscription();
+        }, 0);
       } else {
         setSubscriptionTier('free');
       }
+    });
+
+    // THEN check for an existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        refreshSubscription();
+      } else {
+        setSubscriptionTier('free');
+      }
+      setIsLoading(false);
     });
 
     // Refresh subscription every 60 seconds
