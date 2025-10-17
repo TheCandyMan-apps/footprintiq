@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Brain, Loader2 } from 'lucide-react';
+import { Brain, Loader2, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradeDialog } from './UpgradeDialog';
 
 interface AIAnalysisProps {
   scanId: string;
@@ -12,9 +14,16 @@ interface AIAnalysisProps {
 export const AIAnalysis = ({ scanId }: AIAnalysisProps) => {
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const { toast } = useToast();
+  const { isPremium } = useSubscription();
 
   const generateAnalysis = async () => {
+    if (!isPremium) {
+      setShowUpgradeDialog(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('ai-analysis', {
@@ -75,6 +84,15 @@ export const AIAnalysis = ({ scanId }: AIAnalysisProps) => {
       <CardContent>
         {!analysis ? (
           <div className="text-center py-8">
+            {!isPremium && (
+              <div className="mb-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <Lock className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <p className="font-semibold text-primary mb-1">Premium Feature</p>
+                <p className="text-sm text-muted-foreground">
+                  Upgrade to Pro to unlock AI-powered privacy analysis
+                </p>
+              </div>
+            )}
             <p className="text-muted-foreground mb-4">
               Generate an AI analysis to get detailed insights about your privacy scan results,
               including risk prioritization, action plans, and personalized recommendations.
@@ -87,8 +105,9 @@ export const AIAnalysis = ({ scanId }: AIAnalysisProps) => {
                 </>
               ) : (
                 <>
-                  <Brain className="mr-2 h-4 w-4" />
-                  Generate AI Analysis
+                  {!isPremium && <Lock className="mr-2 h-4 w-4" />}
+                  {isPremium && <Brain className="mr-2 h-4 w-4" />}
+                  {isPremium ? 'Generate AI Analysis' : 'Upgrade to Unlock'}
                 </>
               )}
             </Button>
@@ -119,6 +138,11 @@ export const AIAnalysis = ({ scanId }: AIAnalysisProps) => {
             </Button>
           </div>
         )}
+        <UpgradeDialog 
+          open={showUpgradeDialog} 
+          onOpenChange={setShowUpgradeDialog} 
+          feature="AI-powered privacy analysis"
+        />
       </CardContent>
     </Card>
   );

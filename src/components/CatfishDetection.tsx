@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, AlertTriangle, CheckCircle2, XCircle, Loader2, UserCheck } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle2, XCircle, Loader2, UserCheck, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradeDialog } from './UpgradeDialog';
 
 interface CatfishDetectionProps {
   scanId: string;
@@ -29,9 +31,16 @@ interface AnalysisResult {
 export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const { toast } = useToast();
+  const { isPremium } = useSubscription();
 
   const runDetection = async () => {
+    if (!isPremium) {
+      setShowUpgradeDialog(true);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('behavioral-analysis', {
@@ -114,6 +123,15 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
       <CardContent>
         {!result ? (
           <div className="text-center py-8">
+            {!isPremium && (
+              <div className="mb-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <Lock className="h-8 w-8 mx-auto mb-2 text-primary" />
+                <p className="font-semibold text-primary mb-1">Premium Feature</p>
+                <p className="text-sm text-muted-foreground">
+                  Upgrade to Pro to unlock catfish detection and identity verification
+                </p>
+              </div>
+            )}
             <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground mb-4">
               Run comprehensive catfish detection to verify identity authenticity through:
@@ -133,8 +151,9 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
                 </>
               ) : (
                 <>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Run Catfish Detection
+                  {!isPremium && <Lock className="mr-2 h-4 w-4" />}
+                  {isPremium && <Shield className="mr-2 h-4 w-4" />}
+                  {isPremium ? 'Run Catfish Detection' : 'Upgrade to Unlock'}
                 </>
               )}
             </Button>
@@ -245,6 +264,11 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
             </Button>
           </div>
         )}
+        <UpgradeDialog 
+          open={showUpgradeDialog} 
+          onOpenChange={setShowUpgradeDialog} 
+          feature="Catfish detection and identity verification"
+        />
       </CardContent>
     </Card>
   );

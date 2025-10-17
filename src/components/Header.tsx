@@ -1,11 +1,45 @@
-import { Shield, Menu, X } from "lucide-react";
+import { Shield, Menu, X, User, CreditCard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useState } from "react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, isPremium } = useSubscription();
+  const { toast } = useToast();
+
+  const handleManageSubscription = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      if (error || !data?.url) {
+        toast({
+          title: "Error",
+          description: "Could not open subscription management",
+          variant: "destructive",
+        });
+        return;
+      }
+      window.open(data.url, "_blank");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Could not open subscription management",
+        variant: "destructive",
+      });
+    }
+  };
 
   const scrollToSection = (sectionId: string) => {
     setMobileMenuOpen(false);
@@ -67,18 +101,53 @@ export const Header = () => {
             >
               Support
             </Link>
-            <Link
-              to="/auth"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Sign In
-            </Link>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                    <User className="w-4 h-4" />
+                    Account
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium truncate">{user.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isPremium ? "Pro Plan" : "Free Plan"}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard" className="cursor-pointer">
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  {isPremium && (
+                    <DropdownMenuItem onClick={handleManageSubscription} className="cursor-pointer">
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Manage Subscription
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                to="/auth"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              >
+                Sign In
+              </Link>
+            )}
           </nav>
 
           <div className="hidden md:block">
-            <Button onClick={() => navigate('/auth')}>
-              Get Started
-            </Button>
+            {!user && (
+              <Button onClick={() => navigate('/auth')}>
+                Get Started
+              </Button>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -136,16 +205,44 @@ export const Header = () => {
             >
               Support
             </Link>
-            <Link
-              to="/auth"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Sign In
-            </Link>
-            <Button onClick={() => { navigate('/auth'); setMobileMenuOpen(false); }}>
-              Get Started
-            </Button>
+            {user ? (
+              <>
+                <Link
+                  to="/dashboard"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                {isPremium && (
+                  <button
+                    onClick={() => {
+                      handleManageSubscription();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="text-left text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    Manage Subscription
+                  </button>
+                )}
+                <div className="text-xs text-muted-foreground pt-2 border-t">
+                  {user.email} ({isPremium ? "Pro" : "Free"})
+                </div>
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/auth"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Sign In
+                </Link>
+                <Button onClick={() => { navigate('/auth'); setMobileMenuOpen(false); }}>
+                  Get Started
+                </Button>
+              </>
+            )}
           </nav>
         )}
       </div>
