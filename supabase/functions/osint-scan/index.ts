@@ -223,29 +223,42 @@ serve(async (req) => {
         if (hibpResponse.ok) {
           const breaches = await hibpResponse.json();
           results.breaches = breaches;
-          results.dataSources.push({
-            name: 'Have I Been Pwned',
-            category: 'Data Breaches',
-            url: 'https://haveibeenpwned.com',
-            risk_level: 'high',
-            data_found: [`Found in ${breaches.length} data breaches`],
-            metadata: {
-              breach_count: breaches.length,
-              breaches: breaches.map((b: any) => ({
-                name: b.Name,
-                title: b.Title,
-                domain: b.Domain,
-                breach_date: b.BreachDate,
-                added_date: b.AddedDate,
-                modified_date: b.ModifiedDate,
-                pwn_count: b.PwnCount,
-                description: b.Description,
-                data_classes: b.DataClasses,
-                is_verified: b.IsVerified,
-                is_sensitive: b.IsSensitive,
-              })),
-            },
-          });
+          
+          // Store each breach as a separate data source for better visibility
+          if (breaches && breaches.length > 0) {
+            for (const breach of breaches.slice(0, 10)) {  // Limit to top 10 breaches
+              results.dataSources.push({
+                name: breach.Name || 'Unknown Breach',
+                category: 'Data Breach',
+                url: breach.Domain ? `https://${breach.Domain}` : 'https://haveibeenpwned.com',
+                risk_level: breach.IsVerified ? 'high' : 'medium',
+                data_found: breach.DataClasses || [],
+                metadata: {
+                  breach_date: breach.BreachDate,
+                  pwn_count: breach.PwnCount,
+                  description: breach.Description,
+                  is_verified: breach.IsVerified,
+                  is_sensitive: breach.IsSensitive,
+                  source: 'Have I Been Pwned',
+                },
+              });
+            }
+            
+            // Also add summary source
+            results.dataSources.push({
+              name: 'Have I Been Pwned Summary',
+              category: 'Data Breaches',
+              url: 'https://haveibeenpwned.com',
+              risk_level: 'high',
+              data_found: [`Found in ${breaches.length} total data breaches`],
+              metadata: {
+                breach_count: breaches.length,
+                breaches: breaches.map((b: any) => b.Name),
+              },
+            });
+          }
+        } else if (hibpResponse.status === 404) {
+          console.log('HIBP: No breaches found for this email');
         }
       } catch (error) {
         console.error('HIBP error:', error);
@@ -414,13 +427,13 @@ serve(async (req) => {
         const defaultDatasetId = runData.data.defaultDatasetId;
         console.log(`Sherlock Actor started - Run ID: ${runId}, Dataset ID: ${defaultDatasetId}`);
 
-        // Poll for completion
+        // Poll for completion with longer timeout
         let attempts = 0;
-        const maxAttempts = 30;
+        const maxAttempts = 60;
         let runCompleted = false;
 
         while (attempts < maxAttempts && !runCompleted) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          await new Promise(resolve => setTimeout(resolve, 3000));
           
           const statusResponse = await fetch(
             `https://api.apify.com/v2/actor-runs/${runId}?token=${APIFY_API_TOKEN}`
