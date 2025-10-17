@@ -162,7 +162,7 @@ const ResultsDetail = () => {
   const fetchScanData = async () => {
     if (!scanId) return;
 
-    setLoading(true);
+    if (!scan) setLoading(true);
 
     try {
       // Fetch scan
@@ -173,10 +173,13 @@ const ResultsDetail = () => {
         .maybeSingle();
 
       if (!scanData) {
-        // Poll briefly until the background task populates the scan (max 20 tries)
-        if (pollTriesRef.current < 20) {
+        // Poll briefly until the background task populates the scan (max 40 tries)
+        if (pollTriesRef.current < 40) {
           pollTriesRef.current++;
-          pollTimeoutRef.current = window.setTimeout(fetchScanData, 1500);
+          if (pollTimeoutRef.current !== null) {
+            clearTimeout(pollTimeoutRef.current);
+          }
+          pollTimeoutRef.current = window.setTimeout(fetchScanData, 2000);
         }
         return;
       }
@@ -212,11 +215,14 @@ const ResultsDetail = () => {
       if (requestsError) throw requestsError;
       setRemovalRequests(requests || []);
 
-      // If background job is still populating, poll briefly for results (max 20 tries)
+      // If background job is still populating, poll briefly for results (max 60 tries)
       const hasData = (sources?.length ?? 0) > 0 || (profiles?.length ?? 0) > 0;
-      if (!hasData && pollTriesRef.current < 20) {
+      if (!hasData && pollTriesRef.current < 60) {
         pollTriesRef.current++;
-        pollTimeoutRef.current = window.setTimeout(fetchScanData, 2000);
+        if (pollTimeoutRef.current !== null) {
+          clearTimeout(pollTimeoutRef.current);
+        }
+        pollTimeoutRef.current = window.setTimeout(fetchScanData, 2500);
       }
     } catch (error: any) {
       console.error("Error fetching scan data:", error);
