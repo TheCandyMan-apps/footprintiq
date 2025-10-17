@@ -82,7 +82,15 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 export const useSubscription = () => {
   const context = useContext(SubscriptionContext);
   if (context === undefined) {
-    throw new Error('useSubscription must be used within a SubscriptionProvider');
+    // Return default values instead of throwing to prevent app crash
+    console.warn('useSubscription used outside SubscriptionProvider, returning defaults');
+    return {
+      user: null,
+      subscriptionTier: 'free' as SubscriptionTier,
+      isLoading: false,
+      isPremium: false,
+      refreshSubscription: async () => {},
+    };
   }
   return context;
 };
