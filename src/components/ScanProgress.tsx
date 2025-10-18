@@ -71,10 +71,8 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         if (scanError) throw scanError;
         createdScanId = scan.id;
 
-        // Fire-and-forget: kick off OSINT scan in the background and immediately navigate to results
-        // This prevents the UI from hanging if providers are slow
+        // Fire-and-forget: kick off OSINT scan in the background
         try {
-          // Build payload without empty strings to satisfy function validation
           const body: Record<string, any> = {
             scanId: scan.id,
             scanType,
@@ -91,60 +89,46 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           console.warn('Failed to start background OSINT scan:', e?.message || e);
         }
 
-        // Immediately complete and go to results; data will populate as the background task finishes
-        setCurrentStep(4);
-        setProgress(100);
-        setTimeout(() => {
-          if (isMounted) {
-            onComplete(scan.id);
-            // direct navigation fallback
-            try { navigate(`/results/${scan.id}`); } catch {}
-          }
-        }, 300);
-        return;
+        // Show progress animation while background task runs
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        if (!isMounted) return;
+        setCurrentStep(1);
+        setProgress(30);
 
-
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Step 3: Progress update
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        if (!isMounted) return;
         setCurrentStep(2);
-        setProgress(65);
+        setProgress(50);
 
-        // Step 4: Reverse image search
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        if (!isMounted) return;
         setCurrentStep(3);
         setProgress(75);
 
-        let imageResults = 0;
-
+        // Handle image upload if provided
         if (scanData.imageFile) {
           const fileExt = scanData.imageFile.name.split('.').pop();
           const fileName = `${scan.id}_${Date.now()}.${fileExt}`;
           const filePath = `${userId}/${fileName}`;
 
-          // Upload image to Supabase Storage
           const { error: uploadError } = await supabase.storage
             .from('scan-images')
             .upload(filePath, scanData.imageFile);
 
           if (!uploadError) {
-            // Create a signed URL since the bucket is private
             const { data: signed, error: signedError } = await supabase.storage
               .from('scan-images')
               .createSignedUrl(filePath, 60 * 60);
 
             if (!signedError && signed?.signedUrl) {
-              // Call reverse image search edge function with timeout
               try {
-                const res = await withTimeout(
+                await withTimeout(
                   supabase.functions.invoke('reverse-image-search', {
                     body: { imageUrl: signed.signedUrl, scanId: scan.id }
                   }),
                   20000,
                   'Reverse image search'
                 );
-                if (res?.data) {
-                  imageResults = (res.data as any).resultsCount || 0;
-                }
               } catch (e) {
                 console.warn('Reverse image search skipped:', (e as any)?.message || e);
               }
@@ -152,65 +136,18 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           }
         }
 
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Step 5: Finalize
-        setCurrentStep(4);
-        setProgress(90);
-
-        // Get the updated scan data with results from osint-scan function
-        const { data: finalScan, error: finalError } = await supabase
-          .from("scans")
-          .select("*")
-          .eq("id", scan.id)
-          .maybeSingle();
-
-        if (finalError) throw finalError;
-
-        // For free users (non-admin), limit the data shown
-        if (!isAdmin && subscriptionTier === "free") {
-          // Limit data sources to 3
-          const { data: allDataSources } = await supabase
-            .from("data_sources")
-            .select("*")
-            .eq("scan_id", scan.id);
-          
-          if (allDataSources && allDataSources.length > 3) {
-            const idsToKeep = allDataSources.slice(0, 3).map(ds => ds.id);
-            await supabase
-              .from("data_sources")
-              .delete()
-              .eq("scan_id", scan.id)
-              .not("id", "in", `(${idsToKeep.join(",")})`);
-          }
-
-          // Limit social profiles to 3
-          const { data: allSocial } = await supabase
-            .from("social_profiles")
-            .select("*")
-            .eq("scan_id", scan.id);
-          
-          if (allSocial && allSocial.length > 3) {
-            const idsToKeep = allSocial.slice(0, 3).map(sp => sp.id);
-            await supabase
-              .from("social_profiles")
-              .delete()
-              .eq("scan_id", scan.id)
-              .not("id", "in", `(${idsToKeep.join(",")})`);
-          }
-        }
-
         await new Promise(resolve => setTimeout(resolve, 1500));
-
         if (!isMounted) return;
-
+        setCurrentStep(4);
         setProgress(100);
 
+        // Navigate to results
         setTimeout(() => {
           if (isMounted) {
             onComplete(scan.id);
           }
         }, 500);
+
 
       } catch (error: any) {
         if (!isMounted) return;
