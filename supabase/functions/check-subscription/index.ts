@@ -33,6 +33,35 @@ serve(async (req) => {
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
+    // First check if user has premium/family tier directly in database
+    const { data: roleData } = await supabaseClient
+      .from('user_roles')
+      .select('subscription_tier, subscription_expires_at')
+      .eq('user_id', user.id)
+      .single();
+
+    if (roleData) {
+      const tier = roleData.subscription_tier;
+      const expiresAt = roleData.subscription_expires_at;
+      
+      // If user has premium or family tier in database
+      if (tier === 'premium' || tier === 'family') {
+        // Check if not expired (null means never expires)
+        if (!expiresAt || new Date(expiresAt) > new Date()) {
+          console.log("[check-subscription] premium via database", { tier, expiresAt });
+          return new Response(JSON.stringify({
+            subscribed: true,
+            product_id: tier,
+            subscription_end: expiresAt,
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+      }
+    }
+
+    // If not premium in database, check Stripe
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
