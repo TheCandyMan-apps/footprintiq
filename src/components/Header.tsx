@@ -1,4 +1,4 @@
-import { Shield, Menu, X, User, CreditCard } from "lucide-react";
+import { Shield, Menu, X, User, CreditCard, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -64,85 +64,83 @@ export const Header = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
-            <button
-              onClick={() => scrollToSection('how-it-works')}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              How It Works
-            </button>
-            <button
-              onClick={() => scrollToSection('features')}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Features
-            </button>
-            <button
-              onClick={() => scrollToSection('pricing')}
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Pricing
-            </button>
-            <Link
-              to="/dashboard"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/assistant"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              AI Assistant
-            </Link>
-            <Link
-              to="/cases"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Cases
-            </Link>
-            <Link
-              to="/monitoring"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Monitoring
-            </Link>
-            <Link
-              to="/reports"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Reports
-            </Link>
-            <Link
-              to="/partners"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Partners
-            </Link>
-            <Link
-              to="/global-index"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Global Index
-            </Link>
-            <Link
-              to="/resources"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Resources
-            </Link>
-            <Link
-              to="/blog"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Blog
-            </Link>
-            <Link
-              to="/support"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Support
-            </Link>
+          <nav className="hidden md:flex items-center gap-6">
+            {/* Product */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                  Product
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48 bg-card/95 backdrop-blur-sm">
+                <DropdownMenuItem onClick={() => scrollToSection('how-it-works')} className="cursor-pointer">
+                  How It Works
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => scrollToSection('features')} className="cursor-pointer">
+                  Features
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => scrollToSection('pricing')} className="cursor-pointer">
+                  Pricing
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Tools */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                  Tools
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48 bg-card/95 backdrop-blur-sm">
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard" className="cursor-pointer">Dashboard</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/assistant" className="cursor-pointer">AI Assistant</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/cases" className="cursor-pointer">Cases</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/monitoring" className="cursor-pointer">Monitoring</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/reports" className="cursor-pointer">Reports</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Company */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1">
+                  Company
+                  <ChevronDown className="w-3 h-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48 bg-card/95 backdrop-blur-sm">
+                <DropdownMenuItem asChild>
+                  <Link to="/partners" className="cursor-pointer">Partners</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/global-index" className="cursor-pointer">Global Index</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/resources" className="cursor-pointer">Resources</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/blog" className="cursor-pointer">Blog</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/support" className="cursor-pointer">Support</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Account */}
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -151,7 +149,7 @@ export const Header = () => {
                     Account
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-sm">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium truncate">{user.email}</p>
@@ -218,149 +216,160 @@ export const Header = () => {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <nav className="md:hidden mt-4 pb-4 flex flex-col gap-4">
-            <button
-              onClick={() => scrollToSection('how-it-works')}
-              className="text-left text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              How It Works
-            </button>
-            <button
-              onClick={() => scrollToSection('features')}
-              className="text-left text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Features
-            </button>
-            <button
-              onClick={() => scrollToSection('pricing')}
-              className="text-left text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Pricing
-            </button>
-            <Link
-              to="/dashboard"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Dashboard
-            </Link>
-            <Link
-              to="/assistant"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              AI Assistant
-            </Link>
-            <Link
-              to="/cases"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Cases
-            </Link>
-            <Link
-              to="/monitoring"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Monitoring
-            </Link>
-            <Link
-              to="/reports"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Reports
-            </Link>
-            <Link
-              to="/assistant"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              AI Assistant
-            </Link>
-            <Link
-              to="/partners"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Partners
-            </Link>
-            <Link
-              to="/global-index"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Global Index
-            </Link>
-            <Link
-              to="/resources"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Resources
-            </Link>
-            <Link
-              to="/blog"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Blog
-            </Link>
-            <Link
-              to="/support"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Support
-            </Link>
-            {user ? (
-              <>
-                <Link
-                  to="/dashboard"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Dashboard
-                </Link>
-                {isPremium && (
-                  <button
-                    onClick={() => {
-                      handleManageSubscription();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="text-left text-sm text-muted-foreground hover:text-primary transition-colors"
+            {/* Product Section */}
+            <div className="flex flex-col gap-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product</p>
+              <button
+                onClick={() => scrollToSection('how-it-works')}
+                className="text-left text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+              >
+                How It Works
+              </button>
+              <button
+                onClick={() => scrollToSection('features')}
+                className="text-left text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+              >
+                Features
+              </button>
+              <button
+                onClick={() => scrollToSection('pricing')}
+                className="text-left text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+              >
+                Pricing
+              </button>
+            </div>
+
+            {/* Tools Section */}
+            <div className="flex flex-col gap-2 border-t pt-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tools</p>
+              <Link
+                to="/dashboard"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/assistant"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                AI Assistant
+              </Link>
+              <Link
+                to="/cases"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Cases
+              </Link>
+              <Link
+                to="/monitoring"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Monitoring
+              </Link>
+              <Link
+                to="/reports"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Reports
+              </Link>
+            </div>
+
+            {/* Company Section */}
+            <div className="flex flex-col gap-2 border-t pt-4">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Company</p>
+              <Link
+                to="/partners"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Partners
+              </Link>
+              <Link
+                to="/global-index"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Global Index
+              </Link>
+              <Link
+                to="/resources"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Resources
+              </Link>
+              <Link
+                to="/blog"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Blog
+              </Link>
+              <Link
+                to="/support"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Support
+              </Link>
+            </div>
+
+            {/* Account Section */}
+            <div className="border-t pt-4">
+              {user ? (
+                <>
+                  <div className="text-xs text-muted-foreground mb-3">
+                    {user.email} ({isPremium ? "Pro" : "Free"})
+                  </div>
+                  <Link
+                    to="/dashboard"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors block mb-2"
+                    onClick={() => setMobileMenuOpen(false)}
                   >
-                    Manage Subscription
+                    Dashboard
+                  </Link>
+                  {isPremium && (
+                    <button
+                      onClick={() => {
+                        handleManageSubscription();
+                        setMobileMenuOpen(false);
+                      }}
+                      className="text-left text-sm text-muted-foreground hover:text-primary transition-colors block mb-2"
+                    >
+                      Manage Subscription
+                    </button>
+                  )}
+                  <button
+                    onClick={async () => {
+                      await supabase.auth.signOut();
+                      setMobileMenuOpen(false);
+                      navigate('/');
+                    }}
+                    className="text-left text-sm text-muted-foreground hover:text-primary transition-colors block"
+                  >
+                    Sign Out
                   </button>
-                )}
-                <button
-                  onClick={async () => {
-                    await supabase.auth.signOut();
-                    setMobileMenuOpen(false);
-                    navigate('/');
-                  }}
-                  className="text-left text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  Sign Out
-                </button>
-                <div className="text-xs text-muted-foreground pt-2 border-t">
-                  {user.email} ({isPremium ? "Pro" : "Free"})
-                </div>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/auth"
-                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Sign In
-                </Link>
-                <Button onClick={() => { navigate('/auth'); setMobileMenuOpen(false); }}>
-                  Get Started
-                </Button>
-              </>
-            )}
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/auth"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors block mb-3"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Sign In
+                  </Link>
+                  <Button onClick={() => { navigate('/auth'); setMobileMenuOpen(false); }} className="w-full">
+                    Get Started
+                  </Button>
+                </>
+              )}
+            </div>
           </nav>
         )}
       </div>
