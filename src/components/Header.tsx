@@ -96,6 +96,24 @@ export const Header = () => {
               AI Assistant
             </Link>
             <Link
+              to="/partners"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Partners
+            </Link>
+            <Link
+              to="/global-index"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Global Index
+            </Link>
+            <Link
+              to="/resources"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Resources
+            </Link>
+            <Link
               to="/blog"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
@@ -213,6 +231,27 @@ export const Header = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               AI Assistant
+            </Link>
+            <Link
+              to="/partners"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Partners
+            </Link>
+            <Link
+              to="/global-index"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Global Index
+            </Link>
+            <Link
+              to="/resources"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Resources
             </Link>
             <Link
               to="/blog"

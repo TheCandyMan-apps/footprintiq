@@ -41,3 +41,6 @@ verify_jwt = true
 
 [functions.ai-assistant]
 verify_jwt = true
+
+[functions.global-analytics]
+verify_jwt = false
