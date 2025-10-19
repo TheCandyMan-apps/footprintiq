@@ -96,6 +96,24 @@ export const Header = () => {
               AI Assistant
             </Link>
             <Link
+              to="/cases"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Cases
+            </Link>
+            <Link
+              to="/monitoring"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Monitoring
+            </Link>
+            <Link
+              to="/reports"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              Reports
+            </Link>
+            <Link
               to="/partners"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
@@ -224,6 +242,34 @@ export const Header = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               Dashboard
+            </Link>
+            <Link
+              to="/assistant"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              AI Assistant
+            </Link>
+            <Link
+              to="/cases"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Cases
+            </Link>
+            <Link
+              to="/monitoring"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Monitoring
+            </Link>
+            <Link
+              to="/reports"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Reports
             </Link>
             <Link
               to="/assistant"

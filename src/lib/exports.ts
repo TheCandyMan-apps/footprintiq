@@ -197,6 +197,110 @@ function escapeCSV(field: string): string {
 }
 
 /**
+ * Generate comprehensive report with executive summary
+ */
+export async function generateComprehensiveReport(scan: any, dataSources: any[]): Promise<void> {
+  const { jsPDF } = await import('jspdf');
+  await import('jspdf-autotable');
+  
+  const doc = new jsPDF();
+  let yPos = 20;
+
+  // Title Page
+  doc.setFontSize(24);
+  doc.setFont(undefined, 'bold');
+  doc.text('FootprintIQ', 105, yPos, { align: 'center' });
+  yPos += 10;
+  doc.setFontSize(18);
+  doc.text('Comprehensive Digital Footprint Report', 105, yPos, { align: 'center' });
+  yPos += 20;
+
+  // Executive Summary
+  doc.setFontSize(16);
+  doc.text('Executive Summary', 14, yPos);
+  yPos += 10;
+  doc.setFontSize(11);
+  doc.setFont(undefined, 'normal');
+  
+  const summaryText = `This report provides a comprehensive analysis of the digital footprint scan conducted on ${new Date(scan.created_at).toLocaleDateString()}. The scan identified ${scan.total_sources_found || 0} total exposures across ${dataSources.length} data sources.`;
+  const splitSummary = doc.splitTextToSize(summaryText, 180);
+  doc.text(splitSummary, 14, yPos);
+  yPos += splitSummary.length * 7 + 10;
+
+  // Risk Overview
+  doc.setFontSize(14);
+  doc.setFont(undefined, 'bold');
+  doc.text('Risk Assessment', 14, yPos);
+  yPos += 8;
+  doc.setFontSize(11);
+  doc.setFont(undefined, 'normal');
+  doc.text(`Privacy Score: ${scan.privacy_score || 'N/A'}/100`, 14, yPos);
+  yPos += 6;
+  doc.text(`Critical Risk Items: ${scan.high_risk_count || 0}`, 14, yPos);
+  yPos += 6;
+  doc.text(`Medium Risk Items: ${scan.medium_risk_count || 0}`, 14, yPos);
+  yPos += 6;
+  doc.text(`Low Risk Items: ${scan.low_risk_count || 0}`, 14, yPos);
+  yPos += 15;
+
+  // Data Sources Table
+  doc.addPage();
+  yPos = 20;
+  doc.setFontSize(16);
+  doc.setFont(undefined, 'bold');
+  doc.text('Detailed Findings', 14, yPos);
+  yPos += 10;
+
+  const tableData = dataSources.map(source => [
+    source.name || 'Unknown',
+    source.category || 'N/A',
+    source.risk_level || 'Unknown',
+    source.data_found?.length || 0
+  ]);
+
+  (doc as any).autoTable({
+    startY: yPos,
+    head: [['Source', 'Category', 'Risk Level', 'Data Points']],
+    body: tableData,
+    theme: 'striped',
+    headStyles: { fillColor: [59, 130, 246] },
+    styles: { fontSize: 10 },
+  });
+
+  yPos = (doc as any).lastAutoTable.finalY + 15;
+
+  // Remediation Recommendations
+  if (yPos > 250) {
+    doc.addPage();
+    yPos = 20;
+  }
+  
+  doc.setFontSize(14);
+  doc.setFont(undefined, 'bold');
+  doc.text('Remediation Recommendations', 14, yPos);
+  yPos += 10;
+  doc.setFontSize(10);
+  doc.setFont(undefined, 'normal');
+  
+  const recommendations = [
+    '1. Review and remove high-risk exposures immediately',
+    '2. Enable privacy settings on identified platforms',
+    '3. Request data deletion from data brokers',
+    '4. Monitor for new exposures regularly',
+    '5. Implement strong privacy practices going forward'
+  ];
+  
+  recommendations.forEach(rec => {
+    const splitRec = doc.splitTextToSize(rec, 180);
+    doc.text(splitRec, 14, yPos);
+    yPos += splitRec.length * 6;
+  });
+
+  // Save
+  doc.save(`footprintiq-report-${Date.now()}.pdf`);
+}
+
+/**
  * Helper: Download blob as file
  */
 function downloadBlob(blob: Blob, filename: string): void {

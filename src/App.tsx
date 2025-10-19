@@ -24,6 +24,10 @@ import ApiDocs from "./pages/docs/ApiDocs";
 import PersonaDnaLaunch from "./pages/blog/PersonaDnaLaunch";
 import Analyst from "./pages/Analyst";
 import Assistant from "./pages/Assistant";
+import Cases from "./pages/Cases";
+import CaseDetail from "./pages/CaseDetail";
+import Monitoring from "./pages/Monitoring";
+import Reports from "./pages/Reports";
 import PartnersIndex from "./pages/partners/Index";
 import PartnerDashboard from "./pages/partners/Dashboard";
 import GlobalIndex from "./pages/GlobalIndex";
@@ -61,6 +65,10 @@ const App = () => (
           <Route path="/docs/api" element={<ApiDocs />} />
           <Route path="/analyst" element={<Analyst />} />
           <Route path="/assistant" element={<Assistant />} />
+          <Route path="/cases" element={<Cases />} />
+          <Route path="/cases/:caseId" element={<CaseDetail />} />
+          <Route path="/monitoring" element={<Monitoring />} />
+          <Route path="/reports" element={<Reports />} />
           <Route path="/partners" element={<PartnersIndex />} />
           <Route path="/partners/dashboard" element={<PartnerDashboard />} />
           <Route path="/global-index" element={<GlobalIndex />} />
