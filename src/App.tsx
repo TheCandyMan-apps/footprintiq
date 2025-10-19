@@ -23,6 +23,7 @@ import UsernamePage from "./pages/UsernamePage";
 import ApiDocs from "./pages/docs/ApiDocs";
 import PersonaDnaLaunch from "./pages/blog/PersonaDnaLaunch";
 import Analyst from "./pages/Analyst";
+import Assistant from "./pages/Assistant";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/usernames" element={<UsernamePage />} />
           <Route path="/docs/api" element={<ApiDocs />} />
           <Route path="/analyst" element={<Analyst />} />
+          <Route path="/assistant" element={<Assistant />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

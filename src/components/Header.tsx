@@ -90,6 +90,12 @@ export const Header = () => {
               Dashboard
             </Link>
             <Link
+              to="/assistant"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+            >
+              AI Assistant
+            </Link>
+            <Link
               to="/blog"
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
@@ -200,6 +206,13 @@ export const Header = () => {
               onClick={() => setMobileMenuOpen(false)}
             >
               Dashboard
+            </Link>
+            <Link
+              to="/assistant"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              AI Assistant
             </Link>
             <Link
               to="/blog"
