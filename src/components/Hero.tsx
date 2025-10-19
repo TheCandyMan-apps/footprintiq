@@ -23,28 +23,20 @@ export const Hero = ({ onStartScan }: HeroProps) => {
       
       {/* Content */}
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-20 text-center">
-        <div className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border">
-          <Shield className="w-4 h-4 text-primary" />
-          <span className="text-sm text-muted-foreground">Your Privacy, Protected</span>
-        </div>
-        
         <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-          FootprintIQ — Check Your Digital Footprint
-          <br />
-          <span className="bg-gradient-accent bg-clip-text text-transparent">(Email, Username, Domain, Phone, IP)</span>
+          Check Your Digital Footprint
         </h1>
         
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Scan with trusted OSINT sources like Have I Been Pwned, Shodan, and VirusTotal. 
-          Discover email breaches, username exposure, domain intelligence, IP leaks, and phone data. 
-          Remove your personal information from 100+ data brokers automatically.
+        <p className="text-xl text-muted-foreground mb-6 max-w-3xl mx-auto">
+          Scan email, username, domain, phone, and IP with trusted OSINT sources. 
+          Discover breaches and exposures, then remove your data from 100+ data brokers automatically.
         </p>
         
         {/* Privacy Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 mb-12 rounded-full bg-primary/5 border border-primary/20">
-          <Shield className="w-4 h-4 text-primary" />
-          <span className="text-sm text-muted-foreground">
-            <strong className="text-foreground">Privacy First:</strong> We never sell your data — all scans are transient
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 mb-12 rounded-full bg-primary/5 border border-primary/10">
+          <Shield className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs text-muted-foreground">
+            Privacy first — your data is never sold
           </span>
         </div>
         
