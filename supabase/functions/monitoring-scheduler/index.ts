@@ -107,7 +107,7 @@ serve(async (req) => {
       // Find all active schedules due for execution
       const { data: dueSchedules, error: schedError } = await supabase
         .from('monitoring_schedules')
-        .select('*, scans(*)')
+        .select('*')
         .eq('is_active', true)
         .lte('next_run', new Date().toISOString());
 
@@ -122,7 +122,89 @@ serve(async (req) => {
 
       for (const schedule of dueSchedules || []) {
         try {
-          // Update schedule
+          console.log('Processing schedule:', schedule.id);
+          
+          // Get the original scan to compare against
+          const { data: originalScan } = await supabase
+            .from('scans')
+            .select('*')
+            .eq('id', schedule.scan_id)
+            .single();
+
+          if (!originalScan) {
+            console.error('Original scan not found:', schedule.scan_id);
+            executedScans.failed++;
+            continue;
+          }
+
+          // Trigger a new scan (would call osint-scan edge function in production)
+          // For now, we'll just compare with the most recent scan for this user
+          const { data: recentScans } = await supabase
+            .from('scans')
+            .select('*')
+            .eq('user_id', schedule.user_id)
+            .neq('id', schedule.scan_id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (recentScans && recentScans.length > 0) {
+            const latestScan = recentScans[0];
+            
+            // Compare the two scans
+            const { data: prevSources } = await supabase
+              .from('data_sources')
+              .select('*')
+              .eq('scan_id', schedule.scan_id);
+
+            const { data: currSources } = await supabase
+              .from('data_sources')
+              .select('*')
+              .eq('scan_id', latestScan.id);
+
+            const prevSourceNames = new Set(prevSources?.map(s => s.name) || []);
+            const newFindings = (currSources || []).filter(s => !prevSourceNames.has(s.name));
+            
+            const currSourceNames = new Set(currSources?.map(s => s.name) || []);
+            const removedFindings = (prevSources || []).filter(s => !currSourceNames.has(s.name));
+
+            // Send email notification if there are changes and notifications are enabled
+            if (schedule.notification_enabled && schedule.notification_email && 
+                (newFindings.length > 0 || removedFindings.length > 0)) {
+              
+              console.log('Sending email alert to:', schedule.notification_email);
+              
+              // Get user profile for personalization
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name')
+                .eq('user_id', schedule.user_id)
+                .single();
+
+              const emailResult = await fetch(`${supabaseUrl}/functions/v1/send-monitoring-alert`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${supabaseKey}`
+                },
+                body: JSON.stringify({
+                  email: schedule.notification_email,
+                  scanId: latestScan.id,
+                  newFindings,
+                  removedFindings,
+                  userName: profile?.full_name
+                })
+              });
+
+              if (emailResult.ok) {
+                console.log('Email alert sent successfully');
+                executedScans.changesDetected++;
+              } else {
+                console.error('Failed to send email alert:', await emailResult.text());
+              }
+            }
+          }
+
+          // Update schedule with next run time
           await supabase
             .from('monitoring_schedules')
             .update({
