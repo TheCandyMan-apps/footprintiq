@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { AIAnalysis } from "@/components/AIAnalysis";
 import { CatfishDetection } from '@/components/CatfishDetection';
 import { TimelineChart } from "@/components/TimelineChart";
+import { ShareReportDialog } from "@/components/ShareReportDialog";
+import { PDFReportButton } from "@/components/PDFReportButton";
 import { GraphExplorer } from "@/components/GraphExplorer";
 import { MonitoringToggle } from "@/components/MonitoringToggle";
 import { ScanSummary } from "@/components/ScanSummary";
@@ -398,26 +400,30 @@ const ResultsDetail = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Export</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => { exportAsPDF(findingsForExport, redactPII); toast({ title: "Exported", description: "PDF downloaded." }); }}>
-                <FileText className="w-4 h-4 mr-2" /> PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { exportAsCSV(findingsForExport, redactPII); toast({ title: "Exported", description: "CSV downloaded." }); }}>
-                <FileSpreadsheet className="w-4 h-4 mr-2" /> CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => { exportAsJSON(findingsForExport, redactPII); toast({ title: "Exported", description: "JSON downloaded." }); }}>
-                <FileJson className="w-4 h-4 mr-2" /> JSON
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex gap-2">
+            <ShareReportDialog scanId={scanId!} />
+            <PDFReportButton scanId={scanId!} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <Download className="w-4 h-4 mr-2" />
+                  Export
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Export</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => { exportAsPDF(findingsForExport, redactPII); toast({ title: "Exported", description: "PDF downloaded." }); }}>
+                  <FileText className="w-4 h-4 mr-2" /> PDF
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { exportAsCSV(findingsForExport, redactPII); toast({ title: "Exported", description: "CSV downloaded." }); }}>
+                  <FileSpreadsheet className="w-4 h-4 mr-2" /> CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { exportAsJSON(findingsForExport, redactPII); toast({ title: "Exported", description: "JSON downloaded." }); }}>
+                  <FileJson className="w-4 h-4 mr-2" /> JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         {/* Catfish Detection */}

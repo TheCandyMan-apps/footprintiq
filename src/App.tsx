@@ -21,6 +21,7 @@ import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import UsernamePage from "./pages/UsernamePage";
 import ApiDocs from "./pages/docs/ApiDocs";
+import ApiDocsNew from "./pages/ApiDocs";
 import PersonaDnaLaunch from "./pages/blog/PersonaDnaLaunch";
 import Analyst from "./pages/Analyst";
 import Assistant from "./pages/Assistant";
@@ -64,6 +65,7 @@ const App = () => (
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
           <Route path="/docs/api" element={<ApiDocs />} />
+          <Route path="/api" element={<ApiDocsNew />} />
           <Route path="/analyst" element={<Analyst />} />
           <Route path="/assistant" element={<Assistant />} />
           <Route path="/cases" element={<Cases />} />
