@@ -87,7 +87,7 @@ export function exportAsCSV(findings: Finding[], redactPII: boolean = true): voi
 export async function exportAsPDF(findings: Finding[], redactPII: boolean = true): Promise<void> {
   try {
     const { jsPDF } = await import('jspdf');
-    await import('jspdf-autotable');
+    const autoTable = (await import('jspdf-autotable')).default;
     
     const data = redactPII ? redactFindings(findings, true) : findings;
     const doc = new jsPDF();
@@ -216,7 +216,7 @@ export async function exportAsPDF(findings: Finding[], redactPII: boolean = true
       ]);
 
       // Add comprehensive table
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: 32,
         head: [['Severity', 'Type', 'Finding', 'Source', 'Confidence', 'Date']],
         body: tableData,
@@ -462,7 +462,7 @@ function escapeCSV(field: string): string {
  */
 export async function generateComprehensiveReport(scan: any, dataSources: any[]): Promise<void> {
   const { jsPDF } = await import('jspdf');
-  await import('jspdf-autotable');
+  const autoTable = (await import('jspdf-autotable')).default;
   
   const doc = new jsPDF();
   let pageNumber = 1;
@@ -614,7 +614,7 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
     source.last_seen ? new Date(source.last_seen).toLocaleDateString() : 'N/A'
   ]);
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     startY: yPos,
     head: [['Source', 'Category', 'Risk Level', 'Data Points', 'Last Seen']],
     body: tableData,
@@ -625,14 +625,14 @@ export async function generateComprehensiveReport(scan: any, dataSources: any[])
       fontStyle: 'bold'
     },
     styles: { 
-      fontSize: 9,
-      cellPadding: 4
+      fontSize: 8,
+      cellPadding: 3
     },
     columnStyles: {
-      0: { cellWidth: 45 },
-      1: { cellWidth: 35 },
-      2: { cellWidth: 30, halign: 'center' },
-      3: { cellWidth: 25, halign: 'center' },
+      0: { cellWidth: 40 },
+      1: { cellWidth: 40 },
+      2: { cellWidth: 30 },
+      3: { cellWidth: 28, halign: 'center' },
       4: { cellWidth: 30, halign: 'center' }
     },
     didDrawPage: (data: any) => {
