@@ -39,6 +39,7 @@ import Organization from "./pages/Organization";
 import ThreatIntel from "./pages/ThreatIntel";
 import Compliance from "./pages/Compliance";
 import AutomatedRemoval from "./pages/AutomatedRemoval";
+import Integrations from "./pages/Integrations";
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,7 @@ const App = () => (
           <Route path="/threat-intel" element={<ThreatIntel />} />
           <Route path="/compliance" element={<Compliance />} />
           <Route path="/automated-removal" element={<AutomatedRemoval />} />
+          <Route path="/integrations" element={<Integrations />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

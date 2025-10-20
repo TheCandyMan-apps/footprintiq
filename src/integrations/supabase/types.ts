@@ -634,6 +634,83 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_catalog: {
+        Row: {
+          category: string
+          config_schema: Json
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          provider: string
+        }
+        Insert: {
+          category: string
+          config_schema?: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          provider: string
+        }
+        Update: {
+          category?: string
+          config_schema?: Json
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          provider?: string
+        }
+        Relationships: []
+      }
+      integration_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          records_synced: number | null
+          status: string
+          sync_type: string
+          user_integration_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          records_synced?: number | null
+          status?: string
+          sync_type: string
+          user_integration_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          records_synced?: number | null
+          status?: string
+          sync_type?: string
+          user_integration_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_logs_user_integration_id_fkey"
+            columns: ["user_integration_id"]
+            isOneToOne: false
+            referencedRelation: "user_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       monitoring_alerts: {
         Row: {
           alert_type: string
@@ -1091,6 +1168,59 @@ export type Database = {
         }
         Relationships: []
       }
+      siem_events: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          event_type: string
+          exported_at: string | null
+          id: string
+          integration_id: string | null
+          is_exported: boolean | null
+          raw_data: Json | null
+          severity: string
+          source: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          event_type: string
+          exported_at?: string | null
+          id?: string
+          integration_id?: string | null
+          is_exported?: boolean | null
+          raw_data?: Json | null
+          severity: string
+          source: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          event_type?: string
+          exported_at?: string | null
+          id?: string
+          integration_id?: string | null
+          is_exported?: boolean | null
+          raw_data?: Json | null
+          severity?: string
+          source?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "siem_events_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "user_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_profiles: {
         Row: {
           account_id: string | null
@@ -1315,6 +1445,110 @@ export type Database = {
         }
         Relationships: []
       }
+      ticket_integrations: {
+        Row: {
+          case_id: string | null
+          created_at: string | null
+          external_ticket_id: string
+          id: string
+          integration_id: string
+          metadata: Json | null
+          priority: string | null
+          status: string
+          ticket_url: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          case_id?: string | null
+          created_at?: string | null
+          external_ticket_id: string
+          id?: string
+          integration_id: string
+          metadata?: Json | null
+          priority?: string | null
+          status: string
+          ticket_url?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          case_id?: string | null
+          created_at?: string | null
+          external_ticket_id?: string
+          id?: string
+          integration_id?: string
+          metadata?: Json | null
+          priority?: string | null
+          status?: string
+          ticket_url?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_integrations_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ticket_integrations_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "user_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_integrations: {
+        Row: {
+          config: Json
+          created_at: string | null
+          credentials_encrypted: string | null
+          id: string
+          integration_id: string
+          is_active: boolean | null
+          last_sync: string | null
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string | null
+          credentials_encrypted?: string | null
+          id?: string
+          integration_id: string
+          is_active?: boolean | null
+          last_sync?: string | null
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string | null
+          credentials_encrypted?: string | null
+          id?: string
+          integration_id?: string
+          is_active?: boolean | null
+          last_sync?: string | null
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_integrations_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integration_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1341,6 +1575,50 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      webhook_deliveries: {
+        Row: {
+          attempt_count: number | null
+          created_at: string | null
+          delivered_at: string | null
+          event_type: string
+          id: string
+          payload: Json
+          response_body: string | null
+          response_status: number | null
+          webhook_id: string
+        }
+        Insert: {
+          attempt_count?: number | null
+          created_at?: string | null
+          delivered_at?: string | null
+          event_type: string
+          id?: string
+          payload: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id: string
+        }
+        Update: {
+          attempt_count?: number | null
+          created_at?: string | null
+          delivered_at?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          response_body?: string | null
+          response_status?: number | null
+          webhook_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_deliveries_webhook_id_fkey"
+            columns: ["webhook_id"]
+            isOneToOne: false
+            referencedRelation: "webhooks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       webhooks: {
         Row: {
