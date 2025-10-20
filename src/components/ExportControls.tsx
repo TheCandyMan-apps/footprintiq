@@ -26,9 +26,15 @@ export const ExportControls = ({ findings, redactPII, onRedactToggle }: ExportCo
     toast.success("Exported as CSV");
   };
 
-  const handleExportPDF = () => {
-    exportAsPDF(findings, redactPII);
-    analytics.trackEvent('export_pdf', { findings: findings.length, redacted: redactPII ? 1 : 0 });
+  const handleExportPDF = async () => {
+    try {
+      await exportAsPDF(findings, redactPII);
+      analytics.trackEvent('export_pdf', { findings: findings.length, redacted: redactPII ? 1 : 0 });
+      toast.success("Exported as PDF");
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      toast.error("Failed to export PDF");
+    }
   };
 
   return (

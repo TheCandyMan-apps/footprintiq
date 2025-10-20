@@ -84,11 +84,13 @@ export function exportAsCSV(findings: Finding[], redactPII: boolean = true): voi
 /**
  * Export findings as PDF using jsPDF with professional formatting
  */
-export function exportAsPDF(findings: Finding[], redactPII: boolean = true): void {
-  import('jspdf').then(({ jsPDF }) => {
-    import('jspdf-autotable').then(() => {
-      const data = redactPII ? redactFindings(findings, true) : findings;
-      const doc = new jsPDF();
+export async function exportAsPDF(findings: Finding[], redactPII: boolean = true): Promise<void> {
+  try {
+    const { jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
+    
+    const data = redactPII ? redactFindings(findings, true) : findings;
+    const doc = new jsPDF();
       let pageNumber = 1;
 
       // Helper function to add header and footer
@@ -428,10 +430,12 @@ export function exportAsPDF(findings: Finding[], redactPII: boolean = true): voi
         yPos += 8;
       });
 
-      // Save the PDF
-      doc.save(`footprintiq-scan-${Date.now()}.pdf`);
-    });
-  });
+    // Save the PDF
+    doc.save(`footprintiq-scan-${Date.now()}.pdf`);
+  } catch (error) {
+    console.error('Failed to generate PDF:', error);
+    throw new Error('Failed to generate PDF report');
+  }
 }
 
 /**
