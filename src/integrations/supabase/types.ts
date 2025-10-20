@@ -140,6 +140,86 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_aggregations: {
+        Row: {
+          aggregation_type: string
+          calculated_at: string
+          data: Json
+          id: string
+          period_end: string
+          period_start: string
+          time_period: string
+          user_id: string | null
+        }
+        Insert: {
+          aggregation_type: string
+          calculated_at?: string
+          data: Json
+          id?: string
+          period_end: string
+          period_start: string
+          time_period: string
+          user_id?: string | null
+        }
+        Update: {
+          aggregation_type?: string
+          calculated_at?: string
+          data?: Json
+          id?: string
+          period_end?: string
+          period_start?: string
+          time_period?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      anomalies: {
+        Row: {
+          anomaly_type: string
+          description: string
+          detected_at: string
+          id: string
+          is_resolved: boolean | null
+          metadata: Json | null
+          resolution_notes: string | null
+          scan_id: string | null
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          anomaly_type: string
+          description: string
+          detected_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          metadata?: Json | null
+          resolution_notes?: string | null
+          scan_id?: string | null
+          severity: string
+          user_id: string
+        }
+        Update: {
+          anomaly_type?: string
+          description?: string
+          detected_at?: string
+          id?: string
+          is_resolved?: boolean | null
+          metadata?: Json | null
+          resolution_notes?: string | null
+          scan_id?: string | null
+          severity?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anomalies_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           created_at: string | null
@@ -577,6 +657,45 @@ export type Database = {
           },
         ]
       }
+      detected_patterns: {
+        Row: {
+          affected_scans: Json | null
+          description: string
+          first_detected: string
+          id: string
+          last_seen: string
+          metadata: Json | null
+          occurrence_count: number | null
+          pattern_type: string
+          severity: string
+          user_id: string
+        }
+        Insert: {
+          affected_scans?: Json | null
+          description: string
+          first_detected?: string
+          id?: string
+          last_seen?: string
+          metadata?: Json | null
+          occurrence_count?: number | null
+          pattern_type: string
+          severity: string
+          user_id: string
+        }
+        Update: {
+          affected_scans?: Json | null
+          description?: string
+          first_detected?: string
+          id?: string
+          last_seen?: string
+          metadata?: Json | null
+          occurrence_count?: number | null
+          pattern_type?: string
+          severity?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_rate_limit: {
         Row: {
           created_at: string
@@ -710,6 +829,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ml_models: {
+        Row: {
+          accuracy_score: number | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          last_trained_at: string | null
+          metadata: Json | null
+          model_type: string
+          name: string
+          training_data_size: number | null
+          version: string
+        }
+        Insert: {
+          accuracy_score?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_trained_at?: string | null
+          metadata?: Json | null
+          model_type: string
+          name: string
+          training_data_size?: number | null
+          version: string
+        }
+        Update: {
+          accuracy_score?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_trained_at?: string | null
+          metadata?: Json | null
+          model_type?: string
+          name?: string
+          training_data_size?: number | null
+          version?: string
+        }
+        Relationships: []
       }
       monitoring_alerts: {
         Row: {
@@ -1035,6 +1193,57 @@ export type Database = {
           template_type?: string
         }
         Relationships: []
+      }
+      risk_predictions: {
+        Row: {
+          confidence_score: number
+          created_at: string
+          factors: Json
+          id: string
+          model_id: string | null
+          predicted_risk_level: string
+          recommendations: Json
+          scan_id: string | null
+          user_id: string
+        }
+        Insert: {
+          confidence_score: number
+          created_at?: string
+          factors?: Json
+          id?: string
+          model_id?: string | null
+          predicted_risk_level: string
+          recommendations?: Json
+          scan_id?: string | null
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number
+          created_at?: string
+          factors?: Json
+          id?: string
+          model_id?: string | null
+          predicted_risk_level?: string
+          recommendations?: Json
+          scan_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_predictions_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "ml_models"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_predictions_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scan_comparisons: {
         Row: {
@@ -1501,6 +1710,80 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trend_forecasts: {
+        Row: {
+          confidence_interval: Json | null
+          created_at: string
+          forecast_date: string
+          forecast_type: string
+          id: string
+          model_id: string | null
+          predicted_values: Json
+          user_id: string
+        }
+        Insert: {
+          confidence_interval?: Json | null
+          created_at?: string
+          forecast_date: string
+          forecast_type: string
+          id?: string
+          model_id?: string | null
+          predicted_values: Json
+          user_id: string
+        }
+        Update: {
+          confidence_interval?: Json | null
+          created_at?: string
+          forecast_date?: string
+          forecast_type?: string
+          id?: string
+          model_id?: string | null
+          predicted_values?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trend_forecasts_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "ml_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_behavior_analytics: {
+        Row: {
+          behavior_type: string
+          calculated_at: string
+          id: string
+          insights: Json
+          metrics: Json
+          period_end: string
+          period_start: string
+          user_id: string
+        }
+        Insert: {
+          behavior_type: string
+          calculated_at?: string
+          id?: string
+          insights?: Json
+          metrics?: Json
+          period_end: string
+          period_start: string
+          user_id: string
+        }
+        Update: {
+          behavior_type?: string
+          calculated_at?: string
+          id?: string
+          insights?: Json
+          metrics?: Json
+          period_end?: string
+          period_start?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_integrations: {
         Row: {
