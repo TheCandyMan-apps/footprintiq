@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          organization_id: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          organization_id?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_grant_attempts: {
         Row: {
           created_at: string
@@ -176,6 +215,51 @@ export type Database = {
         }
         Relationships: []
       }
+      automated_removals: {
+        Row: {
+          attempt_count: number | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          last_attempt_at: string | null
+          metadata: Json | null
+          next_attempt_at: string | null
+          source_id: string
+          status: string | null
+          success_at: string | null
+          template_id: string | null
+          user_id: string
+        }
+        Insert: {
+          attempt_count?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          metadata?: Json | null
+          next_attempt_at?: string | null
+          source_id: string
+          status?: string | null
+          success_at?: string | null
+          template_id?: string | null
+          user_id: string
+        }
+        Update: {
+          attempt_count?: number | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_attempt_at?: string | null
+          metadata?: Json | null
+          next_attempt_at?: string | null
+          source_id?: string
+          status?: string | null
+          success_at?: string | null
+          template_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       case_evidence: {
         Row: {
           case_id: string
@@ -308,6 +392,144 @@ export type Database = {
           },
         ]
       }
+      compliance_reports: {
+        Row: {
+          file_url: string | null
+          generated_at: string | null
+          id: string
+          organization_id: string | null
+          report_data: Json
+          report_type: string
+          status: string | null
+          template_id: string
+          user_id: string
+        }
+        Insert: {
+          file_url?: string | null
+          generated_at?: string | null
+          id?: string
+          organization_id?: string | null
+          report_data: Json
+          report_type: string
+          status?: string | null
+          template_id: string
+          user_id: string
+        }
+        Update: {
+          file_url?: string | null
+          generated_at?: string | null
+          id?: string
+          organization_id?: string | null
+          report_data?: Json
+          report_type?: string
+          status?: string | null
+          template_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      compliance_templates: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          regulation_type: string
+          template_data: Json
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          regulation_type: string
+          template_data: Json
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          regulation_type?: string
+          template_data?: Json
+        }
+        Relationships: []
+      }
+      compromised_credentials: {
+        Row: {
+          breach_date: string | null
+          breach_name: string
+          created_at: string | null
+          data_classes: string[]
+          email: string
+          id: string
+          is_verified: boolean | null
+          notified_at: string | null
+          user_id: string
+        }
+        Insert: {
+          breach_date?: string | null
+          breach_name: string
+          created_at?: string | null
+          data_classes: string[]
+          email: string
+          id?: string
+          is_verified?: boolean | null
+          notified_at?: string | null
+          user_id: string
+        }
+        Update: {
+          breach_date?: string | null
+          breach_name?: string
+          created_at?: string | null
+          data_classes?: string[]
+          email?: string
+          id?: string
+          is_verified?: boolean | null
+          notified_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      darkweb_findings: {
+        Row: {
+          data_exposed: string[]
+          discovered_at: string | null
+          finding_type: string
+          id: string
+          is_verified: boolean | null
+          metadata: Json | null
+          severity: string
+          source_url: string | null
+          user_id: string
+        }
+        Insert: {
+          data_exposed: string[]
+          discovered_at?: string | null
+          finding_type: string
+          id?: string
+          is_verified?: boolean | null
+          metadata?: Json | null
+          severity: string
+          source_url?: string | null
+          user_id: string
+        }
+        Update: {
+          data_exposed?: string[]
+          discovered_at?: string | null
+          finding_type?: string
+          id?: string
+          is_verified?: boolean | null
+          metadata?: Json | null
+          severity?: string
+          source_url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       data_sources: {
         Row: {
           category: string
@@ -370,6 +592,45 @@ export type Database = {
           created_at?: string
           id?: string
           ip?: string
+        }
+        Relationships: []
+      }
+      evidence_collections: {
+        Row: {
+          case_id: string | null
+          chain_of_custody: Json | null
+          collection_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_sealed: boolean | null
+          name: string
+          sealed_at: string | null
+          user_id: string
+        }
+        Insert: {
+          case_id?: string | null
+          chain_of_custody?: Json | null
+          collection_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_sealed?: boolean | null
+          name: string
+          sealed_at?: string | null
+          user_id: string
+        }
+        Update: {
+          case_id?: string | null
+          chain_of_custody?: Json | null
+          collection_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_sealed?: boolean | null
+          name?: string
+          sealed_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -483,6 +744,63 @@ export type Database = {
           },
         ]
       }
+      organization_members: {
+        Row: {
+          id: string
+          invited_by: string | null
+          joined_at: string | null
+          organization_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          invited_by?: string | null
+          joined_at?: string | null
+          organization_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      organizations: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          owner_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          owner_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          owner_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -506,6 +824,51 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      removal_campaigns: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          failed_removals: number | null
+          id: string
+          name: string
+          status: string | null
+          success_rate: number | null
+          successful_removals: number | null
+          target_sources: string[]
+          total_requests: number | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          failed_removals?: number | null
+          id?: string
+          name: string
+          status?: string | null
+          success_rate?: number | null
+          successful_removals?: number | null
+          target_sources: string[]
+          total_requests?: number | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          failed_removals?: number | null
+          id?: string
+          name?: string
+          status?: string | null
+          success_rate?: number | null
+          successful_removals?: number | null
+          target_sources?: string[]
+          total_requests?: number | null
           user_id?: string
         }
         Relationships: []
@@ -556,6 +919,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      removal_templates: {
+        Row: {
+          body_template: string
+          follow_up_days: number | null
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          name: string
+          platform: string
+          subject_template: string | null
+          success_rate: number | null
+          template_type: string
+        }
+        Insert: {
+          body_template: string
+          follow_up_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          name: string
+          platform: string
+          subject_template?: string | null
+          success_rate?: number | null
+          template_type: string
+        }
+        Update: {
+          body_template?: string
+          follow_up_days?: number | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          name?: string
+          platform?: string
+          subject_template?: string | null
+          success_rate?: number | null
+          template_type?: string
+        }
+        Relationships: []
       }
       scan_comparisons: {
         Row: {
@@ -802,6 +1204,114 @@ export type Database = {
           ticket_number?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      team_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          organization_id: string
+          role: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          invited_by: string
+          organization_id: string
+          role: string
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          organization_id?: string
+          role?: string
+          token?: string
+        }
+        Relationships: []
+      }
+      threat_feeds: {
+        Row: {
+          created_at: string | null
+          feed_type: string
+          id: string
+          is_active: boolean | null
+          last_updated: string | null
+          metadata: Json | null
+          name: string
+          source: string
+        }
+        Insert: {
+          created_at?: string | null
+          feed_type: string
+          id?: string
+          is_active?: boolean | null
+          last_updated?: string | null
+          metadata?: Json | null
+          name: string
+          source: string
+        }
+        Update: {
+          created_at?: string | null
+          feed_type?: string
+          id?: string
+          is_active?: boolean | null
+          last_updated?: string | null
+          metadata?: Json | null
+          name?: string
+          source?: string
+        }
+        Relationships: []
+      }
+      threat_indicators: {
+        Row: {
+          confidence_score: number | null
+          first_seen: string | null
+          id: string
+          indicator_type: string
+          indicator_value: string
+          last_seen: string | null
+          metadata: Json | null
+          source: string
+          tags: string[] | null
+          threat_level: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          first_seen?: string | null
+          id?: string
+          indicator_type: string
+          indicator_value: string
+          last_seen?: string | null
+          metadata?: Json | null
+          source: string
+          tags?: string[] | null
+          threat_level: string
+        }
+        Update: {
+          confidence_score?: number | null
+          first_seen?: string | null
+          id?: string
+          indicator_type?: string
+          indicator_value?: string
+          last_seen?: string | null
+          metadata?: Json | null
+          source?: string
+          tags?: string[] | null
+          threat_level?: string
         }
         Relationships: []
       }

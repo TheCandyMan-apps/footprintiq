@@ -35,6 +35,10 @@ import PartnerDashboard from "./pages/partners/Dashboard";
 import GlobalIndex from "./pages/GlobalIndex";
 import ResourcesIndex from "./pages/resources/Index";
 import WebinarsPage from "./pages/resources/Webinars";
+import Organization from "./pages/Organization";
+import ThreatIntel from "./pages/ThreatIntel";
+import Compliance from "./pages/Compliance";
+import AutomatedRemoval from "./pages/AutomatedRemoval";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +82,10 @@ const App = () => (
           <Route path="/global-index" element={<GlobalIndex />} />
           <Route path="/resources" element={<ResourcesIndex />} />
           <Route path="/resources/webinars" element={<WebinarsPage />} />
+          <Route path="/organization" element={<Organization />} />
+          <Route path="/threat-intel" element={<ThreatIntel />} />
+          <Route path="/compliance" element={<Compliance />} />
+          <Route path="/automated-removal" element={<AutomatedRemoval />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
