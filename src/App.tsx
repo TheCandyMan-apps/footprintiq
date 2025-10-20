@@ -27,6 +27,7 @@ import Assistant from "./pages/Assistant";
 import Cases from "./pages/Cases";
 import CaseDetail from "./pages/CaseDetail";
 import Monitoring from "./pages/Monitoring";
+import Trends from "./pages/Trends";
 import Reports from "./pages/Reports";
 import PartnersIndex from "./pages/partners/Index";
 import PartnerDashboard from "./pages/partners/Dashboard";
@@ -68,6 +69,7 @@ const App = () => (
           <Route path="/cases" element={<Cases />} />
           <Route path="/cases/:caseId" element={<CaseDetail />} />
           <Route path="/monitoring" element={<Monitoring />} />
+          <Route path="/trends" element={<Trends />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/partners" element={<PartnersIndex />} />
           <Route path="/partners/dashboard" element={<PartnerDashboard />} />

@@ -104,35 +104,45 @@ serve(async (req) => {
       );
 
     } else if (action === 'execute') {
-      // Execute scheduled scans for all active users
-      // This endpoint would be called by a cron job
+      // Find all active schedules due for execution
+      const { data: dueSchedules, error: schedError } = await supabase
+        .from('monitoring_schedules')
+        .select('*, scans(*)')
+        .eq('is_active', true)
+        .lte('next_run', new Date().toISOString());
 
-      const now = new Date();
-      console.log('Executing scheduled scans at:', now.toISOString());
+      if (schedError) throw schedError;
 
-      // Get all users with active monitoring
-      // (Would query monitoring_schedules table)
-      
-      // For each user:
-      // 1. Run new scan
-      // 2. Compare with previous scan
-      // 3. Generate comparison report
-      // 4. Send notification if changes detected
-      // 5. Update next_scan_date
-
-      // Mock execution
       const executedScans = {
-        total: 0,
+        total: dueSchedules?.length || 0,
         successful: 0,
         failed: 0,
         changesDetected: 0,
       };
 
+      for (const schedule of dueSchedules || []) {
+        try {
+          // Update schedule
+          await supabase
+            .from('monitoring_schedules')
+            .update({
+              last_run: new Date().toISOString(),
+              next_run: calculateNextScanDate(schedule.frequency)
+            })
+            .eq('id', schedule.id);
+
+          executedScans.successful++;
+        } catch (error) {
+          console.error('Failed to process schedule:', schedule.id, error);
+          executedScans.failed++;
+        }
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
           execution: executedScans,
-          timestamp: now.toISOString(),
+          timestamp: new Date().toISOString(),
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
