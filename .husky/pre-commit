@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Block commits containing secret patterns
+SECRET_PATTERNS="SUPABASE_SERVICE_ROLE_KEY|STRIPE_SECRET_KEY|sk_live_|sk_test_"
+
+if git diff --cached --name-only | xargs grep -E "$SECRET_PATTERNS" 2>/dev/null; then
+  echo "❌ ERROR: Potential secret detected in staged files!"
+  echo "The following patterns were found: $SECRET_PATTERNS"
+  echo "Please remove secrets before committing."
+  exit 1
+fi
+
+exit 0

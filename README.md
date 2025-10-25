@@ -13,6 +13,41 @@ FootprintIQ now includes comprehensive API documentation and a launch blog post:
 
 Both pages are fully SEO optimized with structured data, OG tags, and canonical URLs.
 
+## 🔐 Environment Setup
+
+Before running the application, set up your environment variables:
+
+1. **Copy the example file:**
+   ```sh
+   cp .env.example .env
+   ```
+
+2. **Fill in required values:**
+   - `VITE_SUPABASE_URL` - Your Supabase project URL
+   - `VITE_SUPABASE_PUBLISHABLE_KEY` - Anon/public key (safe for client)
+   - `VITE_SUPABASE_PROJECT_ID` - Project identifier
+   - Optional: `VITE_APIFY_API_TOKEN` for username scanner
+
+3. **Never commit secrets:**
+   - `.env` files are git-ignored
+   - Pre-commit hooks block `SUPABASE_SERVICE_ROLE_KEY` and `STRIPE_SECRET_KEY`
+   - Only `VITE_*` variables are exposed to the browser
+
+## 🛡️ Security Checklist
+
+### Row-Level Security (RLS)
+- ✅ RLS enabled on all tables with user data
+- ✅ Policies use `auth.uid()` for user isolation  
+- ✅ Security definer functions prevent recursive checks
+- ✅ Admin access via `user_roles` table (never client-side checks)
+- ✅ Regular audits via `/admin/rls-check` page
+
+### Environment Variables
+- ✅ Public keys prefixed with `VITE_` (client-safe)
+- ✅ Secret keys never committed (`.gitignore` + pre-commit hooks)
+- ✅ Config validated at boot (`src/lib/config.ts`)
+- ✅ Health check endpoint at `/api/health`
+
 ## How can I edit this code?
 
 There are several ways of editing your application.

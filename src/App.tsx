@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CookieConsent } from "@/components/CookieConsent";
+import "@/lib/config"; // Validate env at boot
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -41,6 +42,7 @@ import Compliance from "./pages/Compliance";
 import AutomatedRemoval from "./pages/AutomatedRemoval";
 import Integrations from "./pages/Integrations";
 import Analytics from "./pages/Analytics";
+import RlsCheck from "./pages/admin/RlsCheck";
 
 const queryClient = new QueryClient();
 
@@ -90,6 +92,7 @@ const App = () => (
           <Route path="/automated-removal" element={<AutomatedRemoval />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/admin/rls-check" element={<RlsCheck />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
