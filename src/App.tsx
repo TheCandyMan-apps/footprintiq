@@ -43,6 +43,8 @@ import AutomatedRemoval from "./pages/AutomatedRemoval";
 import Integrations from "./pages/Integrations";
 import Analytics from "./pages/Analytics";
 import RlsCheck from "./pages/admin/RlsCheck";
+import Providers from "./pages/admin/Providers";
+import Observability from "./pages/admin/Observability";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +95,8 @@ const App = () => (
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/admin/rls-check" element={<RlsCheck />} />
+          <Route path="/admin/providers" element={<Providers />} />
+          <Route path="/admin/observability" element={<Observability />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { REGISTRY } from "@/providers/registry";
@@ -8,9 +8,9 @@ import { getSpendSummary } from "@/providers/costs";
 import { getPolicyStatus } from "@/providers/policy";
 
 export default function Providers() {
-  const [circuits, setCircuits] = useState<any>({});
-  const [spend, setSpend] = useState<any>({});
-  const [policy, setPolicy] = useState<any>({});
+  const [circuits, setCircuits] = useState<Record<string, { open: boolean; failures: number; cooldownUntil?: number }>>({});
+  const [spend, setSpend] = useState<Record<string, any>>({});
+  const [policy, setPolicy] = useState<Record<string, any>>({});
 
   useEffect(() => {
     setCircuits(getCircuitStatus());
@@ -19,49 +19,79 @@ export default function Providers() {
   }, []);
 
   const getStatus = (providerId: string) => {
-    const hasKey = !!import.meta.env[`VITE_${providerId.toUpperCase()}_API_KEY`];
-    const isOpen = circuits[providerId]?.open;
+    const envKey = `VITE_${providerId.toUpperCase()}_API_KEY`;
+    const hasKey = !!import.meta.env[envKey];
     const meta = REGISTRY.find((p) => p.id === providerId);
     
-    if (!hasKey) return { label: "Missing Key", variant: "secondary" as const };
-    if (meta?.policy && !policy[meta.policy]?.enabled) return { label: "Gated", variant: "outline" as const };
-    if (isOpen) return { label: "Cooldown", variant: "destructive" as const };
+    if (meta?.policy && !policy[meta.policy]?.enabled) {
+      return { label: "Gated", variant: "secondary" as const };
+    }
+    
+    if (circuits[providerId]?.open) {
+      return { label: "Cooldown", variant: "destructive" as const };
+    }
+    
+    if (!hasKey) {
+      return { label: "Missing Key", variant: "outline" as const };
+    }
+    
     return { label: "Enabled", variant: "default" as const };
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Provider Management</h1>
+    <div className="container mx-auto py-8 space-y-6">
+      <div>
+        <h1 className="text-4xl font-bold mb-2">Provider Management</h1>
+        <p className="text-muted-foreground">
+          Monitor and configure all data enrichment providers
+        </p>
+      </div>
       
       <div className="grid gap-4">
         {REGISTRY.map((provider) => {
           const status = getStatus(provider.id);
-          const providerSpend = spend[provider.id]?.daily?.[new Date().toISOString().split("T")[0]];
+          const metrics = spend[provider.id]?.daily;
           
           return (
-            <Card key={provider.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold">{provider.title}</h3>
-                  <p className="text-sm text-muted-foreground">{provider.description}</p>
-                  <div className="flex gap-2 mt-2">
-                    {provider.supports.map((type) => (
-                      <Badge key={type} variant="outline">{type}</Badge>
-                    ))}
+            <Card key={provider.id}>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2">
+                      {provider.title}
+                      <Badge variant={status.variant}>{status.label}</Badge>
+                    </CardTitle>
+                    <CardDescription>{provider.description}</CardDescription>
+                  </div>
+                  <Button size="sm" variant="outline">
+                    Test
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Supports</p>
+                    <p className="font-medium">{provider.supports.join(", ")}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Calls Today</p>
+                    <p className="font-medium">{metrics?.calls || 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Success Rate</p>
+                    <p className="font-medium">
+                      {metrics?.calls ? `${Math.round((metrics.success / metrics.calls) * 100)}%` : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">P95 Latency</p>
+                    <p className="font-medium">
+                      {metrics?.p95 ? `${metrics.p95}ms` : "—"}
+                    </p>
                   </div>
                 </div>
-                <div className="text-right space-y-2">
-                  <Badge variant={status.variant}>{status.label}</Badge>
-                  {providerSpend && (
-                    <div className="text-sm">
-                      <div>Calls: {providerSpend.calls}</div>
-                      <div>Success: {providerSpend.successRate}</div>
-                      <div>Latency: {providerSpend.avgLatencyMs}ms</div>
-                    </div>
-                  )}
-                  <Button size="sm" variant="outline">Test</Button>
-                </div>
-              </div>
+              </CardContent>
             </Card>
           );
         })}

@@ -46,7 +46,29 @@ Before running the application, set up your environment variables:
 - ✅ Public keys prefixed with `VITE_` (client-safe)
 - ✅ Secret keys never committed (`.gitignore` + pre-commit hooks)
 - ✅ Config validated at boot (`src/lib/config.ts`)
-- ✅ Health check endpoint at `/api/health`
+- ✅ Health check endpoint at `/functions/v1/health`
+
+## 🔌 Provider System
+
+FootprintIQ uses a unified provider framework with 20+ data enrichment APIs:
+
+- **Circuit breakers**: Automatic 60s cooldown after 5 consecutive failures
+- **Rate limiting**: Token bucket (30 calls/min per provider)
+- **Caching**: Per-provider TTL-based caching
+- **Quotas & budgets**: Daily quotas (500 calls) and monthly budgets (£50)
+- **Policy gates**: Dark web (`ALLOW_DARKWEB_SOURCES`) and enterprise toggles
+- **Unified Finding Model (UFM)**: Standardized output across all providers
+
+### Admin Console
+- `/admin/providers` - Configure and monitor all providers
+- `/admin/observability` - Real-time metrics dashboard
+- `/admin/rls-check` - RLS policy verification
+
+### Verification
+```bash
+npm run verify:providers
+```
+Generates HTML report at `verification/providers-report.html`
 
 ## How can I edit this code?
 

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { getCircuitStatus } from "../_shared/providerRuntime.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +14,7 @@ serve(async (req) => {
   try {
     const hasServiceKey = !!Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const hasUrl = !!Deno.env.get("SUPABASE_URL");
+    const breakersOpen = getCircuitStatus();
 
     const health = {
       ok: true,
@@ -23,6 +25,10 @@ serve(async (req) => {
         // Never expose actual values
       },
       env: Deno.env.get("DENO_DEPLOYMENT_ID") ? "production" : "development",
+      breakersOpen,
+      budgets: {
+        usedPct: 0, // TODO: Calculate from actual usage
+      },
     };
 
     return new Response(JSON.stringify(health), {
