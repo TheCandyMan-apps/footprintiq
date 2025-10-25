@@ -1,6 +1,7 @@
 import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeVirusTotalV3 } from "@/lib/normalize/virustotal_v3";
 import { Finding } from "@/lib/ufm";
+import { validateDomain, validateIP } from "./validation";
 
 const API_KEY = import.meta.env.VITE_VT_API_KEY;
 const BASE_URL = "https://www.virustotal.com/api/v3";
@@ -11,9 +12,10 @@ export async function checkVirusTotal(target: string, type: "domain" | "ip"): Pr
   }
 
   try {
+    const validated = type === "domain" ? validateDomain(target) : validateIP(target);
     return await wrapCall("virustotal", async () => {
       const endpoint = type === "domain" ? "domains" : "ip_addresses";
-      const response = await fetch(`${BASE_URL}/${endpoint}/${target}`, {
+      const response = await fetch(`${BASE_URL}/${endpoint}/${validated}`, {
         headers: {
           "x-apikey": API_KEY,
           "User-Agent": "FootprintIQ",
@@ -23,7 +25,7 @@ export async function checkVirusTotal(target: string, type: "domain" | "ip"): Pr
       if (!response.ok) throw new Error(`VirusTotal API error: ${response.status}`);
 
       const data = await response.json();
-      return normalizeVirusTotalV3(data, target);
+      return normalizeVirusTotalV3(data, validated);
     }, { ttlMs: 12 * 3600e3 });
   } catch (error) {
     console.error("[virustotal] Error:", error);

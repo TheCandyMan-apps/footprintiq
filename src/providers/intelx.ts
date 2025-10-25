@@ -2,6 +2,7 @@ import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeIntelX } from "@/lib/normalize/intelx";
 import { Finding } from "@/lib/ufm";
 import { ensureAllowed } from "./policy";
+import { validateQuery } from "./validation";
 
 const API_KEY = import.meta.env.VITE_INTELX_API_KEY;
 const BASE_URL = "https://2.intelx.io";
@@ -18,6 +19,7 @@ export async function checkIntelX(query: string): Promise<Finding[]> {
   }
 
   try {
+    const validated = validateQuery(query);
     return await wrapCall("intelx", async () => {
       const response = await fetch(`${BASE_URL}/intelligent/search`, {
         method: "POST",
@@ -27,7 +29,7 @@ export async function checkIntelX(query: string): Promise<Finding[]> {
           "User-Agent": "FootprintIQ",
         },
         body: JSON.stringify({
-          term: query,
+          term: validated,
           maxresults: 100,
           media: 0,
           sort: 4,
@@ -37,7 +39,7 @@ export async function checkIntelX(query: string): Promise<Finding[]> {
       if (!response.ok) throw new Error(`IntelX API error: ${response.status}`);
 
       const data = await response.json();
-      return normalizeIntelX(data, query);
+      return normalizeIntelX(data, validated);
     }, { ttlMs: 7 * 24 * 3600e3 });
   } catch (error) {
     console.error("[intelx] Error:", error);

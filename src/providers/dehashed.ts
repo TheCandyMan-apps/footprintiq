@@ -2,6 +2,7 @@ import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeDeHashed } from "@/lib/normalize/dehashed";
 import { Finding } from "@/lib/ufm";
 import { ensureAllowed } from "./policy";
+import { validateQuery } from "./validation";
 
 const API_KEY = import.meta.env.VITE_DEHASHED_API_KEY;
 const USERNAME = import.meta.env.VITE_DEHASHED_API_KEY_USERNAME;
@@ -19,9 +20,10 @@ export async function checkDeHashed(query: string): Promise<Finding[]> {
   }
 
   try {
+    const validated = validateQuery(query);
     return await wrapCall("dehashed", async () => {
       const auth = btoa(`${USERNAME}:${API_KEY}`);
-      const response = await fetch(`${BASE_URL}?query=${encodeURIComponent(query)}`, {
+      const response = await fetch(`${BASE_URL}?query=${encodeURIComponent(validated)}`, {
         headers: {
           "Authorization": `Basic ${auth}`,
           "Accept": "application/json",
@@ -32,7 +34,7 @@ export async function checkDeHashed(query: string): Promise<Finding[]> {
       if (!response.ok) throw new Error(`DeHashed API error: ${response.status}`);
 
       const data = await response.json();
-      return normalizeDeHashed(data, query);
+      return normalizeDeHashed(data, validated);
     }, { ttlMs: 7 * 24 * 3600e3 });
   } catch (error) {
     console.error("[dehashed] Error:", error);

@@ -1,6 +1,7 @@
 import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeAbstractPhone } from "@/lib/normalize/abstract_phone";
 import { Finding } from "@/lib/ufm";
+import { validatePhone } from "./validation";
 
 const API_KEY = import.meta.env.VITE_ABSTRACTAPI_PHONE_VALIDATION_KEY;
 const BASE_URL = "https://phonevalidation.abstractapi.com/v1";
@@ -11,8 +12,9 @@ export async function checkAbstractPhone(phone: string): Promise<Finding[]> {
   }
 
   try {
+    const validated = validatePhone(phone);
     return await wrapCall("abstract_phone", async () => {
-      const response = await fetch(`${BASE_URL}/?api_key=${API_KEY}&phone=${encodeURIComponent(phone)}`, {
+      const response = await fetch(`${BASE_URL}/?api_key=${API_KEY}&phone=${encodeURIComponent(validated)}`, {
         headers: {
           "User-Agent": "FootprintIQ",
         },
@@ -21,7 +23,7 @@ export async function checkAbstractPhone(phone: string): Promise<Finding[]> {
       if (!response.ok) throw new Error(`AbstractAPI Phone error: ${response.status}`);
 
       const data = await response.json();
-      return normalizeAbstractPhone(data, phone);
+      return normalizeAbstractPhone(data, validated);
     }, { ttlMs: 30 * 24 * 3600e3 });
   } catch (error) {
     console.error("[abstract_phone] Error:", error);

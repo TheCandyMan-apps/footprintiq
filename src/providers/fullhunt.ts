@@ -1,6 +1,7 @@
 import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeFullHunt } from "@/lib/normalize/fullhunt";
 import { Finding } from "@/lib/ufm";
+import { validateDomain } from "./validation";
 
 const API_KEY = import.meta.env.VITE_FULLHUNT_API_KEY;
 const BASE_URL = "https://fullhunt.io/api/v1";
@@ -11,8 +12,9 @@ export async function checkFullHunt(domain: string): Promise<Finding[]> {
   }
 
   try {
+    const validated = validateDomain(domain);
     return await wrapCall("fullhunt", async () => {
-      const response = await fetch(`${BASE_URL}/domain/${domain}/subdomains`, {
+      const response = await fetch(`${BASE_URL}/domain/${validated}/subdomains`, {
         headers: {
           "X-API-KEY": API_KEY,
           "User-Agent": "FootprintIQ",
@@ -22,7 +24,7 @@ export async function checkFullHunt(domain: string): Promise<Finding[]> {
       if (!response.ok) throw new Error(`FullHunt API error: ${response.status}`);
 
       const data = await response.json();
-      return normalizeFullHunt(data, domain);
+      return normalizeFullHunt(data, validated);
     }, { ttlMs: 24 * 3600e3 });
   } catch (error) {
     console.error("[fullhunt] Error:", error);

@@ -1,6 +1,7 @@
 import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeSecurityTrails } from "@/lib/normalize/securitytrails_v2";
 import { Finding } from "@/lib/ufm";
+import { validateDomain } from "./validation";
 
 const API_KEY = import.meta.env.VITE_SECURITYTRAILS_API_KEY;
 const BASE_URL = "https://api.securitytrails.com/v1";
@@ -11,8 +12,9 @@ export async function checkSecurityTrails(domain: string): Promise<Finding[]> {
   }
 
   try {
+    const validated = validateDomain(domain);
     return await wrapCall("securitytrails", async () => {
-      const response = await fetch(`${BASE_URL}/domain/${domain}/subdomains`, {
+      const response = await fetch(`${BASE_URL}/domain/${validated}/subdomains`, {
         headers: {
           "APIKEY": API_KEY,
           "User-Agent": "FootprintIQ",
@@ -22,7 +24,7 @@ export async function checkSecurityTrails(domain: string): Promise<Finding[]> {
       if (!response.ok) throw new Error(`SecurityTrails API error: ${response.status}`);
 
       const data = await response.json();
-      return normalizeSecurityTrails(data, domain);
+      return normalizeSecurityTrails(data, validated);
     }, { ttlMs: 24 * 3600e3 });
   } catch (error) {
     console.error("[securitytrails] Error:", error);
