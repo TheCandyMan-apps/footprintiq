@@ -60,6 +60,15 @@ verify_jwt = true
 [functions.ai-predict]
 verify_jwt = true
 
+[functions.send-monitoring-alert]
+verify_jwt = true
+
+[functions.ai-report-generator]
+verify_jwt = true
+
+[functions.ai-assistant-chat]
+verify_jwt = true
+
 [functions.export-case]
 verify_jwt = true
 

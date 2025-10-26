@@ -137,6 +137,41 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_generated_reports: {
+        Row: {
+          content: string
+          generated_at: string | null
+          id: string
+          report_type: string
+          scan_id: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          generated_at?: string | null
+          id?: string
+          report_type: string
+          scan_id: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          generated_at?: string | null
+          id?: string
+          report_type?: string
+          scan_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_generated_reports_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_rules: {
         Row: {
           condition: Json
@@ -1258,36 +1293,27 @@ export type Database = {
       integration_catalog: {
         Row: {
           category: string
-          config_schema: Json
+          configuration_schema: Json | null
           created_at: string | null
           description: string | null
           id: string
-          is_active: boolean | null
-          logo_url: string | null
           name: string
-          provider: string
         }
         Insert: {
           category: string
-          config_schema?: Json
+          configuration_schema?: Json | null
           created_at?: string | null
           description?: string | null
-          id?: string
-          is_active?: boolean | null
-          logo_url?: string | null
+          id: string
           name: string
-          provider: string
         }
         Update: {
           category?: string
-          config_schema?: Json
+          configuration_schema?: Json | null
           created_at?: string | null
           description?: string | null
           id?: string
-          is_active?: boolean | null
-          logo_url?: string | null
           name?: string
-          provider?: string
         }
         Relationships: []
       }
@@ -1322,15 +1348,7 @@ export type Database = {
           sync_type?: string
           user_integration_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "integration_logs_user_integration_id_fkey"
-            columns: ["user_integration_id"]
-            isOneToOne: false
-            referencedRelation: "user_integrations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       legal_cases: {
         Row: {
@@ -2112,15 +2130,7 @@ export type Database = {
           title?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "siem_events_integration_id_fkey"
-            columns: ["integration_id"]
-            isOneToOne: false
-            referencedRelation: "user_integrations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       social_profiles: {
         Row: {
@@ -2450,13 +2460,6 @@ export type Database = {
             referencedRelation: "cases"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "ticket_integrations_integration_id_fkey"
-            columns: ["integration_id"]
-            isOneToOne: false
-            referencedRelation: "user_integrations"
-            referencedColumns: ["id"]
-          },
         ]
       }
       trend_forecasts: {
@@ -2535,39 +2538,30 @@ export type Database = {
       }
       user_integrations: {
         Row: {
-          config: Json
+          configuration: Json
           created_at: string | null
-          credentials_encrypted: string | null
           id: string
           integration_id: string
           is_active: boolean | null
-          last_sync: string | null
-          name: string
-          updated_at: string | null
+          last_sync_at: string | null
           user_id: string
         }
         Insert: {
-          config?: Json
+          configuration: Json
           created_at?: string | null
-          credentials_encrypted?: string | null
           id?: string
           integration_id: string
           is_active?: boolean | null
-          last_sync?: string | null
-          name: string
-          updated_at?: string | null
+          last_sync_at?: string | null
           user_id: string
         }
         Update: {
-          config?: Json
+          configuration?: Json
           created_at?: string | null
-          credentials_encrypted?: string | null
           id?: string
           integration_id?: string
           is_active?: boolean | null
-          last_sync?: string | null
-          name?: string
-          updated_at?: string | null
+          last_sync_at?: string | null
           user_id?: string
         }
         Relationships: [
