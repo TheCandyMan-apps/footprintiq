@@ -50,13 +50,21 @@ serve(async (req) => {
       );
     }
 
-    // Fetch scan data
-    const { data: scan } = await supabase
+    // Fetch scan data safely (avoid .single() when row may not exist)
+    const { data: scan, error: scanError } = await supabase
       .from("scans")
-      .select("*, findings:findings(*)")
+      .select("id, risk_score, providers_queried, user_id")
       .eq("id", scanId)
       .eq("user_id", userId)
-      .single();
+      .maybeSingle();
+
+    if (scanError) {
+      console.error("Scan fetch error:", scanError);
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch scan data" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!scan) {
       return new Response(
@@ -65,12 +73,22 @@ serve(async (req) => {
       );
     }
 
+    // Count findings for this scan (no heavy payloads)
+    const { count: findingsCount, error: findingsError } = await supabase
+      .from("findings")
+      .select("id", { count: "exact", head: true })
+      .eq("scan_id", scanId);
+
+    if (findingsError) {
+      console.error("Findings count error:", findingsError);
+    }
+
     // Build analysis context
     const context = {
-      findingCount: scan.findings?.length || 0,
+      findingCount: findingsCount ?? 0,
       riskScore: scan.risk_score,
-      providers: scan.providers_queried || [],
-      dataTypes: scan.findings?.map((f: any) => f.data_type).filter(Boolean) || [],
+      providers: Array.isArray(scan.providers_queried) ? scan.providers_queried : (scan.providers_queried ? [scan.providers_queried] : []),
+      dataTypes: [], // kept minimal; can be expanded to fetch distinct data types if needed
     };
 
     const systemPrompt = `You are an OSINT anomaly detection system. Analyze scan patterns and detect unusual behaviors or anomalies.
