@@ -80,3 +80,6 @@ verify_jwt = true
 
 [functions.ml-analysis]
 verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false

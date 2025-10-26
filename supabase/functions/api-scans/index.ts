@@ -1,10 +1,17 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key",
 };
+
+// Input validation schemas
+const ScanQuerySchema = z.object({
+  id: z.string().uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(10),
+});
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -65,13 +72,28 @@ serve(async (req) => {
     const url = new URL(req.url);
     const endpoint = url.pathname;
 
+    // Validate query parameters
+    const params = Object.fromEntries(url.searchParams);
+    const validation = ScanQuerySchema.safeParse(params);
+    
+    if (!validation.success) {
+      console.error("[API-SCANS] Invalid parameters:", validation.error.issues);
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid parameters", 
+          details: validation.error.issues 
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    const { id: scanId, limit } = validation.data;
+
     // Handle different endpoints
     let responseData;
     let statusCode = 200;
 
     if (req.method === "GET" && endpoint.includes("/scans")) {
-      const scanId = url.searchParams.get("id");
-      
       if (scanId) {
         // Get specific scan
         const { data: scan, error } = await supabaseClient
@@ -88,8 +110,7 @@ serve(async (req) => {
           responseData = scan;
         }
       } else {
-        // List scans
-        const limit = parseInt(url.searchParams.get("limit") || "10");
+        // List scans with validated limit
         const { data: scans, error } = await supabaseClient
           .from("scans")
           .select("*")
