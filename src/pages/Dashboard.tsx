@@ -4,13 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import { 
   Shield, 
   TrendingDown, 
   Clock, 
-  LogOut, 
   Plus,
-  Download,
   BarChart3
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
@@ -76,10 +76,6 @@ const Dashboard = () => {
     setLoading(false);
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
-  };
 
   const handleNewScan = () => {
     navigate("/scan");
@@ -109,25 +105,19 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-gradient-card">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold">Privacy Dashboard</h1>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              {user?.email}
-            </span>
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="w-10 h-10 text-primary" />
+            <h1 className="text-4xl font-bold">Privacy Dashboard</h1>
+          </div>
+          <p className="text-muted-foreground text-lg">
+            Track your digital footprint and monitor your privacy score over time
+          </p>
+        </div>
         {/* Stats Overview */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           <Card className="p-6 bg-gradient-card border-border">
@@ -242,6 +232,8 @@ const Dashboard = () => {
           )}
         </div>
       </main>
+
+      <Footer />
     </div>
   );
 };
