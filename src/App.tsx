@@ -56,6 +56,8 @@ import AIAnalyst from "./pages/AIAnalyst";
 import MonitorRunDetail from "./pages/MonitorRunDetail";
 import Preferences from "./pages/Preferences";
 import Timeline from "./pages/Timeline";
+import Watchlists from "./pages/Watchlists";
+import AnalystScoreboard from "./pages/AnalystScoreboard";
 
 const queryClient = new QueryClient();
 
@@ -119,6 +121,8 @@ const App = () => (
           <Route path="/monitoring/:runId" element={<MonitorRunDetail />} />
           <Route path="/preferences" element={<Preferences />} />
           <Route path="/timeline" element={<Timeline />} />
+          <Route path="/watchlists" element={<Watchlists />} />
+          <Route path="/analyst-scoreboard" element={<AnalystScoreboard />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
