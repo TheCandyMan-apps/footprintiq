@@ -36,11 +36,11 @@ verify_jwt = true
 [functions.insight-stream]
 verify_jwt = true
 
-[functions.customer-portal]
-verify_jwt = true
-
 [functions.ai-assistant]
 verify_jwt = true
 
 [functions.global-analytics]
 verify_jwt = false
+
+[functions.abstract-phone]
+verify_jwt = true

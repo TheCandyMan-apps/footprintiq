@@ -2,27 +2,19 @@ import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeAbstractPhone } from "@/lib/normalize/abstract_phone";
 import { Finding } from "@/lib/ufm";
 import { validatePhone } from "./validation";
-
-const API_KEY = import.meta.env.VITE_ABSTRACTAPI_PHONE_VALIDATION_KEY;
-const BASE_URL = "https://phonevalidation.abstractapi.com/v1";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function checkAbstractPhone(phone: string): Promise<Finding[]> {
-  if (!API_KEY) {
-    return [createSyntheticFinding("abstract_phone", "missing_key")];
-  }
-
   try {
     const validated = validatePhone(phone);
     return await wrapCall("abstract_phone", async () => {
-      const response = await fetch(`${BASE_URL}/?api_key=${API_KEY}&phone=${encodeURIComponent(validated)}`, {
-        headers: {
-          "User-Agent": "FootprintIQ",
-        },
+      const { data, error } = await supabase.functions.invoke('abstract-phone', {
+        body: { phone: validated }
       });
 
-      if (!response.ok) throw new Error(`AbstractAPI Phone error: ${response.status}`);
+      if (error) throw new Error(`Abstract Phone error: ${error.message}`);
+      if (!data) throw new Error('No data returned from phone validation');
 
-      const data = await response.json();
       return normalizeAbstractPhone(data, validated);
     }, { ttlMs: 30 * 24 * 3600e3 });
   } catch (error) {
