@@ -14,7 +14,12 @@ serve(async (req) => {
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+      return new Response(
+        JSON.stringify({ 
+          error: "AI analysis is not configured. Please add LOVABLE_API_KEY in your backend secrets." 
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const { scanId } = await req.json();

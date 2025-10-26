@@ -80,27 +80,27 @@ export function TourHighlight({
 
   return (
     <>
-      {/* Backdrop overlay */}
+      {/* Clickable backdrop - allows clicking to skip */}
       <div 
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[9998] animate-in fade-in duration-300"
+        className="fixed inset-0 z-[9997] animate-in fade-in duration-300"
         onClick={onSkip}
       />
 
-      {/* Spotlight cutout */}
+      {/* Spotlight cutout with proper visibility */}
       <div
-        className="fixed z-[9999] pointer-events-none"
+        className="fixed z-[9999] pointer-events-none animate-in fade-in duration-300"
         style={{
           left: targetRect.left - 8,
           top: targetRect.top - 8,
           width: targetRect.width + 16,
           height: targetRect.height + 16,
-          boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 20px 8px hsl(var(--primary) / 0.5)",
-          borderRadius: "8px",
+          boxShadow: "0 0 0 9999px rgba(0, 0, 0, 0.75), 0 0 30px 12px hsl(var(--primary) / 0.6)",
+          borderRadius: "12px",
           transition: "all 0.3s ease-in-out"
         }}
       >
         {/* Animated pulse ring */}
-        <div className="absolute inset-0 rounded-lg border-2 border-primary animate-pulse" />
+        <div className="absolute inset-0 rounded-xl border-2 border-primary animate-pulse" />
       </div>
 
       {/* Popover */}
