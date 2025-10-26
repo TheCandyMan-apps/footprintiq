@@ -1992,6 +1992,47 @@ export type Database = {
         }
         Relationships: []
       }
+      share_links: {
+        Row: {
+          access_count: number | null
+          created_at: string | null
+          created_by: string
+          expires_at: string
+          id: string
+          last_accessed_at: string | null
+          scan_id: string
+          share_token: string
+        }
+        Insert: {
+          access_count?: number | null
+          created_at?: string | null
+          created_by: string
+          expires_at: string
+          id?: string
+          last_accessed_at?: string | null
+          scan_id: string
+          share_token: string
+        }
+        Update: {
+          access_count?: number | null
+          created_at?: string | null
+          created_by?: string
+          expires_at?: string
+          id?: string
+          last_accessed_at?: string | null
+          scan_id?: string
+          share_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "share_links_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shared_reports: {
         Row: {
           created_at: string | null

@@ -1,5 +1,6 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,83 +13,91 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const { scanId, expiresInHours = 24 } = await req.json();
 
-    const { data: { user } } = await supabaseClient.auth.getUser(token);
-    if (!user) throw new Error("Unauthorized");
+    if (!scanId) {
+      return new Response(
+        JSON.stringify({ error: "scanId required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    const { scanId, expiresInDays, password } = await req.json();
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get auth user
+    const authHeader = req.headers.get("Authorization");
+    let userId: string | null = null;
+    if (authHeader) {
+      const { data: { user } } = await supabase.auth.getUser(authHeader.split("Bearer ")[1]);
+      userId = user?.id || null;
+    }
+
+    if (!userId) {
+      return new Response(
+        JSON.stringify({ error: "Authentication required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Verify scan ownership
-    const { data: scan, error: scanError } = await supabaseClient
+    const { data: scan, error: scanError } = await supabase
       .from("scans")
       .select("id")
       .eq("id", scanId)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single();
 
     if (scanError || !scan) {
-      throw new Error("Scan not found");
+      return new Response(
+        JSON.stringify({ error: "Scan not found or access denied" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // Generate random share token
-    const shareToken = crypto.randomUUID();
+    // Generate share token
+    const shareToken = await generateToken();
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + expiresInHours);
 
-    // Calculate expiration
-    let expiresAt = null;
-    if (expiresInDays) {
-      expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + expiresInDays);
-    }
-
-    // Hash password if provided
-    let passwordHash = null;
-    if (password) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(password);
-      const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      passwordHash = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-    }
-
-    // Create shared report
-    const { data: sharedReport, error } = await supabaseClient
-      .from("shared_reports")
+    // Store share link
+    const { data: shareLink, error: insertError } = await supabase
+      .from("share_links")
       .insert({
-        user_id: user.id,
         scan_id: scanId,
         share_token: shareToken,
-        expires_at: expiresAt?.toISOString(),
-        password_hash: passwordHash,
+        created_by: userId,
+        expires_at: expiresAt.toISOString(),
       })
       .select()
       .single();
 
-    if (error) throw error;
+    if (insertError) throw insertError;
 
-    const shareUrl = `${req.headers.get("origin")}/shared/${shareToken}`;
+    const shareUrl = `${supabaseUrl.replace('//', '//app.')}/shared/${shareToken}`;
 
     return new Response(
       JSON.stringify({ 
-        shareUrl, 
-        token: shareToken,
-        expiresAt: expiresAt?.toISOString() 
+        shareUrl,
+        expiresAt: expiresAt.toISOString(),
+        shareToken 
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("Share link error:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error("Create share link error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message || "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });
+
+async function generateToken(): Promise<string> {
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", randomBytes);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 32);
+}

@@ -65,3 +65,9 @@ verify_jwt = true
 
 [functions.detect-anomalies]
 verify_jwt = true
+
+[functions.create-share-link]
+verify_jwt = true
+
+[functions.ml-analysis]
+verify_jwt = true
