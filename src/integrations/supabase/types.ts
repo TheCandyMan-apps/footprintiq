@@ -173,6 +173,39 @@ export type Database = {
         }
         Relationships: []
       }
+      analyst_metrics: {
+        Row: {
+          avg_resolution_time_ms: number | null
+          false_positives_flagged: number | null
+          findings_verified: number | null
+          id: string
+          last_activity_at: string | null
+          scans_completed: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avg_resolution_time_ms?: number | null
+          false_positives_flagged?: number | null
+          findings_verified?: number | null
+          id?: string
+          last_activity_at?: string | null
+          scans_completed?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avg_resolution_time_ms?: number | null
+          false_positives_flagged?: number | null
+          findings_verified?: number | null
+          id?: string
+          last_activity_at?: string | null
+          scans_completed?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       analyst_reports: {
         Row: {
           case_id: string | null
@@ -410,6 +443,76 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      case_comment_reactions: {
+        Row: {
+          comment_id: string
+          created_at: string | null
+          id: string
+          reaction_type: string
+          user_id: string
+        }
+        Insert: {
+          comment_id: string
+          created_at?: string | null
+          id?: string
+          reaction_type: string
+          user_id: string
+        }
+        Update: {
+          comment_id?: string
+          created_at?: string | null
+          id?: string
+          reaction_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_comment_reactions_comment_id_fkey"
+            columns: ["comment_id"]
+            isOneToOne: false
+            referencedRelation: "case_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      case_comments: {
+        Row: {
+          case_id: string
+          content: string
+          created_at: string | null
+          id: string
+          mentions: string[] | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          case_id: string
+          content: string
+          created_at?: string | null
+          id?: string
+          mentions?: string[] | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          case_id?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          mentions?: string[] | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_comments_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       case_evidence: {
         Row: {
@@ -832,6 +935,36 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_cooccurrences: {
+        Row: {
+          confidence: number | null
+          cooccurrence_count: number | null
+          created_at: string | null
+          entity_a: string
+          entity_b: string
+          id: string
+          last_seen: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          cooccurrence_count?: number | null
+          created_at?: string | null
+          entity_a: string
+          entity_b: string
+          id?: string
+          last_seen?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          cooccurrence_count?: number | null
+          created_at?: string | null
+          entity_a?: string
+          entity_b?: string
+          id?: string
+          last_seen?: string | null
+        }
+        Relationships: []
+      }
       entity_edges: {
         Row: {
           confidence: number | null
@@ -934,6 +1067,36 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_suggestions: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          seed_entities: string[]
+          suggestions: Json
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          seed_entities: string[]
+          suggestions?: Json
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          seed_entities?: string[]
+          suggestions?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       evidence_artifacts: {
         Row: {
           artifact_type: string
@@ -1032,6 +1195,30 @@ export type Database = {
           name?: string
           sealed_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      explanation_cache: {
+        Row: {
+          context_hash: string
+          created_at: string | null
+          expires_at: string | null
+          explanation: string
+          id: string
+        }
+        Insert: {
+          context_hash: string
+          created_at?: string | null
+          expires_at?: string | null
+          explanation: string
+          id?: string
+        }
+        Update: {
+          context_hash?: string
+          created_at?: string | null
+          expires_at?: string | null
+          explanation?: string
+          id?: string
         }
         Relationships: []
       }
@@ -2423,6 +2610,89 @@ export type Database = {
           url_pattern?: string
         }
         Relationships: []
+      }
+      watchlist_members: {
+        Row: {
+          added_at: string | null
+          added_by: string | null
+          entity_id: string
+          id: string
+          watchlist_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          added_by?: string | null
+          entity_id: string
+          id?: string
+          watchlist_id: string
+        }
+        Update: {
+          added_at?: string | null
+          added_by?: string | null
+          entity_id?: string
+          id?: string
+          watchlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlist_members_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "entity_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "watchlist_members_watchlist_id_fkey"
+            columns: ["watchlist_id"]
+            isOneToOne: false
+            referencedRelation: "watchlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watchlists: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          rules: Json | null
+          updated_at: string | null
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          rules?: Json | null
+          updated_at?: string | null
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          rules?: Json | null
+          updated_at?: string | null
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlists_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       webhook_deliveries: {
         Row: {
