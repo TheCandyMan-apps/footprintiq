@@ -472,6 +472,53 @@ export type Database = {
           },
         ]
       }
+      chain_of_custody: {
+        Row: {
+          action: string
+          actor_email: string
+          actor_id: string
+          actor_role: string
+          artifact_id: string
+          details: string | null
+          id: string
+          ip_address: string | null
+          timestamp: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          actor_email: string
+          actor_id: string
+          actor_role: string
+          artifact_id: string
+          details?: string | null
+          id?: string
+          ip_address?: string | null
+          timestamp?: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string
+          actor_id?: string
+          actor_role?: string
+          artifact_id?: string
+          details?: string | null
+          id?: string
+          ip_address?: string | null
+          timestamp?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chain_of_custody_artifact_id_fkey"
+            columns: ["artifact_id"]
+            isOneToOne: false
+            referencedRelation: "evidence_artifacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_reports: {
         Row: {
           file_url: string | null
@@ -714,6 +761,170 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_edges: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          evidence: Json | null
+          id: string
+          metadata: Json | null
+          providers: Json | null
+          relationship_type: string
+          source_node_id: string
+          target_node_id: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          evidence?: Json | null
+          id?: string
+          metadata?: Json | null
+          providers?: Json | null
+          relationship_type: string
+          source_node_id: string
+          target_node_id: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          evidence?: Json | null
+          id?: string
+          metadata?: Json | null
+          providers?: Json | null
+          relationship_type?: string
+          source_node_id?: string
+          target_node_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entity_edges_source_node_id_fkey"
+            columns: ["source_node_id"]
+            isOneToOne: false
+            referencedRelation: "entity_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entity_edges_target_node_id_fkey"
+            columns: ["target_node_id"]
+            isOneToOne: false
+            referencedRelation: "entity_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      entity_nodes: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          entity_type: string
+          entity_value: string
+          finding_count: number | null
+          first_seen: string | null
+          id: string
+          last_updated: string | null
+          metadata: Json | null
+          provider_count: number | null
+          risk_score: number | null
+          severity_breakdown: Json | null
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          entity_type: string
+          entity_value: string
+          finding_count?: number | null
+          first_seen?: string | null
+          id?: string
+          last_updated?: string | null
+          metadata?: Json | null
+          provider_count?: number | null
+          risk_score?: number | null
+          severity_breakdown?: Json | null
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          entity_type?: string
+          entity_value?: string
+          finding_count?: number | null
+          first_seen?: string | null
+          id?: string
+          last_updated?: string | null
+          metadata?: Json | null
+          provider_count?: number | null
+          risk_score?: number | null
+          severity_breakdown?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      evidence_artifacts: {
+        Row: {
+          artifact_type: string
+          capture_timestamp: string
+          case_id: string
+          content_hash: string
+          content_type: string | null
+          content_url: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          sealed: boolean
+          size_bytes: number | null
+          source_provider: string | null
+          source_url: string | null
+          title: string
+        }
+        Insert: {
+          artifact_type: string
+          capture_timestamp: string
+          case_id: string
+          content_hash: string
+          content_type?: string | null
+          content_url?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          sealed?: boolean
+          size_bytes?: number | null
+          source_provider?: string | null
+          source_url?: string | null
+          title: string
+        }
+        Update: {
+          artifact_type?: string
+          capture_timestamp?: string
+          case_id?: string
+          content_hash?: string
+          content_type?: string | null
+          content_url?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          sealed?: boolean
+          size_bytes?: number | null
+          source_provider?: string | null
+          source_url?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_artifacts_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "legal_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       evidence_collections: {
         Row: {
           case_id: string | null
@@ -749,6 +960,39 @@ export type Database = {
           is_sealed?: boolean | null
           name?: string
           sealed_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      graph_snapshots: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          edge_count: number | null
+          graph_data: Json
+          id: string
+          name: string
+          node_count: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          edge_count?: number | null
+          graph_data: Json
+          id?: string
+          name: string
+          node_count?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          edge_count?: number | null
+          graph_data?: Json
+          id?: string
+          name?: string
+          node_count?: number | null
           user_id?: string
         }
         Relationships: []
@@ -829,6 +1073,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      legal_cases: {
+        Row: {
+          case_number: string
+          case_type: string
+          created_at: string
+          description: string | null
+          evidence_sealed: boolean
+          hosting_contact: string | null
+          id: string
+          jurisdictions: string[] | null
+          legal_basis: string | null
+          platform_contact: string | null
+          priority: Database["public"]["Enums"]["case_priority"]
+          registrar_contact: string | null
+          resolved_at: string | null
+          sealed_at: string | null
+          sealed_by: string | null
+          status: Database["public"]["Enums"]["case_status"]
+          submitted_at: string | null
+          target_domain: string | null
+          target_urls: string[] | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          case_number: string
+          case_type: string
+          created_at?: string
+          description?: string | null
+          evidence_sealed?: boolean
+          hosting_contact?: string | null
+          id?: string
+          jurisdictions?: string[] | null
+          legal_basis?: string | null
+          platform_contact?: string | null
+          priority?: Database["public"]["Enums"]["case_priority"]
+          registrar_contact?: string | null
+          resolved_at?: string | null
+          sealed_at?: string | null
+          sealed_by?: string | null
+          status?: Database["public"]["Enums"]["case_status"]
+          submitted_at?: string | null
+          target_domain?: string | null
+          target_urls?: string[] | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          case_number?: string
+          case_type?: string
+          created_at?: string
+          description?: string | null
+          evidence_sealed?: boolean
+          hosting_contact?: string | null
+          id?: string
+          jurisdictions?: string[] | null
+          legal_basis?: string | null
+          platform_contact?: string | null
+          priority?: Database["public"]["Enums"]["case_priority"]
+          registrar_contact?: string | null
+          resolved_at?: string | null
+          sealed_at?: string | null
+          sealed_by?: string | null
+          status?: Database["public"]["Enums"]["case_status"]
+          submitted_at?: string | null
+          target_domain?: string | null
+          target_urls?: string[] | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       ml_models: {
         Row: {
@@ -1033,6 +1352,39 @@ export type Database = {
           name?: string
           owner_id?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      policy_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          gate: string
+          id: string
+          ip_address: unknown
+          metadata: Json | null
+          purpose: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          gate: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          purpose?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          gate?: string
+          id?: string
+          ip_address?: unknown
+          metadata?: Json | null
+          purpose?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1546,6 +1898,62 @@ export type Database = {
         }
         Relationships: []
       }
+      takedown_submissions: {
+        Row: {
+          body: string
+          case_id: string
+          created_at: string
+          id: string
+          recipient_email: string | null
+          recipient_name: string
+          recipient_type: string
+          response_at: string | null
+          response_received: boolean
+          response_summary: string | null
+          sent_at: string
+          sent_by: string
+          subject: string
+        }
+        Insert: {
+          body: string
+          case_id: string
+          created_at?: string
+          id?: string
+          recipient_email?: string | null
+          recipient_name: string
+          recipient_type: string
+          response_at?: string | null
+          response_received?: boolean
+          response_summary?: string | null
+          sent_at?: string
+          sent_by: string
+          subject: string
+        }
+        Update: {
+          body?: string
+          case_id?: string
+          created_at?: string
+          id?: string
+          recipient_email?: string | null
+          recipient_name?: string
+          recipient_type?: string
+          response_at?: string | null
+          response_received?: boolean
+          response_summary?: string | null
+          sent_at?: string
+          sent_by?: string
+          subject?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "takedown_submissions_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "legal_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_invitations: {
         Row: {
           accepted_at: string | null
@@ -1859,6 +2267,51 @@ export type Database = {
         }
         Relationships: []
       }
+      username_sites: {
+        Row: {
+          check_method: string
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          profile_exists: Json | null
+          rate_limit: number | null
+          requires_js: boolean | null
+          tags: string[] | null
+          timeout_ms: number | null
+          title: string
+          updated_at: string | null
+          url_pattern: string
+        }
+        Insert: {
+          check_method: string
+          created_at?: string | null
+          enabled?: boolean | null
+          id: string
+          profile_exists?: Json | null
+          rate_limit?: number | null
+          requires_js?: boolean | null
+          tags?: string[] | null
+          timeout_ms?: number | null
+          title: string
+          updated_at?: string | null
+          url_pattern: string
+        }
+        Update: {
+          check_method?: string
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          profile_exists?: Json | null
+          rate_limit?: number | null
+          requires_js?: boolean | null
+          tags?: string[] | null
+          timeout_ms?: number | null
+          title?: string
+          updated_at?: string | null
+          url_pattern?: string
+        }
+        Relationships: []
+      }
       webhook_deliveries: {
         Row: {
           attempt_count: number | null
@@ -1947,22 +2400,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      cleanup_scan_pii: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      generate_ticket_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      cleanup_scan_pii: { Args: never; Returns: undefined }
+      generate_case_number: { Args: never; Returns: string }
+      generate_ticket_number: { Args: never; Returns: string }
       grant_admin_role: {
         Args: { _caller_token?: string; _user_id: string }
         Returns: boolean
       }
-      has_role: {
-        Args: { _role: string; _user_id: string }
-        Returns: boolean
-      }
+      has_role: { Args: { _role: string; _user_id: string }; Returns: boolean }
       has_subscription_tier: {
         Args: { _required_tier: string; _user_id: string }
         Returns: boolean
@@ -1977,6 +2422,8 @@ export type Database = {
       }
     }
     Enums: {
+      case_priority: "low" | "medium" | "high" | "critical"
+      case_status: "draft" | "submitted" | "in_progress" | "resolved" | "closed"
       removal_status: "pending" | "in_progress" | "completed" | "failed"
       risk_level: "low" | "medium" | "high"
       scan_type: "username" | "personal_details" | "both"
@@ -2108,6 +2555,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      case_priority: ["low", "medium", "high", "critical"],
+      case_status: ["draft", "submitted", "in_progress", "resolved", "closed"],
       removal_status: ["pending", "in_progress", "completed", "failed"],
       risk_level: ["low", "medium", "high"],
       scan_type: ["username", "personal_details", "both"],
