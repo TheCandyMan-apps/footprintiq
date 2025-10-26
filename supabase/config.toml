@@ -47,3 +47,6 @@ verify_jwt = true
 
 [functions.graph-api]
 verify_jwt = true
+
+[functions.ai-analyst]
+verify_jwt = true

@@ -104,6 +104,39 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_chunks: {
+        Row: {
+          chunk_id: string
+          created_at: string
+          entity_id: string
+          id: string
+          metadata: Json | null
+          text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chunk_id: string
+          created_at?: string
+          entity_id: string
+          id?: string
+          metadata?: Json | null
+          text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chunk_id?: string
+          created_at?: string
+          entity_id?: string
+          id?: string
+          metadata?: Json | null
+          text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       alert_rules: {
         Row: {
           condition: Json
@@ -139,6 +172,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      analyst_reports: {
+        Row: {
+          case_id: string | null
+          confidence: number | null
+          created_at: string
+          entity_ids: string[]
+          id: string
+          report_data: Json
+          user_id: string
+        }
+        Insert: {
+          case_id?: string | null
+          confidence?: number | null
+          created_at?: string
+          entity_ids: string[]
+          id?: string
+          report_data: Json
+          user_id: string
+        }
+        Update: {
+          case_id?: string | null
+          confidence?: number | null
+          created_at?: string
+          entity_ids?: string[]
+          id?: string
+          report_data?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analyst_reports_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       analytics_aggregations: {
         Row: {
@@ -1187,6 +1258,47 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      monitor_runs: {
+        Row: {
+          diff_hash: string | null
+          finished_at: string | null
+          id: string
+          metadata: Json | null
+          new_findings_count: number | null
+          schedule_id: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          diff_hash?: string | null
+          finished_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_findings_count?: number | null
+          schedule_id: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          diff_hash?: string | null
+          finished_at?: string | null
+          id?: string
+          metadata?: Json | null
+          new_findings_count?: number | null
+          schedule_id?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monitor_runs_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "monitoring_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       monitoring_alerts: {
         Row: {
