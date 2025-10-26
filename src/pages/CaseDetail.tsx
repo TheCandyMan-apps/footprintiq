@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { CaseWorkspace } from "@/components/case/CaseWorkspace";
+import { CaseExport } from "@/components/case/CaseExport";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -79,10 +80,11 @@ const CaseDetail = () => {
         <Header />
         <main className="flex-1 py-12 px-6">
           <div className="max-w-7xl mx-auto">
-            <div className="mb-6">
+            <div className="mb-6 flex items-center justify-between">
               <Button variant="outline" onClick={() => navigate("/cases")}>
                 ← Back to Cases
               </Button>
+              <CaseExport caseId={caseId!} />
             </div>
             <CaseWorkspace onSelectCase={(caseData) => console.log("Case selected:", caseData)} />
           </div>

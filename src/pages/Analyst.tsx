@@ -215,7 +215,7 @@ export default function Analyst() {
               {selectedCase ? (
                 <>
                   <CaseNotes caseData={selectedCase} onUpdate={handleCaseUpdate} />
-                  <CaseExport caseData={selectedCase} />
+                  <CaseExport caseId={selectedCase.id} />
                 </>
               ) : (
                 <Card>

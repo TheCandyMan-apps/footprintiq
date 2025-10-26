@@ -1,105 +1,56 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Case, exportCaseAsJSON } from "@/lib/case";
-import { generateEvidencePack } from "@/lib/evidence/zip";
-import { Download, FileJson, FileArchive } from "lucide-react";
+import { Package } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface CaseExportProps {
-  caseData: Case;
+  caseId: string;
 }
 
-export const CaseExport = ({ caseData }: CaseExportProps) => {
-  const handleExportJSON = () => {
-    try {
-      const json = exportCaseAsJSON(caseData);
-      const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${caseData.name.replace(/\s+/g, "_")}_case.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success("Case exported as JSON");
-    } catch (error) {
-      console.error("Failed to export case:", error);
-      toast.error("Failed to export case");
-    }
-  };
+export function CaseExport({ caseId }: CaseExportProps) {
+  const [isExporting, setIsExporting] = useState(false);
 
-  const handleExportEvidencePack = async () => {
+  const handleExportForensic = async () => {
+    setIsExporting(true);
     try {
-      const blob = await generateEvidencePack(caseData.findings, {
-        generated: new Date().toISOString(),
-        scanId: caseData.id,
-        findingCount: caseData.findings.length,
+      const { data, error } = await supabase.functions.invoke("export-case", {
+        body: { caseId },
       });
-      
+
+      if (error) throw error;
+
+      // Create downloadable JSON file
+      const blob = new Blob([JSON.stringify(data.package, null, 2)], {
+        type: "application/json",
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${caseData.name.replace(/\s+/g, "_")}_evidence_pack.zip`;
+      a.download = `forensic-package-${caseId}.json`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      
-      toast.success("Evidence Pack generated");
-    } catch (error) {
-      console.error("Failed to generate evidence pack:", error);
-      toast.error("Failed to generate evidence pack");
+
+      toast.success("Forensic package exported with chain of custody");
+    } catch (error: any) {
+      console.error("Export error:", error);
+      toast.error(error.message || "Failed to export case");
+    } finally {
+      setIsExporting(false);
     }
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Export Case</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <div className="flex items-start gap-3">
-            <FileJson className="h-5 w-5 text-muted-foreground mt-0.5" />
-            <div className="flex-1">
-              <h4 className="font-medium text-sm">Case JSON</h4>
-              <p className="text-xs text-muted-foreground">
-                Export all findings, notes, and metadata as JSON
-              </p>
-            </div>
-            <Button size="sm" variant="outline" onClick={handleExportJSON}>
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <FileArchive className="h-5 w-5 text-muted-foreground mt-0.5" />
-            <div className="flex-1">
-              <h4 className="font-medium text-sm">Evidence Pack</h4>
-              <p className="text-xs text-muted-foreground">
-                Complete ZIP with JSON, CSV, summary, and manifest
-              </p>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleExportEvidencePack}
-              disabled={caseData.findings.length === 0}
-            >
-              <Download className="mr-2 h-4 w-4" />
-              Generate
-            </Button>
-          </div>
-
-          <div className="mt-4 p-3 bg-muted rounded-lg text-xs text-muted-foreground">
-            <p>
-              <strong>Case Summary:</strong>
-            </p>
-            <p className="mt-1">
-              {caseData.pinnedFindingIds.length} findings, {caseData.notes.length} notes
-            </p>
-            <p>Last updated: {new Date(caseData.updatedAt).toLocaleString()}</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <Button
+      onClick={handleExportForensic}
+      disabled={isExporting}
+      variant="outline"
+      size="sm"
+    >
+      <Package className="h-4 w-4 mr-2" />
+      {isExporting ? "Exporting..." : "Export Forensic Package"}
+    </Button>
   );
-};
+}

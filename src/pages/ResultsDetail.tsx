@@ -13,6 +13,7 @@ import { PDFReportButton } from "@/components/PDFReportButton";
 import { GraphExplorer } from "@/components/GraphExplorer";
 import { MonitoringToggle } from "@/components/MonitoringToggle";
 import { ScanSummary } from "@/components/ScanSummary";
+import { AnomalyDetector } from "@/components/AnomalyDetector";
 import { clusterFindingsByDate } from "@/lib/timeline";
 import { buildGraph, buildGraphFromFindings, detectEntityType } from "@/lib/graph";
 import { Finding } from "@/lib/ufm";
@@ -533,6 +534,11 @@ const ResultsDetail = () => {
             />
           </div>
         )}
+
+        {/* Anomaly Detection */}
+        <div className="mb-8">
+          <AnomalyDetector scanId={scanId!} />
+        </div>
 
         {/* Timeline & Graph - Enhanced Intelligence */}
         {(dataSources.length > 0 || socialProfiles.length > 0) && (

@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
+import { TrendingThreats } from "@/components/TrendingThreats";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { calculateGlobalRiskIndex, type GlobalMetrics } from "@/lib/globalAnalytics";
@@ -136,12 +137,15 @@ const GlobalIndex = () => {
                   </Card>
 
                   {/* Data Notice */}
-                  <Card className="p-6 bg-muted/50">
+                  <Card className="p-6 bg-muted/50 mb-8">
                     <p className="text-sm text-muted-foreground text-center">
                       All data is anonymized and aggregated to protect user privacy. 
                       Individual scan results are never shared or exposed.
                     </p>
                   </Card>
+
+                  {/* Trending Threats */}
+                  <TrendingThreats />
                 </>
               )}
             </div>
