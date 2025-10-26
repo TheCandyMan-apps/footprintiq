@@ -125,6 +125,8 @@ const App = () => (
           <Route path="/timeline" element={<Timeline />} />
           <Route path="/watchlists" element={<Watchlists />} />
           <Route path="/analyst-scoreboard" element={<AnalystScoreboard />} />
+          <Route path="/help" element={<HelpCenter />} />
+          <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

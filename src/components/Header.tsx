@@ -146,6 +146,9 @@ export const Header = () => {
                   <Link to="/blog" className="cursor-pointer">Blog</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link to="/help" className="cursor-pointer">Help Center</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/support" className="cursor-pointer">Support</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>

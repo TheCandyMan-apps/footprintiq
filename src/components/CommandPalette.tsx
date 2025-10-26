@@ -45,6 +45,7 @@ export function CommandPalette() {
     <>
       <button
         onClick={() => setOpen(true)}
+        data-tour="command-palette"
         className="hidden md:flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground border rounded-lg hover:border-primary transition-colors"
       >
         <Search className="w-4 h-4" />
@@ -101,11 +102,26 @@ export function CommandPalette() {
 
           <CommandSeparator />
 
-          <CommandGroup heading="Help">
-            <CommandItem onSelect={() => runCommand(() => navigate('/support'))}>
+          <CommandGroup heading="Help & Learning">
+            <CommandItem onSelect={() => runCommand(() => navigate('/help'))}>
               <HelpCircle className="mr-2 h-4 w-4" />
               <span>Help Center</span>
-              <Hotkey keys={["?"]} className="ml-auto" />
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => navigate('/onboarding?tour=onboarding'))}>
+              <HelpCircle className="mr-2 h-4 w-4" />
+              <span>Start Guided Tour</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => navigate('/onboarding?tour=search'))}>
+              <Search className="mr-2 h-4 w-4" />
+              <span>Search Tour</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => navigate('/onboarding?tour=graph'))}>
+              <Network className="mr-2 h-4 w-4" />
+              <span>Graph Tour</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => navigate('/support'))}>
+              <HelpCircle className="mr-2 h-4 w-4" />
+              <span>Support</span>
             </CommandItem>
           </CommandGroup>
         </CommandList>

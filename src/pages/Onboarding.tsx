@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { TourHighlight } from "@/components/tour/TourHighlight";
 import { useTour } from "@/hooks/useTour";
 import { TOURS } from "@/lib/tour/steps";
+import { markAsVisited } from "@/lib/tour/firstTime";
 
 export default function Onboarding() {
   const [searchParams] = useSearchParams();
@@ -23,6 +24,9 @@ export default function Onboarding() {
   } = useTour(tour);
 
   useEffect(() => {
+    // Mark user as visited
+    markAsVisited();
+    
     // Auto-start tour after a brief delay
     const timer = setTimeout(() => {
       startTour();

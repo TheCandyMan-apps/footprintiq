@@ -118,7 +118,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-2">
+          <div data-tour="search-input" className="space-y-2">
             <Label htmlFor="image">Profile Photo (Optional)</Label>
             <div className="flex flex-col gap-3">
               {!imagePreview ? (
@@ -244,6 +244,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
               type="submit" 
               size="lg" 
               variant="hero"
+              data-tour="scan-button"
               className="w-full text-lg"
             >
               Begin Scan

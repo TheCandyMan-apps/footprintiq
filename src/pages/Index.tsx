@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -9,9 +10,21 @@ import { Pricing } from "@/components/Pricing";
 import { Testimonials } from "@/components/Testimonials";
 import { FAQ } from "@/components/FAQ";
 import { TrustSignals } from "@/components/TrustSignals";
+import { shouldAutoStartTour, getTourAutoStartDelay } from "@/lib/tour/firstTime";
 
 export default function Home() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if this is a first-time user and should auto-start tour
+    if (shouldAutoStartTour()) {
+      const timer = setTimeout(() => {
+        navigate('/onboarding?tour=onboarding');
+      }, getTourAutoStartDelay());
+      
+      return () => clearTimeout(timer);
+    }
+  }, [navigate]);
 
   const handleStartScan = () => {
     navigate('/scan');
