@@ -58,6 +58,8 @@ import Preferences from "./pages/Preferences";
 import Timeline from "./pages/Timeline";
 import Watchlists from "./pages/Watchlists";
 import AnalystScoreboard from "./pages/AnalystScoreboard";
+import HelpCenter from "./pages/HelpCenter";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 

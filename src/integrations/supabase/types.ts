@@ -1914,6 +1914,45 @@ export type Database = {
           },
         ]
       }
+      sandbox_runs: {
+        Row: {
+          artifact_type: string | null
+          bytes_returned: number | null
+          created_at: string
+          error_message: string | null
+          findings_count: number | null
+          id: string
+          latency_ms: number
+          plugin_id: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          artifact_type?: string | null
+          bytes_returned?: number | null
+          created_at?: string
+          error_message?: string | null
+          findings_count?: number | null
+          id?: string
+          latency_ms: number
+          plugin_id: string
+          status: string
+          user_id?: string | null
+        }
+        Update: {
+          artifact_type?: string | null
+          bytes_returned?: number | null
+          created_at?: string
+          error_message?: string | null
+          findings_count?: number | null
+          id?: string
+          latency_ms?: number
+          plugin_id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       scan_comparisons: {
         Row: {
           created_at: string
