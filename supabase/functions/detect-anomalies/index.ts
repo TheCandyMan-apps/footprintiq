@@ -53,7 +53,7 @@ serve(async (req) => {
     // Fetch scan data safely (avoid .single() when row may not exist)
     const { data: scan, error: scanError } = await supabase
       .from("scans")
-      .select("id, risk_score, providers_queried, user_id")
+      .select("id, user_id")
       .eq("id", scanId)
       .eq("user_id", userId)
       .maybeSingle();
@@ -86,8 +86,8 @@ serve(async (req) => {
     // Build analysis context
     const context = {
       findingCount: findingsCount ?? 0,
-      riskScore: scan.risk_score,
-      providers: Array.isArray(scan.providers_queried) ? scan.providers_queried : (scan.providers_queried ? [scan.providers_queried] : []),
+      riskScore: Number((scan as any)?.risk_score ?? 0),
+      providers: Array.isArray((scan as any)?.providers_queried) ? (scan as any).providers_queried : [],
       dataTypes: [], // kept minimal; can be expanded to fetch distinct data types if needed
     };
 
