@@ -45,6 +45,9 @@ import Analytics from "./pages/Analytics";
 import RlsCheck from "./pages/admin/RlsCheck";
 import Providers from "./pages/admin/Providers";
 import Observability from "./pages/admin/Observability";
+import HowWeSourceData from "./pages/HowWeSourceData";
+import Graph from "./pages/Graph";
+import Search from "./pages/Search";
 
 const queryClient = new QueryClient();
 
@@ -97,6 +100,9 @@ const App = () => (
           <Route path="/admin/rls-check" element={<RlsCheck />} />
           <Route path="/admin/providers" element={<Providers />} />
           <Route path="/admin/observability" element={<Observability />} />
+          <Route path="/how-we-source-data" element={<HowWeSourceData />} />
+          <Route path="/graph" element={<Graph />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

@@ -154,10 +154,18 @@ const Dashboard = () => {
         </div>
 
         {/* New Scan Button */}
-        <div className="mb-6">
+        <div className="mb-6 flex gap-3">
           <Button onClick={handleNewScan} size="lg" className="gap-2">
             <Plus className="w-5 h-5" />
             Start New Scan
+          </Button>
+          <Button onClick={() => navigate('/graph')} variant="outline" size="lg" className="gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Entity Graph
+          </Button>
+          <Button onClick={() => navigate('/search')} variant="outline" size="lg" className="gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Search
           </Button>
         </div>
 

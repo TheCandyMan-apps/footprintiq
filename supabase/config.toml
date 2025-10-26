@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.abstract-phone]
 verify_jwt = true
+
+[functions.graph-api]
+verify_jwt = true

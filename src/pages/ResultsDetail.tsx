@@ -14,7 +14,7 @@ import { GraphExplorer } from "@/components/GraphExplorer";
 import { MonitoringToggle } from "@/components/MonitoringToggle";
 import { ScanSummary } from "@/components/ScanSummary";
 import { clusterFindingsByDate } from "@/lib/timeline";
-import { buildGraph } from "@/lib/graph";
+import { buildGraph, buildGraphFromFindings, detectEntityType } from "@/lib/graph";
 import { Finding } from "@/lib/ufm";
 import { ExportControls } from "@/components/ExportControls";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -32,7 +32,8 @@ import {
   Info,
   FileJson,
   FileSpreadsheet,
-  FileText
+  FileText,
+  Network
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
@@ -221,6 +222,81 @@ const ResultsDetail = () => {
 
       if (requestsError) throw requestsError;
       setRemovalRequests(requests || []);
+
+      // Build entity graph from scan data
+      if (scanData) {
+        // Detect entity type from scan data
+        let entityType: 'email' | 'username' | 'phone' | 'domain' | 'ip' = 'username';
+        let entityValue = '';
+        
+        if (scanData.email) {
+          entityType = 'email';
+          entityValue = scanData.email;
+        } else if (scanData.username) {
+          entityType = 'username';
+          entityValue = scanData.username;
+        } else if (scanData.phone) {
+          entityType = 'phone';
+          entityValue = scanData.phone;
+        }
+        
+        if (entityValue) {
+          // Convert scan data to findings format for graph building
+          const findings: Finding[] = [];
+          
+          // Add data sources as findings
+          sources?.forEach(source => {
+            findings.push({
+              id: `source_${source.id}`,
+              type: 'identity' as const,
+              title: `Found on ${source.name}`,
+              description: source.category,
+              severity: source.risk_level as any,
+              confidence: 0.8,
+              provider: source.name,
+              providerCategory: source.category,
+              evidence: source.data_found.map(d => ({ key: 'data', value: d })),
+              impact: `Data found: ${source.data_found.join(', ')}`,
+              remediation: [],
+              tags: ['data_source', source.category],
+              observedAt: new Date().toISOString(),
+              url: source.url,
+              raw: source
+            });
+          });
+          
+          // Add social profiles as findings
+          profiles?.forEach(profile => {
+            findings.push({
+              id: `profile_${profile.id}`,
+              type: 'social_media' as const,
+              title: `${profile.platform} Profile`,
+              description: `Found on ${profile.platform}: ${profile.username}`,
+              severity: 'info' as const,
+              confidence: profile.is_verified ? 0.95 : 0.7,
+              provider: profile.platform,
+              providerCategory: 'Social Media',
+              evidence: [
+                { key: 'username', value: profile.username },
+                { key: 'profile_url', value: profile.profile_url },
+                ...(profile.followers ? [{ key: 'followers', value: profile.followers }] : [])
+              ],
+              impact: `Profile found on ${profile.platform}`,
+              remediation: [],
+              tags: ['social_media', profile.platform],
+              observedAt: new Date().toISOString(),
+              url: profile.profile_url,
+              raw: profile
+            });
+          });
+          
+          // Build graph asynchronously
+          buildGraphFromFindings(findings, {
+            type: entityType,
+            value: entityValue
+          }).catch(err => console.error('[ResultsDetail] Error building graph:', err));
+        }
+      }
 
       // If background job is still populating, poll less frequently (max 30 tries)
       const hasData = (sources?.length ?? 0) > 0 || (profiles?.length ?? 0) > 0;
@@ -499,7 +575,7 @@ const ResultsDetail = () => {
               {getScoreMessage(scan.privacy_score)}
             </p>
             
-            <div className="grid md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+            <div className="grid md:grid-cols-4 gap-4 max-w-3xl mx-auto mb-6">
               <div className="p-4 rounded-lg bg-background/50">
                 <div className="text-2xl font-bold">{scan.total_sources_found}</div>
                 <div className="text-sm text-muted-foreground">Total Sources</div>
@@ -518,6 +594,24 @@ const ResultsDetail = () => {
                 </div>
                 <div className="text-sm text-muted-foreground">Removal Requests</div>
               </div>
+            </div>
+            
+            <div className="flex gap-3 justify-center">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  const entityValue = scan.email || scan.username || scan.phone || '';
+                  navigate(`/search?q=${encodeURIComponent(entityValue)}`);
+                }}
+              >
+                <Network className="w-4 h-4 mr-2" />
+                Explore Entity Graph
+              </Button>
+              <Button 
+                onClick={() => navigate('/scan')}
+              >
+                Run New Scan
+              </Button>
             </div>
           </div>
         </Card>

@@ -99,6 +99,13 @@ export const Header = () => {
                   <Link to="/dashboard" className="cursor-pointer">Dashboard</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link to="/graph" className="cursor-pointer">Entity Graph</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/search" className="cursor-pointer">Search Entities</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
                   <Link to="/assistant" className="cursor-pointer">AI Assistant</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
