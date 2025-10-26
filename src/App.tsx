@@ -54,6 +54,7 @@ import Graph from "./pages/Graph";
 import Search from "./pages/Search";
 import AIAnalyst from "./pages/AIAnalyst";
 import MonitorRunDetail from "./pages/MonitorRunDetail";
+import Preferences from "./pages/Preferences";
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,7 @@ const App = () => (
           <Route path="/search" element={<Search />} />
           <Route path="/ai-analyst" element={<AIAnalyst />} />
           <Route path="/monitoring/:runId" element={<MonitorRunDetail />} />
+          <Route path="/preferences" element={<Preferences />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

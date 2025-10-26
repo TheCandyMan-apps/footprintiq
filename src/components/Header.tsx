@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { CommandPalette } from "@/components/CommandPalette";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -202,7 +203,8 @@ export const Header = () => {
             )}
           </nav>
 
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-3">
+            <CommandPalette />
             {!user && (
               <Button onClick={() => navigate('/auth')}>
                 Get Started
