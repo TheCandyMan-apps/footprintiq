@@ -1,3 +1,4 @@
+// Timeline Intelligence 2.0 - Chronological event analysis with comparison mode
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
