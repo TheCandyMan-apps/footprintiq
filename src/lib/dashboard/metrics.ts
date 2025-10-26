@@ -48,9 +48,9 @@ export async function computeDashboardMetrics(workspaceId: string): Promise<Dash
   const { data: recentScans } = await supabase
     .from('scans')
     .select('result_count')
-    .gte('created_at', yesterday.toISOString());
+    .gte('created_at', yesterday.toISOString()) as any;
   
-  const newFindings24h = recentScans?.reduce((sum, scan) => sum + (scan.result_count || 0), 0) || 0;
+  const newFindings24h = recentScans?.reduce((sum: number, scan: any) => sum + (scan.result_count || 0), 0) || 0;
   
   // Alerts sent
   const { count: alertsSent } = await supabase
@@ -120,9 +120,9 @@ export async function computeDashboardMetrics(workspaceId: string): Promise<Dash
       .from('scans')
       .select('result_count')
       .gte('created_at', date.toISOString())
-      .lt('created_at', nextDate.toISOString());
+      .lt('created_at', nextDate.toISOString()) as any;
     
-    const count = dayScans?.reduce((sum, scan) => sum + (scan.result_count || 0), 0) || 0;
+    const count = dayScans?.reduce((sum: number, scan: any) => sum + (scan.result_count || 0), 0) || 0;
     
     findingsTimeline.push({
       date: date.toISOString().split('T')[0],

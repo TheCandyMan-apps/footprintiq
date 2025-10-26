@@ -29,7 +29,7 @@ export async function buildEntityTimeline(
     .from('entity_nodes' as any)
     .select('workspace_id, user_id')
     .eq('id', entityId)
-    .single();
+    .single() as any;
   
   if (!entity) return events;
   
@@ -38,7 +38,7 @@ export async function buildEntityTimeline(
     .from('scans')
     .select('id, created_at, query, scan_type, result_count')
     .eq('user_id', entity.user_id)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false }) as any;
   
   if (scans) {
     for (const scan of scans) {
@@ -60,7 +60,7 @@ export async function buildEntityTimeline(
   const { data: monitorRuns } = await supabase
     .from('monitor_runs' as any)
     .select('id, started_at, finished_at, new_findings_count, status')
-    .order('started_at', { ascending: false });
+    .order('started_at', { ascending: false }) as any;
   
   if (monitorRuns) {
     for (const run of monitorRuns) {
@@ -85,7 +85,7 @@ export async function buildEntityTimeline(
     .select('*')
     .eq('workspace_id', entity.workspace_id)
     .order('last_seen', { ascending: false })
-    .limit(100);
+    .limit(100) as any;
   
   if (threatIntel) {
     for (const threat of threatIntel) {
@@ -113,7 +113,7 @@ export async function buildEntityTimeline(
     .select('id, created_at, confidence')
     .eq('user_id', entity.user_id)
     .contains('entity_ids', [entityId])
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false }) as any;
   
   if (reports) {
     for (const report of reports) {
@@ -136,7 +136,7 @@ export async function buildEntityTimeline(
     .from('darkweb_findings' as any)
     .select('*')
     .eq('user_id', entity.user_id)
-    .order('discovered_at', { ascending: false });
+    .order('discovered_at', { ascending: false }) as any;
   
   if (darkWebFindings) {
     for (const finding of darkWebFindings) {

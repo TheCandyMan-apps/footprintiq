@@ -27,10 +27,11 @@ export async function runFeedCollection(workspaceId: string): Promise<FeedCollec
     const startTime = Date.now();
     let indicators: any[] = [];
     let error: string | undefined;
+    const feedData = feed as any;
     
     try {
       // Get API keys from environment (these should be configured in Supabase secrets)
-      switch (feed.feed_type) {
+      switch (feedData.feed_type) {
         case 'otx':
           const otxKey = localStorage.getItem('FEED_OTX_KEY');
           if (otxKey) {
@@ -57,7 +58,7 @@ export async function runFeedCollection(workspaceId: string): Promise<FeedCollec
       const stored = await normalizeAndStoreIndicators(
         workspaceId,
         indicators,
-        feed.name
+        feedData.name
       );
       
       // Update feed source stats
@@ -66,15 +67,15 @@ export async function runFeedCollection(workspaceId: string): Promise<FeedCollec
         .update({
           last_pull_at: new Date().toISOString(),
           last_success_at: new Date().toISOString(),
-          total_pulls: feed.total_pulls + 1,
-          success_pulls: feed.success_pulls + 1,
-          records_ingested: feed.records_ingested + stored,
+          total_pulls: feedData.total_pulls + 1,
+          success_pulls: feedData.success_pulls + 1,
+          records_ingested: feedData.records_ingested + stored,
           last_error: null,
         })
-        .eq('id', feed.id);
+        .eq('id', feedData.id);
       
       results.push({
-        feedName: feed.name,
+        feedName: feedData.name,
         success: true,
         recordsIngested: stored,
         duration: Date.now() - startTime,
@@ -87,13 +88,13 @@ export async function runFeedCollection(workspaceId: string): Promise<FeedCollec
         .from('feed_sources' as any)
         .update({
           last_pull_at: new Date().toISOString(),
-          total_pulls: feed.total_pulls + 1,
+          total_pulls: feedData.total_pulls + 1,
           last_error: error,
         })
-        .eq('id', feed.id);
+        .eq('id', feedData.id);
       
       results.push({
-        feedName: feed.name,
+        feedName: feedData.name,
         success: false,
         recordsIngested: 0,
         error,
