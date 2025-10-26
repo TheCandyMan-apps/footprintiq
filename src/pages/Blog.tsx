@@ -37,13 +37,13 @@ const Blog = () => {
     "@type": "Blog",
     "name": "FootprintIQ Blog",
     "description": "Learn about digital privacy, OSINT, data breaches, and online security.",
-    "url": "https://footprintiq.com/blog",
+    "url": "https://footprintiq.app/blog",
     "blogPost": blogPosts.map(post => ({
       "@type": "BlogPosting",
       "headline": post.title,
       "description": post.excerpt,
       "datePublished": new Date(post.date).toISOString(),
-      "url": `https://footprintiq.com/blog/${post.slug}`,
+      "url": `https://footprintiq.app/blog/${post.slug}`,
     })),
   };
 
@@ -52,7 +52,7 @@ const Blog = () => {
       <SEO
         title="Blog - Digital Privacy & OSINT Guides | FootprintIQ"
         description="Learn about digital footprints, OSINT, data breaches, and online privacy protection. Expert guides and tutorials for staying safe online."
-        canonical="https://footprintiq.com/blog"
+        canonical="https://footprintiq.app/blog"
         structuredData={structuredData}
       />
       

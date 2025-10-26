@@ -137,7 +137,29 @@ export default function Compliance() {
 
   return (
     <>
-      <SEO title="Compliance & Reporting | FootprintIQ" description="Generate compliance reports and audit trails" />
+      <SEO 
+        title="Compliance & Reporting — GDPR, CCPA, SOC 2 | FootprintIQ"
+        description="Generate compliance reports and audit trails for GDPR, CCPA, SOC 2, and other privacy regulations. Enterprise-grade compliance management."
+        canonical="https://footprintiq.app/compliance"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://footprintiq.app/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Compliance",
+              "item": "https://footprintiq.app/compliance"
+            }
+          ]
+        }}
+      />
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-6xl mx-auto space-y-6">
           <div>

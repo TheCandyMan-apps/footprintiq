@@ -40,9 +40,27 @@ const GlobalIndex = () => {
   return (
     <>
       <SEO
-        title="Global Exposure Index — FootprintIQ"
-        description="Real-time anonymized analytics on global digital exposure trends. See how privacy risks evolve across regions and industries."
+        title="Global Exposure Index — Real-Time Privacy Risk Trends | FootprintIQ"
+        description="Real-time anonymized analytics on global digital exposure trends. See how privacy risks evolve across regions and industries with comprehensive OSINT data."
         canonical="https://footprintiq.app/global-index"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://footprintiq.app/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Global Index",
+              "item": "https://footprintiq.app/global-index"
+            }
+          ]
+        }}
       />
       <div className="min-h-screen flex flex-col">
         <Header />

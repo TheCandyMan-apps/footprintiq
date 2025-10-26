@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SEO } from "@/components/SEO";
 import { 
   Shield, 
   TrendingDown, 
@@ -104,8 +105,14 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
+    <>
+      <SEO
+        title="Privacy Dashboard — FootprintIQ"
+        description="Track your digital footprint and monitor your privacy score over time with comprehensive OSINT scanning"
+        canonical="https://footprintiq.app/dashboard"
+      />
+      <div className="min-h-screen bg-background">
+        <Header />
 
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Page Header */}
@@ -241,8 +248,9 @@ const Dashboard = () => {
         </div>
       </main>
 
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </>
   );
 };
 

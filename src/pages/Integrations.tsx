@@ -159,10 +159,29 @@ const Integrations = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
-        <SEO 
-          title="Integrations - FootprintIQ"
-          description="Connect FootprintIQ with your favorite tools"
-        />
+      <SEO 
+        title="Enterprise Integrations — Connect FootprintIQ to Your Tools"
+        description="Connect FootprintIQ with Slack, Teams, Discord, Splunk, Salesforce, and more. Seamless integration with your existing security stack."
+        canonical="https://footprintiq.app/integrations"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://footprintiq.app/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Integrations",
+              "item": "https://footprintiq.app/integrations"
+            }
+          ]
+        }}
+      />
         <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">Loading integrations...</div>

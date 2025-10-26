@@ -49,9 +49,33 @@ const WebinarsPage = () => {
   return (
     <>
       <SEO
-        title="Webinars — FootprintIQ"
-        description="Join live webinars and watch recordings on digital privacy, OSINT, and data protection from industry experts."
+        title="Privacy & OSINT Webinars — FootprintIQ Training"
+        description="Join live and on-demand webinars on OSINT techniques, data protection, and enterprise privacy strategies. Expert-led training sessions."
         canonical="https://footprintiq.app/resources/webinars"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://footprintiq.app/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Resources",
+              "item": "https://footprintiq.app/resources"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "name": "Webinars",
+              "item": "https://footprintiq.app/resources/webinars"
+            }
+          ]
+        }}
       />
       <div className="min-h-screen flex flex-col">
         <Header />

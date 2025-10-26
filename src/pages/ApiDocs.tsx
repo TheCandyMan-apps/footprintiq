@@ -89,8 +89,16 @@ export default function ApiDocs() {
   return (
     <>
       <SEO 
-        title="API Documentation | FootprintIQ"
-        description="Access FootprintIQ programmatically with our REST API"
+        title="API Documentation — FootprintIQ REST API"
+        description="Access FootprintIQ programmatically with our REST API. Comprehensive documentation for integrating OSINT scanning into your applications."
+        canonical="https://footprintiq.app/docs/api"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "TechArticle",
+          "name": "FootprintIQ API Documentation",
+          "description": "Complete REST API documentation for OSINT scanning and digital footprint analysis",
+          "url": "https://footprintiq.app/docs/api"
+        }}
       />
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto space-y-8">

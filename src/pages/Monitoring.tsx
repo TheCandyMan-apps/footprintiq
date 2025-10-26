@@ -283,7 +283,26 @@ const Monitoring = () => {
     <>
       <SEO
         title="Monitoring & Alerts — FootprintIQ"
-        description="Monitor your digital footprint continuously and receive alerts for new exposures"
+        description="Monitor your digital footprint continuously and receive real-time alerts for new data exposures and breaches"
+        canonical="https://footprintiq.app/monitoring"
+        structuredData={{
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://footprintiq.app/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Monitoring",
+              "item": "https://footprintiq.app/monitoring"
+            }
+          ]
+        }}
       />
       <div className="min-h-screen flex flex-col">
         <Header />
