@@ -72,8 +72,8 @@ export function useWorkspace(): WorkspaceContext {
         // Get user's role in this workspace
         const workspaceUser = workspaceUsers?.find(
           (wu: any) => wu.workspace_id === currentWorkspace!.id
-        );
-        setCurrentRole((workspaceUser?.role as WorkspaceRole) || null);
+        ) as any;
+        setCurrentRole(workspaceUser?.role ? workspaceUser.role as WorkspaceRole : null);
       }
 
       setLoading(false);
@@ -98,9 +98,9 @@ export function useWorkspace(): WorkspaceContext {
           .select('role')
           .eq('workspace_id', workspaceId)
           .eq('user_id', user.id)
-          .single();
+          .single() as any;
         
-        setCurrentRole((workspaceUser?.role as WorkspaceRole) || null);
+        setCurrentRole(workspaceUser?.role ? workspaceUser.role as WorkspaceRole : null);
       }
     }
   };

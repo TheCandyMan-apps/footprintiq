@@ -46,6 +46,9 @@ import RlsCheck from "./pages/admin/RlsCheck";
 import Providers from "./pages/admin/Providers";
 import Observability from "./pages/admin/Observability";
 import Policies from "./pages/admin/Policies";
+import AuditLogs from "./pages/admin/AuditLogs";
+import Workspace from "./pages/Workspace";
+import Trust from "./pages/Trust";
 import HowWeSourceData from "./pages/HowWeSourceData";
 import Graph from "./pages/Graph";
 import Search from "./pages/Search";
@@ -104,6 +107,9 @@ const App = () => (
           <Route path="/admin/providers" element={<Providers />} />
           <Route path="/admin/observability" element={<Observability />} />
           <Route path="/admin/policies" element={<Policies />} />
+          <Route path="/admin/audit-logs" element={<AuditLogs />} />
+          <Route path="/workspace" element={<Workspace />} />
+          <Route path="/trust" element={<Trust />} />
           <Route path="/how-we-source-data" element={<HowWeSourceData />} />
           <Route path="/graph" element={<Graph />} />
           <Route path="/search" element={<Search />} />
