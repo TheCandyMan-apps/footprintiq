@@ -106,6 +106,9 @@ export const Header = () => {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
+                  <Link to="/ai-analyst" className="cursor-pointer">AI Analyst</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/assistant" className="cursor-pointer">AI Assistant</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
