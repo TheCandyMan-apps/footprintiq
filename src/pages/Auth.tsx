@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Shield, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
+import { useTwitterAuth } from "@/hooks/useTwitterAuth";
 
 const authSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
@@ -27,6 +28,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signInWithTwitter, isLoading: twitterLoading } = useTwitterAuth();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -141,25 +143,6 @@ const Auth = () => {
     }
   };
 
-  const handleTwitterSignIn = async () => {
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'twitter',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-
-    setLoading(false);
-
-    if (error) {
-      toast({
-        title: "Twitter sign in failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-background via-background to-secondary/10">
@@ -195,13 +178,13 @@ const Auth = () => {
                   type="button"
                   variant="outline"
                   className="w-full"
-                  onClick={handleTwitterSignIn}
-                  disabled={loading}
+                  onClick={signInWithTwitter}
+                  disabled={loading || twitterLoading}
                 >
                   <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                   </svg>
-                  Continue with Twitter
+                  {twitterLoading ? "Connecting..." : "Continue with Twitter"}
                 </Button>
               </div>
 
@@ -262,13 +245,13 @@ const Auth = () => {
                   type="button"
                   variant="outline"
                   className="w-full"
-                  onClick={handleTwitterSignIn}
-                  disabled={loading}
+                  onClick={signInWithTwitter}
+                  disabled={loading || twitterLoading}
                 >
                   <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                   </svg>
-                  Continue with Twitter
+                  {twitterLoading ? "Connecting..." : "Continue with Twitter"}
                 </Button>
               </div>
 
