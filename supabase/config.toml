@@ -9,6 +9,9 @@ verify_jwt = true
 [functions.plugin-install]
 verify_jwt = true
 
+[functions.quality-benchmark]
+verify_jwt = true
+
 [functions.twitter-oauth-start]
 verify_jwt = false
 

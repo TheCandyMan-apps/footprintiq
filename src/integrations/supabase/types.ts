@@ -1942,6 +1942,192 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_quality_scores: {
+        Row: {
+          avg_error_rate_30d: number | null
+          avg_error_rate_7d: number | null
+          avg_f1_score_30d: number | null
+          avg_f1_score_7d: number | null
+          avg_p95_latency_30d: number | null
+          avg_p95_latency_7d: number | null
+          degradation_reason: string | null
+          id: string
+          is_degraded: boolean | null
+          last_tested_at: string | null
+          provider_id: string
+          quality_rank: number | null
+          reliability_rank: number | null
+          speed_rank: number | null
+          updated_at: string
+        }
+        Insert: {
+          avg_error_rate_30d?: number | null
+          avg_error_rate_7d?: number | null
+          avg_f1_score_30d?: number | null
+          avg_f1_score_7d?: number | null
+          avg_p95_latency_30d?: number | null
+          avg_p95_latency_7d?: number | null
+          degradation_reason?: string | null
+          id?: string
+          is_degraded?: boolean | null
+          last_tested_at?: string | null
+          provider_id: string
+          quality_rank?: number | null
+          reliability_rank?: number | null
+          speed_rank?: number | null
+          updated_at?: string
+        }
+        Update: {
+          avg_error_rate_30d?: number | null
+          avg_error_rate_7d?: number | null
+          avg_f1_score_30d?: number | null
+          avg_f1_score_7d?: number | null
+          avg_p95_latency_30d?: number | null
+          avg_p95_latency_7d?: number | null
+          degradation_reason?: string | null
+          id?: string
+          is_degraded?: boolean | null
+          last_tested_at?: string | null
+          provider_id?: string
+          quality_rank?: number | null
+          reliability_rank?: number | null
+          speed_rank?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quality_corpus: {
+        Row: {
+          artifact_type: string
+          artifact_value: string
+          corpus_version: string
+          created_at: string
+          difficulty: string | null
+          expected_findings: Json
+          id: string
+          is_active: boolean
+          notes: string | null
+          provider_expectations: Json
+          tags: string[] | null
+          test_case_id: string
+          updated_at: string
+        }
+        Insert: {
+          artifact_type: string
+          artifact_value: string
+          corpus_version?: string
+          created_at?: string
+          difficulty?: string | null
+          expected_findings?: Json
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          provider_expectations?: Json
+          tags?: string[] | null
+          test_case_id: string
+          updated_at?: string
+        }
+        Update: {
+          artifact_type?: string
+          artifact_value?: string
+          corpus_version?: string
+          created_at?: string
+          difficulty?: string | null
+          expected_findings?: Json
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          provider_expectations?: Json
+          tags?: string[] | null
+          test_case_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quality_results: {
+        Row: {
+          accuracy: number | null
+          avg_latency_ms: number | null
+          circuit_breaker_trips: number | null
+          created_at: string
+          error_rate_pct: number | null
+          f1_score: number | null
+          failure_details: Json | null
+          false_negatives: number | null
+          false_positives: number | null
+          id: string
+          p50_latency_ms: number | null
+          p95_latency_ms: number | null
+          p99_latency_ms: number | null
+          precision: number | null
+          provider_id: string
+          recall: number | null
+          run_at: string
+          sample_size: number
+          test_cases_failed: number | null
+          test_cases_passed: number | null
+          test_corpus_version: string
+          timeout_count: number | null
+          total_cost_cents: number | null
+          true_negatives: number | null
+          true_positives: number | null
+        }
+        Insert: {
+          accuracy?: number | null
+          avg_latency_ms?: number | null
+          circuit_breaker_trips?: number | null
+          created_at?: string
+          error_rate_pct?: number | null
+          f1_score?: number | null
+          failure_details?: Json | null
+          false_negatives?: number | null
+          false_positives?: number | null
+          id?: string
+          p50_latency_ms?: number | null
+          p95_latency_ms?: number | null
+          p99_latency_ms?: number | null
+          precision?: number | null
+          provider_id: string
+          recall?: number | null
+          run_at?: string
+          sample_size?: number
+          test_cases_failed?: number | null
+          test_cases_passed?: number | null
+          test_corpus_version?: string
+          timeout_count?: number | null
+          total_cost_cents?: number | null
+          true_negatives?: number | null
+          true_positives?: number | null
+        }
+        Update: {
+          accuracy?: number | null
+          avg_latency_ms?: number | null
+          circuit_breaker_trips?: number | null
+          created_at?: string
+          error_rate_pct?: number | null
+          f1_score?: number | null
+          failure_details?: Json | null
+          false_negatives?: number | null
+          false_positives?: number | null
+          id?: string
+          p50_latency_ms?: number | null
+          p95_latency_ms?: number | null
+          p99_latency_ms?: number | null
+          precision?: number | null
+          provider_id?: string
+          recall?: number | null
+          run_at?: string
+          sample_size?: number
+          test_cases_failed?: number | null
+          test_cases_passed?: number | null
+          test_corpus_version?: string
+          timeout_count?: number | null
+          total_cost_cents?: number | null
+          true_negatives?: number | null
+          true_positives?: number | null
+        }
+        Relationships: []
+      }
       removal_campaigns: {
         Row: {
           completed_at: string | null
