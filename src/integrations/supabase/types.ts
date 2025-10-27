@@ -827,6 +827,114 @@ export type Database = {
           },
         ]
       }
+      circuit_breaker_events: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_type: string
+          failure_count: number | null
+          id: string
+          metadata: Json | null
+          new_state: string | null
+          previous_state: string | null
+          provider_id: string
+          success_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          failure_count?: number | null
+          id?: string
+          metadata?: Json | null
+          new_state?: string | null
+          previous_state?: string | null
+          provider_id: string
+          success_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          failure_count?: number | null
+          id?: string
+          metadata?: Json | null
+          new_state?: string | null
+          previous_state?: string | null
+          provider_id?: string
+          success_count?: number | null
+        }
+        Relationships: []
+      }
+      circuit_breaker_states: {
+        Row: {
+          avg_recovery_time_ms: number | null
+          cooldown_period_ms: number
+          created_at: string
+          failure_count: number
+          failure_threshold: number
+          half_open_max_calls: number
+          half_opened_at: string | null
+          id: string
+          last_failure_at: string | null
+          last_success_at: string | null
+          next_attempt_at: string | null
+          opened_at: string | null
+          provider_id: string
+          state: string
+          success_count: number
+          success_threshold: number
+          timeout_ms: number
+          total_calls_blocked: number
+          total_trips: number
+          updated_at: string
+        }
+        Insert: {
+          avg_recovery_time_ms?: number | null
+          cooldown_period_ms?: number
+          created_at?: string
+          failure_count?: number
+          failure_threshold?: number
+          half_open_max_calls?: number
+          half_opened_at?: string | null
+          id?: string
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          next_attempt_at?: string | null
+          opened_at?: string | null
+          provider_id: string
+          state?: string
+          success_count?: number
+          success_threshold?: number
+          timeout_ms?: number
+          total_calls_blocked?: number
+          total_trips?: number
+          updated_at?: string
+        }
+        Update: {
+          avg_recovery_time_ms?: number | null
+          cooldown_period_ms?: number
+          created_at?: string
+          failure_count?: number
+          failure_threshold?: number
+          half_open_max_calls?: number
+          half_opened_at?: string | null
+          id?: string
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          next_attempt_at?: string | null
+          opened_at?: string | null
+          provider_id?: string
+          state?: string
+          success_count?: number
+          success_threshold?: number
+          timeout_ms?: number
+          total_calls_blocked?: number
+          total_trips?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       compliance_reports: {
         Row: {
           file_url: string | null
@@ -2193,6 +2301,60 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      provider_health: {
+        Row: {
+          circuit_breaker_state: string | null
+          circuit_breaker_trips_24h: number | null
+          degradation_reason: string | null
+          health_score: number
+          id: string
+          is_critical: boolean
+          is_degraded: boolean
+          is_healthy: boolean
+          last_checked_at: string
+          provider_id: string
+          recent_avg_latency_ms: number | null
+          recent_error_count: number | null
+          recent_success_rate: number | null
+          recent_timeout_count: number | null
+          updated_at: string
+        }
+        Insert: {
+          circuit_breaker_state?: string | null
+          circuit_breaker_trips_24h?: number | null
+          degradation_reason?: string | null
+          health_score?: number
+          id?: string
+          is_critical?: boolean
+          is_degraded?: boolean
+          is_healthy?: boolean
+          last_checked_at?: string
+          provider_id: string
+          recent_avg_latency_ms?: number | null
+          recent_error_count?: number | null
+          recent_success_rate?: number | null
+          recent_timeout_count?: number | null
+          updated_at?: string
+        }
+        Update: {
+          circuit_breaker_state?: string | null
+          circuit_breaker_trips_24h?: number | null
+          degradation_reason?: string | null
+          health_score?: number
+          id?: string
+          is_critical?: boolean
+          is_degraded?: boolean
+          is_healthy?: boolean
+          last_checked_at?: string
+          provider_id?: string
+          recent_avg_latency_ms?: number | null
+          recent_error_count?: number | null
+          recent_success_rate?: number | null
+          recent_timeout_count?: number | null
+          updated_at?: string
         }
         Relationships: []
       }
