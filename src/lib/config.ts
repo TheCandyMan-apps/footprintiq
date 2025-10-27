@@ -36,6 +36,24 @@ const configSchema = z.object({
   alerts: z.object({
     webhookUrl: z.string().url().optional(),
   }),
+  marketplace: z.object({
+    reviewers: z.string().default(""),
+    revenueSharePct: z.number().int().min(0).max(100).default(15),
+    stripeConnectEnabled: z.boolean().default(false),
+  }),
+  slo: z.object({
+    latencyP95Ms: z.number().int().positive().default(2500),
+    errorRatePct: z.number().positive().max(100).default(1),
+  }),
+  status: z.object({
+    publicBase: z.string().url().default("https://status.footprintiq.app"),
+  }),
+  backup: z.object({
+    cronUtc: z.string().default("0 3 * * *"),
+  }),
+  secrets: z.object({
+    rotationDays: z.number().int().positive().default(90),
+  }),
 });
 
 type Config = z.infer<typeof configSchema>;
@@ -72,6 +90,24 @@ function validateConfig(): Config {
     alerts: {
       webhookUrl: import.meta.env.VITE_ALERT_WEBHOOK_URL,
     },
+    marketplace: {
+      reviewers: import.meta.env.VITE_MARKETPLACE_REVIEWERS || "",
+      revenueSharePct: parseInt(import.meta.env.VITE_MARKETPLACE_REVENUE_SHARE_PCT || "15"),
+      stripeConnectEnabled: import.meta.env.VITE_STRIPE_CONNECT_ENABLED === "true",
+    },
+    slo: {
+      latencyP95Ms: parseInt(import.meta.env.VITE_SLO_LATENCY_P95_MS || "2500"),
+      errorRatePct: parseFloat(import.meta.env.VITE_SLO_ERROR_RATE_PCT || "1"),
+    },
+    status: {
+      publicBase: import.meta.env.VITE_STATUS_PUBLIC_BASE || "https://status.footprintiq.app",
+    },
+    backup: {
+      cronUtc: import.meta.env.VITE_BACKUP_CRON_UTC || "0 3 * * *",
+    },
+    secrets: {
+      rotationDays: parseInt(import.meta.env.VITE_SECRETS_ROTATION_DAYS || "90"),
+    },
   };
 
   try {
@@ -97,3 +133,8 @@ export const providerConfig = config.providers;
 export const aiConfig = config.ai;
 export const monitoringConfig = config.monitoring;
 export const alertsConfig = config.alerts;
+export const marketplaceConfig = config.marketplace;
+export const sloConfig = config.slo;
+export const statusConfig = config.status;
+export const backupConfig = config.backup;
+export const secretsConfig = config.secrets;

@@ -1,5 +1,14 @@
 project_id = "byuzgvauaeldjqxlrjci"
 
+[functions.plugin-submit]
+verify_jwt = true
+
+[functions.plugin-review]
+verify_jwt = true
+
+[functions.plugin-install]
+verify_jwt = true
+
 [functions.twitter-oauth-start]
 verify_jwt = false
 

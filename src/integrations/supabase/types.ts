@@ -1696,6 +1696,192 @@ export type Database = {
         }
         Relationships: []
       }
+      plugin_installs: {
+        Row: {
+          config: Json
+          enabled: boolean
+          id: string
+          installed_at: string
+          plugin_id: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          config?: Json
+          enabled?: boolean
+          id?: string
+          installed_at?: string
+          plugin_id: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          config?: Json
+          enabled?: boolean
+          id?: string
+          installed_at?: string
+          plugin_id?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_installs_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plugin_reviews: {
+        Row: {
+          created_at: string
+          decision: Database["public"]["Enums"]["plugin_status"]
+          id: string
+          notes: string | null
+          plugin_id: string
+          reviewer_id: string
+          security_scan: Json | null
+          test_results: Json | null
+        }
+        Insert: {
+          created_at?: string
+          decision: Database["public"]["Enums"]["plugin_status"]
+          id?: string
+          notes?: string | null
+          plugin_id: string
+          reviewer_id: string
+          security_scan?: Json | null
+          test_results?: Json | null
+        }
+        Update: {
+          created_at?: string
+          decision?: Database["public"]["Enums"]["plugin_status"]
+          id?: string
+          notes?: string | null
+          plugin_id?: string
+          reviewer_id?: string
+          security_scan?: Json | null
+          test_results?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_reviews_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plugin_usage: {
+        Row: {
+          calls: number
+          cost_cents: number
+          day: string
+          errors: number
+          id: string
+          plugin_id: string
+          revenue_cents: number
+        }
+        Insert: {
+          calls?: number
+          cost_cents?: number
+          day: string
+          errors?: number
+          id?: string
+          plugin_id: string
+          revenue_cents?: number
+        }
+        Update: {
+          calls?: number
+          cost_cents?: number
+          day?: string
+          errors?: number
+          id?: string
+          plugin_id?: string
+          revenue_cents?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_usage_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plugins: {
+        Row: {
+          author_id: string
+          author_name: string
+          created_at: string
+          description: string | null
+          documentation_url: string | null
+          entry_url: string
+          icon_url: string | null
+          id: string
+          manifest: Json
+          published_at: string | null
+          revenue_share_pct: number
+          status: Database["public"]["Enums"]["plugin_status"]
+          stripe_account_id: string | null
+          support_url: string | null
+          suspended_reason: string | null
+          tags: string[]
+          title: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          author_id: string
+          author_name: string
+          created_at?: string
+          description?: string | null
+          documentation_url?: string | null
+          entry_url: string
+          icon_url?: string | null
+          id?: string
+          manifest?: Json
+          published_at?: string | null
+          revenue_share_pct?: number
+          status?: Database["public"]["Enums"]["plugin_status"]
+          stripe_account_id?: string | null
+          support_url?: string | null
+          suspended_reason?: string | null
+          tags?: string[]
+          title: string
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          author_id?: string
+          author_name?: string
+          created_at?: string
+          description?: string | null
+          documentation_url?: string | null
+          entry_url?: string
+          icon_url?: string | null
+          id?: string
+          manifest?: Json
+          published_at?: string | null
+          revenue_share_pct?: number
+          status?: Database["public"]["Enums"]["plugin_status"]
+          stripe_account_id?: string | null
+          support_url?: string | null
+          suspended_reason?: string | null
+          tags?: string[]
+          title?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       policy_audit_log: {
         Row: {
           action: string
@@ -2905,6 +3091,12 @@ export type Database = {
     Enums: {
       case_priority: "low" | "medium" | "high" | "critical"
       case_status: "draft" | "submitted" | "in_progress" | "resolved" | "closed"
+      plugin_status:
+        | "draft"
+        | "submitted"
+        | "approved"
+        | "rejected"
+        | "suspended"
       removal_status: "pending" | "in_progress" | "completed" | "failed"
       risk_level: "low" | "medium" | "high"
       scan_type: "username" | "personal_details" | "both"
@@ -3038,6 +3230,13 @@ export const Constants = {
     Enums: {
       case_priority: ["low", "medium", "high", "critical"],
       case_status: ["draft", "submitted", "in_progress", "resolved", "closed"],
+      plugin_status: [
+        "draft",
+        "submitted",
+        "approved",
+        "rejected",
+        "suspended",
+      ],
       removal_status: ["pending", "in_progress", "completed", "failed"],
       risk_level: ["low", "medium", "high"],
       scan_type: ["username", "personal_details", "both"],

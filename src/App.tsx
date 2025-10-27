@@ -60,6 +60,10 @@ import Watchlists from "./pages/Watchlists";
 import AnalystScoreboard from "./pages/AnalystScoreboard";
 import HelpCenter from "./pages/HelpCenter";
 import Onboarding from "./pages/Onboarding";
+import Marketplace from "./pages/Marketplace";
+import MarketplaceSubmit from "./pages/MarketplaceSubmit";
+import MarketplacePlugin from "./pages/MarketplacePlugin";
+import MarketplaceReview from "./pages/admin/MarketplaceReview";
 
 const queryClient = new QueryClient();
 
@@ -127,6 +131,10 @@ const App = () => (
           <Route path="/analyst-scoreboard" element={<AnalystScoreboard />} />
           <Route path="/help" element={<HelpCenter />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/marketplace" element={<Marketplace />} />
+          <Route path="/marketplace/submit" element={<MarketplaceSubmit />} />
+          <Route path="/marketplace/plugin/:pluginId" element={<MarketplacePlugin />} />
+          <Route path="/admin/marketplace/review" element={<MarketplaceReview />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
