@@ -23,7 +23,7 @@ export const Hero = ({ onStartScan }: HeroProps) => {
       
       {/* Content */}
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-20 text-center">
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+        <h1 className="text-5xl md:text-7xl font-bold mb-10 pb-2 bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
           Check Your Digital Footprint
         </h1>
         
