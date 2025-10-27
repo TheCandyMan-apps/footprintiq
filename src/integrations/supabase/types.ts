@@ -1615,6 +1615,30 @@ export type Database = {
           },
         ]
       }
+      oauth_states: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          provider: string
+          state: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          provider: string
+          state: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          provider?: string
+          state?: string
+        }
+        Relationships: []
+      }
       organization_members: {
         Row: {
           id: string
@@ -2856,6 +2880,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_oauth_states: { Args: never; Returns: undefined }
       cleanup_scan_pii: { Args: never; Returns: undefined }
       generate_case_number: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }

@@ -1,5 +1,11 @@
 project_id = "byuzgvauaeldjqxlrjci"
 
+[functions.twitter-oauth-start]
+verify_jwt = false
+
+[functions.twitter-oauth-callback]
+verify_jwt = false
+
 [functions.osint-scan]
 verify_jwt = true
 
