@@ -65,6 +65,7 @@ import MarketplaceSubmit from "./pages/MarketplaceSubmit";
 import MarketplacePlugin from "./pages/MarketplacePlugin";
 import MarketplaceReview from "./pages/admin/MarketplaceReview";
 import QualityLab from "./pages/admin/QualityLab";
+import ObservabilityDashboard from "./pages/admin/ObservabilityDashboard";
 
 const queryClient = new QueryClient();
 
@@ -137,6 +138,7 @@ const App = () => (
           <Route path="/marketplace/plugin/:pluginId" element={<MarketplacePlugin />} />
           <Route path="/admin/marketplace/review" element={<MarketplaceReview />} />
           <Route path="/admin/quality-lab" element={<QualityLab />} />
+          <Route path="/admin/observability" element={<ObservabilityDashboard />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>

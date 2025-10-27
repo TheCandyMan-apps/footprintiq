@@ -172,6 +172,60 @@ export type Database = {
           },
         ]
       }
+      alert_events: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_rule_id: string | null
+          created_at: string
+          id: string
+          incident_id: string | null
+          message: string
+          metadata: Json | null
+          severity: string
+          title: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_rule_id?: string | null
+          created_at?: string
+          id?: string
+          incident_id?: string | null
+          message: string
+          metadata?: Json | null
+          severity: string
+          title: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_rule_id?: string | null
+          created_at?: string
+          id?: string
+          incident_id?: string | null
+          message?: string
+          metadata?: Json | null
+          severity?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_events_alert_rule_id_fkey"
+            columns: ["alert_rule_id"]
+            isOneToOne: false
+            referencedRelation: "alert_rules_v2"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_events_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_rules: {
         Row: {
           condition: Json
@@ -205,6 +259,51 @@ export type Database = {
           notification_channels?: string[] | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      alert_rules_v2: {
+        Row: {
+          condition: Json
+          cooldown_minutes: number | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          name: string
+          notification_channels: Json
+          rule_type: string
+          severity: string
+          updated_at: string
+        }
+        Insert: {
+          condition: Json
+          cooldown_minutes?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name: string
+          notification_channels?: Json
+          rule_type: string
+          severity?: string
+          updated_at?: string
+        }
+        Update: {
+          condition?: Json
+          cooldown_minutes?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name?: string
+          notification_channels?: Json
+          rule_type?: string
+          severity?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1290,6 +1389,104 @@ export type Database = {
         }
         Relationships: []
       }
+      incident_updates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          incident_id: string
+          is_public: boolean
+          message: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          incident_id: string
+          is_public?: boolean
+          message: string
+          status: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          incident_id?: string
+          is_public?: boolean
+          message?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incident_updates_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidents: {
+        Row: {
+          affected_services: string[] | null
+          assigned_to: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          impact: string | null
+          incident_number: string
+          postmortem_url: string | null
+          resolved_at: string | null
+          root_cause: string | null
+          severity: string
+          slack_thread_url: string | null
+          started_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          affected_services?: string[] | null
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          impact?: string | null
+          incident_number: string
+          postmortem_url?: string | null
+          resolved_at?: string | null
+          root_cause?: string | null
+          severity?: string
+          slack_thread_url?: string | null
+          started_at?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          affected_services?: string[] | null
+          assigned_to?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          impact?: string | null
+          incident_number?: string
+          postmortem_url?: string | null
+          resolved_at?: string | null
+          root_cause?: string | null
+          severity?: string
+          slack_thread_url?: string | null
+          started_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       integration_catalog: {
         Row: {
           category: string
@@ -1422,6 +1619,63 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      metrics_aggregations: {
+        Row: {
+          aggregation_period: string
+          avg: number | null
+          count: number | null
+          created_at: string
+          dimensions: Json | null
+          id: string
+          max: number | null
+          metric_name: string
+          metric_type: string
+          min: number | null
+          p50: number | null
+          p95: number | null
+          p99: number | null
+          period_end: string
+          period_start: string
+          sum: number | null
+        }
+        Insert: {
+          aggregation_period: string
+          avg?: number | null
+          count?: number | null
+          created_at?: string
+          dimensions?: Json | null
+          id?: string
+          max?: number | null
+          metric_name: string
+          metric_type: string
+          min?: number | null
+          p50?: number | null
+          p95?: number | null
+          p99?: number | null
+          period_end: string
+          period_start: string
+          sum?: number | null
+        }
+        Update: {
+          aggregation_period?: string
+          avg?: number | null
+          count?: number | null
+          created_at?: string
+          dimensions?: Json | null
+          id?: string
+          max?: number | null
+          metric_name?: string
+          metric_type?: string
+          min?: number | null
+          p50?: number | null
+          p95?: number | null
+          p99?: number | null
+          period_end?: string
+          period_start?: string
+          sum?: number | null
         }
         Relationships: []
       }
@@ -2567,6 +2821,83 @@ export type Database = {
         }
         Relationships: []
       }
+      slo_definitions: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          measurement_window: string
+          name: string
+          severity: string
+          slo_type: string
+          target_value: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          measurement_window?: string
+          name: string
+          severity?: string
+          slo_type: string
+          target_value: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          measurement_window?: string
+          name?: string
+          severity?: string
+          slo_type?: string
+          target_value?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      slo_measurements: {
+        Row: {
+          created_at: string
+          id: string
+          is_violation: boolean
+          measured_at: string
+          measured_value: number
+          metadata: Json | null
+          slo_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_violation?: boolean
+          measured_at?: string
+          measured_value: number
+          metadata?: Json | null
+          slo_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_violation?: boolean
+          measured_at?: string
+          measured_value?: number
+          metadata?: Json | null
+          slo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "slo_measurements_slo_id_fkey"
+            columns: ["slo_id"]
+            isOneToOne: false
+            referencedRelation: "slo_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_profiles: {
         Row: {
           account_id: string | null
@@ -3255,6 +3586,7 @@ export type Database = {
       cleanup_expired_oauth_states: { Args: never; Returns: undefined }
       cleanup_scan_pii: { Args: never; Returns: undefined }
       generate_case_number: { Args: never; Returns: string }
+      generate_incident_number: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       grant_admin_role: {
         Args: { _caller_token?: string; _user_id: string }
