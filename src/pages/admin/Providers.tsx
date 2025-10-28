@@ -2,28 +2,35 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { REGISTRY } from "@/providers/registry";
-import { getCircuitStatus } from "@/providers/runtime";
-import { getSpendSummary } from "@/providers/costs";
-import { getPolicyStatus } from "@/providers/policy";
+import { PROVIDER_META } from "@/providers/registry.meta";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Providers() {
   const [circuits, setCircuits] = useState<Record<string, { open: boolean; failures: number; cooldownUntil?: number }>>({});
-  const [spend, setSpend] = useState<Record<string, any>>({});
-  const [policy, setPolicy] = useState<Record<string, any>>({});
+  const [health, setHealth] = useState<any>(null);
 
   useEffect(() => {
-    setCircuits(getCircuitStatus());
-    setSpend(getSpendSummary());
-    setPolicy(getPolicyStatus());
+    loadProviderHealth();
   }, []);
 
+  const loadProviderHealth = async () => {
+    try {
+      const { data } = await supabase.functions.invoke('health', {
+        body: { check: 'all' }
+      });
+      if (data) {
+        setCircuits(data.breakersOpen || {});
+        setHealth(data);
+      }
+    } catch (error) {
+      console.error('Failed to load provider health:', error);
+    }
+  };
+
   const getStatus = (providerId: string) => {
-    const envKey = `VITE_${providerId.toUpperCase()}_API_KEY`;
-    const hasKey = !!import.meta.env[envKey];
-    const meta = REGISTRY.find((p) => p.id === providerId);
+    const meta = PROVIDER_META.find((p) => p.id === providerId);
     
-    if (meta?.policy && !policy[meta.policy]?.enabled) {
+    if (meta?.policy && !health?.config?.[meta.policy]) {
       return { label: "Gated", variant: "secondary" as const };
     }
     
@@ -31,10 +38,7 @@ export default function Providers() {
       return { label: "Cooldown", variant: "destructive" as const };
     }
     
-    if (!hasKey) {
-      return { label: "Missing Key", variant: "outline" as const };
-    }
-    
+    // In production, check key status via health endpoint
     return { label: "Enabled", variant: "default" as const };
   };
 
@@ -48,9 +52,8 @@ export default function Providers() {
       </div>
       
       <div className="grid gap-4">
-        {REGISTRY.map((provider) => {
+        {PROVIDER_META.map((provider) => {
           const status = getStatus(provider.id);
-          const metrics = spend[provider.id]?.daily;
           
           return (
             <Card key={provider.id}>
@@ -75,20 +78,16 @@ export default function Providers() {
                     <p className="font-medium">{provider.supports.join(", ")}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Calls Today</p>
-                    <p className="font-medium">{metrics?.calls || 0}</p>
+                    <p className="text-muted-foreground">Cost Tier</p>
+                    <p className="font-medium capitalize">{provider.cost}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">Success Rate</p>
-                    <p className="font-medium">
-                      {metrics?.calls ? `${Math.round((metrics.success / metrics.calls) * 100)}%` : "—"}
-                    </p>
+                    <p className="text-muted-foreground">Category</p>
+                    <p className="font-medium capitalize">{provider.category}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground">P95 Latency</p>
-                    <p className="font-medium">
-                      {metrics?.p95 ? `${metrics.p95}ms` : "—"}
-                    </p>
+                    <p className="text-muted-foreground">Cache TTL</p>
+                    <p className="font-medium">{Math.round(provider.ttlMs / 3600000)}h</p>
                   </div>
                 </div>
               </CardContent>

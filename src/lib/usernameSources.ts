@@ -9,7 +9,7 @@ import { extendedUsernameSources } from './usernameSources-extended';
 export interface UsernameSource {
   name: string;
   url: string;
-  category: 'social' | 'forums' | 'dev' | 'gaming' | 'dating' | 'nsfw' | 'crypto' | 'shopping' | 'business' | 'creative' | 'misc';
+  category: 'social' | 'forums' | 'dev' | 'gaming' | 'adult' | 'nsfw' | 'crypto' | 'shopping' | 'business' | 'creative' | 'misc';
   favicon?: string;
   checkPattern?: string;
 }
@@ -273,28 +273,28 @@ export const usernameSources: UsernameSource[] = [
   { name: "edX", url: "https://www.edx.org/bio/{username}", category: "creative", favicon: "https://www.edx.org/favicon.ico" },
   
   // ===== DATING & SOCIAL DISCOVERY (25) =====
-  { name: "Tinder", url: "https://tinder.com/@{username}", category: "dating", favicon: "https://tinder.com/favicon.ico" },
-  { name: "Bumble", url: "https://bumble.com/get/{username}", category: "dating", favicon: "https://bumble.com/favicon.ico" },
-  { name: "Hinge", url: "https://hinge.co/profile/{username}", category: "dating" },
-  { name: "Match.com", url: "https://www.match.com/{username}", category: "dating", favicon: "https://www.match.com/favicon.ico" },
-  { name: "eHarmony", url: "https://www.eharmony.com/user/{username}", category: "dating", favicon: "https://www.eharmony.com/favicon.ico" },
-  { name: "OkCupid", url: "https://www.okcupid.com/profile/{username}", category: "dating", favicon: "https://www.okcupid.com/favicon.ico" },
-  { name: "Plenty of Fish", url: "https://www.pof.com/viewprofile.aspx?profile_id={username}", category: "dating", favicon: "https://www.pof.com/favicon.ico" },
-  { name: "Zoosk", url: "https://www.zoosk.com/profile/{username}", category: "dating", favicon: "https://www.zoosk.com/favicon.ico" },
-  { name: "Coffee Meets Bagel", url: "https://coffeemeetsbagel.com/{username}", category: "dating" },
-  { name: "Her", url: "https://weareher.com/{username}", category: "dating" },
-  { name: "Grindr", url: "https://www.grindr.com/profile/{username}", category: "dating", favicon: "https://www.grindr.com/favicon.ico" },
-  { name: "Scruff", url: "https://www.scruff.com/{username}", category: "dating", favicon: "https://www.scruff.com/favicon.ico" },
-  { name: "Feeld", url: "https://feeld.co/{username}", category: "dating" },
-  { name: "Badoo", url: "https://badoo.com/{username}", category: "dating", favicon: "https://badoo.com/favicon.ico" },
-  { name: "Happn", url: "https://www.happn.com/en/me/{username}", category: "dating", favicon: "https://www.happn.com/favicon.ico" },
-  { name: "Hily", url: "https://hily.com/{username}", category: "dating" },
-  { name: "Lovoo", url: "https://www.lovoo.com/profile/{username}", category: "dating" },
-  { name: "Tagged", url: "https://www.tagged.com/profile.html?uid={username}", category: "dating", favicon: "https://www.tagged.com/favicon.ico" },
-  { name: "MeetMe", url: "https://www.meetme.com/{username}", category: "dating", favicon: "https://www.meetme.com/favicon.ico" },
-  { name: "Skout", url: "https://www.skout.com/user/{username}", category: "dating" },
-  { name: "Mingle2", url: "https://www.mingle2.com/user/{username}", category: "dating" },
-  { name: "AshleyMadison", url: "https://www.ashleymadison.com/profile/{username}", category: "dating" },
+  { name: "Tinder", url: "https://tinder.com/@{username}", category: "adult", favicon: "https://tinder.com/favicon.ico" },
+  { name: "Bumble", url: "https://bumble.com/get/{username}", category: "adult", favicon: "https://bumble.com/favicon.ico" },
+  { name: "Hinge", url: "https://hinge.co/profile/{username}", category: "adult" },
+  { name: "Match.com", url: "https://www.match.com/{username}", category: "adult", favicon: "https://www.match.com/favicon.ico" },
+  { name: "eHarmony", url: "https://www.eharmony.com/user/{username}", category: "adult", favicon: "https://www.eharmony.com/favicon.ico" },
+  { name: "OkCupid", url: "https://www.okcupid.com/profile/{username}", category: "adult", favicon: "https://www.okcupid.com/favicon.ico" },
+  { name: "Plenty of Fish", url: "https://www.pof.com/viewprofile.aspx?profile_id={username}", category: "adult", favicon: "https://www.pof.com/favicon.ico" },
+  { name: "Zoosk", url: "https://www.zoosk.com/profile/{username}", category: "adult", favicon: "https://www.zoosk.com/favicon.ico" },
+  { name: "Coffee Meets Bagel", url: "https://coffeemeetsbagel.com/{username}", category: "adult" },
+  { name: "Her", url: "https://weareher.com/{username}", category: "adult" },
+  { name: "Grindr", url: "https://www.grindr.com/profile/{username}", category: "adult", favicon: "https://www.grindr.com/favicon.ico" },
+  { name: "Scruff", url: "https://www.scruff.com/{username}", category: "adult", favicon: "https://www.scruff.com/favicon.ico" },
+  { name: "Feeld", url: "https://feeld.co/{username}", category: "adult" },
+  { name: "Badoo", url: "https://badoo.com/{username}", category: "adult", favicon: "https://badoo.com/favicon.ico" },
+  { name: "Happn", url: "https://www.happn.com/en/me/{username}", category: "adult", favicon: "https://www.happn.com/favicon.ico" },
+  { name: "Hily", url: "https://hily.com/{username}", category: "adult" },
+  { name: "Lovoo", url: "https://www.lovoo.com/profile/{username}", category: "adult" },
+  { name: "Tagged", url: "https://www.tagged.com/profile.html?uid={username}", category: "adult", favicon: "https://www.tagged.com/favicon.ico" },
+  { name: "MeetMe", url: "https://www.meetme.com/{username}", category: "adult", favicon: "https://www.meetme.com/favicon.ico" },
+  { name: "Skout", url: "https://www.skout.com/user/{username}", category: "adult" },
+  { name: "Mingle2", url: "https://www.mingle2.com/user/{username}", category: "adult" },
+  { name: "AshleyMadison", url: "https://www.ashleymadison.com/profile/{username}", category: "adult" },
   { name: "AdultFriendFinder", url: "https://adultfriendfinder.com/profile/{username}", category: "nsfw", favicon: "https://adultfriendfinder.com/favicon.ico" },
   { name: "Alt.com", url: "https://www.alt.com/profile/{username}", category: "nsfw" },
   { name: "FetLife", url: "https://fetlife.com/users/{username}", category: "nsfw", favicon: "https://fetlife.com/favicon.ico" },

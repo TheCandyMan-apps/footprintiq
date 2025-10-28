@@ -54,6 +54,7 @@ import Integrations from "./pages/Integrations";
 import Analytics from "./pages/Analytics";
 import RlsCheck from "./pages/admin/RlsCheck";
 import Providers from "./pages/admin/Providers";
+import Health from "./pages/admin/Health";
 import Observability from "./pages/admin/Observability";
 import Policies from "./pages/admin/Policies";
 import AuditLogs from "./pages/admin/AuditLogs";
@@ -142,6 +143,7 @@ const App = () => (
             <Route path="/admin/roles" element={<RoleManagement />} />
           <Route path="/admin/rls-check" element={<RlsCheck />} />
           <Route path="/admin/providers" element={<Providers />} />
+          <Route path="/admin/health" element={<Health />} />
           <Route path="/admin/observability" element={<Observability />} />
           <Route path="/admin/policies" element={<Policies />} />
           <Route path="/admin/audit-logs" element={<AuditLogs />} />

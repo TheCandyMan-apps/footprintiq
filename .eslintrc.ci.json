@@ -1,0 +1,27 @@
+{
+  "extends": ["./eslint.config.js"],
+  "rules": {
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["**/providers/*", "!**/providers/registry.meta"],
+            "message": "Client code must only import registry.meta.ts for security. Provider implementations are server-only."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "error",
+      {
+        "selector": "Literal[value=/VITE_.*_KEY/]",
+        "message": "VITE_*_KEY environment variables must not be referenced in client code. Use server-side edge functions."
+      },
+      {
+        "selector": "MemberExpression[object.object.property.name='env'][property.value=/VITE_.*_KEY/]",
+        "message": "VITE_*_KEY environment variables must not be accessed. Use server-side edge functions."
+      }
+    ]
+  }
+}

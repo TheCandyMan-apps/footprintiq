@@ -1,0 +1,71 @@
+name: Security & Build Verification
+on: 
+  pull_request:
+  push:
+    branches: [main, develop]
+
+jobs:
+  secure-lint:
+    name: Security Lint & Secret Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run security ESLint rules
+        run: npx eslint --config .eslintrc.ci.json src/
+        continue-on-error: false
+      
+      - name: Check for exposed secrets in bundle
+        run: |
+          echo "🔍 Scanning for exposed API keys..."
+          if grep -rE "VITE_.*_KEY\s*=" .env* 2>/dev/null; then
+            echo "❌ ERROR: Found exposed VITE_*_KEY in .env files"
+            exit 1
+          fi
+          if grep -rE "import\.meta\.env\.VITE_.*_KEY" src/pages src/components 2>/dev/null; then
+            echo "❌ ERROR: Found VITE_*_KEY access in client code"
+            exit 1
+          fi
+          echo "✅ No exposed secrets detected"
+      
+      - name: TypeScript type check
+        run: npx tsc --noEmit
+      
+      - name: Build verification
+        run: npm run build
+        env:
+          NODE_ENV: production
+      
+      - name: Generate build attestation
+        run: |
+          echo "BUILD_ID=$(git rev-parse HEAD)" > build_attest.txt
+          echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> build_attest.txt
+          echo "BUILDER=github-actions" >> build_attest.txt
+          echo "NODE_VERSION=$(node --version)" >> build_attest.txt
+          echo "NPM_VERSION=$(npm --version)" >> build_attest.txt
+          find dist -type f -exec sha256sum {} \; >> build_attest.txt
+      
+      - name: Upload build attestation
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-attestation-${{ github.run_id }}
+          path: build_attest.txt
+          retention-days: 90
+      
+      - name: Summary
+        run: |
+          echo "✅ Security checks passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ TypeScript validation passed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Production build successful" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build attestation generated" >> $GITHUB_STEP_SUMMARY
