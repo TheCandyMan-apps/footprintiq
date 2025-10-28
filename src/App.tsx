@@ -24,6 +24,8 @@ import UsernamePage from "./pages/UsernamePage";
 import ApiDocs from "./pages/docs/ApiDocs";
 import ApiDocsNew from "./pages/ApiDocs";
 import DeveloperPortal from "./pages/DeveloperPortal";
+import ExecutiveDashboard from "./pages/ExecutiveDashboard";
+import AdvancedAnalytics from "./pages/AdvancedAnalytics";
 import PersonaDnaLaunch from "./pages/blog/PersonaDnaLaunch";
 import Analyst from "./pages/Analyst";
 import Assistant from "./pages/Assistant";
@@ -122,6 +124,8 @@ const App = () => (
           <Route path="/automated-removal" element={<AutomatedRemoval />} />
           <Route path="/integrations" element={<Integrations />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/analytics/executive" element={<ExecutiveDashboard />} />
+          <Route path="/analytics/advanced" element={<AdvancedAnalytics />} />
           <Route path="/admin/rls-check" element={<RlsCheck />} />
           <Route path="/admin/providers" element={<Providers />} />
           <Route path="/admin/observability" element={<Observability />} />

@@ -411,6 +411,33 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_snapshots: {
+        Row: {
+          created_at: string
+          id: string
+          metrics: Json
+          snapshot_date: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metrics: Json
+          snapshot_date: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metrics?: Json
+          snapshot_date?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       anomalies: {
         Row: {
           anomaly_type: string
@@ -1163,6 +1190,90 @@ export type Database = {
           max_connections?: number
           pool_name?: string
           waiting_requests?: number
+        }
+        Relationships: []
+      }
+      custom_metrics: {
+        Row: {
+          calculation: Json
+          created_at: string
+          description: string | null
+          id: string
+          metric_type: string
+          name: string
+          threshold_critical: number | null
+          threshold_warning: number | null
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          calculation: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          metric_type: string
+          name: string
+          threshold_critical?: number | null
+          threshold_warning?: number | null
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          calculation?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          metric_type?: string
+          name?: string
+          threshold_critical?: number | null
+          threshold_warning?: number | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
+      custom_reports: {
+        Row: {
+          config: Json
+          created_at: string
+          description: string | null
+          id: string
+          last_generated_at: string | null
+          name: string
+          report_type: string
+          schedule: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_generated_at?: string | null
+          name: string
+          report_type: string
+          schedule?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          last_generated_at?: string | null
+          name?: string
+          report_type?: string
+          schedule?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -2448,6 +2559,36 @@ export type Database = {
         }
         Relationships: []
       }
+      predictive_models: {
+        Row: {
+          accuracy_score: number | null
+          created_at: string
+          id: string
+          last_trained_at: string
+          model_data: Json
+          model_type: string
+          user_id: string
+        }
+        Insert: {
+          accuracy_score?: number | null
+          created_at?: string
+          id?: string
+          last_trained_at?: string
+          model_data: Json
+          model_type: string
+          user_id: string
+        }
+        Update: {
+          accuracy_score?: number | null
+          created_at?: string
+          id?: string
+          last_trained_at?: string
+          model_data?: Json
+          model_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -2935,6 +3076,50 @@ export type Database = {
           template_type?: string
         }
         Relationships: []
+      }
+      report_exports: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          file_path: string | null
+          format: string
+          id: string
+          report_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_path?: string | null
+          format: string
+          id?: string
+          report_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          file_path?: string | null
+          format?: string
+          id?: string
+          report_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_exports_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "custom_reports"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       risk_predictions: {
         Row: {
@@ -3832,6 +4017,48 @@ export type Database = {
           title?: string
           updated_at?: string | null
           url_pattern?: string
+        }
+        Relationships: []
+      }
+      warehouse_connectors: {
+        Row: {
+          config: Json
+          connector_type: string
+          created_at: string
+          enabled: boolean
+          id: string
+          last_sync_at: string | null
+          name: string
+          sync_status: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          config: Json
+          connector_type: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_sync_at?: string | null
+          name: string
+          sync_status?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          config?: Json
+          connector_type?: string
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_sync_at?: string | null
+          name?: string
+          sync_status?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
         }
         Relationships: []
       }
