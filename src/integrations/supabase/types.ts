@@ -527,6 +527,57 @@ export type Database = {
         }
         Relationships: []
       }
+      api_marketplace_listings: {
+        Row: {
+          base_cost: number | null
+          category: string
+          created_at: string
+          description: string | null
+          documentation_url: string | null
+          endpoints: Json
+          id: string
+          name: string
+          popularity_score: number
+          pricing_model: string
+          provider: string
+          rate_limits: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          base_cost?: number | null
+          category: string
+          created_at?: string
+          description?: string | null
+          documentation_url?: string | null
+          endpoints?: Json
+          id?: string
+          name: string
+          popularity_score?: number
+          pricing_model: string
+          provider: string
+          rate_limits?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          base_cost?: number | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          documentation_url?: string | null
+          endpoints?: Json
+          id?: string
+          name?: string
+          popularity_score?: number
+          pricing_model?: string
+          provider?: string
+          rate_limits?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       api_usage: {
         Row: {
           api_key_id: string
@@ -1862,6 +1913,51 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_configs: {
+        Row: {
+          config: Json
+          created_at: string
+          credentials_encrypted: string | null
+          error_message: string | null
+          id: string
+          integration_type: string
+          is_active: boolean
+          last_sync_at: string | null
+          name: string
+          sync_status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          credentials_encrypted?: string | null
+          error_message?: string | null
+          id?: string
+          integration_type: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          name: string
+          sync_status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          credentials_encrypted?: string | null
+          error_message?: string | null
+          id?: string
+          integration_type?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          name?: string
+          sync_status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       integration_logs: {
         Row: {
           created_at: string | null
@@ -2217,6 +2313,51 @@ export type Database = {
           },
         ]
       }
+      oauth_connections: {
+        Row: {
+          access_token_encrypted: string | null
+          connected_at: string
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          metadata: Json | null
+          provider: string
+          provider_user_id: string
+          refresh_token_encrypted: string | null
+          scopes: string[] | null
+          token_expires_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          connected_at?: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          metadata?: Json | null
+          provider: string
+          provider_user_id: string
+          refresh_token_encrypted?: string | null
+          scopes?: string[] | null
+          token_expires_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          connected_at?: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          metadata?: Json | null
+          provider?: string
+          provider_user_id?: string
+          refresh_token_encrypted?: string | null
+          scopes?: string[] | null
+          token_expires_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       oauth_states: {
         Row: {
           created_at: string | null
@@ -2340,6 +2481,44 @@ export type Database = {
         }
         Relationships: []
       }
+      plugin_installations: {
+        Row: {
+          config: Json | null
+          id: string
+          installed_at: string
+          is_enabled: boolean
+          last_used_at: string | null
+          plugin_id: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json | null
+          id?: string
+          installed_at?: string
+          is_enabled?: boolean
+          last_used_at?: string | null
+          plugin_id: string
+          user_id: string
+        }
+        Update: {
+          config?: Json | null
+          id?: string
+          installed_at?: string
+          is_enabled?: boolean
+          last_used_at?: string | null
+          plugin_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plugin_installations_plugin_id_fkey"
+            columns: ["plugin_id"]
+            isOneToOne: false
+            referencedRelation: "plugin_manifests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plugin_installs: {
         Row: {
           config: Json
@@ -2380,6 +2559,66 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      plugin_manifests: {
+        Row: {
+          author_id: string
+          category: string
+          created_at: string
+          description: string | null
+          documentation_url: string | null
+          download_count: number
+          icon_url: string | null
+          id: string
+          manifest: Json
+          name: string
+          permissions: string[] | null
+          published_at: string | null
+          rating: number | null
+          repository_url: string | null
+          status: string
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          author_id: string
+          category: string
+          created_at?: string
+          description?: string | null
+          documentation_url?: string | null
+          download_count?: number
+          icon_url?: string | null
+          id?: string
+          manifest: Json
+          name: string
+          permissions?: string[] | null
+          published_at?: string | null
+          rating?: number | null
+          repository_url?: string | null
+          status?: string
+          updated_at?: string
+          version: string
+        }
+        Update: {
+          author_id?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          documentation_url?: string | null
+          download_count?: number
+          icon_url?: string | null
+          id?: string
+          manifest?: Json
+          name?: string
+          permissions?: string[] | null
+          published_at?: string | null
+          rating?: number | null
+          repository_url?: string | null
+          status?: string
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
       }
       plugin_reviews: {
         Row: {
