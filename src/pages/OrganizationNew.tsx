@@ -28,7 +28,7 @@ export default function OrganizationNew() {
     queryKey: ["workspaces"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("workspaces")
+        .from("workspaces" as any)
         .select(`
           *,
           workspace_members!inner(role, user_id)
@@ -36,7 +36,7 @@ export default function OrganizationNew() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return data as any[];
     },
   });
 
@@ -47,7 +47,7 @@ export default function OrganizationNew() {
       if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase
-        .from("workspaces")
+        .from("workspaces" as any)
         .insert({
           name: workspace.name,
           slug: workspace.slug,
@@ -58,7 +58,7 @@ export default function OrganizationNew() {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as any;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
