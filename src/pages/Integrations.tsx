@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,10 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Webhook, MessageSquare, Send, Database, Shield, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
+import { Webhook, MessageSquare, Send, Database, Shield, CheckCircle2, Plus, Trash2, Activity } from "lucide-react";
 
 interface Integration {
   id: string;
@@ -30,12 +33,64 @@ interface UserIntegration {
 }
 
 const Integrations = () => {
+  const queryClient = useQueryClient();
   const [availableIntegrations, setAvailableIntegrations] = useState<Integration[]>([]);
   const [userIntegrations, setUserIntegrations] = useState<UserIntegration[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [configValues, setConfigValues] = useState<Record<string, string>>({});
-  const { toast } = useToast();
+  const [webhookDialogOpen, setWebhookDialogOpen] = useState(false);
+  const [newWebhook, setNewWebhook] = useState({
+    url: "",
+    description: "",
+    events: [] as string[],
+  });
+  const { toast: toastHook } = useToast();
+
+  // Fetch webhooks
+  const { data: webhooks = [] } = useQuery({
+    queryKey: ["webhook-endpoints"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("webhook_endpoints" as any)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Create webhook mutation
+  const createWebhook = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const secret = crypto.randomUUID();
+      const signingSecret = crypto.randomUUID();
+
+      const { error } = await supabase.from("webhook_endpoints" as any).insert({
+        workspace_id: user.id,
+        url: newWebhook.url,
+        description: newWebhook.description,
+        events: newWebhook.events,
+        secret,
+        signing_secret: signingSecret,
+        created_by: user.id,
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["webhook-endpoints"] });
+      setWebhookDialogOpen(false);
+      setNewWebhook({ url: "", description: "", events: [] });
+      toast.success("Webhook created successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create webhook: ${error.message}`);
+    },
+  });
 
   useEffect(() => {
     loadIntegrations();
@@ -63,7 +118,7 @@ const Integrations = () => {
       setUserIntegrations(userInts || []);
     } catch (error) {
       console.error('Error loading integrations:', error);
-      toast({
+      toastHook({
         title: "Error",
         description: "Failed to load integrations",
         variant: "destructive"
@@ -91,7 +146,7 @@ const Integrations = () => {
 
       if (error) throw error;
 
-      toast({
+      toastHook({
         title: "Success",
         description: `${selectedIntegration.name} connected successfully`,
       });
@@ -101,7 +156,7 @@ const Integrations = () => {
       loadIntegrations();
     } catch (error) {
       console.error('Error connecting integration:', error);
-      toast({
+      toastHook({
         title: "Error",
         description: "Failed to connect integration",
         variant: "destructive"
@@ -118,7 +173,7 @@ const Integrations = () => {
 
       if (error) throw error;
 
-      toast({
+      toastHook({
         title: "Success",
         description: `Integration ${!currentStatus ? 'enabled' : 'disabled'}`,
       });
@@ -126,7 +181,7 @@ const Integrations = () => {
       loadIntegrations();
     } catch (error) {
       console.error('Error toggling integration:', error);
-      toast({
+      toastHook({
         title: "Error",
         description: "Failed to update integration",
         variant: "destructive"
@@ -211,6 +266,10 @@ const Integrations = () => {
             <TabsList>
               <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
               <TabsTrigger value="my-integrations">My Integrations</TabsTrigger>
+              <TabsTrigger value="webhooks">
+                <Webhook className="mr-2 h-4 w-4" />
+                Webhooks
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="marketplace" className="space-y-6">
@@ -346,6 +405,144 @@ const Integrations = () => {
                   );
                 })
               )}
+            </TabsContent>
+
+            <TabsContent value="webhooks" className="space-y-4">
+              <div className="flex justify-end">
+                <Dialog open={webhookDialogOpen} onOpenChange={setWebhookDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Webhook
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create Webhook</DialogTitle>
+                      <DialogDescription>
+                        Set up a webhook to receive real-time notifications
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="url">Endpoint URL</Label>
+                        <Input
+                          id="url"
+                          value={newWebhook.url}
+                          onChange={(e) => setNewWebhook({ ...newWebhook, url: e.target.value })}
+                          placeholder="https://your-app.com/webhooks"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Input
+                          id="description"
+                          value={newWebhook.description}
+                          onChange={(e) => setNewWebhook({ ...newWebhook, description: e.target.value })}
+                          placeholder="Production webhook endpoint"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Events</Label>
+                        <Select
+                          value=""
+                          onValueChange={(event) => {
+                            if (!newWebhook.events.includes(event)) {
+                              setNewWebhook({ ...newWebhook, events: [...newWebhook.events, event] });
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select events" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="scan.completed">Scan Completed</SelectItem>
+                            <SelectItem value="finding.critical">Critical Finding</SelectItem>
+                            <SelectItem value="monitor.alert">Monitor Alert</SelectItem>
+                            <SelectItem value="breach.detected">Breach Detected</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {newWebhook.events.map((event) => (
+                            <Badge key={event} variant="secondary">
+                              {event}
+                              <button
+                                className="ml-2"
+                                onClick={() => setNewWebhook({
+                                  ...newWebhook,
+                                  events: newWebhook.events.filter(e => e !== event)
+                                })}
+                              >
+                                ×
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setWebhookDialogOpen(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={() => createWebhook.mutate()} disabled={createWebhook.isPending}>
+                        {createWebhook.isPending ? "Creating..." : "Create Webhook"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="grid gap-4">
+                {webhooks.length === 0 ? (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <Webhook className="h-12 w-12 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">No webhooks configured</h3>
+                      <p className="text-muted-foreground mb-4 text-center">
+                        Create your first webhook to receive real-time notifications
+                      </p>
+                      <Button onClick={() => setWebhookDialogOpen(true)}>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Webhook
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  webhooks.map((webhook: any) => (
+                    <Card key={webhook.id}>
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1">
+                            <CardTitle className="text-lg">{webhook.url}</CardTitle>
+                            <CardDescription>{webhook.description}</CardDescription>
+                          </div>
+                          <Badge variant={webhook.is_active ? "default" : "secondary"}>
+                            {webhook.is_active ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div className="flex flex-wrap gap-2">
+                            {webhook.events?.map((event: string) => (
+                              <Badge key={event} variant="outline">{event}</Badge>
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="space-y-1">
+                              <p className="text-muted-foreground">Success: {webhook.success_count}</p>
+                              <p className="text-muted-foreground">Failures: {webhook.failure_count}</p>
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
