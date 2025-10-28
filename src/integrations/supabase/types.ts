@@ -578,6 +578,99 @@ export type Database = {
         }
         Relationships: []
       }
+      background_jobs: {
+        Row: {
+          attempts: number
+          completed_at: string | null
+          created_at: string
+          error_details: Json | null
+          id: string
+          job_type: string
+          last_error: string | null
+          max_attempts: number
+          payload: Json
+          priority: number
+          scheduled_at: string
+          started_at: string | null
+          status: string
+          updated_at: string
+          worker_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          error_details?: Json | null
+          id?: string
+          job_type: string
+          last_error?: string | null
+          max_attempts?: number
+          payload?: Json
+          priority?: number
+          scheduled_at?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          completed_at?: string | null
+          created_at?: string
+          error_details?: Json | null
+          id?: string
+          job_type?: string
+          last_error?: string | null
+          max_attempts?: number
+          payload?: Json
+          priority?: number
+          scheduled_at?: string
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Relationships: []
+      }
+      cache_entries: {
+        Row: {
+          cache_key: string
+          cache_type: string
+          cache_value: Json
+          created_at: string
+          expires_at: string
+          hit_count: number
+          id: string
+          last_accessed_at: string
+          ttl_seconds: number
+          updated_at: string
+        }
+        Insert: {
+          cache_key: string
+          cache_type: string
+          cache_value: Json
+          created_at?: string
+          expires_at: string
+          hit_count?: number
+          id?: string
+          last_accessed_at?: string
+          ttl_seconds?: number
+          updated_at?: string
+        }
+        Update: {
+          cache_key?: string
+          cache_type?: string
+          cache_value?: Json
+          created_at?: string
+          expires_at?: string
+          hit_count?: number
+          id?: string
+          last_accessed_at?: string
+          ttl_seconds?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       case_comment_reactions: {
         Row: {
           comment_id: string
@@ -1034,6 +1127,42 @@ export type Database = {
           is_verified?: boolean | null
           notified_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      connection_pool_stats: {
+        Row: {
+          active_connections: number
+          avg_wait_time_ms: number | null
+          connection_errors: number
+          created_at: string
+          id: string
+          idle_connections: number
+          max_connections: number
+          pool_name: string
+          waiting_requests: number
+        }
+        Insert: {
+          active_connections: number
+          avg_wait_time_ms?: number | null
+          connection_errors?: number
+          created_at?: string
+          id?: string
+          idle_connections: number
+          max_connections: number
+          pool_name: string
+          waiting_requests?: number
+        }
+        Update: {
+          active_connections?: number
+          avg_wait_time_ms?: number | null
+          connection_errors?: number
+          created_at?: string
+          id?: string
+          idle_connections?: number
+          max_connections?: number
+          pool_name?: string
+          waiting_requests?: number
         }
         Relationships: []
       }
@@ -2058,6 +2187,48 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_baselines: {
+        Row: {
+          created_at: string
+          id: string
+          metric_name: string
+          metric_type: string
+          p50_value: number
+          p95_value: number
+          p99_value: number
+          period_end: string
+          period_start: string
+          resource_name: string
+          sample_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metric_name: string
+          metric_type: string
+          p50_value: number
+          p95_value: number
+          p99_value: number
+          period_end: string
+          period_start: string
+          resource_name: string
+          sample_count: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metric_name?: string
+          metric_type?: string
+          p50_value?: number
+          p95_value?: number
+          p99_value?: number
+          period_end?: string
+          period_start?: string
+          resource_name?: string
+          sample_count?: number
+        }
+        Relationships: []
+      }
       plugin_installs: {
         Row: {
           config: Json
@@ -2541,6 +2712,96 @@ export type Database = {
           total_cost_cents?: number | null
           true_negatives?: number | null
           true_positives?: number | null
+        }
+        Relationships: []
+      }
+      query_performance: {
+        Row: {
+          created_at: string
+          execution_time_ms: number
+          id: string
+          needs_optimization: boolean | null
+          operation: string | null
+          query_hash: string
+          query_type: string
+          rows_examined: number | null
+          rows_returned: number | null
+          table_name: string | null
+          used_index: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          execution_time_ms: number
+          id?: string
+          needs_optimization?: boolean | null
+          operation?: string | null
+          query_hash: string
+          query_type: string
+          rows_examined?: number | null
+          rows_returned?: number | null
+          table_name?: string | null
+          used_index?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          execution_time_ms?: number
+          id?: string
+          needs_optimization?: boolean | null
+          operation?: string | null
+          query_hash?: string
+          query_type?: string
+          rows_examined?: number | null
+          rows_returned?: number | null
+          table_name?: string | null
+          used_index?: boolean | null
+        }
+        Relationships: []
+      }
+      rate_limits: {
+        Row: {
+          created_at: string
+          current_count: number
+          endpoint: string
+          id: string
+          identifier: string
+          identifier_type: string
+          last_request_at: string
+          limit_per_window: number
+          total_blocked: number
+          total_requests: number
+          updated_at: string
+          window_seconds: number
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          current_count?: number
+          endpoint: string
+          id?: string
+          identifier: string
+          identifier_type: string
+          last_request_at?: string
+          limit_per_window?: number
+          total_blocked?: number
+          total_requests?: number
+          updated_at?: string
+          window_seconds?: number
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          current_count?: number
+          endpoint?: string
+          id?: string
+          identifier?: string
+          identifier_type?: string
+          last_request_at?: string
+          limit_per_window?: number
+          total_blocked?: number
+          total_requests?: number
+          updated_at?: string
+          window_seconds?: number
+          window_start?: string
         }
         Relationships: []
       }
@@ -3745,6 +4006,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_background_job: {
+        Args: { worker_id_param: string }
+        Returns: {
+          job_id: string
+          job_type: string
+          payload: Json
+        }[]
+      }
+      cleanup_expired_cache: { Args: never; Returns: undefined }
       cleanup_expired_oauth_states: { Args: never; Returns: undefined }
       cleanup_scan_pii: { Args: never; Returns: undefined }
       generate_case_number: { Args: never; Returns: string }
@@ -3759,6 +4029,7 @@ export type Database = {
         Args: { _required_tier: string; _user_id: string }
         Returns: boolean
       }
+      reset_expired_rate_limits: { Args: never; Returns: undefined }
       update_user_subscription: {
         Args: {
           _expires_at?: string

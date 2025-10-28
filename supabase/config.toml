@@ -24,6 +24,12 @@ verify_jwt = false
 [functions.cost-tracker]
 verify_jwt = false
 
+[functions.cache-manager]
+verify_jwt = false
+
+[functions.job-processor]
+verify_jwt = false
+
 [functions.twitter-oauth-start]
 verify_jwt = false
 

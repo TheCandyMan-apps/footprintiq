@@ -69,6 +69,7 @@ import ObservabilityDashboard from "./pages/admin/ObservabilityDashboard";
 import CircuitBreakers from "./pages/admin/CircuitBreakers";
 import CostTracking from "./pages/admin/CostTracking";
 import AdminDashboard from "./pages/admin/Dashboard";
+import Performance from "./pages/admin/Performance";
 
 const queryClient = new QueryClient();
 
@@ -145,6 +146,7 @@ const App = () => (
           <Route path="/admin/observability" element={<ObservabilityDashboard />} />
           <Route path="/admin/circuit-breakers" element={<CircuitBreakers />} />
           <Route path="/admin/cost-tracking" element={<CostTracking />} />
+          <Route path="/admin/performance" element={<Performance />} />
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
