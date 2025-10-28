@@ -82,6 +82,7 @@ import CostTracking from "./pages/admin/CostTracking";
 import AdminDashboard from "./pages/admin/Dashboard";
 import OrganizationNew from "./pages/OrganizationNew";
 import Performance from "./pages/admin/Performance";
+import Subscription from "./pages/Subscription";
 
 const queryClient = new QueryClient();
 
@@ -155,6 +156,7 @@ const App = () => (
           <Route path="/ai-analyst" element={<AIAnalyst />} />
           <Route path="/monitoring/:runId" element={<MonitorRunDetail />} />
           <Route path="/preferences" element={<Preferences />} />
+          <Route path="/subscription" element={<Subscription />} />
           <Route path="/timeline" element={<Timeline />} />
           <Route path="/watchlists" element={<Watchlists />} />
           <Route path="/analyst-scoreboard" element={<AnalystScoreboard />} />

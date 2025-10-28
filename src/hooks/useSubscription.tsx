@@ -7,6 +7,7 @@ type SubscriptionTier = 'free' | 'premium' | 'family';
 interface SubscriptionContextType {
   user: User | null;
   subscriptionTier: SubscriptionTier;
+  subscriptionEnd: string | null;
   isLoading: boolean;
   isPremium: boolean;
   refreshSubscription: () => Promise<void>;
@@ -17,6 +18,7 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<SubscriptionTier>('free');
+  const [subscriptionEnd, setSubscriptionEnd] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshSubscription = async () => {
@@ -43,8 +45,10 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       if (data?.subscribed && data?.product_id) {
         // Map product_id to tier if needed, default to premium for any active subscription
         setSubscriptionTier('premium');
+        setSubscriptionEnd(data.subscription_end);
       } else {
         setSubscriptionTier('free');
+        setSubscriptionEnd(null);
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
@@ -91,7 +95,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   const isPremium = subscriptionTier === 'premium' || subscriptionTier === 'family';
 
   return (
-    <SubscriptionContext.Provider value={{ user, subscriptionTier, isLoading, isPremium, refreshSubscription }}>
+    <SubscriptionContext.Provider value={{ user, subscriptionTier, subscriptionEnd, isLoading, isPremium, refreshSubscription }}>
       {children}
     </SubscriptionContext.Provider>
   );
@@ -105,6 +109,7 @@ export const useSubscription = () => {
     return {
       user: null,
       subscriptionTier: 'free' as SubscriptionTier,
+      subscriptionEnd: null,
       isLoading: false,
       isPremium: false,
       refreshSubscription: async () => {},
