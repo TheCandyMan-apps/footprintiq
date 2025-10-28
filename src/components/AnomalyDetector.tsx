@@ -23,12 +23,27 @@ export function AnomalyDetector({ scanId }: AnomalyDetectorProps) {
 
   const handleDetect = async () => {
     setIsDetecting(true);
+    console.log("Starting anomaly detection for scan:", scanId);
+    
     try {
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Please sign in to use anomaly detection");
+        return;
+      }
+
+      console.log("Calling detect-anomalies function...");
       const { data, error } = await supabase.functions.invoke("detect-anomalies", {
         body: { scanId },
       });
 
-      if (error) throw error;
+      console.log("Function response:", { data, error });
+
+      if (error) {
+        console.error("Function error:", error);
+        throw error;
+      }
 
       setAnomalies(data.anomalies || []);
       
@@ -39,7 +54,17 @@ export function AnomalyDetector({ scanId }: AnomalyDetectorProps) {
       }
     } catch (error: any) {
       console.error("Detection error:", error);
-      toast.error(error.message || "Failed to detect anomalies");
+      
+      // More specific error messages
+      if (error.message?.includes("LOVABLE_API_KEY")) {
+        toast.error("AI analysis is not configured");
+      } else if (error.message?.includes("Payment required")) {
+        toast.error("AI credits needed - please top up your workspace");
+      } else if (error.message?.includes("Rate limit")) {
+        toast.error("Rate limit exceeded - please try again later");
+      } else {
+        toast.error(error.message || "Failed to detect anomalies");
+      }
     } finally {
       setIsDetecting(false);
     }
