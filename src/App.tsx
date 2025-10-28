@@ -68,6 +68,7 @@ import QualityLab from "./pages/admin/QualityLab";
 import ObservabilityDashboard from "./pages/admin/ObservabilityDashboard";
 import CircuitBreakers from "./pages/admin/CircuitBreakers";
 import CostTracking from "./pages/admin/CostTracking";
+import AdminDashboard from "./pages/admin/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -140,6 +141,7 @@ const App = () => (
           <Route path="/marketplace/plugin/:pluginId" element={<MarketplacePlugin />} />
           <Route path="/admin/marketplace/review" element={<MarketplaceReview />} />
           <Route path="/admin/quality-lab" element={<QualityLab />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/observability" element={<ObservabilityDashboard />} />
           <Route path="/admin/circuit-breakers" element={<CircuitBreakers />} />
           <Route path="/admin/cost-tracking" element={<CostTracking />} />
