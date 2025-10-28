@@ -26,6 +26,9 @@ import ApiDocsNew from "./pages/ApiDocs";
 import DeveloperPortal from "./pages/DeveloperPortal";
 import ExecutiveDashboard from "./pages/ExecutiveDashboard";
 import AdvancedAnalytics from "./pages/AdvancedAnalytics";
+import Teams from "./pages/Teams";
+import TeamDetail from "./pages/TeamDetail";
+import Workflows from "./pages/Workflows";
 import PersonaDnaLaunch from "./pages/blog/PersonaDnaLaunch";
 import Analyst from "./pages/Analyst";
 import Assistant from "./pages/Assistant";
@@ -126,6 +129,9 @@ const App = () => (
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/analytics/executive" element={<ExecutiveDashboard />} />
           <Route path="/analytics/advanced" element={<AdvancedAnalytics />} />
+          <Route path="/teams" element={<Teams />} />
+          <Route path="/teams/:teamId" element={<TeamDetail />} />
+          <Route path="/workflows" element={<Workflows />} />
           <Route path="/admin/rls-check" element={<RlsCheck />} />
           <Route path="/admin/providers" element={<Providers />} />
           <Route path="/admin/observability" element={<Observability />} />
