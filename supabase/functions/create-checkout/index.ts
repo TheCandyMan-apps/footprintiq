@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Hardcode the Pro Plan price ID so it's easy to manage
+// Hardcode the Pro Plan price ID
 const PRICE_ID = "price_1SIbjiA3ptI9drLWsG0noPeX";
 
 serve(async (req) => {
