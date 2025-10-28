@@ -69,6 +69,7 @@ import ObservabilityDashboard from "./pages/admin/ObservabilityDashboard";
 import CircuitBreakers from "./pages/admin/CircuitBreakers";
 import CostTracking from "./pages/admin/CostTracking";
 import AdminDashboard from "./pages/admin/Dashboard";
+import OrganizationNew from "./pages/OrganizationNew";
 import Performance from "./pages/admin/Performance";
 
 const queryClient = new QueryClient();
@@ -147,6 +148,10 @@ const App = () => (
           <Route path="/admin/circuit-breakers" element={<CircuitBreakers />} />
           <Route path="/admin/cost-tracking" element={<CostTracking />} />
           <Route path="/admin/performance" element={<Performance />} />
+        
+          {/* Workspace & Collaboration Routes */}
+          <Route path="/workspaces" element={<OrganizationNew />} />
+          
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
