@@ -1,4 +1,5 @@
-import { Search, Shield, Trash2, TrendingUp } from "lucide-react";
+import { Search, Shield, Trash2, TrendingUp, Sparkles } from "lucide-react";
+import howItWorksHero from "@/assets/how-it-works-hero.jpg";
 
 const steps = [
   {
@@ -33,10 +34,24 @@ const steps = [
 
 export const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-20 px-6 bg-gradient-card">
-      <div className="max-w-7xl mx-auto">
+    <section id="how-it-works" className="relative py-20 px-6 overflow-hidden">
+      {/* Hero Background */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={howItWorksHero} 
+          alt="Digital security concept" 
+          className="w-full h-full object-cover opacity-20"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-primary">Simple Process</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
             How It{" "}
             <span className="bg-gradient-accent bg-clip-text text-transparent">
               Works
@@ -51,20 +66,27 @@ export const HowItWorks = () => {
           {steps.map((step, index) => (
             <div
               key={index}
-              className="relative p-6 rounded-xl bg-card border border-border hover:border-primary/50 transition-all duration-300 group"
+              className="group relative p-8 rounded-2xl bg-gradient-card border border-border/50 hover:border-primary/50 transition-all duration-500 hover:shadow-glow hover:scale-105"
             >
-              <div className="absolute -top-4 -left-4 w-12 h-12 rounded-full bg-gradient-accent flex items-center justify-center text-2xl font-bold">
+              {/* Step number badge */}
+              <div className="absolute -top-5 -right-5 w-14 h-14 rounded-full bg-gradient-accent flex items-center justify-center border-4 border-background font-bold text-2xl shadow-lg group-hover:scale-110 transition-transform">
                 {step.step}
               </div>
 
-              <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center mb-4 text-primary group-hover:scale-110 transition-transform duration-300">
+              {/* Icon with glow effect */}
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 text-primary group-hover:bg-primary/20 transition-all duration-300 shadow-[0_0_20px_rgba(147,51,234,0.2)] group-hover:scale-110">
                 {step.icon}
               </div>
 
-              <h3 className="text-xl font-semibold mb-3">{step.title}</h3>
+              <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">
+                {step.title}
+              </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {step.description}
               </p>
+              
+              {/* Bottom accent line */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-accent scale-x-0 group-hover:scale-x-100 transition-transform origin-left rounded-b-2xl" />
             </div>
           ))}
         </div>

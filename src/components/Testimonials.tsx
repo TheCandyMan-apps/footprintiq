@@ -1,4 +1,5 @@
-import { Star, Quote } from "lucide-react";
+import { Star, Quote, Sparkles } from "lucide-react";
+import testimonialsBg from "@/assets/testimonials-bg.jpg";
 
 const testimonials = [
   {
@@ -47,10 +48,24 @@ const testimonials = [
 
 export const Testimonials = () => {
   return (
-    <section className="py-20 px-6 bg-muted/30">
-      <div className="max-w-7xl mx-auto">
+    <section className="relative py-20 px-6 overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={testimonialsBg} 
+          alt="Network of trust" 
+          className="w-full h-full object-cover opacity-20"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-muted/50 via-background/95 to-background" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium text-primary">5,000+ Happy Users</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Trusted by{" "}
             <span className="bg-gradient-accent bg-clip-text text-transparent">
               Thousands
@@ -65,29 +80,37 @@ export const Testimonials = () => {
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
-              className="relative p-6 rounded-xl bg-card border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-glow"
+              className="group relative p-8 rounded-2xl bg-gradient-card border border-border/50 hover:border-primary/50 transition-all duration-500 hover:shadow-glow hover:-translate-y-2"
             >
-              <Quote className="absolute top-4 right-4 w-8 h-8 text-primary/20" />
+              {/* Decorative gradient overlay */}
+              <div className="absolute inset-0 rounded-2xl bg-gradient-accent opacity-0 group-hover:opacity-5 transition-opacity" />
               
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
+              <Quote className="absolute top-6 right-6 w-12 h-12 text-primary/20 group-hover:text-primary/30 group-hover:scale-110 transition-all" />
+              
+              <div className="relative flex items-center gap-3 mb-4">
+                <div className="w-14 h-14 rounded-full bg-gradient-accent flex items-center justify-center font-bold text-lg shadow-lg">
                   {testimonial.avatar}
                 </div>
                 <div>
-                  <div className="font-semibold">{testimonial.name}</div>
+                  <div className="font-bold group-hover:text-primary transition-colors">
+                    {testimonial.name}
+                  </div>
                   <div className="text-sm text-muted-foreground">{testimonial.role}</div>
                 </div>
               </div>
 
-              <div className="flex gap-1 mb-3">
+              <div className="flex gap-1 mb-4">
                 {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-primary text-primary" />
+                  <Star key={i} className="w-5 h-5 fill-primary text-primary group-hover:scale-110 transition-transform" style={{ transitionDelay: `${i * 50}ms` }} />
                 ))}
               </div>
 
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="relative text-sm text-muted-foreground leading-relaxed">
                 "{testimonial.content}"
               </p>
+              
+              {/* Bottom accent */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-accent scale-x-0 group-hover:scale-x-100 transition-transform origin-left rounded-b-2xl" />
             </div>
           ))}
         </div>

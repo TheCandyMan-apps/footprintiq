@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { HelpCircle } from "lucide-react";
 
 const faqs = [
   {
@@ -42,16 +43,20 @@ const faqs = [
 
 export const FAQ = () => {
   return (
-    <section className="py-20 px-6 bg-muted/30">
+    <section className="py-20 px-6 bg-gradient-to-b from-background via-muted/20 to-background">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20 mb-6">
+            <HelpCircle className="w-4 h-4 text-accent" />
+            <span className="text-sm font-medium text-accent">Got Questions?</span>
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
             Frequently Asked{" "}
             <span className="bg-gradient-accent bg-clip-text text-transparent">
               Questions
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground">
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Everything you need to know about protecting your digital footprint
           </p>
         </div>
@@ -61,12 +66,14 @@ export const FAQ = () => {
             <AccordionItem 
               key={index} 
               value={`item-${index}`}
-              className="bg-card border border-border rounded-lg px-6 shadow-sm"
+              className="group bg-gradient-card border border-border/50 hover:border-accent/50 rounded-2xl px-8 shadow-sm hover:shadow-[0_0_20px_rgba(0,230,230,0.1)] transition-all duration-300"
             >
-              <AccordionTrigger className="text-left hover:no-underline">
-                <span className="font-semibold">{faq.question}</span>
+              <AccordionTrigger className="text-left hover:no-underline py-6">
+                <span className="font-bold text-lg group-hover:text-accent transition-colors">
+                  {faq.question}
+                </span>
               </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground">
+              <AccordionContent className="text-muted-foreground leading-relaxed pb-6">
                 {faq.answer}
               </AccordionContent>
             </AccordionItem>
