@@ -224,6 +224,11 @@ serve(async (req) => {
       if (scanData.phone) {
         predictaQueries.push({ query: scanData.phone, queryType: 'phone' });
       }
+      // Support name-based searches when available
+      const fullName = [scanData.firstName, scanData.lastName].filter(Boolean).join(' ').trim();
+      if (fullName.length > 0) {
+        predictaQueries.push({ query: fullName, queryType: 'name' });
+      }
 
       for (const { query, queryType } of predictaQueries) {
         try {

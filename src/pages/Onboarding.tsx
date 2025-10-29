@@ -20,19 +20,24 @@ export default function Onboarding() {
     startTour,
     nextStep,
     prevStep,
-    endTour
+    endTour,
+    hasCompletedTour
   } = useTour(tour);
 
   useEffect(() => {
     // Mark user as visited
     markAsVisited();
-    
-    // Auto-start tour after a brief delay
+
+    // Auto-start tour after a brief delay only if not completed
     const timer = setTimeout(() => {
-      startTour();
+      if (!hasCompletedTour(tour.id)) {
+        startTour();
+      } else {
+        navigate("/");
+      }
     }, 500);
     return () => clearTimeout(timer);
-  }, [startTour]);
+  }, [startTour, hasCompletedTour, tour.id, navigate]);
 
   const handleEnd = () => {
     endTour();

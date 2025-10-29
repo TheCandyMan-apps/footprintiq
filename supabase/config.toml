@@ -167,3 +167,6 @@ verify_jwt = true
 
 [functions.intel-summary]
 verify_jwt = false
+
+[functions.predicta-search]
+verify_jwt = false
