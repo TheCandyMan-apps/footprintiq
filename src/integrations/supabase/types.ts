@@ -104,6 +104,145 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_api_keys: {
+        Row: {
+          agent_id: string | null
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          permissions: Json | null
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          permissions?: Json | null
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          permissions?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_api_keys_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agent_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_configs: {
+        Row: {
+          agent_type: string
+          config: Json | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_enabled: boolean | null
+          name: string
+          schedule: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agent_type: string
+          config?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          name: string
+          schedule?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agent_type?: string
+          config?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          name?: string
+          schedule?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      agent_runs: {
+        Row: {
+          agent_id: string | null
+          approved_at: string | null
+          approved_by: string | null
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          query: string | null
+          result: Json | null
+          runtime_ms: number | null
+          started_at: string | null
+          status: string | null
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          query?: string | null
+          result?: Json | null
+          runtime_ms?: number | null
+          started_at?: string | null
+          status?: string | null
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          query?: string | null
+          result?: Json | null
+          runtime_ms?: number | null
+          started_at?: string | null
+          status?: string | null
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_runs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agent_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_chunks: {
         Row: {
           chunk_id: string
@@ -2057,6 +2196,39 @@ export type Database = {
         }
         Relationships: []
       }
+      graph_queries: {
+        Row: {
+          created_at: string | null
+          execution_time_ms: number | null
+          generated_query: string | null
+          id: string
+          natural_language_query: string
+          result_summary: Json | null
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          execution_time_ms?: number | null
+          generated_query?: string | null
+          id?: string
+          natural_language_query: string
+          result_summary?: Json | null
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          execution_time_ms?: number | null
+          generated_query?: string | null
+          id?: string
+          natural_language_query?: string
+          result_summary?: Json | null
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       graph_snapshots: {
         Row: {
           created_at: string | null
@@ -2292,6 +2464,59 @@ export type Database = {
           user_integration_id?: string
         }
         Relationships: []
+      }
+      intel_cards: {
+        Row: {
+          agent_run_id: string | null
+          content: string
+          created_at: string | null
+          id: string
+          is_verified: boolean | null
+          tags: string[] | null
+          title: string
+          topic: string | null
+          user_id: string | null
+          verified_at: string | null
+          verified_by: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          agent_run_id?: string | null
+          content: string
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          tags?: string[] | null
+          title: string
+          topic?: string | null
+          user_id?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          agent_run_id?: string | null
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_verified?: boolean | null
+          tags?: string[] | null
+          title?: string
+          topic?: string | null
+          user_id?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intel_cards_agent_run_id_fkey"
+            columns: ["agent_run_id"]
+            isOneToOne: false
+            referencedRelation: "agent_runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       intel_feed_cache: {
         Row: {

@@ -79,6 +79,8 @@ import ThreatForecast from "./pages/ThreatForecast";
 import ClientPortal from "./pages/ClientPortal";
 import Insights from "./pages/Insights";
 import Automation from "./pages/Automation";
+import Agents from "./pages/Agents";
+import TrustAIAgents from "./pages/TrustAIAgents";
 import MarketplaceReview from "./pages/admin/MarketplaceReview";
 import QualityLab from "./pages/admin/QualityLab";
 import ObservabilityDashboard from "./pages/admin/ObservabilityDashboard";
@@ -184,7 +186,9 @@ const App = () => (
           <Route path="/clients/:clientId" element={<ClientPortal />} />
           <Route path="/insights" element={<Insights />} />
           <Route path="/automation" element={<Automation />} />
-          <Route path="/integrations" element={<Integrations />} />
+          <Route path="/agents" element={<Agents />} />
+          <Route path="/trust/ai-agents" element={<TrustAIAgents />} />
+          <Route path="/integrations" element={<div className="container mx-auto py-8"><h1 className="text-3xl">Integrations coming soon</h1></div>} />
         
           {/* Workspace & Collaboration Routes */}
           <Route path="/workspaces" element={<OrganizationNew />} />

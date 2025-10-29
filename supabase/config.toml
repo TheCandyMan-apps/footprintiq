@@ -108,6 +108,12 @@ verify_jwt = true
 [functions.workspace-invitation]
 verify_jwt = true
 
+[functions.graph-query]
+verify_jwt = true
+
+[functions.agent-execute]
+verify_jwt = true
+
 [functions.integration-deliver]
 verify_jwt = true
 
