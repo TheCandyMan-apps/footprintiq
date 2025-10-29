@@ -9,11 +9,11 @@ export const Footer = () => {
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <img 
-                src="/logo-dark.png" 
-                alt="FootprintIQ Logo" 
-                className="h-24 w-auto"
-              />
+            <img 
+              src="/logo-dark.png" 
+              alt="FootprintIQ Logo" 
+              className="h-32 w-auto"
+            />
             </div>
             <p className="text-sm text-muted-foreground mb-4">
               Take control of your digital footprint with comprehensive privacy protection and automated data removal.
