@@ -68,7 +68,7 @@ export const Header = () => {
               <img 
                 src="/logo-dark.png" 
                 alt="FootprintIQ Logo" 
-                className="h-12 w-auto rounded-lg"
+                className="h-16 w-auto rounded-lg"
               />
               <span className="text-xl font-bold">footprintiq</span>
             </Link>
