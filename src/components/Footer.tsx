@@ -12,7 +12,7 @@ export const Footer = () => {
               <img 
                 src="/logo-dark.png" 
                 alt="FootprintIQ Logo" 
-                className="h-10 w-auto rounded-lg"
+                className="h-12 w-auto rounded-lg"
               />
               <span className="text-xl font-bold">footprintiq</span>
             </div>
