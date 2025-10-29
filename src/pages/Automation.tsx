@@ -29,12 +29,12 @@ export default function Automation() {
     queryKey: ['playbooks'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('playbooks')
+        .from('playbooks' as any)
         .select('*')
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data || [];
+      return (data || []) as any[];
     },
   });
 
@@ -42,13 +42,13 @@ export default function Automation() {
     queryKey: ['playbook-runs'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('playbook_runs')
+        .from('playbook_runs' as any)
         .select('*')
         .order('started_at', { ascending: false })
         .limit(50);
       
       if (error) throw error;
-      return data || [];
+      return (data || []) as any[];
     },
   });
 
@@ -58,7 +58,7 @@ export default function Automation() {
       if (!user) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
-        .from('playbooks')
+        .from('playbooks' as any)
         .insert({
           ...newPlaybook,
           created_by: user.id,
@@ -109,7 +109,7 @@ export default function Automation() {
   const deletePlaybookMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('playbooks')
+        .from('playbooks' as any)
         .delete()
         .eq('id', id);
 
@@ -124,7 +124,7 @@ export default function Automation() {
   const togglePlaybookMutation = useMutation({
     mutationFn: async ({ id, enabled }: { id: string; enabled: boolean }) => {
       const { error } = await supabase
-        .from('playbooks')
+        .from('playbooks' as any)
         .update({ enabled })
         .eq('id', id);
 
