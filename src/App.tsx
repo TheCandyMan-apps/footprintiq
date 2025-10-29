@@ -107,9 +107,9 @@ const App = () => (
         <ErrorBoundary>
           <Toaster />
           <Sonner />
-          <GlobalSearch />
           <BrowserRouter>
-        <Routes>
+            <GlobalSearch />
+            <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
