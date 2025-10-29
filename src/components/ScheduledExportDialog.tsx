@@ -27,6 +27,8 @@ import { notify } from "@/lib/notifications";
 
 interface ScheduledExportDialogProps {
   onSchedule?: (config: ScheduleConfig) => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 interface ScheduleConfig {
@@ -37,13 +39,17 @@ interface ScheduleConfig {
   email: string;
 }
 
-export function ScheduledExportDialog({ onSchedule }: ScheduledExportDialogProps) {
-  const [open, setOpen] = useState(false);
+export function ScheduledExportDialog({ onSchedule, open: externalOpen, onOpenChange: externalOnOpenChange }: ScheduledExportDialogProps) {
+  const [internalOpen, setInternalOpen] = useState(false);
   const [frequency, setFrequency] = useState<"daily" | "weekly" | "monthly">("weekly");
   const [time, setTime] = useState("09:00");
   const [format, setFormat] = useState<"json" | "csv" | "pdf">("pdf");
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [email, setEmail] = useState("");
+
+  // Use external state if provided, otherwise use internal state
+  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setIsOpen = externalOnOpenChange || setInternalOpen;
 
   const handleSchedule = () => {
     if (!email) {
@@ -68,17 +74,19 @@ export function ScheduledExportDialog({ onSchedule }: ScheduledExportDialogProps
     });
 
     onSchedule?.(config);
-    setOpen(false);
+    setIsOpen(false);
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Clock className="h-4 w-4 mr-2" />
-          Schedule Export
-        </Button>
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      {!externalOpen && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <Clock className="h-4 w-4 mr-2" />
+            Schedule Export
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Schedule Automated Exports</DialogTitle>
@@ -163,7 +171,7 @@ export function ScheduledExportDialog({ onSchedule }: ScheduledExportDialogProps
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => setIsOpen(false)}>
             Cancel
           </Button>
           <Button onClick={handleSchedule}>Schedule Export</Button>

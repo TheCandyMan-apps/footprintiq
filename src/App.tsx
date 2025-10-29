@@ -7,9 +7,11 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { ThemeProvider } from "next-themes";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { SkipLink } from "@/components/SkipLink";
 import { lazy, Suspense } from "react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useAccessibility } from "@/hooks/useAccessibility";
 import "@/lib/config"; // Validate env at boot
 
 // Critical pages (loaded immediately)
@@ -130,9 +132,11 @@ function AppContent() {
 
 function RouterContent() {
   useKeyboardShortcuts();
+  const { announce } = useAccessibility();
   
   return (
     <>
+      <SkipLink />
       <GlobalSearch />
       <Suspense fallback={<LoadingState />}>
         <Routes>

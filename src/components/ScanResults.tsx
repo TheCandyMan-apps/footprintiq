@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ResultsSkeleton } from "@/components/skeletons/ResultsSkeleton";
 import type { ScanFormData } from "./ScanForm";
 
 interface ScanResultsProps {
@@ -143,14 +144,7 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
   const profileRemovedCount = removedProfiles.size;
 
   if (loading) {
-    return (
-      <div className="min-h-screen px-6 py-20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading scan results...</p>
-        </div>
-      </div>
-    );
+    return <ResultsSkeleton />;
   }
 
   return (

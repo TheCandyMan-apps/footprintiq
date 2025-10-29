@@ -1,11 +1,13 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Download, FileJson, FileSpreadsheet, FileText } from "lucide-react";
+import { Calendar, FileJson, FileSpreadsheet, FileText } from "lucide-react";
 import { Finding } from "@/lib/ufm";
 import { exportAsJSON, exportAsCSV, exportAsPDF } from "@/lib/exports";
 import { analytics } from "@/lib/analytics";
-import { toast } from "sonner";
+import { notify } from "@/lib/notifications";
+import { ScheduledExportDialog } from "@/components/ScheduledExportDialog";
 
 interface ExportControlsProps {
   findings: Finding[];
@@ -14,27 +16,31 @@ interface ExportControlsProps {
 }
 
 export const ExportControls = ({ findings, redactPII, onRedactToggle }: ExportControlsProps) => {
+  const [scheduledDialogOpen, setScheduledDialogOpen] = useState(false);
+
   const handleExportJSON = () => {
     exportAsJSON(findings, redactPII);
     analytics.trackEvent('export_json', { findings: findings.length, redacted: redactPII ? 1 : 0 });
-    toast.success("Exported as JSON");
+    notify.exportComplete("JSON", findings.length);
   };
 
   const handleExportCSV = () => {
     exportAsCSV(findings, redactPII);
     analytics.trackEvent('export_csv', { findings: findings.length, redacted: redactPII ? 1 : 0 });
-    toast.success("Exported as CSV");
+    notify.exportComplete("CSV", findings.length);
   };
 
   const handleExportPDF = async () => {
-    try {
-      await exportAsPDF(findings, redactPII);
-      analytics.trackEvent('export_pdf', { findings: findings.length, redacted: redactPII ? 1 : 0 });
-      toast.success("Exported as PDF");
-    } catch (error) {
-      console.error('PDF export failed:', error);
-      toast.error("Failed to export PDF");
-    }
+    const exportPromise = exportAsPDF(findings, redactPII);
+    
+    notify.promise(exportPromise, {
+      loading: "Generating PDF...",
+      success: () => {
+        analytics.trackEvent('export_pdf', { findings: findings.length, redacted: redactPII ? 1 : 0 });
+        return `PDF exported successfully (${findings.length} findings)`;
+      },
+      error: "Failed to export PDF"
+    });
   };
 
   return (
@@ -64,7 +70,20 @@ export const ExportControls = ({ findings, redactPII, onRedactToggle }: ExportCo
           <FileText className="w-4 h-4 mr-2" />
           PDF
         </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setScheduledDialogOpen(true)}
+        >
+          <Calendar className="w-4 h-4 mr-2" />
+          Schedule
+        </Button>
       </div>
+
+      <ScheduledExportDialog 
+        open={scheduledDialogOpen}
+        onOpenChange={setScheduledDialogOpen}
+      />
     </div>
   );
 };

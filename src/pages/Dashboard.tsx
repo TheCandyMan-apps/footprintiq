@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
+import { DashboardSkeleton } from "@/components/skeletons/DashboardSkeleton";
 import { 
   Shield, 
   TrendingDown, 
@@ -181,9 +182,7 @@ const Dashboard = () => {
           <h2 className="text-2xl font-bold mb-4">Scan History</h2>
           
           {loading ? (
-            <Card className="p-8 text-center text-muted-foreground">
-              Loading your scans...
-            </Card>
+            <DashboardSkeleton />
           ) : scans.length === 0 ? (
             <Card className="p-8 text-center">
               <Shield className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
