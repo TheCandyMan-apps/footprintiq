@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sparkles, Lightbulb, TrendingUp } from "lucide-react";
+import { Sparkles, Lightbulb, TrendingUp, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { notify } from "@/lib/notifications";
 
 interface AITeamAssistProps {
   caseId: string;
@@ -14,13 +16,36 @@ interface AITeamAssistProps {
 export function AITeamAssist({ caseId }: AITeamAssistProps) {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [summary, setSummary] = useState<string>("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+  useEffect(() => {
+    const getUserId = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        setUserId(user?.id || null);
+      } catch (error) {
+        console.error("Error getting user:", error);
+        notify.error({
+          title: "Authentication Error",
+          description: "Failed to authenticate user. Please try logging in again.",
+        });
+      } finally {
+        setIsLoadingUser(false);
+      }
+    };
+    getUserId();
+  }, []);
 
   const suggestTasksMutation = useMutation({
     mutationFn: async () => {
+      if (!userId) throw new Error("User not authenticated");
+
       const { data, error } = await supabase.functions.invoke("ai-assistant", {
         body: {
           prompt: `Based on case ${caseId}, suggest 3-5 investigation tasks for the team. Format as JSON array with: title, priority, rationale.`,
-          context: { caseId },
+          userId,
         },
       });
 
@@ -29,20 +54,35 @@ export function AITeamAssist({ caseId }: AITeamAssistProps) {
     },
     onSuccess: (data) => {
       try {
-        const parsed = JSON.parse(data.response);
-        setSuggestions(Array.isArray(parsed) ? parsed : []);
+        const analysis = data.analysis || "";
+        // Try to extract JSON from the analysis
+        const jsonMatch = analysis.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          const parsed = JSON.parse(jsonMatch[0]);
+          setSuggestions(Array.isArray(parsed) ? parsed : []);
+        } else {
+          setSuggestions([]);
+        }
       } catch {
         setSuggestions([]);
       }
+    },
+    onError: (error: any) => {
+      notify.error({
+        title: "AI Assistant Error",
+        description: error.message || "Failed to generate task suggestions. Please try again.",
+      });
     },
   });
 
   const summarizeMutation = useMutation({
     mutationFn: async () => {
+      if (!userId) throw new Error("User not authenticated");
+
       const { data, error } = await supabase.functions.invoke("ai-assistant", {
         body: {
           prompt: `Summarize recent team activity on case ${caseId}. Focus on: comments, tasks completed, new evidence. Keep it brief.`,
-          context: { caseId },
+          userId,
         },
       });
 
@@ -50,9 +90,36 @@ export function AITeamAssist({ caseId }: AITeamAssistProps) {
       return data;
     },
     onSuccess: (data) => {
-      setSummary(data.response || "");
+      setSummary(data.analysis || "");
+    },
+    onError: (error: any) => {
+      notify.error({
+        title: "AI Assistant Error",
+        description: error.message || "Failed to generate activity summary. Please try again.",
+      });
     },
   });
+
+  if (isLoadingUser) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <Skeleton className="h-32 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!userId) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          You must be logged in to use the AI Team Assistant. Please log in and try again.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -70,7 +137,7 @@ export function AITeamAssist({ caseId }: AITeamAssistProps) {
           <div className="flex gap-2">
             <Button
               onClick={() => suggestTasksMutation.mutate()}
-              disabled={suggestTasksMutation.isPending}
+              disabled={suggestTasksMutation.isPending || !userId}
               variant="outline"
             >
               <Lightbulb className="h-4 w-4 mr-2" />
@@ -78,7 +145,7 @@ export function AITeamAssist({ caseId }: AITeamAssistProps) {
             </Button>
             <Button
               onClick={() => summarizeMutation.mutate()}
-              disabled={summarizeMutation.isPending}
+              disabled={summarizeMutation.isPending || !userId}
               variant="outline"
             >
               <TrendingUp className="h-4 w-4 mr-2" />
