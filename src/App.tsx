@@ -182,6 +182,8 @@ const App = () => (
           <Route path="/threat-forecast" element={<ThreatForecast />} />
           <Route path="/clients/:clientId" element={<ClientPortal />} />
           <Route path="/insights" element={<Insights />} />
+          <Route path="/automation" element={<Automation />} />
+          <Route path="/integrations" element={<Integrations />} />
         
           {/* Workspace & Collaboration Routes */}
           <Route path="/workspaces" element={<OrganizationNew />} />

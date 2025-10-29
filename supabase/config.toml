@@ -108,6 +108,18 @@ verify_jwt = true
 [functions.workspace-invitation]
 verify_jwt = true
 
+[functions.integration-deliver]
+verify_jwt = true
+
+[functions.copilot-chat]
+verify_jwt = true
+
+[functions.playbook-execute]
+verify_jwt = true
+
+[functions.partner-register]
+verify_jwt = false
+
 [functions.webhook-delivery]
 verify_jwt = false
 
