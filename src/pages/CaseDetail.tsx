@@ -6,6 +6,10 @@ import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { CaseWorkspace } from "@/components/case/CaseWorkspace";
 import { CaseExport } from "@/components/case/CaseExport";
+import { LiveComments } from "@/components/workspace/LiveComments";
+import { TaskBoard } from "@/components/workspace/TaskBoard";
+import { SharedNotes } from "@/components/workspace/SharedNotes";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -86,7 +90,26 @@ const CaseDetail = () => {
               </Button>
               <CaseExport caseId={caseId!} />
             </div>
-            <CaseWorkspace onSelectCase={(caseData) => console.log("Case selected:", caseData)} />
+            <Tabs defaultValue="workspace" className="w-full">
+              <TabsList>
+                <TabsTrigger value="workspace">Workspace</TabsTrigger>
+                <TabsTrigger value="comments">Comments</TabsTrigger>
+                <TabsTrigger value="tasks">Tasks</TabsTrigger>
+                <TabsTrigger value="notes">Notes</TabsTrigger>
+              </TabsList>
+              <TabsContent value="workspace">
+                <CaseWorkspace onSelectCase={(caseData) => console.log("Case selected:", caseData)} />
+              </TabsContent>
+              <TabsContent value="comments">
+                <LiveComments caseId={caseId!} />
+              </TabsContent>
+              <TabsContent value="tasks">
+                <TaskBoard caseId={caseId!} />
+              </TabsContent>
+              <TabsContent value="notes">
+                <SharedNotes caseId={caseId!} />
+              </TabsContent>
+            </Tabs>
           </div>
         </main>
         <Footer />

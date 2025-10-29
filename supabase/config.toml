@@ -1,5 +1,8 @@
 project_id = "byuzgvauaeldjqxlrjci"
 
+[functions.workspace-invitation]
+verify_jwt = true
+
 [functions.plugin-submit]
 verify_jwt = true
 
@@ -103,9 +106,6 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.ai-assistant-chat]
-verify_jwt = true
-
-[functions.workspace-invitation]
 verify_jwt = true
 
 [functions.graph-query]
