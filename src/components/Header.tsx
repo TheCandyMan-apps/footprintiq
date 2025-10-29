@@ -66,7 +66,7 @@ export const Header = () => {
             <MobileNav />
             <Link to="/" className="flex items-center">
               <img 
-                src="/logo-icon-transparent.png" 
+                src="/logo-dark.png" 
                 alt="FootprintIQ Logo" 
                 className="h-32 w-auto"
               />
