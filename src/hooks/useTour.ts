@@ -65,9 +65,18 @@ export function useTour(tour: Tour) {
   }, [currentStepIndex, tour.id, saveProgress]);
 
   const endTour = useCallback(() => {
-    saveProgress(tour.id, tour.steps.length, true);
+    const newProgress = {
+      ...progress,
+      [tour.id]: {
+        completed: true,
+        currentStep: tour.steps.length,
+        lastSeen: new Date().toISOString()
+      }
+    };
+    setProgress(newProgress);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newProgress));
     setIsActive(false);
-  }, [tour.id, tour.steps.length, saveProgress]);
+  }, [tour.id, tour.steps.length, progress]);
 
   const resetTour = useCallback(() => {
     setCurrentStepIndex(0);

@@ -71,7 +71,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         if (scanError) throw scanError;
         createdScanId = scan.id;
 
-        // Fire-and-forget: kick off OSINT scan in the background
+        // Kick off OSINT scan in the background
         try {
           const body: Record<string, any> = {
             scanId: scan.id,
@@ -136,9 +136,24 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           }
         }
 
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        if (!isMounted) return;
         setCurrentStep(4);
+        setProgress(90);
+
+        // Poll and show progress - OSINT scan runs in background
+        // Wait longer to ensure results are likely available
+        let pollAttempts = 0;
+        const maxPollAttempts = 12; // 12 attempts = ~18 seconds
+        
+        while (pollAttempts < maxPollAttempts && isMounted) {
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          pollAttempts++;
+          
+          // Update progress gradually towards 100%
+          const progressIncrement = (100 - 90) / maxPollAttempts;
+          setProgress(Math.min(90 + (pollAttempts * progressIncrement), 99));
+        }
+        
+        // Final progress to 100%
         setProgress(100);
 
         // Navigate to results
