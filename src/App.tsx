@@ -4,6 +4,9 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CookieConsent } from "@/components/CookieConsent";
+import { ThemeProvider } from "next-themes";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { GlobalSearch } from "@/components/GlobalSearch";
 import "@/lib/config"; // Validate env at boot
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -93,15 +96,19 @@ import OrganizationNew from "./pages/OrganizationNew";
 import Performance from "./pages/admin/Performance";
 import Subscription from "./pages/Subscription";
 import EmbedWidget from "./pages/EmbedWidget";
+import InstallApp from "./pages/InstallApp";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <TooltipProvider>
+        <ErrorBoundary>
+          <Toaster />
+          <Sonner />
+          <GlobalSearch />
+          <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
@@ -200,13 +207,16 @@ const App = () => (
           
           {/* Embeddable Widget */}
           <Route path="/embed/widget" element={<EmbedWidget />} />
+          <Route path="/install" element={<InstallApp />} />
           
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />
         </Routes>
         <CookieConsent />
       </BrowserRouter>
+      </ErrorBoundary>
     </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
