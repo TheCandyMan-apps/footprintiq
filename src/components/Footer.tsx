@@ -9,7 +9,11 @@ export const Footer = () => {
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <Shield className="w-6 h-6 text-primary" />
+              <img 
+                src="/logo-social.png" 
+                alt="FootprintIQ Logo" 
+                className="w-10 h-10 rounded-lg"
+              />
               <span className="text-xl font-bold">footprintiq</span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">

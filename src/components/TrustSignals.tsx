@@ -27,6 +27,19 @@ export const TrustSignals = () => {
   return (
     <section className="py-16 px-6 bg-muted/30">
       <div className="max-w-7xl mx-auto">
+        {/* Trust Header with Logo */}
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <img 
+              src="/logo-icon.png" 
+              alt="FootprintIQ Shield" 
+              className="w-16 h-16 animate-float"
+            />
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold mb-2">Trusted by Privacy-Conscious Users</h2>
+          <p className="text-muted-foreground">Join thousands protecting their digital identity</p>
+        </div>
+        
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {stats.map((stat, index) => (
             <div key={index} className="text-center">

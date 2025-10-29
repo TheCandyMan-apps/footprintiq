@@ -65,7 +65,11 @@ export const Header = () => {
           <div className="flex items-center gap-3">
             <MobileNav />
             <Link to="/" className="flex items-center gap-2">
-              <Shield className="w-6 h-6 text-primary" />
+              <img 
+                src="/logo-social.png" 
+                alt="FootprintIQ Logo" 
+                className="w-8 h-8 rounded-lg"
+              />
               <span className="text-xl font-bold">footprintiq</span>
             </Link>
           </div>
