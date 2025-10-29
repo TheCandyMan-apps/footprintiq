@@ -172,6 +172,14 @@ export const REGISTRY: ProviderMeta[] = [
     policy: "darkweb",
     description: "Credential exposure summary (counts only)",
   },
+  {
+    id: "predictasearch",
+    title: "Predicta Search",
+    supports: ["email", "phone", "username"],
+    ttlMs: 24 * 3600e3,
+    unitCost: 0.005,
+    description: "Multi-platform social profiles and breach aggregation",
+  },
 ];
 
 export function getProviderMeta(providerId: string): ProviderMeta | undefined {
