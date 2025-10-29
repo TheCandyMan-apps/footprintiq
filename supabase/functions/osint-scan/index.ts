@@ -77,6 +77,7 @@ serve(async (req) => {
     const HIBP_KEY = Deno.env.get('HIBP_API_KEY');
     const CLEARBIT_KEY = Deno.env.get('CLEARBIT_KEY');
     const APIFY_API_TOKEN = Deno.env.get('APIFY_API_TOKEN');
+    const PREDICTA_API_KEY = Deno.env.get('PREDICTA_SEARCH_API_KEY');
 
     const results = {
       dataSources: [] as any[],
@@ -206,7 +207,102 @@ serve(async (req) => {
       }
     }
 
-    // 4. Have I Been Pwned
+    // 4. Predicta Search - Multi-query support
+    if (PREDICTA_API_KEY) {
+      console.log('Searching Predicta...');
+      const predictaQueries: Array<{ query: string; queryType: string }> = [];
+      
+      if (scanData.email) {
+        predictaQueries.push({ query: scanData.email, queryType: 'email' });
+      }
+      if (scanData.username) {
+        const cleanUsername = scanData.username.startsWith('@') 
+          ? scanData.username.slice(1) 
+          : scanData.username;
+        predictaQueries.push({ query: cleanUsername, queryType: 'username' });
+      }
+      if (scanData.phone) {
+        predictaQueries.push({ query: scanData.phone, queryType: 'phone' });
+      }
+
+      for (const { query, queryType } of predictaQueries) {
+        try {
+          const { data: predictaData, error: predictaError } = await supabase.functions.invoke(
+            'predicta-search',
+            {
+              body: { query, queryType }
+            }
+          );
+
+          if (!predictaError && predictaData?.success && predictaData?.data) {
+            const predictaResults = predictaData.data;
+            console.log(`Predicta ${queryType} search found results:`, predictaResults);
+            
+            // Add Predicta as a data source
+            const dataFound: string[] = [];
+            if (predictaResults.profiles?.length > 0) dataFound.push(`${predictaResults.profiles.length} Social Profiles`);
+            if (predictaResults.breaches?.length > 0) dataFound.push(`${predictaResults.breaches.length} Data Breaches`);
+            if (predictaResults.leaks?.length > 0) dataFound.push(`${predictaResults.leaks.length} Data Leaks`);
+            
+            if (dataFound.length > 0) {
+              results.dataSources.push({
+                name: `Predicta Search (${queryType})`,
+                category: 'OSINT Intelligence',
+                url: 'https://predictasearch.com',
+                risk_level: 'high',
+                data_found: dataFound,
+                metadata: {
+                  query,
+                  query_type: queryType,
+                  profiles: predictaResults.profiles || [],
+                  breaches: predictaResults.breaches || [],
+                  leaks: predictaResults.leaks || [],
+                  total_results: (predictaResults.profiles?.length || 0) + (predictaResults.breaches?.length || 0) + (predictaResults.leaks?.length || 0),
+                },
+              });
+
+              // Add profiles to social profiles
+              if (predictaResults.profiles) {
+                for (const profile of predictaResults.profiles) {
+                  results.socialProfiles.push({
+                    platform: profile.platform || 'Unknown',
+                    url: profile.url,
+                    username: profile.username || query,
+                    profile_data: profile,
+                    source: 'Predicta Search',
+                  });
+                }
+              }
+
+              // Add breaches
+              if (predictaResults.breaches) {
+                for (const breach of predictaResults.breaches) {
+                  results.breaches.push(breach);
+                  results.dataSources.push({
+                    name: breach.name || 'Unknown Breach',
+                    category: 'Data Breach',
+                    url: breach.url || 'https://predictasearch.com',
+                    risk_level: 'high',
+                    data_found: breach.data_types || [],
+                    metadata: {
+                      breach_date: breach.date,
+                      source: 'Predicta Search',
+                      ...breach,
+                    },
+                  });
+                }
+              }
+            }
+          } else if (predictaError) {
+            console.error(`Predicta ${queryType} error:`, predictaError);
+          }
+        } catch (error) {
+          console.error(`Predicta ${queryType} exception:`, error);
+        }
+      }
+    }
+
+    // 5. Have I Been Pwned
     if (HIBP_KEY && scanData.email) {
       console.log('Checking data breaches...');
       try {
