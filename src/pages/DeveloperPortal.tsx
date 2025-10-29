@@ -10,9 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { ApiPlayground } from "@/components/dev/ApiPlayground";
 import { SDKGenerator } from "@/components/dev/SDKGenerator";
 import { RateLimitMonitor } from "@/components/dev/RateLimitMonitor";
+import { EmbeddableWidget, generateEmbedCode } from "@/components/EmbeddableWidget";
+import { WhiteLabelToggle } from "@/components/WhiteLabelToggle";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Code, Key, Play, Book, Activity, Plus, Trash2, ExternalLink } from "lucide-react";
+import { Code, Key, Play, Book, Activity, Plus, Trash2, ExternalLink, Sparkles, Palette } from "lucide-react";
 
 export default function DeveloperPortal() {
   const [apiKeys, setApiKeys] = useState<any[]>([]);
@@ -146,7 +148,7 @@ export default function DeveloperPortal() {
 
           {/* Main Tabs */}
           <Tabs defaultValue="keys" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="keys">
                 <Key className="h-4 w-4 mr-2" />
                 API Keys
@@ -158,6 +160,14 @@ export default function DeveloperPortal() {
               <TabsTrigger value="sdk">
                 <Code className="h-4 w-4 mr-2" />
                 SDK Generator
+              </TabsTrigger>
+              <TabsTrigger value="widget">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Widget
+              </TabsTrigger>
+              <TabsTrigger value="whitelabel">
+                <Palette className="h-4 w-4 mr-2" />
+                White-Label
               </TabsTrigger>
               <TabsTrigger value="docs">
                 <Book className="h-4 w-4 mr-2" />
@@ -376,6 +386,53 @@ const findings = await response.json();`}
             {/* Monitoring Tab */}
             <TabsContent value="monitoring">
               <RateLimitMonitor />
+            </TabsContent>
+
+            {/* Widget Tab */}
+            <TabsContent value="widget" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Embeddable Username Widget</CardTitle>
+                  <CardDescription>
+                    Add username availability checks to your website
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Preview</h4>
+                    <EmbeddableWidget branded={true} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Embed Code</Label>
+                    <pre className="bg-muted p-4 rounded-lg text-xs overflow-x-auto">
+                      {generateEmbedCode(true)}
+                    </pre>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(generateEmbedCode(true));
+                        toast({ title: "Copied!", description: "Embed code copied to clipboard" });
+                      }}
+                    >
+                      Copy Embed Code
+                    </Button>
+                  </div>
+
+                  <div className="p-4 bg-muted/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Free tier:</strong> Includes "Made with FootprintIQ" badge. 
+                      Upgrade to Premium to remove branding.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* White-Label Tab */}
+            <TabsContent value="whitelabel">
+              <WhiteLabelToggle />
             </TabsContent>
           </Tabs>
         </main>

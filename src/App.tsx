@@ -92,6 +92,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import OrganizationNew from "./pages/OrganizationNew";
 import Performance from "./pages/admin/Performance";
 import Subscription from "./pages/Subscription";
+import EmbedWidget from "./pages/EmbedWidget";
 
 const queryClient = new QueryClient();
 
@@ -196,6 +197,9 @@ const App = () => (
         
           {/* Workspace & Collaboration Routes */}
           <Route path="/workspaces" element={<OrganizationNew />} />
+          
+          {/* Embeddable Widget */}
+          <Route path="/embed/widget" element={<EmbedWidget />} />
           
           <Route path="/404" element={<NotFound />} />
           <Route path="*" element={<Navigate to="/404" replace />} />

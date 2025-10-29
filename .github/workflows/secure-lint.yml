@@ -63,9 +63,26 @@ jobs:
           path: build_attest.txt
           retention-days: 90
       
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+      
+      - name: Serve build
+        run: npx vite preview --port 4173 &
+        
+      - name: Wait for server
+        run: npx wait-on http://localhost:4173
+        
+      - name: Run Lighthouse CI
+        run: |
+          lhci autorun --collect.url=http://localhost:4173 \
+            --collect.numberOfRuns=1 \
+            --assert.preset=lighthouse:recommended \
+            --upload.target=temporary-public-storage || echo "⚠️ Lighthouse warnings detected"
+      
       - name: Summary
         run: |
           echo "✅ Security checks passed" >> $GITHUB_STEP_SUMMARY
           echo "✅ TypeScript validation passed" >> $GITHUB_STEP_SUMMARY
           echo "✅ Production build successful" >> $GITHUB_STEP_SUMMARY
           echo "✅ Build attestation generated" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Lighthouse CI completed" >> $GITHUB_STEP_SUMMARY

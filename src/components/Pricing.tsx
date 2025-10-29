@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { Card } from "@/components/ui/card";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
 
 const pricingTiers = [
   {
@@ -60,6 +64,15 @@ const pricingTiers = [
 
 export const Pricing = () => {
   const navigate = useNavigate();
+  const [scansPerMonth, setScansPerMonth] = useState(50);
+  
+  const calculatePrice = (scans: number) => {
+    if (scans <= 10) return 0;
+    if (scans <= 100) return 9.99;
+    return 9.99 + Math.floor((scans - 100) / 50) * 5;
+  };
+  
+  const currentPrice = calculatePrice(scansPerMonth);
   const { toast } = useToast();
 
   const handleCTA = async (tierName: string) => {
@@ -105,6 +118,33 @@ export const Pricing = () => {
             Protect your digital footprint with our comprehensive privacy solutions
           </p>
         </div>
+
+        <Card className="max-w-md mx-auto p-6 mb-12">
+          <h3 className="text-lg font-semibold mb-4">Instant Quote Calculator</h3>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Label>Scans per month: {scansPerMonth}</Label>
+              <Slider
+                value={[scansPerMonth]}
+                onValueChange={(v) => setScansPerMonth(v[0])}
+                min={10}
+                max={500}
+                step={10}
+              />
+            </div>
+            <div className="flex items-baseline justify-between">
+              <span className="text-sm text-muted-foreground">Estimated monthly cost:</span>
+              <span className="text-3xl font-bold">£{currentPrice.toFixed(2)}</span>
+            </div>
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={() => handleCTA('Pro')}
+            >
+              Get Started Now
+            </Button>
+          </div>
+        </Card>
 
         <div className="grid md:grid-cols-3 gap-8">
           {pricingTiers.map((tier) => (
