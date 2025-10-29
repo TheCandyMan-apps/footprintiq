@@ -3,9 +3,7 @@ import { normalizeDarkSearch } from "@/lib/normalize/darksearch";
 import { Finding } from "@/lib/ufm";
 import { ensureAllowed } from "./policy";
 import { validateQuery } from "./validation";
-
-const API_KEY = import.meta.env.VITE_DARKSEARCH_API_KEY;
-const BASE_URL = "https://darksearch.io/api";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function checkDarkSearch(query: string): Promise<Finding[]> {
   // Check policy first
@@ -14,23 +12,16 @@ export async function checkDarkSearch(query: string): Promise<Finding[]> {
     return [createSyntheticFinding("darksearch", policyCheck.reason || "gated_by_policy")];
   }
 
-  if (!API_KEY) {
-    return [createSyntheticFinding("darksearch", "missing_key")];
-  }
-
   try {
     const validated = validateQuery(query);
     return await wrapCall("darksearch", async () => {
-      const response = await fetch(`${BASE_URL}/search?query=${encodeURIComponent(validated)}`, {
-        headers: {
-          "Authorization": `Bearer ${API_KEY}`,
-          "User-Agent": "FootprintIQ",
-        },
+      const { data, error } = await supabase.functions.invoke('provider-proxy', {
+        body: { provider: 'darksearch', target: validated }
       });
 
-      if (!response.ok) throw new Error(`DarkSearch API error: ${response.status}`);
+      if (error) throw new Error(`DarkSearch proxy error: ${error.message}`);
+      if (!data) throw new Error('No data returned from DarkSearch');
 
-      const data = await response.json();
       return normalizeDarkSearch(data, validated);
     }, { ttlMs: 7 * 24 * 3600e3 });
   } catch (error) {

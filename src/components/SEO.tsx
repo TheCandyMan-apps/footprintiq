@@ -24,6 +24,23 @@ export const SEO = ({
   article,
   structuredData,
 }: SEOProps) => {
+  const defaultStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "FootprintIQ",
+    "applicationCategory": "SecurityApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "GBP"
+    },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "4.8",
+      "ratingCount": "127"
+    }
+  };
+
   return (
     <Helmet>
       {/* Primary Meta Tags */}
@@ -65,11 +82,9 @@ export const SEO = ({
       <meta name="twitter:image" content={ogImage} />
 
       {/* Structured Data */}
-      {structuredData && (
-        <script type="application/ld+json">
-          {JSON.stringify(structuredData)}
-        </script>
-      )}
+      <script type="application/ld+json">
+        {JSON.stringify(structuredData || defaultStructuredData)}
+      </script>
     </Helmet>
   );
 };

@@ -2,29 +2,19 @@ import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeVirusTotalV3 } from "@/lib/normalize/virustotal_v3";
 import { Finding } from "@/lib/ufm";
 import { validateDomain, validateIP } from "./validation";
-
-const API_KEY = import.meta.env.VITE_VT_API_KEY;
-const BASE_URL = "https://www.virustotal.com/api/v3";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function checkVirusTotal(target: string, type: "domain" | "ip"): Promise<Finding[]> {
-  if (!API_KEY) {
-    return [createSyntheticFinding("virustotal", "missing_key")];
-  }
-
   try {
     const validated = type === "domain" ? validateDomain(target) : validateIP(target);
     return await wrapCall("virustotal", async () => {
-      const endpoint = type === "domain" ? "domains" : "ip_addresses";
-      const response = await fetch(`${BASE_URL}/${endpoint}/${validated}`, {
-        headers: {
-          "x-apikey": API_KEY,
-          "User-Agent": "FootprintIQ",
-        },
+      const { data, error } = await supabase.functions.invoke('provider-proxy', {
+        body: { provider: 'virustotal', target: validated, type }
       });
 
-      if (!response.ok) throw new Error(`VirusTotal API error: ${response.status}`);
+      if (error) throw new Error(`VirusTotal proxy error: ${error.message}`);
+      if (!data) throw new Error('No data returned from VirusTotal');
 
-      const data = await response.json();
       return normalizeVirusTotalV3(data, validated);
     }, { ttlMs: 12 * 3600e3 });
   } catch (error) {

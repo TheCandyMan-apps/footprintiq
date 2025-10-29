@@ -8,11 +8,11 @@ export async function checkAbstractPhone(phone: string): Promise<Finding[]> {
   try {
     const validated = validatePhone(phone);
     return await wrapCall("abstract_phone", async () => {
-      const { data, error } = await supabase.functions.invoke('abstract-phone', {
-        body: { phone: validated }
+      const { data, error } = await supabase.functions.invoke('provider-proxy', {
+        body: { provider: 'abstract_phone', target: validated }
       });
 
-      if (error) throw new Error(`Abstract Phone error: ${error.message}`);
+      if (error) throw new Error(`Abstract Phone proxy error: ${error.message}`);
       if (!data) throw new Error('No data returned from phone validation');
 
       return normalizeAbstractPhone(data, validated);

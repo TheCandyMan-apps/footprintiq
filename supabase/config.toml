@@ -1,5 +1,8 @@
 project_id = "byuzgvauaeldjqxlrjci"
 
+[functions.provider-proxy]
+verify_jwt = true
+
 [functions.workspace-invitation]
 verify_jwt = true
 

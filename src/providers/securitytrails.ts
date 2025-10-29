@@ -2,28 +2,19 @@ import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeSecurityTrails } from "@/lib/normalize/securitytrails_v2";
 import { Finding } from "@/lib/ufm";
 import { validateDomain } from "./validation";
-
-const API_KEY = import.meta.env.VITE_SECURITYTRAILS_API_KEY;
-const BASE_URL = "https://api.securitytrails.com/v1";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function checkSecurityTrails(domain: string): Promise<Finding[]> {
-  if (!API_KEY) {
-    return [createSyntheticFinding("securitytrails", "missing_key")];
-  }
-
   try {
     const validated = validateDomain(domain);
     return await wrapCall("securitytrails", async () => {
-      const response = await fetch(`${BASE_URL}/domain/${validated}/subdomains`, {
-        headers: {
-          "APIKEY": API_KEY,
-          "User-Agent": "FootprintIQ",
-        },
+      const { data, error } = await supabase.functions.invoke('provider-proxy', {
+        body: { provider: 'securitytrails', target: validated }
       });
 
-      if (!response.ok) throw new Error(`SecurityTrails API error: ${response.status}`);
+      if (error) throw new Error(`SecurityTrails proxy error: ${error.message}`);
+      if (!data) throw new Error('No data returned from SecurityTrails');
 
-      const data = await response.json();
       return normalizeSecurityTrails(data, validated);
     }, { ttlMs: 24 * 3600e3 });
   } catch (error) {

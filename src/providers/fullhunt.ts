@@ -2,28 +2,19 @@ import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeFullHunt } from "@/lib/normalize/fullhunt";
 import { Finding } from "@/lib/ufm";
 import { validateDomain } from "./validation";
-
-const API_KEY = import.meta.env.VITE_FULLHUNT_API_KEY;
-const BASE_URL = "https://fullhunt.io/api/v1";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function checkFullHunt(domain: string): Promise<Finding[]> {
-  if (!API_KEY) {
-    return [createSyntheticFinding("fullhunt", "missing_key")];
-  }
-
   try {
     const validated = validateDomain(domain);
     return await wrapCall("fullhunt", async () => {
-      const response = await fetch(`${BASE_URL}/domain/${validated}/subdomains`, {
-        headers: {
-          "X-API-KEY": API_KEY,
-          "User-Agent": "FootprintIQ",
-        },
+      const { data, error } = await supabase.functions.invoke('provider-proxy', {
+        body: { provider: 'fullhunt', target: validated }
       });
 
-      if (!response.ok) throw new Error(`FullHunt API error: ${response.status}`);
+      if (error) throw new Error(`FullHunt proxy error: ${error.message}`);
+      if (!data) throw new Error('No data returned from FullHunt');
 
-      const data = await response.json();
       return normalizeFullHunt(data, validated);
     }, { ttlMs: 24 * 3600e3 });
   } catch (error) {

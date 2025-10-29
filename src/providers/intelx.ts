@@ -3,9 +3,7 @@ import { normalizeIntelX } from "@/lib/normalize/intelx";
 import { Finding } from "@/lib/ufm";
 import { ensureAllowed } from "./policy";
 import { validateQuery } from "./validation";
-
-const API_KEY = import.meta.env.VITE_INTELX_API_KEY;
-const BASE_URL = "https://2.intelx.io";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function checkIntelX(query: string): Promise<Finding[]> {
   // Check policy first
@@ -14,31 +12,16 @@ export async function checkIntelX(query: string): Promise<Finding[]> {
     return [createSyntheticFinding("intelx", policyCheck.reason || "gated_by_policy")];
   }
 
-  if (!API_KEY) {
-    return [createSyntheticFinding("intelx", "missing_key")];
-  }
-
   try {
     const validated = validateQuery(query);
     return await wrapCall("intelx", async () => {
-      const response = await fetch(`${BASE_URL}/intelligent/search`, {
-        method: "POST",
-        headers: {
-          "x-key": API_KEY,
-          "Content-Type": "application/json",
-          "User-Agent": "FootprintIQ",
-        },
-        body: JSON.stringify({
-          term: validated,
-          maxresults: 100,
-          media: 0,
-          sort: 4,
-        }),
+      const { data, error } = await supabase.functions.invoke('provider-proxy', {
+        body: { provider: 'intelx', target: validated }
       });
 
-      if (!response.ok) throw new Error(`IntelX API error: ${response.status}`);
+      if (error) throw new Error(`IntelX proxy error: ${error.message}`);
+      if (!data) throw new Error('No data returned from IntelX');
 
-      const data = await response.json();
       return normalizeIntelX(data, validated);
     }, { ttlMs: 7 * 24 * 3600e3 });
   } catch (error) {

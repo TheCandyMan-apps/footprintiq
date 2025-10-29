@@ -2,28 +2,19 @@ import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeBinaryEdge } from "@/lib/normalize/binaryedge";
 import { Finding } from "@/lib/ufm";
 import { validateIP } from "./validation";
-
-const API_KEY = import.meta.env.VITE_BINARYEDGE_API_KEY;
-const BASE_URL = "https://api.binaryedge.io/v2";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function checkBinaryEdge(ip: string): Promise<Finding[]> {
-  if (!API_KEY) {
-    return [createSyntheticFinding("binaryedge", "missing_key")];
-  }
-
   try {
     const validated = validateIP(ip);
     return await wrapCall("binaryedge", async () => {
-      const response = await fetch(`${BASE_URL}/query/ip/${validated}`, {
-        headers: {
-          "X-Key": API_KEY,
-          "User-Agent": "FootprintIQ",
-        },
+      const { data, error } = await supabase.functions.invoke('provider-proxy', {
+        body: { provider: 'binaryedge', target: validated }
       });
 
-      if (!response.ok) throw new Error(`BinaryEdge API error: ${response.status}`);
+      if (error) throw new Error(`BinaryEdge proxy error: ${error.message}`);
+      if (!data) throw new Error('No data returned from BinaryEdge');
 
-      const data = await response.json();
       return normalizeBinaryEdge(data, validated);
     }, { ttlMs: 24 * 3600e3 });
   } catch (error) {

@@ -2,27 +2,19 @@ import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeHunter } from "@/lib/normalize/hunter";
 import { Finding } from "@/lib/ufm";
 import { validateDomain } from "./validation";
-
-const API_KEY = import.meta.env.VITE_HUNTER_IO_KEY;
-const BASE_URL = "https://api.hunter.io/v2";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function checkHunter(domain: string): Promise<Finding[]> {
-  if (!API_KEY) {
-    return [createSyntheticFinding("hunter", "missing_key")];
-  }
-
   try {
     const validated = validateDomain(domain);
     return await wrapCall("hunter", async () => {
-      const response = await fetch(`${BASE_URL}/domain-search?domain=${validated}&api_key=${API_KEY}`, {
-        headers: {
-          "User-Agent": "FootprintIQ",
-        },
+      const { data, error } = await supabase.functions.invoke('provider-proxy', {
+        body: { provider: 'hunter', target: validated }
       });
 
-      if (!response.ok) throw new Error(`Hunter API error: ${response.status}`);
+      if (error) throw new Error(`Hunter proxy error: ${error.message}`);
+      if (!data) throw new Error('No data returned from Hunter');
 
-      const data = await response.json();
       return normalizeHunter(data, validated);
     }, { ttlMs: 30 * 24 * 3600e3 });
   } catch (error) {

@@ -2,27 +2,19 @@ import { wrapCall, createSyntheticFinding } from "./runtime";
 import { normalizeAbstractIPGeo } from "@/lib/normalize/abstract_ipgeo";
 import { Finding } from "@/lib/ufm";
 import { validateIP } from "./validation";
-
-const API_KEY = import.meta.env.VITE_ABSTRACTAPI_IP_GEOLOCATION_KEY;
-const BASE_URL = "https://ipgeolocation.abstractapi.com/v1";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function checkAbstractIPGeo(ip: string): Promise<Finding[]> {
-  if (!API_KEY) {
-    return [createSyntheticFinding("abstract_ipgeo", "missing_key")];
-  }
-
   try {
     const validated = validateIP(ip);
     return await wrapCall("abstract_ipgeo", async () => {
-      const response = await fetch(`${BASE_URL}/?api_key=${API_KEY}&ip_address=${validated}`, {
-        headers: {
-          "User-Agent": "FootprintIQ",
-        },
+      const { data, error } = await supabase.functions.invoke('provider-proxy', {
+        body: { provider: 'abstract_ipgeo', target: validated }
       });
 
-      if (!response.ok) throw new Error(`AbstractAPI IPGeo error: ${response.status}`);
+      if (error) throw new Error(`Abstract IPGeo proxy error: ${error.message}`);
+      if (!data) throw new Error('No data returned from IP geolocation');
 
-      const data = await response.json();
       return normalizeAbstractIPGeo(data, validated);
     }, { ttlMs: 30 * 24 * 3600e3 });
   } catch (error) {

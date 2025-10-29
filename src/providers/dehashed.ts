@@ -3,10 +3,7 @@ import { normalizeDeHashed } from "@/lib/normalize/dehashed";
 import { Finding } from "@/lib/ufm";
 import { ensureAllowed } from "./policy";
 import { validateQuery } from "./validation";
-
-const API_KEY = import.meta.env.VITE_DEHASHED_API_KEY;
-const USERNAME = import.meta.env.VITE_DEHASHED_API_KEY_USERNAME;
-const BASE_URL = "https://api.dehashed.com/search";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function checkDeHashed(query: string): Promise<Finding[]> {
   // Check policy first
@@ -15,25 +12,16 @@ export async function checkDeHashed(query: string): Promise<Finding[]> {
     return [createSyntheticFinding("dehashed", policyCheck.reason || "gated_by_policy")];
   }
 
-  if (!API_KEY || !USERNAME) {
-    return [createSyntheticFinding("dehashed", "missing_key")];
-  }
-
   try {
     const validated = validateQuery(query);
     return await wrapCall("dehashed", async () => {
-      const auth = btoa(`${USERNAME}:${API_KEY}`);
-      const response = await fetch(`${BASE_URL}?query=${encodeURIComponent(validated)}`, {
-        headers: {
-          "Authorization": `Basic ${auth}`,
-          "Accept": "application/json",
-          "User-Agent": "FootprintIQ",
-        },
+      const { data, error } = await supabase.functions.invoke('provider-proxy', {
+        body: { provider: 'dehashed', target: validated }
       });
 
-      if (!response.ok) throw new Error(`DeHashed API error: ${response.status}`);
+      if (error) throw new Error(`DeHashed proxy error: ${error.message}`);
+      if (!data) throw new Error('No data returned from DeHashed');
 
-      const data = await response.json();
       return normalizeDeHashed(data, validated);
     }, { ttlMs: 7 * 24 * 3600e3 });
   } catch (error) {
