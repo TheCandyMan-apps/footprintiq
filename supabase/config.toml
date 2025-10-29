@@ -131,3 +131,9 @@ verify_jwt = false
 
 [functions.alert-manager]
 verify_jwt = false
+
+[functions.ai-fusion-builder]
+verify_jwt = true
+
+[functions.fusion-compare]
+verify_jwt = true

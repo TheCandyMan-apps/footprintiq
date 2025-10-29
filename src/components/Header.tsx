@@ -121,6 +121,13 @@ export const Header = () => {
                 <DropdownMenuItem asChild>
                   <Link to="/reports" className="cursor-pointer">Reports</Link>
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/persona-resolver" className="cursor-pointer">Persona Resolver</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/threat-forecast" className="cursor-pointer">Threat Forecast</Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -291,6 +298,20 @@ export const Header = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 Reports
+              </Link>
+              <Link
+                to="/persona-resolver"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Persona Resolver
+              </Link>
+              <Link
+                to="/threat-forecast"
+                className="text-sm text-muted-foreground hover:text-primary transition-colors pl-2"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Threat Forecast
               </Link>
             </div>
 
