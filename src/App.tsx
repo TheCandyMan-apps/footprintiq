@@ -76,6 +76,8 @@ import MarketplaceSubmit from "./pages/MarketplaceSubmit";
 import MarketplacePlugin from "./pages/MarketplacePlugin";
 import PersonaResolver from "./pages/PersonaResolver";
 import ThreatForecast from "./pages/ThreatForecast";
+import ClientPortal from "./pages/ClientPortal";
+import Insights from "./pages/Insights";
 import MarketplaceReview from "./pages/admin/MarketplaceReview";
 import QualityLab from "./pages/admin/QualityLab";
 import ObservabilityDashboard from "./pages/admin/ObservabilityDashboard";
