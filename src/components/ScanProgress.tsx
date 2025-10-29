@@ -87,11 +87,14 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           if (scanData.phone && scanData.phone.trim()) body.phone = scanData.phone.trim();
 
           // Actually wait for the scan to complete
-          await withTimeout(
+          const invokeRes = await withTimeout(
             supabase.functions.invoke('osint-scan', { body }),
             30000,
             'OSINT scan'
           );
+          if (invokeRes?.data?.diagnostics) {
+            console.log('[Scan] Providers diagnostics:', invokeRes.data.diagnostics);
+          }
         } catch (e: any) {
           console.warn('OSINT scan error:', e?.message || e);
         }

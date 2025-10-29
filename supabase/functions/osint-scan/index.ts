@@ -87,6 +87,11 @@ serve(async (req) => {
       emailData: null as any,
     };
 
+    // Diagnostics to surface which providers were attempted/invoked
+    const diagnostics = {
+      providersInvoked: [] as string[],
+      providersSkipped: [] as string[],
+    };
     // 1. People Data Labs Search
     if (PEOPLE_DATA_LABS_KEY && (scanData.email || scanData.phone)) {
       console.log('Searching People Data Labs...');
@@ -210,6 +215,7 @@ serve(async (req) => {
     // 4. Predicta Search - Multi-query support
     if (PREDICTA_API_KEY) {
       console.log('Searching Predicta...');
+      diagnostics.providersInvoked.push('predicta:start');
       const predictaQueries: Array<{ query: string; queryType: string }> = [];
       
       if (scanData.email) {
@@ -803,6 +809,7 @@ serve(async (req) => {
           breaches: results.breaches.length,
           privacyScore,
         },
+        diagnostics,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
