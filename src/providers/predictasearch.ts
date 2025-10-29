@@ -1,10 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { ProviderResult } from './types';
 
 export async function queryPredictaSearch(
   query: string,
   queryType: 'email' | 'phone' | 'username' | 'name'
-): Promise<ProviderResult> {
+): Promise<{ success: boolean; provider: string; data?: any; error?: string; cached?: boolean }> {
   try {
     const { data, error } = await supabase.functions.invoke('predicta-search', {
       body: { query, queryType },

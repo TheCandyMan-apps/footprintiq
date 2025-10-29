@@ -5,6 +5,7 @@ import { normalizeVirusTotal, type VirusTotalResult } from "./normalize/virustot
 import { normalizeBuiltWith, type BuiltWithResult } from "./normalize/builtwith";
 import { normalizePeopleDataLabs, type PeopleDataLabsResult } from "./normalize/pdl";
 import { normalizeIPQS, type IPQSPhoneResult } from "./normalize/ipqs";
+import { normalizePredictaSearch, type PredictaSearchResult } from "./normalize/predictasearch";
 
 /**
  * Orchestrator for OSINT scan results
@@ -26,6 +27,7 @@ export interface ProviderResults {
   builtwith?: BuiltWithResult;
   peopleDataLabs?: PeopleDataLabsResult;
   ipqs?: IPQSPhoneResult;
+  predictasearch?: PredictaSearchResult[];
 }
 
 export interface OrchestratedResults {
@@ -73,6 +75,70 @@ export function orchestrateScan(input: ScanInput, results: ProviderResults): Orc
 
   if (results.ipqs && input.phone) {
     findings.push(...normalizeIPQS(results.ipqs, input.phone));
+  }
+
+  if (results.predictasearch) {
+    const normalized = normalizePredictaSearch(results.predictasearch);
+    const now = new Date().toISOString();
+    
+    // Convert Predicta findings to UFM format
+    normalized.findings.forEach((pf) => {
+      if (pf.type === 'breach' && pf.breach) {
+        findings.push({
+          id: `predicta-breach-${pf.platform}-${Date.now()}`,
+          type: 'breach',
+          severity: 'high',
+          confidence: 0.9,
+          provider: 'Predicta Search',
+          providerCategory: 'Data Breach',
+          title: `Data Breach: ${pf.breach.name}`,
+          description: pf.breach.description,
+          impact: `${pf.breach.count.toLocaleString()} accounts exposed`,
+          remediation: ['Change passwords for affected accounts immediately', 'Enable 2FA if not already enabled', 'Monitor for suspicious activity'],
+          evidence: [
+            { key: 'breach_date', value: pf.breach.date },
+            { key: 'breach_domain', value: pf.breach.domain },
+            { key: 'data_classes', value: pf.breach.dataClasses },
+          ],
+          tags: ['breach', 'data-leak', pf.platform],
+          observedAt: now,
+          raw: {
+            breach_date: pf.breach.date,
+            domain: pf.breach.domain,
+            data_classes: pf.breach.dataClasses,
+          },
+        });
+      } else if (pf.type === 'profile') {
+        findings.push({
+          id: `predicta-profile-${pf.platform}-${Date.now()}`,
+          type: 'social_media',
+          severity: pf.verified ? 'medium' : 'low',
+          confidence: pf.verified ? 0.95 : 0.7,
+          provider: 'Predicta Search',
+          providerCategory: 'Social Profile',
+          title: `${pf.platform} Profile Found`,
+          description: `Active profile discovered on ${pf.platform}`,
+          impact: `Digital footprint extends to ${pf.platform}`,
+          remediation: ['Review privacy settings', 'Consider removing if unused', 'Monitor for impersonation'],
+          evidence: [
+            { key: 'platform', value: pf.platform },
+            { key: 'username', value: pf.username },
+            { key: 'verified', value: pf.verified },
+          ],
+          tags: ['social-media', pf.platform, ...(pf.verified ? ['verified'] : [])],
+          observedAt: now,
+          url: pf.url,
+          raw: {
+            platform: pf.platform,
+            username: pf.username,
+            url: pf.url,
+            verified: pf.verified,
+            stats: pf.stats,
+            created_at: pf.createdAt,
+          },
+        });
+      }
+    });
   }
 
   // Deduplicate and sort
