@@ -64,13 +64,12 @@ export const Header = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <MobileNav />
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/" className="flex items-center">
               <img 
                 src="/logo-dark.png" 
                 alt="FootprintIQ Logo" 
-                className="h-16 w-auto rounded-lg"
+                className="h-24 w-auto rounded-lg"
               />
-              <span className="text-xl font-bold">footprintiq</span>
             </Link>
           </div>
 
