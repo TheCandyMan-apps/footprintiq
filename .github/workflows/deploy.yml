@@ -1,0 +1,85 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linting
+        run: npx eslint --config .eslintrc.ci.json src/
+        continue-on-error: false
+      
+      - name: Type check
+        run: npx tsc --noEmit
+      
+      - name: Build production
+        run: npm run build
+        env:
+          NODE_ENV: production
+      
+      - name: Run security audit
+        run: npm audit --production
+        continue-on-error: true
+      
+      - name: Check bundle size
+        run: |
+          echo "📦 Checking bundle size..."
+          BUNDLE_SIZE=$(du -sh dist | cut -f1)
+          echo "Bundle size: $BUNDLE_SIZE"
+          
+          # Get main JS file size
+          MAIN_JS=$(find dist/assets -name "index-*.js" -exec du -h {} \; | cut -f1)
+          echo "Main JS: $MAIN_JS"
+          
+      - name: Generate build info
+        run: |
+          echo "BUILD_ID=${{ github.sha }}" > dist/build-info.txt
+          echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> dist/build-info.txt
+          echo "BUILD_NUMBER=${{ github.run_number }}" >> dist/build-info.txt
+          echo "BRANCH=${{ github.ref_name }}" >> dist/build-info.txt
+          
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-build-${{ github.run_number }}
+          path: dist
+          retention-days: 30
+      
+      - name: Deploy to Netlify (if configured)
+        if: ${{ secrets.NETLIFY_AUTH_TOKEN != '' }}
+        uses: netlify/actions/cli@master
+        with:
+          args: deploy --prod --dir=dist
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      
+      - name: Deployment summary
+        run: |
+          echo "# 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Build completed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Bundle size: $(du -sh dist | cut -f1)" >> $GITHUB_STEP_SUMMARY
+          echo "🏷️ Version: v2.5.0" >> $GITHUB_STEP_SUMMARY
+          echo "🔨 Build: #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "🌿 Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "📅 Date: $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
