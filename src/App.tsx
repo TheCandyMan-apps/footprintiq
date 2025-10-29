@@ -117,16 +117,25 @@ const queryClient = new QueryClient({
 });
 
 function AppContent() {
-  useKeyboardShortcuts();
-  
   return (
     <>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <GlobalSearch />
-        <Suspense fallback={<LoadingState />}>
-          <Routes>
+        <RouterContent />
+      </BrowserRouter>
+    </>
+  );
+}
+
+function RouterContent() {
+  useKeyboardShortcuts();
+  
+  return (
+    <>
+      <GlobalSearch />
+      <Suspense fallback={<LoadingState />}>
+        <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -231,8 +240,7 @@ function AppContent() {
               </Routes>
             </Suspense>
             <CookieConsent />
-          </BrowserRouter>
-        </>
+          </>
   );
 }
 
