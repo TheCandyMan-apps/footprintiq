@@ -7,111 +7,128 @@ import { CookieConsent } from "@/components/CookieConsent";
 import { ThemeProvider } from "next-themes";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { GlobalSearch } from "@/components/GlobalSearch";
+import { lazy, Suspense } from "react";
+import { LoadingState } from "@/components/ui/loading-state";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import "@/lib/config"; // Validate env at boot
+
+// Critical pages (loaded immediately)
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
-import ScanPage from "./pages/ScanPage";
-import ResultsDetail from "./pages/ResultsDetail";
 import NotFound from "./pages/NotFound";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import ResponsibleUse from "./pages/ResponsibleUse";
-import DataSources from "./pages/DataSources";
-import Support from "./pages/Support";
-import SupportConfirmation from "./pages/SupportConfirmation";
-import MyTickets from "./pages/MyTickets";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
-import UsernamePage from "./pages/UsernamePage";
-import ApiDocs from "./pages/docs/ApiDocs";
-import ApiDocsNew from "./pages/ApiDocs";
-import DeveloperPortal from "./pages/DeveloperPortal";
-import ExecutiveDashboard from "./pages/ExecutiveDashboard";
-import AdvancedAnalytics from "./pages/AdvancedAnalytics";
-import Teams from "./pages/Teams";
-import TeamDetail from "./pages/TeamDetail";
-import Workflows from "./pages/Workflows";
-import Security from "./pages/Security";
-import PluginMarketplace from "./pages/PluginMarketplace";
-import PredictiveAnalytics from "./pages/PredictiveAnalytics";
-import RoleManagement from "./pages/admin/RoleManagement";
-import PersonaDnaLaunch from "./pages/blog/PersonaDnaLaunch";
-import Analyst from "./pages/Analyst";
-import Assistant from "./pages/Assistant";
-import Cases from "./pages/Cases";
-import CaseDetail from "./pages/CaseDetail";
-import Monitoring from "./pages/Monitoring";
-import Trends from "./pages/Trends";
-import Reports from "./pages/Reports";
-import PartnersIndex from "./pages/partners/Index";
-import PartnerDashboard from "./pages/partners/Dashboard";
-import GlobalIndex from "./pages/GlobalIndex";
-import ResourcesIndex from "./pages/resources/Index";
-import WebinarsPage from "./pages/resources/Webinars";
-import Organization from "./pages/Organization";
-import ThreatIntel from "./pages/ThreatIntel";
-import Compliance from "./pages/Compliance";
-import AutomatedRemoval from "./pages/AutomatedRemoval";
-import Integrations from "./pages/Integrations";
-import Analytics from "./pages/Analytics";
-import RlsCheck from "./pages/admin/RlsCheck";
-import Providers from "./pages/admin/Providers";
-import Health from "./pages/admin/Health";
-import Observability from "./pages/admin/Observability";
-import Policies from "./pages/admin/Policies";
-import AuditLogs from "./pages/admin/AuditLogs";
-import Workspace from "./pages/Workspace";
-import Workspaces from "./pages/Workspaces";
-import Trust from "./pages/Trust";
-import HowWeSourceData from "./pages/HowWeSourceData";
-import Graph from "./pages/Graph";
-import Search from "./pages/Search";
-import AIAnalyst from "./pages/AIAnalyst";
-import MonitorRunDetail from "./pages/MonitorRunDetail";
-import WorkspaceAudit from "./pages/admin/WorkspaceAudit";
-import Preferences from "./pages/Preferences";
-import Timeline from "./pages/Timeline";
-import Watchlists from "./pages/Watchlists";
-import AnalystScoreboard from "./pages/AnalystScoreboard";
-import HelpCenter from "./pages/HelpCenter";
-import Onboarding from "./pages/Onboarding";
-import Marketplace from "./pages/Marketplace";
-import MarketplaceSubmit from "./pages/MarketplaceSubmit";
-import MarketplacePlugin from "./pages/MarketplacePlugin";
-import PersonaResolver from "./pages/PersonaResolver";
-import ThreatForecast from "./pages/ThreatForecast";
-import ClientPortal from "./pages/ClientPortal";
-import Insights from "./pages/Insights";
-import Automation from "./pages/Automation";
-import Agents from "./pages/Agents";
-import TrustAIAgents from "./pages/TrustAIAgents";
-import MarketplaceReview from "./pages/admin/MarketplaceReview";
-import QualityLab from "./pages/admin/QualityLab";
-import ObservabilityDashboard from "./pages/admin/ObservabilityDashboard";
-import CircuitBreakers from "./pages/admin/CircuitBreakers";
-import CostTracking from "./pages/admin/CostTracking";
-import AdminDashboard from "./pages/admin/Dashboard";
-import OrganizationNew from "./pages/OrganizationNew";
-import Performance from "./pages/admin/Performance";
-import Subscription from "./pages/Subscription";
-import EmbedWidget from "./pages/EmbedWidget";
-import InstallApp from "./pages/InstallApp";
 
-const queryClient = new QueryClient();
+// Lazy-loaded pages (loaded on demand)
+const ScanPage = lazy(() => import("./pages/ScanPage"));
+const ResultsDetail = lazy(() => import("./pages/ResultsDetail"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const ResponsibleUse = lazy(() => import("./pages/ResponsibleUse"));
+const DataSources = lazy(() => import("./pages/DataSources"));
+const Support = lazy(() => import("./pages/Support"));
+const SupportConfirmation = lazy(() => import("./pages/SupportConfirmation"));
+const MyTickets = lazy(() => import("./pages/MyTickets"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+const UsernamePage = lazy(() => import("./pages/UsernamePage"));
+const ApiDocs = lazy(() => import("./pages/docs/ApiDocs"));
+const ApiDocsNew = lazy(() => import("./pages/ApiDocs"));
+const DeveloperPortal = lazy(() => import("./pages/DeveloperPortal"));
+const ExecutiveDashboard = lazy(() => import("./pages/ExecutiveDashboard"));
+const AdvancedAnalytics = lazy(() => import("./pages/AdvancedAnalytics"));
+const Teams = lazy(() => import("./pages/Teams"));
+const TeamDetail = lazy(() => import("./pages/TeamDetail"));
+const Workflows = lazy(() => import("./pages/Workflows"));
+const Security = lazy(() => import("./pages/Security"));
+const PluginMarketplace = lazy(() => import("./pages/PluginMarketplace"));
+const PredictiveAnalytics = lazy(() => import("./pages/PredictiveAnalytics"));
+const RoleManagement = lazy(() => import("./pages/admin/RoleManagement"));
+const PersonaDnaLaunch = lazy(() => import("./pages/blog/PersonaDnaLaunch"));
+const Analyst = lazy(() => import("./pages/Analyst"));
+const Assistant = lazy(() => import("./pages/Assistant"));
+const Cases = lazy(() => import("./pages/Cases"));
+const CaseDetail = lazy(() => import("./pages/CaseDetail"));
+const Monitoring = lazy(() => import("./pages/Monitoring"));
+const Trends = lazy(() => import("./pages/Trends"));
+const Reports = lazy(() => import("./pages/Reports"));
+const PartnersIndex = lazy(() => import("./pages/partners/Index"));
+const PartnerDashboard = lazy(() => import("./pages/partners/Dashboard"));
+const GlobalIndex = lazy(() => import("./pages/GlobalIndex"));
+const ResourcesIndex = lazy(() => import("./pages/resources/Index"));
+const WebinarsPage = lazy(() => import("./pages/resources/Webinars"));
+const Organization = lazy(() => import("./pages/Organization"));
+const ThreatIntel = lazy(() => import("./pages/ThreatIntel"));
+const Compliance = lazy(() => import("./pages/Compliance"));
+const AutomatedRemoval = lazy(() => import("./pages/AutomatedRemoval"));
+const Integrations = lazy(() => import("./pages/Integrations"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const RlsCheck = lazy(() => import("./pages/admin/RlsCheck"));
+const Providers = lazy(() => import("./pages/admin/Providers"));
+const Health = lazy(() => import("./pages/admin/Health"));
+const Observability = lazy(() => import("./pages/admin/Observability"));
+const Policies = lazy(() => import("./pages/admin/Policies"));
+const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
+const Workspace = lazy(() => import("./pages/Workspace"));
+const Workspaces = lazy(() => import("./pages/Workspaces"));
+const Trust = lazy(() => import("./pages/Trust"));
+const HowWeSourceData = lazy(() => import("./pages/HowWeSourceData"));
+const Graph = lazy(() => import("./pages/Graph"));
+const Search = lazy(() => import("./pages/Search"));
+const AIAnalyst = lazy(() => import("./pages/AIAnalyst"));
+const MonitorRunDetail = lazy(() => import("./pages/MonitorRunDetail"));
+const WorkspaceAudit = lazy(() => import("./pages/admin/WorkspaceAudit"));
+const Preferences = lazy(() => import("./pages/Preferences"));
+const Timeline = lazy(() => import("./pages/Timeline"));
+const Watchlists = lazy(() => import("./pages/Watchlists"));
+const AnalystScoreboard = lazy(() => import("./pages/AnalystScoreboard"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const Marketplace = lazy(() => import("./pages/Marketplace"));
+const MarketplaceSubmit = lazy(() => import("./pages/MarketplaceSubmit"));
+const MarketplacePlugin = lazy(() => import("./pages/MarketplacePlugin"));
+const PersonaResolver = lazy(() => import("./pages/PersonaResolver"));
+const ThreatForecast = lazy(() => import("./pages/ThreatForecast"));
+const ClientPortal = lazy(() => import("./pages/ClientPortal"));
+const Insights = lazy(() => import("./pages/Insights"));
+const Automation = lazy(() => import("./pages/Automation"));
+const Agents = lazy(() => import("./pages/Agents"));
+const TrustAIAgents = lazy(() => import("./pages/TrustAIAgents"));
+const MarketplaceReview = lazy(() => import("./pages/admin/MarketplaceReview"));
+const QualityLab = lazy(() => import("./pages/admin/QualityLab"));
+const ObservabilityDashboard = lazy(() => import("./pages/admin/ObservabilityDashboard"));
+const CircuitBreakers = lazy(() => import("./pages/admin/CircuitBreakers"));
+const CostTracking = lazy(() => import("./pages/admin/CostTracking"));
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const OrganizationNew = lazy(() => import("./pages/OrganizationNew"));
+const Performance = lazy(() => import("./pages/admin/Performance"));
+const Subscription = lazy(() => import("./pages/Subscription"));
+const EmbedWidget = lazy(() => import("./pages/EmbedWidget"));
+const InstallApp = lazy(() => import("./pages/InstallApp"));
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <TooltipProvider>
-        <ErrorBoundary>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <GlobalSearch />
-            <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
+
+function AppContent() {
+  useKeyboardShortcuts();
+  
+  return (
+    <>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <GlobalSearch />
+        <Suspense fallback={<LoadingState />}>
+          <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/scan" element={<ScanPage />} />
           <Route path="/results/:scanId" element={<ResultsDetail />} />
@@ -209,13 +226,24 @@ const App = () => (
           <Route path="/embed/widget" element={<EmbedWidget />} />
           <Route path="/install" element={<InstallApp />} />
           
-          <Route path="/404" element={<NotFound />} />
-          <Route path="*" element={<Navigate to="/404" replace />} />
-        </Routes>
-        <CookieConsent />
-      </BrowserRouter>
-      </ErrorBoundary>
-    </TooltipProvider>
+                <Route path="/404" element={<NotFound />} />
+                <Route path="*" element={<Navigate to="/404" replace />} />
+              </Routes>
+            </Suspense>
+            <CookieConsent />
+          </BrowserRouter>
+        </>
+  );
+}
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <TooltipProvider>
+        <ErrorBoundary>
+          <AppContent />
+        </ErrorBoundary>
+      </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { NotificationBell } from "@/components/workspace/NotificationBell";
 import { WorkspacePresence } from "@/components/workspace/WorkspacePresence";
+import { MobileNav } from "@/components/MobileNav";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -61,10 +62,13 @@ export const Header = () => {
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-primary" />
-            <span className="text-xl font-bold">footprintiq</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <MobileNav />
+            <Link to="/" className="flex items-center gap-2">
+              <Shield className="w-6 h-6 text-primary" />
+              <span className="text-xl font-bold">footprintiq</span>
+            </Link>
+          </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
