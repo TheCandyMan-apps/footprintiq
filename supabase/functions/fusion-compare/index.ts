@@ -41,8 +41,16 @@ serve(async (req) => {
       .eq('user_id', user.id);
 
     if (!vectorsA?.length || !vectorsB?.length) {
+      const missingEntities = [];
+      if (!vectorsA?.length) missingEntities.push(entityA);
+      if (!vectorsB?.length) missingEntities.push(entityB);
+      
       return new Response(
-        JSON.stringify({ error: 'Vectors not found for one or both entities' }),
+        JSON.stringify({ 
+          error: 'Entity vectors not found. Please build vectors first by running a scan and generating embeddings.',
+          missingEntities,
+          suggestion: 'Go to the scan results page and click "Build Entity Vectors" for the relevant entities.'
+        }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

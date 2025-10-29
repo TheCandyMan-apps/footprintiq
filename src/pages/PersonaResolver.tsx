@@ -65,14 +65,27 @@ export default function PersonaResolver() {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's a vector not found error
+        if (error.message?.includes('vectors not found') || error.message?.includes('Entity vectors not found')) {
+          toast.error('Entity vectors not found. Build vectors by running a scan first.', {
+            description: 'Each entity needs embeddings generated from scan data before comparison.',
+            duration: 6000
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
 
       toast.success(`Comparison complete: ${data.recommendation}`);
       await loadPredictions();
       setComparingEntities(null);
     } catch (error: any) {
       console.error('Compare error:', error);
-      toast.error(error.message || 'Comparison failed');
+      toast.error(error.message || 'Comparison failed', {
+        description: 'Check console for details'
+      });
     } finally {
       setIsComparing(false);
     }
@@ -136,7 +149,7 @@ export default function PersonaResolver() {
             Quick Compare
           </CardTitle>
           <CardDescription>
-            Compare two entities to determine if they're the same person
+            Compare two entities to determine if they're the same person. Note: Entity vectors must be built from scan data first.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -194,8 +207,13 @@ export default function PersonaResolver() {
           ) : predictions.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <AlertCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No predictions found</p>
-              <p className="text-sm mt-2">Use Quick Compare to create new predictions</p>
+              <p className="font-medium mb-2">No predictions found</p>
+              <p className="text-sm">To compare entities:</p>
+              <ol className="text-sm mt-3 space-y-1 text-left max-w-md mx-auto">
+                <li>1. Run a scan on usernames/identities</li>
+                <li>2. Entity vectors are auto-generated from scan results</li>
+                <li>3. Use Quick Compare above with entity IDs (usernames)</li>
+              </ol>
             </div>
           ) : (
             <div className="space-y-4">
