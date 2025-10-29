@@ -4,6 +4,7 @@ import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { getBlogHeroImage } from "@/lib/blogImages";
 
 const blogPosts: Record<string, { title: string; date: string; readTime: string; category: string; content: string }> = {
   "what-is-digital-footprint": {
@@ -1133,6 +1134,7 @@ const blogPosts: Record<string, { title: string; date: string; readTime: string;
 const BlogPost = () => {
   const { slug } = useParams<{ slug: string }>();
   const post = slug ? blogPosts[slug as keyof typeof blogPosts] : null;
+  const heroImage = slug ? getBlogHeroImage(slug) : undefined;
 
   if (!post) {
     return <Navigate to="/blog" replace />;
@@ -1206,7 +1208,19 @@ const BlogPost = () => {
             {post.title}
           </h1>
 
-          <div className="h-1 w-24 bg-gradient-to-r from-primary via-primary-glow to-accent rounded-full mb-12"></div>
+          <div className="h-1 w-24 bg-gradient-to-r from-primary via-primary-glow to-accent rounded-full mb-8"></div>
+
+          {/* Hero Image */}
+          {heroImage && (
+            <div className="mb-12 rounded-3xl overflow-hidden shadow-2xl border-2 border-border/50">
+              <img 
+                src={heroImage} 
+                alt={post.title}
+                className="w-full h-auto object-cover"
+                loading="eager"
+              />
+            </div>
+          )}
 
           {/* 
             SECURITY NOTE: Blog content is static and hardcoded by developers only.
