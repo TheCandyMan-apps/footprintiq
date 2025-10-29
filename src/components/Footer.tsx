@@ -10,7 +10,7 @@ export const Footer = () => {
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
               <img 
-                src="/logo-social.png" 
+                src="/logo-dark.png" 
                 alt="FootprintIQ Logo" 
                 className="w-10 h-10 rounded-lg"
               />
