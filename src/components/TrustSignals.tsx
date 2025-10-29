@@ -31,7 +31,7 @@ export const TrustSignals = () => {
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
             <img 
-              src="/logo-icon-transparent.png" 
+              src="/logo-dark.png" 
               alt="FootprintIQ Shield" 
               className="w-20 h-20 rounded-xl animate-float"
             />
