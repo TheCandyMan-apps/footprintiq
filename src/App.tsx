@@ -178,6 +178,8 @@ const App = () => (
           {/* AI Fusion & Predictive Routes */}
           <Route path="/persona-resolver" element={<PersonaResolver />} />
           <Route path="/threat-forecast" element={<ThreatForecast />} />
+          <Route path="/clients/:clientId" element={<ClientPortal />} />
+          <Route path="/insights" element={<Insights />} />
         
           {/* Workspace & Collaboration Routes */}
           <Route path="/workspaces" element={<OrganizationNew />} />

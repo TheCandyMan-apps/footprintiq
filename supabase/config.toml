@@ -137,3 +137,12 @@ verify_jwt = true
 
 [functions.fusion-compare]
 verify_jwt = true
+
+[functions.ai-briefing]
+verify_jwt = true
+
+[functions.generate-report]
+verify_jwt = true
+
+[functions.intel-summary]
+verify_jwt = false

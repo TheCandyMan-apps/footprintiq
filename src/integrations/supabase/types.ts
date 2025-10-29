@@ -754,6 +754,60 @@ export type Database = {
         }
         Relationships: []
       }
+      briefing_logs: {
+        Row: {
+          case_id: string | null
+          client_id: string
+          content: Json
+          created_at: string
+          id: string
+          metadata: Json | null
+          opened_at: string | null
+          recipients: string[] | null
+          sent_at: string
+          summary: string
+        }
+        Insert: {
+          case_id?: string | null
+          client_id: string
+          content: Json
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          opened_at?: string | null
+          recipients?: string[] | null
+          sent_at?: string
+          summary: string
+        }
+        Update: {
+          case_id?: string | null
+          client_id?: string
+          content?: Json
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          opened_at?: string | null
+          recipients?: string[] | null
+          sent_at?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "briefing_logs_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "briefing_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cache_entries: {
         Row: {
           cache_key: string
@@ -1146,6 +1200,210 @@ export type Database = {
           timeout_ms?: number
           total_calls_blocked?: number
           total_trips?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      client_cases: {
+        Row: {
+          case_id: string
+          client_id: string
+          created_at: string
+          id: string
+          visibility: string
+        }
+        Insert: {
+          case_id: string
+          client_id: string
+          created_at?: string
+          id?: string
+          visibility?: string
+        }
+        Update: {
+          case_id?: string
+          client_id?: string
+          created_at?: string
+          id?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_cases_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_cases_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_reports: {
+        Row: {
+          client_id: string
+          content: Json
+          created_at: string
+          file_url: string | null
+          hash_manifest: string | null
+          id: string
+          last_generated_at: string | null
+          next_generation_at: string | null
+          report_type: string
+          schedule: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          content: Json
+          created_at?: string
+          file_url?: string | null
+          hash_manifest?: string | null
+          id?: string
+          last_generated_at?: string | null
+          next_generation_at?: string | null
+          report_type: string
+          schedule?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          content?: Json
+          created_at?: string
+          file_url?: string | null
+          hash_manifest?: string | null
+          id?: string
+          last_generated_at?: string | null
+          next_generation_at?: string | null
+          report_type?: string
+          schedule?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_reports_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_subscriptions: {
+        Row: {
+          client_id: string
+          created_at: string
+          expires_at: string | null
+          features: Json | null
+          id: string
+          started_at: string
+          status: string
+          stripe_subscription_id: string | null
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          expires_at?: string | null
+          features?: Json | null
+          id?: string
+          started_at?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          tier?: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          expires_at?: string | null
+          features?: Json | null
+          id?: string
+          started_at?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_subscriptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_users: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_users_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clients: {
+        Row: {
+          created_at: string
+          custom_domain: string | null
+          domain: string | null
+          id: string
+          logo_url: string | null
+          name: string
+          settings: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          custom_domain?: string | null
+          domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name: string
+          settings?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          custom_domain?: string | null
+          domain?: string | null
+          id?: string
+          logo_url?: string | null
+          name?: string
+          settings?: Json | null
           updated_at?: string
         }
         Relationships: []
@@ -2032,6 +2290,33 @@ export type Database = {
           status?: string
           sync_type?: string
           user_integration_id?: string
+        }
+        Relationships: []
+      }
+      intel_feed_cache: {
+        Row: {
+          cached_at: string
+          data: Json
+          expires_at: string
+          feed_type: string
+          id: string
+          source: string
+        }
+        Insert: {
+          cached_at?: string
+          data: Json
+          expires_at: string
+          feed_type: string
+          id?: string
+          source: string
+        }
+        Update: {
+          cached_at?: string
+          data?: Json
+          expires_at?: string
+          feed_type?: string
+          id?: string
+          source?: string
         }
         Relationships: []
       }
@@ -3527,6 +3812,42 @@ export type Database = {
           },
         ]
       }
+      report_templates: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          template_data: Json
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          template_data: Json
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       risk_predictions: {
         Row: {
           confidence_score: number
@@ -3574,6 +3895,53 @@ export type Database = {
             columns: ["scan_id"]
             isOneToOne: false
             referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      risk_valuations: {
+        Row: {
+          calculated_at: string
+          client_id: string | null
+          confidence: number
+          currency: string
+          entity_id: string
+          id: string
+          impact_value: number
+          metadata: Json | null
+          probability: number
+          risk_type: string
+        }
+        Insert: {
+          calculated_at?: string
+          client_id?: string | null
+          confidence: number
+          currency?: string
+          entity_id: string
+          id?: string
+          impact_value: number
+          metadata?: Json | null
+          probability: number
+          risk_type: string
+        }
+        Update: {
+          calculated_at?: string
+          client_id?: string | null
+          confidence?: number
+          currency?: string
+          entity_id?: string
+          id?: string
+          impact_value?: number
+          metadata?: Json | null
+          probability?: number
+          risk_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_valuations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
