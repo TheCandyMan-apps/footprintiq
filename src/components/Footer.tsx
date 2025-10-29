@@ -14,7 +14,6 @@ export const Footer = () => {
                 alt="FootprintIQ Logo" 
                 className="h-24 w-auto"
               />
-              <span className="text-xl font-bold">footprintiq</span>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
               Take control of your digital footprint with comprehensive privacy protection and automated data removal.
