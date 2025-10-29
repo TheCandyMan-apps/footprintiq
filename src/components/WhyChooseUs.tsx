@@ -59,11 +59,13 @@ export const WhyChooseUs = () => {
             <Star className="w-4 h-4 text-accent" />
             <span className="text-sm font-medium text-accent">Premium Features</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Why Choose{" "}
-            <span className="bg-gradient-accent bg-clip-text text-transparent">
-              footprintiq
-            </span>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 flex items-center justify-center gap-3 flex-wrap">
+            Why Choose
+            <img 
+              src="/logo-dark.png" 
+              alt="FootprintIQ" 
+              className="h-12 md:h-16 w-auto inline-block"
+            />
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             The most comprehensive privacy protection platform available
