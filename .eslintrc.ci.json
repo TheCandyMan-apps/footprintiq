@@ -6,8 +6,8 @@
       {
         "patterns": [
           {
-            "group": ["**/providers/*", "!**/providers/registry.meta"],
-            "message": "Client code must only import registry.meta.ts for security. Provider implementations are server-only."
+            "group": ["**/providers/*", "!**/providers/registry.meta", "!**/providers/index.client"],
+            "message": "Client code must only import registry.meta.ts or index.client.ts for security. Provider implementations are server-only."
           }
         ]
       }
@@ -21,6 +21,10 @@
       {
         "selector": "MemberExpression[object.object.property.name='env'][property.value=/VITE_.*_KEY/]",
         "message": "VITE_*_KEY environment variables must not be accessed. Use server-side edge functions."
+      },
+      {
+        "selector": "MemberExpression[object.object.object.name='import'][object.property.name='meta'][property.name='env'] > MemberExpression[property.value=/VITE_.*_KEY/]",
+        "message": "VITE_*_KEY environment variables must not be accessed from import.meta.env. Use server-side edge functions."
       }
     ]
   }

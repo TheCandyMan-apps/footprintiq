@@ -10,6 +10,7 @@ import { Pricing } from "@/components/Pricing";
 import { Testimonials } from "@/components/Testimonials";
 import { FAQ } from "@/components/FAQ";
 import { TrustSignals } from "@/components/TrustSignals";
+import { OrganizationSchema } from "@/components/OrganizationSchema";
 import { shouldAutoStartTour, getTourAutoStartDelay } from "@/lib/tour/firstTime";
 
 export default function Home() {
@@ -99,6 +100,7 @@ export default function Home() {
         ogImage="https://footprintiq.app/og-image.jpg"
         structuredData={structuredData}
       />
+      <OrganizationSchema />
       <Header />
       <Hero onStartScan={handleStartScan} />
       <TrustSignals />
