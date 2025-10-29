@@ -6,7 +6,7 @@ export const OrganizationSchema = () => {
     "@type": "Organization",
     "name": "FootprintIQ",
     "url": "https://footprintiq.app",
-    "logo": "https://footprintiq.app/og-image.jpg",
+    "logo": "https://footprintiq.app/logo-horizontal.png",
     "description": "Advanced OSINT platform for digital footprint scanning and online privacy protection",
     "sameAs": [
       "https://twitter.com/footprintiq",
