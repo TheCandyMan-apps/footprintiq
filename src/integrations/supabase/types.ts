@@ -137,6 +137,50 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_explanations: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          explanation: string
+          id: string
+          model_version: string
+          override_reason: string | null
+          prediction_id: string | null
+          user_id: string
+          weights: Json
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          explanation: string
+          id?: string
+          model_version: string
+          override_reason?: string | null
+          prediction_id?: string | null
+          user_id: string
+          weights?: Json
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          explanation?: string
+          id?: string
+          model_version?: string
+          override_reason?: string | null
+          prediction_id?: string | null
+          user_id?: string
+          weights?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_explanations_prediction_id_fkey"
+            columns: ["prediction_id"]
+            isOneToOne: false
+            referencedRelation: "link_predictions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_generated_reports: {
         Row: {
           content: string
@@ -2066,6 +2110,90 @@ export type Database = {
         }
         Relationships: []
       }
+      linguistic_fingerprints: {
+        Row: {
+          activity_rhythm: Json | null
+          confidence: number | null
+          created_at: string
+          entity_id: string
+          features: Json
+          id: string
+          model_version: string
+          updated_at: string
+          user_id: string
+          vocabulary_stats: Json | null
+          writing_style: Json | null
+        }
+        Insert: {
+          activity_rhythm?: Json | null
+          confidence?: number | null
+          created_at?: string
+          entity_id: string
+          features?: Json
+          id?: string
+          model_version: string
+          updated_at?: string
+          user_id: string
+          vocabulary_stats?: Json | null
+          writing_style?: Json | null
+        }
+        Update: {
+          activity_rhythm?: Json | null
+          confidence?: number | null
+          created_at?: string
+          entity_id?: string
+          features?: Json
+          id?: string
+          model_version?: string
+          updated_at?: string
+          user_id?: string
+          vocabulary_stats?: Json | null
+          writing_style?: Json | null
+        }
+        Relationships: []
+      }
+      link_predictions: {
+        Row: {
+          created_at: string
+          entity_a: string
+          entity_b: string
+          id: string
+          probability: number
+          rationale: Json
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_a: string
+          entity_b: string
+          id?: string
+          probability: number
+          rationale?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_a?: string
+          entity_b?: string
+          id?: string
+          probability?: number
+          rationale?: Json
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       metrics_aggregations: {
         Row: {
           aggregation_period: string
@@ -2478,6 +2606,45 @@ export type Database = {
           period_start?: string
           resource_name?: string
           sample_count?: number
+        }
+        Relationships: []
+      }
+      persona_vectors: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          embeddings: string | null
+          entity_id: string
+          id: string
+          metadata: Json | null
+          modality: string
+          source: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          embeddings?: string | null
+          entity_id: string
+          id?: string
+          metadata?: Json | null
+          modality: string
+          source?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          embeddings?: string | null
+          entity_id?: string
+          id?: string
+          metadata?: Json | null
+          modality?: string
+          source?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -3983,6 +4150,42 @@ export type Database = {
           metadata?: Json | null
           name?: string
           source?: string
+        }
+        Relationships: []
+      }
+      threat_forecasts: {
+        Row: {
+          confidence_intervals: Json | null
+          created_at: string
+          forecast_horizon_days: number
+          forecast_type: string
+          id: string
+          model_used: string
+          prediction_data: Json
+          user_id: string
+          valid_until: string
+        }
+        Insert: {
+          confidence_intervals?: Json | null
+          created_at?: string
+          forecast_horizon_days?: number
+          forecast_type: string
+          id?: string
+          model_used: string
+          prediction_data: Json
+          user_id: string
+          valid_until: string
+        }
+        Update: {
+          confidence_intervals?: Json | null
+          created_at?: string
+          forecast_horizon_days?: number
+          forecast_type?: string
+          id?: string
+          model_used?: string
+          prediction_data?: Json
+          user_id?: string
+          valid_until?: string
         }
         Relationships: []
       }

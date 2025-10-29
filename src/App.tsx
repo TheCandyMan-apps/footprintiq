@@ -74,6 +74,8 @@ import Onboarding from "./pages/Onboarding";
 import Marketplace from "./pages/Marketplace";
 import MarketplaceSubmit from "./pages/MarketplaceSubmit";
 import MarketplacePlugin from "./pages/MarketplacePlugin";
+import PersonaResolver from "./pages/PersonaResolver";
+import ThreatForecast from "./pages/ThreatForecast";
 import MarketplaceReview from "./pages/admin/MarketplaceReview";
 import QualityLab from "./pages/admin/QualityLab";
 import ObservabilityDashboard from "./pages/admin/ObservabilityDashboard";
@@ -172,6 +174,10 @@ const App = () => (
           <Route path="/admin/circuit-breakers" element={<CircuitBreakers />} />
           <Route path="/admin/cost-tracking" element={<CostTracking />} />
           <Route path="/admin/performance" element={<Performance />} />
+        
+          {/* AI Fusion & Predictive Routes */}
+          <Route path="/persona-resolver" element={<PersonaResolver />} />
+          <Route path="/threat-forecast" element={<ThreatForecast />} />
         
           {/* Workspace & Collaboration Routes */}
           <Route path="/workspaces" element={<OrganizationNew />} />
