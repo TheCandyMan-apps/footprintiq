@@ -71,7 +71,10 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         if (scanError) throw scanError;
         createdScanId = scan.id;
 
-        // Kick off OSINT scan in the background
+        // Start OSINT scan and show progress
+        setCurrentStep(1);
+        setProgress(30);
+
         try {
           const body: Record<string, any> = {
             scanId: scan.id,
@@ -83,27 +86,19 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           if (scanData.email && scanData.email.trim()) body.email = scanData.email.trim();
           if (scanData.phone && scanData.phone.trim()) body.phone = scanData.phone.trim();
 
-          void supabase.functions.invoke('osint-scan', { body })
-            .catch((e) => console.warn('Background OSINT scan error:', e?.message || e));
+          // Actually wait for the scan to complete
+          await withTimeout(
+            supabase.functions.invoke('osint-scan', { body }),
+            30000,
+            'OSINT scan'
+          );
         } catch (e: any) {
-          console.warn('Failed to start background OSINT scan:', e?.message || e);
+          console.warn('OSINT scan error:', e?.message || e);
         }
 
-        // Show progress animation while background task runs
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        if (!isMounted) return;
-        setCurrentStep(1);
-        setProgress(30);
-
-        await new Promise(resolve => setTimeout(resolve, 1500));
         if (!isMounted) return;
         setCurrentStep(2);
-        setProgress(50);
-
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        if (!isMounted) return;
-        setCurrentStep(3);
-        setProgress(75);
+        setProgress(60);
 
         // Handle image upload if provided
         if (scanData.imageFile) {
@@ -136,19 +131,31 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           }
         }
 
+        if (!isMounted) return;
         setCurrentStep(4);
         setProgress(90);
 
-        // Poll and show progress - OSINT scan runs in background
-        // Wait longer to ensure results are likely available
+        // Poll for actual results
         let pollAttempts = 0;
-        const maxPollAttempts = 12; // 12 attempts = ~18 seconds
+        const maxPollAttempts = 10;
+        let hasResults = false;
         
-        while (pollAttempts < maxPollAttempts && isMounted) {
-          await new Promise(resolve => setTimeout(resolve, 1500));
+        while (pollAttempts < maxPollAttempts && isMounted && !hasResults) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
           pollAttempts++;
           
-          // Update progress gradually towards 100%
+          // Check if we have any results in either table
+          const [sourcesResult, profilesResult] = await Promise.all([
+            supabase.from('data_sources').select('id').eq('scan_id', scan.id).limit(1),
+            supabase.from('social_profiles').select('id').eq('scan_id', scan.id).limit(1)
+          ]);
+          
+          if ((sourcesResult.data && sourcesResult.data.length > 0) || 
+              (profilesResult.data && profilesResult.data.length > 0)) {
+            hasResults = true;
+          }
+          
+          // Update progress gradually
           const progressIncrement = (100 - 90) / maxPollAttempts;
           setProgress(Math.min(90 + (pollAttempts * progressIncrement), 99));
         }
