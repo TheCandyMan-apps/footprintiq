@@ -59,12 +59,14 @@ import Observability from "./pages/admin/Observability";
 import Policies from "./pages/admin/Policies";
 import AuditLogs from "./pages/admin/AuditLogs";
 import Workspace from "./pages/Workspace";
+import Workspaces from "./pages/Workspaces";
 import Trust from "./pages/Trust";
 import HowWeSourceData from "./pages/HowWeSourceData";
 import Graph from "./pages/Graph";
 import Search from "./pages/Search";
 import AIAnalyst from "./pages/AIAnalyst";
 import MonitorRunDetail from "./pages/MonitorRunDetail";
+import WorkspaceAudit from "./pages/admin/WorkspaceAudit";
 import Preferences from "./pages/Preferences";
 import Timeline from "./pages/Timeline";
 import Watchlists from "./pages/Watchlists";
@@ -156,6 +158,7 @@ const App = () => (
           <Route path="/admin/policies" element={<Policies />} />
           <Route path="/admin/audit-logs" element={<AuditLogs />} />
           <Route path="/workspace" element={<Workspace />} />
+          <Route path="/workspaces" element={<Workspaces />} />
           <Route path="/trust" element={<Trust />} />
           <Route path="/how-we-source-data" element={<HowWeSourceData />} />
           <Route path="/graph" element={<Graph />} />
@@ -178,6 +181,7 @@ const App = () => (
           <Route path="/admin/observability" element={<ObservabilityDashboard />} />
           <Route path="/admin/circuit-breakers" element={<CircuitBreakers />} />
           <Route path="/admin/cost-tracking" element={<CostTracking />} />
+          <Route path="/admin/workspace-audit" element={<WorkspaceAudit />} />
           <Route path="/admin/performance" element={<Performance />} />
         
           {/* AI Fusion & Predictive Routes */}
