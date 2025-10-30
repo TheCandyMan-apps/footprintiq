@@ -30,6 +30,7 @@ interface SocialMediaProfile {
   found: boolean;
   followers?: string;
   lastActive?: string;
+  source?: string;
 }
 
 export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
@@ -93,7 +94,8 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           followers: profile.followers,
           lastActive: profile.metadata && typeof profile.metadata === 'object' && 'last_active' in profile.metadata 
             ? profile.metadata.last_active as string 
-            : undefined
+            : undefined,
+          source: profile.source
         }));
         setSocialProfiles(transformedProfiles);
         
@@ -194,10 +196,13 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
               {activeProfiles.map((profile) => (
                 <Card key={profile.id} className="p-4 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
+                  <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <h4 className="font-semibold">{profile.platform}</h4>
                         <Badge variant="secondary" className="text-xs">Active</Badge>
+                        {profile.source === 'predicta' && (
+                          <Badge variant="default" className="text-xs bg-primary">Predicta Search</Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground mb-1">{profile.username}</p>
                       {profile.followers && (

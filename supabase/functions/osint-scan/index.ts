@@ -281,10 +281,17 @@ serve(async (req) => {
                 for (const profile of predictaResults.profiles) {
                   results.socialProfiles.push({
                     platform: profile.platform || 'Unknown',
-                    url: profile.url,
                     username: profile.username || query,
-                    profile_data: profile,
-                    source: 'Predicta Search',
+                    profile_url: profile.url,
+                    found: true,
+                    source: 'predicta',
+                    first_seen: new Date().toISOString(),
+                    is_verified: false,
+                    metadata: {
+                      source: 'Predicta Search',
+                      profile_data: profile,
+                      discovered_at: new Date().toISOString(),
+                    },
                   });
                 }
               }
@@ -587,6 +594,7 @@ serve(async (req) => {
                           username: result.username || cleanUsername,
                           profile_url: link,
                           found: true,
+                          source: 'sherlock',
                           first_seen: new Date().toISOString(),
                           is_verified: false,
                           metadata: {

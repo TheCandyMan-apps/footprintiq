@@ -62,6 +62,7 @@ interface SocialProfile {
   bio?: string;
   avatar_url?: string;
   account_type?: string;
+  source?: string;
   metadata?: any;
 }
 
@@ -673,6 +674,9 @@ const ResultsDetail = () => {
                           <Badge variant="default" className="text-xs">Verified</Badge>
                         )}
                         <Badge variant="secondary" className="text-xs">Active</Badge>
+                        {profile.source === 'predicta' && (
+                          <Badge variant="default" className="text-xs bg-primary">Predicta Search</Badge>
+                        )}
                       </div>
                       
                       {profile.full_name && (

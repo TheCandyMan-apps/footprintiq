@@ -4522,6 +4522,7 @@ export type Database = {
           platform: string
           profile_url: string
           scan_id: string
+          source: string | null
           username: string
         }
         Insert: {
@@ -4540,6 +4541,7 @@ export type Database = {
           platform: string
           profile_url: string
           scan_id: string
+          source?: string | null
           username: string
         }
         Update: {
@@ -4558,6 +4560,7 @@ export type Database = {
           platform?: string
           profile_url?: string
           scan_id?: string
+          source?: string | null
           username?: string
         }
         Relationships: [
