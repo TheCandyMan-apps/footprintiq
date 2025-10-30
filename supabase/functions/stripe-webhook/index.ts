@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { errorResponse } from "../_shared/errors.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,9 +31,11 @@ serve(async (req) => {
     const signature = req.headers.get("stripe-signature");
     if (!signature) {
       console.error("[STRIPE-WEBHOOK] Missing stripe-signature header");
-      return new Response(
-        JSON.stringify({ error: "Missing stripe-signature header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return errorResponse(
+        new Error("Missing stripe-signature header"),
+        401,
+        'WEBHOOK_VERIFICATION_FAILED',
+        corsHeaders
       );
     }
 
@@ -40,9 +43,11 @@ serve(async (req) => {
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     if (!webhookSecret) {
       console.error("[STRIPE-WEBHOOK] STRIPE_WEBHOOK_SECRET not configured");
-      return new Response(
-        JSON.stringify({ error: "Webhook not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return errorResponse(
+        new Error("Webhook not configured"),
+        500,
+        'SERVER_ERROR',
+        corsHeaders
       );
     }
 
@@ -63,11 +68,12 @@ serve(async (req) => {
         eventId: event.id,
       });
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      console.error("[STRIPE-WEBHOOK] Signature verification failed:", errorMessage);
-      return new Response(
-        JSON.stringify({ error: `Webhook signature verification failed: ${errorMessage}` }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      console.error("[STRIPE-WEBHOOK] Signature verification failed:", err);
+      return errorResponse(
+        err,
+        401,
+        'WEBHOOK_VERIFICATION_FAILED',
+        corsHeaders
       );
     }
 
@@ -231,14 +237,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    console.error("[STRIPE-WEBHOOK] Error processing webhook:", errorMessage);
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    console.error("[STRIPE-WEBHOOK] Error processing webhook:", error);
+    return errorResponse(error, 500, 'SERVER_ERROR', corsHeaders);
   }
 });

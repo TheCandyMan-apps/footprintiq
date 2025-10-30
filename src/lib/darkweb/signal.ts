@@ -5,7 +5,7 @@
  */
 
 import { Finding } from "@/lib/ufm";
-import { providerConfig } from "@/lib/config";
+import { featuresConfig } from "@/lib/config";
 
 export interface DarkWebSignal {
   score: number; // 0-100
@@ -116,7 +116,7 @@ export function calculateDarkWebSignal(findings: Finding[]): DarkWebSignal {
  * Check if dark-web sources are allowed by policy
  */
 export function isDarkWebAllowed(): boolean {
-  return providerConfig.allowDarkwebSources;
+  return featuresConfig.darkwebEnabled;
 }
 
 /**

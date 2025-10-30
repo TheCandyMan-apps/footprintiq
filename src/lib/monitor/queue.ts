@@ -4,7 +4,9 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
-import { monitoringConfig } from "@/lib/config";
+
+// Default max concurrency for monitoring jobs
+const DEFAULT_MAX_CONCURRENCY = 6;
 
 export interface MonitorJob {
   id: string;
@@ -26,7 +28,7 @@ export async function getDueJobs(): Promise<MonitorJob[]> {
     .select("*")
     .eq("is_active", true)
     .lte("next_run", now)
-    .limit(monitoringConfig.maxConcurrency);
+    .limit(DEFAULT_MAX_CONCURRENCY);
 
   if (error) {
     console.error("Error fetching due jobs:", error);

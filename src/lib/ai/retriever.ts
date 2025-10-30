@@ -5,6 +5,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { aiConfig } from "@/lib/config";
 
+// Default max documents for RAG retrieval
+const DEFAULT_RAG_MAX_DOCS = 40;
+
 export interface RetrievedChunk {
   chunk_id: string;
   entity_id: string;
@@ -18,7 +21,7 @@ export interface RetrievedChunk {
  */
 export async function retrieveChunksForEntities(
   entityIds: string[],
-  maxDocs: number = aiConfig.ragMaxDocs
+  maxDocs: number = DEFAULT_RAG_MAX_DOCS
 ): Promise<RetrievedChunk[]> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");

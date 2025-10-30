@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { errorResponse } from "../_shared/errors.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -120,10 +121,17 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[api-v1] Error:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    // Determine appropriate error code based on error type
+    const code = error instanceof Error && error.message === 'API key required' 
+      ? 'INVALID_API_KEY'
+      : error instanceof Error && error.message === 'Invalid API key'
+      ? 'INVALID_API_KEY'
+      : error instanceof Error && error.message === 'Rate limit exceeded'
+      ? 'RATE_LIMITED'
+      : 'SERVER_ERROR';
+    
+    const status = code === 'INVALID_API_KEY' ? 401 : code === 'RATE_LIMITED' ? 429 : 400;
+    return errorResponse(error, status, code, corsHeaders);
   }
 });
 
