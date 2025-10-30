@@ -794,6 +794,36 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          resource_id: string | null
+          resource_type: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       automated_removals: {
         Row: {
           attempt_count: number | null
@@ -4210,6 +4240,39 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_views: {
+        Row: {
+          columns: string[]
+          created_at: string | null
+          density: string
+          filters: Json
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          columns: string[]
+          created_at?: string | null
+          density?: string
+          filters: Json
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          columns?: string[]
+          created_at?: string | null
+          density?: string
+          filters?: Json
+          id?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       scan_comparisons: {
         Row: {
           created_at: string
@@ -5305,6 +5368,7 @@ export type Database = {
       }
     }
     Enums: {
+      app_role: "viewer" | "analyst" | "admin"
       case_priority: "low" | "medium" | "high" | "critical"
       case_status: "draft" | "submitted" | "in_progress" | "resolved" | "closed"
       plugin_status:
@@ -5444,6 +5508,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["viewer", "analyst", "admin"],
       case_priority: ["low", "medium", "high", "critical"],
       case_status: ["draft", "submitted", "in_progress", "resolved", "closed"],
       plugin_status: [
