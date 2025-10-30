@@ -49,10 +49,10 @@ export function AlertsTable({
   onRowClick, 
   onExport,
   canExport = false,
+  selectedColumns = ALL_COLUMNS,
+  density = 'comfortable',
 }: AlertsTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [visibleColumns, setVisibleColumns] = useState(ALL_COLUMNS);
-  const [density, setDensity] = useState<'compact' | 'comfortable'>('comfortable');
 
   const filteredData = useMemo(() => {
     if (!searchQuery) return data;
@@ -65,14 +65,6 @@ export function AlertsTable({
         row.description.toLowerCase().includes(query)
     );
   }, [data, searchQuery]);
-
-  const toggleColumn = (column: string) => {
-    setVisibleColumns((prev) =>
-      prev.includes(column)
-        ? prev.filter((c) => c !== column)
-        : [...prev, column]
-    );
-  };
 
   if (loading) {
     return (
@@ -108,50 +100,6 @@ export function AlertsTable({
               />
             </div>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Columns className="w-4 h-4 mr-2" />
-                  Columns
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Toggle Columns</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {ALL_COLUMNS.map((col) => (
-                  <DropdownMenuCheckboxItem
-                    key={col}
-                    checked={visibleColumns.includes(col)}
-                    onCheckedChange={() => toggleColumn(col)}
-                  >
-                    {col.charAt(0).toUpperCase() + col.slice(1)}
-                  </DropdownMenuCheckboxItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <SlidersHorizontal className="w-4 h-4 mr-2" />
-                  Density
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuCheckboxItem
-                  checked={density === 'compact'}
-                  onCheckedChange={() => setDensity('compact')}
-                >
-                  Compact
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  checked={density === 'comfortable'}
-                  onCheckedChange={() => setDensity('comfortable')}
-                >
-                  Comfortable
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
 
             {canExport && onExport && (
               <DropdownMenu>
@@ -179,18 +127,18 @@ export function AlertsTable({
           <Table>
             <TableHeader>
               <TableRow>
-                {visibleColumns.includes('time') && <TableHead>Time</TableHead>}
-                {visibleColumns.includes('entity') && <TableHead>Entity</TableHead>}
-                {visibleColumns.includes('provider') && <TableHead>Provider</TableHead>}
-                {visibleColumns.includes('severity') && <TableHead>Severity</TableHead>}
-                {visibleColumns.includes('confidence') && <TableHead>Confidence</TableHead>}
-                {visibleColumns.includes('category') && <TableHead>Category</TableHead>}
+                {selectedColumns.includes('time') && <TableHead>Time</TableHead>}
+                {selectedColumns.includes('entity') && <TableHead>Entity</TableHead>}
+                {selectedColumns.includes('provider') && <TableHead>Provider</TableHead>}
+                {selectedColumns.includes('severity') && <TableHead>Severity</TableHead>}
+                {selectedColumns.includes('confidence') && <TableHead>Confidence</TableHead>}
+                {selectedColumns.includes('category') && <TableHead>Category</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={visibleColumns.length} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={selectedColumns.length} className="text-center py-8 text-muted-foreground">
                     No alerts found
                   </TableCell>
                 </TableRow>
@@ -204,30 +152,30 @@ export function AlertsTable({
                     )}
                     onClick={() => onRowClick(alert)}
                   >
-                    {visibleColumns.includes('time') && (
+                    {selectedColumns.includes('time') && (
                       <TableCell className="font-mono text-sm">
                         {formatRelativeTime(alert.time)}
                       </TableCell>
                     )}
-                    {visibleColumns.includes('entity') && (
+                    {selectedColumns.includes('entity') && (
                       <TableCell className="font-medium">{alert.entity}</TableCell>
                     )}
-                    {visibleColumns.includes('provider') && (
+                    {selectedColumns.includes('provider') && (
                       <TableCell>
                         <Badge variant="outline">{alert.provider}</Badge>
                       </TableCell>
                     )}
-                    {visibleColumns.includes('severity') && (
+                    {selectedColumns.includes('severity') && (
                       <TableCell>
                         <Badge className={SEVERITY_COLORS[alert.severity]}>
                           {alert.severity}
                         </Badge>
                       </TableCell>
                     )}
-                    {visibleColumns.includes('confidence') && (
+                    {selectedColumns.includes('confidence') && (
                       <TableCell>{formatConfidence(alert.confidence)}</TableCell>
                     )}
-                    {visibleColumns.includes('category') && (
+                    {selectedColumns.includes('category') && (
                       <TableCell className="text-muted-foreground">
                         {alert.category}
                       </TableCell>
