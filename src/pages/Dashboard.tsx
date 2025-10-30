@@ -31,7 +31,7 @@ import { ColumnChooser } from '@/components/dashboard/ColumnChooser';
 import { DensityToggle } from '@/components/dashboard/DensityToggle';
 import { KeyboardShortcutsDialog } from '@/components/dashboard/KeyboardShortcutsDialog';
 import { useDashboardQuery } from '@/hooks/useDashboardQuery';
-import { useGlobalShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { 
   Kpi, KpiSchema, 
   SeriesPoint, SeriesPointSchema,
@@ -86,12 +86,36 @@ const Dashboard = () => {
   const capabilities = useMemo(() => getRoleCapabilities(userRole), [userRole]);
 
   // Global keyboard shortcuts
-  useGlobalShortcuts({
-    onSearch: () => searchInputRef.current?.focus(),
-    onFilter: () => {}, // Could open filters panel
-    onHelp: () => setShowKeyboardHelp(true),
-    onGoTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
-  });
+  const shortcuts = useMemo(() => [
+    {
+      key: '/',
+      action: () => searchInputRef.current?.focus(),
+      description: 'Focus global search',
+    },
+    {
+      key: '?',
+      shift: true,
+      action: () => setShowKeyboardHelp(true),
+      description: 'Show keyboard shortcuts',
+    },
+    {
+      key: 'g',
+      action: () => {
+        const handler = (e: KeyboardEvent) => {
+          if (e.key === 'g') {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+          document.removeEventListener('keydown', handler);
+        };
+        document.addEventListener('keydown', handler);
+        setTimeout(() => document.removeEventListener('keydown', handler), 1000);
+      },
+      description: 'Go to top (press g twice)',
+    },
+  ], []);
+
+  useKeyboardShortcuts(shortcuts);
 
   // Auth check
   useEffect(() => {
@@ -530,25 +554,18 @@ const Dashboard = () => {
           </div>
 
           {/* Right Rail */}
-          {rightRailOpen && (
-            <RightRail
-              isOpen={rightRailOpen}
-              onClose={() => setRightRailOpen(false)}
-              filters={filters}
-            />
-          )}
-          {!rightRailOpen && (
-            <div className="w-12 border-l bg-card">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full h-12"
-                onClick={() => setRightRailOpen(true)}
-              >
-                <Eye className="w-4 h-4" />
-              </Button>
-            </div>
-          )}
+          <RightRail
+            aiSummary="Recent scans show a 15% increase in exposed credentials. Two new high-severity findings detected on dark web forums."
+            tasks={[
+              { id: '1', title: 'Review high-severity alerts', priority: 'high', dueDate: 'Today' },
+              { id: '2', title: 'Update monitoring schedules', priority: 'medium', dueDate: 'Tomorrow' },
+            ]}
+            notifications={[
+              { id: '1', message: 'New dark web mention detected', time: '5 min ago', read: false },
+              { id: '2', message: 'Weekly report ready', time: '1 hour ago', read: false },
+            ]}
+            loading={loading}
+          />
         </main>
 
         {/* Dialogs */}

@@ -72,3 +72,21 @@ export function redactEntityName(entity: string, role: string | null): string {
   // Default to username redaction
   return redactUsername(entity);
 }
+
+// Alias for compatibility
+export function redactValue(value: string, type: string): string {
+  return redactEntityName(value, 'viewer');
+}
+
+// Redact findings array
+export function redactFindings(findings: any[], redact: boolean): any[] {
+  if (!redact) return findings;
+  
+  return findings.map(finding => ({
+    ...finding,
+    evidence: finding.evidence?.map((e: any) => ({
+      ...e,
+      value: typeof e.value === 'string' ? redactPII(e.value, 'viewer') : e.value,
+    })),
+  }));
+}
