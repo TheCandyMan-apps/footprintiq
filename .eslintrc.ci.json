@@ -26,6 +26,7 @@
         "selector": "MemberExpression[object.object.object.name='import'][object.property.name='meta'][property.name='env'] > MemberExpression[property.value=/VITE_.*_KEY/]",
         "message": "VITE_*_KEY environment variables must not be accessed from import.meta.env. Use server-side edge functions."
       }
-    ]
+    ],
+    "no-process-env": ["error", { "allow": ["NODE_ENV"] }]
   }
 }

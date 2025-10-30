@@ -8,6 +8,31 @@ import { z } from "zod";
 export const SeveritySchema = z.enum(["critical", "high", "medium", "low", "info"]);
 export type Severity = z.infer<typeof SeveritySchema>;
 
+// New UFM compact format for edge functions
+export const EvidenceKV = z.object({
+  key: z.string(),
+  value: z.string(),
+});
+
+export const CompactFindingSchema = z.object({
+  provider: z.string(),
+  kind: z.enum(["breach.hit", "breach.none", "darkweb.hit", "darkweb.none", "presence.hit", "presence.none"]).or(z.string()),
+  severity: z.enum(["low", "medium", "high"]),
+  confidence: z.number().min(0).max(1),
+  observedAt: z.string(),
+  latencyMs: z.number().optional(),
+  reason: z.string().optional(),
+  evidence: z.array(EvidenceKV).optional()
+});
+
+export const FindingsResponse = z.object({
+  findings: z.array(CompactFindingSchema)
+});
+
+export type TCompactFinding = z.infer<typeof CompactFindingSchema>;
+export type TFindingsResponse = z.infer<typeof FindingsResponse>;
+
+// Legacy full-featured UFM types for backwards compatibility
 export const EvidenceSchema = z.object({
   key: z.string(),
   value: z.unknown(),

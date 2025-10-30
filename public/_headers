@@ -6,7 +6,7 @@
   Cross-Origin-Opener-Policy: same-origin
   Cross-Origin-Embedder-Policy: require-corp
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; img-src 'self' data: blob: https:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'strict-dynamic'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://api.stripe.com; form-action 'self'
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; frame-ancestors 'none'; img-src 'self' data: blob: https:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'strict-dynamic'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://api.stripe.com; form-action 'self';
 
 /api/*
   Access-Control-Allow-Origin: *

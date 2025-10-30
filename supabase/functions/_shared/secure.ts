@@ -4,45 +4,41 @@
  */
 
 /**
- * Validate request origin against allowed list
- * @param req - Request object
- * @param allowed - Array of allowed origin prefixes
- * @returns true if origin is allowed
+ * Check if request origin is allowed
+ * Reads from ALLOWED_ORIGINS env var (comma-separated)
+ */
+export function allowedOrigin(req: Request): boolean {
+  const list = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean);
+  const origin = req.headers.get("origin") ?? "";
+  
+  // If no restrictions configured, allow all
+  if (!list.length) return true;
+  
+  // Check if origin starts with any allowed prefix
+  return list.some(prefix => origin.startsWith(prefix));
+}
+
+/**
+ * Legacy function for backwards compatibility
  */
 export function checkOrigin(req: Request, allowed: string[]): boolean {
   const origin = req.headers.get('origin') || '';
-  
-  // If no restrictions configured, allow all
   if (!allowed.length) return true;
-  
-  // Check if origin starts with any allowed prefix
   return allowed.some(prefix => origin.startsWith(prefix));
 }
 
 /**
  * Verify HMAC signature on request body
- * Use for webhook validation and secure API endpoints
- * 
- * @param req - Request object with X-Signature header
- * @param secret - Shared secret for HMAC computation
- * @returns true if signature is valid
- * 
- * @example
- * ```ts
- * const secret = Deno.env.get('WEBHOOK_SECRET');
- * if (!await verifyHmac(req, secret)) {
- *   return new Response('Invalid signature', { status: 401 });
- * }
- * ```
+ * Alias for hmacVerify for consistency
  */
-export async function verifyHmac(req: Request, secret: string): Promise<boolean> {
-  const sig = req.headers.get('X-Signature') || '';
+export async function hmacVerify(req: Request, secret: string): Promise<boolean> {
+  const sig = req.headers.get("X-Signature") || "";
   if (!sig) return false;
   
-  // Clone request to read body without consuming it
   const body = await req.clone().text();
-  
-  // Import HMAC key
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -50,21 +46,16 @@ export async function verifyHmac(req: Request, secret: string): Promise<boolean>
     false,
     ["sign"]
   );
-  
-  // Compute HMAC
-  const mac = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(body)
-  );
-  
-  // Convert to hex string
-  const hex = Array.from(new Uint8Array(mac))
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
-  
-  // Constant-time comparison to prevent timing attacks
+  const mac = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
+  const hex = [...new Uint8Array(mac)].map(b => b.toString(16).padStart(2, "0")).join("");
   return hex === sig;
+}
+
+/**
+ * Legacy function name for backwards compatibility
+ */
+export async function verifyHmac(req: Request, secret: string): Promise<boolean> {
+  return hmacVerify(req, secret);
 }
 
 /**
@@ -109,3 +100,18 @@ export function jsonResponse(data: any, status = 200, headers: Record<string, st
 export function errorResponse(message: string, status = 400, headers: Record<string, string> = {}) {
   return jsonResponse({ error: message }, status, headers);
 }
+
+/**
+ * Quick success response helper
+ */
+export const ok = (data: unknown, status = 200) => 
+  new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders(), "Content-Type": "application/json" }
+  });
+
+/**
+ * Quick error response helper
+ */
+export const bad = (status: number, message: string) => 
+  ok({ error: message }, status);

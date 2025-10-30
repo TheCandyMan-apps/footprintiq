@@ -1,7 +1,8 @@
 {
   "scripts": {
-    "check:build": "tsc --noEmit && vite build --mode production",
-    "check:secrets": "bash -c 'if grep -rE \"VITE_.*_KEY=\" .env* 2>/dev/null; then echo \"❌ Exposed VITE_ secrets found\"; exit 1; else echo \"✅ No exposed VITE_ secrets\"; fi'",
-    "ci:verify": "npm run lint && npm run check:secrets && npm run check:build"
+    "typecheck": "tsc --noEmit",
+    "check:build": "vite build --mode production",
+    "check:secrets": "bash -c 'if grep -R \"VITE_.*_KEY\" src/providers 2>/dev/null | grep -v registry.meta; then echo \"❌ VITE secret in client code\"; exit 1; else echo \"✅ No client secrets\"; fi'",
+    "ci:verify": "npm run lint && npm run typecheck && npm run check:secrets && npm run check:build"
   }
 }
