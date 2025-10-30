@@ -90,6 +90,7 @@ export function SavedViewsDialog({
     if (!user) return;
 
     const { error } = await supabase.from('saved_views').insert({
+      user_id: user.id,
       name: newViewName,
       filters: currentFilters as any,
       columns: currentColumns,

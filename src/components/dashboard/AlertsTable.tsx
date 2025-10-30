@@ -30,6 +30,8 @@ interface AlertsTableProps {
   onRowClick: (alert: AlertRow) => void;
   onExport?: (format: 'csv' | 'pdf') => void;
   canExport?: boolean;
+  selectedColumns?: string[];
+  density?: 'compact' | 'comfortable';
 }
 
 const SEVERITY_COLORS: Record<Severity, string> = {

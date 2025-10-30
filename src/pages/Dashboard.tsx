@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +26,12 @@ import { SourceBreakdown } from '@/components/dashboard/SourceBreakdown';
 import { AlertsTable } from '@/components/dashboard/AlertsTable';
 import { AlertDrawer } from '@/components/dashboard/AlertDrawer';
 import { RightRail } from '@/components/dashboard/RightRail';
+import { SavedViewsDialog } from '@/components/dashboard/SavedViewsDialog';
+import { ColumnChooser } from '@/components/dashboard/ColumnChooser';
+import { DensityToggle } from '@/components/dashboard/DensityToggle';
+import { KeyboardShortcutsDialog } from '@/components/dashboard/KeyboardShortcutsDialog';
 import { useDashboardQuery } from '@/hooks/useDashboardQuery';
+import { useGlobalShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { 
   Kpi, KpiSchema, 
   SeriesPoint, SeriesPointSchema,
@@ -35,7 +40,9 @@ import {
   DateRange,
   getRoleCapabilities,
   UserRole,
+  DashboardFilters,
 } from '@/types/dashboard';
+import { redactEntityName } from '@/lib/redact';
 import {
   Activity,
   AlertTriangle,
@@ -45,6 +52,9 @@ import {
   TrendingUp,
   CalendarIcon,
   Eye,
+  Download,
+  Save,
+  Filter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -66,8 +76,22 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
   const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
+  const [showSavedViews, setShowSavedViews] = useState(false);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [selectedColumns, setSelectedColumns] = useState(['time', 'entity', 'provider', 'severity', 'confidence', 'category']);
+  const [density, setDensity] = useState<'compact' | 'comfortable'>('comfortable');
+  const [rightRailOpen, setRightRailOpen] = useState(true);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const capabilities = useMemo(() => getRoleCapabilities(userRole), [userRole]);
+
+  // Global keyboard shortcuts
+  useGlobalShortcuts({
+    onSearch: () => searchInputRef.current?.focus(),
+    onFilter: () => {}, // Could open filters panel
+    onHelp: () => setShowKeyboardHelp(true),
+    onGoTop: () => window.scrollTo({ top: 0, behavior: 'smooth' }),
+  });
 
   // Auth check
   useEffect(() => {
@@ -196,11 +220,61 @@ const Dashboard = () => {
     }
   };
 
-  const handleExport = (format: 'csv' | 'pdf') => {
-    toast({
-      title: `Exporting as ${format.toUpperCase()}`,
-      description: 'Your export will download shortly',
-    });
+  const handleExport = async (format: 'csv' | 'pdf') => {
+    if (!capabilities.canExport) {
+      toast({
+        title: 'Permission denied',
+        description: 'You need analyst or admin role to export data',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/dashboard-export`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ filters, format }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `dashboard-export-${new Date().toISOString()}.${format}`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Export complete',
+        description: `Your ${format.toUpperCase()} file is downloading`,
+      });
+
+      // Log audit event
+      await supabase.functions.invoke('dashboard-audit', {
+        body: {
+          action: 'export',
+          resource_type: 'dashboard',
+          metadata: { format, filters },
+        },
+      });
+    } catch (error) {
+      toast({
+        title: 'Export failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleAlertExplain = async (alertId: string) => {
@@ -210,17 +284,40 @@ const Dashboard = () => {
     });
   };
 
-  const handleSearchFocus = (e: React.KeyboardEvent) => {
-    if (e.key === '/' && e.target === document.body) {
-      e.preventDefault();
-      document.getElementById('global-search')?.focus();
+  const handleLoadSavedView = (view: any) => {
+    updateFilters(view.filters);
+    setSelectedColumns(view.columns);
+    setDensity(view.density);
+    toast({
+      title: 'View loaded',
+      description: `"${view.name}" has been applied`,
+    });
+  };
+
+  const handleRowClick = async (alert: AlertRow) => {
+    setSelectedAlert(alert);
+    
+    // Log audit event if viewing PII
+    if (capabilities.canViewPII && userRole === 'analyst') {
+      await supabase.functions.invoke('dashboard-audit', {
+        body: {
+          action: 'view_pii',
+          resource_type: 'alert',
+          resource_id: alert.id,
+          metadata: { entity: alert.entity },
+        },
+      });
     }
   };
 
-  useEffect(() => {
-    document.addEventListener('keydown', handleSearchFocus as any);
-    return () => document.removeEventListener('keydown', handleSearchFocus as any);
-  }, []);
+  // Redact alerts for viewers
+  const processedAlerts = useMemo(() => {
+    return alerts.map(alert => ({
+      ...alert,
+      entity: redactEntityName(alert.entity, userRole),
+      description: userRole === 'viewer' ? 'Details redacted' : alert.description,
+    }));
+  }, [alerts, userRole]);
 
   if (!user) return null;
 
@@ -248,10 +345,44 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex items-center gap-3">
+                  {/* Toolbar */}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowSavedViews(true)}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Views
+                    </Button>
+
+                    {capabilities.canExport && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleExport('csv')}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Export
+                      </Button>
+                    )}
+
+                    <ColumnChooser
+                      selectedColumns={selectedColumns}
+                      onChange={setSelectedColumns}
+                    />
+
+                    <DensityToggle
+                      density={density}
+                      onChange={setDensity}
+                    />
+                  </div>
+
                   {/* Global Search */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
+                      ref={searchInputRef}
                       id="global-search"
                       placeholder="Search... (press /)"
                       className="pl-9 w-80"
@@ -387,31 +518,40 @@ const Dashboard = () => {
 
               {/* Alerts Table */}
               <AlertsTable
-                data={alerts}
+                data={processedAlerts}
                 loading={loading}
-                onRowClick={setSelectedAlert}
+                onRowClick={handleRowClick}
                 onExport={capabilities.canExport ? handleExport : undefined}
                 canExport={capabilities.canExport}
+                selectedColumns={selectedColumns}
+                density={density}
               />
             </div>
           </div>
 
           {/* Right Rail */}
-          <RightRail
-            aiSummary="Recent scans show a 15% increase in exposed credentials. Two new high-severity findings detected on dark web forums. Recommend immediate password rotation for affected accounts."
-            tasks={[
-              { id: '1', title: 'Review high-severity alerts', priority: 'high', dueDate: 'Today' },
-              { id: '2', title: 'Update monitoring schedules', priority: 'medium', dueDate: 'Tomorrow' },
-            ]}
-            notifications={[
-              { id: '1', message: 'New dark web mention detected', time: '5 min ago', read: false },
-              { id: '2', message: 'Weekly report ready', time: '1 hour ago', read: false },
-            ]}
-            loading={loading}
-          />
+          {rightRailOpen && (
+            <RightRail
+              isOpen={rightRailOpen}
+              onClose={() => setRightRailOpen(false)}
+              filters={filters}
+            />
+          )}
+          {!rightRailOpen && (
+            <div className="w-12 border-l bg-card">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full h-12"
+                onClick={() => setRightRailOpen(true)}
+              >
+                <Eye className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
         </main>
 
-        {/* Alert Detail Drawer */}
+        {/* Dialogs */}
         <AlertDrawer
           alert={selectedAlert}
           open={!!selectedAlert}
@@ -420,6 +560,20 @@ const Dashboard = () => {
           onAssign={capabilities.canAssign ? (id) => toast({ title: 'Assigned alert' }) : undefined}
           onAddToReport={(id) => toast({ title: 'Added to report' })}
           canAssign={capabilities.canAssign}
+        />
+
+        <SavedViewsDialog
+          open={showSavedViews}
+          onOpenChange={setShowSavedViews}
+          currentFilters={filters}
+          currentColumns={selectedColumns}
+          currentDensity={density}
+          onLoadView={handleLoadSavedView}
+        />
+
+        <KeyboardShortcutsDialog
+          open={showKeyboardHelp}
+          onOpenChange={setShowKeyboardHelp}
         />
 
         <Footer />

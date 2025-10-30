@@ -1,88 +1,74 @@
 /**
- * PII Redaction utilities
- * Masks sensitive information in findings and exports
+ * PII redaction utilities for role-based access control
  */
 
 export function redactEmail(email: string): string {
-  const [local, domain] = email.split("@");
-  if (!domain) return "***@***";
-  const maskedLocal = local.length > 2 ? local.substring(0, 2) + "***" : "***";
-  const [domainName, tld] = domain.split(".");
-  const maskedDomain = domainName.length > 2 ? domainName.substring(0, 2) + "***" : "***";
-  return `${maskedLocal}@${maskedDomain}.${tld}`;
+  const [local, domain] = email.split('@');
+  if (!domain) return '***@***.***';
+  const [domainName, tld] = domain.split('.');
+  return `${local[0]}***@${domainName[0]}***.${tld}`;
 }
 
 export function redactPhone(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length === 0) return "***-***-****";
-  const lastFour = digits.slice(-4);
-  return `***-***-${lastFour}`;
-}
-
-export function redactIP(ip: string): string {
-  const parts = ip.split(".");
-  if (parts.length !== 4) return "***.***.***.***";
-  return `${parts[0]}.${parts[1]}.***.***`;
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 4) return '***-***-****';
+  return `***-***-${digits.slice(-4)}`;
 }
 
 export function redactName(name: string): string {
-  const parts = name.split(" ");
-  if (parts.length === 1) {
-    return name.length > 2 ? name.substring(0, 2) + "***" : "***";
-  }
-  return parts.map((p, i) => (i === 0 ? p : p.charAt(0) + "***")).join(" ");
+  const parts = name.split(' ');
+  if (parts.length === 1) return `${name[0]}***`;
+  return parts.map((p, i) => i === 0 ? p : `${p[0]}***`).join(' ');
 }
 
-export function redactValue(value: unknown, key?: string): unknown {
-  if (typeof value !== "string") return value;
-
-  const lowerKey = key?.toLowerCase() || "";
-
-  // Email
-  if (lowerKey.includes("email") || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-    return redactEmail(value);
-  }
-
-  // Phone
-  if (lowerKey.includes("phone") || /^\+?\d[\d\s\-\(\)]{7,}$/.test(value)) {
-    return redactPhone(value);
-  }
-
-  // IP
-  if (lowerKey.includes("ip") || /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(value)) {
-    return redactIP(value);
-  }
-
-  // Name
-  if (lowerKey.includes("name") && !lowerKey.includes("username") && !lowerKey.includes("domain")) {
-    return redactName(value);
-  }
-
-  return value;
+export function redactUsername(username: string): string {
+  if (username.length <= 3) return '***';
+  return `${username.slice(0, 2)}***${username.slice(-1)}`;
 }
 
-export function redactFindings<T>(findings: T[], enabled: boolean): T[] {
-  if (!enabled) return findings;
+export function redactIP(ip: string): string {
+  const parts = ip.split('.');
+  if (parts.length !== 4) return '***.***.***.***';
+  return `${parts[0]}.***.***.${parts[3]}`;
+}
 
-  return findings.map((finding: any) => {
-    const redacted = { ...finding };
+export function shouldRedact(role: string | null): boolean {
+  return role === 'viewer';
+}
 
-    // Redact evidence
-    if (redacted.evidence && Array.isArray(redacted.evidence)) {
-      redacted.evidence = redacted.evidence.map((e: any) => ({
-        ...e,
-        value: redactValue(e.value, e.key),
-      }));
-    }
+export function redactPII(text: string, role: string | null): string {
+  if (!shouldRedact(role)) return text;
 
-    // Redact description
-    if (redacted.description) {
-      const emailMatch = redacted.description.match(/[^\s@]+@[^\s@]+\.[^\s@]+/);
-      if (emailMatch) {
-        redacted.description = redacted.description.replace(emailMatch[0], redactEmail(emailMatch[0]));
-      }
-    }
+  // Email pattern
+  let redacted = text.replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, (match) =>
+    redactEmail(match)
+  );
 
-    return redacted;
-  });
+  // Phone pattern
+  redacted = redacted.replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, (match) =>
+    redactPhone(match)
+  );
+
+  // IP pattern
+  redacted = redacted.replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, (match) =>
+    redactIP(match)
+  );
+
+  return redacted;
+}
+
+export function redactEntityName(entity: string, role: string | null): string {
+  if (!shouldRedact(role)) return entity;
+
+  // Check if email
+  if (entity.includes('@')) return redactEmail(entity);
+
+  // Check if phone
+  if (/\d{3}[-.]?\d{3}[-.]?\d{4}/.test(entity)) return redactPhone(entity);
+
+  // Check if IP
+  if (/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(entity)) return redactIP(entity);
+
+  // Default to username redaction
+  return redactUsername(entity);
 }
