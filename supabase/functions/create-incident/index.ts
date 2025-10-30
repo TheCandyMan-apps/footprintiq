@@ -1,18 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { IncidentCreateSchema, safeParse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-interface IncidentRequest {
-  title: string;
-  description?: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
-  impact?: string;
-  affected_services?: string[];
-  slack_thread_url?: string;
-}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -56,7 +48,18 @@ Deno.serve(async (req) => {
       );
     }
 
-    const incidentData: IncidentRequest = await req.json();
+    // Validate incident data
+    const body = await req.json();
+    const validation = safeParse(IncidentCreateSchema, body);
+    
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid incident data', details: validation.error }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
+    const incidentData = validation.data!;
 
     // Generate incident number using the database function
     const { data: incidentNumberResult, error: numberError } = await supabase

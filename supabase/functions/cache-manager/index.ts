@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { CacheGetSchema, CacheSetSchema, safeParse } from "../_shared/validation.ts";
+import { checkRateLimit, getClientIP, rateLimitResponse, RateLimits } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +14,17 @@ serve(async (req) => {
   }
 
   try {
+    // Rate limit check
+    const clientIP = getClientIP(req);
+    const allowed = await checkRateLimit(clientIP, {
+      endpoint: "cache-manager",
+      ...RateLimits.cache,
+    });
+    
+    if (!allowed) {
+      return rateLimitResponse(3600);
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -23,9 +36,11 @@ serve(async (req) => {
     // Get cached value
     if (action === "get" && req.method === "GET") {
       const key = url.searchParams.get("key");
-      if (!key) {
+      const validation = safeParse(CacheGetSchema, { key });
+      
+      if (!validation.success) {
         return new Response(
-          JSON.stringify({ error: "Cache key required" }),
+          JSON.stringify({ error: "Invalid cache key", details: validation.error }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -61,14 +76,17 @@ serve(async (req) => {
 
     // Set cached value
     if (action === "set" && req.method === "POST") {
-      const { key, value, type, ttl } = await req.json();
-
-      if (!key || !value) {
+      const body = await req.json();
+      const validation = safeParse(CacheSetSchema, body);
+      
+      if (!validation.success) {
         return new Response(
-          JSON.stringify({ error: "Cache key and value required" }),
+          JSON.stringify({ error: "Invalid cache data", details: validation.error }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      const { key, value, type, ttl } = validation.data!;
 
       const ttlSeconds = ttl || 3600;
       const expiresAt = new Date(Date.now() + ttlSeconds * 1000);

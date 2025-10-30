@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { AgentExecuteSchema, safeParse } from "../_shared/validation.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,7 +13,17 @@ serve(async (req) => {
   }
 
   try {
-    const { agentId, workspaceId } = await req.json();
+    const body = await req.json();
+    const validation = safeParse(AgentExecuteSchema, body);
+    
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { agentId, workspaceId } = validation.data!;
     
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
