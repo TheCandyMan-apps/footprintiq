@@ -238,6 +238,8 @@ serve(async (req) => {
 
       for (const { query, queryType } of predictaQueries) {
         try {
+          diagnostics.providersInvoked.push(`predicta:invoke:${queryType}:${query}`);
+
           const { data: predictaData, error: predictaError } = await supabase.functions.invoke(
             'predicta-search',
             {
@@ -246,6 +248,8 @@ serve(async (req) => {
           );
 
           if (!predictaError && predictaData?.success && predictaData?.data) {
+            diagnostics.providersInvoked.push(`predicta:success:${queryType}`);
+
             const predictaResults = predictaData.data;
             console.log(`Predicta ${queryType} search found results:`, predictaResults);
             
@@ -305,9 +309,11 @@ serve(async (req) => {
               }
             }
           } else if (predictaError) {
+            diagnostics.providersSkipped.push(`predicta:error:${queryType}:${predictaError?.message || 'unknown'}`);
             console.error(`Predicta ${queryType} error:`, predictaError);
           }
         } catch (error) {
+          diagnostics.providersSkipped.push(`predicta:exception:${queryType}`);
           console.error(`Predicta ${queryType} exception:`, error);
         }
       }

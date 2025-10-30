@@ -89,11 +89,17 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           // Actually wait for the scan to complete
           const invokeRes = await withTimeout(
             supabase.functions.invoke('osint-scan', { body }),
-            30000,
+            90000,
             'OSINT scan'
           );
           if (invokeRes?.data?.diagnostics) {
             console.log('[Scan] Providers diagnostics:', invokeRes.data.diagnostics);
+            const diags = invokeRes.data.diagnostics;
+            const invoked = (diags.providersInvoked || []) as string[];
+            const anyPredicta = invoked.some((s) => s.startsWith('predicta:'));
+            if (anyPredicta) {
+              toast({ title: 'Predicta invoked', description: invoked.filter(s=>s.startsWith('predicta:')).join('\n') });
+            }
           }
         } catch (e: any) {
           console.warn('OSINT scan error:', e?.message || e);
