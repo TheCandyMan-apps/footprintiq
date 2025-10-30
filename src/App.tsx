@@ -105,6 +105,7 @@ const OrganizationNew = lazy(() => import("./pages/OrganizationNew"));
 const Performance = lazy(() => import("./pages/admin/Performance"));
 const Subscription = lazy(() => import("./pages/Subscription"));
 const EmbedWidget = lazy(() => import("./pages/EmbedWidget"));
+const Embed = lazy(() => import("./pages/Embed"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
 
 const queryClient = new QueryClient({
@@ -205,6 +206,8 @@ function RouterContent() {
           <Route path="/monitoring/:runId" element={<MonitorRunDetail />} />
           <Route path="/preferences" element={<Preferences />} />
           <Route path="/subscription" element={<Subscription />} />
+          <Route path="/embed" element={<Embed />} />
+          <Route path="/embed-widget" element={<EmbedWidget />} />
           <Route path="/timeline" element={<Timeline />} />
           <Route path="/watchlists" element={<Watchlists />} />
           <Route path="/analyst-scoreboard" element={<AnalystScoreboard />} />

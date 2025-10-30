@@ -6,12 +6,19 @@
 
 import { extendedUsernameSources } from './usernameSources-extended';
 
+export type Category =
+  | 'social' | 'forums' | 'gaming' | 'news' | 'crypto'
+  | 'shopping' | 'dating' | 'adult' | 'other' | 'dev' 
+  | 'nsfw' | 'business' | 'creative' | 'misc';
+
 export interface UsernameSource {
   name: string;
   url: string;
-  category: 'social' | 'forums' | 'dev' | 'gaming' | 'adult' | 'nsfw' | 'crypto' | 'shopping' | 'business' | 'creative' | 'misc';
+  category: Category;
   favicon?: string;
   checkPattern?: string;
+  icon?: string;
+  avatar?: string;
 }
 
 export interface UsernameCheckResult {
