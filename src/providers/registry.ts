@@ -190,11 +190,10 @@ export function isEnabled(providerId: string): boolean {
   const meta = getProviderMeta(providerId);
   if (!meta) return false;
   
-  // Check if API key is present (basic heuristic)
-  const keyName = `VITE_${providerId.toUpperCase()}_API_KEY`;
-  const hasKey = !!import.meta.env[keyName];
-  
-  return hasKey;
+  // Provider availability is determined server-side
+  // This client-side check is now deprecated for security reasons
+  // All providers are considered potentially available and will be validated server-side
+  return true;
 }
 
 export function getProvidersByType(type: "email" | "domain" | "ip" | "username" | "phone"): ProviderMeta[] {
