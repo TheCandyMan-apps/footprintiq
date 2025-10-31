@@ -679,8 +679,11 @@ export type Database = {
           last_used_at: string | null
           name: string
           permissions: Json | null
+          revoked_at: string | null
+          scopes: string[] | null
           updated_at: string | null
           user_id: string
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -692,8 +695,11 @@ export type Database = {
           last_used_at?: string | null
           name: string
           permissions?: Json | null
+          revoked_at?: string | null
+          scopes?: string[] | null
           updated_at?: string | null
           user_id: string
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -705,10 +711,21 @@ export type Database = {
           last_used_at?: string | null
           name?: string
           permissions?: Json | null
+          revoked_at?: string | null
+          scopes?: string[] | null
           updated_at?: string | null
           user_id?: string
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       api_marketplace_listings: {
         Row: {
@@ -793,6 +810,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      audit_log: {
+        Row: {
+          action: string
+          at: string
+          id: string
+          meta: Json | null
+          target: string | null
+          user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          action: string
+          at?: string
+          id?: string
+          meta?: Json | null
+          target?: string | null
+          user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          at?: string
+          id?: string
+          meta?: Json | null
+          target?: string | null
+          user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       audit_logs: {
         Row: {
@@ -922,6 +977,103 @@ export type Database = {
           worker_id?: string | null
         }
         Relationships: []
+      }
+      billing_customers: {
+        Row: {
+          created_at: string
+          id: string
+          metered_scans_month: number
+          period_end: string | null
+          period_start: string | null
+          plan: Database["public"]["Enums"]["billing_plan"]
+          seats: number
+          status: Database["public"]["Enums"]["billing_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metered_scans_month?: number
+          period_end?: string | null
+          period_start?: string | null
+          plan?: Database["public"]["Enums"]["billing_plan"]
+          seats?: number
+          status?: Database["public"]["Enums"]["billing_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metered_scans_month?: number
+          period_end?: string | null
+          period_start?: string | null
+          plan?: Database["public"]["Enums"]["billing_plan"]
+          seats?: number
+          status?: Database["public"]["Enums"]["billing_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_customers_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      branding_profiles: {
+        Row: {
+          created_at: string
+          custom_footer: string | null
+          id: string
+          logo_url: string | null
+          primary_color: string | null
+          remove_branding: boolean | null
+          secondary_color: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_footer?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          remove_branding?: boolean | null
+          secondary_color?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_footer?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          remove_branding?: boolean | null
+          secondary_color?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "branding_profiles_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       briefing_logs: {
         Row: {
@@ -4240,6 +4392,47 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_reports: {
+        Row: {
+          created_at: string
+          filters: Json
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+          widgets: Json
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          widgets?: Json
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          widgets?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_reports_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_views: {
         Row: {
           columns: string[]
@@ -5329,6 +5522,62 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["workspace_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["workspace_role"]
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -5348,6 +5597,10 @@ export type Database = {
       generate_case_number: { Args: never; Returns: string }
       generate_incident_number: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
+      get_workspace_role: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: Database["public"]["Enums"]["workspace_role"]
+      }
       grant_admin_role: {
         Args: { _caller_token?: string; _user_id: string }
         Returns: boolean
@@ -5356,6 +5609,24 @@ export type Database = {
       has_subscription_tier: {
         Args: { _required_tier: string; _user_id: string }
         Returns: boolean
+      }
+      has_workspace_permission: {
+        Args: {
+          _required_role: Database["public"]["Enums"]["workspace_role"]
+          _user_id: string
+          _workspace_id: string
+        }
+        Returns: boolean
+      }
+      log_audit_event: {
+        Args: {
+          _action: string
+          _meta?: Json
+          _target?: string
+          _user_id: string
+          _workspace_id: string
+        }
+        Returns: string
       }
       reset_expired_rate_limits: { Args: never; Returns: undefined }
       update_user_subscription: {
@@ -5369,6 +5640,8 @@ export type Database = {
     }
     Enums: {
       app_role: "viewer" | "analyst" | "admin"
+      billing_plan: "analyst" | "pro" | "enterprise"
+      billing_status: "active" | "past_due" | "canceled" | "trialing"
       case_priority: "low" | "medium" | "high" | "critical"
       case_status: "draft" | "submitted" | "in_progress" | "resolved" | "closed"
       plugin_status:
@@ -5381,6 +5654,7 @@ export type Database = {
       risk_level: "low" | "medium" | "high"
       scan_type: "username" | "personal_details" | "both"
       subscription_tier: "free" | "premium" | "family"
+      workspace_role: "viewer" | "analyst" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5509,6 +5783,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["viewer", "analyst", "admin"],
+      billing_plan: ["analyst", "pro", "enterprise"],
+      billing_status: ["active", "past_due", "canceled", "trialing"],
       case_priority: ["low", "medium", "high", "critical"],
       case_status: ["draft", "submitted", "in_progress", "resolved", "closed"],
       plugin_status: [
@@ -5522,6 +5798,7 @@ export const Constants = {
       risk_level: ["low", "medium", "high"],
       scan_type: ["username", "personal_details", "both"],
       subscription_tier: ["free", "premium", "family"],
+      workspace_role: ["viewer", "analyst", "admin"],
     },
   },
 } as const

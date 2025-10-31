@@ -33,8 +33,7 @@ const MyTickets = lazy(() => import("./pages/MyTickets"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const UsernamePage = lazy(() => import("./pages/UsernamePage"));
-const ApiDocs = lazy(() => import("./pages/docs/ApiDocs"));
-const ApiDocsNew = lazy(() => import("./pages/ApiDocs"));
+const ApiDocsOld = lazy(() => import("./pages/docs/ApiDocs"));
 const DeveloperPortal = lazy(() => import("./pages/DeveloperPortal"));
 const ExecutiveDashboard = lazy(() => import("./pages/ExecutiveDashboard"));
 const AdvancedAnalytics = lazy(() => import("./pages/AdvancedAnalytics"));
@@ -112,6 +111,8 @@ const Billing = lazy(() => import("./pages/Settings/Billing"));
 const APIKeys = lazy(() => import("./pages/Settings/APIKeys"));
 const NewReport = lazy(() => import("./pages/Reports/New"));
 const ReportsList = lazy(() => import("./pages/Reports/List"));
+const ApiDocs = lazy(() => import("./pages/ApiDocs"));
+const DPA = lazy(() => import("./pages/legal/DPA"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -175,8 +176,8 @@ function RouterContent() {
           <Route path="/blog/persona-dna-and-evidence-packs" element={<PersonaDnaLaunch />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
-          <Route path="/docs/api" element={<ApiDocs />} />
-          <Route path="/api" element={<ApiDocsNew />} />
+          <Route path="/docs/api" element={<ApiDocsOld />} />
+          <Route path="/api" element={<ApiDocs />} />
           <Route path="/developers" element={<DeveloperPortal />} />
           <Route path="/analyst" element={<Analyst />} />
           <Route path="/assistant" element={<Assistant />} />
@@ -190,6 +191,8 @@ function RouterContent() {
           <Route path="/enterprise" element={<Enterprise />} />
           <Route path="/settings/billing" element={<Billing />} />
           <Route path="/settings/api-keys" element={<APIKeys />} />
+          <Route path="/api-docs" element={<ApiDocs />} />
+          <Route path="/legal/dpa" element={<DPA />} />
           <Route path="/partners" element={<PartnersIndex />} />
           <Route path="/partners/dashboard" element={<PartnerDashboard />} />
           <Route path="/global-index" element={<GlobalIndex />} />
