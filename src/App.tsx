@@ -107,6 +107,11 @@ const Subscription = lazy(() => import("./pages/Subscription"));
 const EmbedWidget = lazy(() => import("./pages/EmbedWidget"));
 const Embed = lazy(() => import("./pages/Embed"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
+const Enterprise = lazy(() => import("./pages/Enterprise"));
+const Billing = lazy(() => import("./pages/Settings/Billing"));
+const APIKeys = lazy(() => import("./pages/Settings/APIKeys"));
+const NewReport = lazy(() => import("./pages/Reports/New"));
+const ReportsList = lazy(() => import("./pages/Reports/List"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -180,6 +185,11 @@ function RouterContent() {
           <Route path="/monitoring" element={<Monitoring />} />
           <Route path="/trends" element={<Trends />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/reports/new" element={<NewReport />} />
+          <Route path="/reports/list" element={<ReportsList />} />
+          <Route path="/enterprise" element={<Enterprise />} />
+          <Route path="/settings/billing" element={<Billing />} />
+          <Route path="/settings/api-keys" element={<APIKeys />} />
           <Route path="/partners" element={<PartnersIndex />} />
           <Route path="/partners/dashboard" element={<PartnerDashboard />} />
           <Route path="/global-index" element={<GlobalIndex />} />

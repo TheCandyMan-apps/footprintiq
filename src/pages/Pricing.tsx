@@ -9,8 +9,8 @@ const PricingPage = () => {
   const pricingStructuredData = {
     "@context": "https://schema.org",
     "@type": "Product",
-    "name": "FootprintIQ Premium",
-    "description": "Advanced digital footprint scanning and online privacy protection",
+    "name": "FootprintIQ",
+    "description": "Enterprise OSINT platform for digital footprint analysis and threat intelligence",
     "brand": {
       "@type": "Organization",
       "name": "FootprintIQ"
@@ -18,17 +18,26 @@ const PricingPage = () => {
     "offers": [
       {
         "@type": "Offer",
-        "name": "Free Plan",
-        "price": "0",
+        "name": "Analyst Plan",
+        "price": "29",
         "priceCurrency": "GBP",
-        "description": "Basic scans with limited sources"
+        "priceValidUntil": "2026-12-31",
+        "description": "For security analysts with unlimited scans and dark web monitoring"
       },
       {
         "@type": "Offer",
-        "name": "Premium Plan",
-        "price": "9.99",
+        "name": "Pro Plan",
+        "price": "79",
         "priceCurrency": "GBP",
-        "description": "Unlimited scans with all OSINT sources and dark web monitoring"
+        "priceValidUntil": "2026-12-31",
+        "description": "Advanced features with PDF exports and white-label reports"
+      },
+      {
+        "@type": "Offer",
+        "name": "Enterprise Plan",
+        "price": "Contact",
+        "priceCurrency": "GBP",
+        "description": "Custom enterprise solution with API access and SSO"
       }
     ]
   };
