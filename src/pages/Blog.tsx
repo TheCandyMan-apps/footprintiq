@@ -3,8 +3,29 @@ import { Calendar, Clock, ArrowRight } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { StructuredData, organizationSchema } from "@/components/StructuredData";
 
 const blogPosts = [
+  {
+    slug: "what-is-osint-risk",
+    title: "What is OSINT Risk? Understanding Your Digital Exposure",
+    excerpt: "Learn what OSINT risk means for your business, how threat actors use open-source intelligence, and practical steps to reduce your digital attack surface.",
+    date: "January 31, 2025",
+    readTime: "8 min read",
+    category: "Cybersecurity",
+    featured: true,
+    image: "/blog-images/osint.webp",
+  },
+  {
+    slug: "dark-web-monitoring-explained",
+    title: "Dark Web Monitoring Explained: Protecting Your Organization",
+    excerpt: "Comprehensive guide to dark web monitoring - what it is, how it works, and why your organization needs it to prevent credential theft and data breaches.",
+    date: "January 31, 2025",
+    readTime: "10 min read",
+    category: "Cybersecurity",
+    featured: true,
+    image: "/blog-images/dark-web.webp",
+  },
   {
     slug: "what-is-digital-footprint",
     title: "What Is a Digital Footprint? Complete Guide 2025",
@@ -112,6 +133,7 @@ const Blog = () => {
         canonical="https://footprintiq.app/blog"
         structuredData={structuredData}
       />
+      <StructuredData organization={organizationSchema} />
       
       <Header />
       

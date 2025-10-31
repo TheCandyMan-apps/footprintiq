@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { SEO } from "@/components/SEO";
+import { StructuredData, organizationSchema } from "@/components/StructuredData";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
@@ -101,6 +102,7 @@ export default function Home() {
         structuredData={structuredData}
       />
       <OrganizationSchema />
+      <StructuredData organization={organizationSchema} />
       <Header />
       <Hero onStartScan={handleStartScan} />
       <TrustSignals />
