@@ -57,13 +57,13 @@ export function useWorkspace(): WorkspaceContext {
 
       setWorkspaces(userWorkspaces || []);
 
-      // Get current workspace from localStorage or use first
-      const storedWorkspaceId = localStorage.getItem('current_workspace_id');
+      // Get current workspace from sessionStorage or use first
+      const storedWorkspaceId = sessionStorage.getItem('current_workspace_id');
       let currentWorkspace = userWorkspaces?.find(w => w.id === storedWorkspaceId);
       
       if (!currentWorkspace && userWorkspaces.length > 0) {
         currentWorkspace = userWorkspaces[0];
-        localStorage.setItem('current_workspace_id', currentWorkspace.id);
+        sessionStorage.setItem('current_workspace_id', currentWorkspace.id);
       }
 
       if (currentWorkspace) {
@@ -88,7 +88,7 @@ export function useWorkspace(): WorkspaceContext {
     const newWorkspace = workspaces.find(w => w.id === workspaceId);
     if (newWorkspace) {
       setWorkspace(newWorkspace);
-      localStorage.setItem('current_workspace_id', workspaceId);
+      sessionStorage.setItem('current_workspace_id', workspaceId);
       
       // Update role
       const { data: { user } } = await supabase.auth.getUser();

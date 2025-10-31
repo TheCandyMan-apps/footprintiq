@@ -31,7 +31,7 @@ const ALERTS_KEY = "footprintiq_watchlist_alerts";
  * Get all watchlist targets
  */
 export function getWatchlist(): WatchlistTarget[] {
-  const json = localStorage.getItem(WATCHLIST_KEY);
+  const json = sessionStorage.getItem(WATCHLIST_KEY);
   if (!json) return [];
   
   try {
@@ -62,7 +62,7 @@ export function addToWatchlist(target: Omit<WatchlistTarget, "id" | "addedAt">):
   };
 
   watchlist.push(newTarget);
-  localStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
+  sessionStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
   
   return newTarget;
 }
@@ -73,7 +73,7 @@ export function addToWatchlist(target: Omit<WatchlistTarget, "id" | "addedAt">):
 export function removeFromWatchlist(targetId: string): void {
   const watchlist = getWatchlist();
   const filtered = watchlist.filter((t) => t.id !== targetId);
-  localStorage.setItem(WATCHLIST_KEY, JSON.stringify(filtered));
+  sessionStorage.setItem(WATCHLIST_KEY, JSON.stringify(filtered));
 }
 
 /**
@@ -88,7 +88,7 @@ export function updateWatchlistTarget(
   
   if (index !== -1) {
     watchlist[index] = { ...watchlist[index], ...updates };
-    localStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
+    sessionStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
   }
 }
 
@@ -103,7 +103,7 @@ export function markTargetChecked(targetId: string): void {
  * Get all alerts
  */
 export function getAlerts(): WatchlistAlert[] {
-  const json = localStorage.getItem(ALERTS_KEY);
+  const json = sessionStorage.getItem(ALERTS_KEY);
   if (!json) return [];
   
   try {
@@ -127,7 +127,7 @@ export function addAlert(alert: Omit<WatchlistAlert, "id" | "detectedAt" | "read
   };
 
   alerts.push(newAlert);
-  localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts));
+  sessionStorage.setItem(ALERTS_KEY, JSON.stringify(alerts));
 }
 
 /**
@@ -139,7 +139,7 @@ export function markAlertRead(alertId: string): void {
   
   if (alert) {
     alert.read = true;
-    localStorage.setItem(ALERTS_KEY, JSON.stringify(alerts));
+    sessionStorage.setItem(ALERTS_KEY, JSON.stringify(alerts));
   }
 }
 
@@ -147,7 +147,7 @@ export function markAlertRead(alertId: string): void {
  * Clear all alerts
  */
 export function clearAlerts(): void {
-  localStorage.setItem(ALERTS_KEY, JSON.stringify([]));
+  sessionStorage.setItem(ALERTS_KEY, JSON.stringify([]));
 }
 
 /**

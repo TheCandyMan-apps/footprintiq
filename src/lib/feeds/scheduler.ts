@@ -30,28 +30,32 @@ export async function runFeedCollection(workspaceId: string): Promise<FeedCollec
     const feedData = feed as any;
     
     try {
-      // Get API keys from environment (these should be configured in Supabase secrets)
+      // Fetch indicators via secure backend proxy (no client-stored secrets)
       switch (feedData.feed_type) {
-        case 'otx':
-          const otxKey = localStorage.getItem('FEED_OTX_KEY');
-          if (otxKey) {
-            indicators = await collectOTXFeed(otxKey, workspaceId);
-          }
+        case 'otx': {
+          const { data, error } = await supabase.functions.invoke('provider-proxy', {
+            body: { provider: 'otx_feed' }
+          });
+          if (error) throw error;
+          indicators = Array.isArray(data) ? data : [];
           break;
-          
-        case 'shodan':
-          const shodanKey = localStorage.getItem('FEED_SHODAN_KEY');
-          if (shodanKey) {
-            indicators = await collectShodanFeed(shodanKey);
-          }
+        }
+        case 'shodan': {
+          const { data, error } = await supabase.functions.invoke('provider-proxy', {
+            body: { provider: 'shodan_feed', options: { query: 'vuln' } }
+          });
+          if (error) throw error;
+          indicators = Array.isArray(data) ? data : [];
           break;
-          
-        case 'greynoise':
-          const greynoiseKey = localStorage.getItem('FEED_GREYNOISE_KEY');
-          if (greynoiseKey) {
-            indicators = await collectGreyNoiseFeed(greynoiseKey);
-          }
+        }
+        case 'greynoise': {
+          const { data, error } = await supabase.functions.invoke('provider-proxy', {
+            body: { provider: 'greynoise_feed' }
+          });
+          if (error) throw error;
+          indicators = Array.isArray(data) ? data : [];
           break;
+        }
       }
       
       // Store indicators

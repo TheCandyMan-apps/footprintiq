@@ -38,8 +38,8 @@ const Policies = () => {
   };
 
   const loadPolicies = () => {
-    // Load from localStorage for now (in production, would be from database)
-    const saved = localStorage.getItem("footprintiq_policies");
+    // Load from sessionStorage for now (in production, would be from database)
+    const saved = sessionStorage.getItem("footprintiq_policies");
     if (saved) {
       setPolicies(JSON.parse(saved));
     }
@@ -48,8 +48,8 @@ const Policies = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      // Save to localStorage (in production, would save to database)
-      localStorage.setItem("footprintiq_policies", JSON.stringify(policies));
+      // Save to sessionStorage (in production, would save to database)
+      sessionStorage.setItem("footprintiq_policies", JSON.stringify(policies));
       
       toast({
         title: "Policies updated",

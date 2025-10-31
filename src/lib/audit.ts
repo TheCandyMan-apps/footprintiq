@@ -45,14 +45,14 @@ export function logAuditEvent(
     logs.splice(0, logs.length - MAX_LOG_SIZE);
   }
 
-  localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(logs));
+  sessionStorage.setItem(AUDIT_LOG_KEY, JSON.stringify(logs));
 }
 
 /**
  * Get all audit logs
  */
 export function getAuditLogs(): AuditEvent[] {
-  const json = localStorage.getItem(AUDIT_LOG_KEY);
+  const json = sessionStorage.getItem(AUDIT_LOG_KEY);
   if (!json) return [];
 
   try {
@@ -83,7 +83,7 @@ export function getAuditLogsByTimeRange(startDate: Date, endDate: Date): AuditEv
  * Clear all audit logs
  */
 export function clearAuditLogs(): void {
-  localStorage.setItem(AUDIT_LOG_KEY, JSON.stringify([]));
+  sessionStorage.setItem(AUDIT_LOG_KEY, JSON.stringify([]));
 }
 
 /**
