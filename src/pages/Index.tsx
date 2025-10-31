@@ -13,6 +13,8 @@ import { FAQ } from "@/components/FAQ";
 import { TrustSignals } from "@/components/TrustSignals";
 import { OrganizationSchema } from "@/components/OrganizationSchema";
 import { shouldAutoStartTour, getTourAutoStartDelay } from "@/lib/tour/firstTime";
+import scanCapabilitiesBg from "@/assets/scan-capabilities-bg.jpg";
+import privacyBadge from "@/assets/privacy-badge.jpg";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -117,8 +119,18 @@ export default function Home() {
       </div>
       <Testimonials />
       
-      <main className="px-6 py-16 mx-auto max-w-5xl">
-        <section className="mt-10">
+      <main className="relative px-6 py-16 mx-auto max-w-5xl overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0 -mx-6">
+          <img 
+            src={scanCapabilitiesBg} 
+            alt="Digital footprint scanning visualization" 
+            className="w-full h-full object-cover opacity-10"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/90 to-background" />
+        </div>
+        
+        <section className="relative z-10 mt-10">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
               What You Can Scan with FootprintIQ
@@ -129,8 +141,8 @@ export default function Home() {
           </div>
           
           <div className="grid gap-6 md:grid-cols-2 mb-12">
-            <div className="p-6 rounded-xl bg-card border border-border">
-              <h3 className="text-xl font-semibold mb-4">What You Can Scan</h3>
+            <div className="group p-6 rounded-xl bg-gradient-card border border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1">
+              <h3 className="text-xl font-semibold mb-4 group-hover:text-primary transition-colors">What You Can Scan</h3>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
@@ -155,8 +167,8 @@ export default function Home() {
               </ul>
             </div>
             
-            <div className="p-6 rounded-xl bg-card border border-border">
-              <h3 className="text-xl font-semibold mb-4">Why It Matters</h3>
+            <div className="group p-6 rounded-xl bg-gradient-card border border-border/50 hover:border-accent/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1">
+              <h3 className="text-xl font-semibold mb-4 group-hover:text-accent transition-colors">Why It Matters</h3>
               <ul className="space-y-3 text-muted-foreground">
                 <li className="flex items-start gap-2">
                   <span className="text-primary mt-1">•</span>
@@ -188,13 +200,24 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Privacy Trust Note */}
-        <section className="mt-16 p-6 rounded-xl bg-muted/50 border border-border">
-          <p className="text-center text-muted-foreground">
-            <strong className="text-foreground">Your Privacy is Protected:</strong> We never sell your data. 
-            All scan queries are transient and encrypted. We only query reputable OSINT providers and 
-            delete search data after delivering your results.
-          </p>
+        {/* Privacy Trust Note with Image */}
+        <section className="relative mt-16 p-8 rounded-2xl bg-gradient-card border border-primary/20 overflow-hidden group hover:border-primary/40 transition-all duration-300 hover:shadow-glow">
+          {/* Background Icon */}
+          <div className="absolute right-0 top-0 w-48 h-48 opacity-10 group-hover:opacity-15 transition-opacity">
+            <img 
+              src={privacyBadge} 
+              alt="Privacy protection shield" 
+              className="w-full h-full object-contain"
+            />
+          </div>
+          
+          <div className="relative z-10">
+            <p className="text-center text-muted-foreground leading-relaxed">
+              <strong className="text-foreground text-lg block mb-2">Your Privacy is Protected</strong> 
+              We never sell your data. All scan queries are transient and encrypted. We only query 
+              reputable OSINT providers and delete search data after delivering your results.
+            </p>
+          </div>
         </section>
       </main>
       

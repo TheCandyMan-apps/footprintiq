@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import pricingHero from "@/assets/pricing-hero.jpg";
 
 const pricingTiers = [
   {
@@ -105,8 +106,18 @@ export const Pricing = () => {
   };
 
   return (
-    <section className="py-20 px-6">
-      <div className="max-w-7xl mx-auto">
+    <section className="relative py-20 px-6 overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img 
+          src={pricingHero} 
+          alt="Pricing plans background" 
+          className="w-full h-full object-cover opacity-10"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             Choose Your{" "}
