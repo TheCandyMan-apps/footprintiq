@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { getBlogHeroImage } from "@/lib/blogImages";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 const blogPosts: Record<string, { title: string; date: string; readTime: string; category: string; content: string }> = {
   "what-is-digital-footprint": {
@@ -1241,7 +1242,7 @@ const BlogPost = () => {
               prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline
               prose-code:text-primary prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
               prose-pre:bg-muted prose-pre:border prose-pre:border-border"
-            dangerouslySetInnerHTML={{ __html: post.content }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
           />
 
           <div className="mt-16 p-8 bg-gradient-to-br from-primary/5 via-primary-glow/5 to-accent/5 rounded-3xl border-2 border-primary/20">
