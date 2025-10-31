@@ -203,6 +203,38 @@ const PrivacyPolicy = () => {
             </section>
 
             <section>
+              <h2 className="text-2xl font-semibold mb-4">Enterprise Data Processing</h2>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                For Enterprise customers, we offer enhanced data protection terms:
+              </p>
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
+                <li>
+                  <strong className="text-foreground">Data Processing Agreement (DPA):</strong> Full GDPR-compliant DPA available 
+                  (see <Link to="/legal/dpa" className="text-primary hover:underline">DPA Terms</Link>)
+                </li>
+                <li>
+                  <strong className="text-foreground">Data Residency:</strong> Choose EU, UK, or US data storage regions for scan results
+                </li>
+                <li>
+                  <strong className="text-foreground">Extended Retention:</strong> Customizable retention periods up to 2 years with encrypted archival
+                </li>
+                <li>
+                  <strong className="text-foreground">Dedicated Instances:</strong> Single-tenant deployments available for sensitive workloads
+                </li>
+                <li>
+                  <strong className="text-foreground">Audit Logs:</strong> Complete audit trails of all data access and processing activities
+                </li>
+              </ul>
+              <p className="text-muted-foreground leading-relaxed mt-4">
+                Contact{" "}
+                <a href="mailto:enterprise@footprintiq.app" className="text-primary hover:underline">
+                  enterprise@footprintiq.app
+                </a>
+                {" "}for Enterprise data protection requirements.
+              </p>
+            </section>
+
+            <section>
               <h2 className="text-2xl font-semibold mb-4">Children's Privacy</h2>
               <p className="text-muted-foreground leading-relaxed">
                 Our service is not intended for individuals under 16 years of age. We do not knowingly collect personal 

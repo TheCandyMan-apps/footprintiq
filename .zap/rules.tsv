@@ -1,0 +1,20 @@
+# ZAP Scanning Rules
+# Format: ID	THRESHOLD	[NOTES]
+
+# Ignore info-level alerts
+10015	OFF	# Incomplete or No Cache-control and Pragma HTTP Header Set
+10027	OFF	# Information Disclosure - Suspicious Comments
+10036	OFF	# HTTP Server Response Header
+10054	OFF	# Cookie Without SameSite Attribute
+10063	OFF	# Feature Policy Header Not Set
+
+# Lower threshold for false positives
+10096	LOW	# Timestamp Disclosure
+10202	LOW	# Absence of Anti-CSRF Tokens
+
+# Keep critical security checks at high sensitivity
+40012	HIGH	# Cross-Site Scripting (Reflected)
+40014	HIGH	# Cross-Site Scripting (Persistent)
+40016	HIGH	# Cross-Site Scripting (Persistent - Prime)
+40017	HIGH	# Cross-Site Scripting (Persistent - Spider)
+90022	HIGH	# Application Error Disclosure

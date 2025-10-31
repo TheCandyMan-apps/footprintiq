@@ -1,0 +1,65 @@
+name: Lighthouse CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  lighthouse:
+    name: Lighthouse Performance Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build production
+        run: npm run build
+        env:
+          NODE_ENV: production
+      
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+      
+      - name: Serve build
+        run: npx vite preview --port 4173 &
+        
+      - name: Wait for server
+        run: npx wait-on http://localhost:4173 --timeout 60000
+        
+      - name: Run Lighthouse CI
+        run: |
+          lhci autorun \
+            --collect.url=http://localhost:4173 \
+            --collect.url=http://localhost:4173/pricing \
+            --collect.url=http://localhost:4173/enterprise \
+            --collect.numberOfRuns=3 \
+            --assert.preset=lighthouse:recommended \
+            --assert.assertions.categories:performance=0.85 \
+            --assert.assertions.categories:accessibility=0.95 \
+            --assert.assertions.categories:best-practices=0.90 \
+            --assert.assertions.categories:seo=0.95 \
+            --upload.target=temporary-public-storage
+      
+      - name: Generate performance summary
+        run: |
+          echo "# 🚀 Lighthouse Performance Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Performance audit completed" >> $GITHUB_STEP_SUMMARY
+          echo "🎯 Target Scores:" >> $GITHUB_STEP_SUMMARY
+          echo "- Performance: ≥85" >> $GITHUB_STEP_SUMMARY
+          echo "- Accessibility: ≥95" >> $GITHUB_STEP_SUMMARY
+          echo "- Best Practices: ≥90" >> $GITHUB_STEP_SUMMARY
+          echo "- SEO: ≥95" >> $GITHUB_STEP_SUMMARY

@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="robots" content="index, follow" />
     
-    <!-- Preload critical font - self-hosted for performance -->
+    <!-- Performance & Resource Hints -->
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="preload" href="https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2" as="font" type="font/woff2" crossorigin />
+    
+    <!-- Critical CSS -->
     <style>
       @font-face {
         font-family: 'Inter';
@@ -15,6 +19,10 @@
         font-display: swap;
         src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2') format('woff2');
       }
+      
+      /* Critical above-the-fold styles */
+      body { margin: 0; font-family: Inter, system-ui, -apple-system, sans-serif; }
+      #root { min-height: 100vh; }
     </style>
     
     <!-- Default meta (overridden by Helmet) -->
@@ -23,20 +31,24 @@
     <meta name="keywords" content="digital footprint scanner, OSINT privacy, email breach check, username search, domain intelligence, IP exposure, phone OSINT, data broker removal">
     <meta name="author" content="FootprintIQ" />
     
+    <!-- Performance Optimization -->
+    <meta http-equiv="x-dns-prefetch-control" content="on" />
+    <link rel="preconnect" href="https://plausible.io" crossorigin />
+    
     <!-- Analytics - Privacy-friendly Plausible -->
     <script defer data-domain="footprintiq.app" src="https://plausible.io/js/script.js"></script>
 
     <!-- Note: Open Graph and Twitter tags managed by react-helmet-async in components -->
-
     <!-- Note: Structured data managed by react-helmet-async in components -->
+    
     <meta property="og:title" content="FootprintIQ — Digital Footprint Scanner &amp; OSINT Privacy Protection">
-  <meta name="twitter:title" content="FootprintIQ — Digital Footprint Scanner &amp; OSINT Privacy Protection">
-  <meta property="og:description" content="Scan emails, usernames, domains, phones and IPs with trusted OSINT sources like Have I Been Pwned, Shodan and VirusTotal. Remove your personal data from 100+ data brokers.">
-  <meta name="twitter:description" content="Scan emails, usernames, domains, phones and IPs with trusted OSINT sources like Have I Been Pwned, Shodan and VirusTotal. Remove your personal data from 100+ data brokers.">
-  <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/2uSl18P0SSfJLWqHu910xv9mZBj1/uploads/1760643892593-fpiq.png">
-  <meta name="twitter:card" content="summary">
-  <meta property="og:type" content="website">
-</head>
+    <meta name="twitter:title" content="FootprintIQ — Digital Footprint Scanner &amp; OSINT Privacy Protection">
+    <meta property="og:description" content="Scan emails, usernames, domains, phones and IPs with trusted OSINT sources like Have I Been Pwned, Shodan and VirusTotal. Remove your personal data from 100+ data brokers.">
+    <meta name="twitter:description" content="Scan emails, usernames, domains, phones and IPs with trusted OSINT sources like Have I Been Pwned, Shodan and VirusTotal. Remove your personal data from 100+ data brokers.">
+    <link rel="icon" type="image/x-icon" href="https://storage.googleapis.com/gpt-engineer-file-uploads/2uSl18P0SSfJLWqHu910xv9mZBj1/uploads/1760643892593-fpiq.png">
+    <meta name="twitter:card" content="summary">
+    <meta property="og:type" content="website">
+  </head>
 
   <body>
     <div id="root"></div>

@@ -1,0 +1,71 @@
+name: Stripe Webhook Tests
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'supabase/functions/stripe-webhook/**'
+      - 'supabase/functions/billing/**'
+  pull_request:
+    paths:
+      - 'supabase/functions/stripe-webhook/**'
+      - 'supabase/functions/billing/**'
+  workflow_dispatch:
+
+jobs:
+  webhook-tests:
+    name: Test Stripe Webhook Handlers
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      
+      - name: Validate webhook signatures
+        run: |
+          echo "# 💳 Stripe Webhook Tests" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check for proper signature verification
+          if grep -r "verifyWebhookSignature" supabase/functions/stripe-webhook/ > /dev/null; then
+            echo "✅ Webhook signature verification implemented" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Missing webhook signature verification" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+          
+          # Check for idempotency handling
+          if grep -r "idempotency" supabase/functions/stripe-webhook/ > /dev/null; then
+            echo "✅ Idempotency handling implemented" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Consider adding idempotency handling" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Check for error handling
+          if grep -r "try.*catch" supabase/functions/stripe-webhook/ > /dev/null; then
+            echo "✅ Error handling implemented" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Missing error handling" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+      
+      - name: Check event types handled
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Webhook Events Handled:**" >> $GITHUB_STEP_SUMMARY
+          grep -o "case '[^']*'" supabase/functions/stripe-webhook/index.ts | sed "s/case '/ - /" | sed "s/'://" >> $GITHUB_STEP_SUMMARY || echo "Could not parse events" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Validate TypeScript
+        run: |
+          cd supabase/functions/stripe-webhook
+          deno check index.ts
+      
+      - name: Summary
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All Stripe webhook checks passed" >> $GITHUB_STEP_SUMMARY

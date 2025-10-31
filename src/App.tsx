@@ -9,14 +9,16 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { SkipLink } from "@/components/SkipLink";
 import { lazy, Suspense } from "react";
-import { LoadingState } from "@/components/ui/loading-state";
+import { LoadingState } from "@/components/LoadingState";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useAccessibility } from "@/hooks/useAccessibility";
+import { HelmetProvider } from 'react-helmet-async';
 import "@/lib/config"; // Validate env at boot
 
 // Critical pages (loaded immediately)
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
+// Lazy load heavy pages for better performance
+const Index = lazy(() => import("./pages/Index"));
+const Auth = lazy(() => import("./pages/Auth"));
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 

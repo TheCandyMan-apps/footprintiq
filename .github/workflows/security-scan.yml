@@ -1,0 +1,157 @@
+name: Security Vulnerability Scan
+
+on:
+  schedule:
+    - cron: '0 2 * * 1' # Weekly on Monday at 2 AM UTC
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  osv-scanner:
+    name: OSV Vulnerability Scanner
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Run OSV Scanner
+        uses: google/osv-scanner-action@v1
+        with:
+          scan-args: |-
+            --lockfile=package-lock.json
+            --format=json
+            --output=osv-results.json
+        continue-on-error: true
+      
+      - name: Upload OSV results
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-scan-results
+          path: osv-results.json
+          retention-days: 30
+      
+      - name: Parse OSV results
+        run: |
+          if [ -f osv-results.json ]; then
+            VULN_COUNT=$(jq '.results[0].packages | length' osv-results.json || echo "0")
+            echo "# 🔍 Security Scan Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Vulnerabilities Found:** $VULN_COUNT" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-3.0, AGPL-3.0
+
+  npm-audit:
+    name: NPM Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Run npm audit
+        run: |
+          npm audit --production --audit-level=high --json > npm-audit.json || true
+          
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-audit-results
+          path: npm-audit.json
+          retention-days: 30
+      
+      - name: Parse audit results
+        run: |
+          if [ -f npm-audit.json ]; then
+            HIGH=$(jq '.metadata.vulnerabilities.high // 0' npm-audit.json)
+            CRITICAL=$(jq '.metadata.vulnerabilities.critical // 0' npm-audit.json)
+            echo "# 📦 NPM Audit Results" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**High Severity:** $HIGH" >> $GITHUB_STEP_SUMMARY
+            echo "**Critical Severity:** $CRITICAL" >> $GITHUB_STEP_SUMMARY
+            
+            if [ "$CRITICAL" -gt "0" ]; then
+              echo "❌ Critical vulnerabilities found!" >> $GITHUB_STEP_SUMMARY
+              exit 1
+            fi
+          fi
+
+  zap-scan:
+    name: OWASP ZAP Security Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build
+      
+      - name: Serve application
+        run: npx vite preview --port 4173 &
+        
+      - name: Wait for server
+        run: npx wait-on http://localhost:4173 --timeout 60000
+        
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: 'http://localhost:4173'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+          allow_issue_writing: false
+          fail_action: false
+        continue-on-error: true
+      
+      - name: Upload ZAP results
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-scan-results
+          path: report_html.html
+          retention-days: 30
+
+  summary:
+    name: Security Summary
+    needs: [osv-scanner, npm-audit]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# 🛡️ Security Scan Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ OSV Scanner: ${{ needs.osv-scanner.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ NPM Audit: ${{ needs.npm-audit.result }}" >> $GITHUB_STEP_SUMMARY

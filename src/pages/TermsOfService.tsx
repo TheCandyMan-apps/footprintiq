@@ -120,6 +120,25 @@ const TermsOfService = () => {
                 <li>OSINT provider coverage may change as third-party APIs evolve or become unavailable</li>
                 <li>Data removal timelines depend on third-party cooperation and are not guaranteed</li>
               </ul>
+              
+              <h3 className="text-xl font-semibold mb-3 mt-6">Enterprise Service Level Agreement (SLA)</h3>
+              <p className="text-muted-foreground leading-relaxed mb-4">
+                Enterprise customers receive enhanced availability commitments:
+              </p>
+              <ul className="list-disc pl-6 text-muted-foreground space-y-2">
+                <li><strong className="text-foreground">99.9% Uptime SLA:</strong> Monthly uptime guarantee with service credits for violations</li>
+                <li><strong className="text-foreground">Priority Support:</strong> Dedicated account manager and 4-hour response time for critical issues</li>
+                <li><strong className="text-foreground">Scheduled Maintenance:</strong> 7-day advance notice for planned maintenance windows</li>
+                <li><strong className="text-foreground">API Rate Limits:</strong> Guaranteed API quota with burst capacity up to 10,000 requests/hour</li>
+                <li><strong className="text-foreground">Data Export:</strong> 48-hour maximum turnaround for bulk data export requests</li>
+              </ul>
+              <p className="text-muted-foreground leading-relaxed mt-4">
+                See full{" "}
+                <Link to="/legal/dpa" className="text-primary hover:underline">Enterprise SLA Terms</Link> or contact{" "}
+                <a href="mailto:enterprise@footprintiq.app" className="text-primary hover:underline">
+                  enterprise@footprintiq.app
+                </a>
+              </p>
             </section>
 
             <section>
