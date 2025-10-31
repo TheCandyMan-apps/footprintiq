@@ -326,3 +326,234 @@ function mapOtxSeverity(adversary: string): 'low' | 'medium' | 'high' | 'critica
   if (lower.includes('malware') || lower.includes('botnet')) return 'medium';
   return 'low';
 }
+
+async function callHunter(domain: string) {
+  const API_KEY = Deno.env.get('HUNTER_API_KEY');
+  if (!API_KEY) throw new Error('HUNTER_API_KEY not configured');
+
+  const response = await fetch(
+    `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${API_KEY}`,
+    { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+  );
+
+  if (!response.ok) throw new Error(`Hunter API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callFullHunt(domain: string) {
+  const API_KEY = Deno.env.get('FULLHUNT_API_KEY');
+  if (!API_KEY) throw new Error('FULLHUNT_API_KEY not configured');
+
+  const response = await fetch(
+    `https://fullhunt.io/api/v1/domain/${encodeURIComponent(domain)}/subdomains`,
+    {
+      headers: {
+        'X-API-KEY': API_KEY,
+        'User-Agent': 'FootprintIQ-Server',
+      },
+    }
+  );
+
+  if (!response.ok) throw new Error(`FullHunt API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callApify(username: string, platform: string) {
+  const API_KEY = Deno.env.get('APIFY_API_KEY');
+  if (!API_KEY) throw new Error('APIFY_API_KEY not configured');
+
+  const actorMap: Record<string, string> = {
+    instagram: 'apify/instagram-profile-scraper',
+    twitter: 'apify/twitter-scraper',
+    facebook: 'apify/facebook-pages-scraper',
+    linkedin: 'apify/linkedin-profile-scraper',
+  };
+
+  const actorId = actorMap[platform.toLowerCase()];
+  if (!actorId) throw new Error(`Unsupported platform: ${platform}`);
+
+  const response = await fetch(
+    `https://api.apify.com/v2/acts/${actorId}/runs?token=${API_KEY}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username,
+        resultsLimit: 10,
+      }),
+    }
+  );
+
+  if (!response.ok) throw new Error(`Apify API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callGoogleCSE(query: string) {
+  const API_KEY = Deno.env.get('GOOGLE_CSE_API_KEY');
+  const CX = Deno.env.get('GOOGLE_CSE_CX');
+  if (!API_KEY || !CX) throw new Error('Google CSE credentials not configured');
+
+  const response = await fetch(
+    `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(query)}`,
+    { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+  );
+
+  if (!response.ok) throw new Error(`Google CSE API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callDarkSearch(query: string) {
+  const API_KEY = Deno.env.get('DARKSEARCH_API_KEY');
+  if (!API_KEY) throw new Error('DARKSEARCH_API_KEY not configured');
+
+  const response = await fetch(
+    `https://darksearch.io/api/search?query=${encodeURIComponent(query)}`,
+    {
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'User-Agent': 'FootprintIQ-Server',
+      },
+    }
+  );
+
+  if (!response.ok) throw new Error(`DarkSearch API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callSecurityTrails(domain: string) {
+  const API_KEY = Deno.env.get('SECURITYTRAILS_API_KEY');
+  if (!API_KEY) throw new Error('SECURITYTRAILS_API_KEY not configured');
+
+  const response = await fetch(
+    `https://api.securitytrails.com/v1/domain/${encodeURIComponent(domain)}`,
+    {
+      headers: {
+        'APIKEY': API_KEY,
+        'User-Agent': 'FootprintIQ-Server',
+      },
+    }
+  );
+
+  if (!response.ok) throw new Error(`SecurityTrails API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callURLScan(url: string) {
+  const API_KEY = Deno.env.get('URLSCAN_API_KEY');
+  if (!API_KEY) throw new Error('URLSCAN_API_KEY not configured');
+
+  const response = await fetch('https://urlscan.io/api/v1/scan/', {
+    method: 'POST',
+    headers: {
+      'API-Key': API_KEY,
+      'Content-Type': 'application/json',
+      'User-Agent': 'FootprintIQ-Server',
+    },
+    body: JSON.stringify({ url, visibility: 'private' }),
+  });
+
+  if (!response.ok) throw new Error(`URLScan API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callWHOISXML(domain: string) {
+  const API_KEY = Deno.env.get('WHOISXML_API_KEY');
+  if (!API_KEY) throw new Error('WHOISXML_API_KEY not configured');
+
+  const response = await fetch(
+    `https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${API_KEY}&domainName=${encodeURIComponent(domain)}&outputFormat=JSON`,
+    { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+  );
+
+  if (!response.ok) throw new Error(`WHOISXML API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callAbstractPhone(phone: string) {
+  const API_KEY = Deno.env.get('ABSTRACT_API_KEY');
+  if (!API_KEY) throw new Error('ABSTRACT_API_KEY not configured');
+
+  const response = await fetch(
+    `https://phonevalidation.abstractapi.com/v1/?api_key=${API_KEY}&phone=${encodeURIComponent(phone)}`,
+    { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+  );
+
+  if (!response.ok) throw new Error(`Abstract Phone API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callAbstractIPGeo(ip: string) {
+  const API_KEY = Deno.env.get('ABSTRACT_API_KEY');
+  if (!API_KEY) throw new Error('ABSTRACT_API_KEY not configured');
+
+  const response = await fetch(
+    `https://ipgeolocation.abstractapi.com/v1/?api_key=${API_KEY}&ip_address=${encodeURIComponent(ip)}`,
+    { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+  );
+
+  if (!response.ok) throw new Error(`Abstract IP Geo API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callAbstractCompany(domain: string) {
+  const API_KEY = Deno.env.get('ABSTRACT_API_KEY');
+  if (!API_KEY) throw new Error('ABSTRACT_API_KEY not configured');
+
+  const response = await fetch(
+    `https://companyenrichment.abstractapi.com/v1/?api_key=${API_KEY}&domain=${encodeURIComponent(domain)}`,
+    { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+  );
+
+  if (!response.ok) throw new Error(`Abstract Company API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callAbuseIPDB(ip: string) {
+  const API_KEY = Deno.env.get('ABUSEIPDB_API_KEY');
+  if (!API_KEY) throw new Error('ABUSEIPDB_API_KEY not configured');
+
+  const response = await fetch(
+    `https://api.abuseipdb.com/api/v2/check?ipAddress=${encodeURIComponent(ip)}&maxAgeInDays=90&verbose`,
+    {
+      headers: {
+        'Key': API_KEY,
+        'Accept': 'application/json',
+        'User-Agent': 'FootprintIQ-Server',
+      },
+    }
+  );
+
+  if (!response.ok) throw new Error(`AbuseIPDB API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callVirusTotal(target: string, type: 'domain' | 'ip' | 'url' | 'file') {
+  const API_KEY = Deno.env.get('VIRUSTOTAL_API_KEY');
+  if (!API_KEY) throw new Error('VIRUSTOTAL_API_KEY not configured');
+
+  let endpoint = '';
+  switch (type) {
+    case 'domain':
+      endpoint = `domains/${encodeURIComponent(target)}`;
+      break;
+    case 'ip':
+      endpoint = `ip_addresses/${encodeURIComponent(target)}`;
+      break;
+    case 'url':
+      endpoint = `urls/${btoa(target).replace(/=/g, '')}`;
+      break;
+    case 'file':
+      endpoint = `files/${target}`;
+      break;
+  }
+
+  const response = await fetch(`https://www.virustotal.com/api/v3/${endpoint}`, {
+    headers: {
+      'x-apikey': API_KEY,
+      'User-Agent': 'FootprintIQ-Server',
+    },
+  });
+
+  if (!response.ok) throw new Error(`VirusTotal API error: ${response.status}`);
+  return await response.json();
+}
