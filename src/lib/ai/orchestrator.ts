@@ -77,11 +77,12 @@ Please analyze the above context and provide:
 
 Remember: Cite finding IDs when referencing specific intelligence. Do not expose raw PII or credentials.`;
 
-  // Call AI via edge function
+  // Call AI via edge function with full context
   const { data, error } = await supabase.functions.invoke("ai-analyst", {
     body: { 
       action: "summarize",
       prompt,
+      context, // Pass the full context to the edge function
       entityIds: request.entityIds,
     },
   });
@@ -130,11 +131,12 @@ Provide:
 
 Cite specific finding IDs as evidence. Do not speculate beyond available data.`;
 
-  // Call AI via edge function
+  // Call AI via edge function with full context
   const { data, error } = await supabase.functions.invoke("ai-analyst", {
     body: {
       action: "explain_link",
       prompt,
+      context, // Pass the full context to the edge function
       sourceEntityId: request.sourceEntityId,
       targetEntityId: request.targetEntityId,
     },

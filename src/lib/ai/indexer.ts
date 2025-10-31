@@ -168,32 +168,80 @@ export async function storeChunks(chunks: RAGChunk[]): Promise<void> {
 }
 
 /**
- * Index entire user graph
+ * Index entire user graph including scan data
  */
 export async function indexUserGraph(): Promise<{ chunksCreated: number }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // Get all entity nodes for user
+  // Get all scans for user
+  const { data: scans, error: scansError } = await supabase
+    .from("scans")
+    .select("*")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(20); // Index most recent 20 scans
+
+  if (scansError) throw scansError;
+
+  let totalChunks = 0;
+
+  // Index each scan
+  for (const scan of scans || []) {
+    // Determine entity type and value from scan
+    const entityType = scan.email ? "email" : scan.phone ? "phone" : scan.username ? "username" : "unknown";
+    const entityValue = scan.email || scan.phone || scan.username || "unknown";
+    
+    // Create scan summary chunk
+    const scanSummaryChunk: RAGChunk = {
+      entity_id: scan.id,
+      chunk_id: `${scan.id}_scan_summary`,
+      text: `
+Scan Analysis for ${entityType}: ${redactValue(entityValue, entityType)}
+Privacy Score: ${scan.privacy_score || 0}/100
+High Risk Findings: ${scan.high_risk_count || 0}
+Medium Risk Findings: ${scan.medium_risk_count || 0}
+Low Risk Findings: ${scan.low_risk_count || 0}
+Total Sources Found: ${scan.total_sources_found || 0}
+Scan Type: ${scan.scan_type}
+Scan Date: ${scan.created_at}
+User Name: ${scan.first_name || ''} ${scan.last_name || ''}
+
+Risk Level: ${scan.high_risk_count > 5 ? 'HIGH' : scan.high_risk_count > 2 ? 'MEDIUM' : 'LOW'}
+Privacy Status: ${scan.privacy_score < 50 ? 'Poor' : scan.privacy_score < 75 ? 'Fair' : 'Good'}
+      `.trim(),
+      metadata: {
+        entity_type: entityType,
+        entity_value: redactValue(entityValue, entityType) as string,
+        providers: [],
+        severities: scan.high_risk_count > 0 ? ['high'] : scan.medium_risk_count > 0 ? ['medium'] : ['low'],
+        finding_ids: [scan.id],
+        observed_at: scan.created_at,
+      },
+    };
+
+    await storeChunks([scanSummaryChunk]);
+    totalChunks += 1;
+  }
+
+  // Also index entity nodes for relationship data
   const { data: nodes, error } = await supabase
     .from("entity_nodes")
     .select("*")
     .eq("user_id", user.id);
 
-  if (error) throw error;
-
-  let totalChunks = 0;
-
-  for (const node of nodes || []) {
-    const chunks = await buildEntityChunks(
-      node.id,
-      node.entity_type,
-      node.entity_value
-    );
-    
-    if (chunks.length > 0) {
-      await storeChunks(chunks);
-      totalChunks += chunks.length;
+  if (!error && nodes) {
+    for (const node of nodes) {
+      const chunks = await buildEntityChunks(
+        node.id,
+        node.entity_type,
+        node.entity_value
+      );
+      
+      if (chunks.length > 0) {
+        await storeChunks(chunks);
+        totalChunks += chunks.length;
+      }
     }
   }
 

@@ -17,20 +17,23 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    const { action, prompt, entityIds, sourceEntityId, targetEntityId } = await req.json();
+    const { action, prompt, entityIds, sourceEntityId, targetEntityId, context } = await req.json();
 
     // Build system prompt (redaction rules, conservative claims)
-    const systemPrompt = `You are an OSINT analyst assistant. Your role is to:
+    const systemPrompt = `You are an OSINT analyst assistant analyzing REAL scan data. Your role is to:
 
-1. Analyze intelligence data conservatively and objectively
-2. NEVER expose raw PII, passwords, or credentials
-3. Always cite finding IDs and provider names as evidence
-4. Clearly state confidence levels
-5. Focus on patterns, correlations, and risk assessment
-6. Highlight gaps in intelligence
-7. Provide actionable recommendations
+1. Analyze the PROVIDED intelligence data conservatively and objectively
+2. NEVER make up or simulate data - only analyze what is given
+3. NEVER mention "John Doe" or other placeholder names unless they appear in the actual data
+4. ALWAYS cite finding IDs and provider names from the actual context as evidence
+5. Clearly state confidence levels based on available data
+6. Focus on patterns, correlations, and risk assessment from the actual findings
+7. Highlight gaps in intelligence based on what's missing
+8. Provide actionable recommendations based on the actual findings
 
-When citing evidence, use format: "Evidence: [provider]:[finding_id]"
+CRITICAL: If the context provided is empty or minimal, state that there is insufficient data to analyze. Do NOT generate fictional examples or scenarios.
+
+When citing evidence, use format: "Evidence: [provider]:[finding_id]" from the actual data provided.
 
 Redaction rules:
 - Mask email addresses (show only first 2 chars + domain)
@@ -42,7 +45,13 @@ Response format:
 - Be concise and structured
 - Use bullet points for clarity
 - Separate facts from inferences
-- Quantify confidence (low/medium/high)`;
+- Quantify confidence (low/medium/high) based on available data quality
+- If no data is available, state "Insufficient data for analysis"`;
+
+    // Enhanced prompt with context
+    const fullPrompt = context 
+      ? `${prompt}\n\nContext Data:\n${context}\n\nAnalyze ONLY the data provided above. Do not simulate or make up additional information.`
+      : prompt;
 
     // Call Lovable AI
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -55,7 +64,7 @@ Response format:
         model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
+          { role: "user", content: fullPrompt },
         ],
       }),
     });

@@ -75,19 +75,24 @@ const AIAnalyst = () => {
 
   const loadEntities = async () => {
     try {
+      // Load recent scans as entities for analysis
       const { data, error } = await supabase
-        .from("entity_nodes")
-        .select("id, entity_type, entity_value")
-        .order("risk_score", { ascending: false })
+        .from("scans")
+        .select("id, email, phone, username, privacy_score, high_risk_count, created_at")
+        .order("created_at", { ascending: false })
         .limit(50);
 
       if (error) throw error;
 
-      setEntities((data || []).map(e => ({
-        id: e.id,
-        type: e.entity_type,
-        value: e.entity_value,
-      })));
+      setEntities((data || []).map(scan => {
+        const type = scan.email ? "email" : scan.phone ? "phone" : scan.username ? "username" : "unknown";
+        const value = scan.email || scan.phone || scan.username || "unknown";
+        return {
+          id: scan.id,
+          type,
+          value,
+        };
+      }));
     } catch (error: any) {
       console.error("Error loading entities:", error);
     }
