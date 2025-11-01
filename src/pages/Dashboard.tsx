@@ -125,69 +125,100 @@ const Dashboard = () => {
       <div className="min-h-screen bg-background flex flex-col">
         <Header />
 
-        <main className="flex-1">
-          <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-            {/* Header with Actions */}
+        {/* Hero Section */}
+        <div className="relative overflow-hidden bg-gradient-mesh border-b border-border/50">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
+          
+          <div className="relative max-w-7xl mx-auto px-6 py-12">
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-                <p className="text-muted-foreground">
-                  Monitor your digital footprint and OSINT findings
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-2">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span className="text-sm font-medium text-primary">Live Protection Active</span>
+                </div>
+                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                  Security Dashboard
+                </h1>
+                <p className="text-lg text-muted-foreground">
+                  Monitor your digital footprint and OSINT findings in real-time
                 </p>
               </div>
 
-              <div className="flex gap-3">
+              <div className="hidden md:flex gap-3">
                 <Button
                   onClick={() => navigate('/graph')}
                   variant="outline"
+                  className="shadow-lg hover:shadow-glow transition-all duration-300"
                 >
                   <Network className="h-4 w-4 mr-2" />
                   Entity Graph
                 </Button>
                 <Button
                   onClick={() => navigate('/scan')}
+                  className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
                 >
                   <Play className="h-4 w-4 mr-2" />
                   Start New Scan
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+
+        <main className="flex-1">
+          <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Card className="relative overflow-hidden group hover:shadow-elevated transition-all duration-300 border-border/50 hover:border-primary/30">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                   <CardTitle className="text-sm font-medium">Total Scans</CardTitle>
-                  <FileSearch className="h-4 w-4 text-muted-foreground" />
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <FileSearch className="h-4 w-4" />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalScans}</div>
+                <CardContent className="relative z-10">
+                  <div className="text-3xl font-bold bg-gradient-to-br from-foreground to-primary bg-clip-text text-transparent">
+                    {stats.totalScans}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     All-time scans completed
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Card className="relative overflow-hidden group hover:shadow-elevated transition-all duration-300 border-border/50 hover:border-destructive/30">
+                <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                   <CardTitle className="text-sm font-medium">High Risk Findings</CardTitle>
-                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                  <div className="p-2 rounded-lg bg-destructive/10 text-destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.highRiskFindings}</div>
+                <CardContent className="relative z-10">
+                  <div className="text-3xl font-bold text-destructive">
+                    {stats.highRiskFindings}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Requires immediate attention
                   </p>
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Card className="relative overflow-hidden group hover:shadow-elevated transition-all duration-300 border-border/50 hover:border-accent/30">
+                <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                   <CardTitle className="text-sm font-medium">Recent Scans</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <div className="p-2 rounded-lg bg-accent/10 text-accent">
+                    <Clock className="h-4 w-4" />
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.recentFindings}</div>
+                <CardContent className="relative z-10">
+                  <div className="text-3xl font-bold bg-gradient-to-br from-foreground to-accent bg-clip-text text-transparent">
+                    {stats.recentFindings}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Started in last 24 hours
                   </p>
@@ -196,40 +227,51 @@ const Dashboard = () => {
             </div>
 
             {/* Recent Scans */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Scans</CardTitle>
+            <Card className="border-border/50 shadow-card">
+              <CardHeader className="border-b border-border/50 bg-gradient-to-r from-card to-card/50">
+                <CardTitle className="text-xl">Recent Scans</CardTitle>
                 <CardDescription>
                   Your latest OSINT investigations and their results
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 {loading ? (
                   <div className="text-center py-8 text-muted-foreground">
                     Loading scans...
                   </div>
                 ) : scans.length === 0 ? (
-                  <div className="text-center py-12">
-                    <FileSearch className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">No scans yet</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Start your first OSINT scan to discover your digital footprint
+                  <div className="text-center py-16">
+                    <div className="relative inline-block mb-6">
+                      <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
+                      <div className="relative p-6 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30">
+                        <FileSearch className="h-12 w-12 text-primary" />
+                      </div>
+                    </div>
+                    <h3 className="text-2xl font-bold mb-2 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                      No scans yet
+                    </h3>
+                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                      Start your first OSINT scan to discover your digital footprint and protect your privacy
                     </p>
-                    <Button onClick={() => navigate('/scan')}>
+                    <Button 
+                      onClick={() => navigate('/scan')}
+                      className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
+                    >
                       <Play className="h-4 w-4 mr-2" />
                       Start Your First Scan
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {scans.map((scan) => (
                       <div
                         key={scan.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                        className="group relative flex items-center justify-between p-5 rounded-xl border border-border/50 hover:border-primary/30 bg-gradient-to-r from-card to-card/50 hover:shadow-glow transition-all duration-300 cursor-pointer hover:-translate-y-1"
                         onClick={() => navigate(`/results/${scan.id}`)}
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-1">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
+                        <div className="flex-1 relative z-10">
+                          <div className="flex items-center gap-3 mb-2">
                             <Badge variant="outline" className="capitalize">
                               {scan.scan_type}
                             </Badge>
@@ -243,8 +285,8 @@ const Dashboard = () => {
                               </Badge>
                             )}
                           </div>
-                          <p className="font-medium">{getTarget(scan)}</p>
-                          <p className="text-sm text-muted-foreground">
+                          <p className="font-semibold text-lg mb-1">{getTarget(scan)}</p>
+                          <p className="text-sm text-muted-foreground flex items-center gap-2">
                             {format(new Date(scan.created_at), 'MMM d, yyyy h:mm a')}
                             {(scan.high_risk_count || 0) > 0 && (
                               <span className="ml-2 text-destructive">
@@ -253,7 +295,11 @@ const Dashboard = () => {
                             )}
                           </p>
                         </div>
-                        <Button variant="ghost" size="sm">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          className="relative z-10 hover:bg-primary/10 hover:text-primary transition-colors"
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </Button>
