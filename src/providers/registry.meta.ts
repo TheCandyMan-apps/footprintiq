@@ -206,3 +206,29 @@ export function getProvidersByType(type: 'email' | 'domain' | 'ip' | 'username' 
 export function getProvidersByCategory(category: ProviderMeta['category']): ProviderMeta[] {
   return PROVIDER_META.filter((p) => p.category === category);
 }
+
+// Username sources for extended coverage
+export type Category = "social" | "forums" | "gaming" | "dating" | "nsfw" | "darkweb" | "other";
+
+export interface UsernameSource {
+  name: string;
+  site: string;
+  pattern: (u: string) => string;
+  category: Category;
+  requiresConsent?: boolean;
+}
+
+export const DATING_SOURCES: UsernameSource[] = [
+  { name: "Tinder", site: "tinder.com", pattern: u => `https://tinder.com/@${encodeURIComponent(u)}`, category: "dating", requiresConsent: true },
+  { name: "Bumble", site: "bumble.com", pattern: u => `https://bumble.com/en/@${encodeURIComponent(u)}`, category: "dating", requiresConsent: true },
+  { name: "Hinge", site: "hinge.co", pattern: u => `https://hinge.co/${encodeURIComponent(u)}`, category: "dating", requiresConsent: true },
+  { name: "OkCupid", site: "okcupid.com", pattern: u => `https://www.okcupid.com/profile/${encodeURIComponent(u)}`, category: "dating", requiresConsent: true },
+  { name: "Match", site: "match.com", pattern: u => `https://www.match.com/profile/${encodeURIComponent(u)}`, category: "dating", requiresConsent: true },
+];
+
+export const NSFW_SOURCES: UsernameSource[] = [
+  { name: "OnlyFans", site: "onlyfans.com", pattern: u => `https://onlyfans.com/${encodeURIComponent(u)}`, category: "nsfw", requiresConsent: true },
+  { name: "Fansly", site: "fansly.com", pattern: u => `https://fansly.com/${encodeURIComponent(u)}`, category: "nsfw", requiresConsent: true },
+];
+
+export const ALL_USERNAME_SOURCES = [...DATING_SOURCES, ...NSFW_SOURCES];

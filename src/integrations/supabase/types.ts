@@ -1867,6 +1867,33 @@ export type Database = {
         }
         Relationships: []
       }
+      credits_ledger: {
+        Row: {
+          created_at: string
+          delta: number
+          id: string
+          reason: string
+          ref_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta: number
+          id?: string
+          reason: string
+          ref_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          delta?: number
+          id?: string
+          reason?: string
+          ref_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       custom_metrics: {
         Row: {
           calculation: Json
@@ -1957,10 +1984,17 @@ export type Database = {
           discovered_at: string | null
           finding_type: string
           id: string
+          is_new: boolean | null
           is_verified: boolean | null
+          meta: Json | null
           metadata: Json | null
+          notified_at: string | null
+          observed_at: string | null
+          provider: string | null
           severity: string
           source_url: string | null
+          target_id: string | null
+          url: string | null
           user_id: string
         }
         Insert: {
@@ -1968,10 +2002,17 @@ export type Database = {
           discovered_at?: string | null
           finding_type: string
           id?: string
+          is_new?: boolean | null
           is_verified?: boolean | null
+          meta?: Json | null
           metadata?: Json | null
+          notified_at?: string | null
+          observed_at?: string | null
+          provider?: string | null
           severity: string
           source_url?: string | null
+          target_id?: string | null
+          url?: string | null
           user_id: string
         }
         Update: {
@@ -1979,11 +2020,51 @@ export type Database = {
           discovered_at?: string | null
           finding_type?: string
           id?: string
+          is_new?: boolean | null
           is_verified?: boolean | null
+          meta?: Json | null
           metadata?: Json | null
+          notified_at?: string | null
+          observed_at?: string | null
+          provider?: string | null
           severity?: string
           source_url?: string | null
+          target_id?: string | null
+          url?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      darkweb_targets: {
+        Row: {
+          active: boolean
+          created_at: string
+          frequency: string
+          id: string
+          last_checked: string | null
+          type: string
+          value: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          frequency?: string
+          id?: string
+          last_checked?: string | null
+          type: string
+          value: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          frequency?: string
+          id?: string
+          last_checked?: string | null
+          type?: string
+          value?: string
+          workspace_id?: string
         }
         Relationships: []
       }
@@ -4562,6 +4643,30 @@ export type Database = {
         }
         Relationships: []
       }
+      sensitive_consents: {
+        Row: {
+          categories: string[]
+          id: string
+          noted_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          categories: string[]
+          id?: string
+          noted_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          categories?: string[]
+          id?: string
+          noted_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       share_links: {
         Row: {
           access_count: number | null
@@ -5597,6 +5702,7 @@ export type Database = {
       generate_case_number: { Args: never; Returns: string }
       generate_incident_number: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
+      get_credits_balance: { Args: { _workspace_id: string }; Returns: number }
       get_workspace_role: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: Database["public"]["Enums"]["workspace_role"]
