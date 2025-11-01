@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import { Shield } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { StructuredData, organizationSchema } from "@/components/StructuredData";
 import { Header } from "@/components/Header";
@@ -15,6 +16,7 @@ import { OrganizationSchema } from "@/components/OrganizationSchema";
 import { shouldAutoStartTour, getTourAutoStartDelay } from "@/lib/tour/firstTime";
 import scanCapabilitiesBg from "@/assets/scan-capabilities-bg.jpg";
 import privacyBadge from "@/assets/privacy-badge.jpg";
+import privacyShield from "@/assets/privacy-shield.jpg";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -201,22 +203,43 @@ export default function Home() {
         </section>
 
         {/* Privacy Trust Note with Image */}
-        <section className="relative mt-16 p-8 rounded-2xl bg-gradient-card border border-primary/20 overflow-hidden group hover:border-primary/40 transition-all duration-300 hover:shadow-glow">
-          {/* Background Icon */}
-          <div className="absolute right-0 top-0 w-48 h-48 opacity-10 group-hover:opacity-15 transition-opacity">
+        <section className="relative mt-20 rounded-3xl overflow-hidden group">
+          <div className="absolute inset-0">
             <img 
-              src={privacyBadge} 
+              src={privacyShield} 
               alt="Privacy protection shield" 
-              className="w-full h-full object-contain"
+              className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-700"
             />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background/90 to-accent/20" />
           </div>
           
-          <div className="relative z-10">
-            <p className="text-center text-muted-foreground leading-relaxed">
-              <strong className="text-foreground text-lg block mb-2">Your Privacy is Protected</strong> 
-              We never sell your data. All scan queries are transient and encrypted. We only query 
-              reputable OSINT providers and delete search data after delivering your results.
-            </p>
+          <div className="relative z-10 p-12">
+            <div className="max-w-3xl mx-auto text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/20 border-2 border-primary/30 mb-6">
+                <Shield className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                Your Privacy is Our Priority
+              </h3>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                We never sell your data. All scan queries are <span className="text-foreground font-semibold">transient and encrypted</span>. 
+                We only query reputable OSINT providers and <span className="text-foreground font-semibold">delete search data</span> after delivering your results.
+              </p>
+              <div className="mt-8 flex justify-center gap-8 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span>256-bit Encryption</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:200ms]" />
+                  <span>Zero Data Retention</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:400ms]" />
+                  <span>GDPR Compliant</span>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
