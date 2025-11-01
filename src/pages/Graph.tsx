@@ -8,6 +8,17 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScoreBadges } from "@/components/ScoreBadges";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   Download,
   ZoomIn,
   ZoomOut,
@@ -15,6 +26,7 @@ import {
   Loader2,
   Network,
   FileJson,
+  Trash2,
 } from "lucide-react";
 import { getUserGraph, getConnectedEntities, exportGraphSnapshot, type EntityNode, type EntityEdge } from "@/lib/graph";
 import { useToast } from "@/hooks/use-toast";
@@ -309,6 +321,22 @@ export default function Graph() {
     }
   };
 
+  const handleClearGraph = () => {
+    if (cyInstance.current) {
+      cyInstance.current.elements().remove();
+      cyInstance.current.destroy();
+      cyInstance.current = null;
+    }
+    setNodes([]);
+    setEdges([]);
+    setSelectedNode(null);
+    
+    toast({
+      title: "Graph Cleared",
+      description: "All nodes and edges have been removed",
+    });
+  };
+
   const score = selectedNode ? {
     riskScore: selectedNode.riskScore,
     confidenceScore: selectedNode.confidenceScore,
@@ -337,11 +365,39 @@ export default function Graph() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleExportJSON}>
+            {nodes.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Clear Graph
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clear Entity Graph?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove all {nodes.length} nodes and {edges.length} edges from the current view. 
+                      This action cannot be undone, but you can reload the graph from your scan data.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleClearGraph}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Clear Graph
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            <Button variant="outline" size="sm" onClick={handleExportJSON} disabled={nodes.length === 0}>
               <FileJson className="w-4 h-4 mr-2" />
               Export JSON
             </Button>
-            <Button variant="outline" size="sm" onClick={handleSaveSnapshot}>
+            <Button variant="outline" size="sm" onClick={handleSaveSnapshot} disabled={nodes.length === 0}>
               <Download className="w-4 h-4 mr-2" />
               Save Snapshot
             </Button>
