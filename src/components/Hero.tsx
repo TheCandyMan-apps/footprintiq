@@ -35,7 +35,7 @@ export const Hero = ({ onStartScan }: HeroProps) => {
           </span>
         </div>
 
-        <h1 className="text-5xl md:text-7xl font-bold mb-8 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent tracking-tight animate-fade-in [animation-delay:100ms]">
+        <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight pb-1 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent tracking-tight animate-fade-in [animation-delay:100ms]">
           Protect Your Digital Identity
         </h1>
         
