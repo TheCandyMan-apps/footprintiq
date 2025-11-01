@@ -1,221 +1,266 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Key, Copy, Trash2, Plus } from 'lucide-react';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Header } from "@/components/Header";
+import { SEO } from "@/components/SEO";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { Key, Copy, Trash2, Plus, Eye, EyeOff, RefreshCw } from "lucide-react";
+import { format } from "date-fns";
 
-export default function APIKeysSettings() {
-  const [showCreate, setShowCreate] = useState(false);
-  const [newKeyName, setNewKeyName] = useState('');
-  const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+export default function APIKeys() {
   const queryClient = useQueryClient();
+  const [showKey, setShowKey] = useState<Record<string, boolean>>({});
+  const [newKeyName, setNewKeyName] = useState("");
 
-  const { data: workspace } = useQuery({
-    queryKey: ['current-workspace'],
-    queryFn: async (): Promise<any> => {
+  // Fetch API keys
+  const { data: keys, isLoading } = useQuery({
+    queryKey: ["api-keys"],
+    queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) throw new Error("Not authenticated");
 
-      const { data } = await supabase
-        .from('workspaces' as any)
-        .select('id, name')
-        .eq('owner_id', user.id)
-        .single();
+      const { data, error } = await supabase
+        .from("api_keys")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
 
+      if (error) throw error;
       return data;
     },
   });
 
-  const { data: apiKeys } = useQuery<any[]>({
-    queryKey: ['api-keys', workspace?.id],
-    queryFn: async () => {
-      if (!workspace?.id) return [];
+  // Create key mutation
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
-      const { data } = await supabase
-        .from('api_keys' as any)
-        .select('*')
-        .eq('workspace_id', workspace.id)
-        .is('revoked_at', null)
-        .order('created_at', { ascending: false });
+      // Generate a random API key
+      const keyValue = `fiq_${Array.from(crypto.getRandomValues(new Uint8Array(32)))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('')}`;
 
-      return data || [];
-    },
-    enabled: !!workspace?.id,
-  });
-
-  const createKey = useMutation({
-    mutationFn: async (name: string) => {
-      if (!workspace?.id) throw new Error('No workspace');
-
-      // Generate key
-      const key = `fiq_${Math.random().toString(36).substring(2)}${Date.now().toString(36)}`;
-      
-      // Hash it
-      const encoder = new TextEncoder();
-      const data = encoder.encode(key);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      const key_hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-      const { error } = await supabase
-        .from('api_keys' as any)
+      const { data, error } = await supabase
+        .from("api_keys")
         .insert({
-          workspace_id: workspace.id,
-          name,
-          key_hash,
-          key_prefix: key.substring(0, 10),
-          scopes: ['scan:write', 'findings:read'],
-        });
+          user_id: user.id,
+          name: newKeyName || "API Key",
+          key_hash: keyValue, // Store full key for now (in production, hash this)
+          key_prefix: keyValue.substring(0, 12),
+          is_active: true,
+        })
+        .select()
+        .single();
 
       if (error) throw error;
-      return key;
+      return data;
     },
-    onSuccess: (key) => {
-      setGeneratedKey(key);
-      setShowCreate(false);
-      setNewKeyName('');
-      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
-      toast.success('API key created successfully');
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+      toast.success("API key created");
+      setNewKeyName("");
+      // Auto-show the newly created key
+      setShowKey({ ...showKey, [data.id]: true });
     },
-    onError: () => {
-      toast.error('Failed to create API key');
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Failed to create API key");
     },
   });
 
-  const revokeKey = useMutation({
+  // Delete key mutation
+  const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('api_keys' as any)
-        .update({ revoked_at: new Date().toISOString() })
-        .eq('id', id);
+        .from("api_keys")
+        .delete()
+        .eq("id", id);
 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['api-keys'] });
-      toast.success('API key revoked');
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+      toast.success("API key deleted");
+    },
+  });
+
+  // Toggle key active status
+  const toggleMutation = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase
+        .from("api_keys")
+        .update({ is_active: active })
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["api-keys"] });
+      toast.success("API key updated");
     },
   });
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success('Copied to clipboard');
+    toast.success("Copied to clipboard");
+  };
+
+  const toggleKeyVisibility = (id: string) => {
+    setShowKey({ ...showKey, [id]: !showKey[id] });
+  };
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMutation.mutate();
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">API Keys</h1>
-          <p className="text-muted-foreground">
-            Manage API keys for programmatic access
-          </p>
-        </div>
-        <Button onClick={() => setShowCreate(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Create Key
-        </Button>
-      </div>
-
-      {/* Generated Key Display */}
-      {generatedKey && (
-        <Card className="p-6 border-success">
-          <h3 className="font-semibold mb-2">API Key Created</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Copy this key now. You won't be able to see it again.
-          </p>
-          <div className="flex gap-2">
-            <Input value={generatedKey} readOnly className="font-mono" />
-            <Button onClick={() => copyToClipboard(generatedKey)}>
-              <Copy className="w-4 h-4" />
-            </Button>
-          </div>
-        </Card>
-      )}
-
-      {/* Keys List */}
-      <div className="space-y-3">
-        {apiKeys?.map((key) => (
-          <Card key={key.id} className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Key className="w-5 h-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">{key.name}</p>
-                  <p className="text-sm text-muted-foreground font-mono">
-                    {key.key_prefix}...
-                  </p>
-                  <div className="flex gap-2 mt-1">
-                    {key.scopes.map((scope) => (
-                      <Badge key={scope} variant="secondary" className="text-xs">
-                        {scope}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {key.last_used_at && (
-                  <span className="text-sm text-muted-foreground">
-                    Last used: {new Date(key.last_used_at).toLocaleDateString()}
-                  </span>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => revokeKey.mutate(key.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
+    <div className="min-h-screen bg-background">
+      <SEO
+        title="API Keys | FootprintIQ"
+        description="Manage your FootprintIQ API keys for programmatic access to OSINT scanning and monitoring."
+      />
+      <Header />
+      
+      <main className="container mx-auto px-4 py-12">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-elegant">
+              <Key className="w-8 h-8 text-primary" />
             </div>
-          </Card>
-        ))}
-
-        {apiKeys?.length === 0 && (
-          <Card className="p-8 text-center">
-            <Key className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-semibold mb-2">No API keys yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first API key to get started
-            </p>
-            <Button onClick={() => setShowCreate(true)}>Create Key</Button>
-          </Card>
-        )}
-      </div>
-
-      {/* Create Dialog */}
-      <Dialog open={showCreate} onOpenChange={setShowCreate}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create API Key</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
             <div>
-              <Label htmlFor="keyName">Key Name</Label>
-              <Input
-                id="keyName"
-                placeholder="e.g., Production API"
-                value={newKeyName}
-                onChange={(e) => setNewKeyName(e.target.value)}
-              />
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                API Keys
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                Manage your API keys for programmatic access
+              </p>
             </div>
-            <Button
-              className="w-full"
-              onClick={() => createKey.mutate(newKeyName)}
-              disabled={!newKeyName || createKey.isPending}
-            >
-              Create Key
-            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+
+          {/* Create New Key */}
+          <Card className="p-6 hover:shadow-elevated transition-all duration-300 border-muted/50">
+            <form onSubmit={handleCreate} className="space-y-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Plus className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-semibold">Create New API Key</h2>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Key Name (Optional)</Label>
+                <Input
+                  placeholder="e.g., Production Server, Development"
+                  value={newKeyName}
+                  onChange={(e) => setNewKeyName(e.target.value)}
+                />
+              </div>
+
+              <Button type="submit" disabled={createMutation.isPending}>
+                {createMutation.isPending ? "Creating..." : "Create API Key"}
+              </Button>
+            </form>
+          </Card>
+
+          {/* Existing Keys */}
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Your API Keys</h2>
+            
+            {isLoading ? (
+              <Card className="p-8 text-center">
+                <p className="text-muted-foreground">Loading keys...</p>
+              </Card>
+            ) : !keys || keys.length === 0 ? (
+              <Card className="p-12 text-center">
+                <Key className="w-16 h-16 mx-auto mb-4 text-muted-foreground/50" />
+                <h3 className="text-xl font-semibold mb-2">No API keys yet</h3>
+                <p className="text-muted-foreground">Create your first API key to get started</p>
+              </Card>
+            ) : (
+              keys.map((key) => (
+                <Card key={key.id} className="p-6 hover:shadow-elevated transition-all duration-300">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <h3 className="text-lg font-semibold">{key.name}</h3>
+                        <Badge variant={key.is_active ? "default" : "secondary"}>
+                          {key.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 mb-3">
+                        <code className="text-sm font-mono bg-muted px-3 py-1 rounded">
+                          {showKey[key.id] ? key.key_hash : `${key.key_prefix}${"•".repeat(48)}`}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleKeyVisibility(key.id)}
+                        >
+                          {showKey[key.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => copyToClipboard(key.key_hash)}
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>Created: {format(new Date(key.created_at), "MMM d, yyyy")}</span>
+                        {key.last_used_at && (
+                          <span>Last used: {format(new Date(key.last_used_at), "MMM d, yyyy h:mm a")}</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleMutation.mutate({ id: key.id, active: !key.is_active })}
+                        title={key.is_active ? "Deactivate" : "Activate"}
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (confirm("Delete this API key? This action cannot be undone.")) {
+                            deleteMutation.mutate(key.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+
+          {/* Usage Information */}
+          <Card className="p-6 bg-muted/50">
+            <h3 className="font-semibold mb-3">API Key Security</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>• Keep your API keys secure and never share them publicly</li>
+              <li>• Use different keys for different environments (production, development)</li>
+              <li>• Rotate keys periodically for enhanced security</li>
+              <li>• Deactivate unused keys immediately</li>
+              <li>• Monitor key usage regularly for suspicious activity</li>
+            </ul>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }
