@@ -109,12 +109,21 @@ export const Header = () => {
                   <Link to="/dashboard" className="cursor-pointer">Dashboard</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link to="/scan/advanced" className="cursor-pointer">Advanced Scan</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/graph" className="cursor-pointer">Entity Graph</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/search" className="cursor-pointer">Search Entities</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/dark-web-monitoring" className="cursor-pointer">Dark Web Monitoring</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/monitoring" className="cursor-pointer">Alerts & Monitoring</Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/ai-analyst" className="cursor-pointer">AI Analyst</Link>
                 </DropdownMenuItem>
@@ -125,10 +134,14 @@ export const Header = () => {
                   <Link to="/cases" className="cursor-pointer">Cases</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/monitoring" className="cursor-pointer">Monitoring</Link>
+                  <Link to="/reports" className="cursor-pointer">Reports</Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/api-docs" className="cursor-pointer">API Documentation</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/reports" className="cursor-pointer">Reports</Link>
+                  <Link to="/settings/api-keys" className="cursor-pointer">API Keys</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
