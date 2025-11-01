@@ -39,7 +39,7 @@ export const Hero = ({ onStartScan }: HeroProps) => {
           Protect Your Digital Identity
         </h1>
         
-        <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed animate-fade-in [animation-delay:200ms]">
+        <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed pb-2 animate-fade-in [animation-delay:200ms]">
           Scan email, username, domain, phone, and IP across <span className="text-primary font-semibold">trusted OSINT sources</span>. 
           Discover breaches and exposures, then <span className="text-accent font-semibold">remove your data automatically</span> from 100+ data brokers.
         </p>
@@ -113,7 +113,7 @@ export const Hero = ({ onStartScan }: HeroProps) => {
                 <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
                   Your credentials could be for sale right now
                 </h3>
-                <p className="text-white/90 text-lg">
+                <p className="text-white/90 text-lg pb-1">
                   Take action before it's too late
                 </p>
               </div>
@@ -141,8 +141,8 @@ const FeatureCard = ({ icon, title, description, delay = "0ms" }: FeatureCardPro
       <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-6 mx-auto text-primary group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-primary/10">
         {icon}
       </div>
-      <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors">{title}</h3>
-      <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+      <h3 className="text-xl font-bold mb-3 group-hover:text-primary transition-colors leading-tight">{title}</h3>
+      <p className="text-sm text-muted-foreground leading-relaxed pb-1">{description}</p>
     </div>
   );
 };
