@@ -205,6 +205,9 @@ function RouterContent() {
           <Route path="/legal/dpa" element={<DPA />} />
           <Route path="/scan/advanced" element={<AdvancedScan />} />
           <Route path="/buy-credits" element={<BuyCredits />} />
+          <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
+          <Route path="/api-docs" element={<ApiDocs />} />
+          <Route path="/settings/api-keys" element={<APIKeys />} />
           <Route path="/partners" element={<PartnersIndex />} />
           <Route path="/partners/dashboard" element={<PartnerDashboard />} />
           <Route path="/global-index" element={<GlobalIndex />} />

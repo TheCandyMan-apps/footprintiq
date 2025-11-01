@@ -1,340 +1,181 @@
 import { Header } from "@/components/Header";
 import { SEO } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Code, Key, Book, Zap, Shield, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Code, Key, Zap, Shield } from "lucide-react";
 
 export default function ApiDocs() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
         title="API Documentation | FootprintIQ"
-        description="Complete API documentation for FootprintIQ OSINT platform. Integrate scanning, monitoring, and intelligence gathering into your workflows."
+        description="Complete API reference for FootprintIQ OSINT platform. Integrate powerful intelligence gathering into your applications."
       />
       <Header />
-      
+
       <main className="container mx-auto px-4 py-12">
-        <div className="max-w-6xl mx-auto space-y-8">
+        <div className="max-w-4xl mx-auto space-y-8">
           {/* Header */}
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-elegant">
+          <div className="space-y-4">
+            <div className="inline-flex p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5">
               <Code className="w-8 h-8 text-primary" />
             </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                API Documentation
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Integrate FootprintIQ's OSINT capabilities into your applications
-              </p>
-            </div>
+            <h1 className="text-4xl font-bold">API Documentation</h1>
+            <p className="text-muted-foreground text-lg">
+              Integrate FootprintIQ's OSINT capabilities into your applications
+            </p>
           </div>
 
-          {/* Quick Links */}
-          <div className="grid md:grid-cols-3 gap-4">
-            <Card className="p-6 hover:shadow-elevated transition-all duration-300">
-              <Key className="w-8 h-8 text-primary mb-3" />
-              <h3 className="font-semibold mb-2">Get API Keys</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Generate and manage your API keys
-              </p>
-              <Link to="/settings/api-keys">
-                <Button variant="outline" size="sm" className="w-full">
-                  Manage Keys <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-            </Card>
-
-            <Card className="p-6 hover:shadow-elevated transition-all duration-300">
-              <Zap className="w-8 h-8 text-primary mb-3" />
-              <h3 className="font-semibold mb-2">Quick Start</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Get started with your first API call
-              </p>
-              <Button variant="outline" size="sm" className="w-full">
-                View Guide <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Card>
-
-            <Card className="p-6 hover:shadow-elevated transition-all duration-300">
-              <Shield className="w-8 h-8 text-primary mb-3" />
-              <h3 className="font-semibold mb-2">Rate Limits</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Understand usage limits and quotas
-              </p>
-              <Button variant="outline" size="sm" className="w-full">
-                View Limits <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Card>
-          </div>
-
-          <Tabs defaultValue="scanning" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="scanning">Scanning</TabsTrigger>
-              <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
-              <TabsTrigger value="findings">Findings</TabsTrigger>
-              <TabsTrigger value="reports">Reports</TabsTrigger>
-            </TabsList>
-
-            {/* Scanning API */}
-            <TabsContent value="scanning" className="space-y-6 mt-6">
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold">POST /api/v1/scan</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Initiate a comprehensive OSINT scan
-                    </p>
-                  </div>
-                  <Badge>Enterprise</Badge>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Request Body</h4>
-                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-{`{
-  "type": "email" | "username" | "domain" | "phone",
-  "value": "target@example.com",
-  "options": {
-    "providers": ["hibp", "intelx", "dehashed"],
-    "sensitiveSources": ["dating", "nsfw", "darkweb"],
-    "darkweb": {
-      "enabled": true,
-      "depth": 2,
-      "maxPages": 10
-    }
-  }
-}`}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2">Response</h4>
-                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-{`{
-  "scanId": "scan_abc123",
-  "status": "processing",
-  "counts": {
-    "total": 0,
-    "byProvider": {}
-  },
-  "estimatedDuration": 15000
-}`}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2">Example (cURL)</h4>
-                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
-{`curl -X POST https://api.footprintiq.app/v1/scan \\
+          {/* Quick Start */}
+          <Card className="p-6">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Zap className="w-6 h-6 text-primary" />
+              Quick Start
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold mb-2">1. Get your API Key</h3>
+                <p className="text-sm text-muted-foreground">
+                  Navigate to Settings → API Keys and generate a new key
+                </p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-2">2. Make your first request</h3>
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+{`curl -X POST https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/scan/orchestrator \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "type": "email",
-    "value": "test@example.com",
-    "options": {
-      "providers": ["hibp", "dehashed"]
-    }
+    "target": "john.doe@example.com",
+    "scanType": "email",
+    "providers": ["hibp", "intelx", "dehashed"]
   }'`}
-                    </pre>
-                  </div>
-                </div>
+                </pre>
+              </div>
+            </div>
+          </Card>
+
+          {/* API Reference */}
+          <Tabs defaultValue="scan" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="scan">Scan</TabsTrigger>
+              <TabsTrigger value="darkweb">Dark Web</TabsTrigger>
+              <TabsTrigger value="credits">Credits</TabsTrigger>
+              <TabsTrigger value="consent">Consent</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="scan" className="space-y-4">
+              <Card className="p-6">
+                <h3 className="text-xl font-bold mb-2">POST /scan/orchestrator</h3>
+                <p className="text-muted-foreground mb-4">Execute an OSINT scan on a target</p>
+                
+                <h4 className="font-semibold mb-2">Request Body</h4>
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm mb-4">
+{`{
+  "target": "string",          // Email, username, phone, domain, or IP
+  "scanType": "string",        // email|username|phone|domain|ip
+  "providers": ["string"],     // Optional: specific providers to use
+  "options": {
+    "deepScan": boolean,       // Use advanced features (costs more credits)
+    "includeNSFW": boolean     // Include dating/NSFW platforms
+  }
+}`}
+                </pre>
+
+                <h4 className="font-semibold mb-2">Response</h4>
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+{`{
+  "scanId": "uuid",
+  "status": "pending|processing|completed|failed",
+  "findings": [...],
+  "creditsUsed": number,
+  "completedAt": "timestamp"
+}`}
+                </pre>
               </Card>
             </TabsContent>
 
-            {/* Monitoring API */}
-            <TabsContent value="monitoring" className="space-y-6 mt-6">
+            <TabsContent value="darkweb" className="space-y-4">
               <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold">POST /api/v1/monitoring/targets</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Create a new dark web monitoring target
-                    </p>
-                  </div>
-                  <Badge>Professional</Badge>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Request Body</h4>
-                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
+                <h3 className="text-xl font-bold mb-2">POST /darkweb/monitor</h3>
+                <p className="text-muted-foreground mb-4">Add a target for continuous dark web monitoring</p>
+                
+                <h4 className="font-semibold mb-2">Request Body</h4>
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
 {`{
-  "type": "email" | "username" | "domain" | "wallet" | "keyword",
-  "value": "target@example.com",
-  "frequency": "daily" | "weekly",
-  "alertChannels": ["email", "slack"]
+  "identifier": "string",      // Email, username, or domain
+  "notifyEmail": "string"      // Optional: custom notification email
 }`}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2">Response</h4>
-                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-{`{
-  "id": "target_xyz789",
-  "type": "email",
-  "value": "target@example.com",
-  "frequency": "daily",
-  "active": true,
-  "createdAt": "2025-01-15T10:30:00Z"
-}`}
-                    </pre>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold">GET /api/v1/monitoring/targets</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      List all monitoring targets
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Query Parameters</h4>
-                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-{`?active=true&type=email&limit=50&offset=0`}
-                    </pre>
-                  </div>
-                </div>
+                </pre>
               </Card>
             </TabsContent>
 
-            {/* Findings API */}
-            <TabsContent value="findings" className="space-y-6 mt-6">
+            <TabsContent value="credits" className="space-y-4">
               <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold">GET /api/v1/findings</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Retrieve scan findings with filtering
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Query Parameters</h4>
-                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-{`?workspace=ws_abc&since=2025-01-01&category=breach&severity=high&limit=100`}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2">Response</h4>
-                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
+                <h3 className="text-xl font-bold mb-2">GET /credits/balance</h3>
+                <p className="text-muted-foreground mb-4">Check your current credit balance</p>
+                
+                <h4 className="font-semibold mb-2">Response</h4>
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
 {`{
-  "findings": [
-    {
-      "id": "finding_123",
-      "type": "credential_breach",
-      "severity": "high",
-      "confidence": 0.95,
-      "provider": "dehashed",
-      "observedAt": "2025-01-10T14:22:00Z",
-      "evidence": [
-        { "key": "email", "value": "user@example.com" },
-        { "key": "password", "value": "[REDACTED]" }
-      ]
-    }
-  ],
-  "total": 247,
-  "page": 1,
-  "limit": 100
+  "balance": number,
+  "subscriptionTier": "free|basic|premium|enterprise"
 }`}
-                    </pre>
-                  </div>
-                </div>
+                </pre>
               </Card>
             </TabsContent>
 
-            {/* Reports API */}
-            <TabsContent value="reports" className="space-y-6 mt-6">
+            <TabsContent value="consent" className="space-y-4">
               <Card className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold">GET /api/v1/reports/:id.pdf</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Generate and download PDF report
-                    </p>
-                  </div>
-                  <Badge>Professional</Badge>
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Headers</h4>
-                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-{`Authorization: Bearer YOUR_API_KEY
-Accept: application/pdf`}
-                    </pre>
-                  </div>
-
-                  <div>
-                    <h4 className="font-medium mb-2">Response</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Binary PDF file with comprehensive scan results, charts, and AI analysis
-                    </p>
-                  </div>
-                </div>
+                <h3 className="text-xl font-bold mb-2">POST /consent/verify</h3>
+                <p className="text-muted-foreground mb-4">Verify consent before scanning a target</p>
+                
+                <h4 className="font-semibold mb-2">Request Body</h4>
+                <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+{`{
+  "target": "string",
+  "consentType": "self|authorized|legal",
+  "evidence": "string"         // Reason or authorization details
+}`}
+                </pre>
               </Card>
             </TabsContent>
           </Tabs>
 
-          {/* Authentication */}
+          {/* Rate Limits */}
           <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
               <Shield className="w-6 h-6 text-primary" />
-              <h2 className="text-2xl font-bold">Authentication</h2>
-            </div>
-            <p className="text-muted-foreground mb-4">
-              All API requests require authentication using a Bearer token in the Authorization header.
-            </p>
-            <pre className="bg-muted p-4 rounded-lg">
-{`Authorization: Bearer YOUR_API_KEY`}
-            </pre>
-            <div className="mt-4">
-              <Link to="/settings/api-keys">
-                <Button>
-                  <Key className="w-4 h-4 mr-2" />
-                  Manage API Keys
-                </Button>
-              </Link>
+              Rate Limits
+            </h2>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">API Endpoints</span>
+                <span className="font-medium">1,000 requests/hour</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Search Endpoints</span>
+                <span className="font-medium">50 requests/hour</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Analytics Endpoints</span>
+                <span className="font-medium">100 requests/hour</span>
+              </div>
             </div>
           </Card>
 
-          {/* Rate Limits */}
+          {/* Authentication */}
           <Card className="p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Zap className="w-6 h-6 text-primary" />
-              <h2 className="text-2xl font-bold">Rate Limits</h2>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Analyst Basic</span>
-                <Badge variant="outline">60 requests/min</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Professional OSINT</span>
-                <Badge variant="outline">300 requests/min</Badge>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Enterprise Intelligence</span>
-                <Badge variant="outline">1000 requests/min</Badge>
-              </div>
-            </div>
-            <p className="text-sm text-muted-foreground mt-4">
-              Rate limit headers are included in all responses: X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Key className="w-6 h-6 text-primary" />
+              Authentication
+            </h2>
+            <p className="text-muted-foreground mb-4">
+              All API requests require an API key passed in the Authorization header:
             </p>
+            <pre className="bg-muted p-4 rounded-lg overflow-x-auto text-sm">
+              Authorization: Bearer YOUR_API_KEY
+            </pre>
           </Card>
         </div>
       </main>

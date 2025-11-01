@@ -1,182 +1,123 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { errorResponse } from "../_shared/errors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
-};
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+  apiVersion: "2025-08-27.basil",
+});
 
-// Webhook event types
-const WEBHOOK_EVENTS = {
-  SUBSCRIPTION_CREATED: "customer.subscription.created",
-  SUBSCRIPTION_UPDATED: "customer.subscription.updated",
-  SUBSCRIPTION_DELETED: "customer.subscription.deleted",
-  PAYMENT_SUCCEEDED: "invoice.payment_succeeded",
-  PAYMENT_FAILED: "invoice.payment_failed",
-  CHECKOUT_COMPLETED: "checkout.session.completed",
-} as const;
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+);
 
 serve(async (req) => {
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  const signature = req.headers.get("stripe-signature");
+  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+
+  if (!signature || !webhookSecret) {
+    console.error("Missing signature or webhook secret");
+    return new Response("Webhook Error: Missing signature", { status: 400 });
   }
 
-  console.log("[STRIPE-WEBHOOK] Received webhook request");
-
   try {
-    // Get Stripe signature
-    const signature = req.headers.get("stripe-signature");
-    if (!signature) {
-      console.error("[STRIPE-WEBHOOK] Missing stripe-signature header");
-      return errorResponse(
-        new Error("Missing stripe-signature header"),
-        401,
-        'WEBHOOK_VERIFICATION_FAILED',
-        corsHeaders
-      );
-    }
+    const body = await req.text();
+    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
 
-    // Get webhook secret
-    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-    if (!webhookSecret) {
-      console.error("[STRIPE-WEBHOOK] STRIPE_WEBHOOK_SECRET not configured");
-      return errorResponse(
-        new Error("Webhook not configured"),
-        500,
-        'SERVER_ERROR',
-        corsHeaders
-      );
-    }
+    console.log(`Processing event: ${event.type}`);
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
-
-    // Get raw body for signature verification
-    const payload = await req.text();
-
-    // Verify webhook signature
-    let event: Stripe.Event;
-    try {
-      event = stripe.webhooks.constructEvent(payload, signature, webhookSecret);
-      console.log("[STRIPE-WEBHOOK] Signature verified successfully", {
-        eventType: event.type,
-        eventId: event.id,
-      });
-    } catch (err) {
-      console.error("[STRIPE-WEBHOOK] Signature verification failed:", err);
-      return errorResponse(
-        err,
-        401,
-        'WEBHOOK_VERIFICATION_FAILED',
-        corsHeaders
-      );
-    }
-
-    // Initialize Supabase client with service role
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      { auth: { persistSession: false } }
-    );
-
-    // Process webhook event
     switch (event.type) {
-      case WEBHOOK_EVENTS.SUBSCRIPTION_CREATED:
-      case WEBHOOK_EVENTS.SUBSCRIPTION_UPDATED: {
-        const subscription = event.data.object as Stripe.Subscription;
-        console.log("[STRIPE-WEBHOOK] Processing subscription event:", {
-          subscriptionId: subscription.id,
-          customerId: subscription.customer,
-          status: subscription.status,
-        });
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        
+        // Extract metadata
+        const userId = session.metadata?.user_id;
+        const credits = parseInt(session.metadata?.credits || "0");
+        const packageId = session.metadata?.package;
 
-        if (subscription.status === "active") {
-          // Get customer email
-          const customer = await stripe.customers.retrieve(subscription.customer as string);
-          const customerEmail = (customer as Stripe.Customer).email;
-
-          if (!customerEmail) {
-            console.error("[STRIPE-WEBHOOK] No email found for customer");
-            break;
-          }
-
-          // Get product ID from subscription
-          const productId = subscription.items.data[0]?.price?.product as string;
-
-          // Map product ID to subscription tier
-          let tier: "free" | "basic" | "premium" | "enterprise" = "premium";
-          // You can customize this mapping based on your actual product IDs
-          // Example: if (productId === 'prod_basic') tier = 'basic';
-
-          // Find user by email
-          const { data: authUser, error: authError } = await supabase.auth.admin.listUsers();
-          if (authError) {
-            console.error("[STRIPE-WEBHOOK] Error listing users:", authError);
-            break;
-          }
-
-          const user = authUser.users.find((u) => u.email === customerEmail);
-          if (!user) {
-            console.error("[STRIPE-WEBHOOK] User not found for email:", customerEmail);
-            break;
-          }
-
-          // Update subscription in user_roles
-          const subscriptionEnd = new Date(subscription.current_period_end * 1000);
-          const { error: updateError } = await supabase
-            .from("user_roles")
-            .update({
-              subscription_tier: tier,
-              subscription_expires_at: subscriptionEnd.toISOString(),
-            })
-            .eq("user_id", user.id);
-
-          if (updateError) {
-            console.error("[STRIPE-WEBHOOK] Error updating subscription:", updateError);
-          } else {
-            console.log("[STRIPE-WEBHOOK] Subscription updated successfully:", {
-              userId: user.id,
-              tier,
-              expiresAt: subscriptionEnd.toISOString(),
-            });
-          }
+        if (!userId || !credits) {
+          console.error("Missing user_id or credits in session metadata");
+          break;
         }
+
+        console.log(`Crediting ${credits} to user ${userId} for package ${packageId}`);
+
+        // Add credits to user's account
+        const { error: creditError } = await supabase
+          .from("credits_ledger")
+          .insert({
+            workspace_id: userId,
+            delta: credits,
+            reason: `Credit purchase: ${packageId} package`,
+            reference_type: "stripe_payment",
+            reference_id: session.id,
+          });
+
+        if (creditError) {
+          console.error("Failed to credit account:", creditError);
+          throw creditError;
+        }
+
+        console.log(`Successfully credited ${credits} to user ${userId}`);
         break;
       }
 
-      case WEBHOOK_EVENTS.SUBSCRIPTION_DELETED: {
+      case "customer.subscription.created":
+      case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        console.log("[STRIPE-WEBHOOK] Processing subscription deletion:", {
-          subscriptionId: subscription.id,
-          customerId: subscription.customer,
-        });
+        const customerId = subscription.customer as string;
 
-        // Get customer email
-        const customer = await stripe.customers.retrieve(subscription.customer as string);
-        const customerEmail = (customer as Stripe.Customer).email;
+        // Get customer details
+        const customer = await stripe.customers.retrieve(customerId);
+        if (customer.deleted) break;
 
-        if (!customerEmail) {
-          console.error("[STRIPE-WEBHOOK] No email found for customer");
-          break;
-        }
+        const email = customer.email;
+        if (!email) break;
 
         // Find user by email
-        const { data: authUser, error: authError } = await supabase.auth.admin.listUsers();
-        if (authError) {
-          console.error("[STRIPE-WEBHOOK] Error listing users:", authError);
-          break;
+        const { data: userData } = await supabase.auth.admin.listUsers();
+        const user = userData?.users.find(u => u.email === email);
+        if (!user) break;
+
+        // Map Stripe price to subscription tier
+        const priceId = subscription.items.data[0]?.price.id;
+        let tier: "free" | "basic" | "premium" | "enterprise" = "free";
+        
+        if (priceId === Deno.env.get("STRIPE_PRICE_ANALYST")) tier = "basic";
+        else if (priceId === Deno.env.get("STRIPE_PRICE_PRO")) tier = "premium";
+        else if (priceId === Deno.env.get("STRIPE_PRICE_ENTERPRISE")) tier = "enterprise";
+
+        // Update user subscription
+        const { error: updateError } = await supabase
+          .from("user_roles")
+          .update({
+            subscription_tier: tier,
+            subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+          })
+          .eq("user_id", user.id);
+
+        if (updateError) {
+          console.error("Failed to update subscription:", updateError);
+          throw updateError;
         }
 
-        const user = authUser.users.find((u) => u.email === customerEmail);
-        if (!user) {
-          console.error("[STRIPE-WEBHOOK] User not found for email:", customerEmail);
-          break;
-        }
+        console.log(`Updated subscription for ${email} to ${tier}`);
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+
+        const customer = await stripe.customers.retrieve(customerId);
+        if (customer.deleted) break;
+
+        const email = customer.email;
+        if (!email) break;
+
+        const { data: userData } = await supabase.auth.admin.listUsers();
+        const user = userData?.users.find(u => u.email === email);
+        if (!user) break;
 
         // Downgrade to free tier
         const { error: updateError } = await supabase
@@ -188,56 +129,32 @@ serve(async (req) => {
           .eq("user_id", user.id);
 
         if (updateError) {
-          console.error("[STRIPE-WEBHOOK] Error downgrading subscription:", updateError);
-        } else {
-          console.log("[STRIPE-WEBHOOK] User downgraded to free tier:", user.id);
+          console.error("Failed to downgrade subscription:", updateError);
+          throw updateError;
         }
-        break;
-      }
 
-      case WEBHOOK_EVENTS.PAYMENT_FAILED: {
-        const invoice = event.data.object as Stripe.Invoice;
-        console.log("[STRIPE-WEBHOOK] Payment failed:", {
-          invoiceId: invoice.id,
-          customerId: invoice.customer,
-          amount: invoice.amount_due,
-        });
-
-        // Get customer email for notification
-        const customer = await stripe.customers.retrieve(invoice.customer as string);
-        const customerEmail = (customer as Stripe.Customer).email;
-
-        console.log("[STRIPE-WEBHOOK] Payment failure notification needed for:", customerEmail);
-        // TODO: Send email notification to user about payment failure
-        // Implement grace period logic here if needed
-        break;
-      }
-
-      case WEBHOOK_EVENTS.CHECKOUT_COMPLETED: {
-        const session = event.data.object as Stripe.Checkout.Session;
-        console.log("[STRIPE-WEBHOOK] Checkout completed:", {
-          sessionId: session.id,
-          customerId: session.customer,
-          subscriptionId: session.subscription,
-        });
-        // Subscription will be handled by subscription.created event
+        console.log(`Downgraded ${email} to free tier`);
         break;
       }
 
       default:
-        console.log("[STRIPE-WEBHOOK] Unhandled event type:", event.type);
+        console.log(`Unhandled event type: ${event.type}`);
     }
 
-    // Return success response
+    return new Response(JSON.stringify({ received: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("Webhook error:", error);
     return new Response(
-      JSON.stringify({ received: true, eventType: event.type }),
+      JSON.stringify({
+        error: error instanceof Error ? error.message : "Webhook handler failed",
+      }),
       {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { "Content-Type": "application/json" },
       }
     );
-  } catch (error) {
-    console.error("[STRIPE-WEBHOOK] Error processing webhook:", error);
-    return errorResponse(error, 500, 'SERVER_ERROR', corsHeaders);
   }
 });
