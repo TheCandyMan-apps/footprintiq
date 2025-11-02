@@ -157,7 +157,8 @@ const ResultsDetail = () => {
         .single();
       
       if (!error && data) {
-        // Admins get premium access
+        // UI-only check - actual authorization enforced server-side via RLS policies
+        // Admins get premium access (display hint only)
         if (data.role === 'admin') {
           setSubscriptionTier('premium');
         } else {

@@ -5627,6 +5627,41 @@ export type Database = {
         }
         Relationships: []
       }
+      workspace_features: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          feature_name: string
+          id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          feature_name: string
+          id?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          feature_name?: string
+          id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_features_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_members: {
         Row: {
           created_at: string
@@ -5742,6 +5777,10 @@ export type Database = {
           _user_id: string
         }
         Returns: Json
+      }
+      workspace_has_feature: {
+        Args: { _feature_name: string; _workspace_id: string }
+        Returns: boolean
       }
     }
     Enums: {

@@ -25,13 +25,31 @@ serve(async (req) => {
   if (req.method !== 'POST') return bad(405, 'method_not_allowed');
   if (!allowedOrigin(req)) return bad(403, 'forbidden');
 
+  // Authenticate user via JWT
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return bad(401, 'missing_authorization_header');
+  }
+
   const startTime = Date.now();
 
   try {
+    // Use anon key for RLS-protected operations
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader }
+        }
+      }
     );
+
+    // Verify user authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return bad(401, 'invalid_or_expired_token');
+    }
 
     const { type, value, workspaceId, options = {} }: ScanRequest = await req.json();
 

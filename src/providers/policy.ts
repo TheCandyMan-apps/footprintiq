@@ -4,6 +4,15 @@ interface PolicyCheck {
   gatedBy?: string;
 }
 
+/**
+ * SECURITY NOTE: Policy checks are now enforced server-side via workspace_features table.
+ * This client-side module is deprecated and kept only for backward compatibility.
+ * All feature gating is handled in edge functions via workspace_has_feature() database function.
+ * 
+ * DO NOT rely on these checks for security - they are UI hints only.
+ */
+
+// UI-only feature flags (NOT security boundaries - server-side validation is required)
 const ALLOW_DARKWEB_SOURCES = import.meta.env.VITE_ALLOW_DARKWEB_SOURCES === "true";
 const ALLOW_ENTERPRISE_ENRICHMENT = import.meta.env.VITE_ALLOW_ENTERPRISE_ENRICHMENT === "true";
 
@@ -20,6 +29,10 @@ const POLICY_GATES: Record<string, { flag: boolean; tag: string; description: st
   },
 };
 
+/**
+ * @deprecated Use server-side workspace_has_feature() function instead
+ * This function provides UI hints only - not a security boundary
+ */
 export async function ensureAllowed(providerId: string, policyTag?: string): Promise<PolicyCheck> {
   // If no policy tag, allow by default
   if (!policyTag) {
@@ -44,6 +57,9 @@ export async function ensureAllowed(providerId: string, policyTag?: string): Pro
   return { allowed: true };
 }
 
+/**
+ * @deprecated For UI display only
+ */
 export function getPolicyStatus(): Record<string, { enabled: boolean; description: string }> {
   const status: Record<string, any> = {};
   

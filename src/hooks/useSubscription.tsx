@@ -29,13 +29,15 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // Check if user is admin first
+      // UI-only check - actual authorization enforced server-side via RLS policies
+      // and has_role() function calls in edge functions
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role, subscription_tier')
         .eq('user_id', session.user.id)
         .single();
 
+      // Display admin users as premium (UI hint only)
       if (roleData?.role === 'admin') {
         setSubscriptionTier('premium');
         return;

@@ -11,9 +11,34 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Authenticate user via JWT
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'missing_authorization_header' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
+    // Verify authentication (we don't need user object, just validation)
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.75.0');
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'invalid_or_expired_token' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { provider, target, type, options = {} } = await req.json();
-    console.log(`[provider-proxy] ${provider} request for ${target} (${type})`);
+    console.log(`[provider-proxy] ${provider} request for ${target} (${type}) by user ${user.id}`);
 
     let result: any;
 

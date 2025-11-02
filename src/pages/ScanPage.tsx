@@ -44,6 +44,7 @@ const ScanPage = () => {
       
       if (userRole) {
         setSubscriptionTier(userRole.subscription_tier);
+        // UI-only check - actual authorization enforced server-side via RLS policies
         setIsAdmin(userRole.role === 'admin');
       } else {
         // default to free when no row exists
@@ -74,7 +75,8 @@ const ScanPage = () => {
   }, [navigate]);
 
   const handleFormSubmit = (data: ScanFormData) => {
-    // Admin users have unrestricted access
+    // UI-only check - server enforces actual limits via RLS and edge functions
+    // Admin users have unrestricted access (UI hint)
     if (!isAdmin && subscriptionTier === "free" && scanCount >= 1) {
       setShowUpgradeDialog(true);
       return;
