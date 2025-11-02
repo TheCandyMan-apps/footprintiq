@@ -14,6 +14,18 @@ interface AlertPayload {
   snippet: string;
 }
 
+/**
+ * Escape HTML entities to prevent XSS injection in email content
+ */
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders() });
@@ -87,16 +99,16 @@ serve(async (req) => {
         <div class="container">
           <div class="header">
             <h1 style="margin: 0;">🚨 Dark Web Alert</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">New finding matching your keyword: "${keyword}"</p>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">New finding matching your keyword: "${escapeHtml(keyword)}"</p>
           </div>
           <div class="content">
             <div class="alert-badge severity-${severity.toLowerCase()}">${severity} Severity</div>
             
             <div class="finding-box">
-              <h2 style="margin-top: 0; color: #2d3748;">${title}</h2>
-              <p style="color: #4a5568;"><strong>Source:</strong> ${url}</p>
-              <p style="color: #4a5568;"><strong>Keyword:</strong> ${keyword}</p>
-              ${snippet ? `<p style="background: #edf2f7; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 14px;">${snippet.substring(0, 200)}${snippet.length > 200 ? '...' : ''}</p>` : ''}
+              <h2 style="margin-top: 0; color: #2d3748;">${escapeHtml(title)}</h2>
+              <p style="color: #4a5568;"><strong>Source:</strong> ${escapeHtml(url)}</p>
+              <p style="color: #4a5568;"><strong>Keyword:</strong> ${escapeHtml(keyword)}</p>
+              ${snippet ? `<p style="background: #edf2f7; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 14px;">${escapeHtml(snippet.substring(0, 200))}${snippet.length > 200 ? '...' : ''}</p>` : ''}
             </div>
 
             <h3 style="color: #2d3748;">⚠️ Recommended Actions:</h3>
@@ -111,7 +123,7 @@ serve(async (req) => {
             <a href="${Deno.env.get('SUPABASE_URL')?.replace('//', '//app.')}/dark-web-monitoring" class="cta-button">View Full Report →</a>
           </div>
           <div class="footer">
-            <p>This alert was sent because you subscribed to dark web monitoring for "${keyword}"</p>
+            <p>This alert was sent because you subscribed to dark web monitoring for "${escapeHtml(keyword)}"</p>
             <p style="font-size: 12px; color: #a0aec0;">FootprintIQ • Powered by Advanced OSINT Intelligence</p>
           </div>
         </div>

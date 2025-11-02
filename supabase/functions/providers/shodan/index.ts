@@ -35,8 +35,8 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get('SHODAN_API_KEY');
     if (!apiKey) {
-      console.warn('[shodan] API key not configured');
-      return ok({ findings: [] });
+      console.error('[shodan] API key not configured');
+      return bad(503, 'provider_not_configured');
     }
 
     const startTime = Date.now();

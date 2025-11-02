@@ -35,8 +35,8 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get('FULLCONTACT_API_KEY');
     if (!apiKey) {
-      console.warn('[fullcontact] API key not configured');
-      return ok({ findings: [] });
+      console.error('[fullcontact] API key not configured');
+      return bad(503, 'provider_not_configured');
     }
 
     const startTime = Date.now();

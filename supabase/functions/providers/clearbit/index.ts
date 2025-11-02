@@ -35,8 +35,8 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get('CLEARBIT_API_KEY');
     if (!apiKey) {
-      console.warn('[clearbit] API key not configured');
-      return ok({ findings: [] });
+      console.error('[clearbit] API key not configured');
+      return bad(503, 'provider_not_configured');
     }
 
     const startTime = Date.now();
