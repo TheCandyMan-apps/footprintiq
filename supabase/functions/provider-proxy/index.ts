@@ -54,6 +54,15 @@ serve(async (req) => {
       case 'apify':
         result = await callApify(target, options.platform);
         break;
+      case 'apify-social':
+        result = await callApifyRunner('xtech/social-media-finder-pro', target, { searchTerm: target });
+        break;
+      case 'apify-osint':
+        result = await callApifyRunner('epctex/osint-scraper', target, { keywords: [target], modules: ['pastebin', 'github_gist', 'codepad'] });
+        break;
+      case 'apify-darkweb':
+        result = await callApifyRunner('epctex/darkweb-scraper', target, { keywords: [target], maxDepth: options.darkwebDepth || 2 });
+        break;
       case 'googlecse':
         result = await callGoogleCSE(target);
         break;
@@ -524,6 +533,30 @@ async function callAbuseIPDB(ip: string) {
   );
 
   if (!response.ok) throw new Error(`AbuseIPDB API error: ${response.status}`);
+  return await response.json();
+}
+
+async function callApifyRunner(actorId: string, target: string, input: Record<string, any>) {
+  const API_TOKEN = Deno.env.get('APIFY_API_TOKEN');
+  if (!API_TOKEN) throw new Error('APIFY_API_TOKEN not configured');
+
+  const response = await fetch(
+    `${Deno.env.get('SUPABASE_URL')}/functions/v1/providers/apify-runner`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+      },
+      body: JSON.stringify({
+        actorId,
+        input: { ...input, searchTerm: target },
+        timeoutSec: 180,
+      }),
+    }
+  );
+
+  if (!response.ok) throw new Error(`Apify Runner error: ${response.status}`);
   return await response.json();
 }
 

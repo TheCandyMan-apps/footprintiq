@@ -75,10 +75,19 @@ serve(async (req) => {
 
     // Build provider list
     const standardProviders = ['hibp', 'intelx', 'dehashed', 'hunter', 'urlscan'];
-    const apifyProviders = ['apify-social'];
+    const apifyProviders = ['apify-social', 'apify-osint'];
     const darkwebProviders = ['apify-darkweb'];
 
     let providers = options.providers || standardProviders;
+
+    // Add Apify actors if selected
+    if (options.providers) {
+      // User explicitly selected providers, use their selection
+      providers = options.providers;
+    } else {
+      // Default behavior: include standard providers
+      providers = standardProviders;
+    }
 
     if (options.includeDating || options.includeNsfw) {
       providers.push('username-extended');

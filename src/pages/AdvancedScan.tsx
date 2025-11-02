@@ -30,7 +30,8 @@ export default function AdvancedScan() {
     { id: "hibp", name: "Have I Been Pwned", icon: Shield },
     { id: "dehashed", name: "DeHashed", icon: Database },
     { id: "intelx", name: "Intelligence X", icon: Globe },
-    { id: "apify-social", name: "Social Media (400+ sites)", icon: Search, premium: true },
+    { id: "apify-social", name: "Social Media Finder Pro (400+ platforms)", icon: Search, premium: true, description: "Discover profiles across Facebook, Instagram, Twitter, TikTok, LinkedIn, GitHub, Reddit, and 400+ more" },
+    { id: "apify-osint", name: "OSINT Scraper (Paste sites)", icon: Database, premium: true, description: "Search Pastebin, GitHub Gist, Codepad, and other paste sites for exposed data" },
   ];
 
   const toggleProvider = (id: string) => {
@@ -80,10 +81,15 @@ export default function AdvancedScan() {
     setIsScanning(true);
 
     try {
+      // Get authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
       const { data, error } = await supabase.functions.invoke("scan/orchestrate", {
         body: {
           type: scanType,
           value: target,
+          workspaceId: user.id, // TODO: Get actual workspace ID
           options: {
             providers,
             sensitiveSources,
@@ -180,26 +186,29 @@ export default function AdvancedScan() {
                 {availableProviders.map((provider) => {
                   const Icon = provider.icon;
                   return (
-                    <Card
-                      key={provider.id}
-                      className={`p-4 cursor-pointer transition-all ${
-                        providers.includes(provider.id)
-                          ? "border-primary bg-primary/5"
-                          : "hover:border-muted-foreground/50"
-                      }`}
-                      onClick={() => toggleProvider(provider.id)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Checkbox checked={providers.includes(provider.id)} />
-                        <Icon className="w-5 h-5 text-primary" />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{provider.name}</span>
-                            {provider.premium && <Badge variant="secondary">Premium</Badge>}
-                          </div>
+                  <Card
+                    key={provider.id}
+                    className={`p-4 cursor-pointer transition-all ${
+                      providers.includes(provider.id)
+                        ? "border-primary bg-primary/5"
+                        : "hover:border-muted-foreground/50"
+                    }`}
+                    onClick={() => toggleProvider(provider.id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Checkbox checked={providers.includes(provider.id)} className="mt-1" />
+                      <Icon className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">{provider.name}</span>
+                          {provider.premium && <Badge variant="secondary">Premium</Badge>}
                         </div>
+                        {provider.description && (
+                          <p className="text-xs text-muted-foreground mt-1">{provider.description}</p>
+                        )}
                       </div>
-                    </Card>
+                    </div>
+                  </Card>
                   );
                 })}
               </div>
