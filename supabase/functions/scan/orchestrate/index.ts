@@ -1,9 +1,34 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders, ok, bad, allowedOrigin } from '../../_shared/secure.ts';
 import { createQueue } from '../../_shared/queue.ts';
 import { withCache } from '../../_shared/cache.ts';
 import { deduplicateFindings, sortFindings, type UFMFinding } from '../../_shared/normalize.ts';
+
+// Validation schema for scan requests
+const ScanRequestSchema = z.object({
+  type: z.enum(['email', 'username', 'domain', 'phone'], {
+    errorMap: () => ({ message: 'type must be email, username, domain, or phone' })
+  }),
+  value: z.string().trim().min(1, 'value cannot be empty').max(255, 'value too long'),
+  workspaceId: z.string().uuid('invalid workspace ID format'),
+  options: z.object({
+    includeDarkweb: z.boolean().optional(),
+    includeDating: z.boolean().optional(),
+    includeNsfw: z.boolean().optional(),
+    providers: z.array(
+      z.string().regex(/^[a-z0-9-]+$/, 'invalid provider name format')
+    ).max(20, 'too many providers specified').optional()
+  }).optional()
+});
+
+// Whitelist of allowed provider names
+const ALLOWED_PROVIDERS = new Set([
+  'hibp', 'intelx', 'dehashed', 'hunter', 'urlscan',
+  'apify-social', 'apify-osint', 'apify-darkweb',
+  'username-extended', 'predicta', 'facecheck'
+]);
 
 interface ScanRequest {
   type: 'email' | 'username' | 'domain' | 'phone';
@@ -51,10 +76,29 @@ serve(async (req) => {
       return bad(401, 'invalid_or_expired_token');
     }
 
-    const { type, value, workspaceId, options = {} }: ScanRequest = await req.json();
+    // Parse and validate request body
+    const rawBody = await req.json();
+    const parseResult = ScanRequestSchema.safeParse(rawBody);
+    
+    if (!parseResult.success) {
+      const errors = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      console.error('[orchestrate] Validation failed:', errors);
+      return bad(400, `Invalid request: ${errors}`);
+    }
 
-    if (!type || !value || !workspaceId) {
-      return bad(400, 'type, value, and workspaceId required');
+    const { type, value, workspaceId, options = {} } = parseResult.data;
+
+    // Verify user is a member of the workspace
+    const { data: membership, error: memberError } = await supabase
+      .from('workspace_members')
+      .select('role')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (memberError || !membership) {
+      console.error('[orchestrate] Unauthorized workspace access:', user.id, workspaceId);
+      return bad(403, 'not_workspace_member');
     }
 
     console.log(`[orchestrate] Scanning ${type}:${value} for workspace ${workspaceId}`);
@@ -100,6 +144,12 @@ serve(async (req) => {
 
     // Add Apify actors if selected
     if (options.providers) {
+      // Validate all provider names against whitelist
+      const invalidProviders = options.providers.filter(p => !ALLOWED_PROVIDERS.has(p));
+      if (invalidProviders.length > 0) {
+        console.error('[orchestrate] Invalid providers:', invalidProviders);
+        return bad(400, `Invalid providers: ${invalidProviders.join(', ')}`);
+      }
       // User explicitly selected providers, use their selection
       providers = options.providers;
     } else {
