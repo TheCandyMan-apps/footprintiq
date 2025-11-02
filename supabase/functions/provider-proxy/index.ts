@@ -118,6 +118,18 @@ serve(async (req) => {
       case 'virustotal':
         result = await callVirusTotal(target, type);
         break;
+      case 'fullcontact':
+        result = await callProvider('fullcontact', { target, type });
+        break;
+      case 'pipl':
+        result = await callProvider('pipl', { target, type, options });
+        break;
+      case 'clearbit':
+        result = await callProvider('clearbit', { target, type });
+        break;
+      case 'shodan':
+        result = await callProvider('shodan', { target, type });
+        break;
       default:
         throw new Error(`Unknown provider: ${provider}`);
     }
@@ -133,6 +145,18 @@ serve(async (req) => {
     });
   }
 });
+
+async function callProvider(name: string, body: any) {
+  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.75.0');
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+  );
+  
+  const { data, error } = await supabase.functions.invoke(`providers/${name}`, { body });
+  if (error) throw error;
+  return data;
+}
 
 async function callHIBP(email: string) {
   const API_KEY = Deno.env.get('HIBP_API_KEY');

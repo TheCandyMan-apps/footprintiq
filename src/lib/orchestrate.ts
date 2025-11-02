@@ -22,7 +22,7 @@ export interface ScanInput {
 
 export interface ProviderResults {
   hibp?: HibpBreach[];
-  shodan?: ShodanResult[];
+  shodan?: ShodanResult;
   virustotal?: VirusTotalResult;
   builtwith?: BuiltWithResult;
   peopleDataLabs?: PeopleDataLabsResult;
@@ -58,7 +58,7 @@ export function orchestrateScan(input: ScanInput, results: ProviderResults): Orc
   }
 
   if (results.shodan && input.ip) {
-    findings.push(...normalizeShodan(results.shodan, input.ip));
+    findings.push(...normalizeShodan(results.shodan, input.ip, 'ip'));
   }
 
   if (results.virustotal && input.domain) {

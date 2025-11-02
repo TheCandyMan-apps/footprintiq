@@ -114,3 +114,86 @@ export function sortFindings(findings: UFMFinding[]): UFMFinding[] {
     return (b.confidence || 0) - (a.confidence || 0);
   });
 }
+
+/**
+ * Normalize FullContact results
+ */
+export function normalizeFullContact(result: any, target: string, type: string): UFMFinding[] {
+  if (!result || Object.keys(result).length === 0) return [];
+  
+  return [{
+    provider: 'fullcontact',
+    kind: 'presence.hit',
+    severity: 'info' as const,
+    confidence: 0.85,
+    observedAt: new Date().toISOString(),
+    evidence: [
+      { key: 'name', value: result.fullName || '' },
+      { key: 'location', value: result.location || '' },
+      { key: 'title', value: result.title || '' },
+    ].filter(e => e.value),
+    meta: result,
+  }];
+}
+
+/**
+ * Normalize Pipl results
+ */
+export function normalizePipl(result: any, target: string): UFMFinding[] {
+  if (!result?.person) return [];
+  
+  return [{
+    provider: 'pipl',
+    kind: 'presence.hit',
+    severity: 'medium' as const,
+    confidence: 0.9,
+    observedAt: new Date().toISOString(),
+    evidence: [
+      { key: 'names', value: result.person.names?.map((n: any) => n.display).join(', ') || '' },
+      { key: 'addresses', value: result.person.addresses?.length || '0' },
+    ].filter(e => e.value),
+    meta: result.person,
+  }];
+}
+
+/**
+ * Normalize Clearbit results
+ */
+export function normalizeClearbit(result: any, target: string, type: string): UFMFinding[] {
+  if (!result || Object.keys(result).length === 0) return [];
+  
+  return [{
+    provider: 'clearbit',
+    kind: 'presence.hit',
+    severity: 'info' as const,
+    confidence: 0.9,
+    observedAt: new Date().toISOString(),
+    evidence: [
+      { key: 'name', value: result.name || result.person?.name?.fullName || '' },
+      { key: 'domain', value: result.domain || '' },
+      { key: 'industry', value: result.category?.industry || '' },
+    ].filter(e => e.value),
+    meta: result,
+  }];
+}
+
+/**
+ * Normalize Shodan results
+ */
+export function normalizeShodan(result: any, target: string, type: string): UFMFinding[] {
+  if (!result || Object.keys(result).length === 0) return [];
+  
+  return [{
+    provider: 'shodan',
+    kind: 'presence.hit',
+    severity: result.ports?.length > 10 ? 'medium' : 'low' as const,
+    confidence: 0.95,
+    observedAt: new Date().toISOString(),
+    evidence: [
+      { key: 'ip', value: result.ip_str || '' },
+      { key: 'org', value: result.org || '' },
+      { key: 'ports', value: result.ports?.slice(0, 20).join(', ') || '' },
+    ].filter(e => e.value),
+    meta: result,
+  }];
+}

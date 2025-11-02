@@ -27,7 +27,8 @@ const ScanRequestSchema = z.object({
 const ALLOWED_PROVIDERS = new Set([
   'hibp', 'intelx', 'dehashed', 'hunter', 'urlscan',
   'apify-social', 'apify-osint', 'apify-darkweb',
-  'username-extended', 'predicta', 'facecheck'
+  'username-extended', 'predicta', 'facecheck',
+  'fullcontact', 'pipl', 'clearbit', 'shodan'
 ]);
 
 interface ScanRequest {
