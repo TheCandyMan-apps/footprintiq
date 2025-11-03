@@ -44,7 +44,14 @@ export function WorkspacePresence() {
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState();
         const users = Object.values(state).flat() as any[];
-        setPresence(users);
+        // Deduplicate by user_id to fix React key warning
+        const uniqueUsers = users.reduce((acc, user) => {
+          if (!acc.find((u: PresenceUser) => u.user_id === user.user_id)) {
+            acc.push(user);
+          }
+          return acc;
+        }, [] as PresenceUser[]);
+        setPresence(uniqueUsers);
       })
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED") {

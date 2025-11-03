@@ -3,15 +3,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { SEO } from "@/components/SEO";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Shield, Plus, Trash2, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { Shield, Plus, Trash2, AlertTriangle, CheckCircle2, Clock, Search } from "lucide-react";
+import { DarkWebFindingsCard } from "@/components/darkweb/DarkWebFindingsCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function DarkWebMonitoring() {
   const [newTarget, setNewTarget] = useState("");
+  const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Fetch targets

@@ -1978,6 +1978,54 @@ export type Database = {
         }
         Relationships: []
       }
+      darkweb_alert_history: {
+        Row: {
+          alert_type: string | null
+          finding_count: number | null
+          id: string
+          meta: Json | null
+          sent_at: string | null
+          severity: string
+          target_id: string
+          workspace_id: string
+        }
+        Insert: {
+          alert_type?: string | null
+          finding_count?: number | null
+          id?: string
+          meta?: Json | null
+          sent_at?: string | null
+          severity: string
+          target_id: string
+          workspace_id: string
+        }
+        Update: {
+          alert_type?: string | null
+          finding_count?: number | null
+          id?: string
+          meta?: Json | null
+          sent_at?: string | null
+          severity?: string
+          target_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "darkweb_alert_history_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "darkweb_targets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "darkweb_alert_history_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       darkweb_findings: {
         Row: {
           data_exposed: string[]
@@ -2034,6 +2082,60 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      darkweb_subscriptions: {
+        Row: {
+          alert_methods: string[] | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          last_alerted_at: string | null
+          severity_threshold: string | null
+          target_id: string
+          updated_at: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          alert_methods?: string[] | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_alerted_at?: string | null
+          severity_threshold?: string | null
+          target_id: string
+          updated_at?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          alert_methods?: string[] | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_alerted_at?: string | null
+          severity_threshold?: string | null
+          target_id?: string
+          updated_at?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "darkweb_subscriptions_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "darkweb_targets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "darkweb_subscriptions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       darkweb_targets: {
         Row: {
@@ -5784,7 +5886,12 @@ export type Database = {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
-      is_workspace_owner: { Args: { _workspace_id: string }; Returns: boolean }
+      is_workspace_owner:
+        | { Args: { _workspace_id: string }; Returns: boolean }
+        | {
+            Args: { _user_id: string; _workspace_id: string }
+            Returns: boolean
+          }
       log_audit_event: {
         Args: {
           _action: string

@@ -177,5 +177,23 @@ verify_jwt = false
 [functions.scan-orchestrate]
 verify_jwt = true
 
+[functions."darkweb/monitor"]
+verify_jwt = false
+
+[functions."darkweb/weekly-summary"]
+verify_jwt = false
+
+[functions."darkweb/real-time-alert"]
+verify_jwt = false
+
+[functions."darkweb/social-media-search"]
+verify_jwt = false
+
+[functions."darkweb/osint-scraper"]
+verify_jwt = false
+
+[functions."darkweb/darkweb-scraper"]
+verify_jwt = false
+
 [functions.consent-manage]
 verify_jwt = true

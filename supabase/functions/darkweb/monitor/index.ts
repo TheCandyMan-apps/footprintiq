@@ -35,27 +35,75 @@ serve(async (req) => {
 
     for (const target of targets) {
       try {
-        // Call Apify dark web scraper
-        const { data: apifyData, error: apifyError } = await supabase.functions.invoke(
-          'providers/apify-runner',
-          {
-            body: {
-              actorId: 'epctex/darkweb-scraper',
-              input: {
-                searchQuery: target.value,
-                maxResults: 50,
-              },
-              timeoutSec: 180,
-            },
-          }
-        );
+        console.log(`[darkweb-monitor] Processing target ${target.id}: ${target.value}`);
 
-        if (apifyError) {
-          console.error(`[darkweb-monitor] Target ${target.id} failed:`, apifyError);
-          continue;
+        // Determine target type and run appropriate searches
+        const isEmail = target.value.includes('@');
+        const isDomain = target.value.includes('.') && !isEmail;
+        const isUsername = !isEmail && !isDomain;
+
+        let allFindings: any[] = [];
+
+        // 1. Dark web scraper (always run)
+        try {
+          const { data: darkwebData } = await supabase.functions.invoke(
+            'darkweb/darkweb-scraper',
+            {
+              body: {
+                searchQuery: target.value,
+                targetId: target.id,
+                workspaceId: target.workspace_id,
+              },
+            }
+          );
+          if (darkwebData?.findings) {
+            allFindings.push(...darkwebData.findings);
+          }
+        } catch (err) {
+          console.error(`[darkweb-monitor] Dark web scraper failed for ${target.id}:`, err);
         }
 
-        const findings = apifyData.findings || [];
+        // 2. OSINT paste site scraper (for all types)
+        try {
+          const { data: osintData } = await supabase.functions.invoke(
+            'darkweb/osint-scraper',
+            {
+              body: {
+                searchQuery: target.value,
+                targetId: target.id,
+                workspaceId: target.workspace_id,
+              },
+            }
+          );
+          if (osintData?.findings) {
+            allFindings.push(...osintData.findings);
+          }
+        } catch (err) {
+          console.error(`[darkweb-monitor] OSINT scraper failed for ${target.id}:`, err);
+        }
+
+        // 3. Social media search (for usernames only)
+        if (isUsername) {
+          try {
+            const { data: socialData } = await supabase.functions.invoke(
+              'darkweb/social-media-search',
+              {
+                body: {
+                  username: target.value,
+                  targetId: target.id,
+                  workspaceId: target.workspace_id,
+                },
+              }
+            );
+            if (socialData?.findings) {
+              allFindings.push(...socialData.findings);
+            }
+          } catch (err) {
+            console.error(`[darkweb-monitor] Social media search failed for ${target.id}:`, err);
+          }
+        }
+
+        const findings = allFindings;
 
         // Insert new findings (dedupe by target_id + provider + url)
         for (const finding of findings) {
