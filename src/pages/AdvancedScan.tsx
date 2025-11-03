@@ -17,7 +17,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
-  const { workspace, loading: workspaceLoading } = useWorkspace();
+  const { workspace, loading: workspaceLoading, refreshWorkspace } = useWorkspace();
   const [scanType, setScanType] = useState<string>("email");
   const [target, setTarget] = useState("");
   const [providers, setProviders] = useState<string[]>(["hibp", "dehashed", "intelx"]);
@@ -75,6 +75,35 @@ export default function AdvancedScan() {
     } catch (error) {
       console.error("Error saving consent:", error);
       toast.error(error instanceof Error ? error.message : "Failed to save consent");
+    }
+  };
+  // Quick create a default workspace if none exists
+  const handleQuickCreateWorkspace = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("workspaces" as any)
+        .insert({ name: "My Workspace", owner_id: user.id })
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (!data) throw new Error("Failed to create workspace");
+
+      await supabase.from("workspace_members" as any).insert({
+        workspace_id: (data as any).id,
+        user_id: user.id,
+        role: "admin",
+      });
+
+      toast.success("Workspace created");
+      // Refresh hook state so this page can proceed
+      await refreshWorkspace?.();
+    } catch (err) {
+      console.error("Create workspace error:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to create workspace");
     }
   };
 
@@ -142,8 +171,16 @@ export default function AdvancedScan() {
           )}
           
           {!workspaceLoading && !workspace && (
-            <Card className="p-6 text-center">
+            <Card className="p-6 text-center space-y-4">
               <p className="text-destructive">No workspace found. Please create or join a workspace first.</p>
+              <div className="flex items-center justify-center gap-3">
+                <Button onClick={() => handleQuickCreateWorkspace()}>
+                  Quick Create Workspace
+                </Button>
+                <Button variant="outline" onClick={() => navigate('/workspaces')}>
+                  Open Workspaces
+                </Button>
+              </div>
             </Card>
           )}
 
