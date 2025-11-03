@@ -62,15 +62,27 @@ serve(async (req) => {
         return bad(400, `Invalid categories. Must be one of: ${validCategories.join(', ')}`);
       }
 
-      // Check workspace membership
+      // Check workspace membership or ownership
       const { data: member } = await supabase
         .from('workspace_members')
         .select('role')
         .eq('workspace_id', workspace_id)
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (!member) {
+      let isAllowed = !!member;
+
+      if (!isAllowed) {
+        const { data: wsOwner } = await supabase
+          .from('workspaces')
+          .select('id')
+          .eq('id', workspace_id)
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        isAllowed = !!wsOwner;
+      }
+
+      if (!isAllowed) {
         return bad(403, 'not_a_workspace_member');
       }
 
