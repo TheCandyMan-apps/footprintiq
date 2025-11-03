@@ -49,6 +49,9 @@ const RoleManagement = lazy(() => import("./pages/admin/RoleManagement"));
 const PersonaDnaLaunch = lazy(() => import("./pages/blog/PersonaDnaLaunch"));
 const WhatIsOsintRisk = lazy(() => import("./pages/blog/WhatIsOsintRisk"));
 const DarkWebMonitoringBlog = lazy(() => import("./pages/blog/DarkWebMonitoringExplained"));
+const WhatIsDigitalFootprint = lazy(() => import("./pages/blog/WhatIsDigitalFootprint"));
+const CheckEmailBreach = lazy(() => import("./pages/blog/CheckEmailBreach"));
+const OsintBeginnersGuide = lazy(() => import("./pages/blog/OsintBeginnersGuide"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -183,6 +186,9 @@ function RouterContent() {
           <Route path="/blog/persona-dna-and-evidence-packs" element={<PersonaDnaLaunch />} />
           <Route path="/blog/what-is-osint-risk" element={<WhatIsOsintRisk />} />
           <Route path="/blog/dark-web-monitoring-explained" element={<DarkWebMonitoringBlog />} />
+          <Route path="/blog/what-is-digital-footprint" element={<WhatIsDigitalFootprint />} />
+          <Route path="/blog/check-email-breach" element={<CheckEmailBreach />} />
+          <Route path="/blog/osint-beginners-guide" element={<OsintBeginnersGuide />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
