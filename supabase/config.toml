@@ -173,3 +173,9 @@ verify_jwt = false
 
 [functions.predicta-search]
 verify_jwt = false
+
+[functions.scan-orchestrate]
+verify_jwt = true
+
+[functions.consent-manage]
+verify_jwt = true

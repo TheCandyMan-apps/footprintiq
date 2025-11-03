@@ -56,8 +56,11 @@ export default function AdvancedScan() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase.functions.invoke("consent/manage", {
-        body: { categories: confirmedCategories },
+      const { data, error } = await supabase.functions.invoke("consent-manage", {
+        body: { 
+          workspace_id: user.id, // Using user ID as workspace ID for now
+          categories: confirmedCategories 
+        },
       });
 
       if (error) throw error;
@@ -68,7 +71,7 @@ export default function AdvancedScan() {
       toast.success("Consent recorded. Sensitive sources enabled.");
     } catch (error) {
       console.error("Error saving consent:", error);
-      toast.error("Failed to save consent");
+      toast.error(error instanceof Error ? error.message : "Failed to save consent");
     }
   };
 
@@ -85,19 +88,16 @@ export default function AdvancedScan() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase.functions.invoke("scan/orchestrate", {
+      const { data, error } = await supabase.functions.invoke("scan-orchestrate", {
         body: {
           type: scanType,
           value: target,
-          workspaceId: user.id, // TODO: Get actual workspace ID
+          workspaceId: user.id, // Using user ID as workspace ID
           options: {
             providers,
-            sensitiveSources,
-            darkweb: darkwebEnabled ? {
-              enabled: true,
-              depth: darkwebDepth,
-              maxPages: 10,
-            } : undefined,
+            includeDating: sensitiveSources.includes('dating'),
+            includeNsfw: sensitiveSources.includes('nsfw'),
+            includeDarkweb: sensitiveSources.includes('darkweb') || darkwebEnabled,
           },
         },
       });
