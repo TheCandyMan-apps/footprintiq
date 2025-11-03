@@ -10,7 +10,7 @@ serve(async (req) => {
   if (!allowedOrigin(req)) return bad(403, 'forbidden');
 
   try {
-    const supabase = createClient(
+    const anonClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
@@ -18,11 +18,17 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return bad(401, 'unauthorized');
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
+    const { data: { user }, error: authError } = await anonClient.auth.getUser(
       authHeader.replace('Bearer ', '')
     );
 
     if (authError || !user) return bad(401, 'unauthorized');
+
+    // Use service role for permission checks
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     // GET - retrieve consent
     if (req.method === 'GET') {
@@ -62,20 +68,30 @@ serve(async (req) => {
         return bad(400, `Invalid categories. Must be one of: ${validCategories.join(', ')}`);
       }
 
-      // Permission check via RPC to bypass RLS safely
-      const [memberRes, ownerRes] = await Promise.all([
-        supabase.rpc('user_is_workspace_member', { _user_id: user.id, _workspace_id: workspace_id }),
-        supabase.rpc('is_workspace_owner', { _workspace_id: workspace_id }),
-      ]);
+      // Check workspace membership or ownership with service role
+      const { data: member } = await supabase
+        .from('workspace_members')
+        .select('role')
+        .eq('workspace_id', workspace_id)
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      const isAllowed = (memberRes.data === true) || (ownerRes.data === true);
+      let isAllowed = !!member;
+
+      if (!isAllowed) {
+        const { data: wsOwner } = await supabase
+          .from('workspaces')
+          .select('id')
+          .eq('id', workspace_id)
+          .eq('owner_id', user.id)
+          .maybeSingle();
+        isAllowed = !!wsOwner;
+      }
 
       if (!isAllowed) {
         console.warn('[consent/manage] Permission denied', {
           user_id: user.id,
           workspace_id,
-          memberErr: memberRes.error?.message,
-          ownerErr: ownerRes.error?.message,
         });
         return bad(403, 'not_a_workspace_member');
       }
