@@ -51,7 +51,41 @@ export function useWorkspace(): WorkspaceContext {
 
       if (usersError) throw usersError;
 
-      const userWorkspaces = workspaceUsers
+      // If no memberships found, but user owns workspaces, auto-repair by adding membership as admin
+      let membershipList = workspaceUsers as any[] | null | undefined;
+      if (!membershipList || membershipList.length === 0) {
+        const { data: ownedWorkspaces, error: ownedError } = await supabase
+          .from('workspaces' as any)
+          .select('id, name, owner_id')
+          .eq('owner_id', user.id);
+
+        if (ownedError) {
+          console.warn('Failed to fetch owned workspaces:', ownedError);
+        }
+
+        if (ownedWorkspaces && ownedWorkspaces.length > 0) {
+          // Ensure membership exists for owner
+          for (const ow of ownedWorkspaces as any[]) {
+            await supabase
+              .from('workspace_members' as any)
+              .upsert(
+                { workspace_id: ow.id, user_id: user.id, role: 'admin' },
+                { onConflict: 'workspace_id,user_id' } as any
+              );
+          }
+
+          const { data: repairedMembership } = await supabase
+            .from('workspace_members' as any)
+            .select('workspace_id, role, workspaces(*)')
+            .eq('user_id', user.id);
+
+          if (repairedMembership && repairedMembership.length > 0) {
+            membershipList = repairedMembership as any[];
+          }
+        }
+      }
+
+      const userWorkspaces = membershipList
         ?.map((wu: any) => wu.workspaces)
         .filter(Boolean) as Workspace[];
 
