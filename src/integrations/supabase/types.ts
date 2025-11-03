@@ -5697,23 +5697,44 @@ export type Database = {
       workspaces: {
         Row: {
           created_at: string
+          description: string | null
           id: string
           name: string
           owner_id: string
+          settings: Json | null
+          slug: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_expires_at: string | null
+          subscription_tier: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
           id?: string
           name: string
           owner_id: string
+          settings?: Json | null
+          slug?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_expires_at?: string | null
+          subscription_tier?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
+          description?: string | null
           id?: string
           name?: string
           owner_id?: string
+          settings?: Json | null
+          slug?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_expires_at?: string | null
+          subscription_tier?: string | null
           updated_at?: string
         }
         Relationships: []
