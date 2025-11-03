@@ -110,13 +110,14 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { data: workspace } = await supabaseService
+    const { data: workspace, error: workspaceError } = await supabaseService
       .from('workspaces')
-      .select('id, plan, settings')
+      .select('id, subscription_tier, settings')
       .eq('id', workspaceId)
       .single();
 
-    if (!workspace) {
+    if (workspaceError || !workspace) {
+      console.error('[orchestrate] Workspace query error:', workspaceError);
       return bad(404, 'workspace_not_found');
     }
 
@@ -168,7 +169,7 @@ serve(async (req) => {
       providers.push('username-extended');
     }
 
-    if (options.includeDarkweb && workspace.plan !== 'free') {
+    if (options.includeDarkweb && workspace.subscription_tier !== 'free') {
       providers = [...providers, ...darkwebProviders];
     }
 
