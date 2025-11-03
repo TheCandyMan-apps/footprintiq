@@ -5779,6 +5779,10 @@ export type Database = {
         }
         Returns: Json
       }
+      user_is_workspace_member: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: boolean
+      }
       workspace_has_feature: {
         Args: { _feature_name: string; _workspace_id: string }
         Returns: boolean
