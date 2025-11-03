@@ -46,7 +46,8 @@ export default function OrganizationNew() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
+      // 1) Create workspace
+      const { data: ws, error: wsError } = await supabase
         .from("workspaces" as any)
         .insert({
           name: workspace.name,
@@ -57,14 +58,27 @@ export default function OrganizationNew() {
         .select()
         .single();
 
-      if (error) throw error;
-      return data as any;
+      if (wsError) throw wsError;
+      if (!ws) throw new Error("Failed to create workspace");
+
+      // 2) Add creator as admin member (ensures membership for RLS checks)
+      const { error: memberError } = await supabase.from("workspace_members" as any).insert({
+        workspace_id: (ws as any).id,
+        user_id: user.id,
+        role: "admin",
+      });
+      if (memberError) throw memberError;
+
+      // 3) Make it active for the session
+      sessionStorage.setItem('current_workspace_id', (ws as any).id);
+
+      return ws as any;
     },
-    onSuccess: () => {
+    onSuccess: (ws: any) => {
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
       setCreateDialogOpen(false);
       setNewWorkspace({ name: "", slug: "", description: "" });
-      toast.success("Workspace created successfully");
+      toast.success("Workspace created and activated");
     },
     onError: (error: Error) => {
       toast.error(`Failed to create workspace: ${error.message}`);
