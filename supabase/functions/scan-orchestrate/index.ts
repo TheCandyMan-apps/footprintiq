@@ -104,8 +104,13 @@ serve(async (req) => {
 
     console.log(`[orchestrate] Scanning ${type}:${value} for workspace ${workspaceId}`);
 
-    // Check workspace limits and consent
-    const { data: workspace } = await supabase
+    // Check workspace limits and consent (use service role after auth)
+    const supabaseService = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { data: workspace } = await supabaseService
       .from('workspaces')
       .select('id, plan, settings')
       .eq('id', workspaceId)
@@ -117,10 +122,11 @@ serve(async (req) => {
 
     // Check consent for sensitive sources
     if (options.includeDating || options.includeNsfw || options.includeDarkweb) {
-      const { data: consent } = await supabase
+      const { data: consent } = await supabaseService
         .from('sensitive_consents')
         .select('categories')
         .eq('workspace_id', workspaceId)
+        .eq('user_id', user.id)
         .single();
 
       const allowedCategories = consent?.categories || [];
