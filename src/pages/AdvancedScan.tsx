@@ -17,7 +17,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
-  const { workspace } = useWorkspace();
+  const { workspace, loading: workspaceLoading } = useWorkspace();
   const [scanType, setScanType] = useState<string>("email");
   const [target, setTarget] = useState("");
   const [providers, setProviders] = useState<string[]>(["hibp", "dehashed", "intelx"]);
@@ -134,8 +134,23 @@ export default function AdvancedScan() {
 
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto space-y-8">
-          {/* Header */}
-          <div className="flex items-center gap-4">
+          {/* Workspace Loading/Error States */}
+          {workspaceLoading && (
+            <Card className="p-6 text-center">
+              <p className="text-muted-foreground">Loading workspace...</p>
+            </Card>
+          )}
+          
+          {!workspaceLoading && !workspace && (
+            <Card className="p-6 text-center">
+              <p className="text-destructive">No workspace found. Please create or join a workspace first.</p>
+            </Card>
+          )}
+
+          {!workspaceLoading && workspace && (
+            <>
+              {/* Header */}
+              <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-elegant">
               <Search className="w-8 h-8 text-primary" />
             </div>
@@ -298,6 +313,8 @@ export default function AdvancedScan() {
               </p>
             </Card>
           </div>
+            </>
+          )}
         </div>
       </main>
 
