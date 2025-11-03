@@ -9,54 +9,66 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import pricingHero from "@/assets/pricing-hero.jpg";
 
+// Stripe price IDs for each tier
+const STRIPE_PRICES = {
+  analyst: 'price_1SPXbHPNdM5SAyj7lPBHvjIi', // $29/month
+  pro: 'price_1SPXcEPNdM5SAyj7AbannmpP', // $79/month
+};
+
 const pricingTiers = [
   {
-    name: "Free",
-    price: "$0",
-    period: "forever",
-    description: "Perfect for trying out our service",
+    name: "Analyst Basic",
+    price: "$29",
+    period: "per month",
+    description: "Perfect for security analysts",
+    priceId: STRIPE_PRICES.analyst,
     features: [
-      "1 scan per month",
-      "Basic data source detection",
-      "Privacy score analysis",
-      "Manual removal guides",
+      "500 scans per month",
+      "Dark web monitoring",
+      "Basic breach database access",
+      "Email & phone lookup",
+      "Social media reconnaissance",
+      "Basic threat intelligence",
+      "20 team members",
       "Email support",
     ],
-    cta: "Start Free",
+    cta: "Start Free Trial",
     highlighted: false,
   },
   {
-    name: "Pro",
-    price: "$19",
+    name: "Professional OSINT",
+    price: "$79",
     period: "per month",
-    description: "Best for individuals serious about privacy",
+    description: "Advanced features for professionals",
+    priceId: STRIPE_PRICES.pro,
     features: [
       "Unlimited scans",
-      "Advanced OSINT detection",
-      "AI-powered catfish detection",
-      "Automated removal requests",
-      "Continuous monitoring",
-      "Social media profile analysis",
-      "Priority email support",
-      "Monthly privacy reports",
+      "Advanced breach analytics",
+      "PDF export & reporting",
+      "White-label reports",
+      "API access (1000 calls/hour)",
+      "AI Analyst queries (50/month)",
+      "Custom integrations",
+      "Priority support",
     ],
-    cta: "Get Pro",
+    cta: "Upgrade to Pro",
     highlighted: true,
   },
   {
-    name: "Enterprise",
-    price: "$99",
-    period: "per month",
-    description: "For businesses and teams",
+    name: "Enterprise Intelligence",
+    price: "Custom",
+    period: "",
+    description: "Full-scale threat intelligence",
+    priceId: null,
     features: [
       "Everything in Pro",
-      "Up to 10 team members",
-      "Custom data broker coverage",
-      "API access",
-      "Dedicated account manager",
-      "Advanced analytics dashboard",
-      "White-label reporting",
-      "24/7 priority support",
+      "Unlimited API calls",
+      "Unlimited AI queries",
+      "Custom data feeds",
+      "Dedicated support team",
+      "SSO & advanced security",
+      "Custom SLA",
+      "On-premise deployment",
     ],
     cta: "Contact Sales",
     highlighted: false,
@@ -76,33 +88,46 @@ export const Pricing = () => {
   const currentPrice = calculatePrice(scansPerMonth);
   const { toast } = useToast();
 
-  const handleCTA = async (tierName: string) => {
-    if (tierName === "Enterprise") {
-      window.location.href = "mailto:sales@footprintiq.com";
+  const handleCTA = async (tierName: string, priceId: string | null) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      navigate('/auth');
       return;
     }
 
-    if (tierName === "Pro") {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        navigate("/auth");
-        return;
-      }
-      const { data, error } = await supabase.functions.invoke("create-checkout");
-      if (error || !data?.url) {
-        toast({
-          title: "Checkout error",
-          description: error?.message || "We couldn't start the checkout. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-      window.open(data.url, "_blank");
+    if (tierName === "Enterprise Intelligence") {
+      window.location.href = "mailto:sales@footprintiq.com?subject=Enterprise Inquiry";
       return;
     }
 
-    // Free plan
-    navigate("/auth");
+    if (!priceId) {
+      toast({
+        title: "Invalid tier",
+        description: "This pricing tier is not available yet.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('billing/create-subscription', {
+        body: { price_id: priceId }
+      });
+
+      if (error) throw error;
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      toast({
+        title: "Checkout error",
+        description: error instanceof Error ? error.message : "We couldn't start the checkout. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -150,7 +175,7 @@ export const Pricing = () => {
             <Button 
               className="w-full" 
               size="lg"
-              onClick={() => handleCTA('Pro')}
+              onClick={() => handleCTA('Professional OSINT', STRIPE_PRICES.pro)}
             >
               Get Started Now
             </Button>
@@ -188,7 +213,7 @@ export const Pricing = () => {
                 className="w-full mb-6"
                 variant={tier.highlighted ? "default" : "outline"}
                 size="lg"
-                onClick={() => handleCTA(tier.name)}
+                onClick={() => handleCTA(tier.name, tier.priceId)}
               >
                 {tier.cta}
               </Button>
