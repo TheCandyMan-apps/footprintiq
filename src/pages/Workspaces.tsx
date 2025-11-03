@@ -26,29 +26,46 @@ export default function Workspaces() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
+      // Generate a safe, unique slug
+      const base = name.trim().toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .slice(0, 60) || 'workspace';
+      const slug = `${base}-${Math.random().toString(36).slice(2,7)}`;
+
+      // Create workspace
+      const { data: ws, error: wsError } = await supabase
         .from("workspaces" as any)
-        .insert({ name, owner_id: user.id })
+        .insert({ name, owner_id: user.id, slug })
         .select()
         .single();
 
-      if (error) throw error;
-      if (!data) throw new Error("Failed to create workspace");
+      if (wsError) throw wsError;
+      if (!ws) throw new Error("Failed to create workspace");
 
-      // Add creator as admin member
-      await supabase.from("workspace_members" as any).insert({
-        workspace_id: (data as any).id,
+      // Add creator as admin member (required for downstream RLS checks)
+      const { error: memberError } = await supabase.from("workspace_members" as any).insert({
+        workspace_id: (ws as any).id,
         user_id: user.id,
         role: "admin",
       });
+      if (memberError) throw memberError;
 
-      return data as any;
+      // Set as active workspace
+      sessionStorage.setItem('current_workspace_id', (ws as any).id);
+
+      return ws as any;
     },
     onSuccess: () => {
       toast.success("Workspace created");
       setNewWorkspaceName("");
       refreshWorkspace();
     },
+    onError: (err: any) => {
+      const msg = err?.message || 'Failed to create workspace';
+      toast.error(msg);
+    }
   });
 
   const inviteMutation = useMutation({

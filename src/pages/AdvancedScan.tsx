@@ -83,20 +83,29 @@ export default function AdvancedScan() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase
+      // Create a default workspace with unique slug
+      const name = "My Workspace";
+      const slug = `my-workspace-${Math.random().toString(36).slice(2,7)}`;
+
+      const { data: ws, error: wsError } = await supabase
         .from("workspaces" as any)
-        .insert({ name: "My Workspace", owner_id: user.id })
+        .insert({ name, owner_id: user.id, slug })
         .select()
         .single();
 
-      if (error) throw error;
-      if (!data) throw new Error("Failed to create workspace");
+      if (wsError) throw wsError;
+      if (!ws) throw new Error("Failed to create workspace");
 
-      await supabase.from("workspace_members" as any).insert({
-        workspace_id: (data as any).id,
+      // Add creator as admin member
+      const { error: memberError } = await supabase.from("workspace_members" as any).insert({
+        workspace_id: (ws as any).id,
         user_id: user.id,
         role: "admin",
       });
+      if (memberError) throw memberError;
+
+      // Activate it for the session
+      sessionStorage.setItem('current_workspace_id', (ws as any).id);
 
       toast.success("Workspace created");
       // Refresh hook state so this page can proceed
