@@ -5759,6 +5759,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_workspace_owner: { Args: { _workspace_id: string }; Returns: boolean }
       log_audit_event: {
         Args: {
           _action: string
