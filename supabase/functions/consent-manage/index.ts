@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad, allowedOrigin } from '../../_shared/secure.ts';
+import { corsHeaders, ok, bad, allowedOrigin } from '../_shared/secure.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {

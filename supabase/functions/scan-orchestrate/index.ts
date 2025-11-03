@@ -1,10 +1,10 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
-import { corsHeaders, ok, bad, allowedOrigin } from '../../_shared/secure.ts';
-import { createQueue } from '../../_shared/queue.ts';
-import { withCache } from '../../_shared/cache.ts';
-import { deduplicateFindings, sortFindings, type UFMFinding } from '../../_shared/normalize.ts';
+import { corsHeaders, ok, bad, allowedOrigin } from '../_shared/secure.ts';
+import { createQueue } from '../_shared/queue.ts';
+import { withCache } from '../_shared/cache.ts';
+import { deduplicateFindings, sortFindings, type UFMFinding } from '../_shared/normalize.ts';
 
 // Validation schema for scan requests
 const ScanRequestSchema = z.object({
