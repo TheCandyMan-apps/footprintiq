@@ -96,23 +96,46 @@ serve(async (req) => {
         return bad(403, 'not_a_workspace_member');
       }
 
-      // Upsert consent (insert or update if exists)
-      const { data, error } = await supabase
+      // Upsert consent (insert or update if exists); on duplicate, fallback to update
+      const { data: upsertData, error: upsertError } = await supabase
         .from('sensitive_consents')
-        .upsert({
-          workspace_id,
-          user_id: user.id,
-          categories,
-          noted_at: new Date().toISOString(),
-        }, {
-          onConflict: 'workspace_id,user_id'
-        })
+        .upsert(
+          {
+            workspace_id,
+            user_id: user.id,
+            categories,
+            noted_at: new Date().toISOString(),
+          },
+          { onConflict: 'workspace_id,user_id' }
+        )
         .select()
         .single();
 
-      if (error) {
-        console.error('[consent/manage] POST error:', error);
-        return bad(500, error.message);
+      let finalData = upsertData;
+
+      if (upsertError) {
+        // Handle rare race condition where upsert still conflicts
+        if ((upsertError as any).code === '23505') {
+          const { data: updateData, error: updateError } = await supabase
+            .from('sensitive_consents')
+            .update({
+              categories,
+              noted_at: new Date().toISOString(),
+            })
+            .eq('workspace_id', workspace_id)
+            .eq('user_id', user.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('[consent/manage] POST update fallback error:', updateError);
+            return bad(500, updateError.message);
+          }
+          finalData = updateData;
+        } else {
+          console.error('[consent/manage] POST upsert error:', upsertError);
+          return bad(500, upsertError.message);
+        }
       }
 
       // Log to audit
@@ -126,7 +149,7 @@ serve(async (req) => {
 
       console.log(`[consent/manage] Consent granted: ${categories.join(', ')} for workspace ${workspace_id}`);
 
-      return ok({ consent: data });
+      return ok({ consent: finalData });
     }
 
     // DELETE - revoke consent
