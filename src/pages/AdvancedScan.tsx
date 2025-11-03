@@ -13,9 +13,11 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { SensitiveConsentModal } from "@/components/providers/SensitiveConsentModal";
 import { Search, Shield, Zap, Database, Globe, Lock } from "lucide-react";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
+  const { workspace } = useWorkspace();
   const [scanType, setScanType] = useState<string>("email");
   const [target, setTarget] = useState("");
   const [providers, setProviders] = useState<string[]>(["hibp", "dehashed", "intelx"]);
@@ -55,11 +57,12 @@ export default function AdvancedScan() {
       // Save consent to database
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+      if (!workspace?.id) throw new Error("No workspace selected");
 
       const { data, error } = await supabase.functions.invoke("consent-manage", {
         body: { 
-          workspace_id: user.id, // Using user ID as workspace ID for now
-          categories: confirmedCategories 
+          workspace_id: workspace.id,
+          categories: confirmedCategories,
         },
       });
 
@@ -87,12 +90,13 @@ export default function AdvancedScan() {
       // Get authenticated user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
+      if (!workspace?.id) throw new Error("No workspace selected");
 
       const { data, error } = await supabase.functions.invoke("scan-orchestrate", {
         body: {
           type: scanType,
           value: target,
-          workspaceId: user.id, // Using user ID as workspace ID
+          workspaceId: workspace.id,
           options: {
             providers,
             includeDating: sensitiveSources.includes('dating'),
