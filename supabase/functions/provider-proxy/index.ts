@@ -153,7 +153,12 @@ async function callProvider(name: string, body: any) {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
   
-  const { data, error } = await supabase.functions.invoke(`providers/${name}`, { body });
+  const { data, error } = await supabase.functions.invoke(`providers/${name}`, {
+    body,
+    headers: {
+      'x-internal-token': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    }
+  });
   if (error) throw error;
   return data;
 }

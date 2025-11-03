@@ -11,6 +11,17 @@ export interface ApiContext {
 }
 
 export async function getApiContext(req: Request): Promise<ApiContext | null> {
+  // Internal call bypass using service role token
+  const internalToken = req.headers.get('x-internal-token');
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  if (internalToken && serviceKey && internalToken === serviceKey) {
+    return {
+      workspace_id: '00000000-0000-0000-0000-000000000000',
+      scopes: ['*'],
+      key_id: 'internal',
+    };
+  }
+
   const hdr = req.headers.get('Authorization') || '';
   const token = hdr.startsWith('Bearer ') ? hdr.slice(7) : null;
   
@@ -50,7 +61,7 @@ export async function getApiContext(req: Request): Promise<ApiContext | null> {
     key_id: apiKey.id,
   };
 }
-
+ 
 export function hasScope(ctx: ApiContext | null, required: string): boolean {
   if (!ctx) return false;
   return ctx.scopes.includes(required) || ctx.scopes.includes('*');
