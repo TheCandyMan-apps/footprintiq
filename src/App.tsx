@@ -52,6 +52,16 @@ const DarkWebMonitoringBlog = lazy(() => import("./pages/blog/DarkWebMonitoringE
 const WhatIsDigitalFootprint = lazy(() => import("./pages/blog/WhatIsDigitalFootprint"));
 const CheckEmailBreach = lazy(() => import("./pages/blog/CheckEmailBreach"));
 const OsintBeginnersGuide = lazy(() => import("./pages/blog/OsintBeginnersGuide"));
+const RemoveDataBrokers = lazy(() => import("./pages/blog/RemoveDataBrokers"));
+const SocialMediaPrivacy = lazy(() => import("./pages/blog/SocialMediaPrivacy"));
+const PhoneNumberPrivacy = lazy(() => import("./pages/blog/PhoneNumberPrivacy"));
+const UsernameSecurity = lazy(() => import("./pages/blog/UsernameSecurity"));
+const IpAddressSecurity = lazy(() => import("./pages/blog/IpAddressSecurity"));
+const IdentityTheftResponse = lazy(() => import("./pages/blog/IdentityTheftResponse"));
+const PasswordSecurityGuide = lazy(() => import("./pages/blog/PasswordSecurityGuide"));
+const VpnPrivacyGuide = lazy(() => import("./pages/blog/VpnPrivacyGuide"));
+const TwoFactorAuthentication = lazy(() => import("./pages/blog/TwoFactorAuthentication"));
+const SecureBrowsingGuide = lazy(() => import("./pages/blog/SecureBrowsingGuide"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -189,6 +199,16 @@ function RouterContent() {
           <Route path="/blog/what-is-digital-footprint" element={<WhatIsDigitalFootprint />} />
           <Route path="/blog/check-email-breach" element={<CheckEmailBreach />} />
           <Route path="/blog/osint-beginners-guide" element={<OsintBeginnersGuide />} />
+          <Route path="/blog/remove-data-brokers" element={<RemoveDataBrokers />} />
+          <Route path="/blog/social-media-privacy" element={<SocialMediaPrivacy />} />
+          <Route path="/blog/phone-number-privacy" element={<PhoneNumberPrivacy />} />
+          <Route path="/blog/username-security" element={<UsernameSecurity />} />
+          <Route path="/blog/ip-address-security" element={<IpAddressSecurity />} />
+          <Route path="/blog/identity-theft-response" element={<IdentityTheftResponse />} />
+          <Route path="/blog/password-security-guide" element={<PasswordSecurityGuide />} />
+          <Route path="/blog/vpn-privacy-guide" element={<VpnPrivacyGuide />} />
+          <Route path="/blog/two-factor-authentication" element={<TwoFactorAuthentication />} />
+          <Route path="/blog/secure-browsing-guide" element={<SecureBrowsingGuide />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />

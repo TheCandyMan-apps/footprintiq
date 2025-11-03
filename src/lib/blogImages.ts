@@ -13,6 +13,10 @@ export const blogHeroImages: Record<string, string> = {
   "username-security": "/blog-images/username-security.webp",
   "ip-address-security": "/blog-images/ip-security.webp",
   "identity-theft-response": "/blog-images/identity-theft.webp",
+  "password-security-guide": "/blog-images/password-security.webp",
+  "vpn-privacy-guide": "/blog-images/vpn-guide.webp",
+  "two-factor-authentication": "/blog-images/2fa.webp",
+  "secure-browsing-guide": "/blog-images/secure-browsing.webp",
 };
 
 export const getBlogHeroImage = (slug: string): string | undefined => {
