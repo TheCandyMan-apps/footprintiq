@@ -143,14 +143,18 @@ serve(async (req) => {
       }
     }
 
-    // Build provider list
-    const standardProviders = ['hibp', 'intelx', 'dehashed', 'hunter', 'urlscan'];
-    const apifyProviders = ['apify-social', 'apify-osint'];
-    const darkwebProviders = ['apify-darkweb'];
+    // Build provider list - only use providers backed by dedicated functions
+    const SUPPORTED_FUNCTION_PROVIDERS = new Set(['hibp','dehashed','fullcontact','clearbit','shodan','pipl']);
+    const defaultProvidersByType: Record<ScanRequest['type'], string[]> = {
+      email: ['hibp','dehashed','fullcontact','pipl','clearbit'],
+      domain: ['shodan','clearbit','fullcontact'],
+      username: [],
+      phone: ['pipl']
+    };
 
-    let providers = options.providers || standardProviders;
+    let providers = options.providers ?? defaultProvidersByType[type];
 
-    // Add Apify actors if selected
+    // If user explicitly selected providers, validate, otherwise use defaults by type
     if (options.providers) {
       // Validate all provider names against whitelist
       const invalidProviders = options.providers.filter(p => !ALLOWED_PROVIDERS.has(p));
@@ -158,20 +162,20 @@ serve(async (req) => {
         console.error('[orchestrate] Invalid providers:', invalidProviders);
         return bad(400, `Invalid providers: ${invalidProviders.join(', ')}`);
       }
-      // User explicitly selected providers, use their selection
       providers = options.providers;
     } else {
-      // Default behavior: include standard providers
-      providers = standardProviders;
+      providers = defaultProvidersByType[type];
     }
 
-    if (options.includeDating || options.includeNsfw) {
-      providers.push('username-extended');
+    // Filter out providers that are not supported via dedicated functions
+    const unsupported = providers.filter(p => !SUPPORTED_FUNCTION_PROVIDERS.has(p));
+    if (unsupported.length) {
+      console.warn('[orchestrate] Dropping unsupported providers:', unsupported);
     }
+    providers = providers.filter(p => SUPPORTED_FUNCTION_PROVIDERS.has(p));
 
-    if (options.includeDarkweb && workspace.subscription_tier !== 'free') {
-      providers = [...providers, ...darkwebProviders];
-    }
+    // Note: Advanced sources (dating/nsfw/darkweb) rely on providers not yet supported directly.
+    // We intentionally skip adding them here until proxy support is stable.
 
     // Create execution queue
     const queue = createQueue({ concurrency: 7, retries: 3 });
@@ -185,9 +189,10 @@ serve(async (req) => {
         return await withCache(
           cacheKey,
           async () => {
-            // Call respective provider function
-            const { data, error } = await supabase.functions.invoke('provider-proxy', {
-              body: { provider, target: value, type }
+            // Call respective provider function directly
+            const functionPath = `providers/${provider}`;
+            const { data, error } = await supabase.functions.invoke(functionPath, {
+              body: { target: value, type }
             });
 
             if (error) throw error;

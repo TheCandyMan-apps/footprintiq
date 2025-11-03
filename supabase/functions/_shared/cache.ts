@@ -2,8 +2,10 @@
  * Upstash Redis cache utility for Edge Functions
  */
 
-const UPSTASH_URL = Deno.env.get('UPSTASH_REDIS_REST_URL');
-const UPSTASH_TOKEN = Deno.env.get('UPSTASH_REDIS_REST_TOKEN');
+const sanitizeEnv = (s?: string) => (s ?? '').trim().replace(/^['"]+|['"]+$/g, '');
+const UPSTASH_URL = sanitizeEnv(Deno.env.get('UPSTASH_REDIS_REST_URL')).replace(/\/+$/,'');
+const UPSTASH_TOKEN = sanitizeEnv(Deno.env.get('UPSTASH_REDIS_REST_TOKEN'));
+
 
 interface CacheOptions {
   ttlSeconds?: number;
