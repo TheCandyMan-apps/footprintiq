@@ -143,6 +143,29 @@ serve(async (req) => {
       }
     }
 
+    // Create scan record for dashboard visibility
+    let scanId: string | null = null;
+    try {
+      const { data: scan, error: scanError } = await supabase
+        .from('scans')
+        .insert({
+          user_id: user.id,
+          scan_type: type,
+          email: type === 'email' ? value : null,
+          username: type === 'username' ? value : null,
+          phone: type === 'phone' ? value : null,
+        } as any)
+        .select('id')
+        .single();
+      if (scanError) {
+        console.warn('[orchestrate] Failed to create scan record:', scanError);
+      } else {
+        scanId = (scan as any).id;
+      }
+    } catch (e) {
+      console.warn('[orchestrate] Exception creating scan record:', e);
+    }
+
     // Build provider list - only use providers backed by dedicated functions
     const SUPPORTED_FUNCTION_PROVIDERS = new Set(['hibp','dehashed','fullcontact','clearbit','shodan','pipl']);
     const defaultProvidersByType: Record<ScanRequest['type'], string[]> = {
@@ -235,6 +258,25 @@ serve(async (req) => {
       );
     }
 
+    // Update scan record with results and stats
+    if (scanId) {
+      const highRiskCount = sortedFindings.filter(f => f.severity === 'high').length;
+      const mediumRiskCount = sortedFindings.filter(f => f.severity === 'medium').length;
+      const lowRiskCount = sortedFindings.filter(f => f.severity === 'low').length;
+      const privacyScore = Math.max(0, Math.min(100, 100 - (highRiskCount * 10 + mediumRiskCount * 5 + lowRiskCount * 2)));
+
+      await supabase
+        .from('scans')
+        .update({
+          high_risk_count: highRiskCount,
+          medium_risk_count: mediumRiskCount,
+          low_risk_count: lowRiskCount,
+          privacy_score: privacyScore,
+          total_sources_found: sortedFindings.length,
+        } as any)
+        .eq('id', scanId);
+    }
+
     // Bill the scan (idempotent)
     await supabase.functions.invoke('billing/metering/report-scan', {
       body: { workspace_id: workspaceId, count: 1 }
@@ -245,6 +287,7 @@ serve(async (req) => {
     console.log(`[orchestrate] Completed in ${tookMs}ms: ${sortedFindings.length} findings`);
 
     return ok({
+      scanId,
       counts: {
         total: sortedFindings.length,
         bySeverity: sortedFindings.reduce((acc, f) => {
