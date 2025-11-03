@@ -45,7 +45,7 @@ export function useWorkspace(): WorkspaceContext {
 
       // Get all workspaces user belongs to
       const { data: workspaceUsers, error: usersError } = await supabase
-        .from('workspace_users' as any)
+        .from('workspace_members' as any)
         .select('workspace_id, role, workspaces(*)')
         .eq('user_id', user.id);
 
@@ -94,7 +94,7 @@ export function useWorkspace(): WorkspaceContext {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: workspaceUser } = await supabase
-          .from('workspace_users' as any)
+          .from('workspace_members' as any)
           .select('role')
           .eq('workspace_id', workspaceId)
           .eq('user_id', user.id)
