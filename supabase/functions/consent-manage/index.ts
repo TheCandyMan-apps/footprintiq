@@ -96,13 +96,16 @@ serve(async (req) => {
         return bad(403, 'not_a_workspace_member');
       }
 
-      // Insert consent
+      // Upsert consent (insert or update if exists)
       const { data, error } = await supabase
         .from('sensitive_consents')
-        .insert({
+        .upsert({
           workspace_id,
           user_id: user.id,
           categories,
+          noted_at: new Date().toISOString(),
+        }, {
+          onConflict: 'workspace_id,user_id'
         })
         .select()
         .single();
