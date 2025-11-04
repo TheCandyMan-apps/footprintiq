@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 export interface AdvancedScanOptions {
   deepWeb?: boolean;
@@ -18,6 +19,7 @@ export interface ScanProgress {
 }
 
 export function useAdvancedScan() {
+  const { workspace } = useWorkspace();
   const [isScanning, setIsScanning] = useState(false);
   const [progress, setProgress] = useState<ScanProgress>({
     stage: 'idle',
@@ -39,19 +41,39 @@ export function useAdvancedScan() {
     setProgress({ stage: 'initializing', progress: 0, message: 'Starting scan...' });
 
     try {
-      // Create initial scan via orchestrator
+      // Create initial scan via orchestrator (expects type, value, workspaceId)
+      if (!workspace?.id) {
+        throw new Error('No workspace selected');
+      }
+
+      let type: 'email' | 'username' | 'domain' | 'phone';
+      let value: string | undefined;
+
+      if (scanData.email) {
+        type = 'email';
+        value = scanData.email;
+      } else if (scanData.username) {
+        type = 'username';
+        value = scanData.username;
+      } else if (scanData.phone) {
+        type = 'phone';
+        value = scanData.phone;
+      } else {
+        throw new Error('Please provide an email, username, or phone');
+      }
+
       const { data: orchestrateData, error: orchestrateError } = await supabase.functions.invoke('scan-orchestrate', {
         body: {
-          email: scanData.email,
-          phone: scanData.phone,
-          firstName: scanData.firstName,
-          lastName: scanData.lastName,
-          username: scanData.username,
+          type,
+          value: value!,
+          workspaceId: workspace.id,
+          options: { includeDarkweb: !!options.deepWeb },
         },
       });
 
       if (orchestrateError) throw orchestrateError;
-      const scan = { id: orchestrateData.scanId };
+      if (!orchestrateData?.scanId) throw new Error('Scan orchestration failed');
+      const scan = { id: orchestrateData.scanId as string };
 
       setProgress({ stage: 'scanning', progress: 30, message: 'Scanning data sources...' });
 
@@ -63,7 +85,7 @@ export function useAdvancedScan() {
         const { error: darkwebError } = await supabase
           .from('darkweb_targets')
           .insert({
-            workspace_id: (await supabase.auth.getUser()).data.user?.id!,
+            workspace_id: workspace!.id,
             type: scanData.email ? 'email' : 'username',
             value: targetValue,
             active: true,
