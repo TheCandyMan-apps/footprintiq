@@ -43,71 +43,61 @@ export function useWorkspace(): WorkspaceContext {
         return;
       }
 
-      // Get all workspaces user belongs to
-      const { data: workspaceUsers, error: usersError } = await supabase
+      // Get workspace memberships without join to avoid RLS recursion
+      const { data: memberships, error: membershipsError } = await supabase
         .from('workspace_members' as any)
-        .select('workspace_id, role, workspaces(*)')
+        .select('workspace_id, role')
         .eq('user_id', user.id);
 
-      if (usersError) throw usersError;
+      if (membershipsError) throw membershipsError;
 
-      // If no memberships found, but user owns workspaces, auto-repair by adding membership as admin
-      let membershipList = workspaceUsers as any[] | null | undefined;
-      if (!membershipList || membershipList.length === 0) {
-        const { data: ownedWorkspaces, error: ownedError } = await supabase
+      const membershipRows = (memberships as any[]) || [];
+
+      // Fetch workspaces where the user is a member
+      const memberWorkspaceIds = membershipRows.map((m: any) => m.workspace_id);
+      let memberWorkspaces: Workspace[] = [];
+      if (memberWorkspaceIds.length > 0) {
+        const { data: wsByMembership, error: memberWsError } = await supabase
           .from('workspaces' as any)
-          .select('id, name, owner_id')
-          .eq('owner_id', user.id);
-
-        if (ownedError) {
-          console.warn('Failed to fetch owned workspaces:', ownedError);
-        }
-
-        if (ownedWorkspaces && ownedWorkspaces.length > 0) {
-          // Ensure membership exists for owner
-          for (const ow of ownedWorkspaces as any[]) {
-            await supabase
-              .from('workspace_members' as any)
-              .upsert(
-                { workspace_id: ow.id, user_id: user.id, role: 'admin' },
-                { onConflict: 'workspace_id,user_id' } as any
-              );
-          }
-
-          const { data: repairedMembership } = await supabase
-            .from('workspace_members' as any)
-            .select('workspace_id, role, workspaces(*)')
-            .eq('user_id', user.id);
-
-          if (repairedMembership && repairedMembership.length > 0) {
-            membershipList = repairedMembership as any[];
-          }
-        }
+          .select('*')
+          .in('id', memberWorkspaceIds);
+        if (memberWsError) throw memberWsError;
+        memberWorkspaces = (wsByMembership || []) as unknown as Workspace[];
       }
 
-      const userWorkspaces = membershipList
-        ?.map((wu: any) => wu.workspaces)
-        .filter(Boolean) as Workspace[];
+      // Also fetch workspaces owned by the user (owner access is allowed by RLS)
+      const { data: ownedWorkspaces, error: ownedError } = await supabase
+        .from('workspaces' as any)
+        .select('*')
+        .eq('owner_id', user.id);
+      if (ownedError) {
+        console.warn('Failed to fetch owned workspaces:', ownedError);
+      }
 
-      setWorkspaces(userWorkspaces || []);
+      // Merge and deduplicate
+      const combined = [...memberWorkspaces, ...((ownedWorkspaces || []) as any)];
+      const deduped = Array.from(new Map(combined.map((w: any) => [w.id, w])).values()) as Workspace[];
+
+      setWorkspaces(deduped || []);
 
       // Get current workspace from sessionStorage or use first
       const storedWorkspaceId = sessionStorage.getItem('current_workspace_id');
-      let currentWorkspace = userWorkspaces?.find(w => w.id === storedWorkspaceId);
+      let currentWorkspace = deduped.find(w => w.id === storedWorkspaceId) as Workspace | undefined;
       
-      if (!currentWorkspace && userWorkspaces.length > 0) {
-        currentWorkspace = userWorkspaces[0];
+      if (!currentWorkspace && deduped.length > 0) {
+        currentWorkspace = deduped[0];
         sessionStorage.setItem('current_workspace_id', currentWorkspace.id);
       }
 
       if (currentWorkspace) {
         setWorkspace(currentWorkspace);
         
-        // Get user's role in this workspace
-        const workspaceUser = workspaceUsers?.find(
-          (wu: any) => wu.workspace_id === currentWorkspace!.id
-        ) as any;
-        setCurrentRole(workspaceUser?.role ? workspaceUser.role as WorkspaceRole : null);
+        // Determine role: owner if owned, otherwise from membership
+        const membership = membershipRows.find((m: any) => m.workspace_id === currentWorkspace!.id);
+        const role: WorkspaceRole | null = currentWorkspace.owner_id === user.id
+          ? 'owner'
+          : (membership?.role as WorkspaceRole) || null;
+        setCurrentRole(role);
       }
 
       setLoading(false);
