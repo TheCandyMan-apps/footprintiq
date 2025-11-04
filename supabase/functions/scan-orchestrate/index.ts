@@ -227,6 +227,8 @@ serve(async (req) => {
     const tasks = providers.map(provider => async () => {
       const cacheKey = `scan:${provider}:${type}:${value}`;
       
+      console.log(`[orchestrate] Calling provider: ${provider} for ${type}:${value}`);
+      
       try {
         return await withCache(
           cacheKey,
@@ -236,9 +238,14 @@ serve(async (req) => {
               body: { provider, target: value, type }
             });
 
-
-            if (error) throw error;
-            return data.findings || [];
+            if (error) {
+              console.error(`[orchestrate] Provider ${provider} error:`, error);
+              throw error;
+            }
+            
+            const findings = data?.findings || [];
+            console.log(`[orchestrate] Provider ${provider} returned ${findings.length} findings`);
+            return findings;
           },
           { ttlSeconds: 86400 }
         );
