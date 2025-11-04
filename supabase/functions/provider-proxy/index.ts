@@ -50,7 +50,7 @@ serve(async (req) => {
         result = await callIntelX(target);
         break;
       case 'dehashed':
-        result = await callDeHashed(target);
+        result = await callDeHashed(target, type);
         break;
       case 'censys':
         result = await callCensys(target, type);
@@ -342,12 +342,23 @@ async function callIntelX(query: string) {
   return await response.json();
 }
 
-async function callDeHashed(query: string) {
+async function callDeHashed(target: string, type: string) {
   const API_KEY = Deno.env.get('DEHASHED_API_KEY');
   const USERNAME = Deno.env.get('DEHASHED_API_KEY_USERNAME');
   if (!API_KEY || !USERNAME) return { findings: [] };
 
   try {
+    // Format query based on type - DeHashed requires field:value format
+    const fieldMap: Record<string, string> = {
+      'email': 'email',
+      'username': 'username',
+      'name': 'name',
+      'phone': 'phone',
+      'domain': 'domain'
+    };
+    const field = fieldMap[type] || 'username';
+    const query = `${field}:${target}`;
+    
     const auth = btoa(`${USERNAME}:${API_KEY}`);
     const response = await fetch(
       `https://api.dehashed.com/search?query=${encodeURIComponent(query)}`,
