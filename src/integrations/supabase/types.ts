@@ -1867,6 +1867,42 @@ export type Database = {
         }
         Relationships: []
       }
+      consent_history: {
+        Row: {
+          action: string
+          consent_type: string
+          created_at: string
+          id: string
+          ip_address: unknown
+          new_value: Json | null
+          previous_value: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          consent_type: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          new_value?: Json | null
+          previous_value?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          consent_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          new_value?: Json | null
+          previous_value?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       credits_ledger: {
         Row: {
           created_at: string
@@ -5408,6 +5444,45 @@ export type Database = {
           period_end?: string
           period_start?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_consents: {
+        Row: {
+          consent_type: string
+          created_at: string
+          granted: boolean
+          granted_at: string | null
+          id: string
+          ip_address: unknown
+          revoked_at: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          consent_type: string
+          created_at?: string
+          granted?: boolean
+          granted_at?: string | null
+          id?: string
+          ip_address?: unknown
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          consent_type?: string
+          created_at?: string
+          granted?: boolean
+          granted_at?: string | null
+          id?: string
+          ip_address?: unknown
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

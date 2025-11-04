@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import { CookieConsent } from "@/components/CookieConsent";
+import { CookieConsent } from "@/components/consent/CookieConsent";
 import { ThemeProvider } from "next-themes";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { GlobalSearch } from "@/components/GlobalSearch";
@@ -127,6 +127,8 @@ const InstallApp = lazy(() => import("./pages/InstallApp"));
 const Enterprise = lazy(() => import("./pages/Enterprise"));
 const Billing = lazy(() => import("./pages/Settings/Billing"));
 const APIKeys = lazy(() => import("./pages/Settings/APIKeys"));
+const PrivacySettings = lazy(() => import("./pages/Settings/Privacy"));
+const SubscriptionSettings = lazy(() => import("./pages/Settings/Subscription"));
 const NewReport = lazy(() => import("./pages/Reports/New"));
 const ReportsList = lazy(() => import("./pages/Reports/List"));
 const ApiDocs = lazy(() => import("./pages/ApiDocs"));
@@ -227,6 +229,8 @@ function RouterContent() {
           <Route path="/enterprise" element={<Enterprise />} />
           <Route path="/settings/billing" element={<Billing />} />
           <Route path="/settings/api-keys" element={<APIKeys />} />
+          <Route path="/settings/privacy" element={<PrivacySettings />} />
+          <Route path="/settings/subscription" element={<SubscriptionSettings />} />
           <Route path="/api-docs" element={<ApiDocs />} />
           <Route path="/legal/dpa" element={<DPA />} />
           <Route path="/scan/advanced" element={<AdvancedScan />} />
