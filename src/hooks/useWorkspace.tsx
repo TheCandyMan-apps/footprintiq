@@ -76,9 +76,39 @@ export function useWorkspace(): WorkspaceContext {
         console.warn('Failed to fetch owned workspaces:', ownedError);
       }
 
+
       // Merge and deduplicate
-      const combined = [...memberWorkspaces, ...((ownedWorkspaces || []) as any)];
-      const deduped = Array.from(new Map(combined.map((w: any) => [w.id, w])).values()) as Workspace[];
+      let deduped = Array.from(new Map([
+        ...((memberWorkspaces || []) as any[]),
+        ...((ownedWorkspaces || []) as any[]),
+      ].map((w: any) => [w.id, w])).values()) as Workspace[];
+
+      // Auto-create a personal workspace if none exists
+      if (!deduped.length) {
+        try {
+          const name = `${(user.email?.split('@')[0] || 'Personal')} Workspace`;
+          const slug = `personal-${user.id.slice(0, 8)}`;
+          const { data: createdWs, error: createErr } = await supabase
+            .from('workspaces' as any)
+            .insert({ name, slug, owner_id: user.id, settings: {} })
+            .select('*')
+            .single() as any;
+
+          if (!createErr && createdWs) {
+            // Ensure membership exists for orchestrator checks
+            await supabase.from('workspace_members' as any).insert({
+              workspace_id: (createdWs as any).id,
+              user_id: user.id,
+              role: 'admin',
+            });
+            deduped = [createdWs as unknown as Workspace];
+          } else if (createErr) {
+            console.error('Failed to auto-create workspace:', createErr);
+          }
+        } catch (e) {
+          console.error('Auto-create workspace error:', e);
+        }
+      }
 
       setWorkspaces(deduped || []);
 
