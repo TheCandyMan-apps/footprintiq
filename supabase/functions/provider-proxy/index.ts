@@ -301,7 +301,7 @@ async function callShodan(target: string) {
 
 async function callHIBP(email: string) {
   const API_KEY = Deno.env.get('HIBP_API_KEY');
-  if (!API_KEY) throw new Error('HIBP_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch(
     `https://haveibeenpwned.com/api/v3/breachedaccount/${encodeURIComponent(email)}?truncateResponse=false`,
@@ -321,7 +321,7 @@ async function callHIBP(email: string) {
 
 async function callIntelX(query: string) {
   const API_KEY = Deno.env.get('INTELX_API_KEY');
-  if (!API_KEY) throw new Error('INTELX_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch('https://2.intelx.io/intelligent/search', {
     method: 'POST',
@@ -345,7 +345,7 @@ async function callIntelX(query: string) {
 async function callDeHashed(query: string) {
   const API_KEY = Deno.env.get('DEHASHED_API_KEY');
   const USERNAME = Deno.env.get('DEHASHED_API_KEY_USERNAME');
-  if (!API_KEY || !USERNAME) throw new Error('DEHASHED credentials not configured');
+  if (!API_KEY || !USERNAME) return { findings: [] };
 
   const auth = btoa(`${USERNAME}:${API_KEY}`);
   const response = await fetch(
@@ -366,7 +366,7 @@ async function callDeHashed(query: string) {
 async function callCensys(target: string, type: 'domain' | 'ip') {
   const API_KEY_UID = Deno.env.get('CENSYS_API_KEY_UID');
   const API_KEY_SECRET = Deno.env.get('CENSYS_API_KEY_SECRET');
-  if (!API_KEY_UID || !API_KEY_SECRET) throw new Error('CENSYS credentials not configured');
+  if (!API_KEY_UID || !API_KEY_SECRET) return { findings: [] };
 
   const auth = btoa(`${API_KEY_UID}:${API_KEY_SECRET}`);
   const query = type === 'domain' ? `services.dns.names: "${target}"` : `ip: "${target}"`;
@@ -387,7 +387,7 @@ async function callCensys(target: string, type: 'domain' | 'ip') {
 
 async function callBinaryEdge(ip: string) {
   const API_KEY = Deno.env.get('BINARYEDGE_API_KEY');
-  if (!API_KEY) throw new Error('BINARYEDGE_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch(`https://api.binaryedge.io/v2/query/ip/${ip}`, {
     headers: {
@@ -402,7 +402,7 @@ async function callBinaryEdge(ip: string) {
 
 async function callOTX(target: string, type: 'domain' | 'ip') {
   const API_KEY = Deno.env.get('ALIENVAULT_API_KEY');
-  if (!API_KEY) throw new Error('ALIENVAULT_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const endpoint = type === 'domain' ? 'indicators/domain' : 'indicators/IPv4';
   const response = await fetch(
@@ -422,7 +422,7 @@ async function callOTX(target: string, type: 'domain' | 'ip') {
 // New feed collectors returning normalized indicators
 async function collectOtxFeed() {
   const API_KEY = Deno.env.get('ALIENVAULT_API_KEY');
-  if (!API_KEY) throw new Error('ALIENVAULT_API_KEY not configured');
+  if (!API_KEY) return [];
 
   const response = await fetch('https://otx.alienvault.com/api/v1/pulses/subscribed', {
     headers: { 'X-OTX-API-KEY': API_KEY, 'User-Agent': 'FootprintIQ-Server' },
@@ -450,7 +450,7 @@ async function collectOtxFeed() {
 
 async function collectShodanFeed(query: string) {
   const API_KEY = Deno.env.get('SHODAN_API_KEY');
-  if (!API_KEY) throw new Error('SHODAN_API_KEY not configured');
+  if (!API_KEY) return [];
 
   const response = await fetch(
     `https://api.shodan.io/shodan/host/search?key=${API_KEY}&query=${encodeURIComponent(query)}`,
@@ -477,7 +477,7 @@ async function collectShodanFeed(query: string) {
 
 async function collectGreyNoiseFeed() {
   const API_KEY = Deno.env.get('GREYNOISE_API_KEY');
-  if (!API_KEY) throw new Error('GREYNOISE_API_KEY not configured');
+  if (!API_KEY) return [];
 
   const response = await fetch('https://api.greynoise.io/v3/community/ips', {
     headers: { 'key': API_KEY, 'User-Agent': 'FootprintIQ-Server' },
@@ -528,7 +528,7 @@ function mapOtxSeverity(adversary: string): 'low' | 'medium' | 'high' | 'critica
 
 async function callHunter(domain: string) {
   const API_KEY = Deno.env.get('HUNTER_API_KEY');
-  if (!API_KEY) throw new Error('HUNTER_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch(
     `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${API_KEY}`,
@@ -541,7 +541,7 @@ async function callHunter(domain: string) {
 
 async function callFullHunt(domain: string) {
   const API_KEY = Deno.env.get('FULLHUNT_API_KEY');
-  if (!API_KEY) throw new Error('FULLHUNT_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch(
     `https://fullhunt.io/api/v1/domain/${encodeURIComponent(domain)}/subdomains`,
@@ -559,7 +559,7 @@ async function callFullHunt(domain: string) {
 
 async function callApify(username: string, platform: string) {
   const API_KEY = Deno.env.get('APIFY_API_KEY');
-  if (!API_KEY) throw new Error('APIFY_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const actorMap: Record<string, string> = {
     instagram: 'apify/instagram-profile-scraper',
@@ -590,7 +590,7 @@ async function callApify(username: string, platform: string) {
 async function callGoogleCSE(query: string) {
   const API_KEY = Deno.env.get('GOOGLE_CSE_API_KEY');
   const CX = Deno.env.get('GOOGLE_CSE_CX');
-  if (!API_KEY || !CX) throw new Error('Google CSE credentials not configured');
+  if (!API_KEY || !CX) return { findings: [] };
 
   const response = await fetch(
     `https://www.googleapis.com/customsearch/v1?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(query)}`,
@@ -603,7 +603,7 @@ async function callGoogleCSE(query: string) {
 
 async function callDarkSearch(query: string) {
   const API_KEY = Deno.env.get('DARKSEARCH_API_KEY');
-  if (!API_KEY) throw new Error('DARKSEARCH_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch(
     `https://darksearch.io/api/search?query=${encodeURIComponent(query)}`,
@@ -621,7 +621,7 @@ async function callDarkSearch(query: string) {
 
 async function callSecurityTrails(domain: string) {
   const API_KEY = Deno.env.get('SECURITYTRAILS_API_KEY');
-  if (!API_KEY) throw new Error('SECURITYTRAILS_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch(
     `https://api.securitytrails.com/v1/domain/${encodeURIComponent(domain)}`,
@@ -639,7 +639,7 @@ async function callSecurityTrails(domain: string) {
 
 async function callURLScan(url: string) {
   const API_KEY = Deno.env.get('URLSCAN_API_KEY');
-  if (!API_KEY) throw new Error('URLSCAN_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch('https://urlscan.io/api/v1/scan/', {
     method: 'POST',
@@ -657,7 +657,7 @@ async function callURLScan(url: string) {
 
 async function callWHOISXML(domain: string) {
   const API_KEY = Deno.env.get('WHOISXML_API_KEY');
-  if (!API_KEY) throw new Error('WHOISXML_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch(
     `https://www.whoisxmlapi.com/whoisserver/WhoisService?apiKey=${API_KEY}&domainName=${encodeURIComponent(domain)}&outputFormat=JSON`,
@@ -670,7 +670,7 @@ async function callWHOISXML(domain: string) {
 
 async function callAbstractPhone(phone: string) {
   const API_KEY = Deno.env.get('ABSTRACT_API_KEY');
-  if (!API_KEY) throw new Error('ABSTRACT_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch(
     `https://phonevalidation.abstractapi.com/v1/?api_key=${API_KEY}&phone=${encodeURIComponent(phone)}`,
@@ -683,7 +683,7 @@ async function callAbstractPhone(phone: string) {
 
 async function callAbstractIPGeo(ip: string) {
   const API_KEY = Deno.env.get('ABSTRACT_API_KEY');
-  if (!API_KEY) throw new Error('ABSTRACT_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch(
     `https://ipgeolocation.abstractapi.com/v1/?api_key=${API_KEY}&ip_address=${encodeURIComponent(ip)}`,
@@ -696,7 +696,7 @@ async function callAbstractIPGeo(ip: string) {
 
 async function callAbstractCompany(domain: string) {
   const API_KEY = Deno.env.get('ABSTRACT_API_KEY');
-  if (!API_KEY) throw new Error('ABSTRACT_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch(
     `https://companyenrichment.abstractapi.com/v1/?api_key=${API_KEY}&domain=${encodeURIComponent(domain)}`,
@@ -709,7 +709,7 @@ async function callAbstractCompany(domain: string) {
 
 async function callAbuseIPDB(ip: string) {
   const API_KEY = Deno.env.get('ABUSEIPDB_API_KEY');
-  if (!API_KEY) throw new Error('ABUSEIPDB_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   const response = await fetch(
     `https://api.abuseipdb.com/api/v2/check?ipAddress=${encodeURIComponent(ip)}&maxAgeInDays=90&verbose`,
@@ -728,7 +728,7 @@ async function callAbuseIPDB(ip: string) {
 
 async function callApifyRunner(actorId: string, target: string, input: Record<string, any>) {
   const API_TOKEN = Deno.env.get('APIFY_API_TOKEN');
-  if (!API_TOKEN) throw new Error('APIFY_API_TOKEN not configured');
+  if (!API_TOKEN) return { findings: [] };
 
   const response = await fetch(
     `${Deno.env.get('SUPABASE_URL')}/functions/v1/providers/apify-runner`,
@@ -752,7 +752,7 @@ async function callApifyRunner(actorId: string, target: string, input: Record<st
 
 async function callVirusTotal(target: string, type: 'domain' | 'ip' | 'url' | 'file') {
   const API_KEY = Deno.env.get('VIRUSTOTAL_API_KEY');
-  if (!API_KEY) throw new Error('VIRUSTOTAL_API_KEY not configured');
+  if (!API_KEY) return { findings: [] };
 
   let endpoint = '';
   switch (type) {
