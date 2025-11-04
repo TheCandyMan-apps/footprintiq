@@ -197,3 +197,24 @@ verify_jwt = false
 
 [functions.consent-manage]
 verify_jwt = true
+
+[functions.gdpr-consent]
+verify_jwt = true
+
+[functions."billing/webhook"]
+verify_jwt = false
+
+[functions."billing/check-subscription"]
+verify_jwt = true
+
+[functions."billing/customer-portal"]
+verify_jwt = true
+
+[functions.threat-forecast-generator]
+verify_jwt = false
+
+[functions.ai-rag-indexer]
+verify_jwt = true
+
+[functions.monitoring-executor]
+verify_jwt = false

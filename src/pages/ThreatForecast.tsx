@@ -40,6 +40,18 @@ export default function ThreatForecast() {
         .limit(10);
 
       if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        // Generate initial forecast if none exists
+        toast.info('Generating initial forecast...');
+        const { error: generateError } = await supabase.functions.invoke('threat-forecast-generator');
+        if (!generateError) {
+          // Reload after generation
+          setTimeout(() => loadForecasts(), 2000);
+          return;
+        }
+      }
+      
       setForecasts(data || []);
       if (data && data.length > 0) {
         setSelectedForecast(data[0]);
@@ -99,9 +111,25 @@ export default function ThreatForecast() {
             AI-powered predictive analytics for threat detection
           </p>
         </div>
-        <Button onClick={() => navigate('/dashboard')} variant="outline">
-          Back to Dashboard
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={async () => {
+              toast.info('Generating new forecast...');
+              const { error } = await supabase.functions.invoke('threat-forecast-generator');
+              if (!error) {
+                toast.success('Forecast generated');
+                loadForecasts();
+              }
+            }} 
+            variant="outline"
+          >
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Generate Forecast
+          </Button>
+          <Button onClick={() => navigate('/dashboard')} variant="outline">
+            Back to Dashboard
+          </Button>
+        </div>
       </div>
 
       {isLoading ? (
