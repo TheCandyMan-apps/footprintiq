@@ -4732,6 +4732,7 @@ export type Database = {
       }
       scans: {
         Row: {
+          completed_at: string | null
           created_at: string
           email: string | null
           first_name: string | null
@@ -4742,12 +4743,15 @@ export type Database = {
           medium_risk_count: number | null
           phone: string | null
           privacy_score: number | null
+          provider_counts: Json | null
           scan_type: Database["public"]["Enums"]["scan_type"]
+          status: string | null
           total_sources_found: number | null
           user_id: string
           username: string | null
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
@@ -4758,12 +4762,15 @@ export type Database = {
           medium_risk_count?: number | null
           phone?: string | null
           privacy_score?: number | null
+          provider_counts?: Json | null
           scan_type: Database["public"]["Enums"]["scan_type"]
+          status?: string | null
           total_sources_found?: number | null
           user_id: string
           username?: string | null
         }
         Update: {
+          completed_at?: string | null
           created_at?: string
           email?: string | null
           first_name?: string | null
@@ -4774,7 +4781,9 @@ export type Database = {
           medium_risk_count?: number | null
           phone?: string | null
           privacy_score?: number | null
+          provider_counts?: Json | null
           scan_type?: Database["public"]["Enums"]["scan_type"]
+          status?: string | null
           total_sources_found?: number | null
           user_id?: string
           username?: string | null

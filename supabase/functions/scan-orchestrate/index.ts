@@ -143,7 +143,7 @@ serve(async (req) => {
       }
     }
 
-    // Create scan record for dashboard visibility
+    // Create scan record with pending status
     let scanId: string | null = null;
     try {
       const { data: scan, error: scanError } = await supabase
@@ -154,6 +154,8 @@ serve(async (req) => {
           email: type === 'email' ? value : null,
           username: type === 'username' ? value : null,
           phone: type === 'phone' ? value : null,
+          status: 'pending',
+          provider_counts: {}
         } as any)
         .select('id')
         .single();
@@ -258,21 +260,30 @@ serve(async (req) => {
       );
     }
 
-    // Update scan record with results and stats
+    // Update scan record with results, stats, and completed status
     if (scanId) {
       const highRiskCount = sortedFindings.filter(f => f.severity === 'high').length;
       const mediumRiskCount = sortedFindings.filter(f => f.severity === 'medium').length;
       const lowRiskCount = sortedFindings.filter(f => f.severity === 'low').length;
       const privacyScore = Math.max(0, Math.min(100, 100 - (highRiskCount * 10 + mediumRiskCount * 5 + lowRiskCount * 2)));
+      
+      // Calculate provider counts
+      const providerCounts = sortedFindings.reduce((acc, f) => {
+        acc[f.provider] = (acc[f.provider] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
 
       await supabase
         .from('scans')
         .update({
+          status: 'completed',
+          completed_at: new Date().toISOString(),
           high_risk_count: highRiskCount,
           medium_risk_count: mediumRiskCount,
           low_risk_count: lowRiskCount,
           privacy_score: privacyScore,
           total_sources_found: sortedFindings.length,
+          provider_counts: providerCounts
         } as any)
         .eq('id', scanId);
     }

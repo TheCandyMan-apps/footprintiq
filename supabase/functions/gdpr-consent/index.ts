@@ -37,76 +37,55 @@ serve(async (req) => {
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip');
     const userAgent = req.headers.get('user-agent');
 
-    // Process each consent type
+    // Process each consent type with upsert to avoid conflicts
     const consentTypes: Array<keyof ConsentUpdate> = ['necessary', 'functional', 'analytics', 'marketing'];
     
     for (const consentType of consentTypes) {
       const granted = consents[consentType];
       
-      // Check existing consent
+      // Get existing consent for history logging
       const { data: existing } = await supabase
         .from('user_consents')
-        .select('*')
+        .select('granted')
         .eq('user_id', user.id)
         .eq('consent_type', consentType)
         .single();
 
-      if (existing) {
-        // Update existing consent
-        const { error: updateError } = await supabase
-          .from('user_consents')
-          .update({
-            granted,
-            granted_at: granted ? new Date().toISOString() : existing.granted_at,
-            revoked_at: !granted ? new Date().toISOString() : null,
-            ip_address: ipAddress,
-            user_agent: userAgent,
-          })
-          .eq('id', existing.id);
-
-        if (updateError) throw updateError;
-
-        // Log to history
-        await supabase.from('consent_history').insert({
+      // Upsert consent (handles both insert and update)
+      const { error: upsertError } = await supabase
+        .from('user_consents')
+        .upsert({
           user_id: user.id,
           consent_type: consentType,
-          action: granted ? 'granted' : 'revoked',
-          previous_value: { granted: existing.granted },
-          new_value: { granted },
+          granted,
+          granted_at: granted ? new Date().toISOString() : null,
+          revoked_at: !granted ? new Date().toISOString() : null,
           ip_address: ipAddress,
           user_agent: userAgent,
+        }, {
+          onConflict: 'user_id,consent_type'
         });
-      } else {
-        // Insert new consent
-        const { error: insertError } = await supabase
-          .from('user_consents')
-          .insert({
-            user_id: user.id,
-            consent_type: consentType,
-            granted,
-            granted_at: granted ? new Date().toISOString() : null,
-            ip_address: ipAddress,
-            user_agent: userAgent,
-          });
 
-        if (insertError) throw insertError;
-
-        // Log to history
-        await supabase.from('consent_history').insert({
-          user_id: user.id,
-          consent_type: consentType,
-          action: 'granted',
-          previous_value: null,
-          new_value: { granted },
-          ip_address: ipAddress,
-          user_agent: userAgent,
-        });
+      if (upsertError) {
+        console.error(`[gdpr-consent] Upsert error for ${consentType}:`, upsertError);
+        throw upsertError;
       }
+
+      // Log to history
+      await supabase.from('consent_history').insert({
+        user_id: user.id,
+        consent_type: consentType,
+        action: granted ? 'granted' : 'revoked',
+        previous_value: existing ? { granted: existing.granted } : null,
+        new_value: { granted },
+        ip_address: ipAddress,
+        user_agent: userAgent,
+      });
     }
 
     return ok({ success: true, message: 'Consent preferences saved' });
   } catch (error) {
-    console.error('GDPR consent error:', error);
+    console.error('[gdpr-consent] Error:', error);
     return bad(500, error instanceof Error ? error.message : 'Unknown error');
   }
 });
