@@ -36,8 +36,32 @@ serve(async (req) => {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const userId = session.metadata?.user_id;
+        const workspaceId = session.metadata?.workspace_id;
+        const credits = session.metadata?.credits;
         
-        if (userId && session.subscription) {
+        // Handle credits purchase (one-time payment)
+        if (userId && workspaceId && credits && !session.subscription) {
+          const creditAmount = parseInt(credits);
+          console.log(`Adding ${creditAmount} credits to workspace ${workspaceId}`);
+          
+          // Add credits to the workspace
+          const { error: ledgerError } = await supabase
+            .from('credits_ledger')
+            .insert({
+              workspace_id: workspaceId,
+              delta: creditAmount,
+              description: `Purchased ${creditAmount} credits via Stripe`,
+              created_by: userId,
+            });
+          
+          if (ledgerError) {
+            console.error('Error adding credits:', ledgerError);
+          } else {
+            console.log(`Successfully added ${creditAmount} credits to workspace ${workspaceId}`);
+          }
+        }
+        // Handle subscription purchase
+        else if (userId && session.subscription) {
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
           const priceId = subscription.items.data[0].price.id;
           
