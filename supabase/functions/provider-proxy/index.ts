@@ -134,7 +134,10 @@ serve(async (req) => {
         throw new Error(`Unknown provider: ${provider}`);
     }
 
-    return new Response(JSON.stringify(result), {
+    // Normalize response to UFM format
+    const normalizedResult = { findings: Array.isArray(result) ? result : result.findings || [] };
+
+    return new Response(JSON.stringify(normalizedResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
