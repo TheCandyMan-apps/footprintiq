@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
-type SubscriptionTier = 'free' | 'premium' | 'family';
+type SubscriptionTier = 'free' | 'analyst' | 'pro' | 'enterprise';
 
 interface SubscriptionContextType {
   user: User | null;
@@ -10,6 +10,7 @@ interface SubscriptionContextType {
   subscriptionEnd: string | null;
   isLoading: boolean;
   isPremium: boolean;
+  isProOrHigher: boolean;
   refreshSubscription: () => Promise<void>;
 }
 
@@ -30,24 +31,23 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // UI-only check - actual authorization enforced server-side via RLS policies
-      // and has_role() function calls in edge functions
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role, subscription_tier')
         .eq('user_id', session.user.id)
         .single();
 
-      // Display admin users as premium (UI hint only)
+      // Display admin users as enterprise (UI hint only)
       if (roleData?.role === 'admin') {
-        setSubscriptionTier('premium');
+        setSubscriptionTier('enterprise');
         return;
       }
 
-      const { data } = await supabase.functions.invoke('check-subscription');
-      if (data?.subscribed && data?.product_id) {
-        // Map product_id to tier if needed, default to premium for any active subscription
-        setSubscriptionTier('premium');
-        setSubscriptionEnd(data.subscription_end);
+      // Check actual Stripe subscription
+      const { data } = await supabase.functions.invoke('billing/check-subscription');
+      if (data?.subscribed && data?.tier) {
+        setSubscriptionTier(data.tier as SubscriptionTier);
+        setSubscriptionEnd(data.current_period_end || null);
       } else {
         setSubscriptionTier('free');
         setSubscriptionEnd(null);
@@ -94,10 +94,19 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  const isPremium = subscriptionTier === 'premium' || subscriptionTier === 'family';
+  const isPremium = subscriptionTier !== 'free';
+  const isProOrHigher = subscriptionTier === 'pro' || subscriptionTier === 'enterprise';
 
   return (
-    <SubscriptionContext.Provider value={{ user, subscriptionTier, subscriptionEnd, isLoading, isPremium, refreshSubscription }}>
+    <SubscriptionContext.Provider value={{ 
+      user, 
+      subscriptionTier, 
+      subscriptionEnd, 
+      isLoading, 
+      isPremium, 
+      isProOrHigher,
+      refreshSubscription 
+    }}>
       {children}
     </SubscriptionContext.Provider>
   );
@@ -106,7 +115,6 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
 export const useSubscription = () => {
   const context = useContext(SubscriptionContext);
   if (context === undefined) {
-    // Return default values instead of throwing to prevent app crash
     console.warn('useSubscription used outside SubscriptionProvider, returning defaults');
     return {
       user: null,
@@ -114,8 +122,11 @@ export const useSubscription = () => {
       subscriptionEnd: null,
       isLoading: false,
       isPremium: false,
+      isProOrHigher: false,
       refreshSubscription: async () => {},
     };
   }
   return context;
 };
+
+export type { SubscriptionTier };

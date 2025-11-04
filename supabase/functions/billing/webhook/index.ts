@@ -35,55 +35,101 @@ serve(async (req) => {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        const workspace_id = session.metadata?.workspace_id;
-        const plan = session.metadata?.plan as 'analyst' | 'pro' | 'enterprise';
-
-        if (workspace_id && plan) {
-          await supabase.from('billing_customers').upsert({
-            workspace_id,
-            stripe_customer_id: session.customer as string,
-            stripe_subscription_id: session.subscription as string,
-            plan,
-            status: 'active',
+        const userId = session.metadata?.user_id;
+        
+        if (userId && session.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+          const priceId = subscription.items.data[0].price.id;
+          
+          // Map price IDs to tiers
+          const tierMap: Record<string, 'free' | 'analyst' | 'pro' | 'enterprise'> = {
+            'price_1SPXbHPNdM5SAyj7lPBHvjIi': 'analyst',
+            'price_1SPXcEPNdM5SAyj7AbannmpP': 'pro',
+          };
+          
+          const tier = tierMap[priceId] || 'free';
+          const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
+          
+          // Update user subscription tier
+          await supabase.rpc('update_user_subscription', {
+            _user_id: userId,
+            _new_tier: tier,
+            _expires_at: expiresAt,
           });
+          
+          console.log(`Updated user ${userId} to ${tier} tier`);
         }
         break;
       }
 
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        await supabase
-          .from('billing_customers')
-          .update({
-            status: subscription.status === 'active' ? 'active' : 'past_due',
-            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-            seats: subscription.items.data[0]?.quantity || 1,
-          })
-          .eq('stripe_subscription_id', subscription.id);
+        const customer = await stripe.customers.retrieve(subscription.customer as string);
+        
+        if ('email' in customer && customer.email) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('email', customer.email)
+            .single();
+          
+          if (profile) {
+            const priceId = subscription.items.data[0].price.id;
+            const tierMap: Record<string, 'free' | 'analyst' | 'pro' | 'enterprise'> = {
+              'price_1SPXbHPNdM5SAyj7lPBHvjIi': 'analyst',
+              'price_1SPXcEPNdM5SAyj7AbannmpP': 'pro',
+            };
+            
+            const tier = subscription.status === 'active' ? (tierMap[priceId] || 'free') : 'free';
+            const expiresAt = subscription.status === 'active' 
+              ? new Date(subscription.current_period_end * 1000).toISOString()
+              : null;
+            
+            await supabase.rpc('update_user_subscription', {
+              _user_id: profile.user_id,
+              _new_tier: tier,
+              _expires_at: expiresAt,
+            });
+            
+            console.log(`Updated subscription for user ${profile.user_id} to ${tier}`);
+          }
+        }
         break;
       }
 
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        await supabase
-          .from('billing_customers')
-          .update({
-            status: 'canceled',
-            plan: 'free',
-          })
-          .eq('stripe_subscription_id', subscription.id);
+        const customer = await stripe.customers.retrieve(subscription.customer as string);
+        
+        if ('email' in customer && customer.email) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('email', customer.email)
+            .single();
+          
+          if (profile) {
+            await supabase.rpc('update_user_subscription', {
+              _user_id: profile.user_id,
+              _new_tier: 'free',
+              _expires_at: null,
+            });
+            
+            console.log(`Downgraded user ${profile.user_id} to free tier`);
+          }
+        }
+        break;
+      }
+
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as Stripe.Invoice;
+        console.log(`Payment failed for invoice ${invoice.id}`);
         break;
       }
 
       case 'invoice.paid': {
         const invoice = event.data.object as Stripe.Invoice;
-        if (invoice.subscription) {
-          await supabase
-            .from('billing_customers')
-            .update({ status: 'active' })
-            .eq('stripe_subscription_id', invoice.subscription as string);
-        }
+        console.log(`Invoice ${invoice.id} paid successfully`);
         break;
       }
     }
