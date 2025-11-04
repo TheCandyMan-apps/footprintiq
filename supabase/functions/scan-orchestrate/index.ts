@@ -216,6 +216,21 @@ serve(async (req) => {
     }
     providers = providers.filter(p => SUPPORTED_FUNCTION_PROVIDERS.has(p));
 
+    // Enforce provider compatibility with scan type
+    const providerTypeSupport: Record<string, Array<ScanRequest['type']>> = {
+      hibp: ['email'],
+      dehashed: ['email', 'username'],
+      fullcontact: ['email', 'domain'],
+      clearbit: ['email', 'domain'],
+      shodan: ['domain'],
+      pipl: ['email', 'phone'],
+    };
+    const incompatible = providers.filter(p => !(providerTypeSupport[p]?.includes(type)));
+    if (incompatible.length) {
+      console.warn('[orchestrate] Dropping type-incompatible providers:', incompatible);
+    }
+    providers = providers.filter(p => providerTypeSupport[p]?.includes(type));
+
     // Note: Advanced sources (dating/nsfw/darkweb) rely on providers not yet supported directly.
     // We intentionally skip adding them here until proxy support is stable.
 

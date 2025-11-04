@@ -347,20 +347,30 @@ async function callDeHashed(query: string) {
   const USERNAME = Deno.env.get('DEHASHED_API_KEY_USERNAME');
   if (!API_KEY || !USERNAME) return { findings: [] };
 
-  const auth = btoa(`${USERNAME}:${API_KEY}`);
-  const response = await fetch(
-    `https://api.dehashed.com/search?query=${encodeURIComponent(query)}`,
-    {
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Accept': 'application/json',
-        'User-Agent': 'FootprintIQ-Server',
-      },
-    }
-  );
+  try {
+    const auth = btoa(`${USERNAME}:${API_KEY}`);
+    const response = await fetch(
+      `https://api.dehashed.com/search?query=${encodeURIComponent(query)}`,
+      {
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Accept': 'application/json',
+          'User-Agent': 'FootprintIQ-Server',
+        },
+      }
+    );
 
-  if (!response.ok) throw new Error(`DeHashed API error: ${response.status}`);
-  return await response.json();
+    if (response.status === 404) return { findings: [] };
+    if (!response.ok) return { findings: [] };
+    const data = await response.json();
+    if (Array.isArray(data)) {
+      return { findings: data };
+    }
+    return data?.findings ? data : { findings: [] };
+  } catch (e) {
+    console.error('[dehashed] Error:', e);
+    return { findings: [] };
+  }
 }
 
 async function callCensys(target: string, type: 'domain' | 'ip') {
