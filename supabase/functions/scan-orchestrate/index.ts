@@ -156,10 +156,14 @@ serve(async (req) => {
     // Create scan record with pending status
     let scanId: string | null = null;
     try {
-      // Map request type to DB enum
-      const scanTypeDb = type === 'username' ? 'username' : 'personal_details';
+      // Map request type to DB enum with fallback
+      const scanTypeDb =
+        type === 'username' ? 'username'
+        : type === 'domain' ? 'domain'
+        : type === 'phone' ? 'phone'
+        : 'personal_details';
 
-      const { data: scan, error: scanError } = await supabase
+      const { data: scan, error: scanError } = await supabaseService
         .from('scans')
         .insert({
           user_id: user.id,
@@ -227,11 +231,11 @@ serve(async (req) => {
         return await withCache(
           cacheKey,
           async () => {
-            // Call respective provider function directly
-            const functionPath = `providers/${provider}`;
-            const { data, error } = await supabase.functions.invoke(functionPath, {
-              body: { target: value, type }
+            // Call provider through the unified proxy to avoid missing function deployments
+            const { data, error } = await supabase.functions.invoke('provider-proxy', {
+              body: { provider, target: value, type }
             });
+
 
             if (error) throw error;
             return data.findings || [];
@@ -259,7 +263,7 @@ serve(async (req) => {
 
     // Persist findings
     if (sortedFindings.length > 0) {
-      await supabase.from('findings').insert(
+      await supabaseService.from('findings').insert(
         sortedFindings.map(f => ({
           workspace_id: workspaceId,
           provider: f.provider,
@@ -286,7 +290,7 @@ serve(async (req) => {
         return acc;
       }, {} as Record<string, number>);
 
-      await supabase
+      await supabaseService
         .from('scans')
         .update({
           status: 'completed',
