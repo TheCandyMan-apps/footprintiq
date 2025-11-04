@@ -190,7 +190,7 @@ serve(async (req) => {
     const defaultProvidersByType: Record<ScanRequest['type'], string[]> = {
       email: ['hibp','dehashed','fullcontact','pipl','clearbit'],
       domain: ['shodan','clearbit','fullcontact'],
-      username: [],
+      username: ['dehashed'],
       phone: ['pipl']
     };
 
