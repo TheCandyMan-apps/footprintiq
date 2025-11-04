@@ -2,8 +2,16 @@
  * Upstash Redis cache utility for Edge Functions
  */
 
-const sanitizeEnv = (s?: string) => (s ?? '').trim().replace(/^['"]+|['"]+$/g, '');
-const UPSTASH_URL = sanitizeEnv(Deno.env.get('UPSTASH_REDIS_REST_URL')).replace(/\/+$/,'');
+const sanitizeEnv = (s?: string) => {
+  if (!s) return '';
+  // Remove quotes, whitespace, and the variable name if present
+  return s.trim()
+    .replace(/^UPSTASH_REDIS_REST_(URL|TOKEN)=/, '')
+    .replace(/^["']|["']$/g, '')
+    .replace(/\/+$/, '');
+};
+
+const UPSTASH_URL = sanitizeEnv(Deno.env.get('UPSTASH_REDIS_REST_URL'));
 const UPSTASH_TOKEN = sanitizeEnv(Deno.env.get('UPSTASH_REDIS_REST_TOKEN'));
 
 

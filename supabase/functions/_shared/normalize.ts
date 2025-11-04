@@ -79,11 +79,21 @@ export function normalizeApifyDarkweb(items: any[]): UFMFinding[] {
 /**
  * Deduplicate UFM findings by (provider + evidence keys)
  */
-export function deduplicateFindings(findings: UFMFinding[]): UFMFinding[] {
+export function deduplicateFindings(findings: UFMFinding[] | undefined): UFMFinding[] {
+  if (!findings || !Array.isArray(findings)) {
+    console.warn('[normalize] deduplicateFindings received invalid input:', findings);
+    return [];
+  }
+
   const seen = new Set<string>();
   const unique: UFMFinding[] = [];
 
   for (const finding of findings) {
+    if (!finding || !finding.provider || !finding.evidence) {
+      console.warn('[normalize] Skipping invalid finding:', finding);
+      continue;
+    }
+    
     const key = `${finding.provider}:${finding.evidence.map(e => `${e.key}=${e.value}`).join('|')}`;
     
     if (!seen.has(key)) {

@@ -119,16 +119,16 @@ serve(async (req) => {
         result = await callVirusTotal(target, type);
         break;
       case 'fullcontact':
-        result = await callProvider('fullcontact', { target, type });
+        result = await callFullContact(target, type);
         break;
       case 'pipl':
-        result = await callProvider('pipl', { target, type, options });
+        result = await callPipl(target, options);
         break;
       case 'clearbit':
-        result = await callProvider('clearbit', { target, type });
+        result = await callClearbit(target, type);
         break;
       case 'shodan':
-        result = await callProvider('shodan', { target, type });
+        result = await callShodan(target);
         break;
       default:
         throw new Error(`Unknown provider: ${provider}`);
@@ -150,20 +150,153 @@ serve(async (req) => {
 });
 
 async function callProvider(name: string, body: any) {
-  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.75.0');
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL') ?? '',
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-  );
+  // Map to actual provider implementations
+  const { target, type, options = {} } = body;
   
-  const { data, error } = await supabase.functions.invoke(`providers/${name}`, {
-    body,
-    headers: {
-      'x-internal-token': Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    }
-  });
-  if (error) throw error;
-  return data;
+  switch (name) {
+    case 'fullcontact':
+      return await callFullContact(target, type);
+    case 'pipl':
+      return await callPipl(target, options);
+    case 'clearbit':
+      return await callClearbit(target, type);
+    case 'shodan':
+      return await callShodan(target);
+    default:
+      throw new Error(`Provider ${name} not implemented`);
+  }
+}
+
+async function callFullContact(target: string, type: string) {
+  const API_KEY = Deno.env.get('FULLCONTACT_API_KEY');
+  if (!API_KEY) return { findings: [] };
+
+  try {
+    const endpoint = type === 'email' ? 'person.enrich' : 'company.enrich';
+    const response = await fetch(`https://api.fullcontact.com/v3/${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(type === 'email' ? { email: target } : { domain: target }),
+    });
+
+    if (!response.ok) return { findings: [] };
+    const data = await response.json();
+    
+    return {
+      findings: [{
+        provider: 'fullcontact',
+        kind: 'presence.hit',
+        severity: 'info',
+        confidence: 0.85,
+        observedAt: new Date().toISOString(),
+        evidence: [
+          { key: 'name', value: data.fullName || '' },
+          { key: 'location', value: data.location || '' },
+        ].filter(e => e.value),
+        meta: data,
+      }]
+    };
+  } catch (e) {
+    console.error('[fullcontact] Error:', e);
+    return { findings: [] };
+  }
+}
+
+async function callPipl(target: string, options: any) {
+  const API_KEY = Deno.env.get('PIPL_API_KEY');
+  if (!API_KEY) return { findings: [] };
+
+  try {
+    const response = await fetch(`https://api.pipl.com/search/?email=${encodeURIComponent(target)}&key=${API_KEY}`);
+    if (!response.ok) return { findings: [] };
+    const data = await response.json();
+    
+    return {
+      findings: data.person ? [{
+        provider: 'pipl',
+        kind: 'presence.hit',
+        severity: 'medium',
+        confidence: 0.9,
+        observedAt: new Date().toISOString(),
+        evidence: [
+          { key: 'names', value: data.person.names?.map((n: any) => n.display).join(', ') || '' },
+        ].filter(e => e.value),
+        meta: data.person,
+      }] : []
+    };
+  } catch (e) {
+    console.error('[pipl] Error:', e);
+    return { findings: [] };
+  }
+}
+
+async function callClearbit(target: string, type: string) {
+  const API_KEY = Deno.env.get('CLEARBIT_API_KEY');
+  if (!API_KEY) return { findings: [] };
+
+  try {
+    const endpoint = type === 'email' 
+      ? `https://person.clearbit.com/v2/people/find?email=${encodeURIComponent(target)}`
+      : `https://company.clearbit.com/v2/companies/find?domain=${encodeURIComponent(target)}`;
+    
+    const response = await fetch(endpoint, {
+      headers: { 'Authorization': `Bearer ${API_KEY}` },
+    });
+
+    if (!response.ok) return { findings: [] };
+    const data = await response.json();
+    
+    return {
+      findings: [{
+        provider: 'clearbit',
+        kind: 'presence.hit',
+        severity: 'info',
+        confidence: 0.9,
+        observedAt: new Date().toISOString(),
+        evidence: [
+          { key: 'name', value: data.name || data.person?.name?.fullName || '' },
+          { key: 'domain', value: data.domain || '' },
+        ].filter(e => e.value),
+        meta: data,
+      }]
+    };
+  } catch (e) {
+    console.error('[clearbit] Error:', e);
+    return { findings: [] };
+  }
+}
+
+async function callShodan(target: string) {
+  const API_KEY = Deno.env.get('SHODAN_API_KEY');
+  if (!API_KEY) return { findings: [] };
+
+  try {
+    const response = await fetch(`https://api.shodan.io/shodan/host/${target}?key=${API_KEY}`);
+    if (!response.ok) return { findings: [] };
+    const data = await response.json();
+    
+    return {
+      findings: [{
+        provider: 'shodan',
+        kind: 'presence.hit',
+        severity: data.ports?.length > 10 ? 'medium' : 'low',
+        confidence: 0.95,
+        observedAt: new Date().toISOString(),
+        evidence: [
+          { key: 'ip', value: data.ip_str || '' },
+          { key: 'org', value: data.org || '' },
+          { key: 'ports', value: data.ports?.slice(0, 20).join(', ') || '' },
+        ].filter(e => e.value),
+        meta: data,
+      }]
+    };
+  } catch (e) {
+    console.error('[shodan] Error:', e);
+    return { findings: [] };
+  }
 }
 
 async function callHIBP(email: string) {
