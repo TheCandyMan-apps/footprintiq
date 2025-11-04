@@ -156,11 +156,14 @@ serve(async (req) => {
     // Create scan record with pending status
     let scanId: string | null = null;
     try {
+      // Map request type to DB enum
+      const scanTypeDb = type === 'username' ? 'username' : 'personal_details';
+
       const { data: scan, error: scanError } = await supabase
         .from('scans')
         .insert({
           user_id: user.id,
-          scan_type: type,
+          scan_type: scanTypeDb as any,
           email: type === 'email' ? value : null,
           username: type === 'username' ? value : null,
           phone: type === 'phone' ? value : null,
@@ -304,7 +307,7 @@ serve(async (req) => {
       .insert({
         workspace_id: workspaceId,
         delta: -creditsRequired,
-        reason: `Scan: ${type} - ${value}`,
+        reason: 'scan',
         ref_id: scanId || null
       });
 
