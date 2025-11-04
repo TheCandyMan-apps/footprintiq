@@ -17,6 +17,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CommandPalette } from "@/components/CommandPalette";
+import { WorkspaceSwitcher } from "@/components/workspace/WorkspaceSwitcher";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -236,6 +237,7 @@ export const Header = () => {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
+            <WorkspaceSwitcher />
             <WorkspacePresence />
             <CommandPalette />
             {user && <NotificationBell />}
