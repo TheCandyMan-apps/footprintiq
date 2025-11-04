@@ -129,6 +129,7 @@ const Billing = lazy(() => import("./pages/Settings/Billing"));
 const APIKeys = lazy(() => import("./pages/Settings/APIKeys"));
 const PrivacySettings = lazy(() => import("./pages/Settings/Privacy"));
 const SubscriptionSettings = lazy(() => import("./pages/Settings/Subscription"));
+const CreditsSettings = lazy(() => import("./pages/Settings/Credits"));
 const NewReport = lazy(() => import("./pages/Reports/New"));
 const ReportsList = lazy(() => import("./pages/Reports/List"));
 const ApiDocs = lazy(() => import("./pages/ApiDocs"));
@@ -231,6 +232,7 @@ function RouterContent() {
           <Route path="/settings/api-keys" element={<APIKeys />} />
           <Route path="/settings/privacy" element={<PrivacySettings />} />
           <Route path="/settings/subscription" element={<SubscriptionSettings />} />
+          <Route path="/settings/credits" element={<CreditsSettings />} />
           <Route path="/api-docs" element={<ApiDocs />} />
           <Route path="/legal/dpa" element={<DPA />} />
           <Route path="/scan/advanced" element={<AdvancedScan />} />

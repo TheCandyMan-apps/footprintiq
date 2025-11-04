@@ -104,11 +104,21 @@ serve(async (req) => {
 
     console.log(`[orchestrate] Scanning ${type}:${value} for workspace ${workspaceId}`);
 
-    // Check workspace limits and consent (use service role after auth)
+    // Use service role for workspace operations
     const supabaseService = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // Check credits before scan
+    const creditsRequired = options.includeDarkweb ? 10 : (options.includeDating || options.includeNsfw ? 5 : 1);
+    const { data: creditsCheck } = await supabaseService
+      .rpc('get_credits_balance', { _workspace_id: workspaceId });
+    
+    const currentBalance = creditsCheck || 0;
+    if (currentBalance < creditsRequired) {
+      return bad(402, `Insufficient credits. Required: ${creditsRequired}, Balance: ${currentBalance}`);
+    }
 
     const { data: workspace, error: workspaceError } = await supabaseService
       .from('workspaces')
@@ -288,10 +298,19 @@ serve(async (req) => {
         .eq('id', scanId);
     }
 
-    // Bill the scan (idempotent)
-    await supabase.functions.invoke('billing/metering/report-scan', {
-      body: { workspace_id: workspaceId, count: 1 }
-    });
+    // Deduct credits for the scan
+    const { error: creditsError } = await supabaseService
+      .from('credits_ledger')
+      .insert({
+        workspace_id: workspaceId,
+        delta: -creditsRequired,
+        reason: `Scan: ${type} - ${value}`,
+        ref_id: scanId || null
+      });
+
+    if (creditsError) {
+      console.error('[orchestrate] Failed to deduct credits:', creditsError);
+    }
 
     const tookMs = Date.now() - startTime;
 
