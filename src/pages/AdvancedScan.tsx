@@ -27,6 +27,7 @@ export default function AdvancedScan() {
   const [isScanning, setIsScanning] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [pendingSensitiveSources, setPendingSensitiveSources] = useState<string[]>([]);
+  const [workspaceAutoCreated, setWorkspaceAutoCreated] = useState(false);
 
   const availableProviders = [
     { id: "hibp", name: "Have I Been Pwned", icon: Shield },
@@ -115,6 +116,10 @@ export default function AdvancedScan() {
       toast.error(err instanceof Error ? err.message : "Failed to create workspace");
     }
   };
+  // If no workspace after load, auto-create one to unblock scans
+  if (!workspaceLoading && !workspace && !workspaceAutoCreated) {
+    handleQuickCreateWorkspace().finally(() => setWorkspaceAutoCreated(true));
+  }
 
   const handleScan = async () => {
     if (!target.trim()) {
