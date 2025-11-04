@@ -27,7 +27,7 @@ serve(async (req) => {
     if (!price_id) throw new Error('Missing price_id');
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2025-08-27.basil',
+      apiVersion: '2024-06-20',
     });
 
     // Find or create Stripe customer

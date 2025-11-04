@@ -41,7 +41,7 @@ serve(async (req) => {
     const meteredPriceId = Deno.env.get('STRIPE_PRICE_METERED_SCAN');
     if (meteredPriceId) {
       const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-        apiVersion: '2025-08-27.basil',
+        apiVersion: '2024-06-20',
       });
 
       // Find subscription item for metered scans
