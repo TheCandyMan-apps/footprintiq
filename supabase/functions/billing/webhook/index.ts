@@ -50,8 +50,8 @@ serve(async (req) => {
             .insert({
               workspace_id: workspaceId,
               delta: creditAmount,
-              description: `Purchased ${creditAmount} credits via Stripe`,
-              created_by: userId,
+              reason: 'purchase',
+              ref_id: `stripe_${session.id}`,
             });
           
           if (ledgerError) {
