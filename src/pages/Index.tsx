@@ -36,6 +36,10 @@ export default function Home() {
     navigate('/scan');
   };
 
+  const handleAdvancedScan = () => {
+    navigate('/scan/advanced');
+  };
+
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -108,7 +112,7 @@ export default function Home() {
       <OrganizationSchema />
       <StructuredData organization={organizationSchema} />
       <Header />
-      <Hero onStartScan={handleStartScan} />
+      <Hero onStartScan={handleStartScan} onAdvancedScan={handleAdvancedScan} />
       <TrustSignals />
       <div id="how-it-works">
         <HowItWorks />

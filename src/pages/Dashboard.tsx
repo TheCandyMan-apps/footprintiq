@@ -16,6 +16,7 @@ import {
   Clock,
   Eye,
   FileSearch,
+  Zap,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Database } from '@/integrations/supabase/types';
@@ -153,6 +154,14 @@ const Dashboard = () => {
                 >
                   <Network className="h-4 w-4 mr-2" />
                   Entity Graph
+                </Button>
+                <Button
+                  onClick={() => navigate('/scan/advanced')}
+                  variant="outline"
+                  className="shadow-lg shadow-accent/20 hover:shadow-glow hover:border-accent transition-all duration-300"
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  Advanced Scan
                 </Button>
                 <Button
                   onClick={() => navigate('/scan')}

@@ -5,9 +5,10 @@ import credentialBreach from "@/assets/credential-breach.jpg";
 
 interface HeroProps {
   onStartScan: () => void;
+  onAdvancedScan?: () => void;
 }
 
-export const Hero = ({ onStartScan }: HeroProps) => {
+export const Hero = ({ onStartScan, onAdvancedScan }: HeroProps) => {
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Animated Background Image with Overlay */}
@@ -62,6 +63,17 @@ export const Hero = ({ onStartScan }: HeroProps) => {
             <Search className="w-5 h-5" />
             Start Free Scan
           </Button>
+          {onAdvancedScan && (
+            <Button 
+              size="lg" 
+              variant="secondary"
+              onClick={onAdvancedScan}
+              className="text-lg px-10 py-7 h-auto shadow-xl shadow-accent/20 hover:shadow-2xl hover:shadow-accent/30 transition-all duration-300 hover:scale-105 bg-gradient-to-r from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 border border-accent/50"
+            >
+              <Shield className="w-5 h-5" />
+              Advanced Scan
+            </Button>
+          )}
           <Button 
             size="lg" 
             variant="outline"

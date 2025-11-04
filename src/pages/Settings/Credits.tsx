@@ -2,6 +2,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CreditsDisplay } from "@/components/workspace/CreditsDisplay";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { CreditCard, Package, Zap } from "lucide-react";
 
 export default function CreditsSettings() {
@@ -89,7 +91,24 @@ export default function CreditsSettings() {
                     <p>• {Math.floor(pack.credits / 10)} dark web scans</p>
                   </div>
 
-                  <Button className="w-full" variant={pack.popular ? "default" : "outline"}>
+                  <Button 
+                    className="w-full" 
+                    variant={pack.popular ? "default" : "outline"}
+                    onClick={async () => {
+                      try {
+                        const { data, error } = await supabase.functions.invoke('billing/purchase-credits-checkout', {
+                          body: { 
+                            packageId: pack.name.toLowerCase().replace(' pack', ''),
+                            workspaceId: workspace.id 
+                          }
+                        });
+                        if (error) throw error;
+                        if (data?.url) window.open(data.url, '_blank');
+                      } catch (err: any) {
+                        toast.error(err?.message || "Failed to create checkout session");
+                      }
+                    }}
+                  >
                     Purchase
                   </Button>
                 </div>
