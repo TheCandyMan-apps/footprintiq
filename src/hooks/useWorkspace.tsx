@@ -49,7 +49,9 @@ export function useWorkspace(): WorkspaceContext {
         .select('workspace_id, role')
         .eq('user_id', user.id);
 
-      if (membershipsError) throw membershipsError;
+      if (membershipsError) {
+        console.warn('Failed to fetch workspace memberships, continuing with owned workspaces only:', membershipsError);
+      }
 
       const membershipRows = (memberships as any[]) || [];
 
@@ -117,14 +119,25 @@ export function useWorkspace(): WorkspaceContext {
       // Update role
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: workspaceUser } = await supabase
-          .from('workspace_members' as any)
-          .select('role')
-          .eq('workspace_id', workspaceId)
-          .eq('user_id', user.id)
-          .single() as any;
-        
-        setCurrentRole(workspaceUser?.role ? workspaceUser.role as WorkspaceRole : null);
+        try {
+          const { data: workspaceUser, error: roleErr } = await supabase
+            .from('workspace_members' as any)
+            .select('role')
+            .eq('workspace_id', workspaceId)
+            .eq('user_id', user.id)
+            .single() as any;
+
+          const role: WorkspaceRole | null = newWorkspace.owner_id === user.id
+            ? 'owner'
+            : (workspaceUser?.role as WorkspaceRole) || null;
+
+          setCurrentRole(role);
+          if (roleErr) console.warn('Role fetch warning:', roleErr);
+        } catch (e) {
+          const role: WorkspaceRole | null = newWorkspace.owner_id === user.id ? 'owner' : null;
+          setCurrentRole(role);
+          console.warn('Failed to fetch role for workspace switch:', e);
+        }
       }
     }
   };
