@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { NotificationBell } from "@/components/workspace/NotificationBell";
 import { WorkspacePresence } from "@/components/workspace/WorkspacePresence";
 import { MobileNav } from "@/components/MobileNav";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -271,6 +272,7 @@ export const Header = () => {
                 </div>
               </form>
             )}
+            <ThemeToggle />
             <WorkspaceSwitcher />
             <WorkspacePresence />
             <CommandPalette />
@@ -298,21 +300,24 @@ export const Header = () => {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <nav className="md:hidden mt-4 pb-4 flex flex-col gap-4 animate-fade-in">
-            {/* Mobile Search */}
-            {user && (
-              <form onSubmit={handleSearch} className="relative">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search scans..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 pr-4 w-full shadow-inner bg-secondary/50 border-border/50 focus:border-primary transition-[var(--transition-smooth)]"
-                  />
-                </div>
-              </form>
-            )}
+            {/* Mobile Search & Theme Toggle */}
+            <div className="flex items-center gap-2">
+              {user && (
+                <form onSubmit={handleSearch} className="relative flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search scans..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 pr-4 w-full shadow-inner bg-secondary/50 border-border/50 focus:border-primary transition-[var(--transition-smooth)]"
+                    />
+                  </div>
+                </form>
+              )}
+              <ThemeToggle />
+            </div>
 
             {/* Product Section */}
             <div className="flex flex-col gap-2">
