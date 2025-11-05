@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { SensitiveConsentModal } from "@/components/providers/SensitiveConsentModal";
 import { Search, Shield, Zap, Database, Globe, Lock } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { PremiumApifyOptions } from "@/components/scan/PremiumApifyOptions";
+import { CreditsBadge } from "@/components/workspace/CreditsBadge";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -28,6 +30,16 @@ export default function AdvancedScan() {
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [pendingSensitiveSources, setPendingSensitiveSources] = useState<string[]>([]);
   const [workspaceAutoCreated, setWorkspaceAutoCreated] = useState(false);
+  const [premiumOptions, setPremiumOptions] = useState<{
+    socialMediaFinder?: boolean;
+    osintScraper?: boolean;
+    osintKeywords?: string[];
+    darkwebScraper?: boolean;
+    darkwebUrls?: string[];
+    darkwebSearch?: string;
+    darkwebDepth?: number;
+    darkwebPages?: number;
+  }>({});
 
   const availableProviders = [
     { id: "hibp", name: "Have I Been Pwned", icon: Shield },
@@ -145,6 +157,7 @@ export default function AdvancedScan() {
             includeDating: sensitiveSources.includes('dating'),
             includeNsfw: sensitiveSources.includes('nsfw'),
             includeDarkweb: sensitiveSources.includes('darkweb') || darkwebEnabled,
+            premium: premiumOptions,
           },
         },
       });
@@ -201,19 +214,22 @@ export default function AdvancedScan() {
           {!workspaceLoading && workspace && (
             <>
               {/* Header */}
-              <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-elegant">
-              <Search className="w-8 h-8 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                Advanced OSINT Scan
-              </h1>
-              <p className="text-muted-foreground mt-2">
-                Comprehensive intelligence gathering across 400+ sources
-              </p>
-            </div>
-          </div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-elegant">
+                    <Search className="w-8 h-8 text-primary" />
+                  </div>
+                  <div>
+                    <h1 className="text-4xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                      Advanced OSINT Scan
+                    </h1>
+                    <p className="text-muted-foreground mt-2">
+                      Comprehensive intelligence gathering across 400+ sources
+                    </p>
+                  </div>
+                </div>
+                <CreditsBadge workspaceId={workspace.id} />
+              </div>
 
           {/* Main Form */}
           <Card className="p-6 space-y-6">
@@ -325,6 +341,9 @@ export default function AdvancedScan() {
                 </div>
               </Card>
             )}
+
+            {/* Premium Apify Options */}
+            <PremiumApifyOptions onChange={setPremiumOptions} />
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4">

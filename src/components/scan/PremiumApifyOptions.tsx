@@ -8,11 +8,10 @@ import { Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PremiumApifyOptionsProps {
-  enabled: boolean;
-  onOptionsChange: (options: any) => void;
+  onChange: (options: any) => void;
 }
 
-export function PremiumApifyOptions({ enabled, onOptionsChange }: PremiumApifyOptionsProps) {
+export function PremiumApifyOptions({ onChange }: PremiumApifyOptionsProps) {
   const [socialMediaFinder, setSocialMediaFinder] = useState(false);
   const [osintScraper, setOsintScraper] = useState(false);
   const [osintKeywords, setOsintKeywords] = useState<string[]>([]);
@@ -23,7 +22,7 @@ export function PremiumApifyOptions({ enabled, onOptionsChange }: PremiumApifyOp
   const [darkwebPages, setDarkwebPages] = useState(10);
 
   const handleChange = () => {
-    onOptionsChange({
+    onChange({
       socialMediaFinder,
       osintScraper,
       osintKeywords: osintKeywords.length > 0 ? osintKeywords : undefined,
@@ -49,8 +48,6 @@ export function PremiumApifyOptions({ enabled, onOptionsChange }: PremiumApifyOp
     setDarkwebScraper(checked);
     setTimeout(handleChange, 0);
   };
-
-  if (!enabled) return null;
 
   return (
     <Card className="p-4 space-y-4">

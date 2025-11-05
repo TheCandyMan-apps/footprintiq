@@ -48,6 +48,7 @@ const PredictiveAnalytics = lazy(() => import("./pages/PredictiveAnalytics"));
 const RoleManagement = lazy(() => import("./pages/admin/RoleManagement"));
 const PersonaDnaLaunch = lazy(() => import("./pages/blog/PersonaDnaLaunch"));
 const WhatIsOsintRisk = lazy(() => import("./pages/blog/WhatIsOsintRisk"));
+const BuyCreditsPage = lazy(() => import("./pages/BuyCreditsPage"));
 const DarkWebMonitoringBlog = lazy(() => import("./pages/blog/DarkWebMonitoringExplained"));
 const WhatIsDigitalFootprint = lazy(() => import("./pages/blog/WhatIsDigitalFootprint"));
 const CheckEmailBreach = lazy(() => import("./pages/blog/CheckEmailBreach"));
@@ -236,7 +237,7 @@ function RouterContent() {
           <Route path="/api-docs" element={<ApiDocs />} />
           <Route path="/legal/dpa" element={<DPA />} />
           <Route path="/scan/advanced" element={<AdvancedScan />} />
-          <Route path="/buy-credits" element={<BuyCredits />} />
+          <Route path="/buy-credits" element={<BuyCreditsPage />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/api-docs" element={<ApiDocs />} />
           <Route path="/settings/api-keys" element={<APIKeys />} />
