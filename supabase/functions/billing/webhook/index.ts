@@ -82,6 +82,25 @@ serve(async (req) => {
           });
           
           console.log(`Updated user ${userId} to ${tier} tier`);
+          
+          // Grant monthly credits for premium tiers
+          if (workspaceId && ['pro', 'enterprise'].includes(tier)) {
+            const monthlyCredits = tier === 'enterprise' ? 1000 : 200;
+            const { error: creditsError } = await supabase
+              .from('credit_ledger')
+              .insert({
+                workspace_id: workspaceId,
+                delta: monthlyCredits,
+                reason: 'monthly_subscription',
+                meta: { subscription_id: session.subscription, tier },
+              });
+            
+            if (creditsError) {
+              console.error('Error granting monthly credits:', creditsError);
+            } else {
+              console.log(`Granted ${monthlyCredits} credits to workspace ${workspaceId}`);
+            }
+          }
         }
         break;
       }
@@ -116,6 +135,35 @@ serve(async (req) => {
             });
             
             console.log(`Updated subscription for user ${profile.user_id} to ${tier}`);
+            
+            // Grant monthly credits on subscription renewal for premium tiers
+            if (subscription.status === 'active' && ['pro', 'enterprise'].includes(tier)) {
+              const { data: workspaces } = await supabase
+                .from('workspace_members')
+                .select('workspace_id')
+                .eq('user_id', profile.user_id)
+                .eq('role', 'admin')
+                .limit(1)
+                .single();
+              
+              if (workspaces) {
+                const monthlyCredits = tier === 'enterprise' ? 1000 : 200;
+                const { error: creditsError } = await supabase
+                  .from('credit_ledger')
+                  .insert({
+                    workspace_id: workspaces.workspace_id,
+                    delta: monthlyCredits,
+                    reason: 'monthly_subscription',
+                    meta: { subscription_id: subscription.id, tier },
+                  });
+                
+                if (creditsError) {
+                  console.error('Error granting monthly credits:', creditsError);
+                } else {
+                  console.log(`Granted ${monthlyCredits} credits to workspace ${workspaces.workspace_id}`);
+                }
+              }
+            }
           }
         }
         break;

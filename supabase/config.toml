@@ -221,3 +221,6 @@ verify_jwt = false
 
 [functions.apify-run]
 verify_jwt = true
+
+[functions."billing/purchase-credits-checkout"]
+verify_jwt = true
