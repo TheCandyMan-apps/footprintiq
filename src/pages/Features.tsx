@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { FeatureDemo } from "@/components/FeatureDemo";
 import { 
   Shield, 
   Zap, 
@@ -17,7 +18,8 @@ import {
   Webhook,
   BarChart3,
   Layers,
-  Network
+  Network,
+  Play
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -27,6 +29,31 @@ const Features = () => {
       icon: Database,
       title: "Advanced Data Enrichment",
       description: "Access 20+ premium OSINT APIs and intelligence databases",
+      demo: {
+        title: "Data Enrichment Workflow",
+        steps: [
+          {
+            label: "Input Target",
+            screenshot: "/demo-enrichment-1.png",
+            description: "Enter an email address, phone number, or domain to begin enrichment. The system automatically determines available data sources."
+          },
+          {
+            label: "API Selection",
+            screenshot: "/demo-enrichment-2.png",
+            description: "View available premium APIs and select which data sources to query. Options include social media, professional networks, and breach databases."
+          },
+          {
+            label: "Data Collection",
+            screenshot: "/demo-enrichment-3.png",
+            description: "Watch real-time progress as the system queries 20+ APIs simultaneously, aggregating results and removing duplicates."
+          },
+          {
+            label: "Results Dashboard",
+            screenshot: "/demo-enrichment-4.png",
+            description: "View comprehensive results with social profiles, professional history, associated accounts, and risk indicators all in one unified interface."
+          }
+        ]
+      },
       useCases: [
         {
           title: "Corporate Investigation",
@@ -53,6 +80,31 @@ const Features = () => {
       icon: Eye,
       title: "Dark Web Monitoring",
       description: "Real-time surveillance of dark web marketplaces and forums",
+      demo: {
+        title: "Dark Web Monitoring Interface",
+        steps: [
+          {
+            label: "Setup Monitors",
+            screenshot: "/demo-darkweb-1.png",
+            description: "Configure monitoring rules for specific keywords, domains, email addresses, or credential patterns across dark web sources."
+          },
+          {
+            label: "Live Surveillance",
+            screenshot: "/demo-darkweb-2.png",
+            description: "View real-time dashboard showing active marketplaces, forums, and paste sites being monitored with live threat indicators."
+          },
+          {
+            label: "Alert Triggered",
+            screenshot: "/demo-darkweb-3.png",
+            description: "Receive instant notifications when monitored keywords or data appear. See the source, context, and threat level assessment."
+          },
+          {
+            label: "Threat Analysis",
+            screenshot: "/demo-darkweb-4.png",
+            description: "Deep dive into findings with full context, related posts, seller information, and recommended response actions."
+          }
+        ]
+      },
       useCases: [
         {
           title: "Brand Protection",
@@ -79,6 +131,31 @@ const Features = () => {
       icon: Zap,
       title: "Unlimited Scans & Quotas",
       description: "No limits on scans, queries, or data access",
+      demo: {
+        title: "Bulk Scanning Workflow",
+        steps: [
+          {
+            label: "Bulk Upload",
+            screenshot: "/demo-bulk-1.png",
+            description: "Upload CSV files with thousands of targets (emails, IPs, domains) or paste lists directly into the interface."
+          },
+          {
+            label: "Processing Queue",
+            screenshot: "/demo-bulk-2.png",
+            description: "Monitor scan progress with real-time updates. Premium users get priority processing with parallel execution."
+          },
+          {
+            label: "Results Stream",
+            screenshot: "/demo-bulk-3.png",
+            description: "View results as they complete. Filter, sort, and export findings on-the-fly without waiting for all scans to finish."
+          },
+          {
+            label: "Export & Schedule",
+            screenshot: "/demo-bulk-4.png",
+            description: "Export results in multiple formats or schedule recurring scans to run automatically at specified intervals."
+          }
+        ]
+      },
       useCases: [
         {
           title: "Continuous Monitoring",
@@ -105,6 +182,31 @@ const Features = () => {
       icon: Webhook,
       title: "API Access & Integrations",
       description: "5,000 API calls per hour with custom webhook support",
+      demo: {
+        title: "API Integration Setup",
+        steps: [
+          {
+            label: "Generate API Key",
+            screenshot: "/demo-api-1.png",
+            description: "Create API keys with granular permissions. Set rate limits, IP restrictions, and expiration dates for enhanced security."
+          },
+          {
+            label: "Configure Webhooks",
+            screenshot: "/demo-api-2.png",
+            description: "Set up webhook endpoints to receive real-time notifications for scan completions, new findings, or security alerts."
+          },
+          {
+            label: "Test Integration",
+            screenshot: "/demo-api-3.png",
+            description: "Use the built-in API testing console to verify endpoints, inspect responses, and troubleshoot integration issues."
+          },
+          {
+            label: "Monitor Usage",
+            screenshot: "/demo-api-4.png",
+            description: "Track API usage metrics, response times, error rates, and remaining quota in real-time dashboard."
+          }
+        ]
+      },
       useCases: [
         {
           title: "SOAR Integration",
@@ -131,6 +233,31 @@ const Features = () => {
       icon: Bot,
       title: "Unlimited AI Analyst",
       description: "AI-powered threat analysis and natural language queries",
+      demo: {
+        title: "AI Analyst in Action",
+        steps: [
+          {
+            label: "Ask Question",
+            screenshot: "/demo-ai-1.png",
+            description: "Type natural language queries like 'Show me all compromised accounts from last month' or 'What's our overall risk score?'"
+          },
+          {
+            label: "AI Processing",
+            screenshot: "/demo-ai-2.png",
+            description: "Watch the AI analyze your data, cross-reference findings, and identify patterns across multiple scans and sources."
+          },
+          {
+            label: "Insights Report",
+            screenshot: "/demo-ai-3.png",
+            description: "Receive comprehensive answers with visual charts, risk scores, and actionable recommendations backed by data."
+          },
+          {
+            label: "Deep Dive",
+            screenshot: "/demo-ai-4.png",
+            description: "Ask follow-up questions or request deeper analysis. The AI maintains context and can explore related findings."
+          }
+        ]
+      },
       useCases: [
         {
           title: "Threat Correlation",
@@ -157,6 +284,31 @@ const Features = () => {
       icon: Users,
       title: "Team Collaboration & Admin Tools",
       description: "Workspace management with granular permissions",
+      demo: {
+        title: "Team Management Workflow",
+        steps: [
+          {
+            label: "Create Workspace",
+            screenshot: "/demo-team-1.png",
+            description: "Set up separate workspaces for different teams or clients. Configure workspace settings, branding, and data isolation."
+          },
+          {
+            label: "Invite Members",
+            screenshot: "/demo-team-2.png",
+            description: "Add team members via email invitation. Assign roles (Admin, Analyst, Viewer) with specific permission levels."
+          },
+          {
+            label: "Manage Permissions",
+            screenshot: "/demo-team-3.png",
+            description: "Fine-tune access control for each user. Control who can run scans, view sensitive data, export reports, or manage billing."
+          },
+          {
+            label: "Activity Audit",
+            screenshot: "/demo-team-4.png",
+            description: "Review comprehensive audit logs showing all user actions, scan history, data access, and configuration changes."
+          }
+        ]
+      },
       useCases: [
         {
           title: "Multi-Team Deployment",
@@ -183,6 +335,31 @@ const Features = () => {
       icon: FileText,
       title: "Advanced Reporting & White-label",
       description: "Professional PDF reports with custom branding",
+      demo: {
+        title: "Report Generation Process",
+        steps: [
+          {
+            label: "Select Template",
+            screenshot: "/demo-report-1.png",
+            description: "Choose from executive summary, technical deep-dive, or compliance templates. Each optimized for different audiences."
+          },
+          {
+            label: "Customize Branding",
+            screenshot: "/demo-report-2.png",
+            description: "Upload your logo, set brand colors, and configure header/footer text. Preview changes in real-time."
+          },
+          {
+            label: "Configure Sections",
+            screenshot: "/demo-report-3.png",
+            description: "Select which data sections to include: executive summary, detailed findings, remediation steps, or compliance mapping."
+          },
+          {
+            label: "Generate & Distribute",
+            screenshot: "/demo-report-4.png",
+            description: "Generate professional PDF reports and schedule automated distribution via email or webhook delivery."
+          }
+        ]
+      },
       useCases: [
         {
           title: "Client Deliverables",
@@ -209,6 +386,31 @@ const Features = () => {
       icon: Lock,
       title: "SSO & Advanced Security",
       description: "Enterprise-grade authentication and security controls",
+      demo: {
+        title: "SSO Configuration Guide",
+        steps: [
+          {
+            label: "Provider Setup",
+            screenshot: "/demo-sso-1.png",
+            description: "Connect your identity provider (Okta, Azure AD, Google Workspace) using SAML 2.0 or OAuth 2.0 protocols."
+          },
+          {
+            label: "User Mapping",
+            screenshot: "/demo-sso-2.png",
+            description: "Configure automatic user provisioning, attribute mapping, and default role assignment for new SSO users."
+          },
+          {
+            label: "Security Policies",
+            screenshot: "/demo-sso-3.png",
+            description: "Enforce MFA, set session timeouts, configure IP allowlists, and define conditional access rules."
+          },
+          {
+            label: "Test & Monitor",
+            screenshot: "/demo-sso-4.png",
+            description: "Test SSO login flow and monitor authentication logs, failed attempts, and active sessions in real-time."
+          }
+        ]
+      },
       useCases: [
         {
           title: "Enterprise SSO",
@@ -325,6 +527,20 @@ const Features = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="pt-6">
+                      {/* Interactive Demo */}
+                      {feature.demo && (
+                        <div className="mb-8">
+                          <div className="flex items-center gap-2 mb-4">
+                            <Play className="w-5 h-5 text-primary" />
+                            <h4 className="font-semibold">Interactive Walkthrough</h4>
+                          </div>
+                          <FeatureDemo
+                            title={feature.demo.title}
+                            steps={feature.demo.steps}
+                          />
+                        </div>
+                      )}
+
                       {/* Key Features */}
                       <div className="mb-8">
                         <h4 className="font-semibold mb-4 flex items-center gap-2">
