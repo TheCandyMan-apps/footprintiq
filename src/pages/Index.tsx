@@ -9,6 +9,7 @@ import { Hero } from "@/components/Hero";
 import { HowItWorks } from "@/components/HowItWorks";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
 import { Pricing } from "@/components/Pricing";
+import { PremiumTeaser } from "@/components/PremiumTeaser";
 import { Testimonials } from "@/components/Testimonials";
 import { FAQ } from "@/components/FAQ";
 import { TrustSignals } from "@/components/TrustSignals";
@@ -123,6 +124,7 @@ export default function Home() {
       <div id="pricing">
         <Pricing />
       </div>
+      <PremiumTeaser />
       <Testimonials />
       
       <main className="relative px-6 py-16 mx-auto max-w-5xl overflow-hidden">

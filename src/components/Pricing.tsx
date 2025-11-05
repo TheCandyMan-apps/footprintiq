@@ -236,6 +236,103 @@ export const Pricing = () => {
             </div>
           ))}
         </div>
+
+        {/* Feature Comparison Table */}
+        <div className="mt-20">
+          <h3 className="text-3xl font-bold text-center mb-12">
+            Compare{" "}
+            <span className="bg-gradient-accent bg-clip-text text-transparent">
+              All Features
+            </span>
+          </h3>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left p-4 font-semibold">Feature</th>
+                  <th className="text-center p-4 font-semibold">Free</th>
+                  <th className="text-center p-4 font-semibold bg-primary/5">Premium</th>
+                  <th className="text-center p-4 font-semibold">Enterprise</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm">
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">Monthly Scans</td>
+                  <td className="text-center p-4 text-muted-foreground">10</td>
+                  <td className="text-center p-4 bg-primary/5 font-semibold">Unlimited</td>
+                  <td className="text-center p-4 font-semibold">Unlimited</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">Dark Web Monitoring</td>
+                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">Advanced Data Enrichment</td>
+                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">API Access</td>
+                  <td className="text-center p-4 text-muted-foreground">100/hour</td>
+                  <td className="text-center p-4 bg-primary/5 font-semibold">5,000/hour</td>
+                  <td className="text-center p-4 font-semibold">Unlimited</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">AI Analyst Queries</td>
+                  <td className="text-center p-4 text-muted-foreground">5/month</td>
+                  <td className="text-center p-4 bg-primary/5 font-semibold">Unlimited</td>
+                  <td className="text-center p-4 font-semibold">Unlimited</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">Team Members</td>
+                  <td className="text-center p-4 text-muted-foreground">1</td>
+                  <td className="text-center p-4 bg-primary/5 text-muted-foreground">Up to 20</td>
+                  <td className="text-center p-4 font-semibold">Unlimited</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">Data Retention</td>
+                  <td className="text-center p-4 text-muted-foreground">30 days</td>
+                  <td className="text-center p-4 bg-primary/5 text-muted-foreground">365 days</td>
+                  <td className="text-center p-4 text-muted-foreground">730 days</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">PDF Reports & White-label</td>
+                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">SSO Authentication</td>
+                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">Admin Tools</td>
+                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">Custom Integrations</td>
+                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 bg-primary/5"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">Dedicated Support</td>
+                  <td className="text-center p-4 text-muted-foreground">Community</td>
+                  <td className="text-center p-4 bg-primary/5 text-muted-foreground">Priority</td>
+                  <td className="text-center p-4 font-semibold">24/7 Dedicated</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
   );
