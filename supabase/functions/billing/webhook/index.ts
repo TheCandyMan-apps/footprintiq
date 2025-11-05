@@ -87,7 +87,7 @@ serve(async (req) => {
           if (workspaceId && ['pro', 'enterprise'].includes(tier)) {
             const monthlyCredits = tier === 'enterprise' ? 1000 : 200;
             const { error: creditsError } = await supabase
-              .from('credit_ledger')
+              .from('credits_ledger')
               .insert({
                 workspace_id: workspaceId,
                 delta: monthlyCredits,
@@ -149,7 +149,7 @@ serve(async (req) => {
               if (workspaces) {
                 const monthlyCredits = tier === 'enterprise' ? 1000 : 200;
                 const { error: creditsError } = await supabase
-                  .from('credit_ledger')
+                  .from('credits_ledger')
                   .insert({
                     workspace_id: workspaces.workspace_id,
                     delta: monthlyCredits,
