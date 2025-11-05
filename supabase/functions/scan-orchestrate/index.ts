@@ -417,7 +417,7 @@ serve(async (req) => {
       .insert({
         workspace_id: workspaceId,
         delta: -creditsRequired,
-        reason: 'scan',
+        reason: 'darkweb_scan',
         ref_id: scanId || null
       });
 
