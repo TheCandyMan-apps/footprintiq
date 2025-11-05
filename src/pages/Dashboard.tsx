@@ -8,6 +8,8 @@ import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { ThreatFeedSidebar } from '@/components/ThreatFeedSidebar';
 import {
   Play,
   Network,
@@ -17,6 +19,7 @@ import {
   Eye,
   FileSearch,
   Zap,
+  Shield,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Database } from '@/integrations/supabase/types';
@@ -123,8 +126,16 @@ const Dashboard = () => {
         description="View your OSINT scans, findings, and entity relationships"
         canonical="https://footprintiq.app/dashboard"
       />
-      <div className="min-h-screen bg-background flex flex-col">
-        <Header />
+      <SidebarProvider defaultOpen={true}>
+        <div className="min-h-screen bg-background flex flex-col w-full">
+          <Header />
+          
+          <div className="fixed top-4 right-4 z-50">
+            <SidebarTrigger className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border/50 hover:border-primary/30 transition-colors shadow-lg">
+              <Shield className="w-4 h-4" />
+              <span className="text-sm font-medium">Threat Feed</span>
+            </SidebarTrigger>
+          </div>
 
         {/* Hero Section */}
         <div className="relative bg-gradient-to-br from-primary/20 to-background p-8 rounded-xl shadow-[var(--shadow-elevated)] mx-6 mt-6 animate-fade-in border border-primary/10">
@@ -207,8 +218,9 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <main className="flex-1">
-          <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+        <div className="flex flex-1 w-full">
+          <main className="flex-1 overflow-auto">
+            <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -350,11 +362,16 @@ const Dashboard = () => {
                 )}
               </CardContent>
             </Card>
-          </div>
-        </main>
+            </div>
+          </main>
+        </div>
 
-        <Footer />
-      </div>
+          <Footer />
+          
+          {/* Threat Feed Sidebar */}
+          <ThreatFeedSidebar />
+        </div>
+      </SidebarProvider>
     </>
   );
 };
