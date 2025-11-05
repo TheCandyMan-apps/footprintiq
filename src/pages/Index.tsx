@@ -15,6 +15,7 @@ import { FAQ } from "@/components/FAQ";
 import { TrustSignals } from "@/components/TrustSignals";
 import { OrganizationSchema } from "@/components/OrganizationSchema";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
+import { FloatingCTA } from "@/components/FloatingCTA";
 import { shouldAutoStartTour, getTourAutoStartDelay } from "@/lib/tour/firstTime";
 import scanCapabilitiesBg from "@/assets/scan-capabilities-bg.jpg";
 import privacyBadge from "@/assets/privacy-badge.jpg";
@@ -253,6 +254,7 @@ export default function Home() {
       </main>
       
       <FAQ />
+      <FloatingCTA />
       <Footer />
     </>
   );
