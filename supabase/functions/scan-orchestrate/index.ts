@@ -19,7 +19,17 @@ const ScanRequestSchema = z.object({
     includeNsfw: z.boolean().optional(),
     providers: z.array(
       z.string().regex(/^[a-z0-9-]+$/, 'invalid provider name format')
-    ).max(20, 'too many providers specified').optional()
+    ).max(20, 'too many providers specified').optional(),
+    premium: z.object({
+      socialMediaFinder: z.boolean().optional(),
+      osintScraper: z.boolean().optional(),
+      osintKeywords: z.array(z.string()).optional(),
+      darkwebScraper: z.boolean().optional(),
+      darkwebUrls: z.array(z.string()).optional(),
+      darkwebSearch: z.string().optional(),
+      darkwebDepth: z.number().optional(),
+      darkwebPages: z.number().optional()
+    }).optional()
   }).optional()
 });
 
@@ -281,7 +291,7 @@ serve(async (req) => {
     }
 
     // === Premium Apify actors (if enabled in options) ===
-    const premium = body.options?.premium;
+    const premium = options?.premium;
     if (premium && (premium.socialMediaFinder || premium.osintScraper || premium.darkwebScraper)) {
       console.log('[orchestrate] Running premium Apify actors...');
       
