@@ -6,6 +6,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { ScrollProgressBar } from '@/components/ScrollProgressBar';
+import { ScrollToTop } from '@/components/ScrollToTop';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -592,6 +593,9 @@ const Dashboard = () => {
           
           {/* Threat Feed Sidebar */}
           <ThreatFeedSidebar />
+          
+          {/* Scroll to Top Button */}
+          <ScrollToTop />
         </div>
       </SidebarProvider>
     </>
