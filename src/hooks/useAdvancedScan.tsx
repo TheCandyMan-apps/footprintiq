@@ -10,6 +10,13 @@ export interface AdvancedScanOptions {
   behavioralAnalysis?: boolean;
   threatForecasting?: boolean;
   correlationEngine?: boolean;
+  osintScraper?: boolean;
+  osintKeywords?: string[];
+  darkwebScraper?: boolean;
+  darkwebSearch?: string;
+  darkwebUrls?: string[];
+  darkwebDepth?: number;
+  darkwebPages?: number;
 }
 
 export interface ScanProgress {
@@ -71,6 +78,13 @@ export function useAdvancedScan() {
             includeDarkweb: !!options.deepWeb,
             premium: {
               socialMediaFinder: !!options.socialMedia,
+              osintScraper: !!options.osintScraper,
+              osintKeywords: options.osintKeywords,
+              darkwebScraper: !!options.darkwebScraper,
+              darkwebSearch: options.darkwebSearch,
+              darkwebUrls: options.darkwebUrls,
+              darkwebDepth: options.darkwebDepth,
+              darkwebPages: options.darkwebPages,
             },
           },
         },
