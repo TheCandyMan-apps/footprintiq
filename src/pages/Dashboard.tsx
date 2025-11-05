@@ -21,6 +21,7 @@ import {
   FileSearch,
   Zap,
   Shield,
+  FileStack,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import type { Database } from '@/integrations/supabase/types';
@@ -200,6 +201,14 @@ const Dashboard = () => {
                   Entity Graph
                 </Button>
                 <Button
+                  onClick={() => navigate('/scan/batch')}
+                  variant="outline"
+                  className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]"
+                >
+                  <FileStack className="h-4 w-4 mr-2" />
+                  Batch Scan
+                </Button>
+                <Button
                   onClick={() => navigate('/scan/advanced')}
                   variant="outline"
                   className="shadow-lg shadow-accent/20 hover:shadow-glow hover:border-accent transition-[var(--transition-smooth)]"
@@ -225,12 +234,12 @@ const Dashboard = () => {
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="relative overflow-hidden group hover:shadow-elevated transition-all duration-300 border-border/50 hover:border-primary/30">
+              <Card className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow hover:scale-105 transition-all duration-500">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                   <CardTitle className="text-sm font-medium">Total Scans</CardTitle>
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <FileSearch className="h-4 w-4" />
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
+                    <FileSearch className="h-5 w-5" />
                   </div>
                 </CardHeader>
                 <CardContent className="relative z-10">
@@ -243,12 +252,12 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="relative overflow-hidden group hover:shadow-elevated transition-all duration-300 border-border/50 hover:border-destructive/30">
+              <Card className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow hover:scale-105 transition-all duration-500">
                 <div className="absolute inset-0 bg-gradient-to-br from-destructive/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                   <CardTitle className="text-sm font-medium">High Risk Findings</CardTitle>
-                  <div className="p-2 rounded-lg bg-destructive/10 text-destructive">
-                    <AlertTriangle className="h-4 w-4" />
+                  <div className="p-2 rounded-lg bg-destructive/10 text-destructive group-hover:scale-110 transition-transform duration-300">
+                    <AlertTriangle className="h-5 w-5" />
                   </div>
                 </CardHeader>
                 <CardContent className="relative z-10">
@@ -261,12 +270,12 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
 
-              <Card className="relative overflow-hidden group hover:shadow-elevated transition-all duration-300 border-border/50 hover:border-accent/30">
+              <Card className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow hover:scale-105 transition-all duration-500">
                 <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                   <CardTitle className="text-sm font-medium">Recent Scans</CardTitle>
-                  <div className="p-2 rounded-lg bg-accent/10 text-accent">
-                    <Clock className="h-4 w-4" />
+                  <div className="p-2 rounded-lg bg-accent/10 text-accent group-hover:scale-110 transition-transform duration-300">
+                    <Clock className="h-5 w-5" />
                   </div>
                 </CardHeader>
                 <CardContent className="relative z-10">
