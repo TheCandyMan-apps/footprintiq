@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { ThreatFeedSidebar } from '@/components/ThreatFeedSidebar';
 import { ThreatAnalyticsPanel } from '@/components/ThreatAnalyticsPanel';
+import { SkeletonStatCard, SkeletonRecentScans } from '@/components/dashboard/SkeletonCard';
 import {
   Play,
   Network,
@@ -234,6 +235,14 @@ const Dashboard = () => {
 
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {loading ? (
+                <>
+                  <SkeletonStatCard />
+                  <SkeletonStatCard />
+                  <SkeletonStatCard />
+                </>
+              ) : (
+                <>
               <Card className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow hover:scale-105 transition-all duration-500">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
@@ -287,12 +296,17 @@ const Dashboard = () => {
                   </p>
                 </CardContent>
               </Card>
+              </>
+              )}
             </div>
 
             {/* Threat Analytics */}
             <ThreatAnalyticsPanel />
 
             {/* Recent Scans */}
+            {loading ? (
+              <SkeletonRecentScans />
+            ) : (
             <Card className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow hover:scale-105 transition-all duration-500">
               <CardHeader className="border-b border-border/50 bg-gradient-to-r from-card to-card/50">
                 <div className="flex items-center gap-3">
@@ -308,11 +322,7 @@ const Dashboard = () => {
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
-                {loading ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Loading scans...
-                  </div>
-                ) : scans.length === 0 ? (
+                {scans.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="relative inline-block mb-6">
                       <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
@@ -405,6 +415,7 @@ const Dashboard = () => {
                 )}
               </CardContent>
             </Card>
+            )}
             </div>
           </main>
         </div>
