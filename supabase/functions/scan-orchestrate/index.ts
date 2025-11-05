@@ -33,12 +33,12 @@ const ScanRequestSchema = z.object({
   }).optional()
 });
 
-// Whitelist of allowed provider names
+// Whitelist of allowed provider names (only implemented ones in provider-proxy)
 const ALLOWED_PROVIDERS = new Set([
-  'hibp', 'intelx', 'dehashed', 'hunter', 'urlscan',
-  'apify-social', 'apify-osint', 'apify-darkweb',
-  'username-extended', 'predicta', 'facecheck',
-  'fullcontact', 'pipl', 'clearbit', 'shodan'
+  'hibp', 'dehashed', 'clearbit', 'fullcontact',
+  'censys', 'binaryedge', 'otx', 'shodan', 'virustotal',
+  'securitytrails', 'urlscan',
+  'apify-social', 'apify-osint', 'apify-darkweb'
 ]);
 
 interface ScanRequest {
@@ -205,52 +205,57 @@ serve(async (req) => {
       console.warn('[orchestrate] Exception creating scan record:', e);
     }
 
-    // Build provider list - only use providers backed by dedicated functions
-    const SUPPORTED_FUNCTION_PROVIDERS = new Set(['hibp','dehashed','fullcontact','clearbit','shodan','pipl','intelx']);
-    const defaultProvidersByType: Record<ScanRequest['type'], string[]> = {
-      email: ['hibp','dehashed','fullcontact','pipl','clearbit'],
-      domain: ['shodan','clearbit','fullcontact'],
-      username: ['dehashed','pipl','intelx'],
-      phone: ['pipl']
+    // Build provider list with sensible defaults
+    const DEFAULT_PROVIDERS: Record<ScanRequest['type'], string[]> = {
+      email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
+      username: ['dehashed', 'apify-social'], // wide presence + breaches
+      domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
+      phone: ['fullcontact']
     };
 
-    let providers = options.providers ?? defaultProvidersByType[type];
+    let providers = options.providers && options.providers.length > 0 
+      ? options.providers 
+      : DEFAULT_PROVIDERS[type];
 
-    // If user explicitly selected providers, validate, otherwise use defaults by type
-    if (options.providers) {
-      // Validate all provider names against whitelist
+    // If user explicitly selected providers, validate them
+    if (options.providers && options.providers.length > 0) {
       const invalidProviders = options.providers.filter(p => !ALLOWED_PROVIDERS.has(p));
       if (invalidProviders.length > 0) {
-        console.error('[orchestrate] Invalid providers:', invalidProviders);
-        return bad(400, `Invalid providers: ${invalidProviders.join(', ')}`);
+        console.warn('[orchestrate] Invalid providers ignored:', invalidProviders);
+        // Filter out invalid providers instead of failing
+        providers = options.providers.filter(p => ALLOWED_PROVIDERS.has(p));
       }
-      providers = options.providers;
-    } else {
-      providers = defaultProvidersByType[type];
     }
-
-    // Filter out providers that are not supported via dedicated functions
-    const unsupported = providers.filter(p => !SUPPORTED_FUNCTION_PROVIDERS.has(p));
-    if (unsupported.length) {
-      console.warn('[orchestrate] Dropping unsupported providers:', unsupported);
-    }
-    providers = providers.filter(p => SUPPORTED_FUNCTION_PROVIDERS.has(p));
 
     // Enforce provider compatibility with scan type
     const providerTypeSupport: Record<string, Array<ScanRequest['type']>> = {
       hibp: ['email'],
       dehashed: ['email', 'username'],
-      fullcontact: ['email', 'domain'],
+      fullcontact: ['email', 'phone', 'domain'],
       clearbit: ['email', 'domain'],
       shodan: ['domain'],
-      pipl: ['email', 'phone', 'username'],
-      intelx: ['email', 'username', 'domain'],
+      virustotal: ['domain'],
+      securitytrails: ['domain'],
+      urlscan: ['domain'],
+      censys: ['domain'],
+      binaryedge: ['domain'],
+      otx: ['domain'],
+      'apify-social': ['username'],
+      'apify-osint': ['email', 'username'],
+      'apify-darkweb': ['email', 'username'],
     };
+    
     const incompatible = providers.filter(p => !(providerTypeSupport[p]?.includes(type)));
     if (incompatible.length) {
       console.warn('[orchestrate] Dropping type-incompatible providers:', incompatible);
     }
     providers = providers.filter(p => providerTypeSupport[p]?.includes(type));
+
+    // Ensure we always have at least one provider
+    if (providers.length === 0) {
+      console.warn('[orchestrate] No compatible providers, using defaults');
+      providers = DEFAULT_PROVIDERS[type];
+    }
 
     // Note: Advanced sources (dating/nsfw/darkweb) rely on providers not yet supported directly.
     // We intentionally skip adding them here until proxy support is stable.
@@ -366,6 +371,21 @@ serve(async (req) => {
     // Deduplicate and sort
     const uniqueFindings = deduplicateFindings(allFindings);
     const sortedFindings = sortFindings(uniqueFindings);
+
+    // Add informational finding if no results
+    if (sortedFindings.length === 0) {
+      sortedFindings.push({
+        provider: 'system',
+        kind: 'info.no_hits',
+        severity: 'info',
+        confidence: 1,
+        observedAt: new Date().toISOString(),
+        evidence: [{ 
+          key: 'message', 
+          value: 'No results found across selected providers. Try different providers or premium sources.' 
+        }],
+      });
+    }
 
     // Persist findings
     if (sortedFindings.length > 0) {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
@@ -22,7 +22,7 @@ export default function AdvancedScan() {
   const { workspace, loading: workspaceLoading, refreshWorkspace } = useWorkspace();
   const [scanType, setScanType] = useState<string>("email");
   const [target, setTarget] = useState("");
-  const [providers, setProviders] = useState<string[]>(["hibp", "dehashed", "intelx"]);
+  const [providers, setProviders] = useState<string[]>([]);
   const [sensitiveSources, setSensitiveSources] = useState<string[]>([]);
   const [darkwebEnabled, setDarkwebEnabled] = useState(false);
   const [darkwebDepth, setDarkwebDepth] = useState(2);
@@ -41,13 +41,36 @@ export default function AdvancedScan() {
     darkwebPages?: number;
   }>({});
 
+  // Auto-select default providers when scan type changes
+  const DEFAULT_PROVIDERS: Record<string, string[]> = {
+    email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
+    username: ['dehashed', 'apify-social'],
+    domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
+    phone: ['fullcontact'],
+  };
+
+  // Set default providers on mount and when scan type changes
+  useEffect(() => {
+    setProviders(DEFAULT_PROVIDERS[scanType] || []);
+  }, [scanType]);
+
   const availableProviders = [
-    { id: "hibp", name: "Have I Been Pwned", icon: Shield },
-    { id: "dehashed", name: "DeHashed", icon: Database },
-    { id: "intelx", name: "Intelligence X", icon: Globe },
-    { id: "apify-social", name: "Social Media Finder Pro (400+ platforms)", icon: Search, premium: true, description: "Discover profiles across Facebook, Instagram, Twitter, TikTok, LinkedIn, GitHub, Reddit, and 400+ more" },
-    { id: "apify-osint", name: "OSINT Scraper (Paste sites)", icon: Database, premium: true, description: "Search Pastebin, GitHub Gist, Codepad, and other paste sites for exposed data" },
+    { id: "hibp", name: "Have I Been Pwned", icon: Shield, types: ['email'] },
+    { id: "dehashed", name: "DeHashed", icon: Database, types: ['email', 'username'] },
+    { id: "clearbit", name: "Clearbit", icon: Globe, types: ['email', 'domain'] },
+    { id: "fullcontact", name: "FullContact", icon: Database, types: ['email', 'phone', 'domain'] },
+    { id: "urlscan", name: "URLScan.io", icon: Search, types: ['domain'] },
+    { id: "securitytrails", name: "SecurityTrails", icon: Shield, types: ['domain'] },
+    { id: "shodan", name: "Shodan", icon: Globe, types: ['domain'] },
+    { id: "virustotal", name: "VirusTotal", icon: Shield, types: ['domain'] },
+    { id: "apify-social", name: "Social Media Finder Pro (400+ platforms)", icon: Search, premium: true, types: ['username'], description: "Discover profiles across Facebook, Instagram, Twitter, TikTok, LinkedIn, GitHub, Reddit, and 400+ more" },
+    { id: "apify-osint", name: "OSINT Scraper (Paste sites)", icon: Database, premium: true, types: ['email', 'username'], description: "Search Pastebin, GitHub Gist, Codepad, and other paste sites for exposed data" },
   ];
+
+  // Filter providers by current scan type
+  const compatibleProviders = availableProviders.filter(p => 
+    p.types.includes(scanType)
+  );
 
   const toggleProvider = (id: string) => {
     setProviders(prev =>
@@ -266,38 +289,48 @@ export default function AdvancedScan() {
             <div className="space-y-3">
               <Label className="flex items-center gap-2">
                 Data Providers
-                <span className="text-xs text-muted-foreground">(Select which OSINT providers to query)</span>
+                <span className="text-xs text-muted-foreground">
+                  ({compatibleProviders.length} providers available for {scanType} scans)
+                </span>
               </Label>
-              <div className="grid md:grid-cols-2 gap-3">
-                {availableProviders.map((provider) => {
-                  const Icon = provider.icon;
-                  return (
-                  <Card
-                    key={provider.id}
-                    className={`p-4 cursor-pointer transition-all ${
-                      providers.includes(provider.id)
-                        ? "border-primary bg-primary/5"
-                        : "hover:border-muted-foreground/50"
-                    }`}
-                    onClick={() => toggleProvider(provider.id)}
-                  >
-                    <div className="flex items-start gap-3">
-                      <Checkbox checked={providers.includes(provider.id)} className="mt-1" />
-                      <Icon className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium">{provider.name}</span>
-                          {provider.premium && <Badge variant="secondary">Premium</Badge>}
+              {compatibleProviders.length === 0 ? (
+                <div className="p-4 border border-border rounded-lg bg-muted/50 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    No providers available for {scanType} scans. Try a different scan type.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-2 gap-3">
+                  {compatibleProviders.map((provider) => {
+                    const Icon = provider.icon;
+                    return (
+                    <Card
+                      key={provider.id}
+                      className={`p-4 cursor-pointer transition-all ${
+                        providers.includes(provider.id)
+                          ? "border-primary bg-primary/5"
+                          : "hover:border-muted-foreground/50"
+                      }`}
+                      onClick={() => toggleProvider(provider.id)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Checkbox checked={providers.includes(provider.id)} className="mt-1" />
+                        <Icon className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium">{provider.name}</span>
+                            {provider.premium && <Badge variant="secondary">Premium</Badge>}
+                          </div>
+                          {provider.description && (
+                            <p className="text-xs text-muted-foreground mt-1">{provider.description}</p>
+                          )}
                         </div>
-                        {provider.description && (
-                          <p className="text-xs text-muted-foreground mt-1">{provider.description}</p>
-                        )}
                       </div>
-                    </div>
-                  </Card>
-                  );
-                })}
-              </div>
+                    </Card>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Sensitive Sources */}

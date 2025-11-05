@@ -139,6 +139,7 @@ const AdvancedScan = lazy(() => import("./pages/AdvancedScan"));
 const BuyCredits = lazy(() => import("./pages/BuyCredits"));
 const PricingPage = lazy(() => import("./pages/Pricing"));
 const Features = lazy(() => import("./pages/Features"));
+const ScanHealth = lazy(() => import("./pages/ScanHealth"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -241,6 +242,7 @@ function RouterContent() {
           <Route path="/api-docs" element={<ApiDocs />} />
           <Route path="/legal/dpa" element={<DPA />} />
           <Route path="/scan/advanced" element={<AdvancedScan />} />
+          <Route path="/settings/health" element={<ScanHealth />} />
           <Route path="/buy-credits" element={<BuyCreditsPage />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/api-docs" element={<ApiDocs />} />

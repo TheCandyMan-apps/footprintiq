@@ -131,7 +131,8 @@ serve(async (req) => {
         result = await callShodan(target);
         break;
       default:
-        throw new Error(`Unknown provider: ${provider}`);
+        console.warn(`[provider-proxy] Unknown provider: ${provider}`);
+        result = { findings: [] };
     }
 
     // Normalize response to UFM format
