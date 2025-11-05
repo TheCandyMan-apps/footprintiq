@@ -7,6 +7,7 @@ import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
 import { ScrollProgressBar } from '@/components/ScrollProgressBar';
 import { ScrollToTop } from '@/components/ScrollToTop';
+import { AnnouncementBar } from '@/components/AnnouncementBar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -176,6 +177,13 @@ const Dashboard = () => {
         title="Dashboard — FootprintIQ"
         description="View your OSINT scans, findings, and entity relationships"
         canonical="https://footprintiq.app/dashboard"
+      />
+      <AnnouncementBar 
+        message="💡 Pro Tip: Use AI Analyst to get instant insights from your scan results."
+        link="/ai-analyst"
+        linkText="Try AI Analyst"
+        storageKey="ai-analyst-dashboard-tip"
+        variant="update"
       />
       <ScrollProgressBar />
       <SidebarProvider defaultOpen={true}>

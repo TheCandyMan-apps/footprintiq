@@ -17,6 +17,7 @@ import { OrganizationSchema } from "@/components/OrganizationSchema";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { FloatingCTA } from "@/components/FloatingCTA";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { shouldAutoStartTour, getTourAutoStartDelay } from "@/lib/tour/firstTime";
 import scanCapabilitiesBg from "@/assets/scan-capabilities-bg.jpg";
 import privacyBadge from "@/assets/privacy-badge.jpg";
@@ -115,6 +116,13 @@ export default function Home() {
       />
       <OrganizationSchema />
       <StructuredData organization={organizationSchema} />
+      <AnnouncementBar 
+        message="🎉 New Feature: Persona DNA & Evidence Packs now available! Get comprehensive identity resolution reports."
+        link="/blog/persona-dna-and-evidence-packs"
+        linkText="Read More"
+        storageKey="persona-dna-announcement"
+        variant="promo"
+      />
       <ScrollProgressBar />
       <Header />
       <Hero onStartScan={handleStartScan} onAdvancedScan={handleAdvancedScan} />
