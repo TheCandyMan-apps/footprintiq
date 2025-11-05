@@ -14,6 +14,7 @@ import { Testimonials } from "@/components/Testimonials";
 import { FAQ } from "@/components/FAQ";
 import { TrustSignals } from "@/components/TrustSignals";
 import { OrganizationSchema } from "@/components/OrganizationSchema";
+import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { shouldAutoStartTour, getTourAutoStartDelay } from "@/lib/tour/firstTime";
 import scanCapabilitiesBg from "@/assets/scan-capabilities-bg.jpg";
 import privacyBadge from "@/assets/privacy-badge.jpg";
@@ -112,6 +113,7 @@ export default function Home() {
       />
       <OrganizationSchema />
       <StructuredData organization={organizationSchema} />
+      <ScrollProgressBar />
       <Header />
       <Hero onStartScan={handleStartScan} onAdvancedScan={handleAdvancedScan} />
       <TrustSignals />

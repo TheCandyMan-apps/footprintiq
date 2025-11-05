@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
+import { ScrollProgressBar } from '@/components/ScrollProgressBar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -175,6 +176,7 @@ const Dashboard = () => {
         description="View your OSINT scans, findings, and entity relationships"
         canonical="https://footprintiq.app/dashboard"
       />
+      <ScrollProgressBar />
       <SidebarProvider defaultOpen={true}>
         <div className="min-h-screen bg-background flex flex-col w-full animate-fadeIn">
           <Header />
