@@ -137,6 +137,8 @@ const ApiDocs = lazy(() => import("./pages/ApiDocs"));
 const DPA = lazy(() => import("./pages/legal/DPA"));
 const AdvancedScan = lazy(() => import("./pages/AdvancedScan"));
 const BuyCredits = lazy(() => import("./pages/BuyCredits"));
+const PricingPage = lazy(() => import("./pages/Pricing"));
+const Features = lazy(() => import("./pages/Features"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -228,6 +230,8 @@ function RouterContent() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/reports/new" element={<NewReport />} />
           <Route path="/reports/list" element={<ReportsList />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/features" element={<Features />} />
           <Route path="/enterprise" element={<Enterprise />} />
           <Route path="/settings/billing" element={<Billing />} />
           <Route path="/settings/api-keys" element={<APIKeys />} />

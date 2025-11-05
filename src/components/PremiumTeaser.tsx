@@ -88,7 +88,7 @@ export const PremiumTeaser = () => {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <Link to="/pricing">View All Features</Link>
+                <Link to="/features">View All Features</Link>
               </Button>
             </div>
           </div>

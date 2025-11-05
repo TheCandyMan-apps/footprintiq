@@ -88,11 +88,11 @@ export const Header = () => {
                 <DropdownMenuItem onClick={() => scrollToSection('how-it-works')} className="cursor-pointer">
                   How It Works
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => scrollToSection('features')} className="cursor-pointer">
-                  Features
+                <DropdownMenuItem asChild>
+                  <Link to="/features" className="cursor-pointer">Features</Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => scrollToSection('pricing')} className="cursor-pointer">
-                  Pricing
+                <DropdownMenuItem asChild>
+                  <Link to="/pricing" className="cursor-pointer">Pricing</Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
