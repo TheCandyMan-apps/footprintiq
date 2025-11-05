@@ -176,7 +176,7 @@ const Dashboard = () => {
         canonical="https://footprintiq.app/dashboard"
       />
       <SidebarProvider defaultOpen={true}>
-        <div className="min-h-screen bg-background flex flex-col w-full">
+        <div className="min-h-screen bg-background flex flex-col w-full animate-fadeIn">
           <Header />
           
           <div className="fixed top-4 right-4 z-50">

@@ -115,19 +115,19 @@ export default function Home() {
       <Header />
       <Hero onStartScan={handleStartScan} onAdvancedScan={handleAdvancedScan} />
       <TrustSignals />
-      <div id="how-it-works">
+      <div id="how-it-works" className="animate-fadeIn">
         <HowItWorks />
       </div>
-      <div id="features">
+      <div id="features" className="animate-fadeIn">
         <WhyChooseUs />
       </div>
-      <div id="pricing">
+      <div id="pricing" className="animate-fadeIn">
         <Pricing />
       </div>
       <PremiumTeaser />
       <Testimonials />
       
-      <main className="relative px-6 py-16 mx-auto max-w-5xl overflow-hidden">
+      <main className="relative px-6 py-16 mx-auto max-w-5xl overflow-hidden animate-fadeIn">
         {/* Background Image */}
         <div className="absolute inset-0 z-0 -mx-6">
           <img 
