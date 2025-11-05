@@ -17,58 +17,60 @@ const STRIPE_PRICES = {
 
 const pricingTiers = [
   {
-    name: "Analyst Basic",
-    price: "$29",
-    period: "per month",
-    description: "Perfect for security analysts",
-    priceId: STRIPE_PRICES.analyst,
+    name: "Free",
+    price: "$0",
+    period: "forever",
+    description: "Get started with basic features",
+    priceId: null,
     features: [
-      "500 scans per month",
-      "Dark web monitoring",
+      "10 scans per month",
       "Basic breach database access",
       "Email & phone lookup",
-      "Social media reconnaissance",
-      "Basic threat intelligence",
-      "20 team members",
-      "Email support",
+      "2 monitors per workspace",
+      "5 AI analyst queries",
+      "30 days data retention",
+      "Community support",
     ],
-    cta: "Start Free Trial",
+    cta: "Get Started Free",
     highlighted: false,
+    isFree: true,
   },
   {
-    name: "Professional OSINT",
+    name: "Premium",
     price: "$79",
     period: "per month",
-    description: "Advanced features for professionals",
+    description: "Advanced data enrichment & unlimited access",
     priceId: STRIPE_PRICES.pro,
     features: [
-      "Unlimited scans",
-      "Advanced breach analytics",
-      "PDF export & reporting",
-      "White-label reports",
-      "API access (1000 calls/hour)",
-      "AI Analyst queries (50/month)",
-      "Custom integrations",
+      "Unlimited scans & quotas",
+      "Advanced data enrichment",
+      "Dark web monitoring",
+      "Social media reconnaissance",
+      "API access (5000 calls/hour)",
+      "Unlimited AI analyst queries",
+      "Admin tools & team management",
+      "PDF export & white-label reports",
+      "SSO authentication",
       "Priority support",
     ],
-    cta: "Upgrade to Pro",
+    cta: "Subscribe to Premium",
     highlighted: true,
   },
   {
-    name: "Enterprise Intelligence",
+    name: "Enterprise",
     price: "Custom",
     period: "",
-    description: "Full-scale threat intelligence",
+    description: "Full-scale intelligence platform",
     priceId: null,
     features: [
-      "Everything in Pro",
-      "Unlimited API calls",
-      "Unlimited AI queries",
-      "Custom data feeds",
-      "Dedicated support team",
-      "SSO & advanced security",
-      "Custom SLA",
-      "On-premise deployment",
+      "Everything in Premium",
+      "Unlimited team members",
+      "Custom data feeds & integrations",
+      "Advanced admin controls",
+      "Dedicated account manager",
+      "Custom SLA & compliance",
+      "On-premise deployment option",
+      "24/7 enterprise support",
     ],
     cta: "Contact Sales",
     highlighted: false,
@@ -88,7 +90,12 @@ export const Pricing = () => {
   const currentPrice = calculatePrice(scansPerMonth);
   const { toast } = useToast();
 
-  const handleCTA = async (tierName: string, priceId: string | null) => {
+  const handleCTA = async (tierName: string, priceId: string | null, isFree?: boolean) => {
+    if (isFree) {
+      navigate('/auth');
+      return;
+    }
+
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
@@ -96,7 +103,7 @@ export const Pricing = () => {
       return;
     }
 
-    if (tierName === "Enterprise Intelligence") {
+    if (tierName === "Enterprise") {
       window.location.href = "mailto:sales@footprintiq.com?subject=Enterprise Inquiry";
       return;
     }
@@ -213,7 +220,7 @@ export const Pricing = () => {
                 className="w-full mb-6"
                 variant={tier.highlighted ? "default" : "outline"}
                 size="lg"
-                onClick={() => handleCTA(tier.name, tier.priceId)}
+                onClick={() => handleCTA(tier.name, tier.priceId, 'isFree' in tier && tier.isFree)}
               >
                 {tier.cta}
               </Button>
