@@ -186,13 +186,13 @@ export function ThreatFeedSidebar() {
   return (
     <Sidebar
       side="right"
-      className={open ? "w-80" : "w-16"}
+      className={`${open ? "w-80" : "w-16"} transition-[width] duration-300 ease-in-out`}
       collapsible="icon"
     >
-      <SidebarHeader className="border-b border-border/50 p-4">
+      <SidebarHeader className="border-b border-border/50 p-4 transition-[var(--transition-smooth)]">
         <div className="flex items-center justify-between">
           {open && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 animate-fade-in">
               <div className="p-2 rounded-lg bg-destructive/10">
                 <Shield className="w-4 h-4 text-destructive" />
               </div>
@@ -202,7 +202,7 @@ export function ThreatFeedSidebar() {
               </div>
             </div>
           )}
-          <SidebarTrigger className="ml-auto" />
+          <SidebarTrigger className="ml-auto transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] rounded-md p-1" />
         </div>
       </SidebarHeader>
 
@@ -233,7 +233,7 @@ export function ThreatFeedSidebar() {
                     return (
                       <div
                         key={alert.id}
-                        className="group relative p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card hover:border-destructive/30 transition-all duration-300 cursor-pointer animate-fade-in"
+                        className="group relative p-3 rounded-lg border border-border/50 bg-card/50 hover:bg-card hover:border-destructive/30 transition-[var(--transition-smooth)] cursor-pointer animate-fade-in"
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-destructive/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-lg" />
                         
@@ -283,7 +283,7 @@ export function ThreatFeedSidebar() {
                   {recentScans.slice(0, 5).map((scan) => (
                     <div
                       key={scan.id}
-                      className="p-2 rounded-lg border border-border/30 bg-card/30 hover:bg-card/50 transition-colors"
+                      className="p-2 rounded-lg border border-border/30 bg-card/30 hover:bg-card/50 transition-[var(--transition-smooth)] cursor-pointer"
                     >
                       <div className="flex items-center justify-between mb-1">
                         <Badge variant="outline" className="text-xs capitalize">
