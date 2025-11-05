@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { ThreatFeedSidebar } from '@/components/ThreatFeedSidebar';
+import { ThreatAnalyticsPanel } from '@/components/ThreatAnalyticsPanel';
 import {
   Play,
   Network,
@@ -278,6 +279,9 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Threat Analytics */}
+            <ThreatAnalyticsPanel />
 
             {/* Recent Scans */}
             <Card className="border-border/50 shadow-card">
