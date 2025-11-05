@@ -16,8 +16,8 @@ interface SEOProps {
 }
 
 export const SEO = ({
-  title = "FootprintIQ — Check Your Digital Footprint & Online Privacy",
-  description = "Scan emails, usernames, domains, phones and IPs with trusted OSINT sources like Have I Been Pwned, Shodan and VirusTotal. Remove your personal data from 100+ data brokers.",
+  title = "FootprintIQ - Digital Footprint Scanner & OSINT Privacy Protection",
+  description = "Unified platform for scanning and protecting your online footprint with secure APIs and admin tools. Real-time OSINT scanning across 400+ sources with advanced privacy controls.",
   canonical = "https://footprintiq.app/",
   ogImage = "https://footprintiq.app/og-image.jpg",
   ogType = "website",
@@ -29,16 +29,36 @@ export const SEO = ({
     "@type": "SoftwareApplication",
     "name": "FootprintIQ",
     "applicationCategory": "SecurityApplication",
+    "operatingSystem": "Web",
+    "description": "Unified platform for scanning and protecting your online footprint with secure APIs and admin tools. Real-time OSINT scanning across 400+ sources with advanced privacy controls.",
+    "url": "https://footprintiq.app",
+    "image": "https://footprintiq.app/og-image.jpg",
     "offers": {
       "@type": "Offer",
       "price": "0",
-      "priceCurrency": "GBP"
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock",
+      "description": "Free tier with premium plans available"
     },
     "aggregateRating": {
       "@type": "AggregateRating",
       "ratingValue": "4.8",
-      "ratingCount": "127"
-    }
+      "ratingCount": "127",
+      "bestRating": "5"
+    },
+    "creator": {
+      "@type": "Organization",
+      "name": "FootprintIQ",
+      "url": "https://footprintiq.app"
+    },
+    "featureList": [
+      "Unified API Access to 400+ OSINT Sources",
+      "Real-Time Scanning & Monitoring",
+      "Advanced Privacy Controls",
+      "Automated Data Removal",
+      "Admin Tools & Dashboards",
+      "Secure API Integration"
+    ]
   };
 
   return (
@@ -55,6 +75,10 @@ export const SEO = ({
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={ogImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content="FootprintIQ Digital Footprint Scanner" />
+      <meta property="og:site_name" content="FootprintIQ" />
 
       {/* Article Meta Tags */}
       {article && (
@@ -80,6 +104,8 @@ export const SEO = ({
       <meta name="twitter:title" content={title} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:image:alt" content="FootprintIQ Digital Footprint Scanner" />
+      <meta name="twitter:site" content="@FootprintIQ" />
 
       {/* Structured Data */}
       <script type="application/ld+json">
