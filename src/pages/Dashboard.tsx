@@ -127,30 +127,62 @@ const Dashboard = () => {
         <Header />
 
         {/* Hero Section */}
-        <div className="relative overflow-hidden bg-gradient-mesh border-b border-border/50">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent" />
-          
-          <div className="relative max-w-7xl mx-auto px-6 py-12">
-            <div className="flex items-center justify-between">
-              <div className="space-y-2">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <span className="text-sm font-medium text-primary">Live Protection Active</span>
+        <div className="relative bg-gradient-to-br from-primary/20 to-background p-8 rounded-xl shadow-[var(--shadow-elevated)] mx-6 mt-6 animate-fade-in border border-primary/10">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-start justify-between gap-8">
+              <div className="flex items-start gap-4 flex-1">
+                {/* Digital Footprint Shield Icon */}
+                <div className="relative shrink-0">
+                  <div className="absolute inset-0 bg-primary/20 rounded-lg blur-xl animate-pulse" />
+                  <svg
+                    className="relative w-16 h-16 text-primary"
+                    viewBox="0 0 64 64"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M32 4L8 16V28C8 42 18 54 32 60C46 54 56 42 56 28V16L32 4Z"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      fill="currentColor"
+                      fillOpacity="0.1"
+                    />
+                    <path
+                      d="M32 20V32M32 40H32.02"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="24" cy="48" r="2" fill="currentColor" fillOpacity="0.6" />
+                    <circle cx="40" cy="48" r="2" fill="currentColor" fillOpacity="0.6" />
+                    <circle cx="32" cy="52" r="2" fill="currentColor" fillOpacity="0.6" />
+                  </svg>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                  Security Dashboard
-                </h1>
-                <p className="text-lg text-muted-foreground">
-                  Monitor your digital footprint and OSINT findings in real-time
-                </p>
+
+                {/* Heading and Subtitle */}
+                <div className="space-y-2 transition-[var(--transition-smooth)]">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    <span className="text-sm font-medium text-primary">Live Protection Active</span>
+                  </div>
+                  <h1 className="text-3xl font-bold text-primary">
+                    Welcome to Your FootprintIQ Dashboard
+                  </h1>
+                  <p className="text-lg text-muted-foreground">
+                    Monitor and protect your digital presence
+                  </p>
+                </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="hidden md:flex gap-3">
                 <Button
                   onClick={() => navigate('/graph')}
                   variant="outline"
-                  className="shadow-lg hover:shadow-glow transition-all duration-300"
+                  className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]"
                 >
                   <Network className="h-4 w-4 mr-2" />
                   Entity Graph
@@ -158,14 +190,14 @@ const Dashboard = () => {
                 <Button
                   onClick={() => navigate('/scan/advanced')}
                   variant="outline"
-                  className="shadow-lg shadow-accent/20 hover:shadow-glow hover:border-accent transition-all duration-300"
+                  className="shadow-lg shadow-accent/20 hover:shadow-glow hover:border-accent transition-[var(--transition-smooth)]"
                 >
                   <Zap className="h-4 w-4 mr-2" />
                   Advanced Scan
                 </Button>
                 <Button
                   onClick={() => navigate('/scan')}
-                  className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
+                  className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-[var(--transition-smooth)] hover:scale-105"
                 >
                   <Play className="h-4 w-4 mr-2" />
                   Start New Scan
