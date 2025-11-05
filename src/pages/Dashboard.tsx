@@ -293,12 +293,19 @@ const Dashboard = () => {
             <ThreatAnalyticsPanel />
 
             {/* Recent Scans */}
-            <Card className="border-border/50 shadow-card">
+            <Card className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow hover:scale-105 transition-all duration-500">
               <CardHeader className="border-b border-border/50 bg-gradient-to-r from-card to-card/50">
-                <CardTitle className="text-xl">Recent Scans</CardTitle>
-                <CardDescription>
-                  Your latest OSINT investigations and their results
-                </CardDescription>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
+                    <FileSearch className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-xl">Recent Scans</CardTitle>
+                    <CardDescription>
+                      Your latest OSINT investigations and their results
+                    </CardDescription>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="pt-6">
                 {loading ? (
@@ -308,40 +315,74 @@ const Dashboard = () => {
                 ) : scans.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="relative inline-block mb-6">
-                      <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
-                      <div className="relative p-6 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30">
-                        <FileSearch className="h-12 w-12 text-primary" />
+                      <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                      <div className="relative p-6 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 group-hover:border-primary/50 transition-colors">
+                        <Shield className="h-12 w-12 text-primary" />
                       </div>
                     </div>
                     <h3 className="text-2xl font-bold mb-2 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                      No scans yet
+                      Scan Your Digital Footprint
                     </h3>
                     <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                      Start your first OSINT scan to discover your digital footprint and protect your privacy
+                      Start your first OSINT scan to discover your digital footprint and protect your privacy across the web
                     </p>
-                    <Button 
-                      onClick={() => navigate('/scan')}
-                      className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
-                    >
-                      <Play className="h-4 w-4 mr-2" />
-                      Start Your First Scan
-                    </Button>
+                    <div className="flex gap-3 justify-center">
+                      <Button 
+                        onClick={() => navigate('/scan')}
+                        className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Quick Scan
+                      </Button>
+                      <Button 
+                        onClick={() => navigate('/scan/advanced')}
+                        variant="outline"
+                        className="shadow-lg hover:shadow-glow transition-all duration-300"
+                      >
+                        <Zap className="h-4 w-4 mr-2" />
+                        Advanced Scan
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {scans.map((scan) => (
                       <div
                         key={scan.id}
-                        className="group relative flex items-center justify-between p-5 rounded-xl border border-border/50 hover:border-primary/30 bg-gradient-to-r from-card to-card/50 hover:shadow-glow transition-all duration-300 cursor-pointer hover:-translate-y-1"
+                        className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow hover:scale-105 transition-all duration-500 cursor-pointer"
                         onClick={() => navigate(`/results/${scan.id}`)}
                       >
-                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-xl" />
-                        <div className="flex-1 relative z-10">
-                          <div className="flex items-center gap-3 mb-2">
+                        <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="relative z-10 space-y-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
+                                <Shield className="h-5 w-5" />
+                              </div>
+                              <div className="space-y-1">
+                                <p className="font-semibold text-lg">{getTarget(scan)}</p>
+                                <p className="text-xs text-muted-foreground flex items-center gap-2">
+                                  <Clock className="h-3 w-3" />
+                                  {format(new Date(scan.created_at), 'MMM d, yyyy h:mm a')}
+                                </p>
+                              </div>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="hover:bg-primary/10 hover:text-primary transition-colors"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </Button>
+                          </div>
+                          
+                          <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant="outline" className="capitalize">
+                              <FileSearch className="h-3 w-3 mr-1" />
                               {scan.scan_type}
                             </Badge>
-                            <Badge variant="default">
+                            <Badge variant="default" className="bg-green-500/10 text-green-500 border-green-500/30">
                               <CheckCircle2 className="h-3 w-3 mr-1" />
                               Completed
                             </Badge>
@@ -350,25 +391,14 @@ const Dashboard = () => {
                                 Privacy Score: {scan.privacy_score}
                               </Badge>
                             )}
-                          </div>
-                          <p className="font-semibold text-lg mb-1">{getTarget(scan)}</p>
-                          <p className="text-sm text-muted-foreground flex items-center gap-2">
-                            {format(new Date(scan.created_at), 'MMM d, yyyy h:mm a')}
                             {(scan.high_risk_count || 0) > 0 && (
-                              <span className="ml-2 text-destructive">
-                                • {scan.high_risk_count} high risk findings
-                              </span>
+                              <Badge variant="destructive" className="animate-pulse">
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                {scan.high_risk_count} high risk
+                              </Badge>
                             )}
-                          </p>
+                          </div>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="relative z-10 hover:bg-primary/10 hover:text-primary transition-colors"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
-                        </Button>
                       </div>
                     ))}
                   </div>
