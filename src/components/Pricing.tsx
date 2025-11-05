@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import pricingHero from "@/assets/pricing-hero.jpg";
+import { useParallax } from "@/hooks/useParallax";
 
 // Stripe price IDs for each tier
 const STRIPE_PRICES = {
@@ -80,6 +81,8 @@ const pricingTiers = [
 export const Pricing = () => {
   const navigate = useNavigate();
   const [scansPerMonth, setScansPerMonth] = useState(50);
+  const bgRef = useRef<HTMLImageElement>(null);
+  const bgParallax = useParallax(bgRef, { speed: 0.25, direction: 'down' });
   
   const calculatePrice = (scans: number) => {
     if (scans <= 10) return 0;
@@ -139,12 +142,17 @@ export const Pricing = () => {
 
   return (
     <section className="relative py-20 px-6 overflow-hidden">
-      {/* Background Image */}
+      {/* Background Image with Parallax */}
       <div className="absolute inset-0 z-0">
         <img 
+          ref={bgRef}
           src={pricingHero} 
           alt="Pricing plans background" 
           className="w-full h-full object-cover opacity-10"
+          style={{ 
+            transform: bgParallax.transform,
+            willChange: 'transform',
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
       </div>

@@ -1,5 +1,7 @@
 import { Brain, Lock, Zap, Users, Eye, Target, Star } from "lucide-react";
 import featuresHero from "@/assets/features-hero.jpg";
+import { useParallax } from "@/hooks/useParallax";
+import { useRef } from "react";
 
 const benefits = [
   {
@@ -41,14 +43,22 @@ const benefits = [
 ];
 
 export const WhyChooseUs = () => {
+  const bgRef = useRef<HTMLImageElement>(null);
+  const bgParallax = useParallax(bgRef, { speed: 0.15, direction: 'down' });
+  
   return (
     <section className="relative py-20 px-6 overflow-hidden">
-      {/* Hero Background */}
+      {/* Hero Background with Parallax */}
       <div className="absolute inset-0 z-0">
         <img 
+          ref={bgRef}
           src={featuresHero} 
           alt="Security features network" 
           className="w-full h-full object-cover opacity-15"
+          style={{ 
+            transform: bgParallax.transform,
+            willChange: 'transform',
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-background/98 to-background" />
       </div>

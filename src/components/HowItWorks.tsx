@@ -1,5 +1,7 @@
 import { Search, Shield, Trash2, TrendingUp, Sparkles } from "lucide-react";
 import howItWorksHero from "@/assets/how-it-works-hero.jpg";
+import { useParallax } from "@/hooks/useParallax";
+import { useRef } from "react";
 
 const steps = [
   {
@@ -33,14 +35,22 @@ const steps = [
 ];
 
 export const HowItWorks = () => {
+  const bgRef = useRef<HTMLImageElement>(null);
+  const bgParallax = useParallax(bgRef, { speed: 0.2, direction: 'down' });
+  
   return (
     <section id="how-it-works" className="relative py-20 px-6 overflow-hidden">
-      {/* Hero Background */}
+      {/* Hero Background with Parallax */}
       <div className="absolute inset-0 z-0">
         <img 
+          ref={bgRef}
           src={howItWorksHero} 
           alt="Digital security concept" 
           className="w-full h-full object-cover opacity-20"
+          style={{ 
+            transform: bgParallax.transform,
+            willChange: 'transform',
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background" />
       </div>

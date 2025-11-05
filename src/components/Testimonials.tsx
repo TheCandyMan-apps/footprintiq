@@ -1,5 +1,7 @@
 import { Star, Quote, Sparkles } from "lucide-react";
 import testimonialsBg from "@/assets/testimonials-bg.jpg";
+import { useParallax } from "@/hooks/useParallax";
+import { useRef } from "react";
 
 const testimonials = [
   {
@@ -47,14 +49,22 @@ const testimonials = [
 ];
 
 export const Testimonials = () => {
+  const bgRef = useRef<HTMLImageElement>(null);
+  const bgParallax = useParallax(bgRef, { speed: 0.2, direction: 'down' });
+  
   return (
     <section className="relative py-20 px-6 overflow-hidden">
-      {/* Animated Background */}
+      {/* Animated Background with Parallax */}
       <div className="absolute inset-0 z-0">
         <img 
+          ref={bgRef}
           src={testimonialsBg} 
           alt="Network of trust" 
           className="w-full h-full object-cover opacity-20"
+          style={{ 
+            transform: bgParallax.transform,
+            willChange: 'transform',
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-muted/50 via-background/95 to-background" />
       </div>
