@@ -280,6 +280,69 @@ serve(async (req) => {
       }
     }
 
+    // === Premium Apify actors (if enabled in options) ===
+    const premium = body.options?.premium;
+    if (premium && (premium.socialMediaFinder || premium.osintScraper || premium.darkwebScraper)) {
+      console.log('[orchestrate] Running premium Apify actors...');
+      
+      const callApify = async (actorSlug: string, payload: any, label: string) => {
+        try {
+          const { data, error } = await supabase.functions.invoke('apify-run', {
+            body: {
+              workspaceId,
+              actorSlug,
+              payload,
+            },
+          });
+          
+          if (error) {
+            console.error(`[orchestrate] ${label} error:`, error);
+            return;
+          }
+          
+          if (data?.findings?.length) {
+            allFindings.push(...data.findings);
+            console.log(`[orchestrate] ${label}: ${data.findings.length} findings`);
+          }
+          
+          if (data?.debited) {
+            console.log(`[orchestrate] ${label}: ${data.debited} credits debited`);
+          }
+        } catch (e) {
+          console.error(`[orchestrate] ${label} exception:`, e);
+        }
+      };
+
+      // Social Media Finder
+      if (premium.socialMediaFinder && value) {
+        await callApify('xtech/social-media-finder-pro', { username: value }, 'apify:social-media-finder-pro');
+      }
+      
+      // OSINT Scraper
+      if (premium.osintScraper && premium.osintKeywords?.length) {
+        await callApify('epctex/osint-scraper', {
+          searchKeywords: premium.osintKeywords,
+          codepad: true,
+          githubgist: true,
+          ideone: true,
+          pastebin: true,
+          pasteorg: true,
+          textbin: true,
+          proxy: { useApifyProxy: true },
+        }, 'apify:osint-scraper');
+      }
+      
+      // Dark Web Scraper
+      if (premium.darkwebScraper && (premium.darkwebUrls?.length || premium.darkwebSearch)) {
+        await callApify('epctex/darkweb-scraper', {
+          startUrls: premium.darkwebUrls ?? [],
+          search: premium.darkwebSearch ?? '',
+          maxDepth: premium.darkwebDepth ?? 3,
+          maxPages: premium.darkwebPages ?? 10,
+        }, 'apify:darkweb-scraper');
+      }
+    }
+
     // Deduplicate and sort
     const uniqueFindings = deduplicateFindings(allFindings);
     const sortedFindings = sortFindings(uniqueFindings);

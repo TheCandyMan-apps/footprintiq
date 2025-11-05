@@ -218,3 +218,6 @@ verify_jwt = true
 
 [functions.monitoring-executor]
 verify_jwt = false
+
+[functions.apify-run]
+verify_jwt = true
