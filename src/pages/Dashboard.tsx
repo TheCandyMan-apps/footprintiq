@@ -12,6 +12,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { ThreatFeedSidebar } from '@/components/ThreatFeedSidebar';
 import { ThreatAnalyticsPanel } from '@/components/ThreatAnalyticsPanel';
 import { SkeletonStatCard, SkeletonRecentScans } from '@/components/dashboard/SkeletonCard';
+import { SkeletonThreatAnalytics } from '@/components/analytics/SkeletonAnalytics';
 import {
   Play,
   Network,
@@ -301,7 +302,11 @@ const Dashboard = () => {
             </div>
 
             {/* Threat Analytics */}
-            <ThreatAnalyticsPanel />
+            {loading ? (
+              <SkeletonThreatAnalytics />
+            ) : (
+              <ThreatAnalyticsPanel />
+            )}
 
             {/* Recent Scans */}
             {loading ? (
