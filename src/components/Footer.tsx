@@ -3,12 +3,12 @@ import { Link } from "react-router-dom";
 
 export const Footer = () => {
   return (
-    <footer className="bg-card border-t border-border">
+    <footer className="bg-card border-t border-accent">
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-center md:text-left">
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-2 mb-4 justify-center md:justify-start">
             <img 
               src="/logo-dark.png" 
               alt="FootprintIQ Logo" 
@@ -18,15 +18,18 @@ export const Footer = () => {
             <p className="text-sm text-muted-foreground mb-4">
               Take control of your digital footprint with comprehensive privacy protection and automated data removal.
             </p>
-            <div className="flex gap-3">
-              <a href="https://twitter.com/footprintiq" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                <Twitter className="w-5 h-5" />
+            <p className="text-sm font-semibold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-accent">
+              Powered by AI-Driven OSINT
+            </p>
+            <div className="flex gap-3 justify-center md:justify-start">
+              <a href="https://twitter.com/footprintiq" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-transform hover:rotate-12">
+                <Twitter className="w-6 h-6" />
               </a>
-              <a href="https://linkedin.com/company/footprintiq" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                <Linkedin className="w-5 h-5" />
+              <a href="https://linkedin.com/company/footprintiq" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-transform hover:rotate-12">
+                <Linkedin className="w-6 h-6" />
               </a>
-              <a href="https://github.com/footprintiq" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                <Github className="w-5 h-5" />
+              <a href="https://github.com/footprintiq" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-transform hover:rotate-12">
+                <Github className="w-6 h-6" />
               </a>
             </div>
           </div>
