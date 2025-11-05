@@ -186,11 +186,11 @@ serve(async (req) => {
     }
 
     // Build provider list - only use providers backed by dedicated functions
-    const SUPPORTED_FUNCTION_PROVIDERS = new Set(['hibp','dehashed','fullcontact','clearbit','shodan','pipl']);
+    const SUPPORTED_FUNCTION_PROVIDERS = new Set(['hibp','dehashed','fullcontact','clearbit','shodan','pipl','intelx']);
     const defaultProvidersByType: Record<ScanRequest['type'], string[]> = {
       email: ['hibp','dehashed','fullcontact','pipl','clearbit'],
       domain: ['shodan','clearbit','fullcontact'],
-      username: ['dehashed'],
+      username: ['dehashed','pipl','intelx'],
       phone: ['pipl']
     };
 
@@ -223,7 +223,8 @@ serve(async (req) => {
       fullcontact: ['email', 'domain'],
       clearbit: ['email', 'domain'],
       shodan: ['domain'],
-      pipl: ['email', 'phone'],
+      pipl: ['email', 'phone', 'username'],
+      intelx: ['email', 'username', 'domain'],
     };
     const incompatible = providers.filter(p => !(providerTypeSupport[p]?.includes(type)));
     if (incompatible.length) {
