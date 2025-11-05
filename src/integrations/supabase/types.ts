@@ -811,6 +811,82 @@ export type Database = {
         }
         Relationships: []
       }
+      apify_results: {
+        Row: {
+          created_at: string | null
+          id: string
+          result: Json
+          task_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          result: Json
+          task_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          result?: Json
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apify_results_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "apify_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      apify_tasks: {
+        Row: {
+          actor_slug: string
+          cost_credits: number
+          created_at: string | null
+          created_by: string
+          finished_at: string | null
+          id: string
+          input: Json
+          status: string | null
+          task_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          actor_slug: string
+          cost_credits: number
+          created_at?: string | null
+          created_by: string
+          finished_at?: string | null
+          id?: string
+          input: Json
+          status?: string | null
+          task_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          actor_slug?: string
+          cost_credits?: number
+          created_at?: string | null
+          created_by?: string
+          finished_at?: string | null
+          id?: string
+          input?: Json
+          status?: string | null
+          task_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "apify_tasks_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_log: {
         Row: {
           action: string
@@ -1902,6 +1978,41 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      credit_ledger: {
+        Row: {
+          created_at: string | null
+          delta: number
+          id: string
+          meta: Json | null
+          reason: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          delta: number
+          id?: string
+          meta?: Json | null
+          reason: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string | null
+          delta?: number
+          id?: string
+          meta?: Json | null
+          reason?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_ledger_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       credits_ledger: {
         Row: {
@@ -5987,6 +6098,15 @@ export type Database = {
         Returns: string
       }
       reset_expired_rate_limits: { Args: never; Returns: undefined }
+      spend_credits: {
+        Args: {
+          _cost: number
+          _meta: Json
+          _reason: string
+          _workspace_id: string
+        }
+        Returns: boolean
+      }
       update_user_subscription: {
         Args: {
           _expires_at?: string
