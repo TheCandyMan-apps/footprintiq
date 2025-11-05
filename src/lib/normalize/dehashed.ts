@@ -16,7 +16,32 @@ export function normalizeDeHashed(result: DeHashedResult, query: string): Findin
   
   const total = result.total || 0;
   
-  if (total > 0) {
+  if (total === 0) {
+    // No breaches found - this is good news!
+    findings.push({
+      id: generateFindingId("dehashed", "no_credential_exposure", query),
+      type: "breach" as const,
+      title: "No Credential Exposures Found",
+      description: `DeHashed found no credential exposures for "${query}". This target does not appear in known breach databases.`,
+      severity: "low" as any,
+      confidence: 0.9,
+      provider: "DeHashed",
+      providerCategory: "Credential Intelligence",
+      evidence: [
+        { key: "Status", value: "Clean" },
+        { key: "Breaches Found", value: "0" },
+      ],
+      impact: "No known credential compromises detected",
+      remediation: [
+        "Continue monitoring for new breaches",
+        "Maintain strong, unique passwords",
+        "Keep multi-factor authentication enabled",
+      ],
+      tags: ["credentials", "all-clear"],
+      observedAt: new Date().toISOString(),
+      raw: { total: 0 },
+    });
+  } else if (total > 0) {
     const severity = total > 10 ? "critical" : total > 3 ? "high" : "medium";
     
     const databaseNames = result.entries
