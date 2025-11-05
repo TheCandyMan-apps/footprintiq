@@ -122,7 +122,7 @@ serve(async (req) => {
         result = await callFullContact(target, type);
         break;
       case 'pipl':
-        result = await callPipl(target, options);
+        result = await callPipl(target, type);
         break;
       case 'clearbit':
         result = await callClearbit(target, type);
@@ -205,12 +205,24 @@ async function callFullContact(target: string, type: string) {
   }
 }
 
-async function callPipl(target: string, options: any) {
+async function callPipl(target: string, type: string) {
   const API_KEY = Deno.env.get('PIPL_API_KEY');
   if (!API_KEY) return { findings: [] };
 
   try {
-    const response = await fetch(`https://api.pipl.com/search/?email=${encodeURIComponent(target)}&key=${API_KEY}`);
+    // Build query parameters based on type
+    const params = new URLSearchParams({ key: API_KEY });
+    if (type === 'email') {
+      params.append('email', target);
+    } else if (type === 'phone') {
+      params.append('phone', target);
+    } else if (type === 'username') {
+      params.append('username', target);
+    } else {
+      params.append('email', target); // default to email
+    }
+
+    const response = await fetch(`https://api.pipl.com/search/?${params.toString()}`);
     if (!response.ok) return { findings: [] };
     const data = await response.json();
     
