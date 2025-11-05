@@ -315,43 +315,100 @@ async function callHIBP(email: string) {
   const API_KEY = Deno.env.get('HIBP_API_KEY');
   if (!API_KEY) return { findings: [] };
 
-  const response = await fetch(
-    `https://haveibeenpwned.com/api/v3/breachedaccount/${encodeURIComponent(email)}?truncateResponse=false`,
-    {
-      headers: {
-        'hibp-api-key': API_KEY,
-        'User-Agent': 'FootprintIQ-Server',
+  try {
+    const response = await fetch(
+      `https://haveibeenpwned.com/api/v3/breachedaccount/${encodeURIComponent(email)}?truncateResponse=false`,
+      {
+        headers: {
+          'hibp-api-key': API_KEY,
+          'User-Agent': 'FootprintIQ-Server',
+        },
+      }
+    );
+
+    if (response.status === 404) return { findings: [] };
+    if (!response.ok) throw new Error(`HIBP API error: ${response.status}`);
+
+    const breaches = await response.json();
+    
+    // Normalize HIBP breaches to UFM format
+    const findings = breaches.map((breach: any) => ({
+      provider: 'hibp',
+      kind: 'breach.hit',
+      severity: breach.IsSensitive ? 'high' : 'medium',
+      confidence: 0.95,
+      observedAt: breach.AddedDate || new Date().toISOString(),
+      evidence: [
+        { key: 'breach', value: breach.Name || breach.Title },
+        { key: 'date', value: breach.BreachDate },
+        { key: 'compromised', value: breach.DataClasses?.join(', ') || '' },
+      ].filter(e => e.value),
+      meta: {
+        title: breach.Title,
+        domain: breach.Domain,
+        description: breach.Description,
+        pwnCount: breach.PwnCount,
+        dataClasses: breach.DataClasses,
       },
-    }
-  );
-
-  if (response.status === 404) return [];
-  if (!response.ok) throw new Error(`HIBP API error: ${response.status}`);
-
-  return await response.json();
+    }));
+    
+    return { findings };
+  } catch (e) {
+    console.error('[hibp] Error:', e);
+    return { findings: [] };
+  }
 }
 
 async function callIntelX(query: string) {
   const API_KEY = Deno.env.get('INTELX_API_KEY');
   if (!API_KEY) return { findings: [] };
 
-  const response = await fetch('https://2.intelx.io/intelligent/search', {
-    method: 'POST',
-    headers: {
-      'x-key': API_KEY,
-      'Content-Type': 'application/json',
-      'User-Agent': 'FootprintIQ-Server',
-    },
-    body: JSON.stringify({
-      term: query,
-      maxresults: 100,
-      media: 0,
-      sort: 4,
-    }),
-  });
+  try {
+    const response = await fetch('https://2.intelx.io/intelligent/search', {
+      method: 'POST',
+      headers: {
+        'x-key': API_KEY,
+        'Content-Type': 'application/json',
+        'User-Agent': 'FootprintIQ-Server',
+      },
+      body: JSON.stringify({
+        term: query,
+        maxresults: 100,
+        media: 0,
+        sort: 4,
+      }),
+    });
 
-  if (!response.ok) throw new Error(`IntelX API error: ${response.status}`);
-  return await response.json();
+    if (!response.ok) throw new Error(`IntelX API error: ${response.status}`);
+    
+    const data = await response.json();
+    const results = data.records || [];
+    
+    // Normalize IntelX results to UFM format
+    const findings = results.map((record: any) => ({
+      provider: 'intelx',
+      kind: 'darkweb.hit',
+      severity: 'high',
+      confidence: 0.85,
+      observedAt: record.date || new Date().toISOString(),
+      evidence: [
+        { key: 'source', value: record.bucket || 'darkweb' },
+        { key: 'type', value: record.mediactype || '' },
+        { key: 'preview', value: record.name || record.title || '' },
+      ].filter(e => e.value),
+      meta: {
+        systemid: record.systemid,
+        bucket: record.bucket,
+        added: record.added,
+        size: record.size,
+      },
+    }));
+    
+    return { findings };
+  } catch (e) {
+    console.error('[intelx] Error:', e);
+    return { findings: [] };
+  }
 }
 
 async function callDeHashed(target: string, type: string) {
