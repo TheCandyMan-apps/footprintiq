@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Shield, Search, Trash2, AlertTriangle } from "lucide-react";
+import { Shield, Search, Trash2, AlertTriangle, Scan, Lock, Zap, Globe } from "lucide-react";
 import heroImage from "@/assets/hero-privacy.jpg";
 import credentialBreach from "@/assets/credential-breach.jpg";
 
@@ -37,12 +37,12 @@ export const Hero = ({ onStartScan, onAdvancedScan }: HeroProps) => {
         </div>
 
         <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight pb-2 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent tracking-tight animate-fade-in [animation-delay:100ms]">
-          Protect Your Digital Identity
+          Scan Your Digital Footprint and Protect Your Privacy with OSINT Tools
         </h1>
         
         <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed pb-3 animate-fade-in [animation-delay:200ms]">
-          Scan email, username, domain, phone, and IP across <span className="text-primary font-semibold">trusted OSINT sources</span>. 
-          Discover breaches and exposures, then <span className="text-accent font-semibold">remove your data automatically</span> from 100+ data brokers.
+          Access unified API for real-time scanning across <span className="text-primary font-semibold">400+ OSINT sources</span>. 
+          Get instant insights with <span className="text-accent font-semibold">advanced privacy controls</span> and automated data removal.
         </p>
         
         {/* Privacy Badge */}
@@ -59,9 +59,12 @@ export const Hero = ({ onStartScan, onAdvancedScan }: HeroProps) => {
             variant="hero"
             onClick={onStartScan}
             className="text-lg px-10 py-7 h-auto shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105"
+            asChild
           >
-            <Search className="w-5 h-5" />
-            Start Free Scan
+            <a href="/auth">
+              <Scan className="w-5 h-5" />
+              Get Started
+            </a>
           </Button>
           {onAdvancedScan && (
             <Button 
@@ -92,21 +95,21 @@ export const Hero = ({ onStartScan, onAdvancedScan }: HeroProps) => {
         {/* Features */}
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto animate-fade-in [animation-delay:500ms]">
           <FeatureCard 
-            icon={<Search className="w-6 h-6" />}
-            title="Comprehensive Scan"
-            description="Search across 100+ data broker sites and OSINT databases"
+            icon={<Globe className="w-6 h-6" />}
+            title="Unified API Access"
+            description="Single interface to 400+ OSINT sources and data broker databases"
             delay="500ms"
           />
           <FeatureCard 
-            icon={<Trash2 className="w-6 h-6" />}
-            title="Automated Removal"
-            description="We handle the entire data removal process for you"
+            icon={<Zap className="w-6 h-6" />}
+            title="Real-Time Scanning"
+            description="Instant results with live monitoring and automated breach alerts"
             delay="600ms"
           />
           <FeatureCard 
-            icon={<Shield className="w-6 h-6" />}
-            title="Ongoing Protection"
-            description="Continuous monitoring for new exposures and threats"
+            icon={<Lock className="w-6 h-6" />}
+            title="Privacy Controls"
+            description="Advanced consent management and secure data handling"
             delay="700ms"
           />
         </div>
