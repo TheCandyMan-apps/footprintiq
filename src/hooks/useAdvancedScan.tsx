@@ -67,7 +67,12 @@ export function useAdvancedScan() {
           type,
           value: value!,
           workspaceId: workspace.id,
-          options: { includeDarkweb: !!options.deepWeb },
+          options: {
+            includeDarkweb: !!options.deepWeb,
+            premium: {
+              socialMediaFinder: !!options.socialMedia,
+            },
+          },
         },
       });
 
