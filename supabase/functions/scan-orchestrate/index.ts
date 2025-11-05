@@ -50,6 +50,16 @@ interface ScanRequest {
     includeDating?: boolean;
     includeNsfw?: boolean;
     providers?: string[];
+    premium?: {
+      socialMediaFinder?: boolean;
+      osintScraper?: boolean;
+      osintKeywords?: string[];
+      darkwebScraper?: boolean;
+      darkwebUrls?: string[];
+      darkwebSearch?: string;
+      darkwebDepth?: number;
+      darkwebPages?: number;
+    };
   };
 }
 
