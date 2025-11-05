@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AlertTriangle, Shield, TrendingUp, Clock, Zap } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
+import { SkeletonThreatFeedContent } from "@/components/sidebar/SkeletonThreatFeed";
 
 type Scan = Database['public']['Tables']['scans']['Row'];
 
@@ -33,6 +34,7 @@ export function ThreatFeedSidebar() {
   const [alerts, setAlerts] = useState<ThreatAlert[]>([]);
   const [recentScans, setRecentScans] = useState<Scan[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const initUser = async () => {
@@ -85,6 +87,7 @@ export function ThreatFeedSidebar() {
   }, [user]);
 
   const fetchInitialData = async (userId: string) => {
+    setLoading(true);
     try {
       const { data: scansData, error } = await supabase
         .from('scans')
@@ -101,6 +104,8 @@ export function ThreatFeedSidebar() {
       }
     } catch (error) {
       console.error('Error fetching threat feed data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -203,6 +208,10 @@ export function ThreatFeedSidebar() {
 
       <SidebarContent>
         <ScrollArea className="h-full">
+          {loading ? (
+            <SkeletonThreatFeedContent isOpen={open} />
+          ) : (
+            <>
           <SidebarGroup>
             <SidebarGroupLabel className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-destructive animate-pulse" />
@@ -297,6 +306,8 @@ export function ThreatFeedSidebar() {
                 </div>
               </SidebarGroupContent>
             </SidebarGroup>
+          )}
+          </>
           )}
         </ScrollArea>
       </SidebarContent>
