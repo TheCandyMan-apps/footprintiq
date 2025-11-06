@@ -53,15 +53,7 @@ export const Hero = ({ onStartScan, onAdvancedScan }: HeroProps) => {
           willChange: 'transform',
         }}
       >
-        {/* Threat Alert Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full bg-destructive/10 border border-destructive/20 animate-fade-in backdrop-blur-sm">
-          <AlertTriangle className="w-4 h-4 text-destructive animate-pulse" />
-          <span className="text-sm font-medium text-destructive">
-            Over 15 billion credentials exposed in data breaches
-          </span>
-        </div>
-
-        <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight pb-2 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent tracking-tight animate-fade-in [animation-delay:100ms]">
+        <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight pb-2 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent tracking-tight animate-fade-in">
           Scan Your Digital Footprint and Protect Your Privacy with OSINT Tools
         </h1>
         
