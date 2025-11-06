@@ -20,11 +20,12 @@ export default defineConfig(({ mode }) => ({
         name: 'FootprintIQ - OSINT Intelligence Platform',
         short_name: 'FootprintIQ',
         description: 'Enterprise OSINT intelligence platform for digital footprint analysis',
-        theme_color: '#1a1f2e',
-        background_color: '#0a0f1e',
+        theme_color: '#7c3aed',
+        background_color: '#0a0a0f',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
+        categories: ['productivity', 'security', 'utilities'],
         icons: [
           {
             src: '/placeholder.svg',
@@ -37,6 +38,14 @@ export default defineConfig(({ mode }) => ({
             sizes: '512x512',
             type: 'image/svg+xml',
             purpose: 'any maskable'
+          }
+        ],
+        screenshots: [
+          {
+            src: '/placeholder.svg',
+            sizes: '1280x720',
+            type: 'image/svg+xml',
+            label: 'FootprintIQ Dashboard'
           }
         ]
       },
@@ -55,6 +64,29 @@ export default defineConfig(({ mode }) => ({
               },
               cacheableResponse: {
                 statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\/api\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'api-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 5 // 5 minutes
+              },
+              networkTimeoutSeconds: 10
+            }
+          },
+          {
+            urlPattern: /\.(png|jpg|jpeg|svg|gif|webp)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
               }
             }
           }

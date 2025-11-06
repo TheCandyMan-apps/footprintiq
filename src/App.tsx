@@ -14,6 +14,8 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useAccessibility } from "@/hooks/useAccessibility";
 import { HelmetProvider } from 'react-helmet-async';
 import { PageTransition } from "@/components/PageTransition";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { MobileCTABar } from "@/components/MobileCTABar";
 import "@/lib/config"; // Validate env at boot
 
 // Critical pages (loaded immediately)
@@ -190,6 +192,8 @@ function RouterContent() {
     <>
       <SkipLink />
       <GlobalSearch />
+      <PWAInstallPrompt />
+      <MobileCTABar />
       <Suspense fallback={<LoadingState />}>
         <PageTransition>
           <Routes>

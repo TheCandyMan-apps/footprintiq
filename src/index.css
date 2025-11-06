@@ -131,4 +131,31 @@ All colors MUST be HSL.
   .animate-shimmer {
     animation: shimmer 2s infinite;
   }
+
+  /* Touch-friendly targets - minimum 44x44px */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Safe area padding for mobile notches */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Mobile-optimized card stack */
+  .mobile-card-stack {
+    @apply flex flex-col gap-3 md:grid md:grid-cols-2 md:gap-4 lg:grid-cols-3;
+  }
+
+  /* Smooth scroll for mobile */
+  @media (max-width: 768px) {
+    html {
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
 }
