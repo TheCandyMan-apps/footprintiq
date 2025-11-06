@@ -6,6 +6,11 @@ export const Footer = () => {
   return (
     <footer className="bg-card border-t border-accent">
       <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Trust Badges - Horizontal Scroll */}
+        <div className="mb-10">
+          <TrustBadges variant="scroll" />
+        </div>
+        
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8 text-center md:text-left">
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">

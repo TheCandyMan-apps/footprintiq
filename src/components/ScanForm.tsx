@@ -252,8 +252,8 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
             </Button>
             
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <Shield className="w-3 h-3" />
-              <span>We never store your search terms</span>
+              <Shield className="w-3 h-3 text-accent" />
+              <span>We delete queries immediately after processing</span>
             </div>
           </div>
 

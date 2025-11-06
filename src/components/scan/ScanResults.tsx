@@ -10,7 +10,7 @@ import { exportResultsToJSON, exportResultsToCSV, groupByStatus } from '@/utils/
 import { ScanProgress } from './ScanProgress';
 import { FootprintDNACard } from '@/components/FootprintDNACard';
 import { AIInsightsPanel } from '@/components/AIInsightsPanel';
-import { Loader2, FileJson, FileSpreadsheet, ExternalLink } from 'lucide-react';
+import { Loader2, FileJson, FileSpreadsheet, ExternalLink, Shield } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -136,7 +136,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
             <CardTitle className="text-2xl font-semibold mb-2">
               Scan Results: {job.username}
             </CardTitle>
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
               <Badge variant={job.status === 'finished' ? 'default' : 'secondary'}>
                 {job.status}
               </Badge>
@@ -146,6 +146,13 @@ export function ScanResults({ jobId }: ScanResultsProps) {
               {job.finished_at && (
                 <span>Finished: {new Date(job.finished_at).toLocaleString()}</span>
               )}
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-accent/10 ring-1 ring-accent/20">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <Shield className="w-3.5 h-3.5 text-accent" />
+                <span className="text-xs font-medium text-accent">Scan secured by RLS</span>
+              </div>
             </div>
             {job.error && (
               <p className="text-sm text-destructive mt-2">{job.error}</p>
