@@ -13,6 +13,7 @@ import { Plus, Users, Settings, Mail, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Link } from "react-router-dom";
 
 export default function Workspaces() {
   const { workspace, workspaces, switchWorkspace, refreshWorkspace } = useWorkspace();
@@ -142,6 +143,14 @@ export default function Workspaces() {
           <p className="text-muted-foreground">
             Collaborate with your team on investigations
           </p>
+          <div className="mt-4">
+            <Link to="/workspace-management">
+              <Button variant="outline">
+                <Settings className="mr-2 h-4 w-4" />
+                Manage Workspaces
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">

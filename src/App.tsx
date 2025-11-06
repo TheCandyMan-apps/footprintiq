@@ -90,6 +90,7 @@ const Policies = lazy(() => import("./pages/admin/Policies"));
 const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
 const Workspace = lazy(() => import("./pages/Workspace"));
 const Workspaces = lazy(() => import("./pages/Workspaces"));
+const WorkspaceManagement = lazy(() => import("./pages/WorkspaceManagement"));
 const Trust = lazy(() => import("./pages/Trust"));
 const HowWeSourceData = lazy(() => import("./pages/HowWeSourceData"));
 const Graph = lazy(() => import("./pages/Graph"));
@@ -287,6 +288,7 @@ function RouterContent() {
           <Route path="/admin/audit-logs" element={<AuditLogs />} />
           <Route path="/workspace" element={<Workspace />} />
           <Route path="/workspaces" element={<Workspaces />} />
+          <Route path="/workspace-management" element={<WorkspaceManagement />} />
           <Route path="/trust" element={<Trust />} />
           <Route path="/how-we-source-data" element={<HowWeSourceData />} />
           <Route path="/graph" element={<Graph />} />

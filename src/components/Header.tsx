@@ -228,6 +228,11 @@ export const Header = () => {
                       Dashboard
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/workspace-management" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">
+                      Manage Workspaces
+                    </Link>
+                  </DropdownMenuItem>
                   {isPremium && (
                     <DropdownMenuItem onClick={handleManageSubscription} className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">
                       <CreditCard className="w-4 h-4 mr-2" />
