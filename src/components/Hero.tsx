@@ -60,8 +60,7 @@ export const Hero = ({ onStartScan, onAdvancedScan }: HeroProps) => {
         </h1>
         
         <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground mb-6 sm:mb-7 md:mb-8 max-w-3xl mx-auto leading-relaxed pb-3 animate-fade-in [animation-delay:200ms]">
-          Access unified API for real-time scanning across <span className="text-primary font-semibold">400+ OSINT sources</span>. 
-          Get instant insights with <span className="text-accent font-semibold">advanced privacy controls</span> and automated data removal.
+          Take control of your online privacy. Discover where your <span className="text-primary font-semibold">personal information appears</span> across the web and <span className="text-accent font-semibold">remove it effortlessly</span>.
         </p>
         
         {/* Privacy Badge */}
@@ -115,20 +114,20 @@ export const Hero = ({ onStartScan, onAdvancedScan }: HeroProps) => {
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5 md:gap-6 max-w-5xl mx-auto animate-fade-in [animation-delay:500ms]">
           <FeatureCard 
             icon={<Globe className="w-6 h-6" />}
-            title="Unified API Access"
-            description="Single interface to 400+ OSINT sources and data broker databases"
+            title="Find Your Data"
+            description="Search hundreds of websites at once to discover your exposed information"
             delay="500ms"
           />
           <FeatureCard 
             icon={<Zap className="w-6 h-6" />}
-            title="Real-Time Scanning"
-            description="Instant results with live monitoring and automated breach alerts"
+            title="Get Instant Results"
+            description="See what's out there immediately with automatic monitoring for new exposures"
             delay="600ms"
           />
           <FeatureCard 
             icon={<Lock className="w-6 h-6" />}
-            title="Privacy Controls"
-            description="Advanced consent management and secure data handling"
+            title="Stay Protected"
+            description="Remove your data automatically and keep your privacy secure"
             delay="700ms"
           />
         </div>
