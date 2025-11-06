@@ -12,7 +12,7 @@ export const Footer = () => {
             <img 
               src="/logo-dark.png" 
               alt="FootprintIQ Logo" 
-              className="h-32 w-auto"
+              className="h-16 w-auto object-contain max-w-[180px]"
             />
             </div>
             <p className="text-sm text-muted-foreground mb-4">
