@@ -15,6 +15,8 @@ import { MonitoringToggle } from "@/components/MonitoringToggle";
 import { ScanSummary } from "@/components/ScanSummary";
 import { AnomalyDetector } from "@/components/AnomalyDetector";
 import { ScanProgressTracker } from "@/components/ScanProgressTracker";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { PieChart, Pie, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cell, ResponsiveContainer, Legend } from "recharts";
 import { clusterFindingsByDate } from "@/lib/timeline";
 import { buildGraph, buildGraphFromFindings, detectEntityType } from "@/lib/graph";
 import { Finding } from "@/lib/ufm";
@@ -534,6 +536,139 @@ const ResultsDetail = () => {
           <AIAnalysis scanId={scanId!} />
         </div>
 
+        {/* Visualizations Section */}
+        {(dataSources.length > 0 || socialProfiles.length > 0) && (
+          <Card className="bg-[hsl(var(--card))] p-6 rounded-lg shadow-[var(--shadow-card)] mb-8 hover:shadow-[var(--shadow-glow)] transition-[var(--transition-smooth)]">
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-primary" />
+              Data Analytics Overview
+            </h2>
+            
+            <div className="grid md:grid-cols-3 gap-6">
+              {/* Pie Chart - Data Source Distribution */}
+              <div className="flex flex-col">
+                <h3 className="text-lg font-semibold mb-4 text-muted-foreground">Source Distribution</h3>
+                <ChartContainer
+                  config={{
+                    value: {
+                      label: "Sources",
+                      color: "hsl(var(--primary))",
+                    },
+                  }}
+                  className="h-[250px]"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={(() => {
+                          const categoryCount = dataSources.reduce((acc, source) => {
+                            acc[source.category] = (acc[source.category] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>);
+                          
+                          return Object.entries(categoryCount).map(([name, value]) => ({ name, value }));
+                        })()}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={(entry) => `${entry.name}: ${entry.value}`}
+                      >
+                        {(() => {
+                          const categoryCount = dataSources.reduce((acc, source) => {
+                            acc[source.category] = (acc[source.category] || 0) + 1;
+                            return acc;
+                          }, {} as Record<string, number>);
+                          const colors = ['hsl(var(--primary))', 'hsl(var(--accent))', 'hsl(var(--secondary))', 'hsl(var(--destructive))'];
+                          return Object.keys(categoryCount).map((_, index) => (
+                            <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                          ));
+                        })()}
+                      </Pie>
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
+
+              {/* Bar Chart - Risk Levels */}
+              <div className="flex flex-col">
+                <h3 className="text-lg font-semibold mb-4 text-muted-foreground">Risk Level Distribution</h3>
+                <ChartContainer
+                  config={{
+                    count: {
+                      label: "Count",
+                      color: "hsl(var(--primary))",
+                    },
+                  }}
+                  className="h-[250px]"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        { name: 'High', count: scan.high_risk_count, fill: 'hsl(var(--destructive))' },
+                        { name: 'Medium', count: scan.medium_risk_count, fill: 'hsl(var(--primary))' },
+                        { name: 'Low', count: scan.low_risk_count, fill: 'hsl(var(--accent))' },
+                      ]}
+                    >
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="count" radius={[8, 8, 0, 0]}>
+                        {[
+                          { name: 'High', count: scan.high_risk_count, fill: 'hsl(var(--destructive))' },
+                          { name: 'Medium', count: scan.medium_risk_count, fill: 'hsl(var(--primary))' },
+                          { name: 'Low', count: scan.low_risk_count, fill: 'hsl(var(--accent))' },
+                        ].map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
+
+              {/* Line Chart - Findings Timeline */}
+              <div className="flex flex-col">
+                <h3 className="text-lg font-semibold mb-4 text-muted-foreground">Discovery Timeline</h3>
+                <ChartContainer
+                  config={{
+                    findings: {
+                      label: "Findings",
+                      color: "hsl(var(--primary))",
+                    },
+                  }}
+                  className="h-[250px]"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={(() => {
+                        const timelineData = dataSources.map((_, index) => ({
+                          point: index + 1,
+                          findings: index + 1,
+                        }));
+                        return timelineData.length > 0 ? timelineData : [{ point: 1, findings: 0 }];
+                      })()}
+                    >
+                      <XAxis dataKey="point" label={{ value: 'Scan Progress', position: 'insideBottom', offset: -5 }} />
+                      <YAxis label={{ value: 'Findings', angle: -90, position: 'insideLeft' }} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="findings" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={2}
+                        dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Export Controls */}
         {findingsForExport.length > 0 && (
           <div className="mb-8">
@@ -678,7 +813,7 @@ const ResultsDetail = () => {
             
             <div className="grid md:grid-cols-2 gap-4">
               {socialProfiles.map((profile) => (
-                <Card key={profile.id} className="p-5 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
+                <Card key={profile.id} className="p-5 bg-gradient-to-br from-primary/5 to-accent/5 border-border hover:shadow-[var(--shadow-glow)] transition-[var(--transition-smooth)]">
                   <div className="flex gap-4">
                     {profile.avatar_url && (
                       <img 
@@ -782,11 +917,19 @@ const ResultsDetail = () => {
           <h3 className="text-xl font-semibold mb-4">Data Broker Sources Found</h3>
           
           <div className="space-y-4">
-            {dataSources.map((source) => (
-              <Card key={source.id} className="p-6 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
+            {dataSources.map((source) => {
+              const gradientClass = source.risk_level === 'high' 
+                ? 'bg-gradient-to-r from-destructive/10 to-background border-destructive/20' 
+                : source.risk_level === 'medium'
+                ? 'bg-gradient-to-r from-primary/10 to-background border-primary/20'
+                : 'bg-gradient-to-r from-accent/10 to-background border-accent/20';
+              
+              return (
+              <Card key={source.id} className={`p-6 ${gradientClass} hover:shadow-[var(--shadow-glow)] transition-[var(--transition-smooth)]`}>
                 <div className="flex flex-col gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
+                      <AlertTriangle className={`w-5 h-5 ${source.risk_level === 'high' ? 'text-destructive' : source.risk_level === 'medium' ? 'text-primary' : 'text-accent'}`} />
                       <h4 className="text-lg font-semibold">{source.name}</h4>
                       <Badge variant={getRiskColor(source.risk_level) as any}>
                         {source.risk_level.toUpperCase()} RISK
@@ -872,7 +1015,8 @@ const ResultsDetail = () => {
                   </div>
                 </div>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
