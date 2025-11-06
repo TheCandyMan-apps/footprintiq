@@ -1,5 +1,8 @@
 project_id = "byuzgvauaeldjqxlrjci"
 
+[functions.results-webhook]
+verify_jwt = false
+
 [functions.provider-proxy]
 verify_jwt = true
 
