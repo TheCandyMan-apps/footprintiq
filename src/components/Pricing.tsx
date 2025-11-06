@@ -113,28 +113,39 @@ export const Pricing = () => {
 
     if (!priceId) {
       toast({
-        title: "Invalid tier",
-        description: "This pricing tier is not available yet.",
+        title: "Plan Not Available",
+        description: "This pricing tier hasn't been configured yet. Please contact support or see STRIPE_SETUP.md for setup instructions.",
         variant: "destructive",
       });
+      console.error(`Missing Stripe price ID for ${tierName}. Check STRIPE_SETUP.md for configuration instructions.`);
       return;
     }
 
     try {
+      console.log(`Initiating checkout for ${tierName} with price ID: ${priceId}`);
+      
       const { data, error } = await supabase.functions.invoke('billing/create-subscription', {
         body: { price_id: priceId }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Checkout function error:', error);
+        throw error;
+      }
       
       if (data?.url) {
+        console.log('Opening Stripe Checkout:', data.url);
         window.open(data.url, '_blank');
+      } else {
+        throw new Error('No checkout URL returned from server');
       }
     } catch (error) {
       console.error('Checkout error:', error);
       toast({
-        title: "Checkout error",
-        description: error instanceof Error ? error.message : "We couldn't start the checkout. Please try again.",
+        title: "Checkout Error",
+        description: error instanceof Error 
+          ? `${error.message}. Check browser console for details.`
+          : "Couldn't start checkout. Please check your Stripe configuration (see STRIPE_SETUP.md).",
         variant: "destructive",
       });
     }
