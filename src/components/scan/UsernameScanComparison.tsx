@@ -3,10 +3,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, TrendingUp, TrendingDown, RefreshCw, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { ArrowRight, TrendingUp, TrendingDown, RefreshCw, CheckCircle, XCircle, AlertTriangle, FileDown } from "lucide-react";
 import { UsernameScanComparison as ComparisonType, compareUsernameScans } from "@/lib/usernameScanComparison";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { exportComparisonToPDF } from "@/utils/scanComparisonPdfExport";
+import { useToast } from "@/hooks/use-toast";
 
 interface ScanJob {
   id: string;
@@ -21,6 +23,7 @@ export const UsernameScanComparison = () => {
   const [scan2Id, setScan2Id] = useState<string>("");
   const [comparison, setComparison] = useState<ComparisonType | null>(null);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadScans();
@@ -44,10 +47,37 @@ export const UsernameScanComparison = () => {
     try {
       const result = await compareUsernameScans(scan1Id, scan2Id);
       setComparison(result);
+      toast({
+        title: "Comparison Complete",
+        description: "Scan results have been compared successfully",
+      });
     } catch (error) {
       console.error('Failed to compare scans:', error);
+      toast({
+        title: "Comparison Failed",
+        description: "Unable to compare the selected scans",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExportPDF = () => {
+    if (!comparison) return;
+    try {
+      exportComparisonToPDF(comparison);
+      toast({
+        title: "PDF Export Started",
+        description: "Your comparison report is being downloaded",
+      });
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      toast({
+        title: "Export Failed",
+        description: "Unable to generate PDF report",
+        variant: "destructive",
+      });
     }
   };
 
@@ -73,8 +103,18 @@ export const UsernameScanComparison = () => {
     <div className="space-y-6">
       <Card className="rounded-2xl shadow-sm">
         <CardHeader className="p-6">
-          <CardTitle className="text-2xl font-semibold">Compare Username Scans</CardTitle>
-          <CardDescription>Select two completed scans to compare results side-by-side</CardDescription>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="text-2xl font-semibold">Compare Username Scans</CardTitle>
+              <CardDescription>Select two completed scans to compare results side-by-side</CardDescription>
+            </div>
+            {comparison && (
+              <Button onClick={handleExportPDF} variant="outline" size="sm">
+                <FileDown className="mr-2 h-4 w-4" />
+                Export PDF
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
