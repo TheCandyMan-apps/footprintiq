@@ -2,6 +2,8 @@ import { FootprintDNA } from '@/components/FootprintDNA';
 import { FootprintDNAModal } from '@/components/FootprintDNAModal';
 import { RemovalQueue } from '@/components/RemovalQueue';
 import { RemovalSuccessTracker } from '@/components/RemovalSuccessTracker';
+import { DarkWebMonitorSettings } from '@/components/settings/DarkWebMonitorSettings';
+import { InitializeDarkWebDemo } from '@/components/settings/InitializeDarkWebDemo';
 import { analyzeTrends } from '@/lib/trends';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -325,6 +327,7 @@ const Dashboard = () => {
 
   return (
     <>
+      <InitializeDarkWebDemo />
       <SEO
         title="Dashboard — FootprintIQ"
         description="View your OSINT scans, findings, and entity relationships"
@@ -656,6 +659,9 @@ const Dashboard = () => {
 
                   {/* Removal Success Tracker */}
                   <RemovalSuccessTracker userId={user.id} />
+
+                  {/* Dark Web Monitor Settings */}
+                  <DarkWebMonitorSettings />
                 </TabsContent>
 
                 {/* Analytics Tab */}
