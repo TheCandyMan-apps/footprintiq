@@ -18,6 +18,7 @@ import { ThreatAnalyticsPanel } from '@/components/ThreatAnalyticsPanel';
 import { SkeletonStatCard, SkeletonRecentScans } from '@/components/dashboard/SkeletonCard';
 import { SkeletonThreatAnalytics } from '@/components/analytics/SkeletonAnalytics';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { shouldAutoStartTour, getTourAutoStartDelay } from '@/lib/tour/firstTime';
 import {
   Play,
   Network,
@@ -66,6 +67,15 @@ const Dashboard = () => {
       }
       setUser(session.user);
       fetchDashboardData(session.user.id);
+
+      // Check if this is a first-time user and should auto-start tour
+      if (shouldAutoStartTour()) {
+        const timer = setTimeout(() => {
+          navigate('/onboarding?tour=onboarding');
+        }, getTourAutoStartDelay());
+        
+        return () => clearTimeout(timer);
+      }
     };
 
     checkAuth();

@@ -18,24 +18,12 @@ import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { FloatingCTA } from "@/components/FloatingCTA";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
-import { shouldAutoStartTour, getTourAutoStartDelay } from "@/lib/tour/firstTime";
 import scanCapabilitiesBg from "@/assets/scan-capabilities-bg.jpg";
 import privacyBadge from "@/assets/privacy-badge.jpg";
 import privacyShield from "@/assets/privacy-shield.jpg";
 
 export default function Home() {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    // Check if this is a first-time user and should auto-start tour
-    if (shouldAutoStartTour()) {
-      const timer = setTimeout(() => {
-        navigate('/onboarding?tour=onboarding');
-      }, getTourAutoStartDelay());
-      
-      return () => clearTimeout(timer);
-    }
-  }, [navigate]);
 
   const handleStartScan = () => {
     navigate('/scan');
