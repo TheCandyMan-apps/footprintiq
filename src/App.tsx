@@ -141,6 +141,7 @@ const PricingPage = lazy(() => import("./pages/Pricing"));
 const Features = lazy(() => import("./pages/Features"));
 const ScanHealth = lazy(() => import("./pages/ScanHealth"));
 const BatchScan = lazy(() => import("./pages/BatchScan"));
+const MaigretScanner = lazy(() => import("./pages/MaigretScanner"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -220,6 +221,7 @@ function RouterContent() {
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
+          <Route path="/maigret-scanner" element={<MaigretScanner />} />
           <Route path="/docs/api" element={<ApiDocsOld />} />
           <Route path="/api" element={<ApiDocs />} />
           <Route path="/developers" element={<DeveloperPortal />} />

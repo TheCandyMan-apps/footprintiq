@@ -4841,6 +4841,112 @@ export type Database = {
           },
         ]
       }
+      scan_findings: {
+        Row: {
+          job_id: string
+          raw: Json | null
+          site: string
+          status: string | null
+          url: string | null
+        }
+        Insert: {
+          job_id: string
+          raw?: Json | null
+          site: string
+          status?: string | null
+          url?: string | null
+        }
+        Update: {
+          job_id?: string
+          raw?: Json | null
+          site?: string
+          status?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_findings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "scan_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_jobs: {
+        Row: {
+          all_sites: boolean | null
+          artifacts: string[] | null
+          created_at: string | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          kind: string
+          plan: string
+          requested_by: string | null
+          started_at: string | null
+          status: string
+          tags: string | null
+          username: string
+        }
+        Insert: {
+          all_sites?: boolean | null
+          artifacts?: string[] | null
+          created_at?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          plan?: string
+          requested_by?: string | null
+          started_at?: string | null
+          status?: string
+          tags?: string | null
+          username: string
+        }
+        Update: {
+          all_sites?: boolean | null
+          artifacts?: string[] | null
+          created_at?: string | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          plan?: string
+          requested_by?: string | null
+          started_at?: string | null
+          status?: string
+          tags?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      scan_results: {
+        Row: {
+          job_id: string
+          line_no: number
+          ndjson: Json
+        }
+        Insert: {
+          job_id: string
+          line_no: number
+          ndjson: Json
+        }
+        Update: {
+          job_id?: string
+          line_no?: number
+          ndjson?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_results_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "scan_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scans: {
         Row: {
           completed_at: string | null
@@ -5706,6 +5812,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_entitlements: {
+        Row: {
+          plan: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          plan?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          plan?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_integrations: {
         Row: {
           configuration: Json
@@ -5768,6 +5892,33 @@ export type Database = {
           subscription_expires_at?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      username_site_cache: {
+        Row: {
+          last_seen: string | null
+          last_status: string | null
+          last_url: string | null
+          raw: Json | null
+          site: string
+          username: string
+        }
+        Insert: {
+          last_seen?: string | null
+          last_status?: string | null
+          last_url?: string | null
+          raw?: Json | null
+          site: string
+          username: string
+        }
+        Update: {
+          last_seen?: string | null
+          last_status?: string | null
+          last_url?: string | null
+          raw?: Json | null
+          site?: string
+          username?: string
         }
         Relationships: []
       }
