@@ -8,6 +8,7 @@ import { SEO } from '@/components/SEO';
 import { ScrollProgressBar } from '@/components/ScrollProgressBar';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
+import { ScheduledScansManager } from '@/components/ScheduledScansManager';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { ThreatAnalyticsPanel } from '@/components/ThreatAnalyticsPanel';
 import { SkeletonStatCard, SkeletonRecentScans } from '@/components/dashboard/SkeletonCard';
 import { SkeletonThreatAnalytics } from '@/components/analytics/SkeletonAnalytics';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import {
   Play,
   Network,
@@ -40,6 +42,7 @@ type Scan = Database['public']['Tables']['scans']['Row'];
 const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { workspace } = useWorkspace();
   const [user, setUser] = useState<any>(null);
   const [scans, setScans] = useState<Scan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -279,7 +282,7 @@ const Dashboard = () => {
         <main className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto px-6 py-8">
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-8">
+                <TabsList className="grid w-full grid-cols-4 mb-8">
                   <TabsTrigger 
                     value="overview"
                     className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300"
@@ -300,6 +303,13 @@ const Dashboard = () => {
                   >
                     <FileSearch className="h-4 w-4 mr-2" />
                     Recent Scans
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="scheduled"
+                    className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300"
+                  >
+                    <Clock className="h-4 w-4 mr-2" />
+                    Scheduled
                   </TabsTrigger>
                 </TabsList>
 
@@ -580,6 +590,13 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
               )}
+              </TabsContent>
+
+              {/* Scheduled Scans Tab */}
+              <TabsContent value="scheduled" className="space-y-6">
+                {workspace?.id && (
+                  <ScheduledScansManager workspaceId={workspace.id} />
+                )}
               </TabsContent>
             </Tabs>
           </div>

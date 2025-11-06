@@ -4901,6 +4901,106 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_scan_findings: {
+        Row: {
+          created_at: string | null
+          findings_count: number
+          findings_snapshot: Json | null
+          id: string
+          new_findings_count: number
+          scan_id: string
+          scheduled_scan_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          findings_count?: number
+          findings_snapshot?: Json | null
+          id?: string
+          new_findings_count?: number
+          scan_id: string
+          scheduled_scan_id: string
+        }
+        Update: {
+          created_at?: string | null
+          findings_count?: number
+          findings_snapshot?: Json | null
+          id?: string
+          new_findings_count?: number
+          scan_id?: string
+          scheduled_scan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_scan_findings_scheduled_scan_id_fkey"
+            columns: ["scheduled_scan_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_scans: {
+        Row: {
+          created_at: string | null
+          frequency: string
+          id: string
+          is_active: boolean | null
+          last_run_at: string | null
+          last_scan_id: string | null
+          next_run_at: string
+          notify_on_new_findings: boolean | null
+          options: Json | null
+          providers: Json | null
+          scan_type: string
+          target_value: string
+          updated_at: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          frequency: string
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          last_scan_id?: string | null
+          next_run_at: string
+          notify_on_new_findings?: boolean | null
+          options?: Json | null
+          providers?: Json | null
+          scan_type: string
+          target_value: string
+          updated_at?: string | null
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string | null
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          last_scan_id?: string | null
+          next_run_at?: string
+          notify_on_new_findings?: boolean | null
+          options?: Json | null
+          providers?: Json | null
+          scan_type?: string
+          target_value?: string
+          updated_at?: string | null
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_scans_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sensitive_consents: {
         Row: {
           categories: string[]
