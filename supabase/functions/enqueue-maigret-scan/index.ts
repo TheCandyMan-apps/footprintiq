@@ -1,4 +1,4 @@
-import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -161,22 +161,13 @@ async function processJob(
       throw new Error('Worker configuration missing');
     }
 
-    // Build query params
-    const params = new URLSearchParams({
-      username,
-      all_sites: allSites ? 'true' : 'false',
-    });
-
-    if (artifacts.length > 0) {
-      params.set('artifacts', artifacts.join(','));
-    }
-
-    const scanUrl = `${workerUrl}/scan/${username}?${params.toString()}`;
+    // Call Maigret Worker with authentication
+    const workerEndpoint = `${workerUrl}/scan/${encodeURIComponent(username)}`;
     
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutSecs * 1000);
 
-    const response = await fetch(scanUrl, {
+    const resp = await fetch(workerEndpoint, {
       headers: {
         'X-Worker-Token': workerToken,
       },
@@ -185,62 +176,64 @@ async function processJob(
 
     clearTimeout(timeout);
 
-    if (!response.ok) {
-      throw new Error(`Worker returned ${response.status}: ${response.statusText}`);
+    if (!resp.ok) {
+      throw new Error(`Worker returned ${resp.status}: ${resp.statusText}`);
     }
 
     // Stream NDJSON results
-    const reader = response.body?.getReader();
+    if (!resp.body) throw new Error('No response body from Maigret worker');
+
+    const reader = resp.body.getReader();
     const decoder = new TextDecoder();
-    let lineNo = 0;
     let buffer = '';
+    let lineNo = 0;
 
-    if (reader) {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+      buffer += decoder.decode(value, { stream: true });
 
-        for (const line of lines) {
-          if (line.trim()) {
-            try {
-              const ndjson = JSON.parse(line);
-              lineNo++;
+      let newlineIndex;
+      while ((newlineIndex = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, newlineIndex).trim();
+        buffer = buffer.slice(newlineIndex + 1);
 
-              // Store raw result
-              await supabaseClient.from('scan_results').insert({
-                job_id: jobId,
-                line_no: lineNo,
-                ndjson,
-              });
+        if (!line) continue;
 
-              // Extract and store findings if it's a result line
-              if (ndjson.site) {
-                await supabaseClient.from('scan_findings').upsert({
-                  job_id: jobId,
-                  site: ndjson.site,
-                  url: ndjson.url || null,
-                  status: ndjson.status || 'unknown',
-                  raw: ndjson,
-                });
+        try {
+          const json = JSON.parse(line);
+          lineNo++;
 
-                // Update cache
-                await supabaseClient.from('username_site_cache').upsert({
-                  username,
-                  site: ndjson.site,
-                  last_status: ndjson.status,
-                  last_url: ndjson.url || null,
-                  last_seen: new Date().toISOString(),
-                  raw: ndjson,
-                });
-              }
-            } catch (parseError) {
-              console.error('Failed to parse NDJSON line:', parseError);
-            }
+          // Insert raw entry
+          await supabaseClient.from('scan_results').insert({
+            job_id: jobId,
+            line_no: lineNo,
+            ndjson: json,
+          });
+
+          // Normalized findings
+          if (json.site) {
+            await supabaseClient.from('scan_findings').upsert({
+              job_id: jobId,
+              site: json.site,
+              url: json.url ?? null,
+              status: json.status ?? null,
+              raw: json,
+            });
+
+            // Update cache
+            await supabaseClient.from('username_site_cache').upsert({
+              username,
+              site: json.site,
+              last_status: json.status,
+              last_url: json.url ?? null,
+              last_seen: new Date().toISOString(),
+              raw: json,
+            });
           }
+        } catch (err) {
+          console.error('Parse error:', err, 'Line:', line);
         }
       }
     }
