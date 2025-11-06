@@ -18,6 +18,7 @@ import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { FloatingCTA } from "@/components/FloatingCTA";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
+import { ExplainerAnimation } from "@/components/ExplainerAnimation";
 import scanCapabilitiesBg from "@/assets/scan-capabilities-bg.jpg";
 import privacyBadge from "@/assets/privacy-badge.jpg";
 import privacyShield from "@/assets/privacy-shield.jpg";
@@ -115,6 +116,7 @@ export default function Home() {
       <Header />
       <Hero onStartScan={handleStartScan} onAdvancedScan={handleAdvancedScan} />
       <TrustSignals />
+      <ExplainerAnimation />
       <div id="how-it-works" className="animate-fadeIn">
         <HowItWorks />
       </div>
