@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import confetti from 'canvas-confetti';
 
 interface Badge {
   id: string;
@@ -202,6 +203,16 @@ export const useAchievements = (userId: string | undefined) => {
       } else {
         // Show toast for each new badge
         newBadges.forEach((badge) => {
+          // Trigger confetti for first scan badge
+          if (badge.id === 'first_scan') {
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 },
+              colors: ['#8b5cf6', '#06b6d4'],
+            });
+          }
+          
           toast({
             title: '🎉 New Badge Unlocked!',
             description: `${badge.icon} ${badge.name}: ${badge.description}`,

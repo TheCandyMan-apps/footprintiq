@@ -13,6 +13,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useAccessibility } from "@/hooks/useAccessibility";
 import { HelmetProvider } from 'react-helmet-async';
+import { PageTransition } from "@/components/PageTransition";
 import "@/lib/config"; // Validate env at boot
 
 // Critical pages (loaded immediately)
@@ -190,7 +191,8 @@ function RouterContent() {
       <SkipLink />
       <GlobalSearch />
       <Suspense fallback={<LoadingState />}>
-        <Routes>
+        <PageTransition>
+          <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -336,6 +338,7 @@ function RouterContent() {
                 <Route path="/404" element={<NotFound />} />
                 <Route path="*" element={<Navigate to="/404" replace />} />
               </Routes>
+            </PageTransition>
             </Suspense>
             <CookieConsent />
           </>
