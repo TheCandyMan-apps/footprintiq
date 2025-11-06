@@ -70,17 +70,25 @@ export function WebhookHealthMonitor() {
 
       if (error) throw error;
 
-      setEvents(data || []);
+      // Map audit log data to WebhookEvent format
+      const mappedEvents: WebhookEvent[] = (data || []).map(log => ({
+        id: log.id,
+        action: log.action,
+        created_at: log.at,
+        meta: typeof log.meta === 'object' && log.meta !== null ? log.meta as any : {},
+      }));
+
+      setEvents(mappedEvents);
 
       // Calculate stats
-      const successful = data?.filter(e => e.action === 'subscription.payment_succeeded').length || 0;
-      const failed = data?.filter(e => e.action === 'subscription.payment_failed').length || 0;
-      const subscriptions = data?.filter(e => 
+      const successful = mappedEvents.filter(e => e.action === 'subscription.payment_succeeded').length;
+      const failed = mappedEvents.filter(e => e.action === 'subscription.payment_failed').length;
+      const subscriptions = mappedEvents.filter(e => 
         e.action.includes('subscription.') && !e.action.includes('payment')
-      ).length || 0;
+      ).length;
 
       setStats({
-        totalEvents: data?.length || 0,
+        totalEvents: mappedEvents.length,
         successfulPayments: successful,
         failedPayments: failed,
         subscriptionEvents: subscriptions,

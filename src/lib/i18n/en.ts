@@ -77,6 +77,7 @@ export const en = {
     tooltips: 'Tooltips',
     providers: 'Providers',
     billing: 'Billing',
+    subscription_management: 'Subscription Management',
   },
   
   // Errors
