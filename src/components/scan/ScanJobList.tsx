@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, RefreshCw, ExternalLink } from 'lucide-react';
+import { Loader2, RefreshCw, ExternalLink, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
@@ -66,6 +66,37 @@ export function ScanJobList() {
     }
   };
 
+  const handleDeleteJob = async (jobId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm('Are you sure you want to delete this scan? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('scan_jobs')
+        .delete()
+        .eq('id', jobId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Scan deleted successfully',
+      });
+
+      loadJobs();
+    } catch (error: any) {
+      console.error('Failed to delete job:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete scan',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Card className="rounded-2xl shadow-sm">
@@ -121,16 +152,26 @@ export function ScanJobList() {
                     <p className="text-xs text-destructive mt-1 line-clamp-1">{job.error}</p>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    navigate(`/scan/usernames/${job.id}`);
-                  }}
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/scan/usernames/${job.id}`);
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleDeleteJob(job.id, e)}
+                    className="hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>

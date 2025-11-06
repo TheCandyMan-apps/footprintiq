@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Users, Settings, Mail } from "lucide-react";
+import { Plus, Users, Settings, Mail, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -97,6 +97,42 @@ export default function Workspaces() {
     },
   });
 
+  const deleteWorkspaceMutation = useMutation({
+    mutationFn: async (workspaceId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Check if user is the owner
+      const targetWorkspace = workspaces.find((w: any) => w.id === workspaceId);
+      if (targetWorkspace?.owner_id !== user.id) {
+        throw new Error("Only workspace owners can delete workspaces");
+      }
+
+      const { error } = await supabase
+        .from("workspaces" as any)
+        .delete()
+        .eq("id", workspaceId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Workspace deleted");
+      refreshWorkspace();
+    },
+    onError: (err: any) => {
+      const msg = err?.message || 'Failed to delete workspace';
+      toast.error(msg);
+    }
+  });
+
+  const handleDeleteWorkspace = async (workspaceId: string) => {
+    if (!confirm('Are you sure you want to delete this workspace? This will delete all data associated with it. This action cannot be undone.')) {
+      return;
+    }
+
+    deleteWorkspaceMutation.mutate(workspaceId);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
@@ -145,6 +181,16 @@ export default function Workspaces() {
                       <Settings className="h-4 w-4" />
                     </a>
                   </Button>
+                  {ws.owner_id === ws.user_id && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteWorkspace(ws.id)}
+                      className="hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>

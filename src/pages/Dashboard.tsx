@@ -35,6 +35,7 @@ import {
   Users,
   Target,
   Webhook,
+  Trash2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { BarChart, Bar, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from 'recharts';
@@ -155,6 +156,40 @@ const Dashboard = () => {
 
   const getRiskScore = (scan: Scan) => {
     return scan.privacy_score || 0;
+  };
+
+  const handleDeleteScan = async (scanId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm('Are you sure you want to delete this scan? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('scans')
+        .delete()
+        .eq('id', scanId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Scan deleted',
+        description: 'The scan has been removed successfully',
+      });
+
+      // Refresh dashboard data
+      if (user) {
+        fetchDashboardData(user.id);
+      }
+    } catch (error: any) {
+      console.error('Delete scan error:', error);
+      toast({
+        title: 'Error deleting scan',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   // Mock data for mini charts
@@ -570,14 +605,24 @@ const Dashboard = () => {
                                 </p>
                               </div>
                             </div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              className="hover:bg-primary/10 hover:text-primary transition-colors"
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              View
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="hover:bg-primary/10 hover:text-primary transition-colors"
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => handleDeleteScan(scan.id, e)}
+                                className="hover:bg-destructive/10 hover:text-destructive transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                           
                           <div className="flex items-center gap-2 flex-wrap">
