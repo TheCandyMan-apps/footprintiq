@@ -19,6 +19,7 @@ import {
   Receipt
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
 
 interface Invoice {
   id: string;
@@ -147,11 +148,13 @@ export default function SubscriptionManagement() {
   ].sort((a, b) => b.created - a.created);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Subscription Management</h2>
-        <p className="text-muted-foreground">Manage your subscription, billing, and payment methods</p>
-      </div>
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <SettingsBreadcrumb currentPage="Subscription Management" />
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold">Subscription Management</h2>
+          <p className="text-muted-foreground">Manage your subscription, billing, and payment methods</p>
+        </div>
 
       {/* Current Plan */}
       <Card className="p-6">
@@ -319,6 +322,7 @@ export default function SubscriptionManagement() {
           </div>
         )}
       </Card>
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, Users, Zap, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
 
 export default function BillingSettings() {
   const [loading, setLoading] = useState(false);
@@ -94,13 +95,15 @@ export default function BillingSettings() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Billing</h1>
-        <p className="text-muted-foreground">
-          Manage your subscription and billing details
-        </p>
-      </div>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <SettingsBreadcrumb currentPage="Billing" />
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Billing</h1>
+          <p className="text-muted-foreground">
+            Manage your subscription and billing details
+          </p>
+        </div>
 
       {/* Current Plan */}
       <Card className="p-6">
@@ -228,6 +231,7 @@ export default function BillingSettings() {
           </div>
         </Card>
       )}
+      </div>
     </div>
   );
 }

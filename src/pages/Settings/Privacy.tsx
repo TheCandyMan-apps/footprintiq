@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Shield, Cookie, History, Download, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
 
 interface ConsentPreferences {
   necessary: boolean;
@@ -145,11 +146,13 @@ export default function PrivacySettings() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Privacy & Consent</h2>
-        <p className="text-muted-foreground">Manage your privacy preferences and data</p>
-      </div>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <SettingsBreadcrumb currentPage="Privacy" />
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold">Privacy & Consent</h2>
+          <p className="text-muted-foreground">Manage your privacy preferences and data</p>
+        </div>
 
       <Card className="p-6">
         <div className="flex items-center gap-3 mb-6">
@@ -274,6 +277,7 @@ export default function PrivacySettings() {
           </Button>
         </div>
       </Card>
+      </div>
     </div>
   );
 }

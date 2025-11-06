@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { PLAN_QUOTAS } from '@/lib/workspace/quotas';
+import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
 
 export default function SubscriptionSettings() {
   const { subscriptionTier, subscriptionEnd, isLoading } = useSubscription();
@@ -44,11 +45,13 @@ export default function SubscriptionSettings() {
   const quotas = PLAN_QUOTAS[subscriptionTier];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Subscription</h2>
-        <p className="text-muted-foreground">Manage your subscription and billing</p>
-      </div>
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <SettingsBreadcrumb currentPage="Subscription" />
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold">Subscription</h2>
+          <p className="text-muted-foreground">Manage your subscription and billing</p>
+        </div>
 
       <Card className="p-6">
         <div className="space-y-4">
@@ -122,6 +125,7 @@ export default function SubscriptionSettings() {
           />
         </div>
       </Card>
+      </div>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Key, Copy, Trash2, Plus, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import { SettingsBreadcrumb } from "@/components/settings/SettingsBreadcrumb";
 
 export default function APIKeys() {
   const queryClient = useQueryClient();
@@ -129,6 +130,7 @@ export default function APIKeys() {
       
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto space-y-8">
+          <SettingsBreadcrumb currentPage="API Keys" />
           {/* Header */}
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 shadow-elegant">

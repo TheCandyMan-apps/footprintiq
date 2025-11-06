@@ -5,6 +5,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CreditCard, Package, Zap } from "lucide-react";
+import { SettingsBreadcrumb } from "@/components/settings/SettingsBreadcrumb";
 
 export default function CreditsSettings() {
   const { workspace } = useWorkspace();
@@ -36,13 +37,15 @@ export default function CreditsSettings() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Credits & Billing</h1>
-        <p className="text-muted-foreground mt-2">
-          Manage your credits and purchase additional scan capacity
-        </p>
-      </div>
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <SettingsBreadcrumb currentPage="Credits" />
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Credits & Billing</h1>
+          <p className="text-muted-foreground mt-2">
+            Manage your credits and purchase additional scan capacity
+          </p>
+        </div>
 
       {workspace && <CreditsDisplay workspaceId={workspace.id} />}
 
@@ -147,6 +150,7 @@ export default function CreditsSettings() {
           </div>
         </div>
       </Card>
+      </div>
     </div>
   );
 }
