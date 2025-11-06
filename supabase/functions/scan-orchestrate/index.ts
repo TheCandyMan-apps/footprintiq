@@ -524,6 +524,42 @@ serve(async (req) => {
         console.error('[orchestrate] Failed to update scan status:', updateError);
       } else {
         console.log(`[orchestrate] Scan ${scanId} updated to completed with ${sortedFindings.length} findings`);
+        
+        // Trigger webhooks for scan completion
+        try {
+          const eventType = highRiskCount > 0 ? 'findings.critical' : 'scan.completed';
+          await supabaseService.functions.invoke('webhook-delivery', {
+            body: {
+              action: 'trigger',
+              eventType,
+              eventId: scanId,
+              payload: {
+                scanId,
+                type: request.type,
+                value: request.value,
+                status: 'completed',
+                completedAt: new Date().toISOString(),
+                findings: {
+                  total: sortedFindings.length,
+                  critical: highRiskCount,
+                  high: mediumRiskCount,
+                  medium: lowRiskCount,
+                },
+                privacyScore,
+                topFindings: sortedFindings.slice(0, 5).map(f => ({
+                  title: f.title,
+                  severity: f.severity,
+                  provider: f.provider,
+                  category: f.category,
+                })),
+              },
+            },
+          });
+          console.log(`[orchestrate] Webhooks triggered for scan ${scanId}`);
+        } catch (webhookError) {
+          console.error('[orchestrate] Failed to trigger webhooks:', webhookError);
+          // Don't fail the scan if webhooks fail
+        }
       }
     }
 

@@ -9,6 +9,7 @@ import { ScrollProgressBar } from '@/components/ScrollProgressBar';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
 import { ScheduledScansManager } from '@/components/ScheduledScansManager';
+import { WebhookIntegrations } from '@/components/WebhookIntegrations';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,6 +33,7 @@ import {
   Activity,
   Users,
   Target,
+  Webhook,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { BarChart, Bar, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from 'recharts';
@@ -282,7 +284,7 @@ const Dashboard = () => {
         <main className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto px-6 py-8">
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 mb-8">
+                <TabsList className="grid w-full grid-cols-5 mb-8">
                   <TabsTrigger 
                     value="overview"
                     className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300"
@@ -310,6 +312,13 @@ const Dashboard = () => {
                   >
                     <Clock className="h-4 w-4 mr-2" />
                     Scheduled
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="webhooks"
+                    className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300"
+                  >
+                    <Webhook className="h-4 w-4 mr-2" />
+                    Webhooks
                   </TabsTrigger>
                 </TabsList>
 
@@ -597,6 +606,11 @@ const Dashboard = () => {
                 {workspace?.id && (
                   <ScheduledScansManager workspaceId={workspace.id} />
                 )}
+              </TabsContent>
+
+              {/* Webhooks Tab */}
+              <TabsContent value="webhooks" className="space-y-6">
+                <WebhookIntegrations />
               </TabsContent>
             </Tabs>
           </div>

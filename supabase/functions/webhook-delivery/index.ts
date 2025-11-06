@@ -101,28 +101,42 @@ async function deliverWebhook(
   attemptNumber: number = 1
 ) {
   const startTime = Date.now();
-  const deliveryPayload = {
-    event_type: eventType,
-    event_id: eventId,
-    timestamp: new Date().toISOString(),
-    data: payload,
+  
+  // Format payload based on connector type
+  let deliveryPayload: any;
+  let headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'User-Agent': 'FootprintIQ-Webhooks/1.0',
   };
 
-  // Generate signature
-  const signature = await generateSignature(
-    JSON.stringify(deliveryPayload),
-    webhook.signing_secret
-  );
+  if (webhook.connector_type === 'slack') {
+    deliveryPayload = formatSlackMessage(eventType, payload);
+  } else if (webhook.connector_type === 'discord') {
+    deliveryPayload = formatDiscordMessage(eventType, payload);
+  } else if (webhook.connector_type === 'teams') {
+    deliveryPayload = formatTeamsMessage(eventType, payload);
+  } else {
+    // Generic webhook format
+    deliveryPayload = {
+      event_type: eventType,
+      event_id: eventId,
+      timestamp: new Date().toISOString(),
+      data: payload,
+    };
+    
+    // Generate signature for generic webhooks
+    const signature = await generateSignature(
+      JSON.stringify(deliveryPayload),
+      webhook.signing_secret
+    );
+    headers['X-Webhook-Signature'] = signature;
+    headers['X-Webhook-Event'] = eventType;
+  }
 
   try {
     const response = await fetch(webhook.url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Webhook-Signature': signature,
-        'X-Webhook-Event': eventType,
-        'User-Agent': 'FootprintIQ-Webhooks/1.0',
-      },
+      headers,
       body: JSON.stringify(deliveryPayload),
     });
 
@@ -201,6 +215,120 @@ async function deliverWebhook(
 
     console.error(`[webhook-delivery] Failed to deliver to ${webhook.url}:`, error);
   }
+}
+
+function formatSlackMessage(eventType: string, payload: any) {
+  const severityColor = {
+    critical: '#dc2626',
+    high: '#ea580c',
+    medium: '#f59e0b',
+    low: '#84cc16',
+  };
+
+  const color = payload.findings?.critical > 0 ? severityColor.critical : '#3b82f6';
+
+  return {
+    text: `Scan ${payload.status}`,
+    attachments: [{
+      color,
+      title: `Scan ${payload.status}: ${payload.type} - ${payload.value}`,
+      fields: [
+        {
+          title: 'Total Findings',
+          value: payload.findings?.total || 0,
+          short: true
+        },
+        {
+          title: 'Critical',
+          value: payload.findings?.critical || 0,
+          short: true
+        },
+        {
+          title: 'Privacy Score',
+          value: payload.privacyScore || 'N/A',
+          short: true
+        },
+        {
+          title: 'Completed',
+          value: new Date(payload.completedAt).toLocaleString(),
+          short: true
+        }
+      ],
+      footer: 'FootprintIQ',
+      ts: Math.floor(Date.now() / 1000)
+    }]
+  };
+}
+
+function formatDiscordMessage(eventType: string, payload: any) {
+  const severityColor = {
+    critical: 0xdc2626,
+    high: 0xea580c,
+    medium: 0xf59e0b,
+    low: 0x84cc16,
+  };
+
+  const color = payload.findings?.critical > 0 ? severityColor.critical : 0x3b82f6;
+
+  return {
+    embeds: [{
+      title: `🔍 Scan ${payload.status}`,
+      description: `**${payload.type}:** ${payload.value}`,
+      color,
+      fields: [
+        {
+          name: 'Total Findings',
+          value: String(payload.findings?.total || 0),
+          inline: true
+        },
+        {
+          name: 'Critical',
+          value: String(payload.findings?.critical || 0),
+          inline: true
+        },
+        {
+          name: 'Privacy Score',
+          value: String(payload.privacyScore || 'N/A'),
+          inline: true
+        }
+      ],
+      footer: {
+        text: 'FootprintIQ'
+      },
+      timestamp: new Date().toISOString()
+    }]
+  };
+}
+
+function formatTeamsMessage(eventType: string, payload: any) {
+  return {
+    "@type": "MessageCard",
+    "@context": "https://schema.org/extensions",
+    summary: `Scan ${payload.status}`,
+    themeColor: payload.findings?.critical > 0 ? 'dc2626' : '3b82f6',
+    title: `🔍 Scan ${payload.status}`,
+    sections: [{
+      activityTitle: `${payload.type}: ${payload.value}`,
+      facts: [
+        {
+          name: 'Total Findings:',
+          value: String(payload.findings?.total || 0)
+        },
+        {
+          name: 'Critical:',
+          value: String(payload.findings?.critical || 0)
+        },
+        {
+          name: 'Privacy Score:',
+          value: String(payload.privacyScore || 'N/A')
+        },
+        {
+          name: 'Completed:',
+          value: new Date(payload.completedAt).toLocaleString()
+        }
+      ]
+    }]
+  };
 }
 
 async function generateSignature(payload: string, secret: string): Promise<string> {
