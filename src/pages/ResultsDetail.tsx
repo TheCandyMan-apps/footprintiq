@@ -2,6 +2,8 @@ import { FootprintDNA } from '@/components/FootprintDNA';
 import { FootprintDNAModal } from '@/components/FootprintDNAModal';
 import { RemovalQueue } from '@/components/RemovalQueue';
 import { RemovalSuccessTracker } from '@/components/RemovalSuccessTracker';
+import { TrustBadges } from '@/components/TrustBadges';
+import { LastScanned } from '@/components/LastScanned';
 import { analyzeTrends } from '@/lib/trends';
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -496,38 +498,45 @@ const ResultsDetail = () => {
     <div className="min-h-screen bg-background px-6 py-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <Button variant="outline" onClick={() => navigate("/dashboard")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <div className="flex gap-2">
-            <ComprehensiveReportExport
-              scanId={scanId!}
-              scan={scan}
-              dataSources={dataSources}
-              socialProfiles={socialProfiles}
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <Download className="w-4 h-4 mr-2" />
-                  More Exports
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Additional Exports</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => { exportAsPDF(findingsForExport, redactPII); toast({ title: "Exported", description: "PDF downloaded." }); }}>
-                  <FileText className="w-4 h-4 mr-2" /> Simple PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { exportAsCSV(findingsForExport, redactPII); toast({ title: "Exported", description: "CSV downloaded." }); }}>
-                  <FileSpreadsheet className="w-4 h-4 mr-2" /> CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { exportAsJSON(findingsForExport, redactPII); toast({ title: "Exported", description: "JSON downloaded." }); }}>
-                  <FileJson className="w-4 h-4 mr-2" /> JSON
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+        <div className="flex flex-col gap-4 mb-8">
+          <div className="flex items-center justify-between">
+            <Button variant="outline" onClick={() => navigate("/dashboard")}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+            <div className="flex gap-2">
+              <ComprehensiveReportExport
+                scanId={scanId!}
+                scan={scan}
+                dataSources={dataSources}
+                socialProfiles={socialProfiles}
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    More Exports
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Additional Exports</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => { exportAsPDF(findingsForExport, redactPII); toast({ title: "Exported", description: "PDF downloaded." }); }}>
+                    <FileText className="w-4 h-4 mr-2" /> Simple PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { exportAsCSV(findingsForExport, redactPII); toast({ title: "Exported", description: "CSV downloaded." }); }}>
+                    <FileSpreadsheet className="w-4 h-4 mr-2" /> CSV
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { exportAsJSON(findingsForExport, redactPII); toast({ title: "Exported", description: "JSON downloaded." }); }}>
+                    <FileJson className="w-4 h-4 mr-2" /> JSON
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <LastScanned timestamp={scan.created_at} />
+            <TrustBadges variant="compact" />
           </div>
         </div>
 

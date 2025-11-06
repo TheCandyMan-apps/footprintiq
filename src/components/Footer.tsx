@@ -1,5 +1,6 @@
 import { Shield, Mail, Twitter, Linkedin, Github } from "lucide-react";
 import { Link } from "react-router-dom";
+import { TrustBadges } from "./TrustBadges";
 
 export const Footer = () => {
   return (
@@ -103,8 +104,13 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom Bar */}
+        {/* Trust Badges */}
         <div className="pt-8 border-t border-border">
+          <TrustBadges />
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="pt-8 border-t border-border mt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
             <p>© 2025 footprintiq. All rights reserved.</p>
             <div className="flex items-center gap-2">
