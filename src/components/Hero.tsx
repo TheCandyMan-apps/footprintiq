@@ -47,13 +47,13 @@ export const Hero = ({ onStartScan, onAdvancedScan }: HeroProps) => {
       {/* Content with Parallax */}
       <div 
         ref={contentRef}
-        className="relative z-10 max-w-5xl mx-auto px-6 py-20 text-center"
+        className="relative z-10 max-w-5xl mx-auto px-6 pt-32 pb-20 text-center"
         style={{ 
           transform: contentParallax.transform,
           willChange: 'transform',
         }}
       >
-        <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight pb-2 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent tracking-tight animate-fade-in">
+        <h1 className="text-5xl md:text-7xl font-bold mb-8 leading-tight pb-2 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent tracking-tight animate-fade-in mt-8">
           Scan Your Digital Footprint and Protect Your Privacy with OSINT Tools
         </h1>
         
