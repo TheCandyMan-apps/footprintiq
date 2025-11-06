@@ -3,7 +3,9 @@ import { Footer } from '@/components/Footer';
 import { UsernameScanForm } from '@/components/scan/UsernameScanForm';
 import { ScanJobList } from '@/components/scan/ScanJobList';
 import { WorkerHealth } from '@/components/scan/WorkerHealth';
+import { UsernameScanComparison } from '@/components/scan/UsernameScanComparison';
 import { Helmet } from 'react-helmet-async';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function UsernamesPage() {
   return (
@@ -19,8 +21,8 @@ export default function UsernamesPage() {
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Username Scan</h1>
               <p className="text-muted-foreground mt-2">
@@ -30,10 +32,23 @@ export default function UsernamesPage() {
             <WorkerHealth />
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-6">
-            <UsernameScanForm />
-            <ScanJobList />
-          </div>
+          <Tabs defaultValue="scan" className="w-full">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="scan">New Scan</TabsTrigger>
+              <TabsTrigger value="compare">Compare Scans</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="scan" className="space-y-6 mt-6">
+              <div className="grid lg:grid-cols-2 gap-6">
+                <UsernameScanForm />
+                <ScanJobList />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="compare" className="mt-6">
+              <UsernameScanComparison />
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
       
