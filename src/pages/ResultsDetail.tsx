@@ -1,5 +1,6 @@
 import { FootprintDNA } from '@/components/FootprintDNA';
 import { FootprintDNAModal } from '@/components/FootprintDNAModal';
+import { RemovalQueue } from '@/components/RemovalQueue';
 import { analyzeTrends } from '@/lib/trends';
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -574,6 +575,11 @@ const ResultsDetail = () => {
         {/* AI Analysis */}
         <div className="mb-8">
           <AIAnalysis scanId={scanId!} />
+        </div>
+
+        {/* Removal Queue */}
+        <div className="mb-8">
+          <RemovalQueue scanId={scanId} userId={user?.id} />
         </div>
 
         {/* Visualizations Section */}

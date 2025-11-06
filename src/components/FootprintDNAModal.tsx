@@ -1,9 +1,12 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingDown, TrendingUp, Minus, Shield, AlertTriangle, Database, Skull } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus, Shield, AlertTriangle, Database, Skull, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import { TrendDataPoint } from '@/lib/trends';
+import { exportDNAasCSV, exportDNAasPDF } from '@/lib/dnaExport';
+import { useToast } from '@/hooks/use-toast';
 
 interface FootprintDNAModalProps {
   open: boolean;
@@ -18,6 +21,7 @@ export const FootprintDNAModal = ({
   trendData,
   currentScore 
 }: FootprintDNAModalProps) => {
+  const { toast } = useToast();
   // Calculate score change
   const getScoreTrend = () => {
     if (trendData.length < 2) return { change: 0, trend: 'stable' as const };
@@ -48,11 +52,49 @@ export const FootprintDNAModal = ({
     sources: point.totalSources
   }));
 
+  const handleExportCSV = () => {
+    exportDNAasCSV(trendData, currentScore);
+    toast({
+      title: "Export successful",
+      description: "Your DNA report has been downloaded as CSV",
+    });
+  };
+
+  const handleExportPDF = async () => {
+    await exportDNAasPDF(trendData, currentScore);
+    toast({
+      title: "Export successful",
+      description: "Your DNA report has been downloaded as PDF",
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold">Digital DNA Analysis</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-2xl font-bold">Digital DNA Analysis</DialogTitle>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportCSV}
+                className="gap-2"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                Export CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPDF}
+                className="gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Export PDF
+              </Button>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="space-y-6">
