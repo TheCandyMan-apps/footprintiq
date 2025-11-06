@@ -187,8 +187,8 @@ const Dashboard = () => {
       <div className="min-h-screen bg-background flex flex-col w-full animate-fadeIn">
         <Header />
 
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-primary/20 to-background p-8 rounded-xl shadow-[var(--shadow-elevated)] mx-6 mt-6 animate-fade-in border border-primary/10">
+        {/* Hero Section */}
+        <div className="relative bg-gradient-to-br from-primary/20 to-background p-8 rounded-xl shadow-[var(--shadow-elevated)] mx-6 mt-6 animate-fade-in border border-primary/10">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-start justify-between gap-8">
               <div className="flex items-start gap-4 flex-1">
@@ -273,11 +273,11 @@ const Dashboard = () => {
                 </Button>
               </div>
             </div>
+          </div>
         </div>
-      </div>
 
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <main className="flex-1 overflow-auto">
+          <div className="max-w-7xl mx-auto px-6 py-8">
               <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 mb-8">
                   <TabsTrigger 
