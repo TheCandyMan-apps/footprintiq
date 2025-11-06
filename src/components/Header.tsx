@@ -284,208 +284,228 @@ export const Header = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Button - Enhanced with animation */}
           <button
-            className="md:hidden"
+            className="md:hidden p-2 -mr-2 rounded-lg hover:bg-muted/50 transition-all duration-200 active:scale-95"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle menu"
+            aria-expanded={mobileMenuOpen}
           >
-            {mobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
+            <div className="w-6 h-6 flex items-center justify-center">
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6 animate-in spin-in-0 duration-200" />
+              ) : (
+                <Menu className="w-6 h-6 animate-in fade-in duration-200" />
+              )}
+            </div>
           </button>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation Overlay */}
         {mobileMenuOpen && (
-          <nav className="md:hidden mt-4 pb-4 flex flex-col gap-4 animate-fade-in">
-            {/* Mobile Search & Theme Toggle */}
-            <div className="flex items-center gap-2">
-              {user && (
-                <form onSubmit={handleSearch} className="relative flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Search scans..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10 pr-4 w-full shadow-inner bg-secondary/50 border-border/50 focus:border-primary transition-[var(--transition-smooth)]"
-                    />
-                  </div>
-                </form>
-              )}
-              <ThemeToggle />
-            </div>
+          <div 
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 md:hidden animate-in fade-in duration-200"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
 
-            {/* Product Section */}
-            <div className="flex flex-col gap-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Product</p>
-              <button
-                onClick={() => scrollToSection('how-it-works')}
-                className="text-left text-sm text-muted-foreground pl-2 transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary py-2 rounded"
-              >
-                How It Works
-              </button>
-              <button
-                onClick={() => scrollToSection('features')}
-                className="text-left text-sm text-muted-foreground pl-2 transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary py-2 rounded"
-              >
-                Features
-              </button>
-              <button
-                onClick={() => scrollToSection('pricing')}
-                className="text-left text-sm text-muted-foreground pl-2 transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary py-2 rounded"
-              >
-                Pricing
-              </button>
-            </div>
+        {/* Mobile Navigation Menu */}
+        {mobileMenuOpen && (
+          <nav className="fixed top-[64px] right-0 bottom-0 w-[280px] bg-card/95 backdrop-blur-md border-l border-border z-50 md:hidden overflow-y-auto animate-in slide-in-from-right duration-300 shadow-2xl">
+            <div className="p-4 space-y-4">
+              {/* Mobile Search & Theme Toggle */}
+              <div className="flex items-center gap-2">
+                {user && (
+                  <form onSubmit={handleSearch} className="relative flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        type="text"
+                        placeholder="Search scans..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 pr-4 w-full shadow-inner bg-secondary/50 border-border/50 focus:border-primary transition-[var(--transition-smooth)] h-11"
+                      />
+                    </div>
+                  </form>
+                )}
+                <ThemeToggle />
+              </div>
 
-            {/* Tools Section */}
-            <div className="flex flex-col gap-2 border-t pt-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tools</p>
-              <Link
-                to="/dashboard"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-              <Link
-                to="/assistant"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                AI Assistant
-              </Link>
-              <Link
-                to="/cases"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Cases
-              </Link>
-              <Link
-                to="/monitoring"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Monitoring
-              </Link>
-              <Link
-                to="/reports"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Reports
-              </Link>
-              <Link
-                to="/persona-resolver"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Persona Resolver
-              </Link>
-              <Link
-                to="/threat-forecast"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Threat Forecast
-              </Link>
-            </div>
+              {/* Product Section */}
+              <div className="flex flex-col gap-1">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 py-2">Product</p>
+                <button
+                  onClick={() => scrollToSection('how-it-works')}
+                  className="text-left text-sm text-foreground px-3 py-3 transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted rounded-lg min-h-[44px] flex items-center"
+                >
+                  How It Works
+                </button>
+                <button
+                  onClick={() => scrollToSection('features')}
+                  className="text-left text-sm text-foreground px-3 py-3 transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted rounded-lg min-h-[44px] flex items-center"
+                >
+                  Features
+                </button>
+                <button
+                  onClick={() => scrollToSection('pricing')}
+                  className="text-left text-sm text-foreground px-3 py-3 transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted rounded-lg min-h-[44px] flex items-center"
+                >
+                  Pricing
+                </button>
+              </div>
 
-            {/* Company Section */}
-            <div className="flex flex-col gap-2 border-t pt-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Company</p>
-              <Link
-                to="/partners"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Partners
-              </Link>
-              <Link
-                to="/global-index"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Global Index
-              </Link>
-              <Link
-                to="/resources"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Resources
-              </Link>
-              <Link
-                to="/blog"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Blog
-              </Link>
-              <Link
-                to="/support"
-                className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Support
-              </Link>
-            </div>
+              {/* Tools Section */}
+              <div className="flex flex-col gap-1 border-t border-border pt-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 py-2">Tools</p>
+                <Link
+                  to="/dashboard"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  to="/assistant"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  AI Assistant
+                </Link>
+                <Link
+                  to="/cases"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Cases
+                </Link>
+                <Link
+                  to="/monitoring"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Monitoring
+                </Link>
+                <Link
+                  to="/reports"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Reports
+                </Link>
+                <Link
+                  to="/persona-resolver"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Persona Resolver
+                </Link>
+                <Link
+                  to="/threat-forecast"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Threat Forecast
+                </Link>
+              </div>
 
-            {/* Account Section */}
-            <div className="border-t pt-4">
-              {user ? (
-                <>
-                  <div className="text-xs text-muted-foreground mb-3">
-                    {user.email} ({isPremium ? "Pro" : "Free"})
-                  </div>
-                  <Link
-                    to="/dashboard"
-                    className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary block mb-2"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Dashboard
-                  </Link>
-                  {isPremium && (
-                    <button
-                      onClick={() => {
-                        handleManageSubscription();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="text-left text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary block mb-2 w-full"
+              {/* Company Section */}
+              <div className="flex flex-col gap-1 border-t border-border pt-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-3 py-2">Company</p>
+                <Link
+                  to="/partners"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Partners
+                </Link>
+                <Link
+                  to="/global-index"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Global Index
+                </Link>
+                <Link
+                  to="/resources"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Resources
+                </Link>
+                <Link
+                  to="/blog"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Blog
+                </Link>
+                <Link
+                  to="/support"
+                  className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Support
+                </Link>
+              </div>
+
+              {/* Account Section */}
+              <div className="border-t border-border pt-4">
+                {user ? (
+                  <div className="flex flex-col gap-1">
+                    <div className="text-xs text-foreground font-medium px-3 py-2 bg-muted/30 rounded-lg mb-2">
+                      {user.email}
+                      <span className="block text-muted-foreground mt-1">
+                        {isPremium ? "Pro Plan" : "Free Plan"}
+                      </span>
+                    </div>
+                    <Link
+                      to="/dashboard"
+                      className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                      onClick={() => setMobileMenuOpen(false)}
                     >
-                      Manage Subscription
+                      Dashboard
+                    </Link>
+                    {isPremium && (
+                      <button
+                        onClick={() => {
+                          handleManageSubscription();
+                          setMobileMenuOpen(false);
+                        }}
+                        className="text-left text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center w-full"
+                      >
+                        Manage Subscription
+                      </button>
+                    )}
+                    <button
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        setMobileMenuOpen(false);
+                        navigate('/');
+                      }}
+                      className="text-left text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center w-full"
+                    >
+                      Sign Out
                     </button>
-                  )}
-                  <button
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      setMobileMenuOpen(false);
-                      navigate('/');
-                    }}
-                    className="text-left text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary block w-full"
-                  >
-                    Sign Out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/auth"
-                    className="text-sm text-muted-foreground pl-2 py-2 rounded transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)] hover:text-primary block mb-3"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign In
-                  </Link>
-                  <Button onClick={() => { navigate('/auth'); setMobileMenuOpen(false); }} className="w-full">
-                    Get Started
-                  </Button>
-                </>
-              )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <Link
+                      to="/auth"
+                      className="text-sm text-foreground px-3 py-3 rounded-lg transition-[var(--transition-smooth)] hover:bg-muted/50 active:bg-muted min-h-[44px] flex items-center"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sign In
+                    </Link>
+                    <Button 
+                      onClick={() => { navigate('/auth'); setMobileMenuOpen(false); }} 
+                      className="w-full min-h-[44px]"
+                    >
+                      Get Started
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </nav>
         )}
