@@ -4,6 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Loader2, AlertCircle, Activity } from 'lucide-react';
+import { CircularProgress } from '@/components/CircularProgress';
 
 interface ProgressUpdate {
   scanId: string;
@@ -109,21 +110,31 @@ export const ScanProgressTracker = ({ scanId, onComplete }: ScanProgressTrackerP
   return (
     <Card className="border-primary/20 bg-card/50 backdrop-blur-sm">
       <CardContent className="pt-6">
-        <div className="space-y-4">
-          {/* Status Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className={getStatusColor()}>
-                {getStatusIcon()}
+        <div className="space-y-6">
+          {/* Status Header with Circular Progress */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={getStatusColor()}>
+                  {getStatusIcon()}
+                </div>
+                <span className="text-sm font-medium">
+                  {progress.message || 'Processing...'}
+                </span>
               </div>
-              <span className="text-sm font-medium">
-                {progress.message || 'Processing...'}
-              </span>
+              {progress.status === 'completed' && progress.tookMs && (
+                <Badge variant="secondary" className="text-xs">
+                  Completed in {(progress.tookMs / 1000).toFixed(1)}s
+                </Badge>
+              )}
             </div>
-            {progress.status === 'completed' && progress.tookMs && (
-              <Badge variant="secondary" className="text-xs">
-                {(progress.tookMs / 1000).toFixed(1)}s
-              </Badge>
+            
+            {progress.totalProviders && progress.status !== 'completed' && (
+              <CircularProgress 
+                value={progressPercentage} 
+                size={80}
+                strokeWidth={6}
+              />
             )}
           </div>
 
@@ -131,14 +142,18 @@ export const ScanProgressTracker = ({ scanId, onComplete }: ScanProgressTrackerP
           {progress.totalProviders && (
             <div className="space-y-2">
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>
+                <span className="font-medium">
                   {progress.completedProviders || 0} / {progress.totalProviders} providers
                 </span>
-                <span>{progressPercentage}%</span>
+                <span className="font-semibold text-primary animate-fade-in">
+                  {progressPercentage}%
+                </span>
               </div>
               <Progress 
                 value={progressPercentage} 
-                className="h-2"
+                showPercentage={false}
+                animated={true}
+                className="h-3"
               />
             </div>
           )}
