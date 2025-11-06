@@ -4,6 +4,7 @@ import { RemovalQueue } from '@/components/RemovalQueue';
 import { RemovalSuccessTracker } from '@/components/RemovalSuccessTracker';
 import { DarkWebMonitorSettings } from '@/components/settings/DarkWebMonitorSettings';
 import { InitializeDarkWebDemo } from '@/components/settings/InitializeDarkWebDemo';
+import { StreakBadges } from '@/components/StreakBadges';
 import { analyzeTrends } from '@/lib/trends';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -654,11 +655,19 @@ const Dashboard = () => {
                     </CardContent>
                   </Card>
 
-                  {/* Removal Queue */}
-                  <RemovalQueue userId={user.id} />
+                  {/* Two Column Layout for Streak & Removal Queue */}
+                  <div className="grid md:grid-cols-3 gap-6">
+                    {/* Streak & Badges Sidebar */}
+                    <div className="md:col-span-1">
+                      <StreakBadges userId={user?.id} />
+                    </div>
 
-                  {/* Removal Success Tracker */}
-                  <RemovalSuccessTracker userId={user.id} />
+                    {/* Removal Queue & Success Tracker */}
+                    <div className="md:col-span-2 space-y-6">
+                      <RemovalQueue userId={user.id} />
+                      <RemovalSuccessTracker userId={user.id} />
+                    </div>
+                  </div>
 
                   {/* Dark Web Monitor Settings */}
                   <DarkWebMonitorSettings />

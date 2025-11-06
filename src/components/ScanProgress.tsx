@@ -5,6 +5,7 @@ import { CheckCircle2, Clock, XCircle, Loader2, Database, Shield, Search, Globe,
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { updateStreakOnScan } from "@/lib/updateStreakOnScan";
 import type { ScanFormData } from "./ScanForm";
 
 interface ScanProgressProps {
@@ -225,6 +226,9 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         
         // Final progress to 100%
         setProgress(100);
+
+        // Update user streak
+        await updateStreakOnScan(userId);
 
         // Navigate to results
         setTimeout(() => {

@@ -5746,6 +5746,45 @@ export type Database = {
           },
         ]
       }
+      user_achievements: {
+        Row: {
+          badges: Json | null
+          created_at: string | null
+          current_streak: number | null
+          id: string
+          last_scan_date: string | null
+          longest_streak: number | null
+          total_removals: number | null
+          total_scans: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          badges?: Json | null
+          created_at?: string | null
+          current_streak?: number | null
+          id?: string
+          last_scan_date?: string | null
+          longest_streak?: number | null
+          total_removals?: number | null
+          total_scans?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          badges?: Json | null
+          created_at?: string | null
+          current_streak?: number | null
+          id?: string
+          last_scan_date?: string | null
+          longest_streak?: number | null
+          total_removals?: number | null
+          total_scans?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_behavior_analytics: {
         Row: {
           behavior_type: string
@@ -6364,6 +6403,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_user_streak: { Args: { _user_id: string }; Returns: undefined }
       update_user_subscription: {
         Args: {
           _expires_at?: string

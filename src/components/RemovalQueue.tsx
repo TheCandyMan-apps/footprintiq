@@ -133,6 +133,24 @@ export const RemovalQueue = ({ scanId, userId }: RemovalQueueProps) => {
 
       if (error) throw error;
 
+      // Update removals count for achievements
+      const { data: current } = await supabase
+        .from('user_achievements')
+        .select('total_removals')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (current) {
+        await supabase
+          .from('user_achievements')
+          .update({ total_removals: (current.total_removals || 0) + 1 })
+          .eq('user_id', userId);
+      } else {
+        await supabase
+          .from('user_achievements')
+          .insert({ user_id: userId, total_removals: 1 });
+      }
+
       toast({
         title: 'Removal request sent',
         description: `Submitted removal request to ${broker.name}`,
