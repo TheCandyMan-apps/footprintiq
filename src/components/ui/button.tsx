@@ -2,11 +2,12 @@ import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 import { triggerHaptic } from "@/lib/haptics";
+import { Loader2, Check } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-[var(--transition-smooth)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-95 data-[state=active]:scale-95 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-[var(--transition-smooth)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-60 disabled:saturate-50 active:scale-95 data-[state=active]:scale-95 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 overflow-hidden",
   {
     variants: {
       variant: {
@@ -37,29 +38,65 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  loading?: boolean;
+  progress?: number;
+  success?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, onClick, ...props }, ref) => {
+  ({ className, variant, size, asChild = false, onClick, loading, progress, success, children, disabled, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
+    const [showSuccess, setShowSuccess] = React.useState(false);
+    
+    React.useEffect(() => {
+      if (success) {
+        setShowSuccess(true);
+        const timer = setTimeout(() => setShowSuccess(false), 2000);
+        return () => clearTimeout(timer);
+      }
+    }, [success]);
     
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       // Trigger haptic feedback on mobile devices
-      triggerHaptic('light');
+      if (!loading && !disabled) {
+        triggerHaptic('light');
+      }
       
       // Call original onClick if provided
-      if (onClick) {
+      if (onClick && !loading && !disabled) {
         onClick(e);
       }
     };
+    
+    const isDisabled = disabled || loading || showSuccess;
     
     return (
       <Comp 
         className={cn(buttonVariants({ variant, size, className }))} 
         ref={ref} 
         onClick={handleClick}
-        {...props} 
-      />
+        disabled={isDisabled}
+        {...props}
+      >
+        {/* Progress bar background */}
+        {typeof progress === 'number' && (
+          <div 
+            className="absolute inset-0 bg-primary/20 transition-all duration-300 ease-out"
+            style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+          />
+        )}
+        
+        {/* Content */}
+        <span className="relative z-10 flex items-center gap-2">
+          {loading && (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          )}
+          {showSuccess && (
+            <Check className="h-4 w-4 animate-in zoom-in duration-300" />
+          )}
+          {children}
+        </span>
+      </Comp>
     );
   },
 );

@@ -45,11 +45,11 @@ export function CaseExport({ caseId }: CaseExportProps) {
   return (
     <Button
       onClick={handleExportForensic}
-      disabled={isExporting}
+      loading={isExporting}
       variant="outline"
       size="sm"
     >
-      <Package className="h-4 w-4 mr-2" />
+      <Package className="h-4 w-4" />
       {isExporting ? "Exporting..." : "Export Forensic Package"}
     </Button>
   );

@@ -76,8 +76,8 @@ export function PDFReportButton({ scanId }: PDFReportButtonProps) {
   };
 
   return (
-    <Button onClick={generatePDF} disabled={loading} variant="outline">
-      <FileText className="h-4 w-4 mr-2" />
+    <Button onClick={generatePDF} loading={loading} variant="outline">
+      <FileText className="h-4 w-4" />
       {loading ? "Generating..." : "Download PDF"}
     </Button>
   );
