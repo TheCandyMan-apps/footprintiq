@@ -14,6 +14,7 @@ import { GraphExplorer } from "@/components/GraphExplorer";
 import { MonitoringToggle } from "@/components/MonitoringToggle";
 import { ScanSummary } from "@/components/ScanSummary";
 import { AnomalyDetector } from "@/components/AnomalyDetector";
+import { ScanProgressTracker } from "@/components/ScanProgressTracker";
 import { clusterFindingsByDate } from "@/lib/timeline";
 import { buildGraph, buildGraphFromFindings, detectEntityType } from "@/lib/graph";
 import { Finding } from "@/lib/ufm";
@@ -79,6 +80,7 @@ interface Scan {
   high_risk_count: number;
   medium_risk_count: number;
   low_risk_count: number;
+  status?: string;
   created_at: string;
 }
 
@@ -504,6 +506,19 @@ const ResultsDetail = () => {
             </DropdownMenu>
           </div>
         </div>
+
+        {/* Progress Tracker - shown if scan is pending */}
+        {scan.status === 'pending' && scanId && (
+          <div className="mb-8">
+            <ScanProgressTracker 
+              scanId={scanId}
+              onComplete={() => {
+                // Refresh the scan data
+                fetchScanData();
+              }}
+            />
+          </div>
+        )}
 
         {/* Catfish Detection */}
         <div className="mb-8">

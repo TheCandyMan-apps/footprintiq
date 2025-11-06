@@ -264,14 +264,45 @@ serve(async (req) => {
     const queue = createQueue({ concurrency: 7, retries: 3 });
     const allFindings: UFMFinding[] = [];
 
+    // Broadcast initial progress
+    const channelName = `scan_progress:${scanId}`;
+    await supabaseService.channel(channelName).send({
+      type: 'broadcast',
+      event: 'progress',
+      payload: {
+        scanId,
+        status: 'started',
+        totalProviders: providers.length,
+        completedProviders: 0,
+        currentProviders: providers.slice(0, 7),
+        message: 'Starting scan...'
+      }
+    });
+
+    let completedCount = 0;
+
     // Execute providers in parallel
-    const tasks = providers.map(provider => async () => {
+    const tasks = providers.map((provider, index) => async () => {
       const cacheKey = `scan:${provider}:${type}:${value}`;
       
       console.log(`[orchestrate] Calling provider: ${provider} for ${type}:${value}`);
       
+      // Broadcast provider start
+      await supabaseService.channel(channelName).send({
+        type: 'broadcast',
+        event: 'progress',
+        payload: {
+          scanId,
+          status: 'processing',
+          totalProviders: providers.length,
+          completedProviders: completedCount,
+          currentProvider: provider,
+          message: `Querying ${provider}...`
+        }
+      });
+      
       try {
-        return await withCache(
+        const result = await withCache(
           cacheKey,
           async () => {
             // Call provider through the unified proxy to avoid missing function deployments
@@ -290,8 +321,44 @@ serve(async (req) => {
           },
           { ttlSeconds: 86400 }
         );
+        
+        completedCount++;
+        
+        // Broadcast provider completion
+        await supabaseService.channel(channelName).send({
+          type: 'broadcast',
+          event: 'progress',
+          payload: {
+            scanId,
+            status: 'processing',
+            totalProviders: providers.length,
+            completedProviders: completedCount,
+            currentProvider: provider,
+            findingsCount: result.length,
+            message: `Completed ${provider} (${completedCount}/${providers.length})`
+          }
+        });
+        
+        return result;
       } catch (error) {
         console.error(`[orchestrate] Provider ${provider} failed:`, error);
+        completedCount++;
+        
+        // Broadcast provider error
+        await supabaseService.channel(channelName).send({
+          type: 'broadcast',
+          event: 'progress',
+          payload: {
+            scanId,
+            status: 'processing',
+            totalProviders: providers.length,
+            completedProviders: completedCount,
+            currentProvider: provider,
+            error: true,
+            message: `Failed ${provider} (${completedCount}/${providers.length})`
+          }
+        });
+        
         return []; // Continue with other providers
       }
     });
@@ -305,10 +372,33 @@ serve(async (req) => {
       }
     }
 
+    // Broadcast completion of standard providers
+    await supabaseService.channel(channelName).send({
+      type: 'broadcast',
+      event: 'progress',
+      payload: {
+        scanId,
+        status: 'aggregating',
+        totalProviders: providers.length,
+        completedProviders: providers.length,
+        message: 'Processing findings...'
+      }
+    });
+
     // === Premium Apify actors (if enabled in options) ===
     const premium = options?.premium;
     if (premium && (premium.socialMediaFinder || premium.osintScraper || premium.darkwebScraper)) {
       console.log('[orchestrate] Running premium Apify actors...');
+      
+      await supabaseService.channel(channelName).send({
+        type: 'broadcast',
+        event: 'progress',
+        payload: {
+          scanId,
+          status: 'premium',
+          message: 'Running premium searches...'
+        }
+      });
       
       const callApify = async (actorSlug: string, payload: any, label: string) => {
         try {
@@ -454,6 +544,21 @@ serve(async (req) => {
     const tookMs = Date.now() - startTime;
 
     console.log(`[orchestrate] Completed in ${tookMs}ms: ${sortedFindings.length} findings`);
+
+    // Broadcast final completion
+    await supabaseService.channel(channelName).send({
+      type: 'broadcast',
+      event: 'progress',
+      payload: {
+        scanId,
+        status: 'completed',
+        totalProviders: providers.length,
+        completedProviders: providers.length,
+        totalFindings: sortedFindings.length,
+        message: `Scan completed with ${sortedFindings.length} findings`,
+        tookMs
+      }
+    });
 
     return ok({
       scanId,

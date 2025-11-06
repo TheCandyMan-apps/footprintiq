@@ -16,6 +16,7 @@ import { Search, Shield, Zap, Database, Globe, Lock } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { PremiumApifyOptions } from "@/components/scan/PremiumApifyOptions";
 import { CreditsBadge } from "@/components/workspace/CreditsBadge";
+import { ScanProgressTracker } from "@/components/ScanProgressTracker";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export default function AdvancedScan() {
   const [darkwebEnabled, setDarkwebEnabled] = useState(false);
   const [darkwebDepth, setDarkwebDepth] = useState(2);
   const [isScanning, setIsScanning] = useState(false);
+  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [pendingSensitiveSources, setPendingSensitiveSources] = useState<string[]>([]);
   const [workspaceAutoCreated, setWorkspaceAutoCreated] = useState(false);
@@ -187,19 +189,28 @@ export default function AdvancedScan() {
 
       if (error) throw error;
 
-      toast.success(`Scan initiated! Found ${data.counts?.total || 0} results`);
-      
-      // Navigate to results
+      // Set scan ID for progress tracking
       if (data.scanId) {
-        navigate(`/results/${data.scanId}`);
-      } else {
-        navigate("/dashboard");
+        setCurrentScanId(data.scanId);
       }
+
+      toast.success(`Scan initiated! Tracking progress...`);
+      
+      // Don't navigate immediately - let progress tracker handle it
     } catch (error) {
       console.error("Scan error:", error);
       toast.error(error instanceof Error ? error.message : "Scan failed");
-    } finally {
       setIsScanning(false);
+      setCurrentScanId(null);
+    }
+  };
+
+  const handleScanComplete = () => {
+    setIsScanning(false);
+    if (currentScanId) {
+      navigate(`/results/${currentScanId}`);
+    } else {
+      navigate("/dashboard");
     }
   };
 
@@ -236,6 +247,14 @@ export default function AdvancedScan() {
 
           {!workspaceLoading && workspace && (
             <>
+              {/* Progress Tracker - shown during scan */}
+              {isScanning && currentScanId && (
+                <ScanProgressTracker 
+                  scanId={currentScanId}
+                  onComplete={handleScanComplete}
+                />
+              )}
+
               {/* Header */}
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
