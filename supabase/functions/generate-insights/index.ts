@@ -167,6 +167,26 @@ Generate personalized insights based on this data.`,
 
     console.log("Generated insights:", enrichedInsights);
 
+    // Save insights to database
+    const insightsToSave = enrichedInsights.map((insight: any) => ({
+      user_id: userId,
+      job_id: jobId,
+      insight_type: insight.type,
+      message: insight.message,
+      priority: insight.priority,
+      actions: insight.actions || [],
+      metadata: { footprint: context.footprint },
+    }));
+
+    const { error: insertError } = await supabase
+      .from("ai_insights")
+      .insert(insightsToSave);
+
+    if (insertError) {
+      console.error("Failed to save insights to database:", insertError);
+      // Continue anyway - we'll still return the insights
+    }
+
     return new Response(
       JSON.stringify({ insights: enrichedInsights }),
       {

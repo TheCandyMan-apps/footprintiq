@@ -355,6 +355,53 @@ export type Database = {
           },
         ]
       }
+      ai_insights: {
+        Row: {
+          actions: Json | null
+          created_at: string
+          dismissed_at: string | null
+          id: string
+          insight_type: string
+          job_id: string | null
+          message: string
+          metadata: Json | null
+          priority: string
+          user_id: string
+        }
+        Insert: {
+          actions?: Json | null
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          insight_type: string
+          job_id?: string | null
+          message: string
+          metadata?: Json | null
+          priority: string
+          user_id: string
+        }
+        Update: {
+          actions?: Json | null
+          created_at?: string
+          dismissed_at?: string | null
+          id?: string
+          insight_type?: string
+          job_id?: string | null
+          message?: string
+          metadata?: Json | null
+          priority?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_insights_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "scan_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alert_events: {
         Row: {
           acknowledged_at: string | null
