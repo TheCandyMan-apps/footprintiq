@@ -12,6 +12,18 @@ serve(async (req) => {
   }
 
   try {
+    // Internal authentication check
+    const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN');
+    const authHeader = req.headers.get('x-internal-token');
+    
+    if (!authHeader || authHeader !== WORKER_TOKEN) {
+      console.warn('Unauthorized access attempt to job-processor');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Valid internal token required' }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""

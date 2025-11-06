@@ -14,7 +14,19 @@ serve(async (req) => {
   }
 
   try {
-    // Rate limit check
+    // Internal authentication check
+    const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN');
+    const authHeader = req.headers.get('x-internal-token');
+    
+    if (!authHeader || authHeader !== WORKER_TOKEN) {
+      console.warn('Unauthorized access attempt to cache-manager');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Valid internal token required' }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    // Rate limit check (secondary protection)
     const clientIP = getClientIP(req);
     const allowed = await checkRateLimit(clientIP, {
       endpoint: "cache-manager",
