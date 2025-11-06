@@ -9,6 +9,7 @@ import { useRealtimeResults } from '@/hooks/useRealtimeResults';
 import { exportResultsToJSON, exportResultsToCSV, groupByStatus } from '@/utils/exporters';
 import { ScanProgress } from './ScanProgress';
 import { FootprintDNACard } from '@/components/FootprintDNACard';
+import { AIInsightsPanel } from '@/components/AIInsightsPanel';
 import { Loader2, FileJson, FileSpreadsheet, ExternalLink } from 'lucide-react';
 import {
   Table,
@@ -273,6 +274,9 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                 </TableBody>
               </Table>
             </div>
+
+            {/* AI Insights Panel */}
+            <AIInsightsPanel jobId={jobId} userId={job?.requested_by || undefined} />
           </>
         )}
       </CardContent>
