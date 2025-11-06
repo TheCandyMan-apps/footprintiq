@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ThreatAnalyticsPanel } from '@/components/ThreatAnalyticsPanel';
 import { SkeletonStatCard, SkeletonRecentScans } from '@/components/dashboard/SkeletonCard';
 import { SkeletonThreatAnalytics } from '@/components/analytics/SkeletonAnalytics';
@@ -37,6 +38,7 @@ import {
   Target,
   Webhook,
   Archive,
+  X,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { BarChart, Bar, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from 'recharts';
@@ -51,6 +53,7 @@ const Dashboard = () => {
   const [user, setUser] = useState<any>(null);
   const [scans, setScans] = useState<Scan[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedScans, setSelectedScans] = useState<Set<string>>(new Set());
   const [stats, setStats] = useState({
     totalScans: 0,
     highRiskFindings: 0,
@@ -160,8 +163,8 @@ const Dashboard = () => {
     return scan.privacy_score || 0;
   };
 
-  const handleArchiveScan = async (scanId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleArchiveScan = async (scanId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     
     try {
       const { error } = await supabase
@@ -187,6 +190,56 @@ const Dashboard = () => {
         description: error.message,
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleBulkArchive = async () => {
+    if (selectedScans.size === 0) return;
+
+    try {
+      const { error } = await supabase
+        .from('scans')
+        .update({ archived_at: new Date().toISOString() })
+        .in('id', Array.from(selectedScans));
+
+      if (error) throw error;
+
+      toast({
+        title: `${selectedScans.size} scans archived`,
+        description: 'The selected scans have been moved to archives',
+      });
+
+      setSelectedScans(new Set());
+
+      // Refresh dashboard data
+      if (user) {
+        fetchDashboardData(user.id);
+      }
+    } catch (error: any) {
+      console.error('Bulk archive error:', error);
+      toast({
+        title: 'Error archiving scans',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const toggleScanSelection = (scanId: string) => {
+    const newSelected = new Set(selectedScans);
+    if (newSelected.has(scanId)) {
+      newSelected.delete(scanId);
+    } else {
+      newSelected.add(scanId);
+    }
+    setSelectedScans(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedScans.size === scans.length) {
+      setSelectedScans(new Set());
+    } else {
+      setSelectedScans(new Set(scans.map(s => s.id)));
     }
   };
 
@@ -555,6 +608,33 @@ const Dashboard = () => {
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
+                {/* Bulk Actions Bar */}
+                {selectedScans.size > 0 && (
+                  <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium">
+                        {selectedScans.size} scan{selectedScans.size !== 1 ? 's' : ''} selected
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedScans(new Set())}
+                      >
+                        <X className="h-4 w-4 mr-2" />
+                        Clear
+                      </Button>
+                    </div>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleBulkArchive}
+                    >
+                      <Archive className="h-4 w-4 mr-2" />
+                      Archive Selected
+                    </Button>
+                  </div>
+                )}
+
                 {scans.length === 0 ? (
                   <div className="text-center py-16">
                     <div className="relative inline-block mb-6">
@@ -589,16 +669,35 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   <div className="space-y-3">
+                    {/* Select All */}
+                    <div className="flex items-center gap-3 px-4 py-2 border-b">
+                      <Checkbox
+                        checked={selectedScans.size === scans.length && scans.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        Select all {scans.length} scans
+                      </span>
+                    </div>
+
                     {scans.map((scan) => (
                       <div
                         key={scan.id}
-                        className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow hover:scale-105 transition-all duration-500 cursor-pointer"
-                        onClick={() => navigate(`/results/${scan.id}`)}
+                        className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow hover:scale-105 transition-all duration-500"
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         <div className="relative z-10 space-y-4">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex items-center gap-3">
+                              <Checkbox
+                                checked={selectedScans.has(scan.id)}
+                                onCheckedChange={() => toggleScanSelection(scan.id)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <div 
+                                className="flex items-center gap-3 cursor-pointer flex-1"
+                                onClick={() => navigate(`/results/${scan.id}`)}
+                              >
                               <div className="p-2 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
                                 <Shield className="h-5 w-5" />
                               </div>
@@ -608,6 +707,7 @@ const Dashboard = () => {
                                   <Clock className="h-3 w-3" />
                                   {format(new Date(scan.created_at), 'MMM d, yyyy h:mm a')}
                                 </p>
+                              </div>
                               </div>
                             </div>
                             <div className="flex gap-2">
