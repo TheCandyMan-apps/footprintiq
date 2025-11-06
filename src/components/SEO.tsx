@@ -16,8 +16,8 @@ interface SEOProps {
 }
 
 export const SEO = ({
-  title = "FootprintIQ - Digital Footprint Scanner & OSINT Privacy Protection",
-  description = "Unified platform for scanning and protecting your online footprint with secure APIs and admin tools. Real-time OSINT scanning across 400+ sources with advanced privacy controls.",
+  title = "FootprintIQ - Find & Remove Your Exposed Personal Information Online",
+  description = "Take control of your online privacy. Discover where your personal information appears across the web and remove it effortlessly. Stay safe with automatic monitoring and instant alerts.",
   canonical = "https://footprintiq.app/",
   ogImage = "https://footprintiq.app/og-image.jpg",
   ogType = "website",
@@ -30,7 +30,7 @@ export const SEO = ({
     "name": "FootprintIQ",
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Web",
-    "description": "Unified platform for scanning and protecting your online footprint with secure APIs and admin tools. Real-time OSINT scanning across 400+ sources with advanced privacy controls.",
+    "description": "Take control of your online privacy. Discover where your personal information appears across the web and remove it effortlessly. Stay safe with automatic monitoring and instant alerts.",
     "url": "https://footprintiq.app",
     "image": "https://footprintiq.app/og-image.jpg",
     "offers": {
@@ -52,12 +52,12 @@ export const SEO = ({
       "url": "https://footprintiq.app"
     },
     "featureList": [
-      "Unified API Access to 400+ OSINT Sources",
-      "Real-Time Scanning & Monitoring",
-      "Advanced Privacy Controls",
-      "Automated Data Removal",
-      "Admin Tools & Dashboards",
-      "Secure API Integration"
+      "Find Personal Information Online",
+      "Automatic Monitoring & Alerts",
+      "Easy Privacy Protection",
+      "One-Click Data Removal",
+      "Safe & Secure Platform",
+      "Works Across Hundreds of Sites"
     ]
   };
 
