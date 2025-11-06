@@ -1,4 +1,6 @@
 import { FootprintDNA } from '@/components/FootprintDNA';
+import { FootprintDNAModal } from '@/components/FootprintDNAModal';
+import { analyzeTrends } from '@/lib/trends';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -70,6 +72,8 @@ const Dashboard = () => {
     dataBrokers: 0,
     darkWeb: 0,
   });
+  const [isDNAModalOpen, setIsDNAModalOpen] = useState(false);
+  const [trendData, setTrendData] = useState<any[]>([]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -178,6 +182,10 @@ const Dashboard = () => {
           dataBrokers: dataBrokersCount,
           darkWeb: darkWebCount,
         });
+
+        // Fetch trend data for this user
+        const trends = await analyzeTrends(userId, 30);
+        setTrendData(trends);
       }
     } catch (error: any) {
       console.error('Dashboard fetch error:', error);
@@ -590,6 +598,15 @@ const Dashboard = () => {
                         exposures={dnaMetrics.exposures}
                         dataBrokers={dnaMetrics.dataBrokers}
                         darkWeb={dnaMetrics.darkWeb}
+                        trendData={trendData}
+                        onOpenDetails={() => setIsDNAModalOpen(true)}
+                      />
+
+                      <FootprintDNAModal
+                        open={isDNAModalOpen}
+                        onOpenChange={setIsDNAModalOpen}
+                        trendData={trendData}
+                        currentScore={dnaMetrics.score}
                       />
                     </div>
                   )}

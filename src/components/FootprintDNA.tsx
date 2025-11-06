@@ -2,6 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Shield, AlertTriangle, Database, Skull } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { TrendDataPoint } from '@/lib/trends';
 
 interface FootprintDNAProps {
   score: number;
@@ -9,6 +10,8 @@ interface FootprintDNAProps {
   exposures: number;
   dataBrokers: number;
   darkWeb: number;
+  trendData?: TrendDataPoint[];
+  onOpenDetails?: () => void;
 }
 
 interface MetricData {
@@ -24,7 +27,9 @@ export const FootprintDNA = ({
   breaches, 
   exposures, 
   dataBrokers, 
-  darkWeb 
+  darkWeb,
+  trendData = [],
+  onOpenDetails
 }: FootprintDNAProps) => {
   // Determine color based on score
   const getScoreColor = (score: number) => {
@@ -76,7 +81,10 @@ export const FootprintDNA = ({
   ];
 
   return (
-    <Card className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5 border-border shadow-lg">
+    <Card 
+      className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5 border-border shadow-lg cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02]"
+      onClick={onOpenDetails}
+    >
       {/* Glow effect */}
       <div 
         className="absolute inset-0 opacity-20 blur-3xl pointer-events-none"

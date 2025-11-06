@@ -1,4 +1,6 @@
 import { FootprintDNA } from '@/components/FootprintDNA';
+import { FootprintDNAModal } from '@/components/FootprintDNAModal';
+import { analyzeTrends } from '@/lib/trends';
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,6 +120,8 @@ const ResultsDetail = () => {
   const [redactPII, setRedactPII] = useState(true);
   const [loading, setLoading] = useState(true);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
+  const [isDNAModalOpen, setIsDNAModalOpen] = useState(false);
+  const [trendData, setTrendData] = useState<any[]>([]);
   const pollTriesRef = useRef(0);
   const pollTimeoutRef = useRef<number | null>(null);
 
@@ -206,6 +210,12 @@ const ResultsDetail = () => {
 
       if (scanError) throw scanError;
       setScan(scanData);
+
+      // Fetch trend data for this user
+      if (scanData.user_id) {
+        const trends = await analyzeTrends(scanData.user_id, 30);
+        setTrendData(trends);
+      }
 
       // Fetch data sources
       const { data: sources, error: sourcesError } = await supabase
@@ -544,6 +554,15 @@ const ResultsDetail = () => {
               s.category?.toLowerCase().includes('dark') || 
               s.name?.toLowerCase().includes('dark')
             ).length}
+            trendData={trendData}
+            onOpenDetails={() => setIsDNAModalOpen(true)}
+          />
+
+          <FootprintDNAModal
+            open={isDNAModalOpen}
+            onOpenChange={setIsDNAModalOpen}
+            trendData={trendData}
+            currentScore={scan.privacy_score || 0}
           />
         </div>
 
