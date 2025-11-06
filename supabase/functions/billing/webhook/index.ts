@@ -3,12 +3,39 @@ import Stripe from 'https://esm.sh/stripe@18.5.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { corsHeaders, ok, bad } from '../../_shared/secure.ts';
 
+/**
+ * Stripe Webhook Handler for Production
+ * 
+ * Handles subscription lifecycle events:
+ * - checkout.session.completed - New subscription or credit purchase
+ * - customer.subscription.created - Subscription started
+ * - customer.subscription.updated - Plan changes, renewals, status changes
+ * - customer.subscription.deleted - Cancellation
+ * - invoice.payment_succeeded - Successful payment
+ * - invoice.payment_failed - Failed payment (retry or notify)
+ * - customer.subscription.trial_will_end - Trial ending soon
+ * - payment_intent.payment_failed - Payment failure
+ * 
+ * Security: This endpoint does NOT require JWT authentication.
+ * Stripe signatures are validated instead.
+ */
+
+const logEvent = (eventType: string, message: string, metadata?: any) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] [${eventType}] ${message}`, metadata ? JSON.stringify(metadata) : '');
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders() });
   }
 
-  if (req.method !== 'POST') return bad(405, 'method_not_allowed');
+  if (req.method !== 'POST') {
+    logEvent('ERROR', 'Invalid method', { method: req.method });
+    return bad(405, 'method_not_allowed');
+  }
+
+  const startTime = Date.now();
 
   try {
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
@@ -19,13 +46,21 @@ serve(async (req) => {
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
 
     if (!signature || !webhookSecret) {
+      logEvent('ERROR', 'Missing webhook signature or secret');
       throw new Error('Missing webhook signature or secret');
     }
 
+    // Verify webhook signature
     const body = await req.text();
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-
-    console.log('Webhook event:', event.type);
+    let event: Stripe.Event;
+    
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      logEvent('SUCCESS', 'Webhook signature verified', { eventType: event.type, eventId: event.id });
+    } catch (err) {
+      logEvent('ERROR', 'Webhook signature verification failed', { error: err.message });
+      throw new Error(`Webhook signature verification failed: ${err.message}`);
+    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -193,22 +228,207 @@ serve(async (req) => {
         break;
       }
 
+      case 'customer.subscription.created': {
+        const subscription = event.data.object as Stripe.Subscription;
+        logEvent('SUBSCRIPTION_CREATED', 'New subscription created', {
+          subscriptionId: subscription.id,
+          customerId: subscription.customer,
+          status: subscription.status,
+        });
+        
+        const customer = await stripe.customers.retrieve(subscription.customer as string);
+        
+        if ('email' in customer && customer.email) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('email', customer.email)
+            .single();
+          
+          if (profile) {
+            const priceId = subscription.items.data[0].price.id;
+            const tierMap: Record<string, 'free' | 'analyst' | 'pro' | 'enterprise'> = {
+              'price_1SPXbHPNdM5SAyj7lPBHvjIi': 'analyst',
+              'price_1SPXcEPNdM5SAyj7AbannmpP': 'pro',
+            };
+            
+            const tier = tierMap[priceId] || 'free';
+            const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
+            
+            await supabase.rpc('update_user_subscription', {
+              _user_id: profile.user_id,
+              _new_tier: tier,
+              _expires_at: expiresAt,
+            });
+            
+            logEvent('SUBSCRIPTION_ACTIVATED', `User subscription activated`, {
+              userId: profile.user_id,
+              tier,
+              expiresAt,
+            });
+          }
+        }
+        break;
+      }
+
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object as Stripe.Invoice;
+        logEvent('PAYMENT_SUCCESS', 'Invoice payment succeeded', {
+          invoiceId: invoice.id,
+          customerId: invoice.customer,
+          amount: invoice.amount_paid,
+          currency: invoice.currency,
+        });
+        
+        // Log successful payment to audit trail
+        if (invoice.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+          const customer = await stripe.customers.retrieve(subscription.customer as string);
+          
+          if ('email' in customer && customer.email) {
+            await supabase.from('audit_log').insert({
+              action: 'subscription.payment_succeeded',
+              meta: {
+                invoice_id: invoice.id,
+                amount: invoice.amount_paid,
+                currency: invoice.currency,
+                customer_email: customer.email,
+              },
+            });
+          }
+        }
+        break;
+      }
+
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice;
-        console.log(`Payment failed for invoice ${invoice.id}`);
+        logEvent('PAYMENT_FAILED', 'Invoice payment failed', {
+          invoiceId: invoice.id,
+          customerId: invoice.customer,
+          amount: invoice.amount_due,
+          attemptCount: invoice.attempt_count,
+        });
+        
+        // Get customer email for notification
+        const customer = await stripe.customers.retrieve(invoice.customer as string);
+        
+        if ('email' in customer && customer.email) {
+          // Log failed payment
+          await supabase.from('audit_log').insert({
+            action: 'subscription.payment_failed',
+            meta: {
+              invoice_id: invoice.id,
+              amount: invoice.amount_due,
+              currency: invoice.currency,
+              attempt_count: invoice.attempt_count,
+              customer_email: customer.email,
+            },
+          });
+          
+          // Send email notification for payment failure (if Resend is configured)
+          const resendKey = Deno.env.get('RESEND_API_KEY');
+          if (resendKey) {
+            try {
+              await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${resendKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'FootprintIQ <billing@footprintiq.com>',
+                  to: customer.email,
+                  subject: 'Payment Failed - Action Required',
+                  html: `
+                    <h2>Payment Failed</h2>
+                    <p>We were unable to process your recent payment for your FootprintIQ subscription.</p>
+                    <p><strong>Amount:</strong> $${(invoice.amount_due / 100).toFixed(2)} ${invoice.currency.toUpperCase()}</p>
+                    <p><strong>Attempt:</strong> ${invoice.attempt_count} of 4</p>
+                    <p>Please update your payment method to avoid service interruption.</p>
+                    <p><a href="https://app.footprintiq.com/settings/billing">Update Payment Method</a></p>
+                  `,
+                }),
+              });
+              
+              logEvent('EMAIL_SENT', 'Payment failure notification sent', { email: customer.email });
+            } catch (emailError) {
+              logEvent('EMAIL_ERROR', 'Failed to send payment failure email', { error: emailError.message });
+            }
+          }
+        }
         break;
       }
 
-      case 'invoice.paid': {
-        const invoice = event.data.object as Stripe.Invoice;
-        console.log(`Invoice ${invoice.id} paid successfully`);
+      case 'customer.subscription.trial_will_end': {
+        const subscription = event.data.object as Stripe.Subscription;
+        const trialEnd = new Date(subscription.trial_end! * 1000);
+        
+        logEvent('TRIAL_ENDING', 'Subscription trial ending soon', {
+          subscriptionId: subscription.id,
+          trialEnd: trialEnd.toISOString(),
+        });
+        
+        // Send trial ending notification
+        const customer = await stripe.customers.retrieve(subscription.customer as string);
+        
+        if ('email' in customer && customer.email) {
+          const resendKey = Deno.env.get('RESEND_API_KEY');
+          if (resendKey) {
+            try {
+              await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${resendKey}`,
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  from: 'FootprintIQ <hello@footprintiq.com>',
+                  to: customer.email,
+                  subject: 'Your Trial is Ending Soon',
+                  html: `
+                    <h2>Your Trial Ends Soon</h2>
+                    <p>Your FootprintIQ trial ends on ${trialEnd.toLocaleDateString()}.</p>
+                    <p>Continue enjoying advanced OSINT features by keeping your subscription active.</p>
+                    <p><a href="https://app.footprintiq.com/settings/billing">Manage Subscription</a></p>
+                  `,
+                }),
+              });
+              
+              logEvent('EMAIL_SENT', 'Trial ending notification sent', { email: customer.email });
+            } catch (emailError) {
+              logEvent('EMAIL_ERROR', 'Failed to send trial ending email', { error: emailError.message });
+            }
+          }
+        }
         break;
       }
+
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object as Stripe.PaymentIntent;
+        logEvent('PAYMENT_INTENT_FAILED', 'Payment intent failed', {
+          paymentIntentId: paymentIntent.id,
+          customerId: paymentIntent.customer,
+          amount: paymentIntent.amount,
+          lastError: paymentIntent.last_payment_error?.message,
+        });
+        break;
+      }
+
+      default:
+        logEvent('UNHANDLED_EVENT', `Unhandled event type: ${event.type}`);
     }
 
-    return ok({ received: true });
+    const duration = Date.now() - startTime;
+    logEvent('SUCCESS', `Webhook processed successfully in ${duration}ms`, { eventType: event.type });
+    
+    return ok({ received: true, processed: event.type, duration });
   } catch (error) {
-    console.error('Webhook error:', error);
+    const duration = Date.now() - startTime;
+    logEvent('ERROR', 'Webhook processing failed', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      duration,
+    });
+    
     return bad(400, error instanceof Error ? error.message : 'Webhook error');
   }
 });
