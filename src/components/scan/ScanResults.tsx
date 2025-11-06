@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useRealtimeResults } from '@/hooks/useRealtimeResults';
 import { exportResultsToJSON, exportResultsToCSV, groupByStatus } from '@/utils/exporters';
+import { ScanProgress } from './ScanProgress';
 import { Loader2, FileJson, FileSpreadsheet, ExternalLink } from 'lucide-react';
 import {
   Table,
@@ -29,6 +30,7 @@ interface ScanJob {
   started_at: string | null;
   finished_at: string | null;
   error: string | null;
+  all_sites: boolean;
 }
 
 export function ScanResults({ jobId }: ScanResultsProps) {
@@ -39,6 +41,27 @@ export function ScanResults({ jobId }: ScanResultsProps) {
 
   useEffect(() => {
     loadJob();
+
+    // Subscribe to job status updates
+    const channel = supabase
+      .channel(`job_${jobId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'scan_jobs',
+          filter: `id=eq.${jobId}`,
+        },
+        (payload) => {
+          setJob(payload.new as ScanJob);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [jobId]);
 
   const loadJob = async () => {
@@ -148,7 +171,16 @@ export function ScanResults({ jobId }: ScanResultsProps) {
         </div>
       </CardHeader>
       <Separator />
-      <CardContent className="p-6 md:p-8">
+      <CardContent className="p-6 md:p-8 space-y-6">
+        {/* Progress Indicator */}
+        <ScanProgress
+          startedAt={job.started_at}
+          finishedAt={job.finished_at}
+          status={job.status}
+          resultCount={results.length}
+          allSites={job.all_sites || false}
+        />
+
         {resultsLoading && results.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
