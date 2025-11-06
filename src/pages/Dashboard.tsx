@@ -10,6 +10,7 @@ import { ScrollToTop } from '@/components/ScrollToTop';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
 import { ScheduledScansManager } from '@/components/ScheduledScansManager';
 import { WebhookIntegrations } from '@/components/WebhookIntegrations';
+import { ArchivedScans } from '@/components/ArchivedScans';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,7 +36,7 @@ import {
   Users,
   Target,
   Webhook,
-  Trash2,
+  Archive,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { BarChart, Bar, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from 'recharts';
@@ -93,11 +94,12 @@ const Dashboard = () => {
   const fetchDashboardData = async (userId: string) => {
     setLoading(true);
     try {
-      // Fetch recent scans
+      // Fetch recent scans (excluding archived)
       const { data: scansData, error: scansError } = await supabase
         .from('scans')
         .select('*')
         .eq('user_id', userId)
+        .is('archived_at', null)
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -158,24 +160,20 @@ const Dashboard = () => {
     return scan.privacy_score || 0;
   };
 
-  const handleDeleteScan = async (scanId: string, e: React.MouseEvent) => {
+  const handleArchiveScan = async (scanId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
-    if (!confirm('Are you sure you want to delete this scan? This action cannot be undone.')) {
-      return;
-    }
-
     try {
       const { error } = await supabase
         .from('scans')
-        .delete()
+        .update({ archived_at: new Date().toISOString() })
         .eq('id', scanId);
 
       if (error) throw error;
 
       toast({
-        title: 'Scan deleted',
-        description: 'The scan has been removed successfully',
+        title: 'Scan archived',
+        description: 'The scan has been moved to archives',
       });
 
       // Refresh dashboard data
@@ -183,9 +181,9 @@ const Dashboard = () => {
         fetchDashboardData(user.id);
       }
     } catch (error: any) {
-      console.error('Delete scan error:', error);
+      console.error('Archive scan error:', error);
       toast({
-        title: 'Error deleting scan',
+        title: 'Error archiving scan',
         description: error.message,
         variant: 'destructive',
       });
@@ -329,7 +327,7 @@ const Dashboard = () => {
         <main className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto px-6 py-8">
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-5 mb-8">
+                <TabsList className="grid w-full grid-cols-6 mb-8">
                   <TabsTrigger 
                     value="overview"
                     className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300"
@@ -364,6 +362,13 @@ const Dashboard = () => {
                   >
                     <Webhook className="h-4 w-4 mr-2" />
                     Webhooks
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="archived"
+                    className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300"
+                  >
+                    <Archive className="h-4 w-4 mr-2" />
+                    Archived
                   </TabsTrigger>
                 </TabsList>
 
@@ -614,14 +619,15 @@ const Dashboard = () => {
                                 <Eye className="h-4 w-4 mr-2" />
                                 View
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => handleDeleteScan(scan.id, e)}
-                                className="hover:bg-destructive/10 hover:text-destructive transition-colors"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => handleArchiveScan(scan.id, e)}
+                    className="hover:bg-muted transition-colors"
+                    title="Archive scan"
+                  >
+                    <Archive className="h-4 w-4" />
+                  </Button>
                             </div>
                           </div>
                           
@@ -666,6 +672,11 @@ const Dashboard = () => {
               {/* Webhooks Tab */}
               <TabsContent value="webhooks" className="space-y-6">
                 <WebhookIntegrations />
+              </TabsContent>
+
+              {/* Archived Tab */}
+              <TabsContent value="archived" className="space-y-6">
+                <ArchivedScans />
               </TabsContent>
             </Tabs>
           </div>

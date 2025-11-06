@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, RefreshCw, ExternalLink, Trash2 } from 'lucide-react';
+import { Loader2, RefreshCw, ExternalLink, Archive } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
@@ -36,6 +36,7 @@ export function ScanJobList() {
         .from('scan_jobs')
         .select('*')
         .eq('kind', 'maigret')
+        .is('archived_at', null)
         .order('created_at', { ascending: false })
         .limit(25);
 
@@ -66,32 +67,28 @@ export function ScanJobList() {
     }
   };
 
-  const handleDeleteJob = async (jobId: string, e: React.MouseEvent) => {
+  const handleArchiveJob = async (jobId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (!confirm('Are you sure you want to delete this scan? This action cannot be undone.')) {
-      return;
-    }
 
     try {
       const { error } = await supabase
         .from('scan_jobs')
-        .delete()
+        .update({ archived_at: new Date().toISOString() })
         .eq('id', jobId);
 
       if (error) throw error;
 
       toast({
         title: 'Success',
-        description: 'Scan deleted successfully',
+        description: 'Scan archived successfully',
       });
 
       loadJobs();
     } catch (error: any) {
-      console.error('Failed to delete job:', error);
+      console.error('Failed to archive job:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete scan',
+        description: 'Failed to archive scan',
         variant: 'destructive',
       });
     }
@@ -166,10 +163,11 @@ export function ScanJobList() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={(e) => handleDeleteJob(job.id, e)}
-                    className="hover:bg-destructive/10 hover:text-destructive"
+                    onClick={(e) => handleArchiveJob(job.id, e)}
+                    className="hover:bg-muted"
+                    title="Archive scan"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Archive className="h-4 w-4" />
                   </Button>
                 </div>
               </div>

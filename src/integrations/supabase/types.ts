@@ -4876,6 +4876,7 @@ export type Database = {
       scan_jobs: {
         Row: {
           all_sites: boolean | null
+          archived_at: string | null
           artifacts: string[] | null
           created_at: string | null
           error: string | null
@@ -4891,6 +4892,7 @@ export type Database = {
         }
         Insert: {
           all_sites?: boolean | null
+          archived_at?: string | null
           artifacts?: string[] | null
           created_at?: string | null
           error?: string | null
@@ -4906,6 +4908,7 @@ export type Database = {
         }
         Update: {
           all_sites?: boolean | null
+          archived_at?: string | null
           artifacts?: string[] | null
           created_at?: string | null
           error?: string | null
@@ -4949,6 +4952,7 @@ export type Database = {
       }
       scans: {
         Row: {
+          archived_at: string | null
           completed_at: string | null
           created_at: string
           email: string | null
@@ -4968,6 +4972,7 @@ export type Database = {
           username: string | null
         }
         Insert: {
+          archived_at?: string | null
           completed_at?: string | null
           created_at?: string
           email?: string | null
@@ -4987,6 +4992,7 @@ export type Database = {
           username?: string | null
         }
         Update: {
+          archived_at?: string | null
           completed_at?: string | null
           created_at?: string
           email?: string | null
