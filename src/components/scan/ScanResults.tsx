@@ -276,7 +276,16 @@ export function ScanResults({ jobId }: ScanResultsProps) {
             </div>
 
             {/* AI Insights Panel */}
-            <AIInsightsPanel jobId={jobId} userId={job?.requested_by || undefined} />
+            <AIInsightsPanel 
+              jobId={jobId} 
+              userId={job?.requested_by || undefined}
+              footprintData={{
+                breaches: grouped.found.length,
+                exposures: results.length,
+                dataBrokers: grouped.claimed.length,
+                darkWeb: grouped.unknown.length,
+              }}
+            />
           </>
         )}
       </CardContent>

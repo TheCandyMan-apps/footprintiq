@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -9,6 +9,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Bot, Sparkles, AlertTriangle, CheckCircle, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 interface AIInsight {
   id: string;
@@ -25,12 +28,35 @@ interface AIInsight {
 interface AIInsightsPanelProps {
   jobId?: string;
   userId?: string;
+  footprintData?: {
+    breaches: number;
+    exposures: number;
+    dataBrokers: number;
+    darkWeb: number;
+  };
 }
 
-export function AIInsightsPanel({ jobId, userId }: AIInsightsPanelProps) {
+export function AIInsightsPanel({ jobId, userId, footprintData }: AIInsightsPanelProps) {
+  const [insights, setInsights] = useState<AIInsight[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
 
-  // Mock insights - TODO: Replace with API call to AI service (e.g., Grok, GPT, Gemini)
+  // Default footprint data if not provided
+  const defaultFootprint = footprintData || {
+    breaches: 0,
+    exposures: 0,
+    dataBrokers: 0,
+    darkWeb: 0,
+  };
+
+  // Auto-generate insights on mount
+  useEffect(() => {
+    if (userId && defaultFootprint) {
+      generateInsights();
+    }
+  }, [userId]);
+
+  // Mock insights as fallback
   const mockInsights: AIInsight[] = [
     {
       id: "1",
@@ -63,19 +89,79 @@ export function AIInsightsPanel({ jobId, userId }: AIInsightsPanelProps) {
     },
   ];
 
-  // Placeholder for future API integration
+  // Initialize with mock insights if no insights yet
+  useEffect(() => {
+    if (insights.length === 0) {
+      setInsights(mockInsights);
+    }
+  }, []);
+
+  // Generate insights using Lovable AI
   const generateInsights = async () => {
+    if (!userId) {
+      toast({
+        title: "Error",
+        description: "User ID is required to generate insights",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(true);
     
-    // TODO: Implement API call to AI service
-    // Example structure:
-    // const response = await supabase.functions.invoke('generate-insights', {
-    //   body: { jobId, userId, context: footprintData }
-    // });
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsGenerating(false);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-insights', {
+        body: { 
+          jobId, 
+          userId, 
+          footprintData: defaultFootprint 
+        }
+      });
+
+      if (error) {
+        console.error("Error generating insights:", error);
+        
+        // Handle specific errors
+        if (error.message?.includes("Rate limit")) {
+          toast({
+            title: "Rate Limit Exceeded",
+            description: "Too many requests. Please wait a moment and try again.",
+            variant: "destructive",
+          });
+        } else if (error.message?.includes("credits")) {
+          toast({
+            title: "Credits Exhausted",
+            description: "Please add AI credits to your workspace to continue.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to generate insights. Using default recommendations.",
+            variant: "destructive",
+          });
+        }
+        
+        // Keep mock insights on error
+        setInsights(mockInsights);
+      } else if (data?.insights) {
+        setInsights(data.insights);
+        toast({
+          title: "Insights Generated",
+          description: "AI-powered recommendations are ready!",
+        });
+      }
+    } catch (err) {
+      console.error("Exception generating insights:", err);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Using default recommendations.",
+        variant: "destructive",
+      });
+      setInsights(mockInsights);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const getInsightIcon = (type: AIInsight["type"]) => {
@@ -123,7 +209,7 @@ export function AIInsightsPanel({ jobId, userId }: AIInsightsPanelProps) {
 
           <AccordionContent className="px-6 pb-6 animate-accordion-down">
             <div className="space-y-4 pt-2">
-              {mockInsights.map((insight) => (
+              {insights.map((insight) => (
                 <Card
                   key={insight.id}
                   className={cn(
