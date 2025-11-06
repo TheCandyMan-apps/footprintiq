@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRealtimeResults } from '@/hooks/useRealtimeResults';
 import { exportResultsToJSON, exportResultsToCSV, groupByStatus } from '@/utils/exporters';
 import { ScanProgress } from './ScanProgress';
+import { FootprintDNACard } from '@/components/FootprintDNACard';
 import { Loader2, FileJson, FileSpreadsheet, ExternalLink } from 'lucide-react';
 import {
   Table,
@@ -172,6 +173,9 @@ export function ScanResults({ jobId }: ScanResultsProps) {
       </CardHeader>
       <Separator />
       <CardContent className="p-6 md:p-8 space-y-6">
+        {/* Footprint DNA Card */}
+        <FootprintDNACard />
+
         {/* Progress Indicator */}
         <ScanProgress
           startedAt={job.started_at}
