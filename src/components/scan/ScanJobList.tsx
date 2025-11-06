@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, RefreshCw, ExternalLink, Archive } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface ScanJob {
   id: string;
@@ -25,23 +26,27 @@ export function ScanJobList() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    loadJobs();
-  }, []);
+  const { workspace } = useWorkspace();
 
   const loadJobs = async () => {
+    if (!workspace?.id) {
+      setLoading(false);
+      return;
+    }
+    
     try {
-      const { data, error } = await supabase
+      const client: any = supabase;
+      const { data, error } = await client
         .from('scan_jobs')
         .select('*')
         .eq('kind', 'maigret')
+        .eq('workspace_id', workspace.id)
         .is('archived_at', null)
         .order('created_at', { ascending: false })
         .limit(25);
 
       if (error) throw error;
-      setJobs(data || []);
+      setJobs((data || []) as ScanJob[]);
     } catch (error: any) {
       console.error('Failed to load jobs:', error);
       toast({
@@ -53,6 +58,10 @@ export function ScanJobList() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    loadJobs();
+  }, [workspace?.id]);
 
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -71,7 +80,8 @@ export function ScanJobList() {
     e.stopPropagation();
 
     try {
-      const { error } = await supabase
+      const client: any = supabase;
+      const { error } = await client
         .from('scan_jobs')
         .update({ archived_at: new Date().toISOString() })
         .eq('id', jobId);
