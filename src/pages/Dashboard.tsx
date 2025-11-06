@@ -1,6 +1,7 @@
 import { FootprintDNA } from '@/components/FootprintDNA';
 import { FootprintDNAModal } from '@/components/FootprintDNAModal';
 import { RemovalQueue } from '@/components/RemovalQueue';
+import { RemovalSuccessTracker } from '@/components/RemovalSuccessTracker';
 import { analyzeTrends } from '@/lib/trends';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -652,6 +653,9 @@ const Dashboard = () => {
 
                   {/* Removal Queue */}
                   <RemovalQueue userId={user.id} />
+
+                  {/* Removal Success Tracker */}
+                  <RemovalSuccessTracker userId={user.id} />
                 </TabsContent>
 
                 {/* Analytics Tab */}
