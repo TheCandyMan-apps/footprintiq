@@ -1,3 +1,4 @@
+import { FootprintDNA } from '@/components/FootprintDNA';
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -525,6 +526,26 @@ const ResultsDetail = () => {
             />
           </div>
         )}
+
+        {/* Footprint DNA Card */}
+        <div className="mb-8">
+          <FootprintDNA
+            score={scan.privacy_score || 0}
+            breaches={dataSources.filter(s => 
+              s.category?.toLowerCase().includes('breach') || 
+              s.name?.toLowerCase().includes('breach')
+            ).length}
+            exposures={scan.high_risk_count + scan.medium_risk_count}
+            dataBrokers={dataSources.filter(s => 
+              s.category?.toLowerCase().includes('broker') || 
+              s.category?.toLowerCase().includes('people')
+            ).length}
+            darkWeb={dataSources.filter(s => 
+              s.category?.toLowerCase().includes('dark') || 
+              s.name?.toLowerCase().includes('dark')
+            ).length}
+          />
+        </div>
 
         {/* Catfish Detection */}
         <div className="mb-8">

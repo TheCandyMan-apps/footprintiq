@@ -1,3 +1,4 @@
+import { FootprintDNA } from '@/components/FootprintDNA';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -61,6 +62,13 @@ const Dashboard = () => {
     scansThisMonth: 0,
     avgScanTime: 0,
     activeMonitoring: 0,
+  });
+  const [dnaMetrics, setDnaMetrics] = useState({
+    score: 0,
+    breaches: 0,
+    exposures: 0,
+    dataBrokers: 0,
+    darkWeb: 0,
   });
 
   useEffect(() => {
@@ -136,6 +144,41 @@ const Dashboard = () => {
         avgScanTime: 2.4, // Mock for now
         activeMonitoring: 8, // Mock for now
       });
+
+      // Calculate DNA metrics from all scans and their data sources
+      if (scansData && scansData.length > 0) {
+        // Get the most recent scan for DNA calculation
+        const recentScan = scansData[0];
+        
+        // Fetch data sources for the recent scan
+        const { data: sources } = await supabase
+          .from('data_sources')
+          .select('*')
+          .eq('scan_id', recentScan.id);
+
+        const breachCount = sources?.filter(s => 
+          s.category?.toLowerCase().includes('breach') || 
+          s.name?.toLowerCase().includes('breach')
+        ).length || 0;
+
+        const dataBrokersCount = sources?.filter(s => 
+          s.category?.toLowerCase().includes('broker') || 
+          s.category?.toLowerCase().includes('people')
+        ).length || 0;
+
+        const darkWebCount = sources?.filter(s => 
+          s.category?.toLowerCase().includes('dark') || 
+          s.name?.toLowerCase().includes('dark')
+        ).length || 0;
+
+        setDnaMetrics({
+          score: recentScan.privacy_score || 0,
+          breaches: breachCount,
+          exposures: (recentScan.high_risk_count || 0) + (recentScan.medium_risk_count || 0),
+          dataBrokers: dataBrokersCount,
+          darkWeb: darkWebCount,
+        });
+      }
     } catch (error: any) {
       console.error('Dashboard fetch error:', error);
       toast({
@@ -428,7 +471,7 @@ const Dashboard = () => {
                 {/* Overview Tab */}
                 <TabsContent value="overview" className="space-y-6">
                   {/* Enhanced Stats Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     {/* Scans This Month */}
                     <div className="flex items-center gap-4 p-4 bg-secondary rounded-md hover:bg-secondary/80 transition-smooth group">
                       <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
@@ -537,6 +580,19 @@ const Dashboard = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Footprint DNA Card */}
+                  {scans.length > 0 && (
+                    <div className="mb-8">
+                      <FootprintDNA
+                        score={dnaMetrics.score}
+                        breaches={dnaMetrics.breaches}
+                        exposures={dnaMetrics.exposures}
+                        dataBrokers={dnaMetrics.dataBrokers}
+                        darkWeb={dnaMetrics.darkWeb}
+                      />
+                    </div>
+                  )}
 
                   {/* Quick Actions */}
                   <Card className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow transition-all duration-300">
