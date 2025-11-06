@@ -46,6 +46,51 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
     setProviders(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
   };
 
+  // WebSocket connection for real-time provider updates
+  const connectToWebSocket = (scanId: string) => {
+    const wsUrl = `wss://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/scan-progress-ws`;
+    console.log('[ScanProgress] Connecting to WebSocket:', wsUrl);
+    
+    const ws = new WebSocket(wsUrl);
+
+    ws.onopen = () => {
+      console.log('[ScanProgress] WebSocket connected');
+      ws.send(JSON.stringify({
+        type: 'subscribe',
+        scanId: scanId
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log('[ScanProgress] Received update:', data);
+
+        if (data.type === 'provider_update') {
+          updateProvider(data.providerId, {
+            status: data.status,
+            message: data.message,
+            resultCount: data.resultCount
+          });
+        } else if (data.type === 'subscribed') {
+          console.log('[ScanProgress] Subscribed to scan:', data.scanId);
+        }
+      } catch (error) {
+        console.error('[ScanProgress] Error parsing message:', error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error('[ScanProgress] WebSocket error:', error);
+    };
+
+    ws.onclose = () => {
+      console.log('[ScanProgress] WebSocket disconnected');
+    };
+
+    return ws;
+  };
+
   // Utility to prevent indefinite hanging
   const withTimeout = async <T,>(promise: Promise<T>, ms: number, label = 'operation'): Promise<T> => {
     return new Promise<T>((resolve, reject) => {
@@ -59,6 +104,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   useEffect(() => {
     let isMounted = true;
     let createdScanId: string | null = null;
+    let websocket: WebSocket | null = null;
     
     const performScan = async () => {
       try {
@@ -86,19 +132,9 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         if (scanError) throw scanError;
         createdScanId = scan.id;
 
-        // Start providers simulation
+        // Connect to WebSocket for real-time provider updates
+        websocket = connectToWebSocket(scan.id);
         setProgress(30);
-        
-        // Simulate provider updates based on scan data
-        if (scanData.email) {
-          updateProvider('hibp', { status: 'loading', message: 'Checking breaches...' });
-          updateProvider('email', { status: 'loading', message: 'Searching email...' });
-        }
-        if (scanData.username) {
-          updateProvider('predicta', { status: 'loading', message: 'Scanning social media...' });
-        }
-        updateProvider('shodan', { status: 'loading', message: 'Querying database...' });
-        updateProvider('virustotal', { status: 'loading', message: 'Analyzing threats...' });
 
         try {
           const body: Record<string, any> = {
@@ -118,27 +154,11 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
             'OSINT scan'
           );
           
-          // Update providers based on response
           if (invokeRes?.data?.diagnostics) {
             console.log('[Scan] Providers diagnostics:', invokeRes.data.diagnostics);
-            const diags = invokeRes.data.diagnostics;
-            const invoked = (diags.providersInvoked || []) as string[];
-            
-            // Update provider statuses
-            if (scanData.email) {
-              updateProvider('hibp', { status: 'success', message: 'Found breaches', resultCount: Math.floor(Math.random() * 5) });
-              updateProvider('email', { status: 'success', message: 'Email found', resultCount: 1 });
-            }
-            if (scanData.username) {
-              updateProvider('predicta', { status: 'success', message: 'Profiles found', resultCount: Math.floor(Math.random() * 10) + 1 });
-            }
-            updateProvider('shodan', { status: 'success', message: 'Data retrieved', resultCount: Math.floor(Math.random() * 3) });
-            updateProvider('virustotal', { status: 'success', message: 'Analysis complete', resultCount: 0 });
           }
         } catch (e: any) {
           console.warn('OSINT scan error:', e?.message || e);
-          // Mark some providers as failed
-          updateProvider('shodan', { status: 'failed', message: 'Unavailable' });
         }
 
         if (!isMounted) return;
@@ -251,6 +271,9 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
     return () => {
       isMounted = false;
       clearTimeout(t);
+      if (websocket) {
+        websocket.close();
+      }
     };
   }, [onComplete, scanData, userId, subscriptionTier, isAdmin, toast]);
 

@@ -69,6 +69,31 @@ serve(async (req) => {
     
     console.log('Starting OSINT scan:', maskPII(scanData));
 
+    // Helper function to broadcast provider status updates
+    const broadcastProviderStatus = async (
+      providerId: string,
+      status: 'pending' | 'loading' | 'success' | 'failed',
+      message: string,
+      resultCount?: number
+    ) => {
+      try {
+        const channel = supabase.channel(`scan_progress:${scanData.scanId}`);
+        await channel.send({
+          type: 'broadcast',
+          event: 'provider_update',
+          payload: {
+            providerId,
+            status,
+            message,
+            resultCount
+          }
+        });
+        console.log(`[Provider Update] ${providerId}: ${status} - ${message}`);
+      } catch (error) {
+        console.error(`[Provider Update Error] ${providerId}:`, error);
+      }
+    };
+
     // API Keys (will be set by user)
     const PEOPLE_DATA_LABS_KEY = Deno.env.get('PEOPLE_DATA_LABS_KEY');
     const PIPL_KEY = Deno.env.get('PIPL_KEY');
@@ -215,6 +240,7 @@ serve(async (req) => {
     // 4. Predicta Search - Multi-query support
     if (PREDICTA_API_KEY) {
       console.log('Searching Predicta...');
+      await broadcastProviderStatus('predicta', 'loading', 'Scanning social media...');
       diagnostics.providersInvoked.push('predicta:start');
       const predictaQueries: Array<{ query: string; queryType: string }> = [];
       
@@ -236,6 +262,7 @@ serve(async (req) => {
         predictaQueries.push({ query: fullName, queryType: 'name' });
       }
 
+      let predictaResultCount = 0;
       for (const { query, queryType } of predictaQueries) {
         try {
           diagnostics.providersInvoked.push(`predicta:invoke:${queryType}:${query}`);
@@ -279,6 +306,7 @@ serve(async (req) => {
               // Add profiles to social profiles
               if (predictaResults.profiles) {
                 for (const profile of predictaResults.profiles) {
+                  predictaResultCount++;
                   results.socialProfiles.push({
                     platform: profile.platform || 'Unknown',
                     username: profile.username || query,
@@ -324,11 +352,19 @@ serve(async (req) => {
           console.error(`Predicta ${queryType} exception:`, error);
         }
       }
+      
+      // Broadcast final Predicta status
+      if (predictaResultCount > 0) {
+        await broadcastProviderStatus('predicta', 'success', `Found ${predictaResultCount} profiles`, predictaResultCount);
+      } else {
+        await broadcastProviderStatus('predicta', 'success', 'No profiles found', 0);
+      }
     }
 
     // 5. Have I Been Pwned
     if (HIBP_KEY && scanData.email) {
       console.log('Checking data breaches...');
+      await broadcastProviderStatus('hibp', 'loading', 'Checking breaches...');
       try {
         const hibpResponse = await fetch(
           `https://haveibeenpwned.com/api/v3/breachedaccount/${encodeURIComponent(scanData.email)}`,
@@ -346,6 +382,7 @@ serve(async (req) => {
           
           // Store each breach as a separate data source for better visibility
           if (breaches && breaches.length > 0) {
+            await broadcastProviderStatus('hibp', 'success', `Found ${breaches.length} breaches`, breaches.length);
             for (const breach of breaches.slice(0, 10)) {  // Limit to top 10 breaches
               results.dataSources.push({
                 name: breach.Name || 'Unknown Breach',
@@ -379,15 +416,18 @@ serve(async (req) => {
           }
         } else if (hibpResponse.status === 404) {
           console.log('HIBP: No breaches found for this email');
+          await broadcastProviderStatus('hibp', 'success', 'No breaches found', 0);
         }
       } catch (error) {
         console.error('HIBP error:', error);
+        await broadcastProviderStatus('hibp', 'failed', 'Service unavailable');
       }
     }
 
     // 5. Hunter.io Email Intelligence
     if (HUNTER_IO_KEY && scanData.email) {
       console.log('Searching Hunter.io...');
+      await broadcastProviderStatus('email', 'loading', 'Searching email...');
       const dataFound: string[] = [];
       
       try {
@@ -477,6 +517,14 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error('Hunter.io error:', error);
+        await broadcastProviderStatus('email', 'failed', 'Service unavailable');
+      }
+      
+      // Broadcast success status if data was found
+      if (dataFound.length > 0) {
+        await broadcastProviderStatus('email', 'success', `Found ${dataFound.length} data points`, dataFound.length);
+      } else {
+        await broadcastProviderStatus('email', 'success', 'No email data found', 0);
       }
     }
 
