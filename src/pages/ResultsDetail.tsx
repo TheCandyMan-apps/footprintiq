@@ -15,6 +15,7 @@ import { CatfishDetection } from '@/components/CatfishDetection';
 import { TimelineChart } from "@/components/TimelineChart";
 import { ShareReportDialog } from "@/components/ShareReportDialog";
 import { PDFReportButton } from "@/components/PDFReportButton";
+import { ComprehensiveReportExport } from "@/components/ComprehensiveReportExport";
 import { GraphExplorer } from "@/components/GraphExplorer";
 import { MonitoringToggle } from "@/components/MonitoringToggle";
 import { ScanSummary } from "@/components/ScanSummary";
@@ -501,19 +502,23 @@ const ResultsDetail = () => {
             Back to Dashboard
           </Button>
           <div className="flex gap-2">
-            <ShareReportDialog scanId={scanId!} />
-            <PDFReportButton scanId={scanId!} />
+            <ComprehensiveReportExport
+              scanId={scanId!}
+              scan={scan}
+              dataSources={dataSources}
+              socialProfiles={socialProfiles}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline">
                   <Download className="w-4 h-4 mr-2" />
-                  Export
+                  More Exports
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Export</DropdownMenuLabel>
+                <DropdownMenuLabel>Additional Exports</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => { exportAsPDF(findingsForExport, redactPII); toast({ title: "Exported", description: "PDF downloaded." }); }}>
-                  <FileText className="w-4 h-4 mr-2" /> PDF
+                  <FileText className="w-4 h-4 mr-2" /> Simple PDF
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => { exportAsCSV(findingsForExport, redactPII); toast({ title: "Exported", description: "CSV downloaded." }); }}>
                   <FileSpreadsheet className="w-4 h-4 mr-2" /> CSV
