@@ -5,6 +5,7 @@ import { AlertTriangle, Eye, Database, Shield } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 interface MetricData {
   label: string;
@@ -14,21 +15,95 @@ interface MetricData {
   color: string;
 }
 
-export function FootprintDNACard() {
-  // Mock query for breach/exposure data
-  const { data: footprintData } = useQuery({
-    queryKey: ["footprint-metrics"],
+interface FootprintDNACardProps {
+  userId?: string;
+  jobId?: string;
+}
+
+export function FootprintDNACard({ userId, jobId }: FootprintDNACardProps) {
+  // Fetch real data from Supabase
+  const { data: footprintData, refetch } = useQuery({
+    queryKey: ["footprint-metrics", userId, jobId],
     queryFn: async () => {
-      // Mock data - in real scenario, query from Supabase
-      const breaches = Math.floor(Math.random() * 5) + 1;
-      const exposures = Math.floor(Math.random() * 15) + 5;
-      const dataBrokers = Math.floor(Math.random() * 20) + 10;
-      const darkWeb = Math.floor(Math.random() * 3);
+      const currentUserId = userId || (await supabase.auth.getUser()).data.user?.id;
       
+      if (!currentUserId) {
+        return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
+      }
+
+      // Query darkweb findings for breach data
+      const { data: darkwebData, error: darkwebError } = await supabase
+        .from("darkweb_findings")
+        .select("finding_type, severity, data_exposed")
+        .eq("user_id", currentUserId);
+
+      if (darkwebError) {
+        console.error("Error fetching darkweb findings:", darkwebError);
+      }
+
+      // Query scan jobs to get scan data
+      const { data: scanData, error: scanError } = await supabase
+        .from("scan_jobs")
+        .select("id, status, artifacts")
+        .eq("requested_by", currentUserId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (scanError) {
+        console.error("Error fetching scan jobs:", scanError);
+      }
+
+      // Calculate metrics from real data
+      const breaches = darkwebData?.filter(f => 
+        f.finding_type?.includes("breach") || 
+        f.severity === "critical" ||
+        f.severity === "high"
+      ).length || 0;
+
+      const exposures = darkwebData?.filter(f => 
+        f.data_exposed && f.data_exposed.length > 0
+      ).length || 0;
+
+      const dataBrokers = darkwebData?.filter(f => 
+        f.finding_type?.includes("broker") ||
+        f.finding_type?.includes("data_aggregator")
+      ).length || 0;
+
+      const darkWeb = darkwebData?.filter(f => 
+        f.finding_type?.includes("darkweb") ||
+        f.finding_type?.includes("marketplace")
+      ).length || 0;
+
       return { breaches, exposures, dataBrokers, darkWeb };
     },
-    initialData: { breaches: 3, exposures: 12, dataBrokers: 18, darkWeb: 1 },
+    initialData: { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 },
   });
+
+  // Set up real-time subscription for updates
+  useEffect(() => {
+    const currentUserId = userId;
+    if (!currentUserId) return;
+
+    const channel = supabase
+      .channel("footprint-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "darkweb_findings",
+          filter: `user_id=eq.${currentUserId}`,
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, refetch]);
 
   // Calculate risk score: breaches * 2 + exposures
   const riskScore = Math.min(100, footprintData.breaches * 2 + footprintData.exposures);

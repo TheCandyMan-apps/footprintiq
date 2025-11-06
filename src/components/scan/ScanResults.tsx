@@ -32,6 +32,7 @@ interface ScanJob {
   finished_at: string | null;
   error: string | null;
   all_sites: boolean;
+  requested_by: string | null;
 }
 
 export function ScanResults({ jobId }: ScanResultsProps) {
@@ -174,7 +175,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
       <Separator />
       <CardContent className="p-6 md:p-8 space-y-6">
         {/* Footprint DNA Card */}
-        <FootprintDNACard />
+        <FootprintDNACard jobId={jobId} userId={job?.requested_by || undefined} />
 
         {/* Progress Indicator */}
         <ScanProgress
