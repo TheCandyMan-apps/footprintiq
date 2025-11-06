@@ -416,7 +416,7 @@ serve(async (req) => {
         return acc;
       }, {} as Record<string, number>);
 
-      await supabaseService
+      const { error: updateError } = await supabaseService
         .from('scans')
         .update({
           status: 'completed',
@@ -429,6 +429,12 @@ serve(async (req) => {
           provider_counts: providerCounts
         } as any)
         .eq('id', scanId);
+      
+      if (updateError) {
+        console.error('[orchestrate] Failed to update scan status:', updateError);
+      } else {
+        console.log(`[orchestrate] Scan ${scanId} updated to completed with ${sortedFindings.length} findings`);
+      }
     }
 
     // Deduct credits for the scan
