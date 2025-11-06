@@ -44,7 +44,12 @@ const ScanPage = () => {
       
       if (userRole) {
         setSubscriptionTier(userRole.subscription_tier);
-        // UI-only check - actual authorization enforced server-side via RLS policies
+        /**
+         * UI-ONLY role check for display purposes.
+         * SECURITY: Actual authorization enforced server-side via RLS policies.
+         * DO NOT use this for access control decisions.
+         * Server-side validation occurs in edge functions and RLS policies.
+         */
         setIsAdmin(userRole.role === 'admin');
       } else {
         // default to free when no row exists
@@ -75,8 +80,12 @@ const ScanPage = () => {
   }, [navigate]);
 
   const handleFormSubmit = (data: ScanFormData) => {
-    // UI-only check - server enforces actual limits via RLS and edge functions
-    // Admin users have unrestricted access (UI hint)
+    /**
+     * UI-ONLY validation for display purposes.
+     * SECURITY: Server enforces actual limits via RLS policies and edge functions.
+     * DO NOT rely on this for security - it only improves UX by showing upgrade dialog.
+     * Backend will reject unauthorized requests regardless of client state.
+     */
     if (!isAdmin && subscriptionTier === "free" && scanCount >= 1) {
       setShowUpgradeDialog(true);
       return;

@@ -159,8 +159,12 @@ const ResultsDetail = () => {
         .single();
       
       if (!error && data) {
-        // UI-only check - actual authorization enforced server-side via RLS policies
-        // Admins get premium access (display hint only)
+        /**
+         * UI-ONLY role check for display purposes.
+         * SECURITY: Actual authorization enforced server-side via RLS policies.
+         * DO NOT use this for access control decisions.
+         * This only affects which features are displayed in the UI.
+         */
         if (data.role === 'admin') {
           setSubscriptionTier('premium');
         } else {

@@ -30,14 +30,19 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // UI-only check - actual authorization enforced server-side via RLS policies
+      /**
+       * UI-ONLY role check for display purposes.
+       * SECURITY: Actual authorization enforced server-side via RLS policies.
+       * DO NOT use this for access control decisions.
+       * This only affects UI display and subscription tier hints.
+       */
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role, subscription_tier')
         .eq('user_id', session.user.id)
         .single();
 
-      // Display admin users as enterprise (UI hint only)
+      // Display admin users as enterprise (UI hint only - not a security boundary)
       if (roleData?.role === 'admin') {
         setSubscriptionTier('enterprise');
         return;
