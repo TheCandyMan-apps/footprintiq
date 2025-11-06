@@ -53,8 +53,10 @@ export const Hero = ({ onStartScan, onAdvancedScan }: HeroProps) => {
           willChange: 'transform',
         }}
       >
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 md:mb-8 leading-tight pb-2 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent tracking-tight animate-fade-in mt-4 sm:mt-6 md:mt-8">
-          Scan Your Digital Footprint and Protect Your Privacy with OSINT Tools
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-4 sm:mb-6 md:mb-8 leading-tight pb-2 tracking-tight animate-fade-in mt-4 sm:mt-6 md:mt-8">
+          <span className="block text-foreground">Scan Your Digital Footprint</span>
+          <span className="block bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">Master Your FootprintIQ</span>
+          <span className="block text-foreground">Protect Your Privacy</span>
         </h1>
         
         <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-muted-foreground mb-6 sm:mb-7 md:mb-8 max-w-3xl mx-auto leading-relaxed pb-3 animate-fade-in [animation-delay:200ms]">
