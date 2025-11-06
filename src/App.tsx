@@ -142,6 +142,8 @@ const Features = lazy(() => import("./pages/Features"));
 const ScanHealth = lazy(() => import("./pages/ScanHealth"));
 const BatchScan = lazy(() => import("./pages/BatchScan"));
 const MaigretScanner = lazy(() => import("./pages/MaigretScanner"));
+const UsernamesPage = lazy(() => import("./pages/scan/UsernamesPage"));
+const UsernameResultsPage = lazy(() => import("./pages/scan/UsernameResultsPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -222,6 +224,8 @@ function RouterContent() {
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
           <Route path="/maigret-scanner" element={<MaigretScanner />} />
+          <Route path="/scan/usernames" element={<UsernamesPage />} />
+          <Route path="/scan/usernames/:jobId" element={<UsernameResultsPage />} />
           <Route path="/docs/api" element={<ApiDocsOld />} />
           <Route path="/api" element={<ApiDocs />} />
           <Route path="/developers" element={<DeveloperPortal />} />
