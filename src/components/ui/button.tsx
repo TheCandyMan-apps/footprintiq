@@ -70,6 +70,20 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     
     const isDisabled = disabled || loading || showSuccess;
     
+    // When asChild is true, we can't wrap content - Slot expects single child
+    if (asChild) {
+      return (
+        <Comp 
+          className={cn(buttonVariants({ variant, size, className }))} 
+          ref={ref} 
+          onClick={handleClick}
+          {...props}
+        >
+          {children}
+        </Comp>
+      );
+    }
+    
     return (
       <Comp 
         className={cn(buttonVariants({ variant, size, className }))} 
