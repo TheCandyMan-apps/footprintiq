@@ -3,6 +3,9 @@ project_id = "byuzgvauaeldjqxlrjci"
 [functions.ai-router]
 verify_jwt = true
 
+[functions.log-ai]
+verify_jwt = false
+
 [functions.results-webhook]
 verify_jwt = false
 
