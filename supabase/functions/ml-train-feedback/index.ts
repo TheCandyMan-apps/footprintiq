@@ -28,38 +28,44 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Verify admin access
+    // Check if request is from cron (automated) or user (manual)
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Authorization required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    const isCronJob = authHeader === `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`;
+    
+    // If not cron, verify admin access
+    if (!isCronJob) {
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'Authorization required' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const { data: { user } } = await supabase.auth.getUser(authHeader.split('Bearer ')[1]);
+      if (!user) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid user' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check if user is admin
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!userRole || userRole.role !== 'admin') {
+        return new Response(
+          JSON.stringify({ error: 'Admin access required' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
-    const { data: { user } } = await supabase.auth.getUser(authHeader.split('Bearer ')[1]);
-    if (!user) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid user' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Check if user is admin
-    const { data: userRole } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!userRole || userRole.role !== 'admin') {
-      return new Response(
-        JSON.stringify({ error: 'Admin access required' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const { feedbackType } = await req.json();
+    const body = req.method === 'POST' ? await req.json() : {};
+    const { feedbackType } = body;
     console.log('Starting ML training for feedback type:', feedbackType);
 
     // Fetch all false positive feedback
@@ -140,6 +146,31 @@ serve(async (req) => {
       console.error('Error storing training results:', insertError);
       // Continue anyway - don't fail the training
     }
+
+    // Update ML config with new thresholds
+    const newThresholds = {
+      low: Math.max(30, patterns.lowConfidenceThreshold - 15),
+      medium: patterns.lowConfidenceThreshold,
+      high: Math.min(95, patterns.lowConfidenceThreshold + 15)
+    };
+
+    await supabase
+      .from('ml_config')
+      .upsert({
+        config_key: 'confidence_thresholds',
+        config_value: newThresholds,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'config_key' });
+
+    await supabase
+      .from('ml_config')
+      .upsert({
+        config_key: 'false_positive_patterns',
+        config_value: patterns,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'config_key' });
+
+    console.log('Updated ML config with new thresholds:', newThresholds);
 
     const result: TrainingResult = {
       success: true,
