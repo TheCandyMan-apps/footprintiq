@@ -137,7 +137,20 @@ const Cases = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's a limit error
+        if (error.message?.includes('limited to')) {
+          toast({
+            title: "Case limit reached",
+            description: error.message + " Upgrade to Pro for unlimited cases.",
+            variant: "destructive",
+          });
+          // Navigate to pricing after showing toast
+          setTimeout(() => navigate('/pricing'), 2000);
+          return;
+        }
+        throw error;
+      }
 
       toast({
         title: "Case created",

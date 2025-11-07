@@ -162,6 +162,14 @@ export function ReverseImageComponent() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Create result item with type 'image'
+      const resultItem = {
+        type: 'image' as const,
+        data: { matches: results },
+        timestamp: new Date().toISOString(),
+        source: 'TinEye'
+      };
+
       const { data, error } = await supabase
         .from('cases')
         .insert({
@@ -170,7 +178,8 @@ export function ReverseImageComponent() {
           description: `Found ${results.length} matches`,
           status: 'open',
           priority: 'medium',
-          image_results: results
+          image_results: results,
+          results: [resultItem]
         } as any)
         .select()
         .single();

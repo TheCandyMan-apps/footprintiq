@@ -36,14 +36,20 @@ export default function Workspaces() {
         .slice(0, 60) || 'workspace';
       const slug = `${base}-${Math.random().toString(36).slice(2,7)}`;
 
-      // Create workspace
+      // Create workspace (trigger will enforce limits)
       const { data: ws, error: wsError } = await supabase
         .from("workspaces" as any)
         .insert({ name, owner_id: user.id, slug })
         .select()
         .single();
 
-      if (wsError) throw wsError;
+      if (wsError) {
+        // Check if it's a limit error
+        if (wsError.message?.includes('limited to')) {
+          throw new Error(wsError.message);
+        }
+        throw wsError;
+      }
       if (!ws) throw new Error("Failed to create workspace");
 
       // Add creator as admin member (required for downstream RLS checks)
@@ -66,7 +72,19 @@ export default function Workspaces() {
     },
     onError: (err: any) => {
       const msg = err?.message || 'Failed to create workspace';
-      toast.error(msg);
+      
+      // Show upgrade prompt if limit reached
+      if (msg.includes('limited to')) {
+        toast.error(msg, {
+          description: "Upgrade to Pro for unlimited workspaces",
+          action: {
+            label: "Upgrade",
+            onClick: () => window.location.href = '/pricing'
+          }
+        });
+      } else {
+        toast.error(msg);
+      }
     }
   });
 

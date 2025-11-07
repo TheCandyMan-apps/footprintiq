@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
+import { CasesViewer } from "@/components/case/CasesViewer";
 import { Button } from "@/components/ui/button";
 import { CaseWorkspace } from "@/components/case/CaseWorkspace";
 import { CaseExport } from "@/components/case/CaseExport";
@@ -92,8 +93,9 @@ const CaseDetail = () => {
               </Button>
               <CaseExport caseId={caseId!} />
             </div>
-            <Tabs defaultValue="workspace" className="w-full">
-              <TabsList>
+            <Tabs defaultValue="timeline" className="w-full">
+              <TabsList className="grid w-full grid-cols-7">
+                <TabsTrigger value="timeline">Timeline</TabsTrigger>
                 <TabsTrigger value="workspace">Workspace</TabsTrigger>
                 <TabsTrigger value="comments">Comments</TabsTrigger>
                 <TabsTrigger value="tasks">Tasks</TabsTrigger>
@@ -101,22 +103,25 @@ const CaseDetail = () => {
                 <TabsTrigger value="assets">Assets</TabsTrigger>
                 <TabsTrigger value="ai">AI Assist</TabsTrigger>
               </TabsList>
-              <TabsContent value="workspace">
+              <TabsContent value="timeline" className="mt-6">
+                <CasesViewer caseId={caseId!} />
+              </TabsContent>
+              <TabsContent value="workspace" className="mt-6">
                 <CaseWorkspace onSelectCase={(caseData) => console.log("Case selected:", caseData)} />
               </TabsContent>
-              <TabsContent value="comments">
+              <TabsContent value="comments" className="mt-6">
                 <LiveComments caseId={caseId!} />
               </TabsContent>
-              <TabsContent value="tasks">
+              <TabsContent value="tasks" className="mt-6">
                 <TaskBoard caseId={caseId!} />
               </TabsContent>
-              <TabsContent value="notes">
+              <TabsContent value="notes" className="mt-6">
                 <SharedNotes caseId={caseId!} />
               </TabsContent>
-              <TabsContent value="assets">
+              <TabsContent value="assets" className="mt-6">
                 <AssetUploader caseId={caseId!} />
               </TabsContent>
-              <TabsContent value="ai">
+              <TabsContent value="ai" className="mt-6">
                 <AITeamAssist caseId={caseId!} />
               </TabsContent>
             </Tabs>

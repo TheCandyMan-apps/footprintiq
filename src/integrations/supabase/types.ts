@@ -1529,6 +1529,7 @@ export type Database = {
           id: string
           image_results: Json | null
           priority: string
+          results: Json[] | null
           scan_id: string | null
           status: string
           title: string
@@ -1543,6 +1544,7 @@ export type Database = {
           id?: string
           image_results?: Json | null
           priority?: string
+          results?: Json[] | null
           scan_id?: string | null
           status?: string
           title: string
@@ -1557,6 +1559,7 @@ export type Database = {
           id?: string
           image_results?: Json | null
           priority?: string
+          results?: Json[] | null
           scan_id?: string | null
           status?: string
           title?: string
