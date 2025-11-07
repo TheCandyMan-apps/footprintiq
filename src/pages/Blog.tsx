@@ -7,6 +7,16 @@ import { StructuredData, organizationSchema } from "@/components/StructuredData"
 
 const blogPosts = [
   {
+    slug: "ai-in-osint-2025",
+    title: "The Evolution of AI in OSINT: Key Trends Shaping 2025",
+    excerpt: "Explore how artificial intelligence is revolutionizing Open Source Intelligence in 2025, from booming market growth to real-world cybersecurity applications and privacy protection.",
+    date: "November 7, 2025",
+    readTime: "12 min read",
+    category: "AI & Technology",
+    featured: true,
+    image: "/blog-images/ai-osint-2025.webp",
+  },
+  {
     slug: "what-is-osint-risk",
     title: "What is OSINT Risk? Understanding Your Digital Exposure",
     excerpt: "Learn what OSINT risk means for your business, how threat actors use open-source intelligence, and practical steps to reduce your digital attack surface.",
@@ -23,7 +33,7 @@ const blogPosts = [
     date: "January 31, 2025",
     readTime: "10 min read",
     category: "Cybersecurity",
-    featured: true,
+    featured: false,
     image: "/blog-images/dark-web.webp",
   },
   {

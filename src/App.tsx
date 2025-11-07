@@ -51,6 +51,7 @@ const PredictiveAnalytics = lazy(() => import("./pages/PredictiveAnalytics"));
 const RoleManagement = lazy(() => import("./pages/admin/RoleManagement"));
 const PersonaDnaLaunch = lazy(() => import("./pages/blog/PersonaDnaLaunch"));
 const WhatIsOsintRisk = lazy(() => import("./pages/blog/WhatIsOsintRisk"));
+const AiInOsint2025 = lazy(() => import("./pages/blog/AiInOsint2025"));
 const BuyCreditsPage = lazy(() => import("./pages/BuyCreditsPage"));
 const DarkWebMonitoringBlog = lazy(() => import("./pages/blog/DarkWebMonitoringExplained"));
 const WhatIsDigitalFootprint = lazy(() => import("./pages/blog/WhatIsDigitalFootprint"));
@@ -217,6 +218,7 @@ function RouterContent() {
           <Route path="/support/confirmation" element={<SupportConfirmation />} />
           <Route path="/my-tickets" element={<MyTickets />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/ai-in-osint-2025" element={<AiInOsint2025 />} />
           <Route path="/blog/persona-dna-and-evidence-packs" element={<PersonaDnaLaunch />} />
           <Route path="/blog/what-is-osint-risk" element={<WhatIsOsintRisk />} />
           <Route path="/blog/dark-web-monitoring-explained" element={<DarkWebMonitoringBlog />} />
