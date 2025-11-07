@@ -68,8 +68,8 @@ serve(async (req) => {
     
     // Map price IDs to tiers
     const tierMap: Record<string, string> = {
-      'price_1SPXbHPNdM5SAyj7lPBHvjIi': 'analyst',
-      'price_1SPXcEPNdM5SAyj7AbannmpP': 'pro',
+      'price_1SQgxEPNdM5SAyj7pZEUc11u': 'analyst',
+      'price_1SQh9JPNdM5SAyj722p376Qh': 'enterprise',
     };
 
     const tier = tierMap[priceId] || 'free';

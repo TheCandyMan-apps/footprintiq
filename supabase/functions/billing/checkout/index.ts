@@ -23,47 +23,31 @@ serve(async (req) => {
 
     if (authError || !user?.email) throw new Error('Unauthorized');
 
-    const { workspace_id, plan, seats = 1 } = await req.json();
-    if (!workspace_id || !plan) throw new Error('Missing workspace_id or plan');
-
-    // Verify user is admin of workspace
-    const { data: member } = await supabase
-      .from('workspace_members')
-      .select('role')
-      .eq('workspace_id', workspace_id)
-      .eq('user_id', user.id)
-      .single();
-
-    if (!member || member.role !== 'admin') {
-      throw new Error('Only workspace admins can manage billing');
-    }
+    const { plan } = await req.json();
+    if (!plan) throw new Error('Missing plan');
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2024-06-20',
     });
 
-    // Get or create Stripe customer
-    const { data: billing } = await supabase
-      .from('billing_customers')
-      .select('stripe_customer_id')
-      .eq('workspace_id', workspace_id)
-      .single();
-
-    let customerId = billing?.stripe_customer_id;
-
-    if (!customerId) {
+    // Find or create Stripe customer
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    let customerId;
+    
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
+    } else {
       const customer = await stripe.customers.create({
         email: user.email,
-        metadata: { workspace_id },
+        metadata: { user_id: user.id },
       });
       customerId = customer.id;
     }
 
-    // Get price ID from env
+    // Map plan names to price IDs
     const priceMap: Record<string, string> = {
-      analyst: Deno.env.get('STRIPE_PRICE_ANALYST') || '',
-      pro: Deno.env.get('STRIPE_PRICE_PRO') || '',
-      enterprise: Deno.env.get('STRIPE_PRICE_ENTERPRISE') || '',
+      analyst: 'price_1SQgxEPNdM5SAyj7pZEUc11u',
+      enterprise: 'price_1SQh9JPNdM5SAyj722p376Qh',
     };
 
     const priceId = priceMap[plan];
@@ -75,13 +59,13 @@ serve(async (req) => {
       line_items: [
         {
           price: priceId,
-          quantity: seats,
+          quantity: 1,
         },
       ],
       mode: 'subscription',
-      success_url: `${req.headers.get('origin')}/settings/billing?success=true`,
-      cancel_url: `${req.headers.get('origin')}/settings/billing?canceled=true`,
-      metadata: { workspace_id, plan },
+      success_url: `${req.headers.get('origin')}/subscription?success=true`,
+      cancel_url: `${req.headers.get('origin')}/subscription?canceled=true`,
+      metadata: { user_id: user.id, plan },
     });
 
     return ok({ url: session.url });

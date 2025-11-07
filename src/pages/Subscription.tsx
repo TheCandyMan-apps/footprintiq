@@ -24,7 +24,7 @@ const Subscription = () => {
     }
     
     const fetchSubscriptionDetails = async () => {
-      const { data } = await supabase.functions.invoke("check-subscription");
+      const { data } = await supabase.functions.invoke("billing/check-subscription");
       if (data?.subscription_end) {
         setSubscriptionEnd(data.subscription_end);
       }
@@ -60,7 +60,9 @@ const Subscription = () => {
   const handleUpgrade = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("create-checkout");
+      const { data, error } = await supabase.functions.invoke("billing/checkout", {
+        body: { plan: 'analyst' }
+      });
       if (error || !data?.url) {
         toast({
           title: "Checkout error",

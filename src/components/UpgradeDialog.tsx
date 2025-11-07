@@ -20,7 +20,9 @@ export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: 
   const { toast } = useToast();
 
   const handleUpgrade = async () => {
-    const { data, error } = await supabase.functions.invoke("create-checkout");
+    const { data, error } = await supabase.functions.invoke("billing/checkout", {
+      body: { plan: 'analyst' }
+    });
     if (error || !data?.url) {
       toast({
         title: "Checkout error",
