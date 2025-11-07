@@ -2,10 +2,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users, Flag, Filter } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsSkeleton } from "@/components/skeletons/ResultsSkeleton";
+import { motion, AnimatePresence } from "framer-motion";
 import type { ScanFormData } from "./ScanForm";
 
 interface ScanResultsProps {
@@ -20,6 +23,7 @@ interface DataSource {
   dataFound: string[];
   riskLevel: "high" | "medium" | "low";
   url: string;
+  confidenceScore?: number;
 }
 
 interface SocialMediaProfile {
@@ -31,16 +35,19 @@ interface SocialMediaProfile {
   followers?: string;
   lastActive?: string;
   source?: string;
+  confidenceScore?: number;
 }
 
 export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
   const { toast } = useToast();
   const [removedSources, setRemovedSources] = useState<Set<string>>(new Set());
   const [removedProfiles, setRemovedProfiles] = useState<Set<string>>(new Set());
+  const [flaggedItems, setFlaggedItems] = useState<Set<string>>(new Set());
   const [dataSources, setDataSources] = useState<DataSource[]>([]);
   const [socialProfiles, setSocialProfiles] = useState<SocialMediaProfile[]>([]);
   const [scanData, setScanData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showLowConfidence, setShowLowConfidence] = useState(false);
 
   useEffect(() => {
     const fetchScanResults = async () => {
@@ -72,7 +79,8 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           category: source.category,
           dataFound: source.data_found || [],
           riskLevel: source.risk_level as "high" | "medium" | "low",
-          url: source.url
+          url: source.url,
+          confidenceScore: source.confidence_score || 75
         }));
         setDataSources(transformedSources);
 
@@ -95,7 +103,8 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           lastActive: profile.metadata && typeof profile.metadata === 'object' && 'last_active' in profile.metadata 
             ? profile.metadata.last_active as string 
             : undefined,
-          source: profile.source
+          source: profile.source,
+          confidenceScore: profile.confidence_score || 85
         }));
         setSocialProfiles(transformedProfiles);
         
@@ -130,6 +139,50 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
     });
   };
 
+  const handleFalsePositive = async (findingId: string, findingType: 'data_source' | 'social_profile', findingName: string, confidenceScore: number) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const { error } = await supabase
+        .from('feedback')
+        .insert({
+          scan_id: scanId,
+          user_id: user.id,
+          finding_type: findingType,
+          finding_id: findingId,
+          finding_name: findingName,
+          confidence_score: confidenceScore,
+          reason: 'false_positive'
+        });
+
+      if (error) throw error;
+
+      setFlaggedItems(prev => new Set(prev).add(findingId));
+      toast({
+        title: "Flagged as False Positive",
+        description: "Thank you! This feedback helps improve our detection accuracy.",
+      });
+    } catch (error) {
+      console.error('Error flagging false positive:', error);
+      toast({
+        title: "Error",
+        description: "Failed to flag item. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getConfidenceBadge = (score: number) => {
+    if (score > 80) {
+      return { variant: "default" as const, color: "bg-green-500/20 text-green-700 border-green-500/30", label: `${score}% confident` };
+    } else if (score >= 50) {
+      return { variant: "secondary" as const, color: "bg-yellow-500/20 text-yellow-700 border-yellow-500/30", label: `${score}% confident` };
+    } else {
+      return { variant: "destructive" as const, color: "bg-red-500/20 text-red-700 border-red-500/30", label: `${score}% confident` };
+    }
+  };
+
   const getRiskColor = (level: string) => {
     switch (level) {
       case "high": return "destructive";
@@ -139,11 +192,16 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
     }
   };
 
-  const activeResults = dataSources.filter(r => !removedSources.has(r.id));
+  const filterByConfidence = <T extends { confidenceScore?: number }>(items: T[]) => {
+    return showLowConfidence ? items : items.filter(item => (item.confidenceScore || 0) >= 30);
+  };
+
+  const activeResults = filterByConfidence(dataSources.filter(r => !removedSources.has(r.id) && !flaggedItems.has(r.id)));
   const removedCount = removedSources.size;
   const foundProfiles = socialProfiles.filter(p => p.found);
-  const activeProfiles = foundProfiles.filter(p => !removedProfiles.has(p.id));
+  const activeProfiles = filterByConfidence(foundProfiles.filter(p => !removedProfiles.has(p.id) && !flaggedItems.has(p.id)));
   const profileRemovedCount = removedProfiles.size;
+  const lowConfidenceCount = [...dataSources, ...foundProfiles].filter(item => (item.confidenceScore || 0) < 30).length;
 
   if (loading) {
     return <ResultsSkeleton />;
@@ -184,6 +242,30 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           </div>
         </Card>
 
+        {/* Confidence Filter Toggle */}
+        {lowConfidenceCount > 0 && (
+          <Card className="p-4 mb-6 bg-muted/30 border-border/50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Filter className="w-5 h-5 text-muted-foreground" />
+                <div>
+                  <Label htmlFor="low-confidence-toggle" className="text-sm font-medium cursor-pointer">
+                    Show Low Confidence Results
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {lowConfidenceCount} findings below 30% confidence hidden
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="low-confidence-toggle"
+                checked={showLowConfidence}
+                onCheckedChange={setShowLowConfidence}
+              />
+            </div>
+          </Card>
+        )}
+
         {/* Social Media Results */}
         {foundProfiles.length > 0 && (
           <div className="space-y-4 mb-8">
@@ -192,46 +274,79 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
               <h3 className="text-xl font-semibold">Social Media Profiles Found</h3>
             </div>
             
-            <div className="grid md:grid-cols-2 gap-4">
-              {activeProfiles.map((profile) => (
-                <Card key={profile.id} className="p-4 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
-                  <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-semibold">{profile.platform}</h4>
-                        <Badge variant="secondary" className="text-xs">Active</Badge>
-                        {profile.source === 'predicta' && (
-                          <Badge variant="default" className="text-xs bg-primary">Predicta Search</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-1">{profile.username}</p>
-                      {profile.followers && (
-                        <p className="text-xs text-muted-foreground">{profile.followers} followers</p>
-                      )}
-                      {profile.lastActive && (
-                        <p className="text-xs text-muted-foreground">Last active: {profile.lastActive}</p>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(profile.profileUrl, '_blank')}
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="accent"
-                        size="sm"
-                        onClick={() => handleProfileRemoval(profile.id, profile.platform)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+            <AnimatePresence mode="popLayout">
+              <div className="grid md:grid-cols-2 gap-4">
+                {activeProfiles.map((profile) => {
+                  const confidenceBadge = getConfidenceBadge(profile.confidenceScore || 85);
+                  const isLowConfidence = (profile.confidenceScore || 85) < 50;
+                  
+                  return (
+                    <motion.div
+                      key={profile.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ 
+                        opacity: isLowConfidence ? 0.6 : 1, 
+                        scale: 1 
+                      }}
+                      exit={{ opacity: 0, scale: 0.8, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Card className="p-4 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
+                              <h4 className="font-semibold">{profile.platform}</h4>
+                              <Badge variant="secondary" className="text-xs">Active</Badge>
+                              {profile.source === 'predicta' && (
+                                <Badge variant="default" className="text-xs bg-primary">Predicta Search</Badge>
+                              )}
+                              <Badge className={`text-xs ${confidenceBadge.color}`}>
+                                {confidenceBadge.label}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-1">{profile.username}</p>
+                            {profile.followers && (
+                              <p className="text-xs text-muted-foreground">{profile.followers} followers</p>
+                            )}
+                            {profile.lastActive && (
+                              <p className="text-xs text-muted-foreground">Last active: {profile.lastActive}</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2 flex-wrap">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => window.open(profile.profileUrl, '_blank')}
+                              title="View Profile"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleFalsePositive(profile.id, 'social_profile', profile.platform, profile.confidenceScore || 85)}
+                              disabled={flaggedItems.has(profile.id)}
+                              title="Flag as False Positive"
+                              className="text-muted-foreground hover:text-foreground"
+                            >
+                              <Flag className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="accent"
+                              size="sm"
+                              onClick={() => handleProfileRemoval(profile.id, profile.platform)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </AnimatePresence>
 
             {profileRemovedCount > 0 && (
               <Card className="p-4 bg-accent/10 border-accent/20">
@@ -252,50 +367,83 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
         <div className="space-y-4">
           <h3 className="text-xl font-semibold mb-4">Data Broker Sources Found</h3>
           
-          {activeResults.map((source) => (
-            <Card key={source.id} className="p-6 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h4 className="text-lg font-semibold">{source.name}</h4>
-                    <Badge variant={getRiskColor(source.riskLevel) as any}>
-                      {source.riskLevel.toUpperCase()} RISK
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-3">{source.category}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {source.dataFound.map((data, idx) => (
-                      <span 
-                        key={idx} 
-                        className="px-3 py-1 rounded-full bg-secondary text-xs"
-                      >
-                        {data}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => window.open(source.url, '_blank')}
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    View
-                  </Button>
-                  <Button 
-                    variant="accent"
-                    size="sm"
-                    onClick={() => handleRemovalRequest(source.id, source.name)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Request Removal
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))}
+          <AnimatePresence mode="popLayout">
+            {activeResults.map((source) => {
+              const confidenceBadge = getConfidenceBadge(source.confidenceScore || 75);
+              const isLowConfidence = (source.confidenceScore || 75) < 50;
+              
+              return (
+                <motion.div
+                  key={source.id}
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ 
+                    opacity: isLowConfidence ? 0.6 : 1, 
+                    y: 0 
+                  }}
+                  exit={{ opacity: 0, x: -100, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="p-6 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
+                          <h4 className="text-lg font-semibold">{source.name}</h4>
+                          <Badge variant={getRiskColor(source.riskLevel) as any}>
+                            {source.riskLevel.toUpperCase()} RISK
+                          </Badge>
+                          <Badge className={`text-xs ${confidenceBadge.color}`}>
+                            {confidenceBadge.label}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-3">{source.category}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {source.dataFound.map((data, idx) => (
+                            <span 
+                              key={idx} 
+                              className="px-3 py-1 rounded-full bg-secondary text-xs"
+                            >
+                              {data}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="flex gap-2 flex-wrap">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(source.url, '_blank')}
+                          title="View Source"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          View
+                        </Button>
+                        <Button 
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleFalsePositive(source.id, 'data_source', source.name, source.confidenceScore || 75)}
+                          disabled={flaggedItems.has(source.id)}
+                          title="Flag as False Positive"
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Flag className="w-4 h-4" />
+                        </Button>
+                        <Button 
+                          variant="accent"
+                          size="sm"
+                          onClick={() => handleRemovalRequest(source.id, source.name)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Request Removal
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
 
           {removedCount > 0 && (
             <Card className="p-6 bg-accent/10 border-accent/20">

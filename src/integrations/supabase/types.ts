@@ -2541,6 +2541,7 @@ export type Database = {
       data_sources: {
         Row: {
           category: string
+          confidence_score: number | null
           data_found: string[]
           first_seen: string
           id: string
@@ -2553,6 +2554,7 @@ export type Database = {
         }
         Insert: {
           category: string
+          confidence_score?: number | null
           data_found?: string[]
           first_seen?: string
           id?: string
@@ -2565,6 +2567,7 @@ export type Database = {
         }
         Update: {
           category?: string
+          confidence_score?: number | null
           data_found?: string[]
           first_seen?: string
           id?: string
@@ -2928,6 +2931,53 @@ export type Database = {
           id?: string
         }
         Relationships: []
+      }
+      feedback: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          finding_id: string
+          finding_name: string
+          finding_type: string
+          id: string
+          metadata: Json | null
+          reason: string | null
+          scan_id: string
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          finding_id: string
+          finding_name: string
+          finding_type: string
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          scan_id: string
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          finding_id?: string
+          finding_name?: string
+          finding_type?: string
+          id?: string
+          metadata?: Json | null
+          reason?: string | null
+          scan_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       graph_queries: {
         Row: {
@@ -5596,6 +5646,7 @@ export type Database = {
           account_type: string | null
           avatar_url: string | null
           bio: string | null
+          confidence_score: number | null
           first_seen: string
           followers: string | null
           found: boolean
@@ -5615,6 +5666,7 @@ export type Database = {
           account_type?: string | null
           avatar_url?: string | null
           bio?: string | null
+          confidence_score?: number | null
           first_seen?: string
           followers?: string | null
           found?: boolean
@@ -5634,6 +5686,7 @@ export type Database = {
           account_type?: string | null
           avatar_url?: string | null
           bio?: string | null
+          confidence_score?: number | null
           first_seen?: string
           followers?: string | null
           found?: boolean
