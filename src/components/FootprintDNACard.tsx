@@ -5,7 +5,16 @@ import { AlertTriangle, Eye, Database, Shield } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getAIResponse } from "@/lib/aiRouter";
+
+async function aiScore(data: any) {
+  const { content } = await getAIResponse({
+    systemPrompt: "Return ONLY a number 0-100 representing overall privacy risk.",
+    userPrompt: `breaches:${data.breaches} exposures:${data.exposures} darkWeb:${data.darkWeb}`,
+  });
+  return parseInt(content.trim(), 10) || 50;
+}
 
 interface MetricData {
   label: string;
@@ -105,8 +114,14 @@ export function FootprintDNACard({ userId, jobId }: FootprintDNACardProps) {
     };
   }, [userId, refetch]);
 
-  // Calculate risk score: breaches * 2 + exposures
-  const riskScore = Math.min(100, footprintData.breaches * 2 + footprintData.exposures);
+  // AI-generated risk score
+  const [score, setScore] = useState<number | null>(null);
+  
+  useEffect(() => {
+    aiScore(footprintData).then(setScore);
+  }, [footprintData]);
+
+  const riskScore = score ?? 0;
 
   const getRiskColor = (score: number) => {
     if (score < 30) return "text-green-500";
