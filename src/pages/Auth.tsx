@@ -223,7 +223,7 @@ const Auth = () => {
   return <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-background via-background to-secondary/10 animate-fadeIn">
       <Card className="w-full max-w-md p-8 bg-gradient-card border-border shadow-card">
         <div className="text-center mb-8">
-          <img src="/logo-dark.png" alt="FootprintIQ Logo" className="w-16 h-16 mx-auto mb-4" />
+          <img src="/logo-dark.png" alt="FootprintIQ Logo" className="w-32 h-32 mx-auto mb-4" />
           
           <p className="text-muted-foreground">
             Protect your privacy across the internet
