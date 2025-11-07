@@ -35,9 +35,10 @@ export function KpiCard({
 
   return (
     <Card
+      disableHover={!onClick}
       className={cn(
         'p-6 bg-gradient-card border-border transition-all',
-        onClick && 'cursor-pointer hover:shadow-glow hover:border-primary/50'
+        onClick && 'cursor-pointer hover:shadow-glow hover:border-primary/50 hover:-translate-y-1 hover:scale-[1.02]'
       )}
       onClick={onClick}
     >
