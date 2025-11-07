@@ -2092,6 +2092,73 @@ export type Database = {
         }
         Relationships: []
       }
+      credit_alert_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          threshold: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          threshold?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          threshold?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_alert_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      credit_alerts_log: {
+        Row: {
+          alerted_at: string
+          balance: number
+          id: string
+          threshold: number
+          workspace_id: string
+        }
+        Insert: {
+          alerted_at?: string
+          balance: number
+          id?: string
+          threshold: number
+          workspace_id: string
+        }
+        Update: {
+          alerted_at?: string
+          balance?: number
+          id?: string
+          threshold?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_alerts_log_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_ledger: {
         Row: {
           created_at: string | null

@@ -79,6 +79,11 @@ export async function deductCredits(
     };
   }
 
+  // Check for low balance alert (fire and forget)
+  supabase.functions.invoke('check-low-balance', {
+    body: { workspaceId }
+  }).catch(err => console.warn('[credits] Failed to check low balance:', err));
+
   return {
     success: true,
     balance: data.new_balance
