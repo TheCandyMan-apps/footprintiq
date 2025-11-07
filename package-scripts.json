@@ -1,8 +1,13 @@
 {
   "scripts": {
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest watch",
     "typecheck": "tsc --noEmit",
     "check:build": "vite build --mode production",
     "check:secrets": "bash -c 'if grep -R \"VITE_.*_KEY\" src/providers 2>/dev/null | grep -v registry.meta; then echo \"❌ VITE secret in client code\"; exit 1; else echo \"✅ No client secrets\"; fi'",
-    "ci:verify": "npm run lint && npm run typecheck && npm run check:secrets && npm run check:build"
+    "ci:verify": "npm run lint && npm run typecheck && npm run check:secrets && npm run test:run && npm run check:build"
   }
 }

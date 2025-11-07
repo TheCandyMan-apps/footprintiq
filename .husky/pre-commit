@@ -11,4 +11,44 @@ if git diff --cached --name-only | xargs grep -E "$SECRET_PATTERNS" 2>/dev/null;
   exit 1
 fi
 
+# Run tests before commit
+echo "🧪 Running tests..."
+npm run test:run
+
+# Check if tests passed
+if [ $? -ne 0 ]; then
+  echo "❌ Tests failed. Commit aborted."
+  exit 1
+fi
+
+echo "✅ Tests passed!"
+
+# Auto-commit test results to tests branch
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+if [ "$CURRENT_BRANCH" != "tests" ]; then
+  echo "📝 Committing test results to tests branch..."
+  
+  # Stash current changes
+  git stash push -m "pre-commit-stash"
+  
+  # Create or checkout tests branch
+  git checkout tests 2>/dev/null || git checkout -b tests
+  
+  # Cherry-pick test files from main
+  git checkout "$CURRENT_BRANCH" -- tests/ vitest.config.ts
+  
+  # Commit test updates
+  git add tests/ vitest.config.ts
+  git commit -m "test: auto-commit test updates from $CURRENT_BRANCH" --no-verify || true
+  
+  # Go back to original branch
+  git checkout "$CURRENT_BRANCH"
+  
+  # Restore stashed changes
+  git stash pop || true
+  
+  echo "✅ Test results committed to tests branch"
+fi
+
 exit 0
