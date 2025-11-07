@@ -15,6 +15,12 @@ export function markAsVisited(): void {
 }
 
 export function shouldAutoStartTour(): boolean {
+  // Check if tour was already triggered this session
+  const sessionTourTriggered = sessionStorage.getItem('fpiq_tour_triggered');
+  if (sessionTourTriggered) {
+    return false;
+  }
+
   const tourProgress = localStorage.getItem(TOUR_SEEN_KEY);
   
   if (!tourProgress) {
@@ -28,6 +34,10 @@ export function shouldAutoStartTour(): boolean {
   } catch {
     return isFirstTimeUser();
   }
+}
+
+export function markTourTriggered(): void {
+  sessionStorage.setItem('fpiq_tour_triggered', 'true');
 }
 
 export function getTourAutoStartDelay(): number {

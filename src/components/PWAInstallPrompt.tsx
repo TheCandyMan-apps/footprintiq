@@ -24,14 +24,24 @@ export const PWAInstallPrompt = () => {
       return;
     }
 
-    // Track sessions
-    const sessionCount = parseInt(localStorage.getItem(SESSION_COUNT_KEY) || "0");
-    const newSessionCount = sessionCount + 1;
-    localStorage.setItem(SESSION_COUNT_KEY, newSessionCount.toString());
+    // Track sessions (only increment once per browser session)
+    const sessionTracked = sessionStorage.getItem('fpiq_session_tracked');
+    if (!sessionTracked) {
+      sessionStorage.setItem('fpiq_session_tracked', 'true');
+      const sessionCount = parseInt(localStorage.getItem(SESSION_COUNT_KEY) || "0");
+      const newSessionCount = sessionCount + 1;
+      localStorage.setItem(SESSION_COUNT_KEY, newSessionCount.toString());
 
-    // Show prompt after 2 sessions
-    if (newSessionCount >= 2) {
-      setShowPrompt(true);
+      // Show prompt after 2 sessions
+      if (newSessionCount >= 2) {
+        setShowPrompt(true);
+      }
+    } else {
+      // Check if we should show based on existing session count
+      const sessionCount = parseInt(localStorage.getItem(SESSION_COUNT_KEY) || "0");
+      if (sessionCount >= 2) {
+        setShowPrompt(true);
+      }
     }
 
     // Listen for beforeinstallprompt event
