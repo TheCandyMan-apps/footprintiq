@@ -31,11 +31,10 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { packageId, workspaceId } = await req.json();
-    const creditPackage = CREDIT_PACKAGES[packageId];
+    const { priceId, credits, workspaceId } = await req.json();
     
-    if (!creditPackage) {
-      throw new Error("Invalid package selected");
+    if (!priceId || !credits) {
+      throw new Error("Invalid package: priceId and credits are required");
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -62,25 +61,18 @@ serve(async (req) => {
       customer: customerId,
       line_items: [
         {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: `${creditPackage.credits} Credits`,
-              description: `Add ${creditPackage.credits} scan credits to your account`,
-            },
-            unit_amount: creditPackage.price,
-          },
+          price: priceId,
           quantity: 1,
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/settings/credits?success=true`,
-      cancel_url: `${req.headers.get("origin")}/settings/credits?canceled=true`,
+      success_url: `${req.headers.get("origin")}/buy-credits?success=true`,
+      cancel_url: `${req.headers.get("origin")}/buy-credits?canceled=true`,
       metadata: {
         user_id: user.id,
         workspace_id: workspaceId,
-        credits: creditPackage.credits.toString(),
-        package_id: packageId,
+        credits: credits.toString(),
+        price_id: priceId,
       },
     });
 
