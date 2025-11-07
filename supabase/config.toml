@@ -1,5 +1,8 @@
 project_id = "byuzgvauaeldjqxlrjci"
 
+[functions.ml-train-feedback]
+verify_jwt = true
+
 [functions.ai-router]
 verify_jwt = true
 

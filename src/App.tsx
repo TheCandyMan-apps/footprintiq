@@ -92,6 +92,8 @@ const Health = lazy(() => import("./pages/admin/Health"));
 const Observability = lazy(() => import("./pages/admin/Observability"));
 const Policies = lazy(() => import("./pages/admin/Policies"));
 const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
+const PaymentErrors = lazy(() => import("./pages/Admin/PaymentErrors"));
+const FalsePositivesReview = lazy(() => import("./pages/Admin/FalsePositivesReview"));
 const Workspace = lazy(() => import("./pages/Workspace"));
 const Workspaces = lazy(() => import("./pages/Workspaces"));
 const WorkspaceManagement = lazy(() => import("./pages/WorkspaceManagement"));
@@ -296,13 +298,15 @@ function RouterContent() {
             <Route path="/security" element={<Security />} />
             <Route path="/plugins" element={<PluginMarketplace />} />
             <Route path="/predictive-analytics" element={<PredictiveAnalytics />} />
-            <Route path="/admin/roles" element={<RoleManagement />} />
+          <Route path="/admin/roles" element={<RoleManagement />} />
           <Route path="/admin/rls-check" element={<RlsCheck />} />
           <Route path="/admin/providers" element={<Providers />} />
           <Route path="/admin/health" element={<Health />} />
           <Route path="/admin/observability" element={<Observability />} />
           <Route path="/admin/policies" element={<Policies />} />
           <Route path="/admin/audit-logs" element={<AuditLogs />} />
+          <Route path="/admin/payment-errors" element={<PaymentErrors />} />
+          <Route path="/admin/false-positives" element={<FalsePositivesReview />} />
           <Route path="/workspace" element={<Workspace />} />
           <Route path="/workspaces" element={<Workspaces />} />
           <Route path="/workspace-management" element={<WorkspaceManagement />} />

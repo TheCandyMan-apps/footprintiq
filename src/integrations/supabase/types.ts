@@ -2984,8 +2984,13 @@ export type Database = {
           finding_name: string
           finding_type: string
           id: string
+          item_id: string | null
+          item_name: string | null
+          item_type: string | null
           metadata: Json | null
           reason: string | null
+          reviewed: boolean | null
+          reviewer_notes: string | null
           scan_id: string
           user_id: string
         }
@@ -2996,8 +3001,13 @@ export type Database = {
           finding_name: string
           finding_type: string
           id?: string
+          item_id?: string | null
+          item_name?: string | null
+          item_type?: string | null
           metadata?: Json | null
           reason?: string | null
+          reviewed?: boolean | null
+          reviewer_notes?: string | null
           scan_id: string
           user_id: string
         }
@@ -3008,8 +3018,13 @@ export type Database = {
           finding_name?: string
           finding_type?: string
           id?: string
+          item_id?: string | null
+          item_name?: string | null
+          item_type?: string | null
           metadata?: Json | null
           reason?: string | null
+          reviewed?: boolean | null
+          reviewer_notes?: string | null
           scan_id?: string
           user_id?: string
         }
@@ -3624,6 +3639,39 @@ export type Database = {
           name?: string
           training_data_size?: number | null
           version?: string
+        }
+        Relationships: []
+      }
+      ml_training_results: {
+        Row: {
+          accuracy: number | null
+          created_at: string
+          id: string
+          model_version: string
+          patterns: Json | null
+          samples_processed: number
+          trained_at: string
+          training_type: string
+        }
+        Insert: {
+          accuracy?: number | null
+          created_at?: string
+          id?: string
+          model_version: string
+          patterns?: Json | null
+          samples_processed: number
+          trained_at?: string
+          training_type: string
+        }
+        Update: {
+          accuracy?: number | null
+          created_at?: string
+          id?: string
+          model_version?: string
+          patterns?: Json | null
+          samples_processed?: number
+          trained_at?: string
+          training_type?: string
         }
         Relationships: []
       }
