@@ -4173,6 +4173,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          anon_mode_enabled: boolean | null
           created_at: string
           email: string
           full_name: string | null
@@ -4182,6 +4183,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          anon_mode_enabled?: boolean | null
           created_at?: string
           email: string
           full_name?: string | null
@@ -4191,6 +4193,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          anon_mode_enabled?: boolean | null
           created_at?: string
           email?: string
           full_name?: string | null
@@ -4306,6 +4309,36 @@ export type Database = {
           reliability_rank?: number | null
           speed_rank?: number | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      proxy_configs: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          id: string
+          proxy_type: string
+          proxy_url: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          proxy_type: string
+          proxy_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          id?: string
+          proxy_type?: string
+          proxy_url?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -5554,6 +5587,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "social_profiles_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_credibility: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          credibility_score: number | null
+          data_quality_score: number | null
+          id: string
+          provider_name: string
+          reasoning: string | null
+          scan_id: string | null
+          verification_method: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          credibility_score?: number | null
+          data_quality_score?: number | null
+          id?: string
+          provider_name: string
+          reasoning?: string | null
+          scan_id?: string | null
+          verification_method?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          credibility_score?: number | null
+          data_quality_score?: number | null
+          id?: string
+          provider_name?: string
+          reasoning?: string | null
+          scan_id?: string | null
+          verification_method?: string | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_credibility_scan_id_fkey"
             columns: ["scan_id"]
             isOneToOne: false
             referencedRelation: "scans"

@@ -15,7 +15,9 @@ import { SensitiveConsentModal } from "@/components/providers/SensitiveConsentMo
 import { Search, Shield, Zap, Database, Globe, Lock } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useUserPersona } from "@/hooks/useUserPersona";
+import { useAnonMode } from "@/hooks/useAnonMode";
 import { PremiumApifyOptions } from "@/components/scan/PremiumApifyOptions";
+import { AnonModeToggle } from "@/components/scan/AnonModeToggle";
 import { CreditsBadge } from "@/components/workspace/CreditsBadge";
 import { ScanProgressTracker } from "@/components/ScanProgressTracker";
 import { ScanErrorBoundary } from "@/components/ScanErrorBoundary";
@@ -24,6 +26,7 @@ export default function AdvancedScan() {
   const navigate = useNavigate();
   const { workspace, loading: workspaceLoading, refreshWorkspace } = useWorkspace();
   const { persona, isStandard } = useUserPersona();
+  const { anonModeEnabled, toggleAnonMode, isLoading: anonLoading } = useAnonMode();
   const [scanType, setScanType] = useState<string>("email");
   const [target, setTarget] = useState("");
   const [providers, setProviders] = useState<string[]>([]);
@@ -313,6 +316,13 @@ export default function AdvancedScan() {
                 className="text-lg"
               />
             </div>
+
+            {/* Anonymous Mode Toggle */}
+            <AnonModeToggle
+              enabled={anonModeEnabled}
+              onChange={toggleAnonMode}
+              isPremium={true}
+            />
 
             {/* Provider Selection */}
             <div className="space-y-3">

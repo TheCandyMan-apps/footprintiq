@@ -251,3 +251,9 @@ verify_jwt = false
 
 [functions.ip-geocode]
 verify_jwt = false
+
+[functions.proxy-router]
+verify_jwt = true
+
+[functions.ai-credibility-scorer]
+verify_jwt = true
