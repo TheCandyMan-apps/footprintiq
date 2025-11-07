@@ -17,6 +17,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { PremiumApifyOptions } from "@/components/scan/PremiumApifyOptions";
 import { CreditsBadge } from "@/components/workspace/CreditsBadge";
 import { ScanProgressTracker } from "@/components/ScanProgressTracker";
+import { ScanErrorBoundary } from "@/components/ScanErrorBoundary";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -215,12 +216,13 @@ export default function AdvancedScan() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <SEO
-        title="Advanced Scan | FootprintIQ"
-        description="Perform comprehensive OSINT scans across 400+ sources including dark web monitoring, social media, breaches, and more."
-      />
-      <Header />
+    <ScanErrorBoundary context="scan">
+      <div className="min-h-screen bg-background">
+        <SEO
+          title="Advanced Scan | FootprintIQ"
+          description="Perform comprehensive OSINT scans across 400+ sources including dark web monitoring, social media, breaches, and more."
+        />
+        <Header />
 
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto space-y-8">
@@ -446,5 +448,6 @@ export default function AdvancedScan() {
         onConfirm={handleConsentConfirm}
       />
     </div>
+    </ScanErrorBoundary>
   );
 }

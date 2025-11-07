@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { ScanErrorBoundary } from "@/components/ScanErrorBoundary";
 import { AIAnalysis } from "@/components/AIAnalysis";
 import { CatfishDetection } from '@/components/CatfishDetection';
 import { TimelineChart } from "@/components/TimelineChart";
@@ -488,15 +489,18 @@ const ResultsDetail = () => {
 
   if (loading || !scan) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="p-8">Loading scan results...</Card>
-      </div>
+      <ScanErrorBoundary context="results">
+        <div className="min-h-screen flex items-center justify-center">
+          <Card className="p-8">Loading scan results...</Card>
+        </div>
+      </ScanErrorBoundary>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background px-6 py-8">
-      <div className="max-w-6xl mx-auto">
+    <ScanErrorBoundary context="results">
+      <div className="min-h-screen bg-background px-4 sm:px-6 py-6 sm:py-8">
+        <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-8">
           <div className="flex items-center justify-between">
@@ -1085,8 +1089,9 @@ const ResultsDetail = () => {
             })}
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </ScanErrorBoundary>
   );
 };
 

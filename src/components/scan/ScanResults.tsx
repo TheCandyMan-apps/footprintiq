@@ -130,13 +130,13 @@ export function ScanResults({ jobId }: ScanResultsProps) {
 
   return (
     <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="p-6 md:p-8">
-        <div className="flex items-start justify-between">
+      <CardHeader className="p-4 sm:p-6 md:p-8">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex-1">
-            <CardTitle className="text-2xl font-semibold mb-2">
+            <CardTitle className="text-xl sm:text-2xl font-semibold mb-2 break-words">
               Scan Results: {job.username}
             </CardTitle>
-            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-2">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mb-2">
               <Badge variant={job.status === 'finished' ? 'default' : 'secondary'}>
                 {job.status}
               </Badge>
@@ -164,24 +164,28 @@ export function ScanResults({ jobId }: ScanResultsProps) {
               size="sm"
               onClick={() => exportResultsToJSON(results, jobId)}
               disabled={results.length === 0}
+              className="text-xs sm:text-sm"
             >
-              <FileJson className="mr-2 h-4 w-4" />
-              JSON
+              <FileJson className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">JSON</span>
+              <span className="sm:hidden">JSON</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => exportResultsToCSV(results, jobId)}
               disabled={results.length === 0}
+              className="text-xs sm:text-sm"
             >
-              <FileSpreadsheet className="mr-2 h-4 w-4" />
-              CSV
+              <FileSpreadsheet className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">CSV</span>
+              <span className="sm:hidden">CSV</span>
             </Button>
           </div>
         </div>
       </CardHeader>
       <Separator />
-      <CardContent className="p-6 md:p-8 space-y-6">
+      <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
         {/* Footprint DNA Card */}
         <FootprintDNACard jobId={jobId} userId={job?.requested_by || undefined} />
 
@@ -211,52 +215,52 @@ export function ScanResults({ jobId }: ScanResultsProps) {
           </div>
         ) : (
           <>
-            <div className="flex gap-3 mb-6">
-              <Badge variant="default" className="bg-green-600">
+            <div className="flex flex-wrap gap-2 sm:gap-3 mb-4 sm:mb-6">
+              <Badge variant="default" className="bg-green-600 text-xs sm:text-sm">
                 Found: {foundCount}
               </Badge>
-              <Badge variant="secondary" className="bg-blue-600">
+              <Badge variant="secondary" className="bg-blue-600 text-xs sm:text-sm">
                 Claimed: {claimedCount}
               </Badge>
-              <Badge variant="outline">Not Found: {notFoundCount}</Badge>
+              <Badge variant="outline" className="text-xs sm:text-sm">Not Found: {notFoundCount}</Badge>
               {unknownCount > 0 && (
-                <Badge variant="outline" className="bg-amber-100">
+                <Badge variant="outline" className="bg-amber-100 text-xs sm:text-sm">
                   Unknown: {unknownCount}
                 </Badge>
               )}
-              <Badge variant="outline" className="ml-auto">
+              <Badge variant="outline" className="ml-auto text-xs sm:text-sm">
                 Total: {results.length}
               </Badge>
             </div>
 
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-lg overflow-hidden overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-12">#</TableHead>
-                    <TableHead>Site</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>URL</TableHead>
-                    <TableHead className="w-16"></TableHead>
+                    <TableHead className="w-8 sm:w-12 text-xs sm:text-sm">#</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Site</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                    <TableHead className="hidden md:table-cell text-xs sm:text-sm">URL</TableHead>
+                    <TableHead className="w-12 sm:w-16"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {results.map((result) => (
                     <TableRow key={result.line_no}>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="text-muted-foreground text-xs sm:text-sm">
                         {result.line_no}
                       </TableCell>
                       <TableCell className="font-medium">
-                        <Badge variant="outline" className="font-mono text-xs">
+                        <Badge variant="outline" className="font-mono text-[10px] sm:text-xs">
                           {result.ndjson?.site || 'Unknown'}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusVariant(result.ndjson?.status)}>
+                        <Badge variant={getStatusVariant(result.ndjson?.status)} className="text-[10px] sm:text-xs">
                           {result.ndjson?.status || 'unknown'}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-md truncate text-sm text-muted-foreground">
+                      <TableCell className="hidden md:table-cell max-w-md truncate text-xs sm:text-sm text-muted-foreground">
                         {result.ndjson?.url || '-'}
                       </TableCell>
                       <TableCell>
@@ -265,13 +269,15 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                             variant="ghost"
                             size="sm"
                             asChild
+                            className="h-8 w-8 p-0"
                           >
                             <a
                               href={result.ndjson.url}
                               target="_blank"
                               rel="noopener noreferrer"
+                              aria-label="Open profile"
                             >
-                              <ExternalLink className="h-4 w-4" />
+                              <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
                             </a>
                           </Button>
                         )}
