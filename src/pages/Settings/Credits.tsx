@@ -13,8 +13,9 @@ export default function CreditsSettings() {
   const creditPackages = [
     {
       name: "Starter Pack",
-      credits: 50,
-      price: 9.99,
+      credits: 10,
+      price: 5,
+      priceId: "price_1SQtRIPNdM5SAyj7WIxLQDeq",
       icon: Package,
       popular: false,
     },
@@ -22,6 +23,7 @@ export default function CreditsSettings() {
       name: "Pro Pack",
       credits: 200,
       price: 29.99,
+      priceId: "price_credits_200",
       icon: Zap,
       popular: true,
       savings: "25% off",
@@ -30,6 +32,7 @@ export default function CreditsSettings() {
       name: "Enterprise Pack",
       credits: 1000,
       price: 99.99,
+      priceId: "price_credits_1000",
       icon: CreditCard,
       popular: false,
       savings: "40% off",
@@ -101,7 +104,8 @@ export default function CreditsSettings() {
                       try {
                         const { data, error } = await supabase.functions.invoke('billing/purchase-credits-checkout', {
                           body: { 
-                            packageId: pack.name.toLowerCase().replace(' pack', ''),
+                            priceId: pack.priceId,
+                            credits: pack.credits,
                             workspaceId: workspace.id 
                           }
                         });

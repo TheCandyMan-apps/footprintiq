@@ -14,7 +14,7 @@ const CREDIT_PACKAGES = [
   {
     credits: 10,
     price: 5,
-    priceId: "price_credits_10", // Replace with actual Stripe price ID
+    priceId: "price_1SQtRIPNdM5SAyj7WIxLQDeq",
     popular: false,
   },
   {
