@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-type Model = "gemini" | "gpt";
+type Model = "gemini" | "gpt" | "grok";
 
 interface AIRequest {
   systemPrompt: string;
@@ -28,6 +28,75 @@ serve(async (req) => {
       );
     }
 
+    // Route to Grok API if requested
+    if (preferredModel === "grok") {
+      const GROK_API_KEY = Deno.env.get("GROK_API_KEY");
+      if (!GROK_API_KEY) {
+        console.error("GROK_API_KEY not configured");
+        return new Response(
+          JSON.stringify({ error: 'Grok API not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`AI Router: Using Grok model (grok-beta)`);
+
+      const response = await fetch("https://api.x.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${GROK_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "grok-beta",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Grok API error (${response.status}):`, errorText);
+        
+        if (response.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({ error: 'Grok API error' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content;
+
+      if (!content) {
+        console.error("No content in Grok response:", data);
+        return new Response(
+          JSON.stringify({ error: 'Invalid Grok response' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`Grok request completed - Response length: ${content.length}`);
+
+      return new Response(
+        JSON.stringify({
+          content,
+          modelUsed: "grok",
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Default to Lovable AI Gateway for gemini/gpt
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY not configured");
@@ -43,7 +112,7 @@ serve(async (req) => {
       gpt: "openai/gpt-5-mini",
     };
 
-    const selectedModel = modelMap[preferredModel] || modelMap.gemini;
+    const selectedModel = modelMap[preferredModel as "gemini" | "gpt"] || modelMap.gemini;
 
     console.log(`AI Router: Using model ${selectedModel} (requested: ${preferredModel})`);
 

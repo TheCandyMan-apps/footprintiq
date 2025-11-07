@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-type Model = "gemini" | "gpt";
+type Model = "gemini" | "gpt" | "grok";
 
 interface AIResponse {
   content: string;
