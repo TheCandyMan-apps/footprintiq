@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, Clock, XCircle, Loader2, Database, Shield, Search, Globe, Mail, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +41,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   const [progress, setProgress] = useState(0);
   const [providers, setProviders] = useState<Provider[]>(initialProviders);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -110,6 +112,12 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
     const performScan = async () => {
       try {
         if (!isMounted) return;
+        
+        // Show skeleton briefly then start
+        setTimeout(() => {
+          if (isMounted) setIsInitializing(false);
+        }, 500);
+        
         // Step 1: Create scan record
         setProgress(10);
 
@@ -337,43 +345,62 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           {/* Progress bar at the top */}
           <Progress value={progress} className="h-2" />
           
-          {/* Provider list with real-time status */}
+          {/* Provider list with real-time status or skeleton */}
           <div className="space-y-3">
-            {providers.map((provider, index) => {
-              const Icon = provider.icon;
-              
-              return (
+            {isInitializing ? (
+              // Show skeleton loaders during initialization
+              Array.from({ length: 6 }).map((_, index) => (
                 <div 
-                  key={provider.id}
-                  className={`flex items-center gap-3 p-4 rounded-lg border transition-all duration-300 animate-fade-in ${getStatusColor(provider.status)}`}
-                  style={{ animationDelay: `${index * 100}ms` }}
+                  key={index}
+                  className="flex items-center gap-3 p-4 rounded-lg border border-border bg-secondary/20 animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-background/50">
-                    <Icon className="w-5 h-5 text-muted-foreground" />
+                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-48" />
                   </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground">{provider.name}</span>
-                      {provider.message && (
-                        <span className="text-sm text-muted-foreground">
-                          — {provider.message}
-                          {provider.resultCount !== undefined && provider.resultCount > 0 && (
-                            <span className="ml-1 font-semibold text-accent">
-                              ({provider.resultCount} {provider.resultCount === 1 ? 'result' : 'results'})
-                            </span>
-                          )}
-                        </span>
-                      )}
+                  <Skeleton className="w-5 h-5 rounded-full" />
+                </div>
+              ))
+            ) : (
+              // Show actual provider statuses
+              providers.map((provider, index) => {
+                const Icon = provider.icon;
+                
+                return (
+                  <div 
+                    key={provider.id}
+                    className={`flex items-center gap-3 p-4 rounded-lg border transition-all duration-200 animate-fade-in ${getStatusColor(provider.status)}`}
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-background/50">
+                      <Icon className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">{provider.name}</span>
+                        {provider.message && (
+                          <span className="text-sm text-muted-foreground">
+                            — {provider.message}
+                            {provider.resultCount !== undefined && provider.resultCount > 0 && (
+                              <span className="ml-1 font-semibold text-accent">
+                                ({provider.resultCount} {provider.resultCount === 1 ? 'result' : 'results'})
+                              </span>
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="flex-shrink-0">
+                      {getStatusIcon(provider.status)}
                     </div>
                   </div>
-                  
-                  <div className="flex-shrink-0">
-                    {getStatusIcon(provider.status)}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       </Card>

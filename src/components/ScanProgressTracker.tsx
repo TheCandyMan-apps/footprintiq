@@ -5,6 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Loader2, AlertCircle, Activity } from 'lucide-react';
 import { CircularProgress } from '@/components/CircularProgress';
+import confetti from 'canvas-confetti';
+import { triggerHaptic } from '@/lib/haptics';
 
 interface ProgressUpdate {
   scanId: string;
@@ -59,6 +61,40 @@ export const ScanProgressTracker = ({ scanId, onComplete }: ScanProgressTrackerP
 
         // Call onComplete when scan finishes
         if (payload.status === 'completed' && onComplete) {
+          // Trigger haptic feedback
+          triggerHaptic('success');
+          
+          // Fire confetti
+          const duration = 3000;
+          const animationEnd = Date.now() + duration;
+          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+          function randomInRange(min: number, max: number) {
+            return Math.random() * (max - min) + min;
+          }
+
+          const interval: any = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+              return clearInterval(interval);
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+            
+            // Fire confetti from two sides
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+            });
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+            });
+          }, 250);
+
           setTimeout(() => onComplete(), 1500);
         }
       })
