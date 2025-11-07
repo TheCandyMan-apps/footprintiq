@@ -11,6 +11,7 @@ import { Shield, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 import { useTwitterAuth } from "@/hooks/useTwitterAuth";
+import { GDPRConsentModal } from "@/components/auth/GDPRConsentModal";
 
 const authSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
@@ -26,6 +27,12 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [pendingSignupData, setPendingSignupData] = useState<{
+    email: string;
+    password: string;
+    fullName: string;
+  } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { signInWithTwitter, isLoading: twitterLoading } = useTwitterAuth();
@@ -62,31 +69,72 @@ const Auth = () => {
       return;
     }
     
-    setLoading(true);
-
-    const { error } = await supabase.auth.signUp({
+    // Store data and show GDPR consent modal
+    setPendingSignupData({
       email: result.data.email,
       password: result.data.password,
-      options: {
-        data: { full_name: result.data.fullName },
-        emailRedirectTo: `${window.location.origin}/dashboard`,
-      },
+      fullName: result.data.fullName,
     });
+    setShowConsentModal(true);
+  };
 
-    setLoading(false);
+  const handleConsentAccept = async () => {
+    if (!pendingSignupData) return;
 
-    if (error) {
+    setLoading(true);
+
+    try {
+      // Create account
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: pendingSignupData.email,
+        password: pendingSignupData.password,
+        options: {
+          data: { full_name: pendingSignupData.fullName },
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+
+      if (signUpError) throw signUpError;
+
+      // Log GDPR consent
+      if (authData.user) {
+        const { error: consentError } = await supabase.from('consents').insert({
+          user_id: authData.user.id,
+          consent_type: 'gdpr_signup',
+          consent_text: 'I consent to FootprintIQ processing my personal data for scan services only, and I have read and agree to the Privacy Policy and Terms of Service.',
+          ip_address: null, // Browser can't access IP directly
+          user_agent: navigator.userAgent,
+        });
+
+        if (consentError) {
+          console.error('Failed to log consent:', consentError);
+        }
+      }
+
+      setShowConsentModal(false);
+      setPendingSignupData(null);
+      toast({
+        title: "Success!",
+        description: "Your account has been created. Redirecting...",
+      });
+    } catch (error: any) {
       toast({
         title: "Sign up failed",
         description: error.message,
         variant: "destructive",
       });
-    } else {
-      toast({
-        title: "Success!",
-        description: "Your account has been created. Redirecting...",
-      });
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleConsentDecline = () => {
+    setShowConsentModal(false);
+    setPendingSignupData(null);
+    toast({
+      title: "Signup cancelled",
+      description: "You must accept the data processing terms to create an account.",
+    });
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -307,6 +355,13 @@ const Auth = () => {
           </TabsContent>
         </Tabs>
       </Card>
+
+      <GDPRConsentModal
+        open={showConsentModal}
+        onAccept={handleConsentAccept}
+        onDecline={handleConsentDecline}
+        loading={loading}
+      />
     </div>
   );
 };

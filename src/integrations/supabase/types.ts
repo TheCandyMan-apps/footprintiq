@@ -2059,6 +2059,39 @@ export type Database = {
         }
         Relationships: []
       }
+      consents: {
+        Row: {
+          consent_text: string
+          consent_type: string
+          consented_at: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          consent_text: string
+          consent_type: string
+          consented_at?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          consent_text?: string
+          consent_type?: string
+          consented_at?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       credit_ledger: {
         Row: {
           created_at: string | null
