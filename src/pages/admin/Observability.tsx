@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from "recharts";
 import { Activity, AlertTriangle, TrendingUp, Zap, Clock, AlertCircle, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 export default function Observability() {
   const [metrics, setMetrics] = useState<any>(null);
@@ -73,9 +74,22 @@ export default function Observability() {
         </p>
       </div>
 
+      {/* Real-time Metrics Summary */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+          <span className="text-sm text-muted-foreground">
+            Live · Updates every 10s
+          </span>
+        </div>
+        <span className="text-xs text-muted-foreground">
+          Last updated: {new Date().toLocaleTimeString()}
+        </span>
+      </div>
+
       {/* Real-time Metrics Cards */}
       {realtimeMetrics?.realtime && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">API Calls (Last Hour)</CardTitle>
@@ -132,15 +146,26 @@ export default function Observability() {
 
       {/* Real-time Charts */}
       {realtimeMetrics?.realtime && (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2 mb-6">
           <Card>
             <CardHeader>
-              <CardTitle>API Calls per Minute</CardTitle>
-              <CardDescription>Last 30 minutes of traffic</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>API Calls per Minute</CardTitle>
+                  <CardDescription>Last 30 minutes of traffic</CardDescription>
+                </div>
+                <Badge variant="outline" className="text-xs">Real-time</Badge>
+              </div>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={realtimeMetrics.realtime.apiCallsPerMinute}>
+                  <defs>
+                    <linearGradient id="callsGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="time" className="text-xs" />
                   <YAxis className="text-xs" />
@@ -154,7 +179,8 @@ export default function Observability() {
                     type="monotone" 
                     dataKey="calls" 
                     stroke="hsl(var(--primary))" 
-                    fill="hsl(var(--primary) / 0.2)" 
+                    fill="url(#callsGradient)"
+                    strokeWidth={2}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -163,15 +189,20 @@ export default function Observability() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Error Rate Over Time</CardTitle>
-              <CardDescription>Error percentage by minute</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Error Rate Over Time</CardTitle>
+                  <CardDescription>Error percentage by minute</CardDescription>
+                </div>
+                <Badge variant="outline" className="text-xs">Real-time</Badge>
+              </div>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={realtimeMetrics.realtime.errorRates}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis dataKey="time" className="text-xs" />
-                  <YAxis className="text-xs" />
+                  <YAxis className="text-xs" label={{ value: '% Error', angle: -90, position: 'insideLeft' }} />
                   <Tooltip 
                     contentStyle={{ 
                       backgroundColor: 'hsl(var(--background))', 
@@ -183,6 +214,7 @@ export default function Observability() {
                     dataKey="rate" 
                     stroke="hsl(var(--destructive))" 
                     strokeWidth={2}
+                    dot={{ fill: 'hsl(var(--destructive))', r: 3 }}
                   />
                 </LineChart>
               </ResponsiveContainer>

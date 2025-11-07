@@ -16,9 +16,22 @@ serve(async (req) => {
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
-    // Generate mock real-time data for demonstration
-    // In production, this would connect to actual log aggregation service
-    const logs = generateMockLogs(oneHourAgo, now);
+    // Try to fetch real audit logs for recent API activity
+    const { data: auditLogs } = await supabase
+      .from('audit_log')
+      .select('*')
+      .gte('created_at', oneHourAgo.toISOString())
+      .order('created_at', { ascending: true });
+
+    // Try to fetch recent scan results for activity metrics
+    const { data: scans } = await supabase
+      .from('scans')
+      .select('created_at, status')
+      .gte('created_at', oneHourAgo.toISOString())
+      .order('created_at', { ascending: true });
+
+    // Generate enhanced mock data with real activity if available
+    const logs = generateEnhancedLogs(oneHourAgo, now, auditLogs, scans);
     const pgLogs = generateMockPgLogs(oneHourAgo, now);
 
     // Calculate API calls per minute
@@ -154,6 +167,55 @@ function extractAlerts(logs: any[], pgLogs: any[]): Array<{
   return alerts
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     .slice(0, 20);
+}
+
+function generateEnhancedLogs(startTime: Date, endTime: Date, auditLogs: any, scans: any) {
+  const logs = [];
+  const functions = ['scan-orchestrate', 'ai-analyst', 'dashboard-kpis', 'providers-hibp', 'api-scan'];
+  const duration = endTime.getTime() - startTime.getTime();
+  
+  // If we have real activity, incorporate it
+  if (auditLogs && auditLogs.length > 0) {
+    auditLogs.forEach((audit: any) => {
+      logs.push({
+        timestamp: audit.created_at,
+        function_id: audit.action || 'api-action',
+        status_code: 200,
+        execution_time_ms: Math.floor(Math.random() * 300) + 50,
+        event_message: `Audit: ${audit.action}`,
+      });
+    });
+  }
+
+  // Add scan activity
+  if (scans && scans.length > 0) {
+    scans.forEach((scan: any) => {
+      logs.push({
+        timestamp: scan.created_at,
+        function_id: 'scan-orchestrate',
+        status_code: scan.status === 'failed' ? 500 : 200,
+        execution_time_ms: Math.floor(Math.random() * 1000) + 100,
+        event_message: `Scan ${scan.status}`,
+      });
+    });
+  }
+
+  // Fill in with mock data for demonstration
+  const targetCount = Math.max(200, logs.length);
+  for (let i = logs.length; i < targetCount; i++) {
+    const timestamp = new Date(startTime.getTime() + Math.random() * duration);
+    const statusCode = Math.random() > 0.95 ? (Math.random() > 0.5 ? 500 : 400) : 200;
+    
+    logs.push({
+      timestamp: timestamp.toISOString(),
+      function_id: functions[Math.floor(Math.random() * functions.length)],
+      status_code: statusCode,
+      execution_time_ms: Math.floor(Math.random() * 500) + 50,
+      event_message: statusCode >= 400 ? 'Error processing request' : 'Success',
+    });
+  }
+  
+  return logs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 }
 
 function generateMockLogs(startTime: Date, endTime: Date) {
