@@ -21,28 +21,21 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (authError || !user) throw new Error('Unauthorized');
-
-    const { workspace_id } = await req.json();
-    if (!workspace_id) throw new Error('Missing workspace_id');
-
-    // Get Stripe customer ID
-    const { data: billing, error: billingError } = await supabase
-      .from('billing_customers')
-      .select('stripe_customer_id')
-      .eq('workspace_id', workspace_id)
-      .single();
-
-    if (billingError || !billing?.stripe_customer_id) {
-      throw new Error('No billing customer found');
-    }
+    if (authError || !user?.email) throw new Error('Unauthorized');
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2024-06-20',
     });
 
+    // Find Stripe customer by email
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    
+    if (customers.data.length === 0) {
+      throw new Error('No Stripe customer found');
+    }
+
     const session = await stripe.billingPortal.sessions.create({
-      customer: billing.stripe_customer_id,
+      customer: customers.data[0].id,
       return_url: `${req.headers.get('origin')}/settings/billing`,
     });
 

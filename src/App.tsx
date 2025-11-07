@@ -266,6 +266,7 @@ function RouterContent() {
           <Route path="/scan/advanced" element={<AdvancedScan />} />
           <Route path="/settings/health" element={<ScanHealth />} />
           <Route path="/scan/batch" element={<BatchScan />} />
+          <Route path="/settings/billing" element={<Billing />} />
           <Route path="/buy-credits" element={<BuyCreditsPage />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/api-docs" element={<ApiDocs />} />
