@@ -257,3 +257,6 @@ verify_jwt = true
 
 [functions.ai-credibility-scorer]
 verify_jwt = true
+
+[functions.ai-filter-findings]
+verify_jwt = true

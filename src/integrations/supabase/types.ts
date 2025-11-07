@@ -320,6 +320,50 @@ export type Database = {
           },
         ]
       }
+      ai_filter_logs: {
+        Row: {
+          confidence_improvement: number | null
+          created_at: string
+          filtered_count: number
+          id: string
+          original_count: number
+          provider: string
+          reasoning: string | null
+          removed_count: number
+          scan_id: string | null
+        }
+        Insert: {
+          confidence_improvement?: number | null
+          created_at?: string
+          filtered_count: number
+          id?: string
+          original_count: number
+          provider: string
+          reasoning?: string | null
+          removed_count: number
+          scan_id?: string | null
+        }
+        Update: {
+          confidence_improvement?: number | null
+          created_at?: string
+          filtered_count?: number
+          id?: string
+          original_count?: number
+          provider?: string
+          reasoning?: string | null
+          removed_count?: number
+          scan_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_filter_logs_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_generated_reports: {
         Row: {
           content: string

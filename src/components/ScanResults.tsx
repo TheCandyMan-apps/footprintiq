@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsSkeleton } from "@/components/skeletons/ResultsSkeleton";
 import { motion, AnimatePresence } from "framer-motion";
+import { AIFilteringBadge } from "@/components/AIFilteringBadge";
 import type { ScanFormData } from "./ScanForm";
 
 interface ScanResultsProps {
@@ -48,6 +49,11 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
   const [scanData, setScanData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showLowConfidence, setShowLowConfidence] = useState(false);
+  const [aiFilterStats, setAiFilterStats] = useState<{
+    removedCount: number;
+    confidenceImprovement: number;
+    provider: string;
+  } | null>(null);
 
   useEffect(() => {
     const fetchScanResults = async () => {
@@ -73,7 +79,7 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
         if (sourcesError) throw sourcesError;
         
         // Transform data sources to match interface
-        const transformedSources: DataSource[] = sources.map(source => ({
+        let transformedSources: DataSource[] = sources.map(source => ({
           id: source.id,
           name: source.name,
           category: source.category,
@@ -82,7 +88,6 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           url: source.url,
           confidenceScore: source.confidence_score || 75
         }));
-        setDataSources(transformedSources);
 
         // Fetch social profiles
         const { data: profiles, error: profilesError } = await supabase
@@ -93,7 +98,7 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
         if (profilesError) throw profilesError;
         
         // Transform social profiles to match interface
-        const transformedProfiles: SocialMediaProfile[] = profiles.map(profile => ({
+        let transformedProfiles: SocialMediaProfile[] = profiles.map(profile => ({
           id: profile.id,
           platform: profile.platform,
           username: profile.username,
@@ -106,6 +111,68 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           source: profile.source,
           confidenceScore: profile.confidence_score || 85
         }));
+
+        // Apply AI filtering to remove false positives
+        try {
+          console.log('Applying AI filtering...');
+          const allFindings = [
+            ...transformedSources.map(s => ({ ...s, type: 'data_source' })),
+            ...transformedProfiles.map(p => ({ ...p, type: 'social_profile' }))
+          ];
+
+          const { data: filterResult, error: filterError } = await supabase.functions.invoke(
+            'ai-filter-findings',
+            {
+              body: { 
+                rawFindings: allFindings,
+                scanId: scanId
+              }
+            }
+          );
+
+          if (filterError) {
+            console.error('AI filtering error:', filterError);
+            throw filterError;
+          }
+
+          if (filterResult?.validFindings) {
+            // Separate filtered findings back into sources and profiles
+            const filteredSources = filterResult.validFindings
+              .filter((f: any) => f.type === 'data_source')
+              .map(({ type, ...rest }: any) => rest);
+            
+            const filteredProfiles = filterResult.validFindings
+              .filter((f: any) => f.type === 'social_profile')
+              .map(({ type, ...rest }: any) => rest);
+
+            transformedSources = filteredSources;
+            transformedProfiles = filteredProfiles;
+
+            // Show improvement toast
+            if (filterResult.improvements) {
+              const { removedCount, improvements } = filterResult;
+              
+              // Store stats for display
+              setAiFilterStats({
+                removedCount,
+                confidenceImprovement: improvements.averageConfidenceImprovement,
+                provider: improvements.provider
+              });
+
+              if (removedCount > 0) {
+                toast({
+                  title: "AI Filtering Applied",
+                  description: `Removed ${removedCount} potential false positives. Confidence improved by ${improvements.averageConfidenceImprovement.toFixed(1)}% using ${improvements.provider}.`,
+                });
+              }
+            }
+          }
+        } catch (aiError) {
+          console.warn('AI filtering failed, using raw results:', aiError);
+          // Continue with unfiltered results
+        }
+
+        setDataSources(transformedSources);
         setSocialProfiles(transformedProfiles);
         
       } catch (error) {
@@ -241,6 +308,15 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
             </div>
           </div>
         </Card>
+
+        {/* AI Filtering Badge */}
+        {aiFilterStats && (
+          <AIFilteringBadge
+            removedCount={aiFilterStats.removedCount}
+            confidenceImprovement={aiFilterStats.confidenceImprovement}
+            provider={aiFilterStats.provider}
+          />
+        )}
 
         {/* Confidence Filter Toggle */}
         {lowConfidenceCount > 0 && (
