@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { getAIResponse } from '@/lib/aiRouter';
 import { ExternalLink, Trash2, Send, CheckCircle2, Clock, XCircle, Loader2, Database } from 'lucide-react';
 import {
   Table,
@@ -44,6 +45,7 @@ export const RemovalQueue = ({ scanId, userId }: RemovalQueueProps) => {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState<Set<string>>(new Set());
+  const [prioritizing, setPrioritizing] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -51,6 +53,46 @@ export const RemovalQueue = ({ scanId, userId }: RemovalQueueProps) => {
       fetchRemovalRequests();
     }
   }, [userId, scanId]);
+
+  const prioritise = async (brokers: DataBrokerProfile[]) => {
+    if (brokers.length === 0) return brokers;
+    
+    try {
+      setPrioritizing(true);
+      const riskScore = brokers.reduce((sum, b) => sum + b.data_found.length, 0);
+      const brokerNames = brokers.map(b => b.name);
+      
+      const { content } = await getAIResponse({
+        systemPrompt: "Return ONLY a JSON array of broker names sorted by removal urgency (most urgent first).",
+        userPrompt: `Brokers: ${brokerNames.join(", ")}. User risk score: ${riskScore}`,
+        preferredModel: "gemini",
+      });
+      
+      const prioritizedNames = JSON.parse(content) as string[];
+      
+      // Sort brokers based on AI prioritization
+      const sortedBrokers = [...brokers].sort((a, b) => {
+        const indexA = prioritizedNames.indexOf(a.name);
+        const indexB = prioritizedNames.indexOf(b.name);
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        return indexA - indexB;
+      });
+      
+      return sortedBrokers;
+    } catch (error) {
+      console.error('AI prioritization failed:', error);
+      return brokers; // Fallback to original order
+    } finally {
+      setPrioritizing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (dataBrokers.length > 0) {
+      prioritise(dataBrokers).then(setDataBrokers);
+    }
+  }, [dataBrokers.length]);
 
   const fetchDataBrokers = async () => {
     try {
