@@ -20,19 +20,19 @@ const CREDIT_PACKAGES = [
   {
     credits: 50,
     price: 20,
-    priceId: "price_credits_50", // Replace with actual Stripe price ID
+    priceId: "price_1SQtTSPNdM5SAyj77N2cBl6B",
     popular: true,
   },
   {
     credits: 100,
     price: 35,
-    priceId: "price_credits_100", // Replace with actual Stripe price ID
+    priceId: "price_1SQtTfPNdM5SAyj7jrfjyTL7",
     popular: false,
   },
   {
     credits: 500,
     price: 150,
-    priceId: "price_credits_500", // Replace with actual Stripe price ID
+    priceId: "price_1SQtUCPNdM5SAyj7Zat6OZcB",
     popular: false,
   },
 ];
