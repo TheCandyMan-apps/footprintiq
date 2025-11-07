@@ -1520,6 +1520,45 @@ export type Database = {
           },
         ]
       }
+      case_templates: {
+        Row: {
+          category: string
+          checklist_items: Json | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          predefined_tags: string[] | null
+          priority: string | null
+        }
+        Insert: {
+          category: string
+          checklist_items?: Json | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          predefined_tags?: string[] | null
+          priority?: string | null
+        }
+        Update: {
+          category?: string
+          checklist_items?: Json | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          predefined_tags?: string[] | null
+          priority?: string | null
+        }
+        Relationships: []
+      }
       cases: {
         Row: {
           assigned_to: string | null

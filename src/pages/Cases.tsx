@@ -34,6 +34,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CaseTemplates } from "@/components/case/CaseTemplates";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Case {
   id: string;
@@ -59,6 +61,7 @@ const Cases = () => {
     priority: "medium",
     scanId: "",
   });
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
 
   useEffect(() => {
     checkAuth();
@@ -122,18 +125,31 @@ const Cases = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Prepare case data with template information if selected
+      const caseData: any = {
+        user_id: user.id,
+        title: newCase.title,
+        description: newCase.description || selectedTemplate?.description || "",
+        priority: selectedTemplate?.priority || newCase.priority,
+        scan_id: newCase.scanId || null,
+        status: "open",
+      };
+
+      // Add template-specific data
+      if (selectedTemplate) {
+        caseData.tags = selectedTemplate.predefined_tags || [];
+        caseData.results = [
+          {
+            type: "checklist",
+            data: selectedTemplate.checklist_items || [],
+            timestamp: new Date().toISOString(),
+          }
+        ];
+      }
+
       const { data, error } = await supabase
         .from("cases")
-        .insert([
-          {
-            user_id: user.id,
-            title: newCase.title,
-            description: newCase.description,
-            priority: newCase.priority,
-            scan_id: newCase.scanId || null,
-            status: "open",
-          },
-        ])
+        .insert([caseData])
         .select()
         .single();
 
@@ -159,6 +175,7 @@ const Cases = () => {
 
       setIsDialogOpen(false);
       setNewCase({ title: "", description: "", priority: "medium", scanId: "" });
+      setSelectedTemplate(null);
       loadCases();
     } catch (error: any) {
       toast({
@@ -274,73 +291,108 @@ const Cases = () => {
 
       {/* Create Case Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>Create New Case</DialogTitle>
             <DialogDescription>
-              Start a new investigation case to track evidence and remediation
+              Start from a template or create a blank investigation case
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Case Title</Label>
-              <Input
-                id="title"
-                placeholder="Enter case title..."
-                value={newCase.title}
-                onChange={(e) => setNewCase({ ...newCase, title: e.target.value })}
+          <Tabs defaultValue="template" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="template">Choose Template</TabsTrigger>
+              <TabsTrigger value="details">Case Details</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="template" className="space-y-4">
+              <CaseTemplates
+                onSelectTemplate={setSelectedTemplate}
+                selectedTemplateId={selectedTemplate?.id || null}
               />
-            </div>
+              {selectedTemplate && (
+                <div className="rounded-lg bg-muted/50 p-4 space-y-2">
+                  <div className="font-medium text-sm">Template Preview</div>
+                  <p className="text-xs text-muted-foreground">{selectedTemplate.description}</p>
+                  {selectedTemplate.checklist_items?.length > 0 && (
+                    <div className="text-xs text-muted-foreground">
+                      Includes {selectedTemplate.checklist_items.length} checklist items
+                    </div>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="details" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Case Title *</Label>
+                <Input
+                  id="title"
+                  placeholder={selectedTemplate ? `e.g., ${selectedTemplate.name} - [Subject]` : "Enter case title..."}
+                  value={newCase.title}
+                  onChange={(e) => setNewCase({ ...newCase, title: e.target.value })}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                placeholder="Describe the investigation..."
-                value={newCase.description}
-                onChange={(e) => setNewCase({ ...newCase, description: e.target.value })}
-                rows={4}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  placeholder={selectedTemplate?.description || "Describe the investigation..."}
+                  value={newCase.description}
+                  onChange={(e) => setNewCase({ ...newCase, description: e.target.value })}
+                  rows={4}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="priority">Priority</Label>
-              <Select value={newCase.priority} onValueChange={(value) => setNewCase({ ...newCase, priority: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                  <SelectItem value="critical">Critical</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="priority">Priority</Label>
+                  <Select 
+                    value={selectedTemplate?.priority || newCase.priority} 
+                    onValueChange={(value) => setNewCase({ ...newCase, priority: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="critical">Critical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="scan">Link to Scan (Optional)</Label>
-              <Select value={newCase.scanId} onValueChange={(value) => setNewCase({ ...newCase, scanId: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a scan..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {scans.map((scan) => (
-                    <SelectItem key={scan.id} value={scan.id}>
-                      {scan.scan_type} - {new Date(scan.created_at).toLocaleDateString()}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="scan">Link to Scan</Label>
+                  <Select value={newCase.scanId} onValueChange={(value) => setNewCase({ ...newCase, scanId: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Optional" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {scans.map((scan) => (
+                        <SelectItem key={scan.id} value={scan.id}>
+                          {scan.scan_type} - {new Date(scan.created_at).toLocaleDateString()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setIsDialogOpen(false);
+              setSelectedTemplate(null);
+            }}>
               Cancel
             </Button>
-            <Button onClick={handleCreateCase}>Create Case</Button>
+            <Button onClick={handleCreateCase}>
+              {selectedTemplate ? `Create from ${selectedTemplate.name}` : "Create Case"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
