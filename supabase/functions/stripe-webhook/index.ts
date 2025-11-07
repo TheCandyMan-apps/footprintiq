@@ -30,27 +30,40 @@ serve(async (req) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         
-        // Extract metadata
+        // Extract metadata from the checkout session
         const userId = session.metadata?.user_id;
+        const workspaceId = session.metadata?.workspace_id;
         const credits = parseInt(session.metadata?.credits || "0");
-        const packageId = session.metadata?.package;
+        const priceId = session.metadata?.price_id;
 
-        if (!userId || !credits) {
-          console.error("Missing user_id or credits in session metadata");
+        if (!userId || !workspaceId || !credits) {
+          console.error("Missing required metadata in checkout session", {
+            userId,
+            workspaceId,
+            credits,
+            metadata: session.metadata
+          });
           break;
         }
 
-        console.log(`Crediting ${credits} to user ${userId} for package ${packageId}`);
+        console.log(`Processing credit purchase: ${credits} credits for workspace ${workspaceId}`);
 
-        // Add credits to user's account
+        // Add credits to workspace's ledger
         const { error: creditError } = await supabase
           .from("credits_ledger")
           .insert({
-            workspace_id: userId,
+            workspace_id: workspaceId,
             delta: credits,
-            reason: `Credit purchase: ${packageId} package`,
+            reason: `Credit purchase - ${credits} credits`,
             reference_type: "stripe_payment",
             reference_id: session.id,
+            meta: {
+              stripe_session_id: session.id,
+              stripe_price_id: priceId,
+              amount_paid: session.amount_total,
+              currency: session.currency,
+              payment_status: session.payment_status,
+            }
           });
 
         if (creditError) {
@@ -58,7 +71,9 @@ serve(async (req) => {
           throw creditError;
         }
 
-        console.log(`Successfully credited ${credits} to user ${userId}`);
+        console.log(`✅ Successfully credited ${credits} credits to workspace ${workspaceId}`);
+        
+        // Optional: Send confirmation email or notification here
         break;
       }
 
