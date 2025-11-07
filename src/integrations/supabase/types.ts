@@ -3904,6 +3904,51 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_errors: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          customer_id: string | null
+          error_code: string
+          error_message: string
+          error_type: string
+          id: string
+          metadata: Json | null
+          payment_intent_id: string | null
+          price_id: string | null
+          resolved: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          customer_id?: string | null
+          error_code: string
+          error_message: string
+          error_type: string
+          id?: string
+          metadata?: Json | null
+          payment_intent_id?: string | null
+          price_id?: string | null
+          resolved?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          customer_id?: string | null
+          error_code?: string
+          error_message?: string
+          error_type?: string
+          id?: string
+          metadata?: Json | null
+          payment_intent_id?: string | null
+          price_id?: string | null
+          resolved?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       performance_baselines: {
         Row: {
           created_at: string

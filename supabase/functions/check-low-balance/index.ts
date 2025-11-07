@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
-import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,8 +10,6 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -96,63 +93,73 @@ serve(async (req) => {
         throw new Error("User email not found");
       }
 
-      // Send alert email
-      await resend.emails.send({
-        from: "Credits Alert <onboarding@resend.dev>",
-        to: [userEmail],
-        subject: `⚠️ Low Credit Balance Alert - ${currentBalance} Credits Remaining`,
-        html: `
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <meta charset="utf-8">
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            </head>
-            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-              <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); padding: 40px 20px; text-align: center; border-radius: 10px 10px 0 0;">
-                <h1 style="color: white; margin: 0; font-size: 28px;">⚠️ Low Credit Balance</h1>
-              </div>
-              
-              <div style="background: #ffffff; padding: 40px 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
-                <p style="font-size: 18px; margin-bottom: 20px;">Your credit balance is running low!</p>
-                
-                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 30px 0; border-radius: 4px;">
-                  <h2 style="margin: 0 0 15px 0; font-size: 20px; color: #92400e;">Current Status</h2>
-                  <table style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                      <td style="padding: 8px 0; color: #78350f;">Current Balance:</td>
-                      <td style="padding: 8px 0; font-weight: bold; text-align: right; font-size: 24px; color: #ef4444;">${currentBalance} credits</td>
-                    </tr>
-                    <tr>
-                      <td style="padding: 8px 0; color: #78350f;">Alert Threshold:</td>
-                      <td style="padding: 8px 0; font-weight: bold; text-align: right;">${settings.threshold} credits</td>
-                    </tr>
-                  </table>
-                </div>
+      // Send alert email using fetch instead of Resend SDK
+      const resendApiKey = Deno.env.get("RESEND_API_KEY");
+      if (resendApiKey) {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${resendApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: "Credits Alert <onboarding@resend.dev>",
+            to: [userEmail],
+            subject: `⚠️ Low Credit Balance Alert - ${currentBalance} Credits Remaining`,
+            html: `
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                </head>
+                <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                  <div style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); padding: 40px 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                    <h1 style="color: white; margin: 0; font-size: 28px;">⚠️ Low Credit Balance</h1>
+                  </div>
+                  
+                  <div style="background: #ffffff; padding: 40px 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
+                    <p style="font-size: 18px; margin-bottom: 20px;">Your credit balance is running low!</p>
+                    
+                    <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                      <h2 style="margin: 0 0 15px 0; font-size: 20px; color: #92400e;">Current Status</h2>
+                      <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="padding: 8px 0; color: #78350f;">Current Balance:</td>
+                          <td style="padding: 8px 0; font-weight: bold; text-align: right; font-size: 24px; color: #ef4444;">${currentBalance} credits</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 8px 0; color: #78350f;">Alert Threshold:</td>
+                          <td style="padding: 8px 0; font-weight: bold; text-align: right;">${settings.threshold} credits</td>
+                        </tr>
+                      </table>
+                    </div>
 
-                <p style="margin-top: 30px;">To continue using our services without interruption, please purchase more credits.</p>
-                
-                <div style="text-align: center; margin-top: 40px;">
-                  <a href="${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://your-app.lovable.app'}/billing" 
-                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-                    Purchase Credits
-                  </a>
-                </div>
+                    <p style="margin-top: 30px;">To continue using our services without interruption, please purchase more credits.</p>
+                    
+                    <div style="text-align: center; margin-top: 40px;">
+                      <a href="${Deno.env.get("SUPABASE_URL")?.replace('.supabase.co', '.lovable.app') || 'https://your-app.lovable.app'}/billing" 
+                         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                        Purchase Credits
+                      </a>
+                    </div>
 
-                <div style="text-align: center; margin-top: 40px;">
-                  <p style="color: #6b7280; font-size: 14px; margin: 20px 0 0 0;">Need help? Contact our support team.</p>
-                  <p style="color: #9ca3af; font-size: 12px; margin: 5px 0 0 0;">You're receiving this because your balance dropped below ${settings.threshold} credits.</p>
-                </div>
-              </div>
+                    <div style="text-align: center; margin-top: 40px;">
+                      <p style="color: #6b7280; font-size: 14px; margin: 20px 0 0 0;">Need help? Contact our support team.</p>
+                      <p style="color: #9ca3af; font-size: 12px; margin: 5px 0 0 0;">You're receiving this because your balance dropped below ${settings.threshold} credits.</p>
+                    </div>
+                  </div>
 
-              <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
-                <p style="margin: 5px 0;">This is an automated alert for low credit balance.</p>
-                <p style="margin: 5px 0;">You can adjust alert settings in your workspace preferences.</p>
-              </div>
-            </body>
-          </html>
-        `,
-      });
+                  <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+                    <p style="margin: 5px 0;">This is an automated alert for low credit balance.</p>
+                    <p style="margin: 5px 0;">You can adjust alert settings in your workspace preferences.</p>
+                  </div>
+                </body>
+              </html>
+            `,
+          }),
+        });
+      }
 
       // Log the alert
       await supabase.from("credit_alerts_log").insert({

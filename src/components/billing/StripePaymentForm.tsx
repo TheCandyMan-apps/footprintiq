@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Loader2, CreditCard, ShieldCheck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { trackPaymentError, trackCheckoutEvent, trackStripeError } from '@/lib/sentry';
 
 // Initialize Stripe - using the anon key which is safe for client-side
 const stripePromise = loadStripe(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.replace('eyJ', 'pk_test_') || '');
@@ -36,6 +37,7 @@ const CheckoutForm = ({ priceId, planName, amount, onSuccess, onCancel }: Paymen
     }
 
     setIsProcessing(true);
+    trackCheckoutEvent('payment_submit', { priceId, planName, amount, step: 'confirm' });
 
     try {
       const { error: submitError } = await elements.submit();
@@ -44,14 +46,32 @@ const CheckoutForm = ({ priceId, planName, amount, onSuccess, onCancel }: Paymen
       }
 
       // Confirm the payment
-      const { error } = await stripe.confirmPayment({
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: `${window.location.origin}/settings/billing?success=true`,
         },
+        redirect: 'if_required',
       });
 
       if (error) {
+        // Track Stripe error in Sentry and log to database
+        trackStripeError(error, { amount, priceId });
+        
+        // Log to database for admin dashboard
+        await supabase.from('payment_errors').insert({
+          error_type: error.type,
+          error_code: error.code || error.decline_code || 'unknown',
+          error_message: error.message,
+          payment_intent_id: error.payment_intent?.id,
+          amount,
+          price_id: priceId,
+          metadata: {
+            plan_name: planName,
+            decline_code: error.decline_code,
+          },
+        });
+
         // Handle specific error types with user-friendly messages
         let errorMessage = 'Payment failed. Please try again.';
         
@@ -81,8 +101,21 @@ const CheckoutForm = ({ priceId, planName, amount, onSuccess, onCancel }: Paymen
           variant: 'destructive',
         });
         
-        console.error('Payment error:', error);
+        trackCheckoutEvent('stripe.checkout.failed', { 
+          priceId, 
+          planName, 
+          amount, 
+          success: false,
+          errorCode: error.code 
+        });
       } else {
+        trackCheckoutEvent('payment_success', { 
+          priceId, 
+          planName, 
+          amount, 
+          success: true 
+        });
+        
         toast({
           title: 'Payment Successful!',
           description: `You've subscribed to ${planName}`,
@@ -91,6 +124,14 @@ const CheckoutForm = ({ priceId, planName, amount, onSuccess, onCancel }: Paymen
       }
     } catch (err) {
       console.error('Payment error:', err);
+      
+      // Track unexpected errors
+      trackPaymentError(err instanceof Error ? err : 'Unknown error', {
+        amount,
+        priceId,
+        errorType: 'unexpected',
+      });
+      
       toast({
         title: 'Payment Error',
         description: err instanceof Error ? err.message : 'An unexpected error occurred',
