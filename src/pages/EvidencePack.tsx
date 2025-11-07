@@ -111,9 +111,14 @@ export default function EvidencePack() {
         .from('evidence_packs')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (packError) throw packError;
+      if (!packData) {
+        toast.error('Evidence pack not found');
+        navigate('/evidence-pack');
+        return;
+      }
 
       setPack(packData);
       setPackName(packData.name);
