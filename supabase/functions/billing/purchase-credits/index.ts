@@ -30,7 +30,7 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { package: packageKey } = await req.json();
+    const { package: packageKey, workspaceId } = await req.json();
     const selectedPackage = CREDIT_PACKAGES[packageKey as keyof typeof CREDIT_PACKAGES];
     
     if (!selectedPackage) {
@@ -70,8 +70,10 @@ serve(async (req) => {
       cancel_url: `${req.headers.get("origin")}/dashboard?credits_cancelled=true`,
       metadata: {
         user_id: user.id,
+        workspace_id: workspaceId,
         credits: selectedPackage.credits.toString(),
         package: packageKey,
+        price_id: 'price_data', // Indicates this used price_data instead of priceId
       },
     });
 
