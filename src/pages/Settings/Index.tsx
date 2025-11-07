@@ -9,7 +9,8 @@ import {
   Receipt,
   ChevronRight,
   Settings as SettingsIcon,
-  Zap
+  Zap,
+  Brain
 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +53,12 @@ export default function SettingsIndex() {
       description: 'Purchase additional credits and view your current balance',
       icon: Zap,
       path: '/settings/credits',
+    },
+    {
+      title: 'AI Models',
+      description: 'Choose your preferred AI model for threat analysis and insights',
+      icon: Brain,
+      path: '/settings/ai',
     },
     {
       title: 'API Keys',
