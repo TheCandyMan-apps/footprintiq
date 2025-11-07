@@ -5,10 +5,19 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, Calendar, Download, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
 import { Separator } from '@/components/ui/separator';
 import { useSubscription } from '@/hooks/useSubscription';
+import { StripePaymentForm } from '@/components/billing/StripePaymentForm';
+import { TestModeToggle } from '@/components/billing/TestModeToggle';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface BillingHistoryItem {
   id: string;
@@ -28,8 +37,34 @@ interface UpcomingInvoice {
   next_payment_attempt: number;
 }
 
+// Pricing tiers with new $5 Basic and $15 Pro plans
+const PRICING_TIERS = {
+  basic: {
+    name: 'Basic',
+    price: 5,
+    priceId: 'price_1SQwVyPNdM5SAyj7gXDm8Mkc',
+  },
+  pro: {
+    name: 'Pro',
+    price: 15,
+    priceId: 'price_1SQwWCPNdM5SAyj7XS394cD8',
+  },
+  analyst: {
+    name: 'Analyst',
+    price: 29,
+    priceId: 'price_1SPXbHPNdM5SAyj7lPBHvjIi',
+  },
+  enterprise: {
+    name: 'Enterprise',
+    price: 299,
+    priceId: 'price_1SPXcEPNdM5SAyj7AbannmpP',
+  },
+};
+
 export default function BillingSettings() {
   const [loading, setLoading] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<keyof typeof PRICING_TIERS | null>(null);
   const { subscriptionTier, isPremium, refreshSubscription } = useSubscription();
 
   const { data: subscriptionData, refetch: refetchSubscription } = useQuery({
@@ -57,24 +92,24 @@ export default function BillingSettings() {
     enabled: isPremium,
   });
 
-  const handleUpgrade = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('billing/checkout', {
-        body: { plan: 'analyst' },
-      });
+  const handleUpgrade = async (plan: keyof typeof PRICING_TIERS) => {
+    setSelectedPlan(plan);
+    setShowPaymentDialog(true);
+  };
 
-      if (error) throw error;
+  const handlePaymentSuccess = () => {
+    setShowPaymentDialog(false);
+    setSelectedPlan(null);
+    toast({
+      title: 'Payment Successful!',
+      description: 'Your subscription has been activated.',
+    });
+    refreshSubscription();
+  };
 
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Upgrade error:', error);
-      toast.error('Failed to start upgrade process');
-    } finally {
-      setLoading(false);
-    }
+  const handlePaymentCancel = () => {
+    setShowPaymentDialog(false);
+    setSelectedPlan(null);
   };
 
   const handlePortal = async () => {
@@ -89,7 +124,11 @@ export default function BillingSettings() {
       }
     } catch (error) {
       console.error('Portal error:', error);
-      toast.error('Failed to open billing portal');
+      toast({
+        title: 'Portal Error',
+        description: 'Failed to open billing portal',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -132,6 +171,9 @@ export default function BillingSettings() {
             Refresh
           </Button>
         </div>
+
+        {/* Test Mode Toggle */}
+        <TestModeToggle />
 
         {/* Current Subscription & Next Payment */}
         <div className="grid gap-6 lg:grid-cols-3">
@@ -182,14 +224,21 @@ export default function BillingSettings() {
                   Manage Subscription
                 </Button>
               ) : (
-                <Button 
-                  onClick={handleUpgrade}
-                  disabled={loading}
-                  className="flex items-center gap-2"
-                >
-                  {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  Upgrade to Analyst
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => handleUpgrade('basic')}
+                    disabled={loading}
+                    variant="outline"
+                  >
+                    Basic ($5/mo)
+                  </Button>
+                  <Button 
+                    onClick={() => handleUpgrade('pro')}
+                    disabled={loading}
+                  >
+                    Pro ($15/mo)
+                  </Button>
+                </div>
               )}
             </div>
           </Card>
@@ -366,16 +415,49 @@ export default function BillingSettings() {
             )}
           </div>
           {!isPremium && (
-            <Button 
-              onClick={handleUpgrade}
-              className="w-full mt-6"
-              size="lg"
-            >
-              Upgrade Now
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+            <div className="flex gap-3 mt-6">
+              <Button 
+                onClick={() => handleUpgrade('basic')}
+                className="flex-1"
+                variant="outline"
+                size="lg"
+              >
+                Get Basic ($5)
+              </Button>
+              <Button 
+                onClick={() => handleUpgrade('pro')}
+                className="flex-1"
+                size="lg"
+              >
+                Get Pro ($15)
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
           )}
         </Card>
+
+        {/* Pricing Plans Dialog */}
+        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedPlan && PRICING_TIERS[selectedPlan].name} Plan
+              </DialogTitle>
+              <DialogDescription>
+                Complete your subscription using secure Stripe payment
+              </DialogDescription>
+            </DialogHeader>
+            {selectedPlan && (
+              <StripePaymentForm
+                priceId={PRICING_TIERS[selectedPlan].priceId}
+                planName={PRICING_TIERS[selectedPlan].name}
+                amount={PRICING_TIERS[selectedPlan].price}
+                onSuccess={handlePaymentSuccess}
+                onCancel={handlePaymentCancel}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -280,21 +280,67 @@ serve(async (req) => {
           currency: invoice.currency,
         });
         
-        // Log successful payment to audit trail
+        // Update user role based on subscription payment
         if (invoice.subscription) {
           const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
           const customer = await stripe.customers.retrieve(subscription.customer as string);
           
           if ('email' in customer && customer.email) {
-            await supabase.from('audit_log').insert({
-              action: 'subscription.payment_succeeded',
-              meta: {
-                invoice_id: invoice.id,
-                amount: invoice.amount_paid,
-                currency: invoice.currency,
-                customer_email: customer.email,
-              },
-            });
+            const priceId = subscription.items.data[0].price.id;
+            
+            // Map price IDs to subscription tiers
+            const tierMap: Record<string, 'free' | 'basic' | 'pro' | 'analyst' | 'enterprise'> = {
+              'price_1SQwVyPNdM5SAyj7gXDm8Mkc': 'basic',  // $5/month
+              'price_1SQwWCPNdM5SAyj7XS394cD8': 'pro',    // $15/month
+              'price_1SPXbHPNdM5SAyj7lPBHvjIi': 'analyst',
+              'price_1SPXcEPNdM5SAyj7AbannmpP': 'enterprise',
+            };
+            
+            const tier = tierMap[priceId] || 'free';
+            const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
+            
+            // Get or create user profile
+            const { data: profiles } = await supabase
+              .from('profiles')
+              .select('user_id')
+              .eq('email', customer.email)
+              .maybeSingle();
+            
+            if (profiles?.user_id) {
+              // Update user_roles table with new subscription tier
+              const { error: roleError } = await supabase
+                .from('user_roles')
+                .upsert({
+                  user_id: profiles.user_id,
+                  role: 'user',
+                  subscription_tier: tier,
+                  subscription_expires_at: expiresAt,
+                }, {
+                  onConflict: 'user_id',
+                });
+              
+              if (roleError) {
+                logEvent('ERROR', 'Failed to update user role', { error: roleError.message });
+              } else {
+                logEvent('ROLE_UPDATED', `User role updated to ${tier}`, {
+                  userId: profiles.user_id,
+                  tier,
+                  expiresAt,
+                });
+              }
+              
+              // Log successful payment to audit trail
+              await supabase.from('audit_log').insert({
+                action: 'subscription.payment_succeeded',
+                meta: {
+                  invoice_id: invoice.id,
+                  amount: invoice.amount_paid,
+                  currency: invoice.currency,
+                  customer_email: customer.email,
+                  subscription_tier: tier,
+                },
+              });
+            }
           }
         }
         break;

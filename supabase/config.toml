@@ -222,6 +222,18 @@ verify_jwt = true
 [functions."billing/checkout"]
 verify_jwt = true
 
+[functions."billing/create-payment-intent"]
+verify_jwt = true
+
+[functions."billing/create-portal"]
+verify_jwt = true
+
+[functions."billing/upcoming-invoice"]
+verify_jwt = true
+
+[functions."billing/history"]
+verify_jwt = true
+
 [functions.threat-forecast-generator]
 verify_jwt = false
 
