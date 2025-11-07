@@ -26,11 +26,11 @@ export async function getAIResponse({
     
     if (!modelToUse) {
       const { data: prefs } = await supabase
-        .from('user_ai_preferences')
-        .select('preferred_model')
+        .from('user_preferences')
+        .select('ai_preferred_model')
         .single();
       
-      modelToUse = (prefs?.preferred_model as Model) || 'gemini';
+      modelToUse = (prefs?.ai_preferred_model as Model) || 'gemini';
     }
 
     // Call secure edge function (API keys stored server-side)
@@ -59,10 +59,10 @@ export async function getAIResponse({
  */
 export async function updatePreferredModel(model: Model): Promise<void> {
   const { error } = await supabase
-    .from('user_ai_preferences')
+    .from('user_preferences')
     .upsert({
       user_id: (await supabase.auth.getUser()).data.user?.id,
-      preferred_model: model,
+      ai_preferred_model: model,
     });
 
   if (error) throw error;
@@ -73,9 +73,9 @@ export async function updatePreferredModel(model: Model): Promise<void> {
  */
 export async function getPreferredModel(): Promise<Model> {
   const { data } = await supabase
-    .from('user_ai_preferences')
-    .select('preferred_model')
+    .from('user_preferences')
+    .select('ai_preferred_model')
     .single();
 
-  return (data?.preferred_model as Model) || 'gemini';
+  return (data?.ai_preferred_model as Model) || 'gemini';
 }

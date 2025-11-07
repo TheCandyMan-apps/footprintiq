@@ -402,6 +402,39 @@ export type Database = {
           },
         ]
       }
+      ai_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          model: string
+          prompt_length: number
+          response_length: number | null
+          success: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          model: string
+          prompt_length: number
+          response_length?: number | null
+          success?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          model?: string
+          prompt_length?: number
+          response_length?: number | null
+          success?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       alert_events: {
         Row: {
           acknowledged_at: string | null
@@ -5832,30 +5865,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_ai_preferences: {
-        Row: {
-          created_at: string
-          id: string
-          preferred_model: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          preferred_model?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          preferred_model?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_behavior_analytics: {
         Row: {
           behavior_type: string
@@ -5983,6 +5992,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_preferences: {
+        Row: {
+          ai_preferred_model: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_preferred_model?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_preferred_model?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
