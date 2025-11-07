@@ -24,6 +24,10 @@ import { ScanProgressTracker } from "@/components/ScanProgressTracker";
 import { ScanErrorBoundary } from "@/components/ScanErrorBoundary";
 import { BatchUpload } from "@/components/scan/BatchUpload";
 import { IPMapPreview } from "@/components/scan/IPMapPreview";
+import { LocationMap } from "@/components/scan/LocationMap";
+import { LocationCard } from "@/components/scan/LocationCard";
+import { HighPrecisionToggle } from "@/components/scan/HighPrecisionToggle";
+import { useGeocoding } from "@/hooks/useGeocoding";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -54,6 +58,18 @@ export default function AdvancedScan() {
   const [batchItems, setBatchItems] = useState<string[]>([]);
   const [isBatchMode, setIsBatchMode] = useState(false);
   const [darkWebPolicyAccepted, setDarkWebPolicyAccepted] = useState(false);
+  const [highPrecisionMode, setHighPrecisionMode] = useState(false);
+  const [regionFilter, setRegionFilter] = useState<string>("all");
+  const [ipLocations, setIpLocations] = useState<Array<{ ip: string; lat?: number; lon?: number }>>([]);
+
+  // Geocoding for IP addresses
+  const { locations, loading: geocodingLoading, getLocationForIP, getErrorForIP } = useGeocoding(
+    ipLocations,
+    { 
+      enabled: scanType === 'ip' && ipLocations.length > 0,
+      highPrecisionMode 
+    }
+  );
 
   // Auto-select default providers when scan type changes
   const DEFAULT_PROVIDERS: Record<string, string[]> = {
@@ -417,7 +433,46 @@ export default function AdvancedScan() {
                     </div>
                   )}
                   {scanType === 'ip' && batchItems.length > 0 && (
-                    <IPMapPreview ips={batchItems} />
+                    <>
+                      <IPMapPreview ips={batchItems} />
+                      
+                      {/* High-Precision Mode Toggle */}
+                      {!isStandard && (
+                        <HighPrecisionToggle
+                          enabled={highPrecisionMode}
+                          onChange={setHighPrecisionMode}
+                          isPremium={!isStandard}
+                        />
+                      )}
+
+                      {/* Geocoded Locations Map */}
+                      {locations.length > 0 && !isStandard && (
+                        <LocationMap
+                          locations={locations}
+                          regionFilter={regionFilter}
+                          onRegionFilterChange={setRegionFilter}
+                          isPremium={!isStandard}
+                        />
+                      )}
+
+                      {/* Geocoded Location Cards */}
+                      {batchItems.length > 0 && !isStandard && (
+                        <div className="space-y-2">
+                          <Label>Geocoded Locations</Label>
+                          <div className="grid gap-2 max-h-[300px] overflow-y-auto">
+                            {batchItems.map((ip) => (
+                              <LocationCard
+                                key={ip}
+                                ip={ip}
+                                location={getLocationForIP(ip)}
+                                loading={geocodingLoading}
+                                error={getErrorForIP(ip)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               ) : (

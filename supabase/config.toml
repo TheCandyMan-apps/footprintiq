@@ -278,3 +278,6 @@ verify_jwt = true
 
 [functions.geocode-ip]
 verify_jwt = true
+
+[functions.geocode-location]
+verify_jwt = true
