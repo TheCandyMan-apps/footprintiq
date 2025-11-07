@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Settings as SettingsIcon,
   Zap,
-  Brain
+  Brain,
+  TrendingUp
 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +60,12 @@ export default function SettingsIndex() {
       description: 'Choose your preferred AI model for threat analysis and insights',
       icon: Brain,
       path: '/settings/ai',
+    },
+    {
+      title: 'AI Analytics',
+      description: 'View AI usage statistics, trends, and model performance metrics',
+      icon: TrendingUp,
+      path: '/analytics/ai',
     },
     {
       title: 'API Keys',
