@@ -220,7 +220,7 @@ const Auth = () => {
       <Card className="w-full max-w-md p-8 bg-gradient-card border-border shadow-card">
         <div className="text-center mb-8">
           <img 
-            src="https://storage.googleapis.com/gpt-engineer-file-uploads/2uSl18P0SSfJLWqHu910xv9mZBj1/uploads/1762544667872-FPIQ-Logo-X.png" 
+            src="/logo-dark.png" 
             alt="FootprintIQ Logo" 
             className="w-16 h-16 mx-auto mb-4"
           />
