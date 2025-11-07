@@ -10,9 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { SensitiveConsentModal } from "@/components/providers/SensitiveConsentModal";
-import { Search, Shield, Zap, Database, Globe, Lock } from "lucide-react";
+import { Search, Shield, Zap, Database, Globe, Lock, AlertTriangle } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useUserPersona } from "@/hooks/useUserPersona";
 import { useAnonMode } from "@/hooks/useAnonMode";
@@ -21,6 +22,8 @@ import { AnonModeToggle } from "@/components/scan/AnonModeToggle";
 import { CreditsBadge } from "@/components/workspace/CreditsBadge";
 import { ScanProgressTracker } from "@/components/ScanProgressTracker";
 import { ScanErrorBoundary } from "@/components/ScanErrorBoundary";
+import { BatchUpload } from "@/components/scan/BatchUpload";
+import { IPMapPreview } from "@/components/scan/IPMapPreview";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -48,6 +51,9 @@ export default function AdvancedScan() {
     darkwebDepth?: number;
     darkwebPages?: number;
   }>({});
+  const [batchItems, setBatchItems] = useState<string[]>([]);
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  const [darkWebPolicyAccepted, setDarkWebPolicyAccepted] = useState(false);
 
   // Auto-select default providers when scan type changes
   const DEFAULT_PROVIDERS: Record<string, string[]> = {
@@ -60,6 +66,11 @@ export default function AdvancedScan() {
   // Set default providers on mount and when scan type changes
   useEffect(() => {
     setProviders(DEFAULT_PROVIDERS[scanType] || []);
+    // Reset batch mode when switching types
+    if (scanType !== 'email' && scanType !== 'ip') {
+      setIsBatchMode(false);
+      setBatchItems([]);
+    }
   }, [scanType]);
 
   const availableProviders = [
@@ -69,8 +80,9 @@ export default function AdvancedScan() {
     { id: "fullcontact", name: "FullContact", icon: Database, types: ['email', 'phone', 'domain'] },
     { id: "urlscan", name: "URLScan.io", icon: Search, types: ['domain'] },
     { id: "securitytrails", name: "SecurityTrails", icon: Shield, types: ['domain'] },
-    { id: "shodan", name: "Shodan", icon: Globe, types: ['domain'] },
+    { id: "shodan", name: "Shodan", icon: Globe, types: ['domain', 'ip'] },
     { id: "virustotal", name: "VirusTotal", icon: Shield, types: ['domain'] },
+    { id: "abuseipdb", name: "AbuseIPDB", icon: Shield, types: ['ip'] },
     { id: "apify-social", name: "Social Media Finder Pro (400+ platforms)", icon: Search, premium: true, types: ['username'], description: "Discover profiles across Facebook, Instagram, Twitter, TikTok, LinkedIn, GitHub, Reddit, and 400+ more" },
     { id: "apify-osint", name: "OSINT Scraper (Paste sites)", icon: Database, premium: true, types: ['email', 'username'], description: "Search Pastebin, GitHub Gist, Codepad, and other paste sites for exposed data" },
   ];
@@ -171,8 +183,28 @@ export default function AdvancedScan() {
   }
 
   const handleScan = async () => {
-    if (!target.trim()) {
-      toast.error("Please enter a target to scan");
+    // Validation
+    const targets = isBatchMode ? batchItems : [target];
+    if (targets.length === 0 || (targets.length === 1 && !targets[0].trim())) {
+      toast.error("Please enter at least one target to scan");
+      return;
+    }
+
+    // Check premium requirement for batch scans
+    if (isBatchMode && targets.length > 1 && isStandard) {
+      toast.error("Batch scanning requires a premium subscription", {
+        description: "Upgrade to scan multiple targets at once",
+        action: {
+          label: "Upgrade",
+          onClick: () => navigate('/pricing')
+        }
+      });
+      return;
+    }
+
+    // Dark web policy check
+    if (darkwebEnabled && !darkWebPolicyAccepted) {
+      toast.error("Please accept the dark web scanning policy");
       return;
     }
 
@@ -181,37 +213,69 @@ export default function AdvancedScan() {
     try {
       // Get authenticated user
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-      if (!workspace?.id) throw new Error("No workspace selected");
-
-      const { data, error } = await supabase.functions.invoke("scan-orchestrate", {
-        body: {
-          type: scanType,
-          value: target,
-          workspaceId: workspace.id,
-          options: {
-            providers,
-            includeDating: sensitiveSources.includes('dating'),
-            includeNsfw: sensitiveSources.includes('nsfw'),
-            includeDarkweb: sensitiveSources.includes('darkweb') || darkwebEnabled,
-            premium: premiumOptions,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      // Set scan ID for progress tracking
-      if (data.scanId) {
-        setCurrentScanId(data.scanId);
+      if (!user) {
+        toast.error("Please log in to perform scans");
+        setIsScanning(false);
+        return;
+      }
+      
+      if (!workspace?.id) {
+        toast.error("No workspace selected");
+        setIsScanning(false);
+        return;
       }
 
-      toast.success(`Scan initiated! Tracking progress...`);
+      // Process batch or single scan
+      const scanPromises = targets.map(async (targetValue) => {
+        try {
+          const { data, error } = await supabase.functions.invoke("scan-orchestrate", {
+            body: {
+              type: scanType,
+              value: targetValue,
+              workspaceId: workspace.id,
+              options: {
+                providers,
+                includeDating: sensitiveSources.includes('dating'),
+                includeNsfw: sensitiveSources.includes('nsfw'),
+                includeDarkweb: sensitiveSources.includes('darkweb') || darkwebEnabled,
+                premium: premiumOptions,
+              },
+            },
+          });
+
+          if (error) throw error;
+          return { success: true, scanId: data.scanId, target: targetValue };
+        } catch (err) {
+          console.error(`Scan failed for ${targetValue}:`, err);
+          return { success: false, error: err, target: targetValue };
+        }
+      });
+
+      const results = await Promise.allSettled(scanPromises);
+      const successful = results.filter(r => r.status === 'fulfilled' && r.value.success);
+      const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success));
+
+      if (successful.length > 0) {
+        // Set first successful scan for progress tracking
+        const firstScan = results.find(r => r.status === 'fulfilled' && r.value.success);
+        if (firstScan && firstScan.status === 'fulfilled') {
+          setCurrentScanId(firstScan.value.scanId);
+        }
+
+        toast.success(`${successful.length} scan(s) initiated successfully`);
+      }
+
+      if (failed.length > 0) {
+        toast.error(`${failed.length} scan(s) failed`, {
+          description: "Check console for details"
+        });
+      }
       
-      // Don't navigate immediately - let progress tracker handle it
     } catch (error) {
       console.error("Scan error:", error);
-      toast.error(error instanceof Error ? error.message : "Scan failed");
+      toast.error(error instanceof Error ? error.message : "Scan failed", {
+        description: "Please try again or contact support"
+      });
       setIsScanning(false);
       setCurrentScanId(null);
     }
@@ -308,13 +372,62 @@ export default function AdvancedScan() {
             </div>
 
             <div className="space-y-2">
-              <Label>Target Value</Label>
-              <Input
-                placeholder={`Enter ${scanType}...`}
-                value={target}
-                onChange={(e) => setTarget(e.target.value)}
-                className="text-lg"
-              />
+              <div className="flex items-center justify-between">
+                <Label>Target Value</Label>
+                {(scanType === 'email' || scanType === 'ip') && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsBatchMode(!isBatchMode);
+                      if (!isBatchMode) {
+                        setBatchItems([]);
+                      }
+                    }}
+                  >
+                    {isBatchMode ? 'Single Mode' : 'Batch Mode'}
+                  </Button>
+                )}
+              </div>
+
+              {isBatchMode ? (
+                <>
+                  <BatchUpload
+                    onBatchLoaded={setBatchItems}
+                    scanType={scanType}
+                    maxItems={isStandard ? 1 : 10}
+                  />
+                  {batchItems.length > 0 && (
+                    <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                      <p className="text-sm font-medium mb-2">
+                        {batchItems.length} {scanType}(s) loaded
+                      </p>
+                      <div className="max-h-32 overflow-y-auto space-y-1">
+                        {batchItems.slice(0, 5).map((item, idx) => (
+                          <p key={idx} className="text-xs text-muted-foreground font-mono">
+                            {item}
+                          </p>
+                        ))}
+                        {batchItems.length > 5 && (
+                          <p className="text-xs text-muted-foreground italic">
+                            and {batchItems.length - 5} more...
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {scanType === 'ip' && batchItems.length > 0 && (
+                    <IPMapPreview ips={batchItems} />
+                  )}
+                </>
+              ) : (
+                <Input
+                  placeholder={`Enter ${scanType}...`}
+                  value={target}
+                  onChange={(e) => setTarget(e.target.value)}
+                  className="text-lg"
+                />
+              )}
             </div>
 
             {/* Anonymous Mode Toggle */}
@@ -401,21 +514,44 @@ export default function AdvancedScan() {
             </div>
 
             {/* Dark Web Options */}
-            {darkwebEnabled && (
-              <Card className="p-4 bg-destructive/5 border-destructive/30">
-                <div className="space-y-3">
-                  <Label>Dark Web Crawl Depth</Label>
-                  <Select value={darkwebDepth.toString()} onValueChange={(v) => setDarkwebDepth(parseInt(v))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Shallow (1 level)</SelectItem>
-                      <SelectItem value="2">Medium (2 levels)</SelectItem>
-                      <SelectItem value="3">Deep (3 levels)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            {(darkwebEnabled || sensitiveSources.includes('darkweb')) && (
+              <Card className="p-4 bg-destructive/5 border-destructive/30 space-y-4">
+                <Alert className="border-warning/50 bg-warning/10">
+                  <AlertTriangle className="h-4 w-4 text-warning" />
+                  <AlertDescription className="text-sm">
+                    <strong>Dark Web Scanning Policy:</strong> By enabling dark web monitoring, you acknowledge that:
+                    <ul className="list-disc list-inside mt-2 space-y-1 text-xs">
+                      <li>Results may include illegal or disturbing content</li>
+                      <li>This feature is for legitimate security research only</li>
+                      <li>Misuse may result in account suspension</li>
+                      <li>Additional credits will be consumed (2-5x normal rate)</li>
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={darkWebPolicyAccepted}
+                    onCheckedChange={(checked) => setDarkWebPolicyAccepted(!!checked)}
+                  />
+                  <span className="text-sm">I accept the dark web scanning policy and terms</span>
+                </label>
+
+                {darkWebPolicyAccepted && (
+                  <div className="space-y-3">
+                    <Label>Dark Web Crawl Depth</Label>
+                    <Select value={darkwebDepth.toString()} onValueChange={(v) => setDarkwebDepth(parseInt(v))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Shallow (1 level) - 2x credits</SelectItem>
+                        <SelectItem value="2">Medium (2 levels) - 3x credits</SelectItem>
+                        <SelectItem value="3">Deep (3 levels) - 5x credits</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </Card>
             )}
 
@@ -426,12 +562,17 @@ export default function AdvancedScan() {
             <div className="flex gap-3 pt-4">
               <Button
                 onClick={handleScan}
-                disabled={isScanning || !target.trim()}
+                disabled={isScanning || (isBatchMode ? batchItems.length === 0 : !target.trim())}
                 className="flex-1"
                 size="lg"
               >
                 <Zap className="w-5 h-5 mr-2" />
-                {isScanning ? "Scanning..." : "Start Comprehensive Scan"}
+                {isScanning 
+                  ? "Scanning..." 
+                  : isBatchMode && batchItems.length > 0
+                    ? `Scan ${batchItems.length} Target${batchItems.length > 1 ? 's' : ''}`
+                    : "Start Comprehensive Scan"
+                }
               </Button>
             </div>
           </Card>
