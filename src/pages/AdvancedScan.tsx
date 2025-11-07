@@ -28,6 +28,7 @@ import { LocationMap } from "@/components/scan/LocationMap";
 import { LocationCard } from "@/components/scan/LocationCard";
 import { HighPrecisionToggle } from "@/components/scan/HighPrecisionToggle";
 import { GeocodingProgress } from "@/components/scan/GeocodingProgress";
+import { BuyCreditsModal } from "@/components/scan/BuyCreditsModal";
 import { useGeocoding } from "@/hooks/useGeocoding";
 
 export default function AdvancedScan() {
@@ -62,6 +63,7 @@ export default function AdvancedScan() {
   const [highPrecisionMode, setHighPrecisionMode] = useState(false);
   const [regionFilter, setRegionFilter] = useState<string>("all");
   const [ipLocations, setIpLocations] = useState<Array<{ ip: string; lat?: number; lon?: number }>>([]);
+  const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
 
   // Geocoding for IP addresses
   const { 
@@ -651,6 +653,17 @@ export default function AdvancedScan() {
                     : "Start Comprehensive Scan"
                 }
               </Button>
+              {!isStandard && (
+                <Button
+                  onClick={() => setShowBuyCreditsModal(true)}
+                  variant="outline"
+                  size="lg"
+                  className="border-primary/50 hover:bg-primary/10"
+                >
+                  <Search className="w-5 h-5 mr-2" />
+                  Buy Credits
+                </Button>
+              )}
             </div>
           </Card>
 
@@ -687,6 +700,11 @@ export default function AdvancedScan() {
         open={showConsentModal}
         onClose={() => setShowConsentModal(false)}
         onConfirm={handleConsentConfirm}
+      />
+
+      <BuyCreditsModal
+        open={showBuyCreditsModal}
+        onClose={() => setShowBuyCreditsModal(false)}
       />
     </div>
     </ScanErrorBoundary>
