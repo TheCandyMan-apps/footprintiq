@@ -94,6 +94,7 @@ const Policies = lazy(() => import("./pages/admin/Policies"));
 const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
 const PaymentErrors = lazy(() => import("./pages/Admin/PaymentErrors"));
 const FalsePositivesReview = lazy(() => import("./pages/Admin/FalsePositivesReview"));
+const SecurityReport = lazy(() => import("./pages/admin/SecurityReport"));
 const Workspace = lazy(() => import("./pages/Workspace"));
 const Workspaces = lazy(() => import("./pages/Workspaces"));
 const WorkspaceManagement = lazy(() => import("./pages/WorkspaceManagement"));
@@ -300,6 +301,7 @@ function RouterContent() {
             <Route path="/predictive-analytics" element={<PredictiveAnalytics />} />
           <Route path="/admin/roles" element={<RoleManagement />} />
           <Route path="/admin/rls-check" element={<RlsCheck />} />
+          <Route path="/admin/security-report" element={<SecurityReport />} />
           <Route path="/admin/providers" element={<Providers />} />
           <Route path="/admin/health" element={<Health />} />
           <Route path="/admin/observability" element={<Observability />} />

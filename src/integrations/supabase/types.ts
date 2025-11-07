@@ -5581,6 +5581,33 @@ export type Database = {
           },
         ]
       }
+      security_audit_log: {
+        Row: {
+          check_type: string
+          checked_at: string
+          details: Json | null
+          id: string
+          message: string
+          severity: string
+        }
+        Insert: {
+          check_type: string
+          checked_at?: string
+          details?: Json | null
+          id?: string
+          message: string
+          severity: string
+        }
+        Update: {
+          check_type?: string
+          checked_at?: string
+          details?: Json | null
+          id?: string
+          message?: string
+          severity?: string
+        }
+        Relationships: []
+      }
       sensitive_consents: {
         Row: {
           categories: string[]

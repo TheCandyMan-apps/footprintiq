@@ -171,7 +171,7 @@ export function ReverseImageComponent() {
           status: 'open',
           priority: 'medium',
           image_results: results
-        })
+        } as any)
         .select()
         .single();
 

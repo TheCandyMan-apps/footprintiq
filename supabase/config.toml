@@ -1,5 +1,11 @@
 project_id = "byuzgvauaeldjqxlrjci"
 
+[functions.create-checkout-session]
+verify_jwt = true
+
+[functions.security-check]
+verify_jwt = true
+
 [functions.ml-train-feedback]
 verify_jwt = true
 
