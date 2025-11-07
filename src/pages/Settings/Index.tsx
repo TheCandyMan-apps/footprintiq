@@ -11,7 +11,8 @@ import {
   Settings as SettingsIcon,
   Zap,
   Brain,
-  TrendingUp
+  TrendingUp,
+  User
 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,12 @@ export default function SettingsIndex() {
   const { subscriptionTier, isLoading } = useSubscription();
 
   const categories: SettingsCategory[] = [
+    {
+      title: 'Profile',
+      description: 'Manage your profile information and interface experience',
+      icon: User,
+      path: '/settings/profile',
+    },
     {
       title: 'Subscription Management',
       description: 'View your current plan, billing history, upcoming invoices, and payment methods',

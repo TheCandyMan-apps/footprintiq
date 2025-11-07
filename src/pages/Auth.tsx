@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 import { useTwitterAuth } from "@/hooks/useTwitterAuth";
 import { GDPRConsentModal } from "@/components/auth/GDPRConsentModal";
+import { PersonaSelectorModal, type Persona } from "@/components/auth/PersonaSelectorModal";
 
 const authSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
@@ -28,10 +29,12 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
+  const [showPersonaModal, setShowPersonaModal] = useState(false);
   const [pendingSignupData, setPendingSignupData] = useState<{
     email: string;
     password: string;
     fullName: string;
+    persona?: Persona;
   } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -81,6 +84,14 @@ const Auth = () => {
   const handleConsentAccept = async () => {
     if (!pendingSignupData) return;
 
+    // Show persona selector after GDPR consent
+    setShowConsentModal(false);
+    setShowPersonaModal(true);
+  };
+
+  const handlePersonaSelect = async (persona: Persona) => {
+    if (!pendingSignupData) return;
+
     setLoading(true);
 
     try {
@@ -96,22 +107,34 @@ const Auth = () => {
 
       if (signUpError) throw signUpError;
 
-      // Log GDPR consent
+      // Log GDPR consent and persona
       if (authData.user) {
         const { error: consentError } = await supabase.from('consents').insert({
           user_id: authData.user.id,
           consent_type: 'gdpr_signup',
           consent_text: 'I consent to FootprintIQ processing my personal data for scan services only, and I have read and agree to the Privacy Policy and Terms of Service.',
-          ip_address: null, // Browser can't access IP directly
+          ip_address: null,
           user_agent: navigator.userAgent,
         });
 
         if (consentError) {
           console.error('Failed to log consent:', consentError);
         }
+
+        // Create profile with persona
+        const { error: profileError } = await supabase.from('profiles').upsert({
+          user_id: authData.user.id,
+          email: pendingSignupData.email,
+          full_name: pendingSignupData.fullName,
+          persona: persona,
+        });
+
+        if (profileError) {
+          console.error('Failed to create profile:', profileError);
+        }
       }
 
-      setShowConsentModal(false);
+      setShowPersonaModal(false);
       setPendingSignupData(null);
       toast({
         title: "Success!",
@@ -360,6 +383,12 @@ const Auth = () => {
         open={showConsentModal}
         onAccept={handleConsentAccept}
         onDecline={handleConsentDecline}
+        loading={loading}
+      />
+
+      <PersonaSelectorModal
+        open={showPersonaModal}
+        onSelect={handlePersonaSelect}
         loading={loading}
       />
     </div>

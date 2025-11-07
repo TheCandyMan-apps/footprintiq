@@ -131,6 +131,7 @@ const Embed = lazy(() => import("./pages/Embed"));
 const InstallApp = lazy(() => import("./pages/InstallApp"));
 const Enterprise = lazy(() => import("./pages/Enterprise"));
 const SettingsIndex = lazy(() => import("./pages/Settings/Index"));
+const ProfileSettings = lazy(() => import("./pages/Settings/Profile"));
 const Billing = lazy(() => import("./pages/Settings/Billing"));
 const APIKeys = lazy(() => import("./pages/Settings/APIKeys"));
 const PrivacySettings = lazy(() => import("./pages/Settings/Privacy"));
@@ -253,6 +254,7 @@ function RouterContent() {
           <Route path="/features" element={<Features />} />
           <Route path="/enterprise" element={<Enterprise />} />
           <Route path="/settings" element={<SettingsIndex />} />
+          <Route path="/settings/profile" element={<ProfileSettings />} />
           <Route path="/settings/billing" element={<Billing />} />
           <Route path="/settings/api-keys" element={<APIKeys />} />
           <Route path="/settings/privacy" element={<PrivacySettings />} />

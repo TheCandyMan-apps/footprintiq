@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { SensitiveConsentModal } from "@/components/providers/SensitiveConsentModal";
 import { Search, Shield, Zap, Database, Globe, Lock } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useUserPersona } from "@/hooks/useUserPersona";
 import { PremiumApifyOptions } from "@/components/scan/PremiumApifyOptions";
 import { CreditsBadge } from "@/components/workspace/CreditsBadge";
 import { ScanProgressTracker } from "@/components/ScanProgressTracker";
@@ -22,6 +23,7 @@ import { ScanErrorBoundary } from "@/components/ScanErrorBoundary";
 export default function AdvancedScan() {
   const navigate = useNavigate();
   const { workspace, loading: workspaceLoading, refreshWorkspace } = useWorkspace();
+  const { persona, isStandard } = useUserPersona();
   const [scanType, setScanType] = useState<string>("email");
   const [target, setTarget] = useState("");
   const [providers, setProviders] = useState<string[]>([]);
@@ -70,10 +72,16 @@ export default function AdvancedScan() {
     { id: "apify-osint", name: "OSINT Scraper (Paste sites)", icon: Database, premium: true, types: ['email', 'username'], description: "Search Pastebin, GitHub Gist, Codepad, and other paste sites for exposed data" },
   ];
 
-  // Filter providers by current scan type
-  const compatibleProviders = availableProviders.filter(p => 
-    p.types.includes(scanType)
-  );
+  // Filter providers by current scan type and user persona
+  const compatibleProviders = availableProviders.filter(p => {
+    // Check if provider supports current scan type
+    if (!p.types.includes(scanType)) return false;
+    
+    // Hide premium/advanced providers for standard users
+    if (isStandard && p.premium) return false;
+    
+    return true;
+  });
 
   const toggleProvider = (id: string) => {
     setProviders(prev =>
@@ -313,6 +321,11 @@ export default function AdvancedScan() {
                 <span className="text-xs text-muted-foreground">
                   ({compatibleProviders.length} providers available for {scanType} scans)
                 </span>
+                {isStandard && (
+                  <Badge variant="secondary" className="ml-2">
+                    Simplified Mode
+                  </Badge>
+                )}
               </Label>
               {compatibleProviders.length === 0 ? (
                 <div className="p-4 border border-border rounded-lg bg-muted/50 text-center">
