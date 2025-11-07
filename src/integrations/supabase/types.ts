@@ -3789,7 +3789,6 @@ export type Database = {
         Row: {
           confidence: number | null
           created_at: string
-          embeddings: string | null
           entity_id: string
           id: string
           metadata: Json | null
@@ -3801,7 +3800,6 @@ export type Database = {
         Insert: {
           confidence?: number | null
           created_at?: string
-          embeddings?: string | null
           entity_id: string
           id?: string
           metadata?: Json | null
@@ -3813,7 +3811,6 @@ export type Database = {
         Update: {
           confidence?: number | null
           created_at?: string
-          embeddings?: string | null
           entity_id?: string
           id?: string
           metadata?: Json | null
