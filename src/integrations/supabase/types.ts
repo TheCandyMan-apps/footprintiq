@@ -2205,6 +2205,47 @@ export type Database = {
         }
         Relationships: []
       }
+      dark_web_findings: {
+        Row: {
+          created_at: string
+          description: string | null
+          discovered_at: string
+          id: string
+          raw_data: Json | null
+          scan_id: string
+          source_name: string
+          threat_level: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discovered_at?: string
+          id?: string
+          raw_data?: Json | null
+          scan_id: string
+          source_name: string
+          threat_level?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discovered_at?: string
+          id?: string
+          raw_data?: Json | null
+          scan_id?: string
+          source_name?: string
+          threat_level?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dark_web_findings_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       darkweb_alert_history: {
         Row: {
           alert_type: string | null
