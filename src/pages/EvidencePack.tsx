@@ -107,7 +107,7 @@ export default function EvidencePack() {
 
   const loadPack = async (id: string) => {
     try {
-      const { data: packData, error: packError } = await supabase
+      const { data: packData, error: packError } = await (supabase as any)
         .from('evidence_packs')
         .select('*')
         .eq('id', id)
@@ -120,12 +120,12 @@ export default function EvidencePack() {
         return;
       }
 
-      setPack(packData);
-      setPackName(packData.name);
-      setPackDescription(packData.description || '');
+      setPack(packData as any);
+      setPackName((packData as any).name);
+      setPackDescription((packData as any).description || '');
 
       // Load items
-      const { data: itemsData, error: itemsError } = await supabase
+      const { data: itemsData, error: itemsError } = await (supabase as any)
         .from('evidence_pack_items')
         .select(`
           *,
@@ -135,27 +135,27 @@ export default function EvidencePack() {
         .order('order_index');
 
       if (itemsError) throw itemsError;
-      setItems(itemsData || []);
+      setItems((itemsData || []) as any);
 
       // Load notes
-      const { data: notesData, error: notesError } = await supabase
+      const { data: notesData, error: notesError } = await (supabase as any)
         .from('evidence_pack_notes')
         .select('*')
         .eq('pack_id', id)
         .order('created_at', { ascending: false });
 
       if (notesError) throw notesError;
-      setNotes(notesData || []);
+      setNotes((notesData || []) as any);
 
       // Load timeline
-      const { data: timelineData, error: timelineError } = await supabase
+      const { data: timelineData, error: timelineError } = await (supabase as any)
         .from('evidence_pack_timeline')
         .select('*')
         .eq('pack_id', id)
         .order('event_date', { ascending: false });
 
       if (timelineError) throw timelineError;
-      setTimeline(timelineData || []);
+      setTimeline((timelineData || []) as any);
 
     } catch (error: any) {
       toast.error('Failed to load evidence pack');
@@ -169,7 +169,7 @@ export default function EvidencePack() {
     if (!workspace?.id) return;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('findings')
         .select('*')
         .eq('workspace_id', workspace.id)
@@ -177,7 +177,7 @@ export default function EvidencePack() {
         .limit(100);
 
       if (error) throw error;
-      setAvailableFindings(data || []);
+      setAvailableFindings((data || []) as any);
     } catch (error: any) {
       console.error('Failed to load findings:', error);
     }
@@ -193,7 +193,7 @@ export default function EvidencePack() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('evidence_packs')
         .insert({
           workspace_id: workspace.id,
@@ -207,7 +207,7 @@ export default function EvidencePack() {
       if (error) throw error;
 
       toast.success('Evidence pack created');
-      navigate(`/evidence-pack?id=${data.id}`);
+      navigate(`/evidence-pack?id=${(data as any).id}`);
     } catch (error: any) {
       toast.error('Failed to create pack');
       console.error(error);
@@ -218,7 +218,7 @@ export default function EvidencePack() {
     if (!packId) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('evidence_packs')
         .update({
           name: packName,
@@ -238,7 +238,7 @@ export default function EvidencePack() {
     if (!packId) return;
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('evidence_pack_items')
         .insert({
           pack_id: packId,
@@ -257,7 +257,7 @@ export default function EvidencePack() {
 
   const removeFinding = async (itemId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('evidence_pack_items')
         .delete()
         .eq('id', itemId);
@@ -278,7 +278,7 @@ export default function EvidencePack() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('evidence_pack_notes')
         .insert({
           pack_id: packId,
@@ -364,7 +364,7 @@ export default function EvidencePack() {
       URL.revokeObjectURL(url);
 
       // Update pack status
-      await supabase
+      await (supabase as any)
         .from('evidence_packs')
         .update({ status: 'exported' })
         .eq('id', packId);

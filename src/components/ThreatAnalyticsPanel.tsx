@@ -318,11 +318,11 @@ export const ThreatAnalyticsPanel = () => {
                           data={severityChartData}
                           cx="50%"
                           cy="50%"
-                          labelLine={false}
-                          label={({ name, percent }) =>
-                            `${name}: ${(percent * 100).toFixed(0)}%`
+                          labelLine={true}
+                          label={({ percent }) =>
+                            percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''
                           }
-                          outerRadius={100}
+                          outerRadius={90}
                           fill="#8884d8"
                           dataKey="value"
                         >
@@ -335,6 +335,10 @@ export const ThreatAnalyticsPanel = () => {
                             backgroundColor: 'hsl(var(--card))',
                             border: '1px solid hsl(var(--border))',
                           }}
+                        />
+                        <Legend 
+                          verticalAlign="bottom"
+                          height={36}
                         />
                       </PieChart>
                     </ResponsiveContainer>
