@@ -4,6 +4,9 @@ import { RemovalQueue } from '@/components/RemovalQueue';
 import { RemovalSuccessTracker } from '@/components/RemovalSuccessTracker';
 import { TrustBadges } from '@/components/TrustBadges';
 import { LastScanned } from '@/components/LastScanned';
+import { ConfidenceScoreBadge } from '@/components/ConfidenceScoreBadge';
+import { ConfidenceScoreIndicator } from '@/components/ConfidenceScoreIndicator';
+import { ProviderMatchVisual } from '@/components/ProviderMatchVisual';
 import { analyzeTrends } from '@/lib/trends';
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -735,6 +738,85 @@ const ResultsDetail = () => {
                     </LineChart>
                   </ResponsiveContainer>
                 </ChartContainer>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {/* Confidence & Provider Match Analysis */}
+        {(dataSources.length > 0 || socialProfiles.length > 0) && (
+          <Card className="p-6 mb-8">
+            <h2 className="text-2xl font-bold mb-6">Data Quality & Source Analysis</h2>
+            
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              {/* Overall Confidence Score */}
+              <div>
+                <ConfidenceScoreIndicator
+                  score={Math.round(
+                    [...dataSources, ...socialProfiles].reduce((sum, item) => {
+                      const score = (item as any).confidence_score || 75;
+                      return sum + score;
+                    }, 0) / (dataSources.length + socialProfiles.length)
+                  )}
+                  label="Overall Data Confidence"
+                  showDetails={true}
+                  providerCount={new Set([...dataSources.map(d => d.category), ...socialProfiles.map(p => p.platform)]).size}
+                />
+              </div>
+
+              {/* Provider Match Visualization */}
+              <ProviderMatchVisual
+                providers={[
+                  ...new Set([
+                    ...dataSources.map(d => d.category),
+                    ...socialProfiles.map(p => p.platform)
+                  ])
+                ].map(provider => {
+                  const sources = dataSources.filter(d => d.category === provider);
+                  const profiles = socialProfiles.filter(p => p.platform === provider);
+                  const matched = sources.length > 0 || profiles.length > 0;
+                  const avgConfidence = matched
+                    ? Math.round(
+                        [...sources, ...profiles].reduce((sum, item) => sum + ((item as any).confidence_score || 75), 0) /
+                        (sources.length + profiles.length)
+                      )
+                    : 0;
+                  
+                  return {
+                    name: provider,
+                    matched,
+                    confidence: avgConfidence
+                  };
+                })}
+                matchPercentage={Math.round(
+                  (dataSources.length + socialProfiles.length) / 
+                  Math.max(dataSources.length + socialProfiles.length, 1) * 100
+                )}
+              />
+            </div>
+
+            {/* Confidence Distribution */}
+            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-border">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-emerald-600">
+                  {[...dataSources, ...socialProfiles].filter(item => ((item as any).confidence_score || 75) >= 85).length}
+                </div>
+                <p className="text-sm text-muted-foreground">High Confidence</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {[...dataSources, ...socialProfiles].filter(item => {
+                    const score = (item as any).confidence_score || 75;
+                    return score >= 50 && score < 85;
+                  }).length}
+                </div>
+                <p className="text-sm text-muted-foreground">Medium Confidence</p>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">
+                  {[...dataSources, ...socialProfiles].filter(item => ((item as any).confidence_score || 75) < 50).length}
+                </div>
+                <p className="text-sm text-muted-foreground">Low Confidence</p>
               </div>
             </div>
           </Card>

@@ -10,6 +10,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ResultsSkeleton } from "@/components/skeletons/ResultsSkeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { AIFilteringBadge } from "@/components/AIFilteringBadge";
+import { ConfidenceScoreBadge } from "@/components/ConfidenceScoreBadge";
+import { ConfidenceScoreIndicator } from "@/components/ConfidenceScoreIndicator";
 import type { ScanFormData } from "./ScanForm";
 
 interface ScanResultsProps {
@@ -309,6 +311,45 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           </div>
         </Card>
 
+        {/* Overall Confidence Score Summary */}
+        <Card className="p-6 mb-6 bg-gradient-card border-border">
+          <h3 className="text-lg font-semibold mb-4">Data Quality Overview</h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            <ConfidenceScoreIndicator
+              score={Math.round(
+                [...dataSources, ...foundProfiles].reduce((sum, item) => sum + (item.confidenceScore || 75), 0) / 
+                (dataSources.length + foundProfiles.length)
+              )}
+              label="Average Confidence"
+              showDetails={true}
+              providerCount={new Set([...dataSources.map(d => d.category), ...foundProfiles.map(p => p.platform)]).size}
+            />
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">High Confidence</span>
+                <span className="font-semibold">
+                  {[...dataSources, ...foundProfiles].filter(item => (item.confidenceScore || 75) >= 85).length}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Medium Confidence</span>
+                <span className="font-semibold">
+                  {[...dataSources, ...foundProfiles].filter(item => {
+                    const score = item.confidenceScore || 75;
+                    return score >= 50 && score < 85;
+                  }).length}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Low Confidence</span>
+                <span className="font-semibold text-orange-600">
+                  {lowConfidenceCount}
+                </span>
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* AI Filtering Badge */}
         {aiFilterStats && (
           <AIFilteringBadge
@@ -368,8 +409,8 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                       exit={{ opacity: 0, scale: 0.8, height: 0 }}
                       transition={{ duration: 0.3 }}
                     >
-                      <Card className="p-4 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
-                        <div className="flex items-start justify-between gap-3">
+                       <Card className="p-4 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
+                        <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <h4 className="font-semibold">{profile.platform}</h4>
@@ -377,9 +418,6 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                               {profile.source === 'predicta' && (
                                 <Badge variant="default" className="text-xs bg-primary">Predicta Search</Badge>
                               )}
-                              <Badge className={`text-xs ${confidenceBadge.color}`}>
-                                {confidenceBadge.label}
-                              </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground mb-1">{profile.username}</p>
                             {profile.followers && (
@@ -416,6 +454,14 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
+                        </div>
+                        
+                        {/* Confidence Score Indicator */}
+                        <div className="pt-3 border-t border-border">
+                          <ConfidenceScoreBadge 
+                            score={profile.confidenceScore || 85}
+                            size="sm"
+                          />
                         </div>
                       </Card>
                     </motion.div>
@@ -461,15 +507,12 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                   transition={{ duration: 0.3 }}
                 >
                   <Card className="p-6 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <h4 className="text-lg font-semibold">{source.name}</h4>
                           <Badge variant={getRiskColor(source.riskLevel) as any}>
                             {source.riskLevel.toUpperCase()} RISK
-                          </Badge>
-                          <Badge className={`text-xs ${confidenceBadge.color}`}>
-                            {confidenceBadge.label}
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground mb-3">{source.category}</p>
@@ -514,6 +557,14 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                           Request Removal
                         </Button>
                       </div>
+                    </div>
+                    
+                    {/* Confidence Score Indicator */}
+                    <div className="pt-4 border-t border-border">
+                      <ConfidenceScoreBadge 
+                        score={source.confidenceScore || 75}
+                        size="sm"
+                      />
                     </div>
                   </Card>
                 </motion.div>
