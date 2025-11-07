@@ -61,7 +61,7 @@ export function WebhookIntegrations() {
   const loadWebhooks = async () => {
     setIsLoading(true);
     const { data, error } = await supabase
-      .from('webhook_endpoints' as any)
+      .from('webhook_endpoints')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -90,9 +90,21 @@ export function WebhookIntegrations() {
 
     setIsAdding(true);
     
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      toast({
+        title: 'Error',
+        description: 'You must be logged in to add webhooks',
+        variant: 'destructive',
+      });
+      setIsAdding(false);
+      return;
+    }
+
     const { error } = await supabase
-      .from('webhook_endpoints' as any)
+      .from('webhook_endpoints')
       .insert({
+        user_id: user.id,
         name: newWebhook.name,
         url: newWebhook.url,
         connector_type: newWebhook.type,
@@ -122,7 +134,7 @@ export function WebhookIntegrations() {
 
   const handleDeleteWebhook = async (id: string) => {
     const { error } = await supabase
-      .from('webhook_endpoints' as any)
+      .from('webhook_endpoints')
       .delete()
       .eq('id', id);
 
@@ -144,7 +156,7 @@ export function WebhookIntegrations() {
 
   const handleToggleActive = async (id: string, isActive: boolean) => {
     const { error } = await supabase
-      .from('webhook_endpoints' as any)
+      .from('webhook_endpoints')
       .update({ is_active: isActive })
       .eq('id', id);
 

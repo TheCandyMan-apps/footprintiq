@@ -6433,6 +6433,65 @@ export type Database = {
           },
         ]
       }
+      webhook_endpoints: {
+        Row: {
+          connector_type: string
+          created_at: string
+          events: string[]
+          failure_count: number
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          name: string
+          signing_secret: string
+          success_count: number
+          updated_at: string
+          url: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          connector_type: string
+          created_at?: string
+          events?: string[]
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name: string
+          signing_secret: string
+          success_count?: number
+          updated_at?: string
+          url: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          connector_type?: string
+          created_at?: string
+          events?: string[]
+          failure_count?: number
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          name?: string
+          signing_secret?: string
+          success_count?: number
+          updated_at?: string
+          url?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_endpoints_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhooks: {
         Row: {
           created_at: string | null
