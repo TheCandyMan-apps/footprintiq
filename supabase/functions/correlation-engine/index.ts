@@ -97,6 +97,9 @@ serve(async (req) => {
     const fullName = `${scan.first_name} ${scan.last_name}`.trim();
     const username = scan.username;
 
+    // Import confidence scoring utilities
+    const { calculateProviderConfidence } = await import('../_shared/confidenceScoring.ts');
+    
     // Email correlations
     if (email) {
       const emailSources = dataSources.filter(ds => 
@@ -104,10 +107,14 @@ serve(async (req) => {
           field.toLowerCase().includes('email')
         )
       );
+      const emailConfidence = calculateProviderConfidence(
+        emailSources.map(ds => ds.name),
+        dataSources.length
+      );
       correlations.emailMatches = emailSources.map(ds => ({
         source: ds.name,
         category: ds.category,
-        confidence: 0.95,
+        confidence: emailConfidence / 100,
       }));
     }
 
@@ -118,10 +125,14 @@ serve(async (req) => {
           field.toLowerCase().includes('phone')
         )
       );
+      const phoneConfidence = calculateProviderConfidence(
+        phoneSources.map(ds => ds.name),
+        dataSources.length
+      );
       correlations.phoneMatches = phoneSources.map(ds => ({
         source: ds.name,
         category: ds.category,
-        confidence: 0.90,
+        confidence: phoneConfidence / 100,
       }));
     }
 
@@ -132,20 +143,28 @@ serve(async (req) => {
           field.toLowerCase().includes('name')
         )
       );
+      const nameConfidence = calculateProviderConfidence(
+        nameSources.map(ds => ds.name),
+        dataSources.length
+      );
       correlations.nameMatches = nameSources.map(ds => ({
         source: ds.name,
         category: ds.category,
-        confidence: 0.85,
+        confidence: nameConfidence / 100,
       }));
     }
 
     // Username correlations across social profiles
     if (username && socialProfiles) {
+      const usernameConfidence = calculateProviderConfidence(
+        socialProfiles.map(sp => sp.platform),
+        socialProfiles.length
+      );
       correlations.usernameMatches = socialProfiles.map(sp => ({
         platform: sp.platform,
         username: sp.username,
         url: sp.profile_url,
-        confidence: 0.80,
+        confidence: (sp.confidence_score || usernameConfidence) / 100,
       }));
     }
 

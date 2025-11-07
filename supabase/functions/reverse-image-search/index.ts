@@ -168,14 +168,33 @@ serve(async (req) => {
       results.push(...mockImageResults);
     }
 
-    // Store results in database
+    // Calculate confidence scores and store results in database
     if (results.length > 0) {
-      const { error: dsError } = await supabase
-        .from('data_sources')
-        .insert(results.map(r => ({
+      const { calculateDataSourceConfidence } = await import('../_shared/confidenceScoring.ts');
+      
+      const resultsWithConfidence = results.map(r => {
+        // For facial recognition, confidence is based on the match score
+        let confidence = 50; // Base confidence
+        
+        // Extract confidence from data_found if available
+        const confidenceMatch = r.data_found.find((d: string) => d.includes('% confidence'));
+        if (confidenceMatch) {
+          const matchPercent = parseInt(confidenceMatch);
+          if (!isNaN(matchPercent)) {
+            confidence = matchPercent;
+          }
+        }
+        
+        return {
           scan_id: scanId,
           ...r,
-        })));
+          confidence_score: confidence,
+        };
+      });
+
+      const { error: dsError } = await supabase
+        .from('data_sources')
+        .insert(resultsWithConfidence);
 
       if (dsError) {
         console.error('Error storing image search results:', dsError);

@@ -803,25 +803,49 @@ serve(async (req) => {
       }
     }
 
-    // Store results in database
+    // Calculate confidence scores and store results in database
     if (results.dataSources.length > 0) {
-      const { error: dsError } = await supabase
-        .from('data_sources')
-        .insert(results.dataSources.map(ds => ({
+      const { calculateDataSourceConfidence } = await import('../_shared/confidenceScoring.ts');
+      
+      const dataSourcesWithConfidence = results.dataSources.map(ds => {
+        const confidence = calculateDataSourceConfidence(ds, results.dataSources);
+        return {
           scan_id: scanData.scanId,
           ...ds,
-        })));
+          confidence_score: confidence,
+        };
+      });
+
+      const { error: dsError } = await supabase
+        .from('data_sources')
+        .insert(dataSourcesWithConfidence);
 
       if (dsError) console.error('Error storing data sources:', dsError);
     }
 
     if (results.socialProfiles.length > 0) {
-      const { error: spError } = await supabase
-        .from('social_profiles')
-        .insert(results.socialProfiles.map(sp => ({
+      const { calculateSocialProfileConfidence } = await import('../_shared/confidenceScoring.ts');
+      
+      // Count matching usernames across platforms
+      const usernameCounts = new Map<string, number>();
+      results.socialProfiles.forEach(sp => {
+        const count = usernameCounts.get(sp.username) || 0;
+        usernameCounts.set(sp.username, count + 1);
+      });
+      
+      const socialProfilesWithConfidence = results.socialProfiles.map(sp => {
+        const matchingProfiles = (usernameCounts.get(sp.username) || 1) - 1;
+        const confidence = calculateSocialProfileConfidence(sp, matchingProfiles);
+        return {
           scan_id: scanData.scanId,
           ...sp,
-        })));
+          confidence_score: confidence,
+        };
+      });
+
+      const { error: spError } = await supabase
+        .from('social_profiles')
+        .insert(socialProfilesWithConfidence);
 
       if (spError) console.error('Error storing social profiles:', spError);
     }
