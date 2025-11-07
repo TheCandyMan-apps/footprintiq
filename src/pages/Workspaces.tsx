@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "react-router-dom";
+import { WorkspaceCases } from "@/components/workspace/WorkspaceCases";
 
 export default function Workspaces() {
   const { workspace, workspaces, switchWorkspace, refreshWorkspace } = useWorkspace();
@@ -241,51 +242,55 @@ export default function Workspaces() {
         </div>
 
         {workspace && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
-                Invite Team Members
-              </CardTitle>
-              <CardDescription>
-                Add collaborators to {workspace.name}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="md:col-span-2">
-                  <Label htmlFor="invite-email">Email Address</Label>
-                  <Input
-                    id="invite-email"
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="colleague@example.com"
-                  />
+          <>
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
+                  Invite Team Members
+                </CardTitle>
+                <CardDescription>
+                  Add collaborators to {workspace.name}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="md:col-span-2">
+                    <Label htmlFor="invite-email">Email Address</Label>
+                    <Input
+                      id="invite-email"
+                      type="email"
+                      value={inviteEmail}
+                      onChange={(e) => setInviteEmail(e.target.value)}
+                      placeholder="colleague@example.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="invite-role">Role</Label>
+                    <Select value={inviteRole} onValueChange={(v: any) => setInviteRole(v)}>
+                      <SelectTrigger id="invite-role">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="viewer">Viewer</SelectItem>
+                        <SelectItem value="analyst">Analyst</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="invite-role">Role</Label>
-                  <Select value={inviteRole} onValueChange={(v: any) => setInviteRole(v)}>
-                    <SelectTrigger id="invite-role">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="viewer">Viewer</SelectItem>
-                      <SelectItem value="analyst">Analyst</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button
-                onClick={() => inviteMutation.mutate({ email: inviteEmail, role: inviteRole })}
-                disabled={!inviteEmail || inviteMutation.isPending}
-                className="mt-4"
-              >
-                Send Invitation
-              </Button>
-            </CardContent>
-          </Card>
+                <Button
+                  onClick={() => inviteMutation.mutate({ email: inviteEmail, role: inviteRole })}
+                  disabled={!inviteEmail || inviteMutation.isPending}
+                  className="mt-4"
+                >
+                  Send Invitation
+                </Button>
+              </CardContent>
+            </Card>
+
+            <WorkspaceCases workspaceId={workspace.id} />
+          </>
         )}
       </main>
       <Footer />

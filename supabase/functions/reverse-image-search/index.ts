@@ -9,13 +9,24 @@ const corsHeaders = {
 
 interface ReverseImageRequest {
   imageUrl: string;
-  scanId: string;
+  scanId?: string;
+  workspaceId?: string;
+  useTinEye?: boolean;
+  creditCost?: number;
 }
 
 interface FaceCheckResult {
   score: number;
   url: string;
   base64: string;
+}
+
+interface ImageMatch {
+  thumbnail_url: string;
+  url: string;
+  domain: string;
+  match_percent: number;
+  crawl_date: string;
 }
 
 serve(async (req) => {
@@ -28,27 +39,96 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { imageUrl, scanId }: ReverseImageRequest = await req.json();
+    const { imageUrl, scanId, workspaceId, useTinEye, creditCost }: ReverseImageRequest = await req.json();
     
     // Validate user ownership
     const authHeader = req.headers.get('Authorization');
+    let userId: string | null = null;
+    
     if (authHeader) {
       const { data: { user } } = await supabase.auth.getUser(authHeader.split('Bearer ')[1]);
       if (user) {
-        const { data: scan } = await supabase.from('scans').select('user_id').eq('id', scanId).single();
-        if (scan && scan.user_id !== user.id) {
-          return new Response(
-            JSON.stringify({ error: 'Access denied' }),
-            { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
+        userId = user.id;
+        if (scanId) {
+          const { data: scan } = await supabase.from('scans').select('user_id').eq('id', scanId).single();
+          if (scan && scan.user_id !== user.id) {
+            return new Response(
+              JSON.stringify({ error: 'Access denied' }),
+              { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
         }
       }
     }
-    
-    console.log('Starting reverse image search for scan:', scanId);
 
+    // Deduct credits if workspaceId and creditCost provided
+    if (workspaceId && creditCost && userId) {
+      const { data: deductResult, error: creditError } = await supabase.rpc('spend_credits', {
+        _workspace_id: workspaceId,
+        _cost: creditCost,
+        _reason: 'reverse_image_search',
+        _meta: { user_id: userId, timestamp: new Date().toISOString() }
+      });
+
+      if (creditError || !deductResult) {
+        return new Response(
+          JSON.stringify({ error: 'Insufficient credits' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+    
+    console.log('Starting reverse image search:', { scanId, useTinEye });
+
+    const results: ImageMatch[] = [];
+
+    // TinEye search
+    if (useTinEye) {
+      const TINEYE_API_KEY = Deno.env.get('TINEYE_API_KEY');
+      if (TINEYE_API_KEY) {
+        console.log('Using TinEye for reverse image search...');
+        try {
+          // Download image to process
+          const imageResponse = await fetch(imageUrl);
+          if (!imageResponse.ok) throw new Error('Failed to fetch image');
+          
+          const imageBlob = await imageResponse.blob();
+          const formData = new FormData();
+          formData.append('image', imageBlob);
+
+          // Call TinEye API
+          const tineyeResponse = await fetch('https://api.tineye.com/rest/search/', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${TINEYE_API_KEY}`,
+            },
+            body: formData,
+          });
+
+          if (tineyeResponse.ok) {
+            const tineyeData = await tineyeResponse.json();
+            
+            if (tineyeData.results && tineyeData.results.matches) {
+              for (const match of tineyeData.results.matches) {
+                results.push({
+                  thumbnail_url: match.backlinks[0]?.thumbnail || match.image_url,
+                  url: match.backlinks[0]?.url || match.image_url,
+                  domain: new URL(match.backlinks[0]?.url || match.image_url).hostname,
+                  match_percent: Math.round(match.score * 100),
+                  crawl_date: match.backlinks[0]?.crawl_date || new Date().toISOString(),
+                });
+              }
+            }
+            console.log(`TinEye found ${results.length} matches`);
+          }
+        } catch (error) {
+          console.error('TinEye error:', error instanceof Error ? error.message : 'Unknown error');
+        }
+      }
+    }
+
+    // FaceCheck fallback
     const FACECHECK_API_TOKEN = Deno.env.get('FACECHECK_API_TOKEN');
-    const results = [];
 
     if (FACECHECK_API_TOKEN) {
       console.log('Using FaceCheck.ID for facial recognition search...');
@@ -168,8 +248,8 @@ serve(async (req) => {
       results.push(...mockImageResults);
     }
 
-    // Calculate confidence scores and store results in database
-    if (results.length > 0) {
+    // Calculate confidence scores and store results in database only if scanId provided
+    if (results.length > 0 && scanId) {
       const { calculateDataSourceConfidence } = await import('../_shared/confidenceScoring.ts');
       
       const resultsWithConfidence = results.map(r => {
@@ -207,7 +287,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         resultsCount: results.length,
-        results: results.map(r => ({ name: r.name, url: r.url })),
+        matches: results,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

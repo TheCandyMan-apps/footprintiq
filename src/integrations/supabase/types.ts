@@ -1527,6 +1527,7 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          image_results: Json | null
           priority: string
           scan_id: string | null
           status: string
@@ -1540,6 +1541,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_results?: Json | null
           priority?: string
           scan_id?: string | null
           status?: string
@@ -1553,6 +1555,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          image_results?: Json | null
           priority?: string
           scan_id?: string | null
           status?: string

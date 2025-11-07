@@ -29,6 +29,8 @@ import { LocationCard } from "@/components/scan/LocationCard";
 import { HighPrecisionToggle } from "@/components/scan/HighPrecisionToggle";
 import { GeocodingProgress } from "@/components/scan/GeocodingProgress";
 import { BuyCreditsModal } from "@/components/scan/BuyCreditsModal";
+import { ReverseImageComponent } from "@/components/scan/ReverseImageComponent";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGeocoding } from "@/hooks/useGeocoding";
 
 export default function AdvancedScan() {
@@ -379,6 +381,16 @@ export default function AdvancedScan() {
                 <CreditsBadge workspaceId={workspace.id} />
               </div>
 
+              {/* Tabs for scan types */}
+              <Tabs defaultValue="standard" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="standard">Standard Scan</TabsTrigger>
+                  <TabsTrigger value="reverse-image">Reverse Image Intel</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="standard" className="space-y-8 mt-6">
+                  {/* Standard scan form continues below */}
+
           {/* Main Form */}
           <Card className="p-6 space-y-6">
             {/* Target Input */}
@@ -691,6 +703,12 @@ export default function AdvancedScan() {
               </p>
             </Card>
           </div>
+                </TabsContent>
+
+                <TabsContent value="reverse-image" className="mt-6">
+                  <ReverseImageComponent />
+                </TabsContent>
+              </Tabs>
             </>
           )}
         </div>
