@@ -145,6 +145,7 @@ const ReportsList = lazy(() => import("./pages/Reports/List"));
 const ApiDocs = lazy(() => import("./pages/ApiDocs"));
 const DPA = lazy(() => import("./pages/legal/DPA"));
 const AdvancedScan = lazy(() => import("./pages/AdvancedScan"));
+const EvidencePack = lazy(() => import("./pages/EvidencePack"));
 const BuyCredits = lazy(() => import("./pages/BuyCredits"));
 const PricingPage = lazy(() => import("./pages/Pricing"));
 const Features = lazy(() => import("./pages/Features"));
@@ -266,6 +267,7 @@ function RouterContent() {
           <Route path="/api-docs" element={<ApiDocs />} />
           <Route path="/legal/dpa" element={<DPA />} />
           <Route path="/scan/advanced" element={<AdvancedScan />} />
+          <Route path="/evidence-pack" element={<EvidencePack />} />
           <Route path="/settings/health" element={<ScanHealth />} />
           <Route path="/scan/batch" element={<BatchScan />} />
           <Route path="/settings/billing" element={<Billing />} />

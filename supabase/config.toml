@@ -1,11 +1,5 @@
 project_id = "byuzgvauaeldjqxlrjci"
 
-[functions.scan-health]
-verify_jwt = false
-
-[functions.test-scan]
-verify_jwt = true
-
 [functions.ai-router]
 verify_jwt = true
 
@@ -248,3 +242,12 @@ verify_jwt = true
 
 [functions.observability-metrics]
 verify_jwt = true
+
+[functions.scan-health]
+verify_jwt = false
+
+[functions.test-scan]
+verify_jwt = false
+
+[functions.ip-geocode]
+verify_jwt = false
