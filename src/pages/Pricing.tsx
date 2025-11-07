@@ -20,24 +20,17 @@ const PricingPage = () => {
         "@type": "Offer",
         "name": "Analyst Plan",
         "price": "29",
-        "priceCurrency": "GBP",
+        "priceCurrency": "USD",
         "priceValidUntil": "2026-12-31",
         "description": "For security analysts with unlimited scans and dark web monitoring"
       },
       {
         "@type": "Offer",
-        "name": "Pro Plan",
-        "price": "79",
-        "priceCurrency": "GBP",
-        "priceValidUntil": "2026-12-31",
-        "description": "Advanced features with PDF exports and white-label reports"
-      },
-      {
-        "@type": "Offer",
         "name": "Enterprise Plan",
-        "price": "Contact",
-        "priceCurrency": "GBP",
-        "description": "Custom enterprise solution with API access and SSO"
+        "price": "299",
+        "priceCurrency": "USD",
+        "priceValidUntil": "2026-12-31",
+        "description": "Advanced enterprise solution with API access, white-label reports, and SSO"
       }
     ]
   };

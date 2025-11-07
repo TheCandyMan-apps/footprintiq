@@ -12,8 +12,8 @@ import { useParallax } from "@/hooks/useParallax";
 
 // Stripe price IDs for each tier
 const STRIPE_PRICES = {
-  analyst: 'price_1SPXbHPNdM5SAyj7lPBHvjIi', // $29/month
-  pro: 'price_1SPXcEPNdM5SAyj7AbannmpP', // $79/month
+  analyst: 'price_1SQgxEPNdM5SAyj7pZEUc11u', // $29/month
+  enterprise: 'price_1SQh9JPNdM5SAyj722p376Qh', // $299/month
 };
 
 const pricingTiers = [
@@ -24,12 +24,10 @@ const pricingTiers = [
     description: "Get started with basic features",
     priceId: null,
     features: [
-      "10 scans per month",
-      "Basic breach database access",
-      "Email & phone lookup",
-      "2 monitors per workspace",
-      "5 AI analyst queries",
-      "30 days data retention",
+      "1 scan per month",
+      "Basic data source detection",
+      "Privacy score analysis",
+      "Email breach checking",
       "Community support",
     ],
     cta: "Get Started Free",
@@ -37,43 +35,45 @@ const pricingTiers = [
     isFree: true,
   },
   {
-    name: "Premium",
-    price: "$79",
+    name: "Analyst",
+    price: "$29",
     period: "per month",
-    description: "Advanced data enrichment & unlimited access",
-    priceId: STRIPE_PRICES.pro,
+    description: "For security analysts & investigators",
+    priceId: STRIPE_PRICES.analyst,
     features: [
-      "Unlimited scans & quotas",
-      "Advanced data enrichment",
+      "Unlimited scans",
+      "Advanced OSINT detection (100+ sources)",
       "Dark web monitoring",
-      "Social media reconnaissance",
-      "API access (5000 calls/hour)",
-      "Unlimited AI analyst queries",
-      "Admin tools & team management",
-      "PDF export & white-label reports",
-      "SSO authentication",
-      "Priority support",
+      "AI-powered catfish detection",
+      "Automated removal requests",
+      "Continuous monitoring & alerts",
+      "Social media profile analysis",
+      "PDF report exports",
+      "Priority email support",
+      "Monthly privacy reports",
     ],
-    cta: "Subscribe to Premium",
+    cta: "Start Analyst Plan",
     highlighted: true,
   },
   {
     name: "Enterprise",
-    price: "Custom",
-    period: "",
-    description: "Full-scale intelligence platform",
-    priceId: null,
+    price: "$299",
+    period: "per month",
+    description: "Advanced enterprise solution",
+    priceId: STRIPE_PRICES.enterprise,
     features: [
-      "Everything in Premium",
+      "Everything in Analyst",
       "Unlimited team members",
-      "Custom data feeds & integrations",
+      "API access (10,000 calls/hour)",
+      "Custom integrations",
+      "White-label reports",
+      "SSO authentication",
       "Advanced admin controls",
       "Dedicated account manager",
       "Custom SLA & compliance",
-      "On-premise deployment option",
       "24/7 enterprise support",
     ],
-    cta: "Contact Sales",
+    cta: "Start Enterprise Plan",
     highlighted: false,
   },
 ];
@@ -106,26 +106,20 @@ export const Pricing = () => {
       return;
     }
 
-    if (tierName === "Enterprise") {
-      window.location.href = "mailto:sales@footprintiq.com?subject=Enterprise Inquiry";
-      return;
-    }
-
     if (!priceId) {
       toast({
         title: "Plan Not Available",
-        description: "This pricing tier hasn't been configured yet. Please contact support or see STRIPE_SETUP.md for setup instructions.",
+        description: "This pricing tier hasn't been configured yet.",
         variant: "destructive",
       });
-      console.error(`Missing Stripe price ID for ${tierName}. Check STRIPE_SETUP.md for configuration instructions.`);
       return;
     }
 
     try {
-      console.log(`Initiating checkout for ${tierName} with price ID: ${priceId}`);
+      const plan = tierName.toLowerCase();
       
-      const { data, error } = await supabase.functions.invoke('billing/create-subscription', {
-        body: { price_id: priceId }
+      const { data, error } = await supabase.functions.invoke('billing/checkout', {
+        body: { plan }
       });
 
       if (error) {
@@ -134,7 +128,6 @@ export const Pricing = () => {
       }
       
       if (data?.url) {
-        console.log('Opening Stripe Checkout:', data.url);
         window.open(data.url, '_blank');
       } else {
         throw new Error('No checkout URL returned from server');
@@ -144,8 +137,8 @@ export const Pricing = () => {
       toast({
         title: "Checkout Error",
         description: error instanceof Error 
-          ? `${error.message}. Check browser console for details.`
-          : "Couldn't start checkout. Please check your Stripe configuration (see STRIPE_SETUP.md).",
+          ? error.message
+          : "Couldn't start checkout. Please try again.",
         variant: "destructive",
       });
     }
@@ -201,7 +194,7 @@ export const Pricing = () => {
             <Button 
               className="w-full" 
               size="lg"
-              onClick={() => handleCTA('Professional OSINT', STRIPE_PRICES.pro)}
+              onClick={() => handleCTA('Analyst', STRIPE_PRICES.analyst)}
             >
               Get Started Now
             </Button>
@@ -271,14 +264,14 @@ export const Pricing = () => {
                 <tr className="border-b border-border">
                   <th className="text-left p-4 font-semibold">Feature</th>
                   <th className="text-center p-4 font-semibold">Free</th>
-                  <th className="text-center p-4 font-semibold bg-primary/5">Premium</th>
+                  <th className="text-center p-4 font-semibold bg-primary/5">Analyst</th>
                   <th className="text-center p-4 font-semibold">Enterprise</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 <tr className="border-b border-border/50">
                   <td className="p-4 font-medium">Monthly Scans</td>
-                  <td className="text-center p-4 text-muted-foreground">10</td>
+                  <td className="text-center p-4 text-muted-foreground">1</td>
                   <td className="text-center p-4 bg-primary/5 font-semibold">Unlimited</td>
                   <td className="text-center p-4 font-semibold">Unlimited</td>
                 </tr>
@@ -289,51 +282,57 @@ export const Pricing = () => {
                   <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
                 </tr>
                 <tr className="border-b border-border/50">
-                  <td className="p-4 font-medium">Advanced Data Enrichment</td>
+                  <td className="p-4 font-medium">OSINT Data Sources</td>
+                  <td className="text-center p-4 text-muted-foreground">Basic</td>
+                  <td className="text-center p-4 bg-primary/5 font-semibold">100+</td>
+                  <td className="text-center p-4 font-semibold">100+</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">API Access</td>
+                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 bg-primary/5"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 font-semibold">10,000/hour</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">AI-Powered Analysis</td>
                   <td className="text-center p-4"><span className="text-destructive">✗</span></td>
                   <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
                   <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
                 </tr>
                 <tr className="border-b border-border/50">
-                  <td className="p-4 font-medium">API Access</td>
-                  <td className="text-center p-4 text-muted-foreground">100/hour</td>
-                  <td className="text-center p-4 bg-primary/5 font-semibold">5,000/hour</td>
-                  <td className="text-center p-4 font-semibold">Unlimited</td>
-                </tr>
-                <tr className="border-b border-border/50">
-                  <td className="p-4 font-medium">AI Analyst Queries</td>
-                  <td className="text-center p-4 text-muted-foreground">5/month</td>
-                  <td className="text-center p-4 bg-primary/5 font-semibold">Unlimited</td>
-                  <td className="text-center p-4 font-semibold">Unlimited</td>
+                  <td className="p-4 font-medium">Automated Removal Requests</td>
+                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="p-4 font-medium">Team Members</td>
                   <td className="text-center p-4 text-muted-foreground">1</td>
-                  <td className="text-center p-4 bg-primary/5 text-muted-foreground">Up to 20</td>
+                  <td className="text-center p-4 bg-primary/5 text-muted-foreground">1</td>
                   <td className="text-center p-4 font-semibold">Unlimited</td>
                 </tr>
                 <tr className="border-b border-border/50">
-                  <td className="p-4 font-medium">Data Retention</td>
-                  <td className="text-center p-4 text-muted-foreground">30 days</td>
-                  <td className="text-center p-4 bg-primary/5 text-muted-foreground">365 days</td>
-                  <td className="text-center p-4 text-muted-foreground">730 days</td>
-                </tr>
-                <tr className="border-b border-border/50">
-                  <td className="p-4 font-medium">PDF Reports & White-label</td>
+                  <td className="p-4 font-medium">Continuous Monitoring</td>
                   <td className="text-center p-4"><span className="text-destructive">✗</span></td>
                   <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">PDF Reports</td>
+                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">White-label Reports</td>
+                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 bg-primary/5"><span className="text-destructive">✗</span></td>
                   <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="p-4 font-medium">SSO Authentication</td>
                   <td className="text-center p-4"><span className="text-destructive">✗</span></td>
-                  <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
-                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
-                </tr>
-                <tr className="border-b border-border/50">
-                  <td className="p-4 font-medium">Admin Tools</td>
-                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
-                  <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                  <td className="text-center p-4 bg-primary/5"><span className="text-destructive">✗</span></td>
                   <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
                 </tr>
                 <tr className="border-b border-border/50">
@@ -343,10 +342,16 @@ export const Pricing = () => {
                   <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
                 </tr>
                 <tr className="border-b border-border/50">
-                  <td className="p-4 font-medium">Dedicated Support</td>
+                  <td className="p-4 font-medium">Support</td>
                   <td className="text-center p-4 text-muted-foreground">Community</td>
-                  <td className="text-center p-4 bg-primary/5 text-muted-foreground">Priority</td>
+                  <td className="text-center p-4 bg-primary/5 text-muted-foreground">Priority Email</td>
                   <td className="text-center p-4 font-semibold">24/7 Dedicated</td>
+                </tr>
+                <tr className="border-b border-border/50">
+                  <td className="p-4 font-medium">Dedicated Account Manager</td>
+                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4 bg-primary/5"><span className="text-destructive">✗</span></td>
+                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
                 </tr>
               </tbody>
             </table>
