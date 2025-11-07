@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { Resend } from "npm:resend@2.0.0";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2025-08-27.basil",
@@ -10,6 +11,8 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
+
+const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 serve(async (req) => {
   const signature = req.headers.get("stripe-signature");
@@ -73,7 +76,86 @@ serve(async (req) => {
 
         console.log(`✅ Successfully credited ${credits} credits to workspace ${workspaceId}`);
         
-        // Optional: Send confirmation email or notification here
+        // Send confirmation email
+        try {
+          // Get user email
+          const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+          const userEmail = authUser?.user?.email;
+
+          if (userEmail) {
+            const amountPaid = session.amount_total ? (session.amount_total / 100).toFixed(2) : "0.00";
+            const currency = session.currency?.toUpperCase() || "GBP";
+
+            await resend.emails.send({
+              from: "Credits Purchase <onboarding@resend.dev>",
+              to: [userEmail],
+              subject: `${credits} Credits Added to Your Account! 🎉`,
+              html: `
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <meta charset="utf-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                  </head>
+                  <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center; border-radius: 10px 10px 0 0;">
+                      <h1 style="color: white; margin: 0; font-size: 28px;">Payment Successful!</h1>
+                    </div>
+                    
+                    <div style="background: #ffffff; padding: 40px 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 10px 10px;">
+                      <p style="font-size: 18px; margin-bottom: 20px;">Great news! Your credit purchase has been processed successfully.</p>
+                      
+                      <div style="background: #f9fafb; border-left: 4px solid #667eea; padding: 20px; margin: 30px 0; border-radius: 4px;">
+                        <h2 style="margin: 0 0 15px 0; font-size: 20px; color: #667eea;">Purchase Details</h2>
+                        <table style="width: 100%; border-collapse: collapse;">
+                          <tr>
+                            <td style="padding: 8px 0; color: #6b7280;">Credits Added:</td>
+                            <td style="padding: 8px 0; font-weight: bold; text-align: right; font-size: 24px; color: #667eea;">${credits} credits</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 8px 0; color: #6b7280;">Amount Paid:</td>
+                            <td style="padding: 8px 0; font-weight: bold; text-align: right;">${currency} ${amountPaid}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 8px 0; color: #6b7280;">Transaction ID:</td>
+                            <td style="padding: 8px 0; text-align: right; font-family: monospace; font-size: 12px; color: #6b7280;">${session.id}</td>
+                          </tr>
+                        </table>
+                      </div>
+
+                      <p style="margin-top: 30px;">Your credits are now available and ready to use. You can start using them immediately for:</p>
+                      
+                      <ul style="list-style: none; padding: 0; margin: 20px 0;">
+                        <li style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">✓ Dark web monitoring</li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">✓ OSINT investigations</li>
+                        <li style="padding: 10px 0; border-bottom: 1px solid #e5e7eb;">✓ Premium data exports</li>
+                        <li style="padding: 10px 0;">✓ Advanced threat intelligence</li>
+                      </ul>
+
+                      <div style="text-align: center; margin-top: 40px;">
+                        <p style="color: #6b7280; font-size: 14px; margin: 20px 0 0 0;">Thank you for your purchase!</p>
+                        <p style="color: #6b7280; font-size: 14px; margin: 5px 0 0 0;">If you have any questions, please don't hesitate to reach out to our support team.</p>
+                      </div>
+                    </div>
+
+                    <div style="text-align: center; padding: 20px; color: #9ca3af; font-size: 12px;">
+                      <p style="margin: 5px 0;">This is an automated receipt for your credit purchase.</p>
+                      <p style="margin: 5px 0;">Please keep this email for your records.</p>
+                    </div>
+                  </body>
+                </html>
+              `,
+            });
+
+            console.log(`📧 Confirmation email sent to ${userEmail}`);
+          } else {
+            console.warn("Could not send email: user email not found");
+          }
+        } catch (emailError) {
+          // Don't fail the webhook if email fails
+          console.error("Failed to send confirmation email:", emailError);
+        }
+        
         break;
       }
 
