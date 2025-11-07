@@ -6543,7 +6543,7 @@ export type Database = {
         Returns: boolean
       }
       is_workspace_member: {
-        Args: { _user_id: string; _workspace_id: string }
+        Args: { _user: string; _workspace: string }
         Returns: boolean
       }
       is_workspace_owner:

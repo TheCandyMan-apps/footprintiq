@@ -46,7 +46,8 @@ import {
   FileJson,
   FileSpreadsheet,
   FileText,
-  Network
+  Network,
+  Zap
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 
@@ -865,6 +866,33 @@ const ResultsDetail = () => {
             </div>
           </div>
         </Card>
+
+        {/* No Results Banner */}
+        {scan.total_sources_found === 0 && dataSources.length === 0 && socialProfiles.length === 0 && (
+          <Card className="p-8 mb-8 text-center bg-accent/5 border-accent/30">
+            <Shield className="w-16 h-16 mx-auto mb-4 text-accent opacity-70" />
+            <h3 className="text-2xl font-semibold mb-3">No Data Found - That's Good News!</h3>
+            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+              We searched across all selected providers and didn't find any exposed information. 
+              This means your digital footprint is minimal or well-protected.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button variant="outline" onClick={() => navigate('/scan')}>
+                Try Another Scan Type
+              </Button>
+              <Button onClick={() => navigate('/scan')}>
+                <Zap className="w-4 h-4 mr-2" />
+                Add Premium Sources
+              </Button>
+            </div>
+            <div className="mt-6 pt-6 border-t border-border">
+              <p className="text-sm text-muted-foreground">
+                <strong>Tip:</strong> Try enabling premium Apify sources (Social Media Finder, OSINT Scraper) 
+                for comprehensive coverage across 400+ platforms.
+              </p>
+            </div>
+          </Card>
+        )}
 
         {/* Monitoring Toggle */}
         {user && scanId && (

@@ -8,7 +8,7 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
+    const supabaseService = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
@@ -16,7 +16,7 @@ serve(async (req) => {
     console.log('[darkweb-monitor] Starting daily dark web monitoring');
 
     // Fetch active targets that need checking
-    const { data: targets, error: targetsError } = await supabase
+    const { data: targets, error: targetsError } = await supabaseService
       .from('darkweb_targets')
       .select('*')
       .eq('active', true)
@@ -37,6 +37,20 @@ serve(async (req) => {
       try {
         console.log(`[darkweb-monitor] Processing target ${target.id}: ${target.value}`);
 
+        // Check consent for darkweb monitoring
+        const { data: consent } = await supabaseService
+          .from('sensitive_consents')
+          .select('categories')
+          .eq('workspace_id', target.workspace_id)
+          .eq('user_id', target.user_id)
+          .single();
+
+        const allowedCategories = consent?.categories || [];
+        if (!allowedCategories.includes('darkweb')) {
+          console.warn(`[darkweb-monitor] Skipping target ${target.id}: no darkweb consent`);
+          continue;
+        }
+
         // Determine target type and run appropriate searches
         const isEmail = target.value.includes('@');
         const isDomain = target.value.includes('.') && !isEmail;
@@ -46,7 +60,7 @@ serve(async (req) => {
 
         // 1. Dark web scraper (always run)
         try {
-          const { data: darkwebData } = await supabase.functions.invoke(
+          const { data: darkwebData } = await supabaseService.functions.invoke(
             'darkweb/darkweb-scraper',
             {
               body: {
@@ -65,7 +79,7 @@ serve(async (req) => {
 
         // 2. OSINT paste site scraper (for all types)
         try {
-          const { data: osintData } = await supabase.functions.invoke(
+          const { data: osintData } = await supabaseService.functions.invoke(
             'darkweb/osint-scraper',
             {
               body: {
@@ -85,7 +99,7 @@ serve(async (req) => {
         // 3. Social media search (for usernames only)
         if (isUsername) {
           try {
-            const { data: socialData } = await supabase.functions.invoke(
+            const { data: socialData } = await supabaseService.functions.invoke(
               'darkweb/social-media-search',
               {
                 body: {
@@ -105,9 +119,9 @@ serve(async (req) => {
 
         const findings = allFindings;
 
-        // Insert new findings (dedupe by target_id + provider + url)
+        // Upsert findings to avoid duplicate key errors
         for (const finding of findings) {
-          const { error: insertError } = await supabase
+          const { error: insertError } = await supabaseService
             .from('darkweb_findings')
             .upsert({
               target_id: target.id,
@@ -118,7 +132,7 @@ serve(async (req) => {
               is_new: true,
             }, {
               onConflict: 'target_id,provider,url',
-              ignoreDuplicates: true,
+              ignoreDuplicates: false, // Update if exists
             });
 
           if (!insertError) {
@@ -127,14 +141,14 @@ serve(async (req) => {
         }
 
         // Update last_checked
-        await supabase
+        await supabaseService
           .from('darkweb_targets')
           .update({ last_checked: new Date().toISOString() })
           .eq('id', target.id);
 
         // Consume credits for Pro plan (1 credit per hit)
         if (findings.length > 0) {
-          await supabase.from('credits_ledger').insert({
+          await supabaseService.from('credits_ledger').insert({
             workspace_id: target.workspace_id,
             delta: -findings.length,
             reason: 'darkweb_scan',
@@ -144,7 +158,7 @@ serve(async (req) => {
 
         // Send alert email for new findings
         if (findings.length > 0) {
-          await supabase.functions.invoke('send-monitoring-alert', {
+          await supabaseService.functions.invoke('send-monitoring-alert', {
             body: {
               workspace_id: target.workspace_id,
               target,

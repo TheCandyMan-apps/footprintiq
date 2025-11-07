@@ -1,150 +1,130 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { corsHeaders } from '../_shared/secure.ts';
 
+// Test scan endpoint to verify pipeline with known-good data
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders() });
   }
 
-  try {
-    // Test with a known-good email that should return results from HIBP
-    const testEmail = 'test@example.com';
-    
-    console.log('[test-scan] Running test scan with:', testEmail);
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'method_not_allowed' }),
+      { status: 405, headers: { ...corsHeaders(), 'Content-Type': 'application/json' } }
+    );
+  }
 
-    // Call HIBP provider directly
-    const hibpResult = await testHIBP(testEmail);
-    
-    // Call DeHashed if configured
-    let dehashedResult = null;
-    if (Deno.env.get('DEHASHED_API_KEY')) {
-      try {
-        dehashedResult = await testDeHashed(testEmail);
-      } catch (error) {
-        console.error('[test-scan] DeHashed test failed:', error);
+  // Authenticate user
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    return new Response(
+      JSON.stringify({ error: 'missing_authorization_header' }),
+      { status: 401, headers: { ...corsHeaders(), 'Content-Type': 'application/json' } }
+    );
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: authHeader }
+        }
       }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'invalid_or_expired_token' }),
+        { status: 401, headers: { ...corsHeaders(), 'Content-Type': 'application/json' } }
+      );
     }
 
-    const response = {
-      status: 'success',
+    // Use a known test email (or provide one in request body)
+    const { testEmail } = await req.json().catch(() => ({ testEmail: 'test@example.com' }));
+
+    console.log(`[test-scan] Running test scan for ${testEmail}`);
+
+    // Test HIBP provider
+    const hibpResults = await testProvider('hibp', testEmail, 'email');
+    
+    // Test DeHashed provider (if configured)
+    const dehashedResults = await testProvider('dehashed', testEmail, 'email');
+
+    const results = {
+      status: 'completed',
+      testEmail,
       timestamp: new Date().toISOString(),
-      testTarget: testEmail,
-      results: {
-        hibp: hibpResult,
-        dehashed: dehashedResult,
+      providers: {
+        hibp: {
+          tested: true,
+          success: hibpResults.success,
+          findingsCount: hibpResults.findings?.length || 0,
+          error: hibpResults.error,
+        },
+        dehashed: {
+          tested: true,
+          success: dehashedResults.success,
+          findingsCount: dehashedResults.findings?.length || 0,
+          error: dehashedResults.error,
+        },
       },
       summary: {
-        hibpFindings: hibpResult?.findings?.length || 0,
-        dehashedFindings: dehashedResult?.findings?.length || 0,
+        totalFindings: (hibpResults.findings?.length || 0) + (dehashedResults.findings?.length || 0),
+        providersSuccessful: [hibpResults.success, dehashedResults.success].filter(Boolean).length,
+        providersFailed: [!hibpResults.success, !dehashedResults.success].filter(Boolean).length,
       },
     };
 
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify(results),
+      {
+        headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+      }
+    );
   } catch (error) {
     console.error('[test-scan] Error:', error);
-    return new Response(JSON.stringify({ 
-      status: 'error', 
-      error: (error as Error).message 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ 
+        status: 'error',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+      }
+    );
   }
 });
 
-async function testHIBP(email: string) {
-  const apiKey = Deno.env.get('HIBP_API_KEY');
-  if (!apiKey) {
-    return { findings: [], note: 'HIBP_API_KEY not configured' };
-  }
-
+async function testProvider(provider: string, target: string, type: string) {
   try {
-    const response = await fetch(
-      `https://haveibeenpwned.com/api/v3/breachedaccount/${encodeURIComponent(email)}?truncateResponse=false`,
-      {
-        headers: {
-          'hibp-api-key': apiKey,
-          'user-agent': 'FootprintIQ-Test',
-        },
-      }
+    const supabaseService = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    if (response.status === 404) {
-      return { findings: [], note: 'No breaches found (404 - expected for test email)' };
+    // Call provider-proxy
+    const { data, error } = await supabaseService.functions.invoke('provider-proxy', {
+      body: { provider, target, type, options: {} }
+    });
+
+    if (error) {
+      return { success: false, error: error.message };
     }
 
-    if (!response.ok) {
-      throw new Error(`HIBP returned ${response.status}`);
-    }
-
-    const breaches = await response.json();
-    
-    // Normalize to UFM format
-    const findings = breaches.slice(0, 3).map((breach: any) => ({
-      provider: 'hibp',
-      kind: 'breach.credential_leak',
-      severity: 'high',
-      confidence: 0.9,
-      observedAt: breach.BreachDate,
-      evidence: [
-        { key: 'breach_name', value: breach.Name },
-        { key: 'domain', value: breach.Domain },
-        { key: 'breach_date', value: breach.BreachDate },
-      ],
-    }));
-
-    return { findings, totalBreaches: breaches.length };
+    return {
+      success: true,
+      findings: data?.findings || [],
+    };
   } catch (error) {
-    console.error('[test-scan] HIBP error:', error);
-    return { findings: [], error: (error as Error).message };
-  }
-}
-
-async function testDeHashed(email: string) {
-  const apiKey = Deno.env.get('DEHASHED_API_KEY');
-  const username = Deno.env.get('DEHASHED_API_KEY_USERNAME');
-  
-  if (!apiKey || !username) {
-    return { findings: [], note: 'DeHashed credentials not configured' };
-  }
-
-  try {
-    const response = await fetch(
-      `https://api.dehashed.com/search?query=email:${encodeURIComponent(email)}&size=3`,
-      {
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Basic ${btoa(`${username}:${apiKey}`)}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`DeHashed returned ${response.status}`);
-    }
-
-    const data = await response.json();
-    const entries = data.entries || [];
-
-    // Normalize to UFM format
-    const findings = entries.map((entry: any) => ({
-      provider: 'dehashed',
-      kind: 'breach.credential_leak',
-      severity: 'high',
-      confidence: 0.85,
-      observedAt: entry.obtained_at || new Date().toISOString(),
-      evidence: [
-        { key: 'email', value: entry.email },
-        { key: 'username', value: entry.username },
-        { key: 'database', value: entry.database_name },
-      ].filter(e => e.value),
-    }));
-
-    return { findings, totalEntries: data.total || entries.length };
-  } catch (error) {
-    console.error('[test-scan] DeHashed error:', error);
-    return { findings: [], error: (error as Error).message };
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
   }
 }

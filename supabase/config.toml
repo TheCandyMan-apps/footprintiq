@@ -1,5 +1,11 @@
 project_id = "byuzgvauaeldjqxlrjci"
 
+[functions.scan-health]
+verify_jwt = false
+
+[functions.test-scan]
+verify_jwt = true
+
 [functions.ai-router]
 verify_jwt = true
 

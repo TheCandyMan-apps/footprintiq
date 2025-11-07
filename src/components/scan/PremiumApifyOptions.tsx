@@ -73,8 +73,10 @@ export function PremiumApifyOptions({ onChange }: PremiumApifyOptionsProps) {
                 <TooltipTrigger>
                   <Info className="h-4 w-4 text-muted-foreground" />
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Find username presence across social platforms</p>
+                <TooltipContent className="max-w-xs">
+                  <p className="font-semibold mb-1">Social Media Finder Pro</p>
+                  <p className="text-xs">Discovers profiles across 400+ platforms including Facebook, Instagram, Twitter, TikTok, LinkedIn, GitHub, Reddit, and more.</p>
+                  <p className="text-xs mt-1 text-primary">Cost: ~3 credits · Coverage: Global</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -100,8 +102,10 @@ export function PremiumApifyOptions({ onChange }: PremiumApifyOptionsProps) {
                 <TooltipTrigger>
                   <Info className="h-4 w-4 text-muted-foreground" />
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Search paste sites for leaked data</p>
+                <TooltipContent className="max-w-xs">
+                  <p className="font-semibold mb-1">OSINT Paste Scraper</p>
+                  <p className="text-xs">Searches Pastebin, GitHub Gist, Codepad, and other paste sites for exposed credentials, API keys, and sensitive data.</p>
+                  <p className="text-xs mt-1 text-primary">Cost: ~2 credits · Sources: 6+ paste sites</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -142,8 +146,10 @@ export function PremiumApifyOptions({ onChange }: PremiumApifyOptionsProps) {
                 <TooltipTrigger>
                   <Info className="h-4 w-4 text-muted-foreground" />
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Search dark web marketplaces and forums</p>
+                <TooltipContent className="max-w-xs">
+                  <p className="font-semibold mb-1">Dark Web Scraper</p>
+                  <p className="text-xs">Crawls dark web (.onion) marketplaces, forums, and leak sites for mentions of your data. Requires Tor proxy access.</p>
+                  <p className="text-xs mt-1 text-destructive">⚠️ High cost: ~5 credits · Depth/pages configurable</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
