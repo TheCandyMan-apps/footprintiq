@@ -75,7 +75,7 @@ export default function EvidencePack() {
   const [searchParams] = useSearchParams();
   const packId = searchParams.get('id');
   const { workspace, loading: workspaceLoading } = useWorkspace();
-  const { subscriptionTier, isLoading: subscriptionLoading } = useSubscription();
+  const { isPremium, isLoading: subscriptionLoading } = useSubscription();
   
   const [pack, setPack] = useState<EvidencePack | null>(null);
   const [packName, setPackName] = useState('');
@@ -86,9 +86,6 @@ export default function EvidencePack() {
   const [availableFindings, setAvailableFindings] = useState<Finding[]>([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-
-  // Premium gate
-  const isPremium = subscriptionTier === 'premium' || subscriptionTier === 'enterprise';
 
   useEffect(() => {
     if (workspaceLoading || subscriptionLoading) return;
