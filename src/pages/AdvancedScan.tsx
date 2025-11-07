@@ -27,6 +27,7 @@ import { IPMapPreview } from "@/components/scan/IPMapPreview";
 import { LocationMap } from "@/components/scan/LocationMap";
 import { LocationCard } from "@/components/scan/LocationCard";
 import { HighPrecisionToggle } from "@/components/scan/HighPrecisionToggle";
+import { GeocodingProgress } from "@/components/scan/GeocodingProgress";
 import { useGeocoding } from "@/hooks/useGeocoding";
 
 export default function AdvancedScan() {
@@ -63,7 +64,17 @@ export default function AdvancedScan() {
   const [ipLocations, setIpLocations] = useState<Array<{ ip: string; lat?: number; lon?: number }>>([]);
 
   // Geocoding for IP addresses
-  const { locations, loading: geocodingLoading, getLocationForIP, getErrorForIP } = useGeocoding(
+  const { 
+    locations, 
+    loading: geocodingLoading, 
+    getLocationForIP, 
+    getErrorForIP,
+    progressItems,
+    isProcessing,
+    totalCount,
+    completedCount,
+    errorCount 
+  } = useGeocoding(
     ipLocations,
     { 
       enabled: scanType === 'ip' && ipLocations.length > 0,
@@ -442,6 +453,17 @@ export default function AdvancedScan() {
                           enabled={highPrecisionMode}
                           onChange={setHighPrecisionMode}
                           isPremium={!isStandard}
+                        />
+                      )}
+
+                      {/* Geocoding Progress Indicator */}
+                      {!isStandard && (isProcessing || progressItems.length > 0) && (
+                        <GeocodingProgress
+                          items={progressItems}
+                          totalCount={totalCount}
+                          completedCount={completedCount}
+                          errorCount={errorCount}
+                          isActive={isProcessing}
                         />
                       )}
 
