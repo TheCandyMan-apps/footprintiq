@@ -239,3 +239,6 @@ verify_jwt = true
 
 [functions.generate-insights]
 verify_jwt = true
+
+[functions.observability-metrics]
+verify_jwt = true
