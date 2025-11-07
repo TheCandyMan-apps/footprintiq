@@ -3,6 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { 
   ShieldAlert, 
   UserSearch, 
@@ -10,8 +17,14 @@ import {
   Bug, 
   Shield, 
   Link as LinkIcon,
-  Sparkles
+  Sparkles,
+  Plus,
+  MoreVertical,
+  Trash2,
+  Star
 } from "lucide-react";
+import { CreateTemplateDialog } from "./CreateTemplateDialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface CaseTemplate {
   id: string;
@@ -22,6 +35,7 @@ interface CaseTemplate {
   icon: string;
   predefined_tags: string[];
   checklist_items: { task: string; completed: boolean }[];
+  user_id?: string | null;
 }
 
 interface CaseTemplatesProps {
@@ -41,6 +55,8 @@ const iconMap: Record<string, React.ReactNode> = {
 export const CaseTemplates = ({ onSelectTemplate, selectedTemplateId }: CaseTemplatesProps) => {
   const [templates, setTemplates] = useState<CaseTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadTemplates();
@@ -77,7 +93,38 @@ export const CaseTemplates = ({ onSelectTemplate, selectedTemplateId }: CaseTemp
       case "brand-protection": return "bg-accent/10 text-accent";
       case "vip-protection": return "bg-secondary/10 text-secondary";
       case "risk-assessment": return "bg-muted text-muted-foreground";
+      case "custom": return "bg-primary/10 text-primary";
       default: return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm("Delete this template? This cannot be undone.")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("case_templates")
+        .delete()
+        .eq("id", templateId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Template deleted",
+        description: "Your custom template has been removed",
+      });
+
+      loadTemplates();
+    } catch (error: any) {
+      toast({
+        title: "Error deleting template",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -86,11 +133,22 @@ export const CaseTemplates = ({ onSelectTemplate, selectedTemplateId }: CaseTemp
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 text-sm font-medium">
-        <Sparkles className="w-4 h-4 text-primary" />
-        Choose a Template (Optional)
-      </div>
+    <>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Sparkles className="w-4 h-4 text-primary" />
+            Choose a Template (Optional)
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Template
+          </Button>
+        </div>
       
       <ScrollArea className="h-[300px] pr-4">
         <div className="space-y-2">
@@ -125,10 +183,38 @@ export const CaseTemplates = ({ onSelectTemplate, selectedTemplateId }: CaseTemp
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                    <div className="font-medium text-sm">{template.name}</div>
-                    <Badge variant="outline" className={`text-xs ${getCategoryColor(template.category)}`}>
-                      {template.category.replace("-", " ")}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium text-sm">{template.name}</div>
+                      {template.user_id && (
+                        <Badge variant="outline" className="text-xs bg-primary/5">
+                          <Star className="w-3 h-3 mr-1" />
+                          Custom
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className={`text-xs ${getCategoryColor(template.category)}`}>
+                        {template.category.replace("-", " ")}
+                      </Badge>
+                      {template.user_id && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => handleDeleteTemplate(template.id, e)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                   </div>
                   <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
                     {template.description}
@@ -146,6 +232,13 @@ export const CaseTemplates = ({ onSelectTemplate, selectedTemplateId }: CaseTemp
           ))}
         </div>
       </ScrollArea>
-    </div>
+      </div>
+
+      <CreateTemplateDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onTemplateCreated={loadTemplates}
+      />
+    </>
   );
 };

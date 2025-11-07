@@ -12,15 +12,19 @@ import { TaskBoard } from "@/components/workspace/TaskBoard";
 import { SharedNotes } from "@/components/workspace/SharedNotes";
 import { AssetUploader } from "@/components/workspace/AssetUploader";
 import { AITeamAssist } from "@/components/workspace/AITeamAssist";
+import { CreateTemplateDialog } from "@/components/case/CreateTemplateDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { BookmarkPlus } from "lucide-react";
 
 const CaseDetail = () => {
   const { caseId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
+  const [caseData, setCaseData] = useState<any>(null);
+  const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -37,7 +41,7 @@ const CaseDetail = () => {
       // Verify case exists and user has access
       const { data, error } = await supabase
         .from("cases")
-        .select("id")
+        .select("*")
         .eq("id", caseId)
         .single();
 
@@ -51,6 +55,7 @@ const CaseDetail = () => {
         return;
       }
 
+      setCaseData(data);
       setIsLoading(false);
     } catch (error: any) {
       toast({
@@ -91,7 +96,16 @@ const CaseDetail = () => {
               <Button variant="outline" onClick={() => navigate("/cases")}>
                 ← Back to Cases
               </Button>
-              <CaseExport caseId={caseId!} />
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsTemplateDialogOpen(true)}
+                >
+                  <BookmarkPlus className="w-4 h-4 mr-2" />
+                  Save as Template
+                </Button>
+                <CaseExport caseId={caseId!} />
+              </div>
             </div>
             <Tabs defaultValue="timeline" className="w-full">
               <TabsList className="grid w-full grid-cols-7">
@@ -129,6 +143,23 @@ const CaseDetail = () => {
         </main>
         <Footer />
       </div>
+
+      <CreateTemplateDialog
+        open={isTemplateDialogOpen}
+        onOpenChange={setIsTemplateDialogOpen}
+        onTemplateCreated={() => {
+          toast({
+            title: "Template saved",
+            description: "You can now use this template when creating new cases",
+          });
+        }}
+        existingCase={caseData ? {
+          title: caseData.title,
+          description: caseData.description,
+          priority: caseData.priority,
+          tags: caseData.tags || [],
+        } : undefined}
+      />
     </>
   );
 };

@@ -1532,6 +1532,7 @@ export type Database = {
           name: string
           predefined_tags: string[] | null
           priority: string | null
+          user_id: string | null
         }
         Insert: {
           category: string
@@ -1544,6 +1545,7 @@ export type Database = {
           name: string
           predefined_tags?: string[] | null
           priority?: string | null
+          user_id?: string | null
         }
         Update: {
           category?: string
@@ -1556,6 +1558,7 @@ export type Database = {
           name?: string
           predefined_tags?: string[] | null
           priority?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
