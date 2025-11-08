@@ -3,6 +3,11 @@ import Stripe from 'https://esm.sh/stripe@18.5.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { corsHeaders, ok, bad } from '../../../_shared/secure.ts';
 
+// Sentry-like logging for payment operations
+const logPaymentEvent = (event: string, context: any) => {
+  console.log(`[PAYMENT_AUDIT] ${event}:`, JSON.stringify(context));
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders() });
@@ -11,6 +16,8 @@ serve(async (req) => {
   if (req.method !== 'POST') return bad(405, 'method_not_allowed');
 
   try {
+    logPaymentEvent('audit_started', { timestamp: new Date().toISOString() });
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -20,7 +27,12 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
-    if (authError || !user) throw new Error('Unauthorized');
+    if (authError || !user) {
+      logPaymentEvent('auth_failed', { error: authError?.message });
+      throw new Error('Unauthorized');
+    }
+
+    logPaymentEvent('user_authenticated', { user_id: user.id });
 
     // Check if user is admin
     const { data: userRole } = await supabase
@@ -30,8 +42,11 @@ serve(async (req) => {
       .single();
 
     if (userRole?.role !== 'admin') {
+      logPaymentEvent('admin_check_failed', { user_id: user.id, role: userRole?.role });
       throw new Error('Admin access required');
     }
+
+    logPaymentEvent('admin_verified', { user_id: user.id });
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2024-06-20',
@@ -40,11 +55,17 @@ serve(async (req) => {
     const issues: any[] = [];
 
     // 1. Fetch recent Stripe payment intents (last 30 days)
+    logPaymentEvent('fetching_stripe_payments', { lookback_days: 30 });
     const paymentIntents = await stripe.paymentIntents.list({
       limit: 100,
       created: {
         gte: Math.floor(Date.now() / 1000) - (30 * 24 * 60 * 60),
       },
+    });
+
+    logPaymentEvent('stripe_payments_fetched', { 
+      total: paymentIntents.data.length,
+      has_more: paymentIntents.has_more 
     });
 
     const failedPayments = paymentIntents.data.filter(pi => 
@@ -53,7 +74,17 @@ serve(async (req) => {
       pi.last_payment_error
     );
 
+    if (failedPayments.length > 0) {
+      logPaymentEvent('failed_payments_detected', { count: failedPayments.length });
+    }
+
     failedPayments.forEach(payment => {
+      logPaymentEvent('payment_failure_detail', {
+        payment_id: payment.id,
+        error_code: payment.last_payment_error?.code,
+        error_type: payment.last_payment_error?.type,
+      });
+
       issues.push({
         type: 'failed_payment',
         severity: 'high',
@@ -75,6 +106,7 @@ serve(async (req) => {
     });
 
     // 3. Fetch Supabase payment data
+    logPaymentEvent('fetching_supabase_credits', {});
     const { data: creditsLedger, error: creditsError } = await supabase
       .from('credits_ledger')
       .select('*')
@@ -82,7 +114,13 @@ serve(async (req) => {
       .limit(100);
 
     if (creditsError) {
+      logPaymentEvent('supabase_credits_error', { 
+        error: creditsError.message,
+        code: creditsError.code 
+      });
       console.error('Credits ledger error:', creditsError);
+    } else {
+      logPaymentEvent('supabase_credits_fetched', { count: creditsLedger?.length || 0 });
     }
 
     // 4. Check for subscription mismatches
@@ -114,6 +152,12 @@ serve(async (req) => {
 
             // Check if Supabase tier matches Stripe
             if (subscriptions.data.length === 0 && sub.subscription_tier !== 'free') {
+              logPaymentEvent('subscription_mismatch', {
+                user_id: sub.user_id,
+                email: profile.email,
+                supabase_tier: sub.subscription_tier,
+              });
+
               issues.push({
                 type: 'subscription_mismatch',
                 severity: 'critical',
@@ -174,10 +218,21 @@ serve(async (req) => {
       rls_status: rlsChecks,
     };
 
+    logPaymentEvent('audit_completed', { 
+      total_issues: report.summary.total_issues,
+      critical: report.summary.critical,
+      high: report.summary.high,
+      medium: report.summary.medium,
+    });
+
     console.log('Payment audit completed:', report.summary);
 
     return ok(report);
   } catch (error) {
+    logPaymentEvent('audit_failed', { 
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
     console.error('Payment audit error:', error);
     return bad(500, error instanceof Error ? error.message : 'Unknown error');
   }
