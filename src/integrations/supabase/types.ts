@@ -2336,6 +2336,7 @@ export type Database = {
           created_at: string
           delta: number
           id: string
+          meta: Json | null
           reason: string
           ref_id: string | null
           workspace_id: string
@@ -2344,6 +2345,7 @@ export type Database = {
           created_at?: string
           delta: number
           id?: string
+          meta?: Json | null
           reason: string
           ref_id?: string | null
           workspace_id: string
@@ -2352,6 +2354,7 @@ export type Database = {
           created_at?: string
           delta?: number
           id?: string
+          meta?: Json | null
           reason?: string
           ref_id?: string | null
           workspace_id?: string
