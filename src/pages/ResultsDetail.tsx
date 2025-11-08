@@ -27,6 +27,7 @@ import { MonitoringToggle } from "@/components/MonitoringToggle";
 import { ScanSummary } from "@/components/ScanSummary";
 import { AnomalyDetector } from "@/components/AnomalyDetector";
 import { ScanProgressTracker } from "@/components/ScanProgressTracker";
+import { ScanStatusIndicator } from "@/components/scan/ScanStatusIndicator";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart, Pie, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cell, ResponsiveContainer, Legend } from "recharts";
 import { clusterFindingsByDate } from "@/lib/timeline";
@@ -594,10 +595,10 @@ const ResultsDetail = () => {
           </div>
         </div>
 
-        {/* Progress Tracker - shown if scan is pending */}
-        {scan.status === 'pending' && scanId && (
+        {/* Real-time Status Indicator - shown if scan is active */}
+        {(scan.status === 'pending' || scan.status === 'processing') && scanId && (
           <div className="mb-8">
-            <ScanProgressTracker 
+            <ScanStatusIndicator 
               scanId={scanId}
               onComplete={() => {
                 // Refresh the scan data

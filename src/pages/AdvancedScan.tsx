@@ -20,8 +20,8 @@ import { useAnonMode } from "@/hooks/useAnonMode";
 import { PremiumApifyOptions } from "@/components/scan/PremiumApifyOptions";
 import { AnonModeToggle } from "@/components/scan/AnonModeToggle";
 import { CreditsBadge } from "@/components/workspace/CreditsBadge";
-import { ScanProgressTracker } from "@/components/ScanProgressTracker";
 import { ScanProgressDialog } from "@/components/scan/ScanProgressDialog";
+import { ScanStatusIndicator } from "@/components/scan/ScanStatusIndicator";
 import { ScanErrorBoundary } from "@/components/ScanErrorBoundary";
 import { BatchUpload } from "@/components/scan/BatchUpload";
 import { IPMapPreview } from "@/components/scan/IPMapPreview";
@@ -366,6 +366,16 @@ export default function AdvancedScan() {
 
           {!workspaceLoading && workspace && (
             <>
+              {/* Real-time Status Indicator - compact inline version */}
+              {isScanning && currentScanId && (
+                <div className="mb-6">
+                  <ScanStatusIndicator 
+                    scanId={currentScanId}
+                    onComplete={handleScanComplete}
+                    compact={true}
+                  />
+                </div>
+              )}
 
               {/* Header */}
               <div className="flex items-center justify-between gap-4">
