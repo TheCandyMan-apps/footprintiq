@@ -66,11 +66,12 @@ serve(async (req) => {
       const { data: deductResult, error: creditError } = await supabase.rpc('spend_credits', {
         _workspace_id: workspaceId,
         _cost: creditCost,
-        _reason: 'reverse_image_search',
-        _meta: { user_id: userId, timestamp: new Date().toISOString() }
+        _reason: 'darkweb_scan',
+        _meta: { user_id: userId, timestamp: new Date().toISOString(), feature: 'reverse_image_search' }
       });
 
       if (creditError || !deductResult) {
+        console.error('Credit deduction failed:', creditError);
         return new Response(
           JSON.stringify({ error: 'Insufficient credits' }),
           { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
