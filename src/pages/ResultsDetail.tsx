@@ -28,6 +28,7 @@ import { ScanSummary } from "@/components/ScanSummary";
 import { AnomalyDetector } from "@/components/AnomalyDetector";
 import { ScanProgressTracker } from "@/components/ScanProgressTracker";
 import { ScanStatusIndicator } from "@/components/scan/ScanStatusIndicator";
+import { FindingCard } from "@/components/scan/FindingCard";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart, Pie, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cell, ResponsiveContainer, Legend } from "recharts";
 import { clusterFindingsByDate } from "@/lib/timeline";
@@ -1023,56 +1024,61 @@ const ResultsDetail = () => {
           </Card>
         )}
 
-        {/* Findings Section - fallback when data_sources/social_profiles are empty but findings exist */}
-        {dataSources.length === 0 && socialProfiles.length === 0 && findings.length > 0 && (
-          <Card className="p-6 mb-8 bg-gradient-card border-border">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Shield className="w-6 h-6 text-primary" />
-              Findings from Scan
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              The scan found {findings.length} results across various providers. These findings represent 
-              data discovered during the OSINT scan.
-            </p>
-            <div className="space-y-3">
-              {findings.map((finding) => (
-                <Card key={finding.id} className="p-4 bg-background/50">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant={finding.severity === 'high' ? 'destructive' : finding.severity === 'medium' ? 'default' : 'secondary'}>
-                          {finding.severity.toUpperCase()}
-                        </Badge>
-                        <span className="text-sm font-semibold">{finding.provider}</span>
-                        <span className="text-xs text-muted-foreground">• {finding.providerCategory}</span>
-                      </div>
-                      <p className="text-sm font-medium mb-1">{finding.title}</p>
-                      <div className="text-xs text-muted-foreground">
-                        {finding.evidence && finding.evidence.length > 0 && (
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {finding.evidence.slice(0, 3).map((ev, idx) => (
-                              <span key={idx} className="px-2 py-1 bg-secondary rounded text-xs">
-                                {ev.key}: {String(ev.value).substring(0, 50)}
-                                {String(ev.value).length > 50 ? '...' : ''}
-                              </span>
-                            ))}
-                            {finding.evidence.length > 3 && (
-                              <span className="text-xs text-muted-foreground">
-                                +{finding.evidence.length - 3} more
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {Math.round(finding.confidence * 100)}% confidence
+        {/* Findings Section - Enhanced detailed cards */}
+        {findings.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Shield className="w-6 h-6 text-primary" />
+                <div>
+                  <h3 className="text-2xl font-bold">Scan Findings</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {findings.length} {findings.length === 1 ? 'finding' : 'findings'} discovered across {new Set(findings.map(f => f.provider)).size} providers
+                  </p>
+                </div>
+              </div>
+              
+              {/* Severity Summary */}
+              <div className="flex gap-2">
+                {['critical', 'high', 'medium', 'low', 'info'].map(severity => {
+                  const count = findings.filter((f: any) => f.raw?.severity === severity).length;
+                  if (count === 0) return null;
+                  return (
+                    <Badge 
+                      key={severity}
+                      variant={
+                        severity === 'critical' || severity === 'high' 
+                          ? 'destructive' 
+                          : severity === 'medium' 
+                          ? 'default' 
+                          : 'secondary'
+                      }
+                    >
+                      {count} {severity}
                     </Badge>
-                  </div>
-                </Card>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {findings.map((finding) => (
+                <FindingCard 
+                  key={finding.id} 
+                  finding={{
+                    id: finding.id,
+                    provider: finding.provider,
+                    kind: finding.providerCategory,
+                    severity: (finding.raw as any)?.severity || finding.severity,
+                    confidence: finding.confidence,
+                    observed_at: finding.observedAt,
+                    evidence: finding.evidence,
+                    meta: (finding.raw as any)?.meta || {},
+                  }}
+                />
               ))}
             </div>
-          </Card>
+          </div>
         )}
 
         {/* Monitoring Toggle */}
