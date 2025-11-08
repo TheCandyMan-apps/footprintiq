@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { useSubscription } from '@/hooks/useSubscription';
 import { StripePaymentForm } from '@/components/billing/StripePaymentForm';
 import { TestModeToggle } from '@/components/billing/TestModeToggle';
+import { PaymentErrorBoundary } from '@/components/billing/PaymentErrorBoundary';
 import {
   Dialog,
   DialogContent,
@@ -65,6 +66,9 @@ export default function BillingSettings() {
   const [loading, setLoading] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<keyof typeof PRICING_TIERS | null>(null);
+  const [verifyingUpgrade, setVerifyingUpgrade] = useState(false);
+  const [pollingAttempts, setPollingAttempts] = useState(0);
+  const MAX_POLLING_ATTEMPTS = 6; // 30 seconds with 5s intervals
   const { subscriptionTier, isPremium, refreshSubscription } = useSubscription();
 
   const { data: subscriptionData, refetch: refetchSubscription } = useQuery({
@@ -97,14 +101,78 @@ export default function BillingSettings() {
     setShowPaymentDialog(true);
   };
 
-  const handlePaymentSuccess = () => {
-    setShowPaymentDialog(false);
-    setSelectedPlan(null);
-    toast({
-      title: 'Payment Successful!',
-      description: 'Your subscription has been activated.',
-    });
-    refreshSubscription();
+  const verifyUpgrade = async (expectedTier: string): Promise<boolean> => {
+    try {
+      await refreshSubscription();
+      const { data } = await supabase.functions.invoke("billing/check-subscription");
+      
+      // Check if user role was updated
+      const { data: userRole } = await supabase
+        .from('user_roles')
+        .select('subscription_tier')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      return userRole?.subscription_tier === expectedTier || 
+             data?.subscription_tier === expectedTier;
+    } catch (error) {
+      console.error('Verification error:', error);
+      return false;
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    if (!selectedPlan) return;
+
+    setVerifyingUpgrade(true);
+    setPollingAttempts(0);
+
+    const expectedTier = selectedPlan;
+    let attempts = 0;
+
+    // Poll for up to 30 seconds
+    const pollInterval = setInterval(async () => {
+      attempts++;
+      setPollingAttempts(attempts);
+
+      const isVerified = await verifyUpgrade(expectedTier);
+
+      if (isVerified) {
+        clearInterval(pollInterval);
+        setVerifyingUpgrade(false);
+        setShowPaymentDialog(false);
+        setSelectedPlan(null);
+        toast({
+          title: '✅ Upgrade Successful!',
+          description: 'Your premium features are now unlocked.',
+        });
+        refreshSubscription();
+        refetchSubscription();
+      } else if (attempts >= MAX_POLLING_ATTEMPTS) {
+        clearInterval(pollInterval);
+        setVerifyingUpgrade(false);
+        toast({
+          title: 'Verification Timeout',
+          description: 'Your payment is processing. Please refresh in a moment or contact support@footprintiq.app if issues persist.',
+          variant: 'destructive',
+        });
+      }
+    }, 5000);
+
+    // Initial check immediately
+    const isVerified = await verifyUpgrade(expectedTier);
+    if (isVerified) {
+      clearInterval(pollInterval);
+      setVerifyingUpgrade(false);
+      setShowPaymentDialog(false);
+      setSelectedPlan(null);
+      toast({
+        title: '✅ Upgrade Successful!',
+        description: 'Your premium features are now unlocked.',
+      });
+      refreshSubscription();
+      refetchSubscription();
+    }
   };
 
   const handlePaymentCancel = () => {
@@ -150,8 +218,9 @@ export default function BillingSettings() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <SettingsBreadcrumb currentPage="Billing" />
+    <PaymentErrorBoundary>
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <SettingsBreadcrumb currentPage="Billing" />
       
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -444,10 +513,22 @@ export default function BillingSettings() {
                 {selectedPlan && PRICING_TIERS[selectedPlan].name} Plan
               </DialogTitle>
               <DialogDescription>
-                Complete your subscription using secure Stripe payment
+                {verifyingUpgrade 
+                  ? `Verifying upgrade... (${pollingAttempts * 5}s / 30s)`
+                  : 'Complete your subscription using secure Stripe payment'
+                }
               </DialogDescription>
             </DialogHeader>
-            {selectedPlan && (
+            {verifyingUpgrade ? (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                <p className="text-center text-muted-foreground">
+                  Processing your upgrade...
+                  <br />
+                  <span className="text-xs">Please don't close this window</span>
+                </p>
+              </div>
+            ) : selectedPlan && (
               <StripePaymentForm
                 priceId={PRICING_TIERS[selectedPlan].priceId}
                 planName={PRICING_TIERS[selectedPlan].name}
@@ -459,6 +540,7 @@ export default function BillingSettings() {
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+      </div>
+    </PaymentErrorBoundary>
   );
 }
