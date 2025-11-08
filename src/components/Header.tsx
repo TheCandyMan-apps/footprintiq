@@ -7,6 +7,7 @@ import { DarkWebBell } from "@/components/DarkWebBell";
 import { WorkspacePresence } from "@/components/workspace/WorkspacePresence";
 import { MobileNav } from "@/components/MobileNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import fpiqLogo from "@/assets/fpiq-logo.png";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,7 +80,7 @@ export const Header = () => {
             <MobileNav />
             <Link to="/" className="flex items-center">
               <img 
-                src="/logo-dark.png" 
+                src={fpiqLogo} 
                 alt="FootprintIQ Logo" 
                 className="h-12 w-auto object-contain max-w-[200px] drop-shadow-sm"
               />
