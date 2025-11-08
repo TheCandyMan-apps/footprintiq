@@ -61,8 +61,8 @@ export function UsernameScanForm({ onScanStarted }: UsernameScanFormProps) {
         description: `Username scan for "${username}" has been queued`,
       });
 
-      if (data?.job_id && onScanStarted) {
-        onScanStarted(data.job_id);
+      if (data?.jobId && onScanStarted) {
+        onScanStarted(data.jobId);
       }
 
       // Reset form

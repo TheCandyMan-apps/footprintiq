@@ -100,6 +100,9 @@ Deno.serve(async (req) => {
     // Validate artifacts for plan
     const finalArtifacts = config.allowArtifacts ? artifacts : [];
 
+    // Estimate provider count based on scan mode
+    const estimatedProviders = all_sites ? 500 : 100;
+
     // Create job record
     const { data: job, error: jobError } = await supabaseUser
       .from('scan_jobs')
@@ -112,6 +115,7 @@ Deno.serve(async (req) => {
         started_at: new Date().toISOString(),
         requested_by: user.id,
         plan,
+        providers_total: estimatedProviders,
       })
       .select()
       .single();
@@ -183,12 +187,18 @@ Deno.serve(async (req) => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
         
+        console.log(`[Attempt ${attempt}] Calling Maigret worker: ${url.toString()}`);
+        console.log(`Worker token configured: ${WORKER_TOKEN ? 'YES' : 'NO'}`);
+        
         resp = await fetch(url, {
           headers: { 'X-Worker-Token': WORKER_TOKEN },
           signal: controller.signal,
         });
         
         clearTimeout(timeoutId);
+        
+        console.log(`Worker response: ${resp.status} ${resp.statusText}`);
+        console.log(`Worker response has body: ${resp.body ? 'YES' : 'NO'}`);
         
         if (resp.ok) break; // Success
         
@@ -259,6 +269,12 @@ Deno.serve(async (req) => {
       }
     };
 
+    // Add timeout for streaming phase
+    const streamTimeout = setTimeout(() => {
+      reader.cancel();
+      console.error('Stream timeout - no data received from worker');
+    }, config.timeout * 1000);
+
     try {
       for (;;) {
         const { value, done } = await reader.read();
@@ -324,7 +340,10 @@ Deno.serve(async (req) => {
           }
         }
       }
+      
+      clearTimeout(streamTimeout);
     } catch (e) {
+      clearTimeout(streamTimeout);
       console.error('Stream error:', e);
       
       // Broadcast scan failure
@@ -361,6 +380,29 @@ Deno.serve(async (req) => {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
+      );
+    }
+
+    // Check if worker returned empty response
+    if (providersCompleted === 0) {
+      console.warn(`Worker returned empty response for job ${job.id}`);
+      
+      await supabaseUser
+        .from('scan_jobs')
+        .update({ 
+          status: 'error',
+          error: 'Worker returned no results - possible configuration or network issue',
+          finished_at: new Date().toISOString(),
+        })
+        .eq('id', job.id);
+        
+      return new Response(
+        JSON.stringify({
+          jobId: job.id,
+          status: 'error',
+          error: 'Worker returned no results'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 

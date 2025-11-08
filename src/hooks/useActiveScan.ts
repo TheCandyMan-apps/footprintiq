@@ -42,7 +42,7 @@ export function useActiveScan() {
     if (!activeScan?.scanId) return;
 
     const channelName = activeScan.type === 'username' 
-      ? `scan_job:${activeScan.scanId}`
+      ? `scan_progress_${activeScan.scanId}`
       : `scan_progress:${activeScan.scanId}`;
 
     console.log(`[useActiveScan] Subscribing to ${channelName}`);
