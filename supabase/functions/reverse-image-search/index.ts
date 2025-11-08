@@ -83,48 +83,62 @@ serve(async (req) => {
 
     const results: ImageMatch[] = [];
 
-    // TinEye search
+    // TinEye search using MatchEngine API
     if (useTinEye) {
       const TINEYE_API_KEY = Deno.env.get('TINEYE_API_KEY');
       if (TINEYE_API_KEY) {
-        console.log('Using TinEye for reverse image search...');
+        console.log('Using TinEye MatchEngine for reverse image search...');
         try {
           // Download image to process
           const imageResponse = await fetch(imageUrl);
           if (!imageResponse.ok) throw new Error('Failed to fetch image');
           
           const imageBlob = await imageResponse.blob();
-          const formData = new FormData();
-          formData.append('image', imageBlob);
+          const arrayBuffer = await imageBlob.arrayBuffer();
+          const imageData = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-          // Call TinEye API
+          // Call TinEye MatchEngine API
           const tineyeResponse = await fetch('https://api.tineye.com/rest/search/', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${TINEYE_API_KEY}`,
+              'Content-Type': 'application/json',
             },
-            body: formData,
+            body: JSON.stringify({
+              api_key: TINEYE_API_KEY,
+              image_data: imageData,
+            }),
           });
 
+          console.log('TinEye response status:', tineyeResponse.status);
+          
           if (tineyeResponse.ok) {
             const tineyeData = await tineyeResponse.json();
+            console.log('TinEye response:', JSON.stringify(tineyeData).substring(0, 200));
             
-            if (tineyeData.results && tineyeData.results.matches) {
-              for (const match of tineyeData.results.matches) {
-                results.push({
-                  thumbnail_url: match.backlinks[0]?.thumbnail || match.image_url,
-                  url: match.backlinks[0]?.url || match.image_url,
-                  domain: new URL(match.backlinks[0]?.url || match.image_url).hostname,
-                  match_percent: Math.round(match.score * 100),
-                  crawl_date: match.backlinks[0]?.crawl_date || new Date().toISOString(),
-                });
+            if (tineyeData.results && Array.isArray(tineyeData.results)) {
+              for (const match of tineyeData.results) {
+                if (match.backlinks && match.backlinks.length > 0) {
+                  const backlink = match.backlinks[0];
+                  results.push({
+                    thumbnail_url: backlink.image_url || match.image_url || imageUrl,
+                    url: backlink.url || match.image_url,
+                    domain: backlink.url ? new URL(backlink.url).hostname : 'unknown',
+                    match_percent: match.score ? Math.round(match.score * 100) : 100,
+                    crawl_date: backlink.crawl_date || new Date().toISOString(),
+                  });
+                }
               }
             }
             console.log(`TinEye found ${results.length} matches`);
+          } else {
+            const errorText = await tineyeResponse.text();
+            console.error('TinEye API error:', tineyeResponse.status, errorText);
           }
         } catch (error) {
           console.error('TinEye error:', error instanceof Error ? error.message : 'Unknown error');
         }
+      } else {
+        console.log('TinEye API key not configured');
       }
     }
 
