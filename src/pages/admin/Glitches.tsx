@@ -118,10 +118,29 @@ export default function Glitches() {
   };
 
   const sendAlertEmail = async () => {
-    toast({
-      title: 'Alert sent',
-      description: 'Admin notification sent to admin@footprintiq.app',
-    });
+    try {
+      const errorRate = (recentErrors / avgErrorRate - 1) * 100;
+      
+      const { error } = await supabase.functions.invoke('admin/send-glitch-alert', {
+        body: {
+          errorRate: errorRate.toFixed(1),
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Alert sent',
+        description: 'Admin notification sent to admin@footprintiq.app',
+      });
+    } catch (error) {
+      console.error('Failed to send alert:', error);
+      toast({
+        title: 'Alert failed',
+        description: 'Could not send admin notification',
+        variant: 'destructive',
+      });
+    }
   };
 
   const getSeverityColor = (severity: string) => {

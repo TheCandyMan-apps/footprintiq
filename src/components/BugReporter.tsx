@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Bug, Camera } from 'lucide-react';
-// import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas';
 
 interface BugReporterProps {
   error?: Error;
@@ -23,12 +23,26 @@ export function BugReporter({ error, errorInfo }: BugReporterProps) {
   const { toast } = useToast();
 
   const captureScreenshot = async () => {
-    toast({
-      title: 'Screenshot feature coming soon',
-      description: 'Screenshot functionality will be available shortly',
-    });
-    // Temporarily disabled due to build issues
-    // Will re-enable after build cache clears
+    try {
+      const canvas = await html2canvas(document.body, {
+        allowTaint: true,
+        useCORS: true,
+        logging: false,
+      });
+      const screenshotData = canvas.toDataURL('image/png');
+      setScreenshot(screenshotData);
+      toast({
+        title: 'Screenshot captured',
+        description: 'Screenshot will be included with your bug report',
+      });
+    } catch (error) {
+      console.error('Screenshot capture failed:', error);
+      toast({
+        title: 'Screenshot failed',
+        description: 'Unable to capture screenshot. You can still submit the report.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const submitBugReport = async () => {

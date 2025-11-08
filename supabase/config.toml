@@ -290,3 +290,6 @@ verify_jwt = true
 
 [functions.create-checkout-session]
 verify_jwt = true
+
+[functions."admin/send-glitch-alert"]
+verify_jwt = true
