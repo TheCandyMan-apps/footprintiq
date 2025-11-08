@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { SensitiveConsentModal } from "@/components/providers/SensitiveConsentModal";
-import { Search, Shield, Zap, Database, Globe, Lock, AlertTriangle } from "lucide-react";
+import { Search, Shield, Zap, Database, Globe, Lock, AlertTriangle, Info } from "lucide-react";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useUserPersona } from "@/hooks/useUserPersona";
 import { useAnonMode } from "@/hooks/useAnonMode";
@@ -217,6 +217,13 @@ export default function AdvancedScan() {
   }
 
   const handleScan = async () => {
+    // Redirect username scans to Maigret scanner
+    if (scanType === 'username') {
+      toast.info("Redirecting to Username Scanner (powered by Maigret)");
+      navigate('/scan/usernames');
+      return;
+    }
+
     // Validation
     const targets = isBatchMode ? batchItems : [target];
     if (targets.length === 0 || (targets.length === 1 && !targets[0].trim())) {
@@ -419,11 +426,19 @@ export default function AdvancedScan() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="email">Email Address</SelectItem>
-                  <SelectItem value="username">Username</SelectItem>
+                  <SelectItem value="username">Username (Uses Maigret Scanner)</SelectItem>
                   <SelectItem value="domain">Domain</SelectItem>
                   <SelectItem value="phone">Phone Number</SelectItem>
                 </SelectContent>
               </Select>
+              {scanType === 'username' && (
+                <Alert>
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    Username scans use our Maigret integration for comprehensive social media discovery across 400+ platforms
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
             <div className="space-y-2">
