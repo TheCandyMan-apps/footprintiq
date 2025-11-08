@@ -66,8 +66,8 @@ serve(async (req) => {
       const { data: deductResult, error: creditError } = await supabase.rpc('spend_credits', {
         _workspace_id: workspaceId,
         _cost: creditCost,
-        _reason: 'darkweb_scan',
-        _meta: { user_id: userId, timestamp: new Date().toISOString(), feature: 'reverse_image_search' }
+        _reason: 'reverse_image_search',
+        _meta: { user_id: userId, timestamp: new Date().toISOString() }
       });
 
       if (creditError || !deductResult) {
