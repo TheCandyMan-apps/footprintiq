@@ -83,50 +83,48 @@ serve(async (req) => {
 
     const results: ImageMatch[] = [];
 
-    // TinEye search using MatchEngine API
+    // TinEye search via official API (multipart + X-API-KEY)
     if (useTinEye) {
       const TINEYE_API_KEY = Deno.env.get('TINEYE_API_KEY');
       if (TINEYE_API_KEY) {
-        console.log('Using TinEye MatchEngine for reverse image search...');
+        console.log('Using TinEye API for reverse image search...');
         try {
           // Download image to process
           const imageResponse = await fetch(imageUrl);
           if (!imageResponse.ok) throw new Error('Failed to fetch image');
-          
           const imageBlob = await imageResponse.blob();
-          const arrayBuffer = await imageBlob.arrayBuffer();
-          const imageData = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-          // Call TinEye MatchEngine API
-          const tineyeResponse = await fetch('https://api.tineye.com/rest/search/', {
+          // Build multipart request as per TinEye docs (field: image_upload)
+          const formData = new FormData();
+          formData.append('image_upload', imageBlob, 'search.jpg');
+
+          // Call TinEye API
+          const tineyeResponse = await fetch('https://api.tineye.com/rest/search/?limit=50&backlink_limit=1', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json',
+              'accept': 'application/json',
+              'x-api-key': TINEYE_API_KEY,
             },
-            body: JSON.stringify({
-              api_key: TINEYE_API_KEY,
-              image_data: imageData,
-            }),
+            body: formData,
           });
 
           console.log('TinEye response status:', tineyeResponse.status);
           
           if (tineyeResponse.ok) {
             const tineyeData = await tineyeResponse.json();
-            console.log('TinEye response:', JSON.stringify(tineyeData).substring(0, 200));
+            console.log('TinEye response (truncated):', JSON.stringify(tineyeData).substring(0, 200));
             
-            if (tineyeData.results && Array.isArray(tineyeData.results)) {
-              for (const match of tineyeData.results) {
-                if (match.backlinks && match.backlinks.length > 0) {
-                  const backlink = match.backlinks[0];
-                  results.push({
-                    thumbnail_url: backlink.image_url || match.image_url || imageUrl,
-                    url: backlink.url || match.image_url,
-                    domain: backlink.url ? new URL(backlink.url).hostname : 'unknown',
-                    match_percent: match.score ? Math.round(match.score * 100) : 100,
-                    crawl_date: backlink.crawl_date || new Date().toISOString(),
-                  });
-                }
+            if (tineyeData.results && tineyeData.results.matches && Array.isArray(tineyeData.results.matches)) {
+              for (const match of tineyeData.results.matches) {
+                const backlink = match.backlinks && match.backlinks[0];
+                const pageUrl = backlink?.backlink || backlink?.url || match.image_url || imageUrl;
+                results.push({
+                  thumbnail_url: backlink?.url || match.image_url || imageUrl,
+                  url: pageUrl,
+                  domain: (() => { try { return new URL(pageUrl).hostname; } catch { return 'unknown'; } })(),
+                  match_percent: typeof match.score === 'number' ? Math.round(match.score) : 100,
+                  crawl_date: backlink?.crawl_date || new Date().toISOString(),
+                });
               }
             }
             console.log(`TinEye found ${results.length} matches`);
@@ -210,13 +208,12 @@ serve(async (req) => {
             
             // Process results
             for (const item of searchData.output.items as FaceCheckResult[]) {
-              const riskLevel = item.score > 80 ? 'high' : item.score > 50 ? 'medium' : 'low';
               results.push({
-                name: new URL(item.url).hostname,
-                category: 'Facial Recognition',
+                thumbnail_url: item.base64 ? `data:image/jpeg;base64,${item.base64}` : item.url,
                 url: item.url,
-                risk_level: riskLevel as 'low' | 'medium' | 'high',
-                data_found: ['Profile Photo', 'Facial Match', `${item.score}% confidence`],
+                domain: (() => { try { return new URL(item.url).hostname; } catch { return 'unknown'; } })(),
+                match_percent: Math.round(item.score),
+                crawl_date: new Date().toISOString(),
               });
             }
             searchComplete = true;
