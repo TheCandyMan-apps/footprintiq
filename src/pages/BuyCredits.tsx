@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { Header } from "@/components/Header";
 import { SEO } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
@@ -46,22 +47,53 @@ const CREDIT_USES = [
 
 export default function BuyCredits() {
   const [selectedPackage, setSelectedPackage] = useState("50");
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
 
-  // Fetch current credit balance
+  // Fetch current credit balance with realtime updates
   const { data: balance } = useQuery({
-    queryKey: ["credits-balance"],
+    queryKey: ["credits-balance", workspace?.id],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
       const { data, error } = await supabase.rpc("get_credits_balance", {
-        _workspace_id: user.id,
+        _workspace_id: workspace?.id || user.id,
       });
 
       if (error) throw error;
       return data || 0;
     },
+    enabled: !!workspace?.id,
   });
+
+  // Setup realtime subscription for credit updates
+  useEffect(() => {
+    if (!workspace?.id) return;
+
+    const channel = supabase
+      .channel(`credits_${workspace.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'credits',
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["credits-balance", workspace.id] });
+          toast.success("Credits updated! 🎉", {
+            description: "Your credit balance has been refreshed"
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [workspace?.id, queryClient]);
 
   // Purchase mutation
   const purchaseMutation = useMutation({
@@ -75,8 +107,15 @@ export default function BuyCredits() {
         }
       }
 
+      if (!workspace?.id) {
+        throw new Error("No workspace found. Please select a workspace first.");
+      }
+
       const { data, error } = await supabase.functions.invoke("billing/purchase-credits", {
-        body: { package: packageId },
+        body: { 
+          package: packageId,
+          workspaceId: workspace.id
+        },
       });
 
       if (error) throw error;
