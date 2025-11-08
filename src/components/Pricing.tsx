@@ -118,7 +118,7 @@ export const Pricing = () => {
     try {
       const plan = tierName.toLowerCase();
       
-      const { data, error } = await supabase.functions.invoke('billing/checkout', {
+      const { data, error } = await supabase.functions.invoke('billing-checkout', {
         body: { plan }
       });
 

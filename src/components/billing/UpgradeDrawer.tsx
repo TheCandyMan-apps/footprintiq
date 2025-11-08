@@ -79,7 +79,7 @@ export const UpgradeDrawer = ({ open, onOpenChange, currentPlan }: UpgradeDrawer
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke("billing/checkout", {
+      const { data, error } = await supabase.functions.invoke("billing-checkout", {
         body: { plan: planId },
       });
 
