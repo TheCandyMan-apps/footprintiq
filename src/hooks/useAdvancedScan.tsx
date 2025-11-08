@@ -95,6 +95,9 @@ export function useAdvancedScan() {
       const scanId = orchestrateData.scanId as string;
 
       setProgress({ stage: 'scanning', progress: 30, message: 'Scanning data sources...' });
+      
+      // Clear isScanning immediately so UI updates
+      setIsScanning(false);
 
       // Return scanId immediately so progress dialog can open
       const scan = { id: scanId };
@@ -178,9 +181,8 @@ export function useAdvancedScan() {
     } catch (error) {
       console.error('Advanced scan error:', error);
       toast.error('Advanced scan failed: ' + (error as Error).message);
-      throw error;
-    } finally {
       setIsScanning(false);
+      throw error;
     }
   };
 
