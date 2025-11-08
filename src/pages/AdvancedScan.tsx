@@ -33,12 +33,14 @@ import { BuyCreditsModal } from "@/components/scan/BuyCreditsModal";
 import { ReverseImageComponent } from "@/components/scan/ReverseImageComponent";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGeocoding } from "@/hooks/useGeocoding";
+import { useActiveScanContext } from "@/contexts/ActiveScanContext";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
   const { workspace, loading: workspaceLoading, refreshWorkspace } = useWorkspace();
   const { persona, isStandard } = useUserPersona();
   const { anonModeEnabled, toggleAnonMode, isLoading: anonLoading } = useAnonMode();
+  const { startTracking } = useActiveScanContext();
   const [scanType, setScanType] = useState<string>("email");
   const [target, setTarget] = useState("");
   const [providers, setProviders] = useState<string[]>([]);
@@ -303,6 +305,14 @@ export default function AdvancedScan() {
           setCurrentScanId(firstScan.value.scanId);
           setModalScanId(firstScan.value.scanId);
           setProgressOpen(true);
+          
+          // Start floating tracker
+          startTracking({
+            scanId: firstScan.value.scanId,
+            type: 'advanced',
+            target: firstScan.value.target,
+            startedAt: new Date().toISOString(),
+          });
         }
 
         toast.success(`${successful.length} scan(s) initiated successfully`);

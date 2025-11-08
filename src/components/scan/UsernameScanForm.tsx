@@ -21,6 +21,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useActiveScanContext } from '@/contexts/ActiveScanContext';
 
 const ARTIFACT_OPTIONS = [
   { id: 'html', label: 'HTML' },
@@ -41,6 +42,7 @@ export function UsernameScanForm() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { entitlement, isPremium, loading: entitlementLoading } = useMaigretEntitlement();
+  const { startTracking } = useActiveScanContext();
   const { 
     isScanning, 
     debugLogs, 
@@ -96,10 +98,18 @@ export function UsernameScanForm() {
 
       const jobId = data?.jobId;
 
-      // Open progress dialog
+      // Open progress dialog and start floating tracker
       if (jobId) {
         setCurrentScanId(jobId);
         setProgressDialogOpen(true);
+        
+        // Start floating tracker
+        startTracking({
+          scanId: jobId,
+          type: 'username',
+          target: username.trim(),
+          startedAt: new Date().toISOString(),
+        });
       }
 
       toast({

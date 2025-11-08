@@ -16,6 +16,8 @@ import { HelmetProvider } from 'react-helmet-async';
 import { PageTransition } from "@/components/PageTransition";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { MobileCTABar } from "@/components/MobileCTABar";
+import { FloatingProgressTracker } from "@/components/FloatingProgressTracker";
+import { ActiveScanProvider } from "@/contexts/ActiveScanContext";
 import "@/lib/config"; // Validate env at boot
 
 // Critical pages (loaded immediately)
@@ -173,13 +175,14 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   return (
-    <>
+    <ActiveScanProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <RouterContent />
+        <FloatingProgressTracker />
       </BrowserRouter>
-    </>
+    </ActiveScanProvider>
   );
 }
 
