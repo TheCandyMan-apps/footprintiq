@@ -123,6 +123,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     const maigretChannel = supabase
       .channel(`scan_progress_${scanId}`)
       .on('broadcast', { event: 'provider_update' }, (payload: any) => {
+        console.debug('[ScanProgressDialog] Maigret provider_update:', payload);
         const update = payload.payload;
         upsertProvider(update.provider, update.status, update.message);
 
@@ -135,7 +136,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         setProgress(Math.min((completed / total) * 100, 95));
       })
       .on('broadcast', { event: 'scan_complete' }, (payload: any) => {
-        console.log('Maigret scan completed:', payload);
+        console.debug('[ScanProgressDialog] Maigret scan_complete:', payload);
         setStatus('completed');
         setProgress(100);
         playSuccessSound();
@@ -144,9 +145,15 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         setTimeout(() => onComplete?.(), 2000);
       })
       .on('broadcast', { event: 'scan_failed' }, (payload: any) => {
-        console.error('Maigret scan failed:', payload);
+        console.debug('[ScanProgressDialog] Maigret scan_failed:', payload);
         setStatus('failed');
         toast.error(payload.payload.error || 'Scan failed');
+      })
+      .on('broadcast', { event: 'scan_cancelled' }, () => {
+        console.debug('[ScanProgressDialog] Maigret scan_cancelled');
+        setStatus('cancelled');
+        toast.info('Scan cancelled');
+        setTimeout(() => onComplete?.(), 1000);
       })
       .subscribe();
 
@@ -154,6 +161,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     const orchestratorChannel = supabase
       .channel(`scan_progress:${scanId}`)
       .on('broadcast', { event: 'progress' }, (payload: any) => {
+        console.debug('[ScanProgressDialog] Orchestrator progress:', payload);
         const update = payload.payload;
         
         // Map orchestrator messages to provider updates
@@ -186,6 +194,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
 
         // Handle completion
         if (update.status === 'completed') {
+          console.debug('[ScanProgressDialog] Orchestrator completed');
           setStatus('completed');
           setProgress(100);
           playSuccessSound();
@@ -193,11 +202,13 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
           toast.success('Scan completed successfully');
           setTimeout(() => onComplete?.(), 2000);
         } else if (update.status === 'failed') {
+          console.debug('[ScanProgressDialog] Orchestrator failed');
           setStatus('failed');
           toast.error(update.message || 'Scan failed');
         }
       })
       .on('broadcast', { event: 'scan_cancelled' }, () => {
+        console.debug('[ScanProgressDialog] Orchestrator scan_cancelled');
         setStatus('cancelled');
         toast.info('Scan cancelled');
         setTimeout(() => onComplete?.(), 1000);

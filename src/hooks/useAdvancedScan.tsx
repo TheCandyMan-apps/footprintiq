@@ -92,75 +92,86 @@ export function useAdvancedScan() {
 
       if (orchestrateError) throw orchestrateError;
       if (!orchestrateData?.scanId) throw new Error('Scan orchestration failed');
-      const scan = { id: orchestrateData.scanId as string };
+      const scanId = orchestrateData.scanId as string;
 
       setProgress({ stage: 'scanning', progress: 30, message: 'Scanning data sources...' });
 
-      // Optional: Dark web monitoring
-      if (options.deepWeb && (scanData.email || scanData.username)) {
-        setProgress({ stage: 'darkweb', progress: 40, message: 'Scanning dark web...' });
-        
-        const targetValue = scanData.email || scanData.username!;
-        const { error: darkwebError } = await supabase
-          .from('darkweb_targets')
-          .insert({
-            workspace_id: workspace!.id,
-            type: scanData.email ? 'email' : 'username',
-            value: targetValue,
-            active: true,
+      // Return scanId immediately so progress dialog can open
+      const scan = { id: scanId };
+
+      // Run optional follow-ups in background (non-blocking)
+      void (async () => {
+        try {
+          // Optional: Dark web monitoring
+          if (options.deepWeb && (scanData.email || scanData.username)) {
+            setProgress({ stage: 'darkweb', progress: 40, message: 'Scanning dark web...' });
+            
+            const targetValue = scanData.email || scanData.username!;
+            const { error: darkwebError } = await supabase
+              .from('darkweb_targets')
+              .insert({
+                workspace_id: workspace!.id,
+                type: scanData.email ? 'email' : 'username',
+                value: targetValue,
+                active: true,
+              });
+
+            if (!darkwebError) {
+              await supabase.functions.invoke('darkweb/monitor', {
+                body: { target: targetValue },
+              });
+            }
+          }
+
+          // Optional: Face recognition - skip if no image available
+          if (options.faceRecognition) {
+            setProgress({ stage: 'face', progress: 50, message: 'Running face recognition...' });
+            await supabase.functions.invoke('reverse-image-search', {
+              body: { scanId },
+            });
+          }
+
+          // Optional: Behavioral analysis
+          if (options.behavioralAnalysis) {
+            setProgress({ stage: 'behavioral', progress: 60, message: 'Analyzing behavior patterns...' });
+            await supabase.functions.invoke('behavioral-analysis', {
+              body: { scanId },
+            });
+          }
+
+          // Optional: Correlation engine
+          if (options.correlationEngine) {
+            setProgress({ stage: 'correlation', progress: 70, message: 'Correlating data...' });
+            await supabase.functions.invoke('correlation-engine', {
+              body: { scanId },
+            });
+          }
+
+          // AI Analysis
+          setProgress({ stage: 'ai', progress: 80, message: 'Running AI analysis...' });
+          await supabase.functions.invoke('ai-analysis', {
+            body: { scanId },
           });
 
-        if (!darkwebError) {
-          await supabase.functions.invoke('darkweb/monitor', {
-            body: { target: targetValue },
+          // Index for RAG
+          setProgress({ stage: 'indexing', progress: 90, message: 'Indexing for AI...' });
+          await supabase.functions.invoke('ai-rag-indexer', {
+            body: { scanId },
           });
+
+          // Optional: Generate threat forecast
+          if (options.threatForecasting) {
+            setProgress({ stage: 'forecasting', progress: 95, message: 'Generating threat forecast...' });
+            await supabase.functions.invoke('threat-forecast-generator');
+          }
+
+          setProgress({ stage: 'complete', progress: 100, message: 'Scan complete!' });
+          toast.success('Advanced scan completed successfully');
+        } catch (bgError) {
+          console.error('Background task error:', bgError);
+          // Don't throw - scan ID is already returned
         }
-      }
-
-      // Optional: Face recognition - skip if no image available
-      if (options.faceRecognition) {
-        setProgress({ stage: 'face', progress: 50, message: 'Running face recognition...' });
-        await supabase.functions.invoke('reverse-image-search', {
-          body: { scanId: scan.id },
-        });
-      }
-
-      // Optional: Behavioral analysis
-      if (options.behavioralAnalysis) {
-        setProgress({ stage: 'behavioral', progress: 60, message: 'Analyzing behavior patterns...' });
-        await supabase.functions.invoke('behavioral-analysis', {
-          body: { scanId: scan.id },
-        });
-      }
-
-      // Optional: Correlation engine
-      if (options.correlationEngine) {
-        setProgress({ stage: 'correlation', progress: 70, message: 'Correlating data...' });
-        await supabase.functions.invoke('correlation-engine', {
-          body: { scanId: scan.id },
-        });
-      }
-
-      // AI Analysis
-      setProgress({ stage: 'ai', progress: 80, message: 'Running AI analysis...' });
-      await supabase.functions.invoke('ai-analysis', {
-        body: { scanId: scan.id },
-      });
-
-      // Index for RAG
-      setProgress({ stage: 'indexing', progress: 90, message: 'Indexing for AI...' });
-      await supabase.functions.invoke('ai-rag-indexer', {
-        body: { scanId: scan.id },
-      });
-
-      // Optional: Generate threat forecast
-      if (options.threatForecasting) {
-        setProgress({ stage: 'forecasting', progress: 95, message: 'Generating threat forecast...' });
-        await supabase.functions.invoke('threat-forecast-generator');
-      }
-
-      setProgress({ stage: 'complete', progress: 100, message: 'Scan complete!' });
-      toast.success('Advanced scan completed successfully');
+      })();
 
       return scan;
 

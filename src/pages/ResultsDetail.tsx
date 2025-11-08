@@ -221,6 +221,14 @@ const ResultsDetail = () => {
       if (scanError) throw scanError;
       setScan(scanData);
 
+      // Stop polling if scan is completed
+      if (scanData.status === 'completed') {
+        if (pollTimeoutRef.current !== null) {
+          clearTimeout(pollTimeoutRef.current);
+          pollTimeoutRef.current = null;
+        }
+      }
+
       // Fetch trend data for this user
       if (scanData.user_id) {
         const trends = await analyzeTrends(scanData.user_id, 30);
@@ -330,14 +338,21 @@ const ResultsDetail = () => {
         }
       }
 
-      // If background job is still populating, poll less frequently (max 30 tries)
+      // If background job is still populating AND scan not completed, poll less frequently (max 30 tries)
       const hasData = (sources?.length ?? 0) > 0 || (profiles?.length ?? 0) > 0;
-      if (!hasData && pollTriesRef.current < 30) {
+      if (!hasData && scanData.status !== 'completed' && pollTriesRef.current < 30) {
         pollTriesRef.current++;
         if (pollTimeoutRef.current !== null) {
           clearTimeout(pollTimeoutRef.current);
         }
         pollTimeoutRef.current = window.setTimeout(fetchScanData, 5000);
+      } else if (scanData.status === 'completed' && !hasData) {
+        // Stop polling if scan is completed but no data
+        console.log('[ResultsDetail] Scan completed with no data_sources/social_profiles');
+        if (pollTimeoutRef.current !== null) {
+          clearTimeout(pollTimeoutRef.current);
+          pollTimeoutRef.current = null;
+        }
       }
     } catch (error: any) {
       console.error("Error fetching scan data:", error);

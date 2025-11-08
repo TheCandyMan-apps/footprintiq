@@ -59,10 +59,13 @@ export function ScanResults({ jobId }: ScanResultsProps) {
         },
         (payload) => {
           const updatedJob = payload.new as ScanJob;
+          console.debug('[ScanResults] Job status updated:', updatedJob.status);
           setJob(updatedJob);
           
-          // Unsubscribe when job is finished to stop updates
-          if (updatedJob.status === 'finished' && jobChannelRef.current) {
+          // Unsubscribe when job reaches any terminal status
+          const terminalStatuses = ['finished', 'error', 'cancelled', 'partial'];
+          if (terminalStatuses.includes(updatedJob.status) && jobChannelRef.current) {
+            console.debug('[ScanResults] Job terminal, unsubscribing from job channel');
             supabase.removeChannel(jobChannelRef.current);
             jobChannelRef.current = null;
           }

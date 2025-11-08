@@ -166,19 +166,39 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Broadcast cancellation event via Supabase Realtime
-    const channel = supabase.channel(`scan_progress_${scanId}`);
-    await channel.send({
-      type: 'broadcast',
-      event: 'scan_cancelled',
-      payload: {
-        scanId,
-        cancelledBy: user.id,
-        cancelledAt: new Date().toISOString(),
-        creditRefund,
-        message: 'Scan cancelled by user',
-      },
-    });
+    // Broadcast cancellation event via Supabase Realtime to both channel patterns
+    try {
+      const maigretChannel = supabase.channel(`scan_progress_${scanId}`);
+      await maigretChannel.subscribe();
+      await maigretChannel.send({
+        type: 'broadcast',
+        event: 'scan_cancelled',
+        payload: {
+          scanId,
+          cancelledBy: user.id,
+          cancelledAt: new Date().toISOString(),
+          creditRefund,
+          message: 'Scan cancelled by user',
+        },
+      });
+
+      const orchestratorChannel = supabase.channel(`scan_progress:${scanId}`);
+      await orchestratorChannel.subscribe();
+      await orchestratorChannel.send({
+        type: 'broadcast',
+        event: 'scan_cancelled',
+        payload: {
+          scanId,
+          cancelledBy: user.id,
+          cancelledAt: new Date().toISOString(),
+          creditRefund,
+          message: 'Scan cancelled by user',
+        },
+      });
+    } catch (broadcastError) {
+      console.error('[cancel-scan] Failed to broadcast cancellation:', broadcastError);
+      // Don't fail the cancellation if broadcast fails
+    }
 
     console.log('[cancel-scan] Successfully cancelled scan:', scanId);
 
