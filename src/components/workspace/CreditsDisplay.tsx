@@ -1,61 +1,129 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Coins, Plus, TrendingUp, History } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { useState } from "react";
+import { Coins, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import confetti from 'canvas-confetti';
 
 interface CreditsDisplayProps {
   workspaceId: string;
 }
 
 export function CreditsDisplay({ workspaceId }: CreditsDisplayProps) {
-  const { toast } = useToast();
-  const [showHistory, setShowHistory] = useState(false);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [balance, setBalance] = useState(0);
+  const [lastBalance, setLastBalance] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const { data: balance, isLoading } = useQuery({
-    queryKey: ['credits-balance', workspaceId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc('get_credits_balance', { _workspace_id: workspaceId });
-      
-      if (error) throw error;
-      return data || 0;
-    },
-  });
+  const fetchCredits = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.rpc("get_credits_balance", {
+        _workspace_id: workspaceId,
+      });
 
-  const { data: history } = useQuery({
-    queryKey: ['credits-history', workspaceId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('credits_ledger')
-        .select('*')
-        .eq('workspace_id', workspaceId)
-        .order('created_at', { ascending: false })
-        .limit(10);
-      
       if (error) throw error;
-      return data;
-    },
-    enabled: showHistory,
-  });
+
+      const newBalance = data || 0;
+      
+      // Check if credits increased (purchase detected)
+      if (newBalance > balance && balance > 0) {
+        const creditsAdded = newBalance - balance;
+        
+        // Trigger confetti
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+        
+        // Show celebration toast
+        toast.success(`${creditsAdded} credits added! 🎉`, {
+          description: `Your new balance: ${newBalance} credits`,
+          duration: 5000,
+        });
+        
+        // Invalidate queries to refresh navbar
+        queryClient.invalidateQueries({ queryKey: ['credits-balance'] });
+      }
+
+      setBalance(newBalance);
+      setLastBalance(newBalance);
+    } catch (err) {
+      console.error("Error fetching credits:", err);
+      toast.error("Failed to fetch credits");
+    } finally {
+      setLoading(false);
+    }
+  }, [workspaceId, balance, queryClient]);
+
+  useEffect(() => {
+    fetchCredits();
+
+    // Set up Realtime listener for credit changes
+    console.log('[Credits] Setting up Realtime listener for workspace:', workspaceId);
+    
+    const channel = supabase
+      .channel(`credits-${workspaceId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'credits_ledger',
+          filter: `workspace_id=eq.${workspaceId}`,
+        },
+        (payload) => {
+          console.log('[Credits] Realtime INSERT event:', payload);
+          
+          // Defer credit fetch to avoid deadlock
+          setTimeout(() => {
+            fetchCredits();
+          }, 100);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'credits_ledger',
+          filter: `workspace_id=eq.${workspaceId}`,
+        },
+        (payload) => {
+          console.log('[Credits] Realtime UPDATE event:', payload);
+          
+          setTimeout(() => {
+            fetchCredits();
+          }, 100);
+        }
+      )
+      .subscribe((status) => {
+        console.log('[Credits] Realtime subscription status:', status);
+      });
+
+    return () => {
+      console.log('[Credits] Cleaning up Realtime listener');
+      supabase.removeChannel(channel);
+    };
+  }, [workspaceId, fetchCredits]);
 
   const handleBuyCredits = () => {
-    toast({
-      title: "Buy Credits",
-      description: "Redirecting to payment page...",
-    });
-    // TODO: Integrate with Stripe checkout
+    navigate("/settings/credits");
   };
+
+  const calculateTrend = () => {
+    if (lastBalance === 0) return null;
+    const change = balance - lastBalance;
+    const percentChange = (change / lastBalance) * 100;
+    return { change, percentChange };
+  };
+
+  const trend = calculateTrend();
 
   return (
     <Card className="p-6">
@@ -66,52 +134,36 @@ export function CreditsDisplay({ workspaceId }: CreditsDisplayProps) {
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Available Credits</p>
-            <p className="text-3xl font-bold">
-              {isLoading ? '...' : balance?.toLocaleString()}
-            </p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-bold">
+                {loading ? "..." : balance.toLocaleString()}
+              </p>
+              {trend && trend.change !== 0 && (
+                <div className={`flex items-center gap-1 text-sm ${
+                  trend.change > 0 ? "text-green-600" : "text-red-600"
+                }`}>
+                  {trend.change > 0 ? (
+                    <TrendingUp className="h-4 w-4" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4" />
+                  )}
+                  <span>{Math.abs(trend.percentChange).toFixed(0)}%</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         <div className="flex gap-2">
-          <Dialog open={showHistory} onOpenChange={setShowHistory}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <History className="h-4 w-4 mr-2" />
-                History
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Credits History</DialogTitle>
-                <DialogDescription>
-                  Your recent credit transactions
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {history?.map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="flex justify-between items-center p-3 rounded-lg border"
-                  >
-                    <div>
-                      <p className="font-medium">{transaction.reason}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(transaction.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className={`font-bold ${transaction.delta > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {transaction.delta > 0 ? '+' : ''}{transaction.delta}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </DialogContent>
-          </Dialog>
-
+          <Button 
+            onClick={fetchCredits} 
+            size="sm" 
+            variant="outline"
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
           <Button onClick={handleBuyCredits} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
             Buy Credits
           </Button>
         </div>

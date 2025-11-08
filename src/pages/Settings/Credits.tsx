@@ -1,14 +1,44 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CreditsDisplay } from "@/components/workspace/CreditsDisplay";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CreditCard, Package, Zap } from "lucide-react";
+import { CreditCard, Package, Zap, Loader2 } from "lucide-react";
 import { SettingsBreadcrumb } from "@/components/settings/SettingsBreadcrumb";
+import { trackPaymentError } from "@/lib/sentry";
+import { paymentMonitor } from "@/lib/monitoring/payment-monitor";
 
 export default function CreditsSettings() {
   const { workspace } = useWorkspace();
+  const [purchasing, setPurchasing] = useState<string | null>(null);
+
+  const validateSession = async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        // Try to refresh session
+        const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !session) {
+          toast.error("Session expired. Please sign in again.");
+          return null;
+        }
+        
+        return session.user;
+      }
+      
+      return user;
+    } catch (error) {
+      console.error("Session validation error:", error);
+      trackPaymentError(error instanceof Error ? error : 'Session validation failed', {
+        errorType: 'session_validation',
+      });
+      return null;
+    }
+  };
 
   const creditPackages = [
     {
@@ -100,23 +130,122 @@ export default function CreditsSettings() {
                   <Button 
                     className="w-full" 
                     variant={pack.popular ? "default" : "outline"}
+                    disabled={purchasing === pack.priceId}
                     onClick={async () => {
+                      setPurchasing(pack.priceId);
+                      
+                      // Track attempt
+                      paymentMonitor.trackAttempt();
+                      
                       try {
-                        const { data, error } = await supabase.functions.invoke('billing/purchase-credits-checkout', {
-                          body: { 
-                            priceId: pack.priceId,
-                            credits: pack.credits,
-                            workspaceId: workspace.id 
+                        // Validate session first
+                        const user = await validateSession();
+                        if (!user) {
+                          throw new Error("Authentication required");
+                        }
+
+                        if (!workspace?.id) {
+                          throw new Error("No workspace found");
+                        }
+
+                        // Validate payload
+                        if (!pack.priceId || !pack.credits) {
+                          throw new Error("Invalid package configuration");
+                        }
+
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+                        try {
+                          const { data, error } = await supabase.functions.invoke(
+                            'billing/purchase-credits-checkout', 
+                            {
+                              body: { 
+                                priceId: pack.priceId,
+                                credits: pack.credits,
+                                workspaceId: workspace.id 
+                              },
+                              headers: {
+                                'Content-Type': 'application/json',
+                              },
+                            }
+                          );
+
+                          clearTimeout(timeoutId);
+
+                          if (error) {
+                            // Track failure
+                            paymentMonitor.trackFailure(error, {
+                              priceId: pack.priceId,
+                              amount: pack.price,
+                              stage: 'checkout_creation',
+                            });
+
+                            // Log error for monitoring
+                            trackPaymentError(error, {
+                              priceId: pack.priceId,
+                              amount: pack.price,
+                              errorType: 'checkout_creation',
+                              errorCode: error.code || 'unknown',
+                            });
+                            throw error;
                           }
-                        });
-                        if (error) throw error;
-                        if (data?.url) window.open(data.url, '_blank');
+
+                          if (data?.url) {
+                            window.open(data.url, '_blank');
+                          } else {
+                            throw new Error("No checkout URL returned");
+                          }
+                        } catch (fetchError: any) {
+                          clearTimeout(timeoutId);
+                          
+                          if (fetchError.name === 'AbortError') {
+                            throw new Error("Request timeout - please try again");
+                          }
+                          throw fetchError;
+                        }
                       } catch (err: any) {
-                        toast.error(err?.message || "Failed to create checkout session");
+                        console.error("Purchase error:", err);
+                        
+                        // Track failure
+                        paymentMonitor.trackFailure(err, {
+                          priceId: pack.priceId,
+                          amount: pack.price,
+                          stage: 'purchase_flow',
+                        });
+                        
+                        let errorMessage = "Failed to create checkout session";
+                        
+                        if (err?.message?.includes("Authentication")) {
+                          errorMessage = "Please sign in to purchase credits";
+                        } else if (err?.message?.includes("timeout")) {
+                          errorMessage = "Request timed out - please try again";
+                        } else if (err?.message?.includes("Bad Request")) {
+                          errorMessage = "Invalid request - please refresh and try again";
+                        } else if (err?.message) {
+                          errorMessage = err.message;
+                        }
+
+                        toast.error(errorMessage);
+                        
+                        trackPaymentError(err, {
+                          priceId: pack.priceId,
+                          amount: pack.price,
+                          errorType: 'purchase_error',
+                        });
+                      } finally {
+                        setPurchasing(null);
                       }
                     }}
                   >
-                    Purchase
+                    {purchasing === pack.priceId ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      'Purchase'
+                    )}
                   </Button>
                 </div>
               </Card>
