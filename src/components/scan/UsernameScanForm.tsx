@@ -13,6 +13,7 @@ import { Loader2, Info, Bug } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useUsernameScan } from '@/hooks/useUsernameScan';
 import { UsernameScanDebug } from './UsernameScanDebug';
+import { ScanProgressDialog } from './ScanProgressDialog';
 import { checkAndRefreshSession } from '@/lib/auth/sessionRefresh';
 import {
   Tooltip,
@@ -35,6 +36,8 @@ export function UsernameScanForm() {
   const [allSites, setAllSites] = useState(false);
   const [artifacts, setArtifacts] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { entitlement, isPremium, loading: entitlementLoading } = useMaigretEntitlement();
@@ -93,29 +96,21 @@ export function UsernameScanForm() {
 
       const jobId = data?.jobId;
 
+      // Open progress dialog
+      if (jobId) {
+        setCurrentScanId(jobId);
+        setProgressDialogOpen(true);
+      }
+
       toast({
         title: 'Scan Started',
         description: `Scan queued for username "${username}"`,
-        action: jobId ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate(`/scan/usernames/${jobId}`)}
-          >
-            View Job
-          </Button>
-        ) : undefined,
       });
 
       // Reset form
       setUsername('');
       setTags('');
       setArtifacts([]);
-
-      // Navigate to results if we have a job ID
-      if (jobId) {
-        setTimeout(() => navigate(`/scan/usernames/${jobId}`), 1000);
-      }
     } catch (error: any) {
       console.error('Scan error:', error);
       toast({
@@ -301,6 +296,18 @@ export function UsernameScanForm() {
 
     {/* Debug Console */}
     {debugMode && <UsernameScanDebug logs={debugLogs} onClear={clearLogs} />}
+
+    {/* Progress Dialog */}
+    <ScanProgressDialog
+      open={progressDialogOpen}
+      onOpenChange={setProgressDialogOpen}
+      scanId={currentScanId}
+      onComplete={() => {
+        if (currentScanId) {
+          navigate(`/scan/usernames/${currentScanId}`);
+        }
+      }}
+    />
     </>
   );
 }
