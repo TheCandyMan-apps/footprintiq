@@ -7,6 +7,8 @@ import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Users, Settings, Trash2, Crown, Shield, Eye, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +19,8 @@ import { SEO } from "@/components/SEO";
 export default function WorkspaceManagement() {
   const { workspace, workspaces, switchWorkspace, refreshWorkspace } = useWorkspace();
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
+  const [addMemberEmail, setAddMemberEmail] = useState("");
+  const [addMemberRole, setAddMemberRole] = useState<"viewer" | "analyst" | "admin">("viewer");
   const queryClient = useQueryClient();
 
   const { data: user } = useQuery({
@@ -96,6 +100,69 @@ export default function WorkspaceManagement() {
     },
     onError: (err: any) => {
       toast.error(err?.message || 'Failed to remove member');
+    }
+  });
+
+  const changeMemberRoleMutation = useMutation({
+    mutationFn: async ({ workspaceId, memberId, newRole }: { 
+      workspaceId: string; 
+      memberId: string; 
+      newRole: 'viewer' | 'analyst' | 'admin' 
+    }) => {
+      const client: any = supabase;
+      const { error } = await client
+        .from("workspace_members")
+        .update({ role: newRole })
+        .eq("id", memberId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Member role updated");
+      queryClient.invalidateQueries({ queryKey: ['workspace-members'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to update role');
+    }
+  });
+
+  const addMemberMutation = useMutation({
+    mutationFn: async ({ workspaceId, email, role }: { 
+      workspaceId: string; 
+      email: string; 
+      role: 'viewer' | 'analyst' | 'admin' 
+    }) => {
+      // Look up user by email
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('email', email)
+        .single();
+
+      if (!profile) {
+        throw new Error('User not found. They must have an account first.');
+      }
+
+      // Add as member
+      const client: any = supabase;
+      const { error } = await client
+        .from("workspace_members")
+        .insert({
+          workspace_id: workspaceId,
+          user_id: profile.user_id,
+          role: role
+        });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Member added to workspace");
+      setAddMemberEmail("");
+      setAddMemberRole("viewer");
+      queryClient.invalidateQueries({ queryKey: ['workspace-members'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to add member');
     }
   });
 
@@ -213,6 +280,45 @@ export default function WorkspaceManagement() {
                     </TabsList>
 
                     <TabsContent value="members" className="space-y-4">
+                      {isOwner(selectedWorkspace) && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Add Member</CardTitle>
+                            <CardDescription>Add existing users to this workspace</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex gap-4">
+                              <Input
+                                placeholder="user@example.com"
+                                value={addMemberEmail}
+                                onChange={(e) => setAddMemberEmail(e.target.value)}
+                                className="flex-1"
+                              />
+                              <Select value={addMemberRole} onValueChange={(v) => setAddMemberRole(v as any)}>
+                                <SelectTrigger className="w-32">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="viewer">Viewer</SelectItem>
+                                  <SelectItem value="analyst">Analyst</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button 
+                                onClick={() => addMemberMutation.mutate({
+                                  workspaceId: selectedWorkspace,
+                                  email: addMemberEmail,
+                                  role: addMemberRole
+                                })}
+                                disabled={!addMemberEmail || addMemberMutation.isPending}
+                              >
+                                Add
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                      
                       {membersLoading ? (
                         <div className="text-center py-8 text-muted-foreground">
                           Loading members...
@@ -246,12 +352,47 @@ export default function WorkspaceManagement() {
                                     </div>
                                   </TableCell>
                                   <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      {getRoleIcon(member.role)}
-                                      <Badge variant={getRoleBadge(member.role)}>
-                                        {member.role}
-                                      </Badge>
-                                    </div>
+                                    {isOwner(selectedWorkspace) && member.user_id !== user?.id ? (
+                                      <Select 
+                                        value={member.role}
+                                        onValueChange={(newRole) => changeMemberRoleMutation.mutate({
+                                          workspaceId: selectedWorkspace,
+                                          memberId: member.id,
+                                          newRole: newRole as any
+                                        })}
+                                      >
+                                        <SelectTrigger className="w-32">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="viewer">
+                                            <div className="flex items-center gap-2">
+                                              <Eye className="h-4 w-4" />
+                                              Viewer
+                                            </div>
+                                          </SelectItem>
+                                          <SelectItem value="analyst">
+                                            <div className="flex items-center gap-2">
+                                              <Search className="h-4 w-4" />
+                                              Analyst
+                                            </div>
+                                          </SelectItem>
+                                          <SelectItem value="admin">
+                                            <div className="flex items-center gap-2">
+                                              <Shield className="h-4 w-4" />
+                                              Admin
+                                            </div>
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    ) : (
+                                      <div className="flex items-center gap-2">
+                                        {getRoleIcon(member.role)}
+                                        <Badge variant={getRoleBadge(member.role)}>
+                                          {member.role}
+                                        </Badge>
+                                      </div>
+                                    )}
                                   </TableCell>
                                   <TableCell className="text-sm text-muted-foreground">
                                     {new Date(member.created_at).toLocaleDateString()}

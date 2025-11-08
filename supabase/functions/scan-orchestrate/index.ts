@@ -118,8 +118,30 @@ serve(async (req) => {
       .single();
 
     if (memberError || !membership) {
-      console.error('[orchestrate] Unauthorized workspace access:', user.id, workspaceId);
-      return bad(403, 'not_workspace_member');
+      console.error('[orchestrate] Unauthorized workspace access:', {
+        userId: user.id,
+        workspaceId,
+        memberError,
+        membership
+      });
+      
+      // Check if user is the workspace owner but not a member (data integrity issue)
+      const { data: workspace } = await supabaseService
+        .from('workspaces')
+        .select('owner_id, name')
+        .eq('id', workspaceId)
+        .single();
+        
+      if (workspace?.owner_id === user.id) {
+        console.error('[orchestrate] CRITICAL: Owner is not a workspace member!', {
+          workspaceId,
+          workspaceName: workspace.name,
+          ownerId: user.id
+        });
+        return bad(500, 'data_integrity_error_owner_not_member_contact_support');
+      }
+      
+      return bad(403, 'not_workspace_member_check_permissions');
     }
 
     console.log(`[orchestrate] Scanning ${type}:${value} for workspace ${workspaceId}`);
