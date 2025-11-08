@@ -60,12 +60,21 @@ export const FootprintDNAModal = ({
     });
   };
 
-  const handleExportPDF = async () => {
-    await exportDNAasPDF(trendData, currentScore);
-    toast({
-      title: "Export successful",
-      description: "Your DNA report has been downloaded as PDF",
-    });
+  const handleExportPDF = () => {
+    try {
+      exportDNAasPDF(trendData, currentScore);
+      toast({
+        title: "Export successful",
+        description: "Your DNA report has been downloaded as PDF",
+      });
+    } catch (error) {
+      console.error('PDF export error:', error);
+      toast({
+        title: "Export failed",
+        description: "There was an error generating the PDF report",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
