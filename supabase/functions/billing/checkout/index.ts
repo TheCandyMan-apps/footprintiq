@@ -1,7 +1,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@18.5.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad, allowedOrigin } from '../../_shared/secure.ts';
+import { corsHeaders, ok, bad } from '../../_shared/secure.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -9,7 +9,6 @@ serve(async (req) => {
   }
 
   if (req.method !== 'POST') return bad(405, 'method_not_allowed');
-  if (!allowedOrigin(req)) return bad(403, 'forbidden');
 
   try {
     const supabase = createClient(
