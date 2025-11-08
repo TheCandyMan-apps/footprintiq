@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { CheckCircle, Loader2, XCircle, AlertCircle, X } from 'lucide-react';
 import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
 interface ProviderStatus {
   name: string;
@@ -27,6 +28,74 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
   const [creditsUsed, setCreditsUsed] = useState(0);
   const [status, setStatus] = useState<'running' | 'completed' | 'failed' | 'cancelled'>('running');
   const [isCancelling, setIsCancelling] = useState(false);
+
+  const playSuccessSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Play a pleasant success sound (C major chord)
+      oscillator.frequency.value = 523.25; // C5
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+      
+      // Add second note for harmony
+      const oscillator2 = audioContext.createOscillator();
+      const gainNode2 = audioContext.createGain();
+      oscillator2.connect(gainNode2);
+      gainNode2.connect(audioContext.destination);
+      
+      oscillator2.frequency.value = 659.25; // E5
+      oscillator2.type = 'sine';
+      gainNode2.gain.setValueAtTime(0.2, audioContext.currentTime + 0.1);
+      gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
+      
+      oscillator2.start(audioContext.currentTime + 0.1);
+      oscillator2.stop(audioContext.currentTime + 0.6);
+    } catch (error) {
+      console.log('Could not play success sound:', error);
+    }
+  };
+
+  const triggerConfetti = () => {
+    const duration = 3000;
+    const animationEnd = Date.now() + duration;
+    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+    const randomInRange = (min: number, max: number) => {
+      return Math.random() * (max - min) + min;
+    };
+
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      const particleCount = 50 * (timeLeft / duration);
+      
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+      });
+      confetti({
+        ...defaults,
+        particleCount,
+        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+      });
+    }, 250);
+  };
 
   useEffect(() => {
     if (!scanId || !open) return;
@@ -84,7 +153,14 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
           if (payload.payload.creditsUsed) {
             setCreditsUsed(payload.payload.creditsUsed);
           }
-          toast.success('Scan completed successfully');
+          
+          // Trigger celebration effects
+          triggerConfetti();
+          playSuccessSound();
+          
+          toast.success('Scan completed successfully', {
+            description: 'All providers have finished scanning',
+          });
           onComplete?.();
         }
       )
@@ -220,11 +296,21 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
 
           {/* Action Buttons */}
           <div className="flex items-center justify-between pt-4 border-t">
-            <div className="text-sm text-muted-foreground">
-              {status === 'completed' && 'Scan completed successfully'}
-              {status === 'failed' && 'Scan failed'}
-              {status === 'cancelled' && 'Scan cancelled'}
-              {status === 'running' && 'Scan in progress...'}
+            <div className="text-sm">
+              {status === 'completed' && (
+                <span className="text-green-600 dark:text-green-400 font-medium animate-fade-in">
+                  🎉 Scan completed successfully!
+                </span>
+              )}
+              {status === 'failed' && (
+                <span className="text-destructive font-medium">Scan failed</span>
+              )}
+              {status === 'cancelled' && (
+                <span className="text-muted-foreground">Scan cancelled</span>
+              )}
+              {status === 'running' && (
+                <span className="text-muted-foreground">Scan in progress...</span>
+              )}
             </div>
             <div className="flex gap-2">
               {status === 'running' && (
