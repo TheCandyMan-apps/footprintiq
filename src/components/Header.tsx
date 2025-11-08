@@ -73,7 +73,7 @@ export const Header = () => {
 
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-6 py-3">
+      <div className="max-w-7xl mx-auto px-6 py-1.5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <MobileNav />
