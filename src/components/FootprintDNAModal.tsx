@@ -2,10 +2,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { TrendingDown, TrendingUp, Minus, Shield, AlertTriangle, Database, Skull, Download, FileText, FileSpreadsheet, Settings } from 'lucide-react';
 import { TrendDataPoint } from '@/lib/trends';
-import { exportDNAasCSV, exportDNAasPDF, BrandingSettings } from '@/lib/dnaExport';
+import { exportDNAasCSV, exportDNAasPDF, BrandingSettings, PDFTemplate } from '@/lib/dnaExport';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
@@ -27,6 +28,7 @@ export const FootprintDNAModal = ({
   const { toast } = useToast();
   const [brandingSettings, setBrandingSettings] = useState<BrandingSettings | undefined>();
   const [showBrandingSettings, setShowBrandingSettings] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<PDFTemplate>('technical');
 
   useEffect(() => {
     if (open) {
@@ -100,10 +102,10 @@ export const FootprintDNAModal = ({
 
   const handleExportPDF = () => {
     try {
-      exportDNAasPDF(trendData, currentScore, brandingSettings);
+      exportDNAasPDF(trendData, currentScore, brandingSettings, selectedTemplate);
       toast({
         title: "Export successful",
-        description: "Your DNA report has been downloaded as PDF",
+        description: `Your ${selectedTemplate} report has been downloaded as PDF`,
       });
     } catch (error) {
       console.error('PDF export error:', error);
@@ -121,7 +123,17 @@ export const FootprintDNAModal = ({
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl font-bold">Digital DNA Analysis</DialogTitle>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
+              <Select value={selectedTemplate} onValueChange={(value) => setSelectedTemplate(value as PDFTemplate)}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select template" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="executive">Executive Summary</SelectItem>
+                  <SelectItem value="technical">Technical Detail</SelectItem>
+                  <SelectItem value="compliance">Compliance Focus</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 variant="ghost"
                 size="sm"

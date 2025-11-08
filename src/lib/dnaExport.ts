@@ -10,6 +10,8 @@ export interface BrandingSettings {
   secondary_color?: string;
 }
 
+export type PDFTemplate = 'executive' | 'technical' | 'compliance';
+
 export const exportDNAasCSV = (trendData: TrendDataPoint[], currentScore: number) => {
   const headers = ['Date', 'Privacy Score', 'Total Sources', 'High Risk', 'Medium Risk', 'Low Risk'];
   
@@ -43,7 +45,8 @@ export const exportDNAasCSV = (trendData: TrendDataPoint[], currentScore: number
 export const exportDNAasPDF = async (
   trendData: TrendDataPoint[], 
   currentScore: number,
-  branding?: BrandingSettings
+  branding?: BrandingSettings,
+  template: PDFTemplate = 'technical'
 ) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -102,10 +105,15 @@ export const exportDNAasPDF = async (
     yPosition += (lines.length * 4) + 6;
   }
   
-  // Title
+  // Title with template type
   doc.setFontSize(20);
   doc.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b);
-  doc.text('Digital DNA Report', pageWidth / 2, yPosition, { align: 'center' });
+  const templateTitles = {
+    executive: 'Executive Summary Report',
+    technical: 'Technical Analysis Report',
+    compliance: 'Compliance Assessment Report'
+  };
+  doc.text(templateTitles[template], pageWidth / 2, yPosition, { align: 'center' });
   yPosition += 8;
   
   // Date
@@ -141,7 +149,7 @@ export const exportDNAasPDF = async (
   doc.text(riskText, 14, yPosition);
   yPosition += 17;
   
-  // Summary Statistics
+  // Summary Statistics (all templates)
   if (trendData.length > 0) {
     const latest = trendData[trendData.length - 1];
     const earliest = trendData[0];
@@ -154,52 +162,125 @@ export const exportDNAasPDF = async (
     
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    doc.text(`Total Data Points: ${trendData.length}`, 14, yPosition);
-    yPosition += 7;
-    doc.text(`Score Change: ${scoreChange > 0 ? '+' : ''}${scoreChange}`, 14, yPosition);
-    yPosition += 7;
-    doc.text(`Latest High Risk: ${latest.highRiskCount}`, 14, yPosition);
-    yPosition += 7;
-    doc.text(`Latest Medium Risk: ${latest.mediumRiskCount}`, 14, yPosition);
-    yPosition += 7;
-    doc.text(`Latest Total Sources: ${latest.totalSources}`, 14, yPosition);
-    yPosition += 8;
+    
+    if (template === 'executive') {
+      // Executive: Only key metrics
+      doc.text(`Score Change: ${scoreChange > 0 ? '+' : ''}${scoreChange}`, 14, yPosition);
+      yPosition += 7;
+      doc.text(`Critical Issues: ${latest.highRiskCount}`, 14, yPosition);
+      yPosition += 7;
+      doc.text(`Data Points Analyzed: ${latest.totalSources}`, 14, yPosition);
+      yPosition += 8;
+    } else if (template === 'compliance') {
+      // Compliance: Risk-focused metrics
+      doc.text(`Total Data Points: ${trendData.length}`, 14, yPosition);
+      yPosition += 7;
+      doc.text(`Risk Trend: ${scoreChange > 0 ? 'Increasing' : scoreChange < 0 ? 'Decreasing' : 'Stable'}`, 14, yPosition);
+      yPosition += 7;
+      doc.text(`High Risk Items: ${latest.highRiskCount} (Requires Immediate Action)`, 14, yPosition);
+      yPosition += 7;
+      doc.text(`Medium Risk Items: ${latest.mediumRiskCount} (Monitor Closely)`, 14, yPosition);
+      yPosition += 7;
+      doc.text(`Low Risk Items: ${latest.lowRiskCount} (Acceptable Risk Level)`, 14, yPosition);
+      yPosition += 8;
+    } else {
+      // Technical: All metrics
+      doc.text(`Total Data Points: ${trendData.length}`, 14, yPosition);
+      yPosition += 7;
+      doc.text(`Score Change: ${scoreChange > 0 ? '+' : ''}${scoreChange}`, 14, yPosition);
+      yPosition += 7;
+      doc.text(`Latest High Risk: ${latest.highRiskCount}`, 14, yPosition);
+      yPosition += 7;
+      doc.text(`Latest Medium Risk: ${latest.mediumRiskCount}`, 14, yPosition);
+      yPosition += 7;
+      doc.text(`Latest Total Sources: ${latest.totalSources}`, 14, yPosition);
+      yPosition += 8;
+    }
   }
   
-  // Historical Data Table
-  if (trendData.length > 0) {
+  // Add compliance statement for compliance template
+  if (template === 'compliance') {
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
-    doc.text('Historical Trend Data', 14, yPosition);
-    yPosition += 5;
+    doc.text('Compliance Assessment', 14, yPosition);
+    yPosition += 8;
     
-    const tableData = trendData.map(point => [
-      point.date,
-      point.privacyScore.toString(),
-      point.totalSources.toString(),
-      point.highRiskCount.toString(),
-      point.mediumRiskCount.toString(),
-      point.lowRiskCount.toString()
-    ]);
-    
-    (doc as any).autoTable({
-      startY: yPosition,
-      head: [['Date', 'Score', 'Sources', 'High Risk', 'Med Risk', 'Low Risk']],
-      body: tableData,
-      theme: 'striped',
-      headStyles: { 
-        fillColor: [primaryColor.r, primaryColor.g, primaryColor.b]
-      },
-      styles: { fontSize: 8 },
-      columnStyles: {
-        0: { cellWidth: 30 },
-        1: { cellWidth: 20 },
-        2: { cellWidth: 25 },
-        3: { cellWidth: 25 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 25 }
-      }
+    doc.setFontSize(9);
+    doc.setTextColor(60, 60, 60);
+    const complianceText = [
+      'This report provides a comprehensive assessment of digital privacy risks and compliance status.',
+      'All findings have been categorized according to industry-standard risk levels.',
+      'Immediate action is recommended for high-risk items to maintain compliance posture.',
+      ''
+    ];
+    complianceText.forEach(line => {
+      doc.text(line, 14, yPosition);
+      yPosition += 5;
     });
+    yPosition += 5;
+  }
+
+  // Historical Data Table
+  if (trendData.length > 0) {
+    // Skip detailed table for executive template
+    if (template === 'executive') {
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Recent Trend Summary', 14, yPosition);
+      yPosition += 5;
+      
+      // Show only last 5 data points for executive
+      const recentData = trendData.slice(-5).map(point => [
+        point.date,
+        point.privacyScore.toString(),
+        point.highRiskCount.toString()
+      ]);
+      
+      (doc as any).autoTable({
+        startY: yPosition,
+        head: [['Date', 'Score', 'Critical Issues']],
+        body: recentData,
+        theme: 'striped',
+        headStyles: { 
+          fillColor: [primaryColor.r, primaryColor.g, primaryColor.b]
+        },
+        styles: { fontSize: 9 }
+      });
+    } else {
+      // Full table for technical and compliance
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Historical Trend Data', 14, yPosition);
+      yPosition += 5;
+      
+      const tableData = trendData.map(point => [
+        point.date,
+        point.privacyScore.toString(),
+        point.totalSources.toString(),
+        point.highRiskCount.toString(),
+        point.mediumRiskCount.toString(),
+        point.lowRiskCount.toString()
+      ]);
+      
+      (doc as any).autoTable({
+        startY: yPosition,
+        head: [['Date', 'Score', 'Sources', 'High Risk', 'Med Risk', 'Low Risk']],
+        body: tableData,
+        theme: 'striped',
+        headStyles: { 
+          fillColor: [primaryColor.r, primaryColor.g, primaryColor.b]
+        },
+        styles: { fontSize: 8 },
+        columnStyles: {
+          0: { cellWidth: 30 },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 25 },
+          3: { cellWidth: 25 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 25 }
+        }
+      });
+    }
   }
   
   // Footer
