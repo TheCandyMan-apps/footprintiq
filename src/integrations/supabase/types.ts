@@ -3134,6 +3134,63 @@ export type Database = {
           },
         ]
       }
+      findings: {
+        Row: {
+          confidence: number
+          created_at: string | null
+          evidence: Json | null
+          id: string
+          kind: string
+          meta: Json | null
+          observed_at: string
+          provider: string
+          scan_id: string
+          severity: string
+          workspace_id: string
+        }
+        Insert: {
+          confidence: number
+          created_at?: string | null
+          evidence?: Json | null
+          id?: string
+          kind: string
+          meta?: Json | null
+          observed_at: string
+          provider: string
+          scan_id: string
+          severity: string
+          workspace_id: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string | null
+          evidence?: Json | null
+          id?: string
+          kind?: string
+          meta?: Json | null
+          observed_at?: string
+          provider?: string
+          scan_id?: string
+          severity?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "findings_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "findings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       graph_queries: {
         Row: {
           created_at: string | null

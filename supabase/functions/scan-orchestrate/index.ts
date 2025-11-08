@@ -227,6 +227,14 @@ serve(async (req) => {
       console.warn('[orchestrate] Exception creating scan record:', e);
     }
 
+    // Create and subscribe to realtime channel for progress updates
+    const channelName = `scan_progress:${scanId}`;
+    const progressChannel = supabaseService.channel(channelName);
+    
+    await progressChannel.subscribe((status) => {
+      console.log(`[orchestrate] Channel ${channelName} status:`, status);
+    });
+
     // Build provider list with sensible defaults
     const DEFAULT_PROVIDERS: Record<ScanRequest['type'], string[]> = {
       email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
@@ -287,8 +295,7 @@ serve(async (req) => {
     const allFindings: UFMFinding[] = [];
 
     // Broadcast initial progress
-    const channelName = `scan_progress:${scanId}`;
-    await supabaseService.channel(channelName).send({
+    await progressChannel.send({
       type: 'broadcast',
       event: 'progress',
       payload: {
@@ -310,7 +317,7 @@ serve(async (req) => {
       console.log(`[orchestrate] Calling provider: ${provider} for ${type}:${value}`);
       
       // Broadcast provider start
-      await supabaseService.channel(channelName).send({
+      await progressChannel.send({
         type: 'broadcast',
         event: 'progress',
         payload: {
@@ -347,7 +354,7 @@ serve(async (req) => {
         completedCount++;
         
         // Broadcast provider completion
-        await supabaseService.channel(channelName).send({
+        await progressChannel.send({
           type: 'broadcast',
           event: 'progress',
           payload: {
@@ -367,7 +374,7 @@ serve(async (req) => {
         completedCount++;
         
         // Broadcast provider error
-        await supabaseService.channel(channelName).send({
+        await progressChannel.send({
           type: 'broadcast',
           event: 'progress',
           payload: {
@@ -395,7 +402,7 @@ serve(async (req) => {
     }
 
     // Broadcast completion of standard providers
-    await supabaseService.channel(channelName).send({
+    await progressChannel.send({
       type: 'broadcast',
       event: 'progress',
       payload: {
@@ -412,7 +419,7 @@ serve(async (req) => {
     if (premium && (premium.socialMediaFinder || premium.osintScraper || premium.darkwebScraper)) {
       console.log('[orchestrate] Running premium Apify actors...');
       
-      await supabaseService.channel(channelName).send({
+      await progressChannel.send({
         type: 'broadcast',
         event: 'progress',
         payload: {
@@ -606,7 +613,7 @@ serve(async (req) => {
     console.log(`[orchestrate] Completed in ${tookMs}ms: ${sortedFindings.length} findings`);
 
     // Broadcast final completion
-    await supabaseService.channel(channelName).send({
+    await progressChannel.send({
       type: 'broadcast',
       event: 'progress',
       payload: {
@@ -619,6 +626,9 @@ serve(async (req) => {
         tookMs
       }
     });
+
+    // Unsubscribe from channel
+    await progressChannel.unsubscribe();
 
     return ok({
       scanId,
