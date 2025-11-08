@@ -9,8 +9,11 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMaigretEntitlement } from '@/hooks/useMaigretEntitlement';
-import { Loader2, Info } from 'lucide-react';
+import { Loader2, Info, Bug } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUsernameScan } from '@/hooks/useUsernameScan';
+import { UsernameScanDebug } from './UsernameScanDebug';
+import { checkAndRefreshSession } from '@/lib/auth/sessionRefresh';
 import {
   Tooltip,
   TooltipContent,
@@ -35,6 +38,14 @@ export function UsernameScanForm() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { entitlement, isPremium, loading: entitlementLoading } = useMaigretEntitlement();
+  const { 
+    isScanning, 
+    debugLogs, 
+    debugMode, 
+    setDebugMode, 
+    startScan, 
+    clearLogs 
+  } = useUsernameScan();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,18 +62,36 @@ export function UsernameScanForm() {
     setSubmitting(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('enqueue-maigret-scan', {
-        body: {
-          username: username.trim(),
-          tags: tags.trim() || undefined,
-          all_sites: allSites,
-          artifacts: isPremium ? artifacts : [],
-        },
+      // Pre-scan session check
+      const sessionCheck = await checkAndRefreshSession();
+      
+      if (!sessionCheck.valid) {
+        toast({
+          title: 'Session Expired',
+          description: 'Please log in again',
+          variant: 'destructive',
+        });
+        navigate('/auth');
+        return;
+      }
+      
+      if (sessionCheck.refreshed) {
+        toast({
+          title: 'Session Refreshed',
+          description: 'Your session has been renewed—retry scan',
+        });
+      }
+
+      // Use enhanced scan hook
+      const data = await startScan({
+        username: username.trim(),
+        tags: tags.trim() || undefined,
+        allSites: allSites,
+        artifacts: isPremium ? artifacts : [],
+        debugMode,
       });
 
-      if (error) throw error;
-
-      const jobId = data?.job_id;
+      const jobId = data?.jobId;
 
       toast({
         title: 'Scan Started',
@@ -110,20 +139,36 @@ export function UsernameScanForm() {
   }
 
   return (
-    <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="p-6 md:p-8">
-        <CardTitle className="text-2xl font-semibold">New Username Scan</CardTitle>
-        <CardDescription className="text-sm text-muted-foreground">
-          Search for profiles across social media and websites
-          {entitlement && (
-            <span className="ml-2 text-xs font-medium text-primary">
-              {entitlement.plan.toUpperCase()} Plan
-            </span>
-          )}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="p-6 md:p-8 pt-0">
-        <form onSubmit={handleSubmit} className="space-y-6">
+    <>
+      <Card className="rounded-2xl shadow-sm">
+        <CardHeader className="p-6 md:p-8">
+          <CardTitle className="text-2xl font-semibold">New Username Scan</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
+            Search for profiles across social media and websites
+            {entitlement && (
+              <span className="ml-2 text-xs font-medium text-primary">
+                {entitlement.plan.toUpperCase()} Plan
+              </span>
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-6 md:p-8 pt-0">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Debug Mode Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2">
+                <Bug className="w-4 h-4 text-muted-foreground" />
+                <Label htmlFor="debug-mode" className="text-sm font-medium cursor-pointer">
+                  Debug Mode
+                </Label>
+                <span className="text-xs px-2 py-0.5 rounded-md bg-secondary text-secondary-foreground">Beta</span>
+              </div>
+              <Switch
+                id="debug-mode"
+                checked={debugMode}
+                onCheckedChange={setDebugMode}
+              />
+            </div>
           <div className="space-y-2">
             <Label htmlFor="username">Username *</Label>
             <Input
@@ -240,8 +285,8 @@ export function UsernameScanForm() {
             </div>
           )}
 
-          <Button type="submit" disabled={submitting} className="w-full h-11">
-            {submitting ? (
+          <Button type="submit" disabled={submitting || isScanning} className="w-full h-11">
+            {(submitting || isScanning) ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Starting Scan...
@@ -253,5 +298,9 @@ export function UsernameScanForm() {
         </form>
       </CardContent>
     </Card>
+
+    {/* Debug Console */}
+    {debugMode && <UsernameScanDebug logs={debugLogs} onClear={clearLogs} />}
+    </>
   );
 }

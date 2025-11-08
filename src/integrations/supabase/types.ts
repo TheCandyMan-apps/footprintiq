@@ -5510,7 +5510,11 @@ export type Database = {
           finished_at: string | null
           id: string
           kind: string
+          last_provider_update: string | null
+          partial_results: Json | null
           plan: string
+          providers_completed: number | null
+          providers_total: number | null
           requested_by: string | null
           started_at: string | null
           status: string
@@ -5526,7 +5530,11 @@ export type Database = {
           finished_at?: string | null
           id?: string
           kind?: string
+          last_provider_update?: string | null
+          partial_results?: Json | null
           plan?: string
+          providers_completed?: number | null
+          providers_total?: number | null
           requested_by?: string | null
           started_at?: string | null
           status?: string
@@ -5542,7 +5550,11 @@ export type Database = {
           finished_at?: string | null
           id?: string
           kind?: string
+          last_provider_update?: string | null
+          partial_results?: Json | null
           plan?: string
+          providers_completed?: number | null
+          providers_total?: number | null
           requested_by?: string | null
           started_at?: string | null
           status?: string

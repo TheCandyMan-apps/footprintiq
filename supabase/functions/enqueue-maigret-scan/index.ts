@@ -169,27 +169,61 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Streaming mode (Standard)
+    // Streaming mode (Standard) with timeout and retry
     const url = new URL(`${WORKER_URL}/scan/${encodeURIComponent(username.trim())}`);
     if (tags?.trim()) url.searchParams.set('tags', tags.trim());
     if (all_sites) url.searchParams.set('all_sites', 'true');
 
-    const resp = await fetch(url, {
-      headers: { 'X-Worker-Token': WORKER_TOKEN }
-    });
+    // Retry logic with exponential backoff
+    let resp: Response | null = null;
+    let lastError: any;
+    
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        
+        resp = await fetch(url, {
+          headers: { 'X-Worker-Token': WORKER_TOKEN },
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (resp.ok) break; // Success
+        
+        // Check if retryable
+        if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) {
+          // 4xx client errors (except rate limit) - don't retry
+          lastError = new Error(`Worker error ${resp.status}`);
+          break;
+        }
+        
+        lastError = new Error(`Worker error ${resp.status}`);
+      } catch (error: any) {
+        lastError = error;
+        console.error(`Attempt ${attempt} failed:`, error.message);
+        
+        if (attempt < 3) {
+          const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
 
-    if (!resp.ok || !resp.body) {
+    if (!resp || !resp.ok || !resp.body) {
+      const errorMsg = lastError?.message || `Worker ${resp?.status || 'unreachable'}`;
       await supabaseUser
         .from('scan_jobs')
         .update({
           status: 'error',
-          error: `Worker ${resp.status}`,
+          error: errorMsg,
           finished_at: new Date().toISOString()
         })
         .eq('id', job.id);
 
       return new Response(
-        JSON.stringify({ jobId: job.id, status: 'error' }),
+        JSON.stringify({ jobId: job.id, status: 'error', error: errorMsg }),
         {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -203,6 +237,8 @@ Deno.serve(async (req) => {
     let lineNo = 0;
     let inserted = 0;
     let normalized = 0;
+    const partialResults: any[] = [];
+    let providersCompleted = 0;
 
     try {
       for (;;) {
@@ -240,23 +276,49 @@ Deno.serve(async (req) => {
                 raw: json
               });
 
-            if (!e2) normalized++;
+            if (!e2) {
+              normalized++;
+              providersCompleted++;
+              partialResults.push({ site: json.site, url: json.url, status: json.status });
+              
+              // Save partial results every 5 providers
+              if (providersCompleted % 5 === 0) {
+                await supabaseAdmin
+                  .from('scan_jobs')
+                  .update({
+                    partial_results: partialResults,
+                    providers_completed: providersCompleted,
+                    last_provider_update: new Date().toISOString(),
+                  })
+                  .eq('id', job.id);
+              }
+            }
           }
         }
       }
     } catch (e) {
       console.error('Stream error:', e);
+      
+      // Save partial results on error
+      const status = providersCompleted > 0 ? 'partial' : 'error';
       await supabaseUser
         .from('scan_jobs')
         .update({
-          status: 'error',
+          status,
           error: `stream ${String(e)}`,
+          partial_results: partialResults,
+          providers_completed: providersCompleted,
           finished_at: new Date().toISOString()
         })
         .eq('id', job.id);
 
       return new Response(
-        JSON.stringify({ jobId: job.id, status: 'error' }),
+        JSON.stringify({ 
+          jobId: job.id, 
+          status, 
+          providersCompleted,
+          error: String(e)
+        }),
         {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -266,10 +328,15 @@ Deno.serve(async (req) => {
 
     await supabaseUser
       .from('scan_jobs')
-      .update({ status: 'finished', finished_at: new Date().toISOString() })
+      .update({ 
+        status: 'finished', 
+        finished_at: new Date().toISOString(),
+        partial_results: partialResults,
+        providers_completed: providersCompleted,
+      })
       .eq('id', job.id);
 
-    console.log(`Streaming mode completed for job ${job.id}: lines=${lineNo}, inserted=${inserted}, normalized=${normalized}`);
+    console.log(`Streaming mode completed for job ${job.id}: lines=${lineNo}, inserted=${inserted}, normalized=${normalized}, providers=${providersCompleted}`);
 
     return new Response(
       JSON.stringify({
@@ -277,7 +344,8 @@ Deno.serve(async (req) => {
         status: 'finished',
         linesParsed: lineNo,
         rowsInserted: inserted,
-        findingsUpserted: normalized
+        findingsUpserted: normalized,
+        providersCompleted
       }),
       {
         status: 200,
