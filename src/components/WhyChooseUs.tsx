@@ -74,7 +74,7 @@ export const WhyChooseUs = () => {
             <img 
               src="/logo-dark.png" 
               alt="FootprintIQ" 
-              className="h-12 md:h-16 w-auto inline-block"
+              className="h-20 md:h-24 w-auto inline-block"
             />
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
