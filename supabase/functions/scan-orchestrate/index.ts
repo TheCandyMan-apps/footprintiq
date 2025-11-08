@@ -623,11 +623,17 @@ serve(async (req) => {
         completedProviders: providers.length,
         totalFindings: sortedFindings.length,
         message: `Scan completed with ${sortedFindings.length} findings`,
-        tookMs
+        tookMs,
+        currentProviders: []
       }
     });
 
+    // Wait for frontend to receive the final event before closing channel
+    console.log(`[orchestrate] Keeping channel alive for 2 seconds to ensure delivery`);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     // Unsubscribe from channel
+    console.log(`[orchestrate] Unsubscribing from channel ${channelName}`);
     await progressChannel.unsubscribe();
 
     return ok({

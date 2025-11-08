@@ -819,26 +819,40 @@ async function callAbuseIPDB(ip: string) {
 
 async function callApifyRunner(actorId: string, target: string, input: Record<string, any>) {
   const API_TOKEN = Deno.env.get('APIFY_API_TOKEN');
-  if (!API_TOKEN) return { findings: [] };
+  if (!API_TOKEN) {
+    console.log('[callApifyRunner] No APIFY_API_TOKEN configured, skipping');
+    return { findings: [] };
+  }
 
-  const response = await fetch(
-    `${Deno.env.get('SUPABASE_URL')}/functions/v1/providers/apify-runner`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-      },
-      body: JSON.stringify({
-        actorId,
-        input: { ...input, searchTerm: target },
-        timeoutSec: 180,
-      }),
+  try {
+    const response = await fetch(
+      `${Deno.env.get('SUPABASE_URL')}/functions/v1/apify-run`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        },
+        body: JSON.stringify({
+          workspaceId: 'system', // Use system workspace for provider-proxy calls
+          actorSlug: actorId,
+          payload: { ...input, searchTerm: target },
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[callApifyRunner] Apify error ${response.status}:`, errorText);
+      return { findings: [] };
     }
-  );
-
-  if (!response.ok) throw new Error(`Apify Runner error: ${response.status}`);
-  return await response.json();
+    
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error('[callApifyRunner] Exception:', error);
+    return { findings: [] };
+  }
 }
 
 async function callVirusTotal(target: string, type: 'domain' | 'ip' | 'url' | 'file') {
