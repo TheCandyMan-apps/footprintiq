@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +41,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
   const [jobLoading, setJobLoading] = useState(true);
   const { results, loading: resultsLoading } = useRealtimeResults(jobId);
   const { toast } = useToast();
+  const jobChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     loadJob();
@@ -57,13 +58,24 @@ export function ScanResults({ jobId }: ScanResultsProps) {
           filter: `id=eq.${jobId}`,
         },
         (payload) => {
-          setJob(payload.new as ScanJob);
+          const updatedJob = payload.new as ScanJob;
+          setJob(updatedJob);
+          
+          // Unsubscribe when job is finished to stop updates
+          if (updatedJob.status === 'finished' && jobChannelRef.current) {
+            supabase.removeChannel(jobChannelRef.current);
+            jobChannelRef.current = null;
+          }
         }
       )
       .subscribe();
 
+    jobChannelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (jobChannelRef.current) {
+        supabase.removeChannel(jobChannelRef.current);
+      }
     };
   }, [jobId]);
 
@@ -102,7 +114,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
     }
   };
 
-  const grouped = groupByStatus(results);
+  const grouped = useMemo(() => groupByStatus(results), [results]);
   const foundCount = grouped.found.length;
   const claimedCount = grouped.claimed.length;
   const notFoundCount = grouped.not_found.length;

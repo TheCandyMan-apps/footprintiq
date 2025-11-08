@@ -106,76 +106,107 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     setCreditsUsed(0);
     setStatus('running');
 
-    // Subscribe to realtime updates
-    const channel = supabase
-      .channel(`scan_progress_${scanId}`)
-      .on(
-        'broadcast',
-        { event: 'provider_update' },
-        (payload: any) => {
-          const { provider, status: providerStatus, message, resultCount, creditsUsed: credits } = payload.payload;
-
-          setProviders((prev) => {
-            const existing = prev.find((p) => p.name === provider);
-            if (existing) {
-              return prev.map((p) =>
-                p.name === provider
-                  ? { ...p, status: providerStatus, message, resultCount }
-                  : p
-              );
-            }
-            return [...prev, { name: provider, status: providerStatus, message, resultCount }];
-          });
-
-          if (credits) {
-            setCreditsUsed(credits);
-          }
-
-          // Calculate progress
-          setProviders((currentProviders) => {
-            const completed = currentProviders.filter(
-              (p) => p.status === 'success' || p.status === 'failed'
-            ).length;
-            const total = currentProviders.length;
-            if (total > 0) {
-              setProgress(Math.round((completed / total) * 100));
-            }
-            return currentProviders;
-          });
+    // Helper to upsert provider status
+    const upsertProvider = (name: string, status: ProviderStatus['status'], message?: string) => {
+      setProviders((prev) => {
+        const existing = prev.find((p) => p.name === name);
+        if (existing) {
+          return prev.map((p) =>
+            p.name === name ? { ...p, status, message: message || p.message } : p
+          );
         }
-      )
-      .on(
-        'broadcast',
-        { event: 'scan_complete' },
-        (payload: any) => {
+        return [...prev, { name, status, message: message || '' }];
+      });
+    };
+
+    // Subscribe to Maigret scan progress updates (username scans)
+    const maigretChannel = supabase
+      .channel(`scan_progress_${scanId}`)
+      .on('broadcast', { event: 'provider_update' }, (payload: any) => {
+        const update = payload.payload;
+        upsertProvider(update.provider, update.status, update.message);
+
+        if (update.creditsUsed !== undefined) {
+          setCreditsUsed(update.creditsUsed);
+        }
+
+        const completed = update.creditsUsed || 0;
+        const total = 100;
+        setProgress(Math.min((completed / total) * 100, 95));
+      })
+      .on('broadcast', { event: 'scan_complete' }, (payload: any) => {
+        console.log('Maigret scan completed:', payload);
+        setStatus('completed');
+        setProgress(100);
+        playSuccessSound();
+        triggerConfetti();
+        toast.success('Scan completed successfully');
+        setTimeout(() => onComplete?.(), 2000);
+      })
+      .on('broadcast', { event: 'scan_failed' }, (payload: any) => {
+        console.error('Maigret scan failed:', payload);
+        setStatus('failed');
+        toast.error(payload.payload.error || 'Scan failed');
+      })
+      .subscribe();
+
+    // Subscribe to orchestrator progress updates (advanced scans)
+    const orchestratorChannel = supabase
+      .channel(`scan_progress:${scanId}`)
+      .on('broadcast', { event: 'progress' }, (payload: any) => {
+        const update = payload.payload;
+        
+        // Map orchestrator messages to provider updates
+        if (update.message) {
+          const queryMatch = update.message.match(/Querying (.+)\.\.\./);
+          const completedMatch = update.message.match(/Completed (.+)\.\.\./);
+          
+          if (queryMatch) {
+            upsertProvider(queryMatch[1], 'loading', 'Querying...');
+          } else if (completedMatch) {
+            const findingsText = update.findingsCount !== undefined 
+              ? ` (${update.findingsCount} findings)` 
+              : '';
+            upsertProvider(completedMatch[1], 'success', `Completed${findingsText}`);
+          } else if (update.error) {
+            const providerName = update.provider || 'Provider';
+            upsertProvider(providerName, 'failed', update.message);
+          }
+        }
+
+        // Update overall progress from orchestrator
+        if (update.completedProviders !== undefined && update.totalProviders !== undefined) {
+          const pct = (update.completedProviders / update.totalProviders) * 100;
+          setProgress(Math.min(pct, 95));
+        }
+
+        if (update.creditsUsed !== undefined) {
+          setCreditsUsed(update.creditsUsed);
+        }
+
+        // Handle completion
+        if (update.status === 'completed') {
           setStatus('completed');
           setProgress(100);
-          if (payload.payload.creditsUsed) {
-            setCreditsUsed(payload.payload.creditsUsed);
-          }
-          
-          // Trigger celebration effects
-          triggerConfetti();
           playSuccessSound();
-          
-          toast.success('Scan completed successfully', {
-            description: 'All providers have finished scanning',
-          });
-          onComplete?.();
-        }
-      )
-      .on(
-        'broadcast',
-        { event: 'scan_failed' },
-        (payload: any) => {
+          triggerConfetti();
+          toast.success('Scan completed successfully');
+          setTimeout(() => onComplete?.(), 2000);
+        } else if (update.status === 'failed') {
           setStatus('failed');
-          toast.error(payload.payload.error || 'Scan failed');
+          toast.error(update.message || 'Scan failed');
         }
-      )
+      })
+      .on('broadcast', { event: 'scan_cancelled' }, () => {
+        setStatus('cancelled');
+        toast.info('Scan cancelled');
+        setTimeout(() => onComplete?.(), 1000);
+      })
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(maigretChannel);
+      supabase.removeChannel(orchestratorChannel);
     };
   }, [scanId, open, onComplete]);
 

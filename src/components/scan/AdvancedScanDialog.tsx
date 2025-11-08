@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
 import { useAdvancedScan, AdvancedScanOptions } from '@/hooks/useAdvancedScan';
+import { ScanProgressDialog } from './ScanProgressDialog';
 import { Loader2, Zap } from 'lucide-react';
 
 interface AdvancedScanDialogProps {
@@ -41,15 +42,17 @@ export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogPro
     correlationEngine: true,
   });
 
+  const [progressOpen, setProgressOpen] = useState(false);
+  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       const scan = await startAdvancedScan(formData, options);
-      setTimeout(() => {
-        navigate(`/scan/${scan.id}`);
-        onOpenChange(false);
-      }, 1000);
+      setCurrentScanId(scan.id);
+      onOpenChange(false);
+      setProgressOpen(true);
     } catch (error) {
       // Error handled in hook
     }
@@ -220,6 +223,18 @@ export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogPro
           </div>
         </form>
       </DialogContent>
+
+      <ScanProgressDialog
+        open={progressOpen}
+        onOpenChange={setProgressOpen}
+        scanId={currentScanId}
+        onComplete={() => {
+          setProgressOpen(false);
+          if (currentScanId) {
+            navigate(`/results/${currentScanId}`);
+          }
+        }}
+      />
     </Dialog>
   );
 }
