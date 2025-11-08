@@ -109,6 +109,14 @@ serve(async (req) => {
 
     const { type, value, workspaceId, options = {} } = parseResult.data;
 
+    console.log(`[orchestrate] Scanning ${type}:${value} for workspace ${workspaceId}`);
+
+    // Use service role for workspace operations (initialize BEFORE any usage)
+    const supabaseService = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
     // Verify user is a member of the workspace
     const { data: membership, error: memberError } = await supabase
       .from('workspace_members')
@@ -143,14 +151,6 @@ serve(async (req) => {
       
       return bad(403, 'not_workspace_member_check_permissions');
     }
-
-    console.log(`[orchestrate] Scanning ${type}:${value} for workspace ${workspaceId}`);
-
-    // Use service role for workspace operations
-    const supabaseService = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
 
     // Check credits before scan
     const creditsRequired = options.includeDarkweb ? 10 : (options.includeDating || options.includeNsfw ? 5 : 1);
@@ -499,10 +499,11 @@ serve(async (req) => {
       });
     }
 
-    // Persist findings
-    if (sortedFindings.length > 0) {
+    // Persist findings (linked to scan_id)
+    if (sortedFindings.length > 0 && scanId) {
       await supabaseService.from('findings').insert(
         sortedFindings.map(f => ({
+          scan_id: scanId,
           workspace_id: workspaceId,
           provider: f.provider,
           kind: f.kind,
@@ -513,6 +514,7 @@ serve(async (req) => {
           meta: f.meta || {},
         }))
       );
+      console.log(`[orchestrate] Persisted ${sortedFindings.length} findings for scan ${scanId}`);
     }
 
     // Update scan record with results, stats, and completed status

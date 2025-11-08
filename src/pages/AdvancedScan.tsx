@@ -21,6 +21,7 @@ import { PremiumApifyOptions } from "@/components/scan/PremiumApifyOptions";
 import { AnonModeToggle } from "@/components/scan/AnonModeToggle";
 import { CreditsBadge } from "@/components/workspace/CreditsBadge";
 import { ScanProgressTracker } from "@/components/ScanProgressTracker";
+import { ScanProgressDialog } from "@/components/scan/ScanProgressDialog";
 import { ScanErrorBoundary } from "@/components/ScanErrorBoundary";
 import { BatchUpload } from "@/components/scan/BatchUpload";
 import { IPMapPreview } from "@/components/scan/IPMapPreview";
@@ -66,6 +67,8 @@ export default function AdvancedScan() {
   const [regionFilter, setRegionFilter] = useState<string>("all");
   const [ipLocations, setIpLocations] = useState<Array<{ ip: string; lat?: number; lon?: number }>>([]);
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
+  const [progressOpen, setProgressOpen] = useState(false);
+  const [modalScanId, setModalScanId] = useState<string | null>(null);
 
   // Geocoding for IP addresses
   const { 
@@ -287,10 +290,12 @@ export default function AdvancedScan() {
       const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success));
 
       if (successful.length > 0) {
-        // Set first successful scan for progress tracking
+        // Set first successful scan for progress tracking & open modal
         const firstScan = results.find(r => r.status === 'fulfilled' && r.value.success);
         if (firstScan && firstScan.status === 'fulfilled') {
           setCurrentScanId(firstScan.value.scanId);
+          setModalScanId(firstScan.value.scanId);
+          setProgressOpen(true);
         }
 
         toast.success(`${successful.length} scan(s) initiated successfully`);
@@ -314,11 +319,17 @@ export default function AdvancedScan() {
 
   const handleScanComplete = () => {
     setIsScanning(false);
+    setProgressOpen(false);
     if (currentScanId) {
       navigate(`/results/${currentScanId}`);
     } else {
       navigate("/dashboard");
     }
+  };
+
+  const handleProgressClose = () => {
+    setProgressOpen(false);
+    setModalScanId(null);
   };
 
   return (
@@ -355,13 +366,6 @@ export default function AdvancedScan() {
 
           {!workspaceLoading && workspace && (
             <>
-              {/* Progress Tracker - shown during scan */}
-              {isScanning && currentScanId && (
-                <ScanProgressTracker 
-                  scanId={currentScanId}
-                  onComplete={handleScanComplete}
-                />
-              )}
 
               {/* Header */}
               <div className="flex items-center justify-between gap-4">
@@ -724,7 +728,17 @@ export default function AdvancedScan() {
         open={showBuyCreditsModal}
         onClose={() => setShowBuyCreditsModal(false)}
       />
+
+      {/* Progress Modal */}
+      {modalScanId && (
+        <ScanProgressDialog
+          open={progressOpen}
+          onOpenChange={handleProgressClose}
+          scanId={modalScanId}
+          onComplete={handleScanComplete}
+        />
+      )}
     </div>
-    </ScanErrorBoundary>
+  </ScanErrorBoundary>
   );
 }

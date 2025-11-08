@@ -132,6 +132,7 @@ const ResultsDetail = () => {
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [isDNAModalOpen, setIsDNAModalOpen] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
+  const [findings, setFindings] = useState<Finding[]>([]);
   const pollTriesRef = useRef(0);
   const pollTimeoutRef = useRef<number | null>(null);
 
@@ -253,6 +254,36 @@ const ResultsDetail = () => {
 
       if (profilesError) throw profilesError;
       setSocialProfiles(profiles || []);
+
+      // Fetch findings by scan_id
+      const { data: findingsData, error: findingsError } = await supabase
+        .from("findings" as any)
+        .select("*")
+        .eq("scan_id", scanId);
+
+      if (findingsError) {
+        console.error('[ResultsDetail] Error fetching findings:', findingsError);
+      } else {
+        // Convert findings to Finding format
+        const convertedFindings: Finding[] = ((findingsData as any[]) || []).map((f: any) => ({
+          id: f.id,
+          type: 'breach' as const,
+          title: `${f.provider}: ${f.kind}`,
+          description: JSON.stringify(f.evidence || []),
+          severity: f.severity as any,
+          confidence: f.confidence,
+          provider: f.provider,
+          providerCategory: f.kind,
+          evidence: f.evidence || [],
+          impact: `Finding from ${f.provider}`,
+          remediation: [],
+          tags: [f.provider, f.kind],
+          observedAt: f.observed_at,
+          raw: f
+        }));
+        setFindings(convertedFindings);
+        console.log(`[ResultsDetail] Loaded ${convertedFindings.length} findings for scan ${scanId}`);
+      }
 
       // Fetch removal requests
       const { data: requests, error: requestsError } = await supabase
@@ -965,7 +996,7 @@ const ResultsDetail = () => {
         </Card>
 
         {/* No Results Banner */}
-        {scan.total_sources_found === 0 && dataSources.length === 0 && socialProfiles.length === 0 && (
+        {scan.total_sources_found === 0 && dataSources.length === 0 && socialProfiles.length === 0 && findings.length === 0 && (
           <Card className="p-8 mb-8 text-center bg-accent/5 border-accent/30">
             <Shield className="w-16 h-16 mx-auto mb-4 text-accent opacity-70" />
             <h3 className="text-2xl font-semibold mb-3">No Data Found - That's Good News!</h3>
@@ -987,6 +1018,58 @@ const ResultsDetail = () => {
                 <strong>Tip:</strong> Try enabling premium Apify sources (Social Media Finder, OSINT Scraper) 
                 for comprehensive coverage across 400+ platforms.
               </p>
+            </div>
+          </Card>
+        )}
+
+        {/* Findings Section - fallback when data_sources/social_profiles are empty but findings exist */}
+        {dataSources.length === 0 && socialProfiles.length === 0 && findings.length > 0 && (
+          <Card className="p-6 mb-8 bg-gradient-card border-border">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Shield className="w-6 h-6 text-primary" />
+              Findings from Scan
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              The scan found {findings.length} results across various providers. These findings represent 
+              data discovered during the OSINT scan.
+            </p>
+            <div className="space-y-3">
+              {findings.map((finding) => (
+                <Card key={finding.id} className="p-4 bg-background/50">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant={finding.severity === 'high' ? 'destructive' : finding.severity === 'medium' ? 'default' : 'secondary'}>
+                          {finding.severity.toUpperCase()}
+                        </Badge>
+                        <span className="text-sm font-semibold">{finding.provider}</span>
+                        <span className="text-xs text-muted-foreground">• {finding.providerCategory}</span>
+                      </div>
+                      <p className="text-sm font-medium mb-1">{finding.title}</p>
+                      <div className="text-xs text-muted-foreground">
+                        {finding.evidence && finding.evidence.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {finding.evidence.slice(0, 3).map((ev, idx) => (
+                              <span key={idx} className="px-2 py-1 bg-secondary rounded text-xs">
+                                {ev.key}: {String(ev.value).substring(0, 50)}
+                                {String(ev.value).length > 50 ? '...' : ''}
+                              </span>
+                            ))}
+                            {finding.evidence.length > 3 && (
+                              <span className="text-xs text-muted-foreground">
+                                +{finding.evidence.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {Math.round(finding.confidence * 100)}% confidence
+                    </Badge>
+                  </div>
+                </Card>
+              ))}
             </div>
           </Card>
         )}
