@@ -66,6 +66,7 @@
     "dompurify": "^3.3.0",
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.23.24",
+    "html2canvas": "^1.4.1",
     "husky": "^9.1.7",
     "input-otp": "^1.4.2",
     "jsdom": "^27.1.0",

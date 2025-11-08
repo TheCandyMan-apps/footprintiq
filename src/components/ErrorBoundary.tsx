@@ -2,6 +2,8 @@ import React, { Component, ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { BugReporter } from './BugReporter';
+import * as Sentry from '@sentry/react';
 
 interface Props {
   children: ReactNode;
@@ -11,20 +13,36 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
+  errorInfo: React.ErrorInfo | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, errorInfo: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+    return { hasError: true, error, errorInfo: null };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
+    
+    // Store errorInfo in state
+    this.setState({ errorInfo });
+    
+    // Report to Sentry
+    Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo.componentStack,
+        },
+      },
+      tags: {
+        errorBoundary: 'global',
+      },
+    });
   }
 
   render() {
@@ -60,7 +78,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </details>
             )}
 
-            <div className="flex gap-3 justify-center">
+            <div className="flex gap-3 justify-center flex-wrap">
               <Button
                 onClick={() => window.location.reload()}
                 variant="default"
@@ -73,6 +91,7 @@ export class ErrorBoundary extends Component<Props, State> {
               >
                 Go Home
               </Button>
+              <BugReporter error={this.state.error || undefined} errorInfo={this.state.errorInfo || undefined} />
             </div>
           </Card>
         </div>

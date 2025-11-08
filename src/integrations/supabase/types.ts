@@ -1329,6 +1329,51 @@ export type Database = {
           },
         ]
       }
+      bugs: {
+        Row: {
+          created_at: string | null
+          description: string
+          error_stack: string | null
+          id: string
+          page_url: string
+          screenshot_url: string | null
+          severity: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          error_stack?: string | null
+          id?: string
+          page_url: string
+          screenshot_url?: string | null
+          severity?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          error_stack?: string | null
+          id?: string
+          page_url?: string
+          screenshot_url?: string | null
+          severity?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       cache_entries: {
         Row: {
           cache_key: string

@@ -90,6 +90,7 @@ const RlsCheck = lazy(() => import("./pages/admin/RlsCheck"));
 const Providers = lazy(() => import("./pages/admin/Providers"));
 const Health = lazy(() => import("./pages/admin/Health"));
 const Observability = lazy(() => import("./pages/admin/Observability"));
+const Glitches = lazy(() => import("./pages/admin/Glitches"));
 const Policies = lazy(() => import("./pages/admin/Policies"));
 const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
 const PaymentErrors = lazy(() => import("./pages/Admin/PaymentErrors"));
@@ -305,6 +306,7 @@ function RouterContent() {
           <Route path="/admin/providers" element={<Providers />} />
           <Route path="/admin/health" element={<Health />} />
           <Route path="/admin/observability" element={<Observability />} />
+          <Route path="/admin/glitches" element={<Glitches />} />
           <Route path="/admin/policies" element={<Policies />} />
           <Route path="/admin/audit-logs" element={<AuditLogs />} />
           <Route path="/admin/payment-errors" element={<PaymentErrors />} />
