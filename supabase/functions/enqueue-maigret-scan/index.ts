@@ -240,6 +240,25 @@ Deno.serve(async (req) => {
     const partialResults: any[] = [];
     let providersCompleted = 0;
 
+    // Helper function to broadcast progress updates
+    const broadcastProgress = async (provider: string, status: 'loading' | 'success' | 'failed', message?: string, resultCount?: number) => {
+      try {
+        await supabaseAdmin.channel(`scan_progress_${job.id}`).send({
+          type: 'broadcast',
+          event: 'provider_update',
+          payload: {
+            provider,
+            status,
+            message,
+            resultCount,
+            creditsUsed: providersCompleted, // Approximate credits as provider count
+          },
+        });
+      } catch (error) {
+        console.error('Failed to broadcast progress:', error);
+      }
+    };
+
     try {
       for (;;) {
         const { value, done } = await reader.read();
@@ -281,6 +300,15 @@ Deno.serve(async (req) => {
               providersCompleted++;
               partialResults.push({ site: json.site, url: json.url, status: json.status });
               
+              // Broadcast provider completion
+              const providerStatus = json.url ? 'success' : 'failed';
+              await broadcastProgress(
+                json.site,
+                providerStatus,
+                json.url ? 'Profile found' : 'No profile found',
+                normalized
+              );
+              
               // Save partial results every 5 providers
               if (providersCompleted % 5 === 0) {
                 await supabaseAdmin
@@ -298,6 +326,16 @@ Deno.serve(async (req) => {
       }
     } catch (e) {
       console.error('Stream error:', e);
+      
+      // Broadcast scan failure
+      await supabaseAdmin.channel(`scan_progress_${job.id}`).send({
+        type: 'broadcast',
+        event: 'scan_failed',
+        payload: {
+          error: String(e),
+          providersCompleted,
+        },
+      });
       
       // Save partial results on error
       const status = providersCompleted > 0 ? 'partial' : 'error';
@@ -335,6 +373,18 @@ Deno.serve(async (req) => {
         providers_completed: providersCompleted,
       })
       .eq('id', job.id);
+
+    // Broadcast scan completion
+    await supabaseAdmin.channel(`scan_progress_${job.id}`).send({
+      type: 'broadcast',
+      event: 'scan_complete',
+      payload: {
+        status: 'completed',
+        totalProviders: providersCompleted,
+        creditsUsed: providersCompleted,
+        message: 'Scan completed successfully',
+      },
+    });
 
     console.log(`Streaming mode completed for job ${job.id}: lines=${lineNo}, inserted=${inserted}, normalized=${normalized}, providers=${providersCompleted}`);
 
