@@ -79,8 +79,21 @@ export function CreditsDisplay({ workspaceId }: CreditsDisplayProps) {
         },
         (payload) => {
           console.log('[Credits] Realtime INSERT event:', payload);
+          const newRecord = payload.new as any;
           
-          // Defer credit fetch to avoid deadlock
+          if (newRecord.transaction_type === 'purchase' && newRecord.amount > 0) {
+            toast.success(`${newRecord.amount} credits added! 🎉`, {
+              description: "Your credits are ready to use",
+              duration: 5000,
+            });
+            
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 }
+            });
+          }
+          
           setTimeout(() => {
             fetchCredits();
           }, 100);

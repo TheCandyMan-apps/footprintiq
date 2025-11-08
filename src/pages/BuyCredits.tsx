@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Coins, Check, Zap, Shield, TrendingUp } from "lucide-react";
+import { trackCreditPurchase } from "@/lib/sentry-monitoring";
 
 const CREDIT_PACKAGES = [
   {
@@ -65,6 +66,15 @@ export default function BuyCredits() {
   // Purchase mutation
   const purchaseMutation = useMutation({
     mutationFn: async (packageId: string) => {
+      // Validate and refresh session first
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          throw new Error("Session expired. Please log in again.");
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke("billing/purchase-credits", {
         body: { package: packageId },
       });
@@ -74,10 +84,16 @@ export default function BuyCredits() {
     },
     onSuccess: (data) => {
       if (data.url) {
+        trackCreditPurchase(true);
         window.open(data.url, "_blank");
+        toast.success("Redirecting to checkout...");
+      } else {
+        trackCreditPurchase(false, new Error('No checkout URL returned'));
+        toast.error("Failed to get checkout link");
       }
     },
     onError: (error) => {
+      trackCreditPurchase(false, error as Error);
       toast.error(error instanceof Error ? error.message : "Purchase failed");
     },
   });

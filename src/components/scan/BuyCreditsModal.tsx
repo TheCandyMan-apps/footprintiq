@@ -54,13 +54,23 @@ export function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
 
   const handlePurchase = async (credits: number) => {
     try {
-      // Get current user
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        toast.error("Please refresh and sign in again", {
-          description: "Your session may have expired"
-        });
+      setLoading(credits);
+
+      // Validate and refresh session
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (refreshError) {
+          toast.error("Session expired. Please log in again.");
+          setLoading(null);
+          return;
+        }
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Please log in to purchase credits");
+        setLoading(null);
         return;
       }
 
@@ -68,10 +78,9 @@ export function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
         toast.error("No workspace found", {
           description: "Please select a workspace first"
         });
+        setLoading(null);
         return;
       }
-
-      setLoading(credits);
 
       // Call edge function to create checkout session
       const { data, error } = await supabase.functions.invoke("create-checkout-session", {
