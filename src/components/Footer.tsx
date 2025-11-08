@@ -1,7 +1,6 @@
 import { Shield, Mail, Twitter, Linkedin, Github } from "lucide-react";
 import { Link } from "react-router-dom";
 import { TrustBadges } from "./TrustBadges";
-import fpiqLogo from "@/assets/fpiq-logo.png";
 
 export const Footer = () => {
   return (
@@ -17,7 +16,7 @@ export const Footer = () => {
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-4 justify-center md:justify-start">
             <img 
-              src={fpiqLogo} 
+              src="/logo-dark.png" 
               alt="FootprintIQ Logo" 
               className="h-16 w-auto object-contain max-w-[180px] drop-shadow-sm"
             />
