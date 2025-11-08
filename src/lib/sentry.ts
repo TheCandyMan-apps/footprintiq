@@ -19,7 +19,7 @@ export const initSentry = () => {
         blockAllMedia: true,
       }),
     ],
-    tracesSampleRate: 1.0,
+    tracesSampleRate: import.meta.env.MODE === 'production' ? 0.2 : 1.0,
     replaysSessionSampleRate: 0.1,
     replaysOnErrorSampleRate: 1.0,
     beforeSend(event) {
@@ -27,9 +27,22 @@ export const initSentry = () => {
       if (event.request) {
         delete event.request.cookies;
       }
+      // Track payment-related errors with high priority
+      if (event.tags?.category === 'payment') {
+        event.level = 'error';
+      }
       return event;
     },
+    // Capture Supabase errors
+    beforeBreadcrumb(breadcrumb) {
+      if (breadcrumb.category === 'fetch' && breadcrumb.data?.url?.includes('supabase')) {
+        return breadcrumb;
+      }
+      return breadcrumb;
+    },
   });
+
+  console.log('[Sentry] Initialized for payment tracking');
 };
 
 // Track payment errors with context
