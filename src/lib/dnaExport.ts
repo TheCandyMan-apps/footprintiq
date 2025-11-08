@@ -2,6 +2,14 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { TrendDataPoint } from './trends';
 
+export interface BrandingSettings {
+  company_name?: string;
+  company_tagline?: string;
+  logo_url?: string | null;
+  primary_color?: string;
+  secondary_color?: string;
+}
+
 export const exportDNAasCSV = (trendData: TrendDataPoint[], currentScore: number) => {
   const headers = ['Date', 'Privacy Score', 'Total Sources', 'High Risk', 'Medium Risk', 'Low Risk'];
   
@@ -32,29 +40,95 @@ export const exportDNAasCSV = (trendData: TrendDataPoint[], currentScore: number
   document.body.removeChild(link);
 };
 
-export const exportDNAasPDF = async (trendData: TrendDataPoint[], currentScore: number) => {
+export const exportDNAasPDF = async (
+  trendData: TrendDataPoint[], 
+  currentScore: number,
+  branding?: BrandingSettings
+) => {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
+  // Helper to convert hex to RGB
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 99, g: 102, b: 241 };
+  };
+  
+  const primaryColor = branding?.primary_color 
+    ? hexToRgb(branding.primary_color)
+    : { r: 99, g: 102, b: 241 };
+  
+  const secondaryColor = branding?.secondary_color
+    ? hexToRgb(branding.secondary_color)
+    : { r: 16, g: 185, b: 129 };
+  
+  let yPosition = 20;
+  
+  // Logo (if provided)
+  if (branding?.logo_url) {
+    try {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = branding.logo_url!;
+      });
+      doc.addImage(img, 'PNG', 14, yPosition, 30, 30);
+      yPosition += 35;
+    } catch (error) {
+      console.error('Error loading logo:', error);
+    }
+  }
+  
+  // Company Name
+  if (branding?.company_name) {
+    doc.setFontSize(16);
+    doc.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b);
+    doc.text(branding.company_name, pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 8;
+  }
+  
+  // Company Tagline
+  if (branding?.company_tagline) {
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    const lines = doc.splitTextToSize(branding.company_tagline, pageWidth - 28);
+    doc.text(lines, pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += (lines.length * 4) + 6;
+  }
+  
   // Title
   doc.setFontSize(20);
-  doc.setTextColor(99, 102, 241); // primary color
-  doc.text('Digital DNA Report', pageWidth / 2, 20, { align: 'center' });
+  doc.setTextColor(primaryColor.r, primaryColor.g, primaryColor.b);
+  doc.text('Digital DNA Report', pageWidth / 2, yPosition, { align: 'center' });
+  yPosition += 8;
   
   // Date
   doc.setFontSize(10);
   doc.setTextColor(100, 100, 100);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, 28, { align: 'center' });
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
+  yPosition += 10;
   
   // Current Score Section
   doc.setFontSize(14);
   doc.setTextColor(0, 0, 0);
-  doc.text('Current Privacy Score', 14, 45);
+  doc.text('Current Privacy Score', 14, yPosition);
+  yPosition += 15;
   
   doc.setFontSize(32);
-  const scoreColor = currentScore < 40 ? [16, 185, 129] : currentScore <= 70 ? [234, 179, 8] : [239, 68, 68];
-  doc.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2]);
-  doc.text(`${currentScore}/100`, 14, 60);
+  const scoreColor = currentScore < 40 
+    ? secondaryColor
+    : currentScore <= 70 
+    ? { r: 234, g: 179, b: 8 }
+    : { r: 239, g: 68, b: 68 };
+  doc.setTextColor(scoreColor.r, scoreColor.g, scoreColor.b);
+  doc.text(`${currentScore}/100`, 14, yPosition);
+  yPosition += 8;
   
   // Risk Assessment
   doc.setFontSize(10);
@@ -64,7 +138,8 @@ export const exportDNAasPDF = async (trendData: TrendDataPoint[], currentScore: 
     : currentScore <= 70 
     ? 'Medium risk - Some areas need attention' 
     : 'High risk - Immediate action recommended';
-  doc.text(riskText, 14, 68);
+  doc.text(riskText, 14, yPosition);
+  yPosition += 17;
   
   // Summary Statistics
   if (trendData.length > 0) {
@@ -74,22 +149,29 @@ export const exportDNAasPDF = async (trendData: TrendDataPoint[], currentScore: 
     
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
-    doc.text('Summary Statistics', 14, 85);
+    doc.text('Summary Statistics', 14, yPosition);
+    yPosition += 8;
     
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    doc.text(`Total Data Points: ${trendData.length}`, 14, 93);
-    doc.text(`Score Change: ${scoreChange > 0 ? '+' : ''}${scoreChange}`, 14, 100);
-    doc.text(`Latest High Risk: ${latest.highRiskCount}`, 14, 107);
-    doc.text(`Latest Medium Risk: ${latest.mediumRiskCount}`, 14, 114);
-    doc.text(`Latest Total Sources: ${latest.totalSources}`, 14, 121);
+    doc.text(`Total Data Points: ${trendData.length}`, 14, yPosition);
+    yPosition += 7;
+    doc.text(`Score Change: ${scoreChange > 0 ? '+' : ''}${scoreChange}`, 14, yPosition);
+    yPosition += 7;
+    doc.text(`Latest High Risk: ${latest.highRiskCount}`, 14, yPosition);
+    yPosition += 7;
+    doc.text(`Latest Medium Risk: ${latest.mediumRiskCount}`, 14, yPosition);
+    yPosition += 7;
+    doc.text(`Latest Total Sources: ${latest.totalSources}`, 14, yPosition);
+    yPosition += 8;
   }
   
   // Historical Data Table
   if (trendData.length > 0) {
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
-    doc.text('Historical Trend Data', 14, 135);
+    doc.text('Historical Trend Data', 14, yPosition);
+    yPosition += 5;
     
     const tableData = trendData.map(point => [
       point.date,
@@ -101,11 +183,13 @@ export const exportDNAasPDF = async (trendData: TrendDataPoint[], currentScore: 
     ]);
     
     (doc as any).autoTable({
-      startY: 140,
+      startY: yPosition,
       head: [['Date', 'Score', 'Sources', 'High Risk', 'Med Risk', 'Low Risk']],
       body: tableData,
       theme: 'striped',
-      headStyles: { fillColor: [99, 102, 241] },
+      headStyles: { 
+        fillColor: [primaryColor.r, primaryColor.g, primaryColor.b]
+      },
       styles: { fontSize: 8 },
       columnStyles: {
         0: { cellWidth: 30 },

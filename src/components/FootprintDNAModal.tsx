@@ -3,10 +3,13 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { TrendingDown, TrendingUp, Minus, Shield, AlertTriangle, Database, Skull, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { TrendingDown, TrendingUp, Minus, Shield, AlertTriangle, Database, Skull, Download, FileText, FileSpreadsheet, Settings } from 'lucide-react';
 import { TrendDataPoint } from '@/lib/trends';
-import { exportDNAasCSV, exportDNAasPDF } from '@/lib/dnaExport';
+import { exportDNAasCSV, exportDNAasPDF, BrandingSettings } from '@/lib/dnaExport';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect } from 'react';
+import { PDFBrandingSettings } from '@/components/settings/PDFBrandingSettings';
 
 interface FootprintDNAModalProps {
   open: boolean;
@@ -22,6 +25,41 @@ export const FootprintDNAModal = ({
   currentScore 
 }: FootprintDNAModalProps) => {
   const { toast } = useToast();
+  const [brandingSettings, setBrandingSettings] = useState<BrandingSettings | undefined>();
+  const [showBrandingSettings, setShowBrandingSettings] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      loadBrandingSettings();
+    }
+  }, [open]);
+
+  const loadBrandingSettings = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('pdf_branding_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data) {
+        setBrandingSettings({
+          company_name: data.company_name || undefined,
+          company_tagline: data.company_tagline || undefined,
+          logo_url: data.logo_url,
+          primary_color: data.primary_color || undefined,
+          secondary_color: data.secondary_color || undefined,
+        });
+      }
+    } catch (error) {
+      console.error('Error loading branding settings:', error);
+    }
+  };
   // Calculate score change
   const getScoreTrend = () => {
     if (trendData.length < 2) return { change: 0, trend: 'stable' as const };
@@ -62,7 +100,7 @@ export const FootprintDNAModal = ({
 
   const handleExportPDF = () => {
     try {
-      exportDNAasPDF(trendData, currentScore);
+      exportDNAasPDF(trendData, currentScore, brandingSettings);
       toast({
         title: "Export successful",
         description: "Your DNA report has been downloaded as PDF",
@@ -84,6 +122,15 @@ export const FootprintDNAModal = ({
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl font-bold">Digital DNA Analysis</DialogTitle>
             <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowBrandingSettings(true)}
+                className="gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                PDF Settings
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -310,6 +357,14 @@ export const FootprintDNAModal = ({
           </Tabs>
         </div>
       </DialogContent>
+      
+      <PDFBrandingSettings 
+        open={showBrandingSettings} 
+        onOpenChange={(open) => {
+          setShowBrandingSettings(open);
+          if (!open) loadBrandingSettings(); // Reload settings after closing
+        }} 
+      />
     </Dialog>
   );
 };

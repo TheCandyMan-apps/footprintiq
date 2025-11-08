@@ -4069,6 +4069,42 @@ export type Database = {
         }
         Relationships: []
       }
+      pdf_branding_settings: {
+        Row: {
+          company_name: string | null
+          company_tagline: string | null
+          created_at: string | null
+          id: string
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          company_name?: string | null
+          company_tagline?: string | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          company_name?: string | null
+          company_tagline?: string | null
+          created_at?: string | null
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       performance_baselines: {
         Row: {
           created_at: string
