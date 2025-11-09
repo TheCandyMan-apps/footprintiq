@@ -148,9 +148,12 @@ export function ScanResults({ jobId }: ScanResultsProps) {
       <CardHeader className="p-4 sm:p-6 md:p-8">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div className="flex-1">
-            <CardTitle className="text-xl sm:text-2xl font-semibold mb-2 break-words">
-              Scan Results: {job.username}
-            </CardTitle>
+            <div className="mb-3 p-3 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+              <div className="text-sm text-muted-foreground mb-1">Scanning Username:</div>
+              <div className="text-2xl sm:text-3xl font-bold text-primary break-words">
+                {job.username}
+              </div>
+            </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mb-2">
               <Badge variant={job.status === 'finished' ? 'default' : 'secondary'}>
                 {job.status}

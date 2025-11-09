@@ -599,6 +599,57 @@ const ResultsDetail = () => {
           </div>
         </div>
 
+        {/* Search Criteria Headline */}
+        <Card className="mb-8 p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-primary/10">
+              <Shield className="w-8 h-8 text-primary" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold mb-1">
+                Scan Results for:
+              </h2>
+              <div className="flex flex-wrap items-center gap-3">
+                {scan.email && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default" className="text-lg px-4 py-2">
+                      {redactPII ? scan.email.replace(/(.{2})(.*)(@.*)/, '$1***$3') : scan.email}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">(Email)</span>
+                  </div>
+                )}
+                {scan.username && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default" className="text-lg px-4 py-2">
+                      {scan.username}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">(Username)</span>
+                  </div>
+                )}
+                {scan.phone && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default" className="text-lg px-4 py-2">
+                      {redactPII ? scan.phone.replace(/(\d{3})(\d{3})(\d{4})/, '$1-***-$3') : scan.phone}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">(Phone)</span>
+                  </div>
+                )}
+                {(scan.first_name || scan.last_name) && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="default" className="text-lg px-4 py-2">
+                      {redactPII 
+                        ? `${scan.first_name?.[0] || ''}*** ${scan.last_name?.[0] || ''}***`
+                        : `${scan.first_name || ''} ${scan.last_name || ''}`.trim()
+                      }
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">(Name)</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* Real-time Status Indicator - shown if scan is active */}
         {(scan.status === 'pending' || scan.status === 'processing') && scanId && (
           <div className="mb-8">
