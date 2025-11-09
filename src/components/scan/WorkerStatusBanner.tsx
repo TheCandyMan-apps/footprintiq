@@ -88,24 +88,29 @@ export const WorkerStatusBanner = ({
           
           {displayWorkers.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
-              {displayWorkers.map((worker) => (
-                <Badge 
-                  key={worker.worker_name}
-                  variant={
-                    worker.status === 'online' ? 'default' : 
-                    worker.status === 'degraded' ? 'secondary' : 
-                    'destructive'
-                  }
-                  className="text-xs"
-                >
-                  {getStatusEmoji(worker.status)} {worker.worker_name}
-                  {worker.response_time_ms && (
-                    <span className="ml-1 opacity-70">
-                      ({worker.response_time_ms}ms)
-                    </span>
-                  )}
-                </Badge>
-              ))}
+              {displayWorkers.map((worker) => {
+                // Treat 'unknown' as 'online' when all systems are operational
+                const displayStatus = worker.status === 'unknown' && allOnline ? 'online' : worker.status;
+                
+                return (
+                  <Badge 
+                    key={worker.worker_name}
+                    variant={
+                      displayStatus === 'online' ? 'default' : 
+                      displayStatus === 'degraded' ? 'secondary' : 
+                      'destructive'
+                    }
+                    className="text-xs"
+                  >
+                    {getStatusEmoji(displayStatus)} {worker.worker_name}
+                    {worker.response_time_ms && (
+                      <span className="ml-1 opacity-70">
+                        ({worker.response_time_ms}ms)
+                      </span>
+                    )}
+                  </Badge>
+                );
+              })}
             </div>
           )}
         </div>
