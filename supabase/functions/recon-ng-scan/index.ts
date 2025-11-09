@@ -108,6 +108,8 @@ async function processReconNgScan(
   );
 
   const channel = supabase.channel(`recon_ng_progress_${scanId}`);
+  const WORKER_URL = Deno.env.get('RECON_NG_WORKER_URL') || 'http://localhost:8080';
+  const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN');
 
   try {
     // Broadcast initial status
@@ -117,47 +119,97 @@ async function processReconNgScan(
       payload: {
         scanId,
         status: 'running',
-        message: 'Initializing Recon-ng scan...',
+        message: 'Connecting to Recon-ng worker...',
         progress: 0,
       },
     });
 
-    // Mock execution (replace with actual Recon-ng worker call)
-    const results = [];
+    console.log(`[ReconNG] Calling worker at ${WORKER_URL} for scan ${scanId}`);
+
+    // Call actual Recon-ng worker
+    const workerResponse = await fetch(`${WORKER_URL}/scan`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${WORKER_TOKEN}`,
+      },
+      body: JSON.stringify({
+        target,
+        modules,
+        workspace: `scan_${scanId.substring(0, 8)}`,
+      }),
+    });
+
+    if (!workerResponse.ok) {
+      throw new Error(`Worker returned ${workerResponse.status}: ${await workerResponse.text()}`);
+    }
+
+    const workerData = await workerResponse.json();
+    console.log(`[ReconNG] Worker response:`, workerData);
+
+    if (!workerData.success) {
+      throw new Error(workerData.error || 'Worker scan failed');
+    }
+
+    // Broadcast progress updates
+    await channel.send({
+      type: 'broadcast',
+      event: 'progress',
+      payload: {
+        scanId,
+        status: 'running',
+        message: 'Processing scan results...',
+        progress: 80,
+        completedModules: modules.length,
+        totalModules: modules.length,
+      },
+    });
+
+    // Parse worker results
+    const results = workerData.results || [];
+    const hosts = workerData.hosts || [];
+    const contacts = workerData.contacts || [];
+    const locations = workerData.locations || [];
+
+    // Generate correlations
     const correlations = [];
+    const moduleGroups = new Map<string, any[]>();
 
-    for (let i = 0; i < modules.length; i++) {
-      const module = modules[i];
-      
-      await channel.send({
-        type: 'broadcast',
-        event: 'progress',
-        payload: {
-          scanId,
-          status: 'running',
-          message: `Running module: ${module}`,
-          progress: Math.round(((i + 1) / modules.length) * 100),
-          completedModules: i + 1,
-          totalModules: modules.length,
-        },
-      });
-
-      // Simulate module execution
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // Mock results
-      const mockResults = generateMockResults(module, target, targetType);
-      results.push(...mockResults);
-
-      // Generate correlations
-      if (mockResults.length > 0) {
-        correlations.push({
-          module,
-          count: mockResults.length,
-          description: `Found ${mockResults.length} results from ${module}`,
-          confidence: 'medium',
-        });
+    results.forEach((result: any) => {
+      const module = result.module;
+      if (!moduleGroups.has(module)) {
+        moduleGroups.set(module, []);
       }
+      moduleGroups.get(module)!.push(result);
+    });
+
+    moduleGroups.forEach((items, module) => {
+      correlations.push({
+        module,
+        count: items.length,
+        description: `Found ${items.length} ${items[0]?.type || 'results'} from ${module}`,
+        confidence: items.length > 3 ? 'high' : items.length > 1 ? 'medium' : 'low',
+        types: [...new Set(items.map(i => i.type))],
+      });
+    });
+
+    // Add host/contact correlations
+    if (hosts.length > 0) {
+      correlations.push({
+        module: 'hosts',
+        count: hosts.length,
+        description: `Discovered ${hosts.length} hosts/domains`,
+        confidence: 'high',
+      });
+    }
+
+    if (contacts.length > 0) {
+      correlations.push({
+        module: 'contacts',
+        count: contacts.length,
+        description: `Found ${contacts.length} contact emails`,
+        confidence: 'medium',
+      });
     }
 
     // Deduct credits
@@ -165,16 +217,30 @@ async function processReconNgScan(
       _workspace_id: workspaceId,
       _cost: 10,
       _reason: 'recon-ng scan',
-      _meta: { scan_id: scanId, target, modules: modules.length }
+      _meta: { 
+        scan_id: scanId, 
+        target, 
+        modules: modules.length,
+        hosts: hosts.length,
+        contacts: contacts.length,
+        worker_url: WORKER_URL
+      }
     });
+
+    // Consolidate all results
+    const allResults = [
+      ...results,
+      ...hosts.map((h: any) => ({ ...h, type: 'host', module: 'hosts' })),
+      ...contacts.map((c: any) => ({ ...c, type: 'contact', module: 'contacts' })),
+    ];
 
     // Update scan with results
     await supabase
       .from('recon_ng_scans')
       .update({
         status: 'completed',
-        total_results: results.length,
-        results,
+        total_results: allResults.length,
+        results: allResults,
         correlations,
         completed_at: new Date().toISOString(),
       })
@@ -187,16 +253,17 @@ async function processReconNgScan(
       payload: {
         scanId,
         status: 'completed',
-        message: 'Scan completed successfully',
+        message: `Scan completed: ${allResults.length} results found`,
         progress: 100,
-        totalResults: results.length,
+        totalResults: allResults.length,
+        correlations: correlations.length,
       },
     });
 
-    console.log(`Recon-ng scan ${scanId} completed with ${results.length} results`);
+    console.log(`[ReconNG] Scan ${scanId} completed: ${allResults.length} results, ${correlations.length} correlations`);
 
   } catch (error) {
-    console.error('Error processing Recon-ng scan:', error);
+    console.error('[ReconNG] Error processing scan:', error);
 
     await supabase
       .from('recon_ng_scans')
@@ -216,23 +283,8 @@ async function processReconNgScan(
         progress: 0,
       },
     });
+  } finally {
+    // Clean up channel
+    await supabase.removeChannel(channel);
   }
-}
-
-function generateMockResults(module: string, target: string, targetType: string) {
-  // Mock data generation
-  const results = [];
-  const count = Math.floor(Math.random() * 5) + 1;
-
-  for (let i = 0; i < count; i++) {
-    results.push({
-      module,
-      type: targetType,
-      value: `${target}_result_${i + 1}`,
-      source: module.split('/')[0],
-      timestamp: new Date().toISOString(),
-    });
-  }
-
-  return results;
 }
