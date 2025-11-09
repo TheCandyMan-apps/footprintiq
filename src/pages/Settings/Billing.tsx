@@ -52,6 +52,13 @@ const PRICING_TIERS = {
     price: 15,
     priceId: 'price_1SQwWCPNdM5SAyj7XS394cD8',
   },
+  pro_annual: {
+    name: 'Pro Annual',
+    price: 150,
+    period: 'year',
+    priceId: 'price_1SQwWCPNdM5SAyj7XS394cD9', // Annual price ID
+    savings: 30, // $30 savings vs monthly
+  },
   analyst: {
     name: 'Analyst',
     price: 29,
@@ -320,21 +327,37 @@ export default function BillingSettings() {
                   Manage Subscription
                 </Button>
               ) : (
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => handleUpgrade('basic')}
-                    disabled={loading}
-                    variant="outline"
-                  >
-                    Basic ($5/mo)
-                  </Button>
-                  <Button 
-                    onClick={() => handleUpgrade('pro')}
-                    disabled={loading}
-                  >
-                    Pro ($15/mo)
-                  </Button>
-                </div>
+                <>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button 
+                      onClick={() => handleUpgrade('basic')}
+                      disabled={loading}
+                      variant="outline"
+                    >
+                      Basic ($5/mo)
+                    </Button>
+                    <Button 
+                      onClick={() => handleUpgrade('pro')}
+                      disabled={loading}
+                    >
+                      Pro ($15/mo)
+                    </Button>
+                    <Button 
+                      onClick={() => handleUpgrade('pro_annual')}
+                      disabled={loading}
+                      variant="default"
+                      className="relative"
+                    >
+                      <Badge className="absolute -top-2 -right-2 bg-green-500 text-xs">
+                        Save $30
+                      </Badge>
+                      Pro Pack ($150/yr)
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    💰 Annual plan saves you $30/year compared to monthly billing
+                  </p>
+                </>
               )}
             </div>
           </Card>
