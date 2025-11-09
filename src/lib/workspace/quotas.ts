@@ -1,4 +1,7 @@
-type SubscriptionTier = 'free' | 'pro' | 'analyst' | 'enterprise';
+export type SubscriptionTier = 'free' | 'pro' | 'enterprise';
+
+// Legacy analyst tier maps to pro
+export type LegacySubscriptionTier = SubscriptionTier | 'analyst';
 
 interface PlanQuotas {
   scansPerMonth: number;
@@ -35,17 +38,6 @@ export const PLAN_QUOTAS: Record<SubscriptionTier, PlanQuotas> = {
     ssoEnabled: false,
     prioritySupport: false,
   },
-  analyst: {
-    scansPerMonth: 500,
-    monitorsPerWorkspace: 50,
-    apiCallsPerHour: 5000,
-    teamMembers: 20,
-    retentionDays: 365,
-    aiAnalystQueries: 500,
-    darkWebAccess: true,
-    ssoEnabled: true,
-    prioritySupport: true,
-  },
   enterprise: {
     scansPerMonth: -1, // unlimited
     monitorsPerWorkspace: -1,
@@ -59,8 +51,48 @@ export const PLAN_QUOTAS: Record<SubscriptionTier, PlanQuotas> = {
   },
 };
 
-export function getQuotas(tier: SubscriptionTier): PlanQuotas {
-  return PLAN_QUOTAS[tier];
+// Credit costs per scan type
+export const SCAN_CREDITS: Record<string, number> = {
+  basic: 1,
+  advanced: 5,
+  maigret: 3,
+  darkweb: 10,
+  batch: 2,
+};
+
+export function getQuotas(tier: LegacySubscriptionTier): PlanQuotas {
+  // Map legacy analyst tier to pro
+  const normalizedTier = tier === 'analyst' ? 'pro' : tier;
+  return PLAN_QUOTAS[normalizedTier];
+}
+
+export function hasFeatureAccess(tier: SubscriptionTier, feature: string): boolean {
+  const quotas = getQuotas(tier);
+  
+  switch (feature) {
+    case 'maigret':
+    case 'darkweb':
+      return quotas.darkWebAccess;
+    case 'advanced_scan':
+      return tier !== 'free';
+    case 'batch_scan':
+      return tier === 'enterprise';
+    case 'ai_analyst':
+      return quotas.aiAnalystQueries > 0;
+    case 'priority_support':
+      return quotas.prioritySupport;
+    case 'sso':
+      return quotas.ssoEnabled;
+    default:
+      return true;
+  }
+}
+
+export function getScanCost(tier: SubscriptionTier, scanType: string): number {
+  // Enterprise gets unlimited scans
+  if (tier === 'enterprise') return 0;
+  
+  return SCAN_CREDITS[scanType] || SCAN_CREDITS.basic;
 }
 
 export function canPerformAction(
