@@ -1,0 +1,177 @@
+name: Load Tests
+
+on:
+  # Manual trigger
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: 'Test scenario to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - light
+          - medium
+          - heavy
+          - stress
+      max_users:
+        description: 'Max concurrent users (stress test only)'
+        required: false
+        default: '200'
+  
+  # Scheduled runs
+  schedule:
+    # Run every Sunday at 2 AM UTC
+    - cron: '0 2 * * 0'
+  
+  # Run on specific branches
+  push:
+    branches:
+      - load-test-*
+
+jobs:
+  load-test:
+    name: Run Load Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run load tests
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        run: |
+          if [ "${{ github.event.inputs.scenario }}" = "stress" ]; then
+            npm run test:stress -- --max-users ${{ github.event.inputs.max_users }}
+          elif [ "${{ github.event.inputs.scenario }}" = "all" ] || [ -z "${{ github.event.inputs.scenario }}" ]; then
+            npm run test:load
+          else
+            npm run test:load:${{ github.event.inputs.scenario }}
+          fi
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-test-reports-${{ github.run_number }}
+          path: tests/load/reports/
+          retention-days: 30
+
+      - name: Comment PR with results
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const reportsDir = 'tests/load/reports';
+            const files = fs.readdirSync(reportsDir);
+            const latestReport = files.sort().reverse()[0];
+            
+            if (latestReport) {
+              const reportPath = path.join(reportsDir, latestReport);
+              const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+              
+              let comment = '## 📊 Load Test Results\n\n';
+              
+              report.forEach(result => {
+                if (result.success) {
+                  comment += `### ${result.scenario}\n\n`;
+                  comment += `- **Requests/Second**: ${result.metrics.requestsPerSecond.toFixed(2)}\n`;
+                  comment += `- **Success Rate**: ${((result.metrics.successfulRequests / result.metrics.totalRequests) * 100).toFixed(2)}%\n`;
+                  comment += `- **Avg Response Time**: ${result.metrics.averageResponseTime.toFixed(2)}ms\n`;
+                  comment += `- **P95 Response Time**: ${result.metrics.p95ResponseTime.toFixed(2)}ms\n\n`;
+                }
+              });
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+
+  performance-check:
+    name: Performance Threshold Check
+    runs-on: ubuntu-latest
+    needs: load-test
+    if: always()
+    
+    steps:
+      - name: Download test reports
+        uses: actions/download-artifact@v4
+        with:
+          name: load-test-reports-${{ github.run_number }}
+          path: reports/
+
+      - name: Check performance thresholds
+        run: |
+          echo "🔍 Checking performance thresholds..."
+          
+          # Parse latest report
+          LATEST_REPORT=$(ls -t reports/*.json | head -1)
+          
+          if [ -z "$LATEST_REPORT" ]; then
+            echo "⚠️  No reports found"
+            exit 0
+          fi
+          
+          # Extract metrics
+          SUCCESS_RATE=$(jq -r '.[0].metrics.successfulRequests / .[0].metrics.totalRequests * 100' "$LATEST_REPORT")
+          P95_RT=$(jq -r '.[0].metrics.p95ResponseTime' "$LATEST_REPORT")
+          RPS=$(jq -r '.[0].metrics.requestsPerSecond' "$LATEST_REPORT")
+          
+          echo "📊 Metrics:"
+          echo "  Success Rate: $SUCCESS_RATE%"
+          echo "  P95 Response Time: ${P95_RT}ms"
+          echo "  Requests/Second: $RPS"
+          
+          # Check thresholds
+          FAILED=0
+          
+          if (( $(echo "$SUCCESS_RATE < 99" | bc -l) )); then
+            echo "❌ Success rate below 99%"
+            FAILED=1
+          fi
+          
+          if (( $(echo "$P95_RT > 500" | bc -l) )); then
+            echo "⚠️  P95 response time above 500ms"
+          fi
+          
+          if (( $(echo "$RPS < 50" | bc -l) )); then
+            echo "⚠️  Throughput below 50 req/s"
+          fi
+          
+          if [ $FAILED -eq 1 ]; then
+            echo "❌ Performance check failed"
+            exit 1
+          else
+            echo "✅ Performance check passed"
+          fi
+
+  notify:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [load-test, performance-check]
+    if: failure()
+    
+    steps:
+      - name: Send notification
+        run: |
+          echo "Load tests failed. Check workflow logs for details."
+          # Add Slack/Discord/Email notification here

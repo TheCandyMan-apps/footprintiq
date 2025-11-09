@@ -30,6 +30,11 @@
     "audit:watch": "tsx scripts/audit-scans.ts --watch",
     "audit:ci": "tsx scripts/audit-scans.ts --ci",
     "audit:full": "tsx scripts/audit-full.ts",
-    "test:ai-glitches": "vitest run tests/ai-glitch-detection.test.ts"
+  "test:ai-glitches": "vitest run tests/ai-glitch-detection.test.ts",
+  "test:load": "tsx tests/load/run-load-test.ts",
+  "test:stress": "tsx tests/load/stress-test.ts",
+  "test:load:light": "tsx tests/load/run-load-test.ts -- --scenario light",
+  "test:load:medium": "tsx tests/load/run-load-test.ts -- --scenario medium",
+  "test:load:heavy": "tsx tests/load/run-load-test.ts -- --scenario heavy"
   }
 }
