@@ -5058,6 +5058,53 @@ export type Database = {
         }
         Relationships: []
       }
+      recon_ng_auto_updates: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          last_check_at: string | null
+          last_update_at: string | null
+          modules_to_watch: string[] | null
+          notification_enabled: boolean
+          schedule: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_check_at?: string | null
+          last_update_at?: string | null
+          modules_to_watch?: string[] | null
+          notification_enabled?: boolean
+          schedule?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_check_at?: string | null
+          last_update_at?: string | null
+          modules_to_watch?: string[] | null
+          notification_enabled?: boolean
+          schedule?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recon_ng_auto_updates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recon_ng_scans: {
         Row: {
           completed_at: string | null
@@ -5110,6 +5157,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "recon_ng_scans_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recon_ng_update_history: {
+        Row: {
+          changelog: string | null
+          error_message: string | null
+          id: string
+          module_name: string
+          new_version: string
+          old_version: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          changelog?: string | null
+          error_message?: string | null
+          id?: string
+          module_name: string
+          new_version: string
+          old_version?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          changelog?: string | null
+          error_message?: string | null
+          id?: string
+          module_name?: string
+          new_version?: string
+          old_version?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recon_ng_update_history_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
