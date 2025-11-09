@@ -88,6 +88,7 @@ const Compliance = lazy(() => import("./pages/Compliance"));
 const AutomatedRemoval = lazy(() => import("./pages/AutomatedRemoval"));
 const Integrations = lazy(() => import("./pages/Integrations"));
 const Analytics = lazy(() => import("./pages/Analytics"));
+const ScanAnalytics = lazy(() => import("./pages/ScanAnalytics"));
 const RlsCheck = lazy(() => import("./pages/admin/RlsCheck"));
 const Providers = lazy(() => import("./pages/admin/Providers"));
 const Health = lazy(() => import("./pages/admin/Health"));
@@ -273,6 +274,7 @@ function RouterContent() {
           <Route path="/settings/credits" element={<CreditsSettings />} />
           <Route path="/settings/ai" element={<AISettings />} />
           <Route path="/analytics/ai" element={<AIAnalytics />} />
+          <Route path="/analytics/scans" element={<ScanAnalytics />} />
           <Route path="/api-docs" element={<ApiDocs />} />
           <Route path="/legal/dpa" element={<DPA />} />
           <Route path="/scan/advanced" element={<AdvancedScan />} />
