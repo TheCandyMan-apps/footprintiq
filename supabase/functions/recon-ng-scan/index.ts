@@ -111,6 +111,10 @@ async function processReconNgScan(
   const WORKER_URL = Deno.env.get('RECON_NG_WORKER_URL') || 'http://localhost:8080';
   const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN');
 
+  // Retry configuration for premium reliability
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 2000;
+
   try {
     // Broadcast initial status
     await channel.send({
@@ -126,29 +130,71 @@ async function processReconNgScan(
 
     console.log(`[ReconNG] Calling worker at ${WORKER_URL} for scan ${scanId}`);
 
-    // Call actual Recon-ng worker
-    const workerResponse = await fetch(`${WORKER_URL}/scan`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${WORKER_TOKEN}`,
-      },
-      body: JSON.stringify({
-        target,
-        modules,
-        workspace: `scan_${scanId.substring(0, 8)}`,
-      }),
-    });
+    let workerData;
+    let lastError;
 
-    if (!workerResponse.ok) {
-      throw new Error(`Worker returned ${workerResponse.status}: ${await workerResponse.text()}`);
+    // Retry logic with 3 attempts
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        console.log(`[ReconNG] Attempt ${attempt}/${MAX_RETRIES} for scan ${scanId}`);
+
+        // Call actual Recon-ng worker
+        const workerResponse = await fetch(`${WORKER_URL}/scan`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${WORKER_TOKEN}`,
+          },
+          body: JSON.stringify({
+            target,
+            modules,
+            workspace: `scan_${scanId.substring(0, 8)}`,
+          }),
+        });
+
+        if (!workerResponse.ok) {
+          throw new Error(`Worker returned ${workerResponse.status}: ${await workerResponse.text()}`);
+        }
+
+        workerData = await workerResponse.json();
+        console.log(`[ReconNG] Worker response on attempt ${attempt}:`, workerData);
+
+        if (!workerData.success) {
+          throw new Error(workerData.error || 'Worker scan failed');
+        }
+
+        // Success! Break out of retry loop
+        console.log(`[ReconNG] Scan ${scanId} succeeded on attempt ${attempt}`);
+        break;
+
+      } catch (error) {
+        lastError = error;
+        console.error(`[ReconNG] Attempt ${attempt} failed:`, error.message);
+
+        if (attempt < MAX_RETRIES) {
+          // Broadcast retry notification
+          await channel.send({
+            type: 'broadcast',
+            event: 'progress',
+            payload: {
+              scanId,
+              status: 'running',
+              message: `Retrying... (Attempt ${attempt + 1}/${MAX_RETRIES})`,
+              progress: Math.floor((attempt / MAX_RETRIES) * 30),
+            },
+          });
+
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * attempt));
+        } else {
+          // All retries exhausted
+          throw new Error(`All ${MAX_RETRIES} attempts failed. Last error: ${error.message}`);
+        }
+      }
     }
 
-    const workerData = await workerResponse.json();
-    console.log(`[ReconNG] Worker response:`, workerData);
-
-    if (!workerData.success) {
-      throw new Error(workerData.error || 'Worker scan failed');
+    if (!workerData) {
+      throw lastError || new Error('No worker response received');
     }
 
     // Broadcast progress updates
