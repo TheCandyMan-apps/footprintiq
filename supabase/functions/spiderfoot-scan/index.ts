@@ -3,8 +3,13 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { corsHeaders } from '../_shared/secure.ts';
 import { retryWithBackoff } from '../_shared/retryWithBackoff.ts';
 
-const SPIDERFOOT_API_URL = Deno.env.get('SPIDERFOOT_API_URL') || 'http://localhost:5001';
+const SPIDERFOOT_API_URL = Deno.env.get('SPIDERFOOT_API_URL');
 const SPIDERFOOT_API_KEY = Deno.env.get('SPIDERFOOT_API_KEY');
+
+// Validate required environment variables
+if (!SPIDERFOOT_API_URL || SPIDERFOOT_API_URL === 'http://localhost:5001') {
+  console.error('SPIDERFOOT_API_URL is not configured or still points to localhost');
+}
 
 interface ScanRequest {
   target: string;
@@ -56,17 +61,27 @@ serve(async (req) => {
       );
     }
 
+    // Validate SpiderFoot API URL
+    if (!SPIDERFOOT_API_URL || SPIDERFOOT_API_URL.includes('localhost')) {
+      console.error('SpiderFoot API URL not configured');
+      return new Response(
+        JSON.stringify({ error: 'SpiderFoot API is not configured. Please contact administrator.' }),
+        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Parse request
     const { target, target_type, modules = [], workspace_id }: ScanRequest = await req.json();
 
     if (!target || !target_type || !workspace_id) {
+      console.error('Missing required fields:', { target: !!target, target_type: !!target_type, workspace_id: !!workspace_id });
       return new Response(
         JSON.stringify({ error: 'Missing required fields: target, target_type, workspace_id' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Starting SpiderFoot scan for ${target_type}: ${target}`);
+    console.log(`[SpiderFoot] Starting scan for ${target_type}: ${target}, workspace: ${workspace_id}, user: ${user.id}`);
 
     // Verify workspace membership
     const { data: membership, error: membershipError } = await supabase
@@ -77,11 +92,14 @@ serve(async (req) => {
       .single();
 
     if (membershipError || !membership) {
+      console.error('[SpiderFoot] Membership check failed:', membershipError);
       return new Response(
         JSON.stringify({ error: 'Not a member of this workspace' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log(`[SpiderFoot] User role in workspace: ${membership.role}`);
 
     // Check credits (10 credits for SpiderFoot scan)
     const supabaseAdmin = createClient(
@@ -89,22 +107,31 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { data: canSpend } = await supabaseAdmin.rpc('spend_credits', {
+    console.log('[SpiderFoot] Checking credits...');
+    const { data: canSpend, error: creditsError } = await supabaseAdmin.rpc('spend_credits', {
       _workspace_id: workspace_id,
       _cost: 10,
       _reason: 'spiderfoot_scan',
       _meta: { target, target_type }
     });
 
+    if (creditsError) {
+      console.error('[SpiderFoot] Credits check error:', creditsError);
+    }
+
     if (!canSpend) {
+      console.warn('[SpiderFoot] Insufficient credits');
       return new Response(
         JSON.stringify({ error: 'Insufficient credits. SpiderFoot scans cost 10 credits.' }),
         { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create scan record
-    const { data: scanRecord, error: scanError } = await supabase
+    console.log('[SpiderFoot] Credits deducted successfully');
+
+    // Create scan record using admin client to bypass RLS
+    console.log('[SpiderFoot] Creating scan record...');
+    const { data: scanRecord, error: scanError } = await supabaseAdmin
       .from('spiderfoot_scans')
       .insert({
         workspace_id,
@@ -119,9 +146,18 @@ serve(async (req) => {
       .single();
 
     if (scanError) {
-      console.error('Failed to create scan record:', scanError);
+      console.error('[SpiderFoot] Failed to create scan record:', {
+        error: scanError,
+        code: scanError.code,
+        message: scanError.message,
+        details: scanError.details,
+        hint: scanError.hint
+      });
       return new Response(
-        JSON.stringify({ error: 'Failed to create scan record' }),
+        JSON.stringify({ 
+          error: 'Failed to create scan record',
+          details: scanError.message 
+        }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -144,9 +180,16 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in spiderfoot-scan:', error);
+    console.error('[SpiderFoot] Unhandled error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ 
+        error: error.message || 'Internal server error',
+        type: error.name 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

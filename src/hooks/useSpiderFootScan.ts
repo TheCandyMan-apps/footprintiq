@@ -36,23 +36,47 @@ export function useSpiderFootScan() {
 
   const startScan = async (request: SpiderFootScanRequest): Promise<string | null> => {
     setIsScanning(true);
-
+    
     try {
+      console.log('[useSpiderFootScan] Starting scan with request:', {
+        target: request.target,
+        target_type: request.target_type,
+        modules: request.modules?.length,
+        workspace_id: request.workspace_id
+      });
+
       const { data, error } = await supabase.functions.invoke('spiderfoot-scan', {
         body: request,
       });
 
       if (error) {
-        console.error('SpiderFoot scan error:', error);
+        console.error('[useSpiderFootScan] Edge function error:', {
+          message: error.message,
+          context: error.context,
+          details: error
+        });
+        
+        // Provide more specific error messages
+        let errorMessage = error.message || 'Failed to start SpiderFoot scan';
+        
+        if (error.message?.includes('not configured')) {
+          errorMessage = 'SpiderFoot service is not available. Please contact support.';
+        } else if (error.message?.includes('Insufficient credits')) {
+          errorMessage = 'Insufficient credits. Please purchase more credits to continue.';
+        } else if (error.message?.includes('Not a member')) {
+          errorMessage = 'You do not have access to this workspace.';
+        }
+        
         toast({
           title: 'Scan Failed',
-          description: error.message || 'Failed to start SpiderFoot scan',
+          description: errorMessage,
           variant: 'destructive',
         });
         return null;
       }
 
-      if (data?.success) {
+      if (data?.success && data?.scan_id) {
+        console.log('[useSpiderFootScan] Scan started successfully:', data.scan_id);
         toast({
           title: 'Scan Started',
           description: `SpiderFoot scan initiated for ${request.target}`,
@@ -60,12 +84,13 @@ export function useSpiderFootScan() {
         return data.scan_id;
       }
 
+      console.warn('[useSpiderFootScan] No scan_id returned');
       return null;
     } catch (error) {
-      console.error('Error starting SpiderFoot scan:', error);
+      console.error('[useSpiderFootScan] Unexpected error:', error);
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred',
+        description: 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
       return null;
