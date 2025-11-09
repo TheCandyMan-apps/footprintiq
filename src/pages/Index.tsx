@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Shield } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
 import { StructuredData, organizationSchema } from "@/components/StructuredData";
 import { Header } from "@/components/Header";
@@ -25,6 +26,14 @@ import privacyShield from "@/assets/privacy-shield.jpg";
 
 export default function Home() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/dashboard");
+      }
+    });
+  }, [navigate]);
 
   const handleStartScan = () => {
     navigate('/scan');
