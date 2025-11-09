@@ -11,13 +11,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScanTemplateConfig } from '@/hooks/useScanTemplates';
+import { TagInput } from './TagInput';
+import { TEMPLATE_CATEGORIES } from '@/constants/templateCategories';
 
 interface SaveTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentConfig: ScanTemplateConfig;
-  onSave: (name: string, description: string | null, config: ScanTemplateConfig) => Promise<void>;
+  onSave: (
+    name: string,
+    description: string | null,
+    config: ScanTemplateConfig,
+    category?: string | null,
+    tags?: string[] | null
+  ) => Promise<void>;
 }
 
 export function SaveTemplateDialog({
@@ -28,6 +37,8 @@ export function SaveTemplateDialog({
 }: SaveTemplateDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<string>('');
+  const [tags, setTags] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
@@ -35,9 +46,17 @@ export function SaveTemplateDialog({
     
     setIsSaving(true);
     try {
-      await onSave(name, description || null, currentConfig);
+      await onSave(
+        name,
+        description || null,
+        currentConfig,
+        category || null,
+        tags.length > 0 ? tags : null
+      );
       setName('');
       setDescription('');
+      setCategory('');
+      setTags([]);
       onOpenChange(false);
     } finally {
       setIsSaving(false);
@@ -46,7 +65,7 @@ export function SaveTemplateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Save Scan Template</DialogTitle>
           <DialogDescription>
@@ -64,6 +83,26 @@ export function SaveTemplateDialog({
               maxLength={100}
             />
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Category</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger id="category">
+                <SelectValue placeholder="Select a category..." />
+              </SelectTrigger>
+              <SelectContent>
+                {TEMPLATE_CATEGORIES.map((cat) => (
+                  <SelectItem key={cat.value} value={cat.value}>
+                    <span className="mr-2">{cat.icon}</span>
+                    {cat.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <TagInput tags={tags} onChange={setTags} />
+
           <div className="space-y-2">
             <Label htmlFor="description">Description (optional)</Label>
             <Textarea

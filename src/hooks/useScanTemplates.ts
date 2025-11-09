@@ -19,6 +19,8 @@ export interface ScanTemplate {
   description: string | null;
   configuration: ScanTemplateConfig;
   is_favorite: boolean;
+  category: string | null;
+  tags: string[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -54,7 +56,9 @@ export function useScanTemplates() {
   const saveTemplate = async (
     name: string,
     description: string | null,
-    configuration: ScanTemplateConfig
+    configuration: ScanTemplateConfig,
+    category?: string | null,
+    tags?: string[] | null
   ): Promise<ScanTemplate | null> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -67,6 +71,8 @@ export function useScanTemplates() {
           name,
           description,
           configuration: configuration as any,
+          category,
+          tags,
         })
         .select()
         .single();
@@ -85,7 +91,7 @@ export function useScanTemplates() {
 
   const updateTemplate = async (
     id: string,
-    updates: Partial<Pick<ScanTemplate, 'name' | 'description' | 'configuration' | 'is_favorite'>>
+    updates: Partial<Pick<ScanTemplate, 'name' | 'description' | 'configuration' | 'is_favorite' | 'category' | 'tags'>>
   ): Promise<boolean> => {
     try {
       const updateData: any = { ...updates };

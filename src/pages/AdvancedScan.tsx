@@ -402,9 +402,11 @@ export default function AdvancedScan() {
   const handleSaveTemplate = async (
     name: string,
     description: string | null,
-    config: any
+    config: any,
+    category?: string | null,
+    tags?: string[] | null
   ) => {
-    await saveTemplate(name, description, config);
+    await saveTemplate(name, description, config, category, tags);
   };
 
   const getCurrentConfig = () => ({
