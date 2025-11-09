@@ -30,16 +30,22 @@ export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: 
         throw new Error(`Session refresh failed: ${refreshError.message}`);
       }
 
-      const { data, error } = await supabase.functions.invoke("billing-checkout", {
-        body: { plan: 'analyst' }
-      });
-      
-      if (error || !data?.url) {
-        throw error || new Error("No checkout URL returned");
+      // Try primary checkout function
+      let url: string | undefined;
+      const primary = await supabase.functions.invoke("billing-checkout", { body: { plan: 'analyst' } });
+      if (!primary.error && primary.data?.url) {
+        url = primary.data.url;
+      } else {
+        // Fallback to namespaced function
+        const fallback = await supabase.functions.invoke("billing/checkout", { body: { plan: 'analyst' } });
+        if (!fallback.error && fallback.data?.url) {
+          url = fallback.data.url;
+        }
       }
-      
-      window.open(data.url, "_blank");
+      if (!url) throw new Error(primary.error?.message || 'Checkout failed');
+      window.open(url, "_blank");
       onOpenChange(false);
+
       
       // Show success message after brief delay
       setTimeout(() => {

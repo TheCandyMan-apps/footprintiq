@@ -87,16 +87,23 @@ export const Header = () => {
 
   const handleManageSubscription = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke("customer-portal");
-      if (error || !data?.url) {
-        toast({
-          title: "Error",
-          description: "Could not open subscription management",
-          variant: "destructive",
-        });
+      // Try primary portal function
+      const primary = await supabase.functions.invoke("billing/create-portal");
+      if (!primary.error && primary.data?.url) {
+        window.open(primary.data.url, "_blank");
         return;
       }
-      window.open(data.url, "_blank");
+      // Fallback to legacy endpoint
+      const fallback = await supabase.functions.invoke("customer-portal");
+      if (!fallback.error && fallback.data?.url) {
+        window.open(fallback.data.url, "_blank");
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Could not open subscription management",
+        variant: "destructive",
+      });
     } catch (error) {
       toast({
         title: "Error",

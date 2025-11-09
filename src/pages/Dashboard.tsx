@@ -79,7 +79,8 @@ const Dashboard = () => {
 
       // Check if this is a first-time user and should auto-start tour
       if (shouldAutoStartTour()) {
-        markTourTriggered(); // Mark as triggered to prevent multiple redirects
+        markTourTriggered();
+        markOnboardingShown(); // ensure we only ever show once per browser/user
         const timer = setTimeout(() => {
           navigate('/onboarding?tour=onboarding');
         }, getTourAutoStartDelay());

@@ -125,20 +125,22 @@ export const Pricing = () => {
       }
 
       const plan = tierName.toLowerCase();
-      
-      const { data, error } = await supabase.functions.invoke('billing-checkout', {
-        body: { plan }
-      });
+      let url: string | undefined;
 
-      if (error) {
-        console.error('Checkout function error:', error);
-        throw error;
+      // Try primary function first
+      const primary = await supabase.functions.invoke('billing-checkout', { body: { plan } });
+      if (!primary.error && primary.data?.url) {
+        url = primary.data.url;
+      } else {
+        // Fallback to alternate path
+        const alt = await supabase.functions.invoke('billing/checkout', { body: { plan } });
+        if (!alt.error && alt.data?.url) {
+          url = alt.data.url;
+        }
       }
-      
-      if (data?.url) {
-        window.open(data.url, '_blank');
-        
-        // Show success message after brief delay
+
+      if (url) {
+        window.open(url, '_blank');
         setTimeout(() => {
           toast({
             title: "Upgrade complete - enjoy premium features! 🎉",

@@ -1527,6 +1527,50 @@ export type Database = {
           },
         ]
       }
+      case_items: {
+        Row: {
+          added_by: string
+          case_id: string
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+          summary: string | null
+          title: string | null
+          url: string | null
+        }
+        Insert: {
+          added_by: string
+          case_id: string
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+          summary?: string | null
+          title?: string | null
+          url?: string | null
+        }
+        Update: {
+          added_by?: string
+          case_id?: string
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          summary?: string | null
+          title?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_items_case_id_fkey"
+            columns: ["case_id"]
+            isOneToOne: false
+            referencedRelation: "cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_notes: {
         Row: {
           case_id: string

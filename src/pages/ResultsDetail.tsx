@@ -56,6 +56,7 @@ import {
   Zap
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
+import { AddToCaseButton } from "@/components/case/AddToCaseButton";
 
 interface DataSource {
   id: string;
@@ -225,8 +226,9 @@ const ResultsDetail = () => {
       if (scanError) throw scanError;
       setScan(scanData);
 
-      // Stop polling if scan is completed
-      if (scanData.status === 'completed') {
+      // Top-level Add to Case button
+      // ... keep existing code (rest of the page rendering)
+
         if (pollTimeoutRef.current !== null) {
           clearTimeout(pollTimeoutRef.current);
           pollTimeoutRef.current = null;
@@ -1011,8 +1013,29 @@ const ResultsDetail = () => {
           </div>
         </Card>
 
+        {/* Quick Actions */}
+        <Card className="p-4 mb-8">
+          <div className="flex flex-wrap gap-3 items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="w-6 h-6 text-primary" />
+              <h3 className="text-lg font-semibold">Actions</h3>
+            </div>
+            {scan && (
+              <AddToCaseButton
+                itemType="scan"
+                itemId={scan.id}
+                title={`Scan ${scan.id}`}
+                summary={`Type: ${scan.scan_type} • Date: ${new Date(scan.created_at).toLocaleString()}`}
+                buttonLabel="Add Scan to Case"
+                size="sm"
+              />
+            )}
+          </div>
+        </Card>
+
         {/* No Results Banner */}
         {scan.total_sources_found === 0 && dataSources.length === 0 && socialProfiles.length === 0 && findings.length === 0 && (
+
           <Card className="p-8 mb-8 text-center bg-accent/5 border-accent/30">
             <Shield className="w-16 h-16 mx-auto mb-4 text-accent opacity-70" />
             <h3 className="text-2xl font-semibold mb-3">No Data Found - That's Good News!</h3>
@@ -1089,7 +1112,16 @@ const ResultsDetail = () => {
                     evidence: finding.evidence,
                     meta: (finding.raw as any)?.meta || {},
                   }}
-                />
+                >
+                  <div className="mt-2">
+                    <AddToCaseButton
+                      itemType="finding"
+                      itemId={String((finding as any).id)}
+                      title={finding.title}
+                      summary={`Provider: ${finding.provider} • Severity: ${(finding as any).raw?.severity || finding.severity}`}
+                    />
+                  </div>
+                </FindingCard>
               ))}
             </div>
           </div>
