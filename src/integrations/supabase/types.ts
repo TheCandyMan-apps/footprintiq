@@ -6643,6 +6643,45 @@ export type Database = {
         }
         Relationships: []
       }
+      system_audit_logs: {
+        Row: {
+          ai_summary: string | null
+          audit_type: string
+          created_at: string
+          details: Json
+          duration_ms: number
+          id: string
+          issues_fixed: number
+          issues_found: number
+          prioritized_issues: Json | null
+          severity_breakdown: Json
+        }
+        Insert: {
+          ai_summary?: string | null
+          audit_type: string
+          created_at?: string
+          details?: Json
+          duration_ms: number
+          id?: string
+          issues_fixed?: number
+          issues_found?: number
+          prioritized_issues?: Json | null
+          severity_breakdown?: Json
+        }
+        Update: {
+          ai_summary?: string | null
+          audit_type?: string
+          created_at?: string
+          details?: Json
+          duration_ms?: number
+          id?: string
+          issues_fixed?: number
+          issues_found?: number
+          prioritized_issues?: Json | null
+          severity_breakdown?: Json
+        }
+        Relationships: []
+      }
       takedown_submissions: {
         Row: {
           body: string

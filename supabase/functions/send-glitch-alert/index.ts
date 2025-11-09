@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,8 +37,6 @@ const handler = async (req: Request): Promise<Response> => {
     if (!resendApiKey) {
       throw new Error("RESEND_API_KEY not configured");
     }
-
-    const resend = new Resend(resendApiKey);
 
     console.log('[Glitch Alert] Sending alert email...');
 
@@ -103,11 +100,7 @@ const handler = async (req: Request): Promise<Response> => {
       return html;
     };
 
-    const emailResponse = await resend.emails.send({
-      from: "FootprintIQ Alerts <alerts@footprintiq.app>",
-      to: ["admin@footprintiq.app"],
-      subject: `🚨 Glitch Alert: ${failureRate.toFixed(1)}% Failure Rate Detected`,
-      html: `
+    const emailHtml = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -167,15 +160,34 @@ const handler = async (req: Request): Promise<Response> => {
           </div>
         </body>
         </html>
-      `,
+      `;
+
+    const emailResponse = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'FootprintIQ Alerts <alerts@footprintiq.app>',
+        to: ['admin@footprintiq.app'],
+        subject: `🚨 Glitch Alert: ${failureRate.toFixed(1)}% Failure Rate Detected`,
+        html: emailHtml,
+      }),
     });
 
-    console.log('[Glitch Alert] Email sent successfully:', emailResponse);
+    const emailData = await emailResponse.json();
+
+    if (!emailResponse.ok) {
+      throw new Error(`Email send failed: ${JSON.stringify(emailData)}`);
+    }
+
+    console.log('[Glitch Alert] Email sent successfully:', emailData);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        emailId: emailResponse.data?.id 
+        emailId: emailData.id 
       }),
       {
         status: 200,

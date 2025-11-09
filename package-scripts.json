@@ -29,6 +29,7 @@
     "audit:scans": "tsx scripts/audit-scans.ts",
     "audit:watch": "tsx scripts/audit-scans.ts --watch",
     "audit:ci": "tsx scripts/audit-scans.ts --ci",
+    "audit:full": "tsx scripts/audit-full.ts",
     "test:ai-glitches": "vitest run tests/ai-glitch-detection.test.ts"
   }
 }
