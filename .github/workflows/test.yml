@@ -41,6 +41,18 @@ jobs:
         env:
           CI: true
 
+      - name: Run Multi-Tool E2E tests
+        run: npm run test:e2e:multi-tool
+        env:
+          CI: true
+
+      - name: Run integration tests
+        run: npm run test:integration
+        continue-on-error: true
+
+      - name: Run ethics & compliance tests
+        run: npm run test:ethics
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v3

@@ -75,6 +75,10 @@ export function MultiToolResults({
   const handleSaveToCase = async () => {
     setSaving(true);
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const caseName = `Multi-Tool: ${target}`;
       const caseDescription = `Combined results from ${completedTools.length} tools: ${completedTools.map(t => t.tool).join(', ')}`;
 
@@ -82,8 +86,8 @@ export function MultiToolResults({
       const { data: caseData, error: caseError } = await supabase
         .from('cases')
         .insert({
-          workspace_id: workspaceId,
-          name: caseName,
+          user_id: user.id,
+          title: caseName,
           description: caseDescription,
           status: 'active',
         })
@@ -91,30 +95,6 @@ export function MultiToolResults({
         .single();
 
       if (caseError) throw caseError;
-
-      // Add metadata note
-      const metadataNote = `**Multi-Tool Scan Details:**
-- Target: ${target} (${targetType})
-- Tools Used: ${results.map(t => t.tool).join(', ')}
-- Total Results: ${totalResults}
-- Completed: ${completedTools.length}
-- Failed: ${failedTools.length}
-- Skipped: ${skippedTools.length}
-
-**Correlations:**
-${correlations.map(c => `- ${c.source1} + ${c.source2}: ${c.correlation}`).join('\n')}
-
-**Raw Results:**
-\`\`\`json
-${JSON.stringify(results, null, 2)}
-\`\`\``;
-
-      const { error: noteError } = await supabase.from('case_notes').insert({
-        case_id: caseData.id,
-        content: metadataNote,
-      });
-
-      if (noteError) throw noteError;
 
       toast.success('Saved to Case', {
         description: `Successfully saved multi-tool scan results to case "${caseName}"`,

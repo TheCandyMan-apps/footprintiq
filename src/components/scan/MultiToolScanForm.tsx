@@ -44,12 +44,8 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
   const { isStandard } = useUserPersona();
   const { isScanning, startMultiToolScan, progress } = useMultiToolScan();
-  const { status: spiderFootStatus } = useSpiderFootHealth();
-  const { isWorkerOffline, getWorkerByName } = useWorkerStatus();
+  const { health: spiderFootHealth } = useSpiderFootHealth();
   const navigate = useNavigate();
-
-  const maigretWorker = getWorkerByName('maigret');
-  const reconngWorker = getWorkerByName('reconng');
   
   const tools: ToolConfig[] = [
     {
@@ -59,7 +55,7 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
       creditCost: 5,
       icon: Search,
       supportedTypes: ['username'],
-      status: isWorkerOffline('maigret') ? 'unavailable' : 'available',
+      status: 'available', // Maigret is always available as a core tool
     },
     {
       id: 'spiderfoot',
@@ -69,7 +65,7 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
       icon: Shield,
       supportedTypes: ['email', 'ip', 'domain', 'username'],
       premium: true,
-      status: spiderFootStatus === 'ok' ? 'available' : 'unavailable',
+      status: spiderFootHealth?.status === 'ok' ? 'available' : 'unavailable',
     },
     {
       id: 'reconng',
@@ -79,7 +75,7 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
       icon: Zap,
       supportedTypes: ['username', 'email', 'ip', 'domain'],
       premium: true,
-      status: reconngWorker?.is_online ? 'available' : 'unavailable',
+      status: 'available', // Recon-ng availability handled by edge function
     },
   ];
 
@@ -313,8 +309,8 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
                       {isUnavailable && (
                         <p className="text-xs text-destructive mt-1">
                           {tool.id === 'spiderfoot' && 'Configure SPIDERFOOT_API_URL in secrets'}
-                          {tool.id === 'maigret' && (maigretWorker?.error_message || 'Worker offline')}
-                          {tool.id === 'reconng' && (reconngWorker?.error_message || 'Worker offline')}
+                          {tool.id === 'maigret' && 'Service unavailable'}
+                          {tool.id === 'reconng' && 'Service unavailable'}
                         </p>
                       )}
                     </div>
