@@ -1,4 +1,5 @@
 import { FootprintDNA } from '@/components/FootprintDNA';
+import { FootprintDNASkeleton } from '@/components/FootprintDNASkeleton';
 import { FootprintDNAModal } from '@/components/FootprintDNAModal';
 import { RemovalQueue } from '@/components/RemovalQueue';
 import { RemovalSuccessTracker } from '@/components/RemovalSuccessTracker';
@@ -628,7 +629,12 @@ const Dashboard = () => {
                   </div>
 
                   {/* Footprint DNA Card */}
-                  {scans.length > 0 && <div className="mb-8">
+                  {loading ? (
+                    <div className="mb-8">
+                      <FootprintDNASkeleton />
+                    </div>
+                  ) : scans.length > 0 ? (
+                    <div className="mb-8">
                       <FootprintDNA 
                         score={dnaMetrics.score} 
                         breaches={dnaMetrics.breaches} 
@@ -642,7 +648,8 @@ const Dashboard = () => {
                       />
 
                       <FootprintDNAModal open={isDNAModalOpen} onOpenChange={setIsDNAModalOpen} trendData={trendData} currentScore={dnaMetrics.score} />
-                    </div>}
+                    </div>
+                  ) : null}
 
                   {/* Quick Actions */}
                   <Card className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow transition-all duration-300">
