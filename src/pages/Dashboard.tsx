@@ -98,6 +98,53 @@ const Dashboard = () => {
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Set up real-time subscription for scan changes
+  useEffect(() => {
+    if (!user?.id) return;
+
+    console.log('Setting up realtime subscription for scans');
+    
+    const channel = supabase
+      .channel('dashboard-scans-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'scans',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Scan change detected:', payload.eventType, payload);
+          
+          // Refresh dashboard data when scans change
+          fetchDashboardData(user.id);
+          
+          // Show a toast notification for new scans
+          if (payload.eventType === 'INSERT') {
+            toast({
+              title: 'New scan detected',
+              description: 'Dashboard updating with latest data...',
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            toast({
+              title: 'Scan updated',
+              description: 'Dashboard refreshing...',
+            });
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
+
+    return () => {
+      console.log('Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, toast]);
+
   const fetchDashboardData = async (userId: string) => {
     setLoading(true);
     try {
