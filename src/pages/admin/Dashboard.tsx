@@ -36,6 +36,7 @@ import {
   Pie,
   Cell
 } from "recharts";
+import { CreditUsageBreakdown } from "@/components/admin/CreditUsageBreakdown";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--muted))"];
 
@@ -299,6 +300,9 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Credit Usage Breakdown */}
+            <CreditUsageBreakdown />
 
             {/* Quick Actions */}
             <Card>

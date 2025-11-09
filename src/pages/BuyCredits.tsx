@@ -10,45 +10,65 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Coins, Check, Zap, Shield, TrendingUp } from "lucide-react";
 import { trackCreditPurchase } from "@/lib/sentry-monitoring";
+import { AutoRefillToggle } from "@/components/billing/AutoRefillToggle";
+import { useSubscription } from '@/hooks/useSubscription';
 
 const CREDIT_PACKAGES = [
   {
-    id: "10",
+    id: "starter",
+    name: "Starter Pack",
     credits: 10,
     price: 9,
     pricePerCredit: 0.9,
     popular: false,
   },
   {
-    id: "50",
-    credits: 50,
-    price: 40,
-    pricePerCredit: 0.8,
+    id: "osint-pro",
+    name: "OSINT Pro",
+    credits: 500,
+    price: 350,
+    pricePerCredit: 0.7,
     popular: true,
-    savings: "11%",
+    savings: "22%",
+    badge: "Best Value",
   },
   {
-    id: "100",
+    id: "investigator",
+    name: "Investigator Bundle",
     credits: 100,
     price: 75,
     pricePerCredit: 0.75,
     popular: false,
     savings: "17%",
   },
+  {
+    id: "enterprise",
+    name: "Enterprise Pack",
+    credits: 1000,
+    price: 600,
+    pricePerCredit: 0.6,
+    popular: false,
+    savings: "33%",
+    badge: "Maximum Savings",
+  },
 ];
 
 const CREDIT_USES = [
-  "Dark web monitoring alerts",
-  "Dating & NSFW platform searches",
-  "Premium evidence reveals",
-  "PDF report exports",
-  "Advanced API access",
+  "Harvester OSINT scans (10 credits)",
+  "Dark web monitoring alerts (5 credits)",
+  "Dating & NSFW platform searches (15 credits)",
+  "Premium evidence reveals (3 credits)",
+  "PDF report exports (2 credits)",
+  "Maigret username scans (8 credits)",
+  "Advanced API access (varies)",
 ];
 
 export default function BuyCredits() {
-  const [selectedPackage, setSelectedPackage] = useState("50");
+  const [selectedPackage, setSelectedPackage] = useState("osint-pro");
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
+  const { subscriptionTier } = useSubscription();
+  const isPro = subscriptionTier === 'pro' || subscriptionTier === 'analyst' || subscriptionTier === 'enterprise';
 
   // Fetch current credit balance with realtime updates
   const { data: balance } = useQuery({
@@ -181,20 +201,23 @@ export default function BuyCredits() {
                 } ${pkg.popular ? "relative" : ""}`}
                 onClick={() => setSelectedPackage(pkg.id)}
               >
-                {pkg.popular && (
+                {pkg.badge && (
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    Most Popular
+                    {pkg.badge}
                   </Badge>
                 )}
                 <div className="text-center space-y-4">
                   <div>
+                    <div className="text-sm font-semibold text-muted-foreground mb-1">
+                      {pkg.name}
+                    </div>
                     <div className="text-4xl font-bold">{pkg.credits}</div>
                     <div className="text-sm text-muted-foreground">credits</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold">£{pkg.price}</div>
+                    <div className="text-3xl font-bold">${pkg.price}</div>
                     <div className="text-sm text-muted-foreground">
-                      £{pkg.pricePerCredit.toFixed(2)} per credit
+                      ${pkg.pricePerCredit.toFixed(2)} per credit
                     </div>
                     {pkg.savings && (
                       <Badge variant="secondary" className="mt-2">
@@ -222,8 +245,11 @@ export default function BuyCredits() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold mb-1">
-                  {CREDIT_PACKAGES.find(p => p.id === selectedPackage)?.credits} Credits
+                  {CREDIT_PACKAGES.find(p => p.id === selectedPackage)?.name || 'Selected Package'}
                 </h3>
+                <p className="text-sm font-medium text-primary mb-1">
+                  {CREDIT_PACKAGES.find(p => p.id === selectedPackage)?.credits} Credits
+                </p>
                 <p className="text-sm text-muted-foreground">
                   One-time payment • No subscription required
                 </p>
@@ -235,10 +261,13 @@ export default function BuyCredits() {
                 className="min-w-[200px]"
               >
                 <Zap className="w-5 h-5 mr-2" />
-                {purchaseMutation.isPending ? "Processing..." : `Pay £${CREDIT_PACKAGES.find(p => p.id === selectedPackage)?.price}`}
+                {purchaseMutation.isPending ? "Processing..." : `Pay $${CREDIT_PACKAGES.find(p => p.id === selectedPackage)?.price}`}
               </Button>
             </div>
           </Card>
+
+          {/* Auto-Refill for Pro Users */}
+          <AutoRefillToggle isPro={isPro} />
 
           {/* What You Can Do */}
           <div className="grid md:grid-cols-2 gap-6">

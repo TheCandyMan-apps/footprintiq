@@ -7405,6 +7405,44 @@ export type Database = {
           },
         ]
       }
+      workspace_settings: {
+        Row: {
+          auto_refill_enabled: boolean | null
+          auto_refill_package: string | null
+          auto_refill_threshold: number | null
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          auto_refill_enabled?: boolean | null
+          auto_refill_package?: string | null
+          auto_refill_threshold?: number | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          auto_refill_enabled?: boolean | null
+          auto_refill_package?: string | null
+          auto_refill_threshold?: number | null
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspaces: {
         Row: {
           created_at: string

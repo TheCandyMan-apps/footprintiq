@@ -44,9 +44,14 @@ const logError = (context: string, error: any, metadata?: any) => {
 };
 
 const CREDIT_PACKAGES = {
-  "10": { price: 9, credits: 10 },
-  "50": { price: 40, credits: 50 },
-  "100": { price: 75, credits: 100 },
+  "starter": { price: 9, credits: 10, name: "Starter Pack" },
+  "osint-pro": { price: 350, credits: 500, name: "OSINT Pro" },
+  "investigator": { price: 75, credits: 100, name: "Investigator Bundle" },
+  "enterprise": { price: 600, credits: 1000, name: "Enterprise Pack" },
+  // Legacy support
+  "10": { price: 9, credits: 10, name: "Starter Pack" },
+  "50": { price: 40, credits: 50, name: "Basic Pack" },
+  "100": { price: 75, credits: 100, name: "Pro Pack" },
 };
 
 serve(async (req) => {
@@ -126,10 +131,10 @@ serve(async (req) => {
           line_items: [
             {
               price_data: {
-                currency: "gbp",
+                currency: "usd",
                 product_data: {
-                  name: `${selectedPackage.credits} Premium Credits`,
-                  description: "Use for dark web monitoring, dating/NSFW searches, and premium exports",
+                  name: selectedPackage.name || `${selectedPackage.credits} Premium Credits`,
+                  description: "Use for Harvester OSINT, dark web monitoring, dating/NSFW searches, and premium exports",
                 },
                 unit_amount: selectedPackage.price * 100,
               },
