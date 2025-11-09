@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 import {
   LineChart,
   Line,
@@ -24,7 +32,13 @@ import {
   Target,
   AlertCircle,
   DollarSign,
+  Download,
+  FileText,
+  Table,
 } from "lucide-react";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import Papa from "papaparse";
 
 interface SpendingData {
   date: string;
@@ -216,6 +230,150 @@ export function CreditsAnalyticsDashboard() {
     return recs;
   };
 
+  const exportToCSV = () => {
+    try {
+      // Prepare data for CSV
+      const csvData = [
+        ["Credit Usage Analytics Report"],
+        ["Generated:", new Date().toLocaleString()],
+        ["Workspace:", workspace?.name || workspace?.id || ""],
+        [],
+        ["Summary"],
+        ["Total Credits Spent", totalSpent],
+        ["Average Cost Per Operation", avgCostPerScan.toFixed(2)],
+        ["Total Operations", featureUsage.reduce((sum, f) => sum + f.count, 0)],
+        [],
+        ["Spending Over Time"],
+        ["Date", "Credits Spent"],
+        ...spendingOverTime.map(d => [d.date, d.spent]),
+        [],
+        ["Feature Usage"],
+        ["Feature", "Uses", "Total Cost"],
+        ...featureUsage.map(f => [f.feature, f.count, f.totalCost]),
+        [],
+        ["Optimization Recommendations"],
+        ["Impact", "Title", "Description"],
+        ...recommendations.map(r => [r.impact, r.title, r.description]),
+      ];
+
+      const csv = Papa.unparse(csvData);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", `credits-analytics-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("Analytics report exported to CSV");
+    } catch (error) {
+      console.error("CSV export error:", error);
+      toast.error("Failed to export CSV report");
+    }
+  };
+
+  const exportToPDF = () => {
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      // Title
+      doc.setFontSize(20);
+      doc.text("Credit Usage Analytics Report", pageWidth / 2, 20, { align: "center" });
+
+      // Metadata
+      doc.setFontSize(10);
+      doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
+      doc.text(`Workspace: ${workspace?.name || workspace?.id || ""}`, 14, 36);
+
+      // Summary Section
+      doc.setFontSize(14);
+      doc.text("Summary", 14, 48);
+      
+      (doc as any).autoTable({
+        startY: 52,
+        head: [["Metric", "Value"]],
+        body: [
+          ["Total Credits Spent", `${totalSpent} credits`],
+          ["Average Cost Per Operation", `${avgCostPerScan.toFixed(2)} credits`],
+          ["Total Operations", featureUsage.reduce((sum, f) => sum + f.count, 0)],
+        ],
+        theme: "grid",
+        headStyles: { fillColor: [99, 102, 241] },
+      });
+
+      // Feature Usage Section
+      let finalY = (doc as any).lastAutoTable.finalY + 10;
+      doc.setFontSize(14);
+      doc.text("Feature Usage", 14, finalY);
+
+      (doc as any).autoTable({
+        startY: finalY + 4,
+        head: [["Feature", "Uses", "Total Cost"]],
+        body: featureUsage.map(f => [f.feature, f.count, `${f.totalCost} credits`]),
+        theme: "grid",
+        headStyles: { fillColor: [99, 102, 241] },
+      });
+
+      // Spending Over Time Section
+      finalY = (doc as any).lastAutoTable.finalY + 10;
+      
+      // Check if we need a new page
+      if (finalY > 250) {
+        doc.addPage();
+        finalY = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text("Recent Spending (Last 30 Days)", 14, finalY);
+
+      const recentSpending = spendingOverTime.slice(-10); // Last 10 days for PDF
+      (doc as any).autoTable({
+        startY: finalY + 4,
+        head: [["Date", "Credits Spent"]],
+        body: recentSpending.map(d => [d.date, `${d.spent} credits`]),
+        theme: "grid",
+        headStyles: { fillColor: [99, 102, 241] },
+      });
+
+      // Recommendations Section
+      finalY = (doc as any).lastAutoTable.finalY + 10;
+      
+      if (finalY > 250) {
+        doc.addPage();
+        finalY = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.text("Optimization Recommendations", 14, finalY);
+
+      (doc as any).autoTable({
+        startY: finalY + 4,
+        head: [["Impact", "Title", "Description"]],
+        body: recommendations.map(r => [
+          r.impact.toUpperCase(),
+          r.title,
+          r.description,
+        ]),
+        theme: "grid",
+        headStyles: { fillColor: [99, 102, 241] },
+        columnStyles: {
+          0: { cellWidth: 20 },
+          1: { cellWidth: 50 },
+          2: { cellWidth: 'auto' },
+        },
+      });
+
+      doc.save(`credits-analytics-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success("Analytics report exported to PDF");
+    } catch (error) {
+      console.error("PDF export error:", error);
+      toast.error("Failed to export PDF report");
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -239,6 +397,34 @@ export function CreditsAnalyticsDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Header with Export Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Analytics Overview</h2>
+          <p className="text-sm text-muted-foreground">
+            Track your credit spending and optimize usage
+          </p>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export Report
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={exportToCSV}>
+              <Table className="h-4 w-4 mr-2" />
+              Export as CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={exportToPDF}>
+              <FileText className="h-4 w-4 mr-2" />
+              Export as PDF
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-6">
