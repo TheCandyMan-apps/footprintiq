@@ -58,26 +58,41 @@ export async function deductCredits(
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
+  // Check current balance first
+  const currentBalance = await getBalance(workspaceId);
+  
+  if (currentBalance < amount) {
+    return {
+      success: false,
+      error: 'insufficient_credits',
+      balance: currentBalance,
+      required: amount
+    };
+  }
+
   const { data, error } = await supabase
     .rpc('spend_credits', {
       _workspace_id: workspaceId,
-      _amount: amount,
-      _description: description
+      _cost: amount,
+      _reason: description,
+      _meta: {}
     });
 
   if (error) {
-    console.error('[credits] Error deducting credits:', error);
+    console.error('[credits] Error spending credits:', error);
     return { success: false, error: error.message };
   }
 
-  if (!data.success) {
+  if (!data) {
     return {
       success: false,
-      error: data.error,
-      balance: data.current_balance,
-      required: data.required
+      error: 'insufficient_credits',
+      balance: currentBalance - amount
     };
   }
+
+  // Get new balance
+  const newBalance = await getBalance(workspaceId);
 
   // Check for low balance alert (fire and forget)
   supabase.functions.invoke('check-low-balance', {
@@ -86,7 +101,7 @@ export async function deductCredits(
 
   return {
     success: true,
-    balance: data.new_balance
+    balance: newBalance
   };
 }
 
