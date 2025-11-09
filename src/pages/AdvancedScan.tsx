@@ -288,10 +288,32 @@ export default function AdvancedScan() {
       }
 
       // Process batch or single scan
-      const scanPromises = targets.map(async (targetValue) => {
+      const scanPromises = targets.map(async (targetValue, index) => {
         try {
+          // Generate scanId upfront (using Web Crypto API)
+          const preScanId = self.crypto.randomUUID();
+          
+          // For the first scan, open dialog and subscribe BEFORE calling edge function
+          if (index === 0) {
+            setModalScanId(preScanId);
+            setProgressOpen(true);
+            setCurrentScanId(preScanId);
+            
+            // Start floating tracker
+            startTracking({
+              scanId: preScanId,
+              type: 'advanced',
+              target: targetValue,
+              startedAt: new Date().toISOString(),
+            });
+            
+            // Small delay to ensure subscription is established
+            await new Promise(resolve => setTimeout(resolve, 100));
+          }
+          
           const { data, error } = await supabase.functions.invoke("scan-orchestrate", {
             body: {
+              scanId: preScanId,
               type: scanType,
               value: targetValue,
               workspaceId: workspace.id,
@@ -306,7 +328,7 @@ export default function AdvancedScan() {
           });
 
           if (error) throw error;
-          return { success: true, scanId: data.scanId, target: targetValue };
+          return { success: true, scanId: preScanId, target: targetValue };
         } catch (err) {
           console.error(`Scan failed for ${targetValue}:`, err);
           return { success: false, error: err, target: targetValue };
@@ -318,22 +340,6 @@ export default function AdvancedScan() {
       const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success));
 
       if (successful.length > 0) {
-        // Set first successful scan for progress tracking & open modal
-        const firstScan = results.find(r => r.status === 'fulfilled' && r.value.success);
-        if (firstScan && firstScan.status === 'fulfilled') {
-          setCurrentScanId(firstScan.value.scanId);
-          setModalScanId(firstScan.value.scanId);
-          setProgressOpen(true);
-          
-          // Start floating tracker
-          startTracking({
-            scanId: firstScan.value.scanId,
-            type: 'advanced',
-            target: firstScan.value.target,
-            startedAt: new Date().toISOString(),
-          });
-        }
-
         toast.success(`${successful.length} scan(s) initiated successfully`);
       }
 

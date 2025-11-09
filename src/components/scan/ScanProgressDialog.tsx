@@ -104,8 +104,10 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
   useEffect(() => {
     if (!scanId || !open) return;
 
+    console.log('[ScanProgressDialog] Subscribing to channels for scanId:', scanId);
+
     // Reset state
-    setProgress(0);
+    setProgress(5); // Show 5% to indicate we're listening
     setProviders([]);
     setCreditsUsed(0);
     setStatus('running');

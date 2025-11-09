@@ -8,6 +8,7 @@ import { deduplicateFindings, sortFindings, type UFMFinding } from '../_shared/n
 
 // Validation schema for scan requests
 const ScanRequestSchema = z.object({
+  scanId: z.string().uuid('invalid scan ID format').optional(),
   type: z.enum(['email', 'username', 'domain', 'phone'], {
     errorMap: () => ({ message: 'type must be email, username, domain, or phone' })
   }),
@@ -42,6 +43,7 @@ const ALLOWED_PROVIDERS = new Set([
 ]);
 
 interface ScanRequest {
+  scanId?: string;
   type: 'email' | 'username' | 'domain' | 'phone';
   value: string;
   workspaceId: string;
@@ -107,7 +109,7 @@ serve(async (req) => {
       return bad(400, `Invalid request: ${errors}`);
     }
 
-    const { type, value, workspaceId, options = {} } = parseResult.data;
+    const { scanId: providedScanId, type, value, workspaceId, options = {} } = parseResult.data;
 
     console.log(`[orchestrate] Scanning ${type}:${value} for workspace ${workspaceId}`);
 
@@ -195,8 +197,11 @@ serve(async (req) => {
       }
     }
 
-    // Create scan record with pending status
-    let scanId: string | null = null;
+    // Use provided scanId or generate a new one
+    const scanId = providedScanId || crypto.randomUUID();
+    console.log(`[orchestrate] Using scanId: ${scanId}`);
+    
+    // Create or update scan record with pending status
     try {
       // Map request type to DB enum with fallback
       const scanTypeDb =
@@ -205,9 +210,10 @@ serve(async (req) => {
         : type === 'phone' ? 'phone'
         : 'personal_details';
 
-      const { data: scan, error: scanError } = await supabaseService
+      const { error: scanError } = await supabaseService
         .from('scans')
-        .insert({
+        .upsert({
+          id: scanId,
           user_id: user.id,
           scan_type: scanTypeDb as any,
           email: type === 'email' ? value : null,
@@ -215,16 +221,15 @@ serve(async (req) => {
           phone: type === 'phone' ? value : null,
           status: 'pending',
           provider_counts: {}
-        } as any)
-        .select('id')
-        .single();
+        } as any, {
+          onConflict: 'id'
+        });
+      
       if (scanError) {
-        console.warn('[orchestrate] Failed to create scan record:', scanError);
-      } else {
-        scanId = (scan as any).id;
+        console.warn('[orchestrate] Failed to upsert scan record:', scanError);
       }
     } catch (e) {
-      console.warn('[orchestrate] Exception creating scan record:', e);
+      console.warn('[orchestrate] Exception upserting scan record:', e);
     }
 
     // Create and subscribe to realtime channel for progress updates
