@@ -28,7 +28,7 @@ import { ThreatAnalyticsPanel } from '@/components/ThreatAnalyticsPanel';
 import { SkeletonStatCard, SkeletonRecentScans } from '@/components/dashboard/SkeletonCard';
 import { SkeletonThreatAnalytics } from '@/components/analytics/SkeletonAnalytics';
 import { useWorkspace } from '@/hooks/useWorkspace';
-import { shouldAutoStartTour, getTourAutoStartDelay, markTourTriggered } from '@/lib/tour/firstTime';
+import { shouldAutoStartTour, getTourAutoStartDelay, markTourTriggered, markOnboardingShown } from '@/lib/tour/firstTime';
 import { Play, Network, AlertTriangle, CheckCircle2, Clock, Eye, FileSearch, Zap, Shield, FileStack, TrendingUp, Activity, Users, Target, Webhook, Archive, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { BarChart, Bar, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from 'recharts';

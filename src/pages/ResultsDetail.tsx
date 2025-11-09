@@ -226,9 +226,8 @@ const ResultsDetail = () => {
       if (scanError) throw scanError;
       setScan(scanData);
 
-      // Top-level Add to Case button
-      // ... keep existing code (rest of the page rendering)
-
+      // Stop polling if scan is completed
+      if (scanData.status === 'completed') {
         if (pollTimeoutRef.current !== null) {
           clearTimeout(pollTimeoutRef.current);
           pollTimeoutRef.current = null;
@@ -1100,20 +1099,20 @@ const ResultsDetail = () => {
 
             <div className="space-y-4">
               {findings.map((finding) => (
-                <FindingCard 
-                  key={finding.id} 
-                  finding={{
-                    id: finding.id,
-                    provider: finding.provider,
-                    kind: finding.providerCategory,
-                    severity: (finding.raw as any)?.severity || finding.severity,
-                    confidence: finding.confidence,
-                    observed_at: finding.observedAt,
-                    evidence: finding.evidence,
-                    meta: (finding.raw as any)?.meta || {},
-                  }}
-                >
-                  <div className="mt-2">
+                <div key={finding.id} className="space-y-2">
+                  <FindingCard 
+                    finding={{
+                      id: finding.id,
+                      provider: finding.provider,
+                      kind: finding.providerCategory,
+                      severity: (finding.raw as any)?.severity || finding.severity,
+                      confidence: finding.confidence,
+                      observed_at: finding.observedAt,
+                      evidence: finding.evidence,
+                      meta: (finding.raw as any)?.meta || {},
+                    }}
+                  />
+                  <div className="flex justify-end">
                     <AddToCaseButton
                       itemType="finding"
                       itemId={String((finding as any).id)}
@@ -1121,7 +1120,7 @@ const ResultsDetail = () => {
                       summary={`Provider: ${finding.provider} • Severity: ${(finding as any).raw?.severity || finding.severity}`}
                     />
                   </div>
-                </FindingCard>
+                </div>
               ))}
             </div>
           </div>
