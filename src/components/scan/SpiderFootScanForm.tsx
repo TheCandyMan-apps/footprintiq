@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSpiderFootScan } from '@/hooks/useSpiderFootScan';
-import { Shield, Search, Database, Globe, AlertCircle } from 'lucide-react';
+import { useUserPersona } from '@/hooks/useUserPersona';
+import { Shield, Search, Database, Globe, AlertCircle, Lock, Zap, Crown } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 
@@ -27,7 +29,9 @@ const POPULAR_MODULES = [
 ];
 
 export function SpiderFootScanForm({ workspaceId }: SpiderFootScanFormProps) {
+  const navigate = useNavigate();
   const { startScan, isScanning } = useSpiderFootScan();
+  const { persona, isStandard } = useUserPersona();
   const [target, setTarget] = useState('');
   const [targetType, setTargetType] = useState<'email' | 'ip' | 'domain' | 'username' | 'phone'>('email');
   const [selectedModules, setSelectedModules] = useState<string[]>(['sfp_dns', 'sfp_emailrep', 'sfp_whois']);
@@ -66,6 +70,113 @@ export function SpiderFootScanForm({ workspaceId }: SpiderFootScanFormProps) {
     }
   };
 
+  // Show premium teaser for free users
+  if (isStandard) {
+    return (
+      <Card className="p-8 space-y-6 relative overflow-hidden">
+        {/* Premium Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none" />
+        
+        <div className="relative space-y-6">
+          {/* Header with Lock Icon */}
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 shadow-lg">
+              <Crown className="w-8 h-8 text-primary" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-3xl font-bold">SpiderFoot OSINT Recon</h2>
+                <Badge variant="default" className="bg-gradient-to-r from-primary to-accent">
+                  <Lock className="w-3 h-3 mr-1" />
+                  Premium
+                </Badge>
+              </div>
+              <p className="text-lg text-muted-foreground">
+                Unlock 200+ intelligence gathering modules
+              </p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Feature Showcase */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[
+              { icon: Shield, title: 'Advanced OSINT', desc: '200+ reconnaissance modules' },
+              { icon: Database, title: 'Deep Intelligence', desc: 'DNS, WHOIS, breach data, social media' },
+              { icon: Search, title: 'Threat Detection', desc: 'VirusTotal, Shodan, leak databases' },
+              { icon: Globe, title: 'Global Coverage', desc: 'Passive & active scanning capabilities' },
+            ].map((feature, idx) => (
+              <div key={idx} className="p-4 rounded-lg border bg-card/50 backdrop-blur-sm">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <feature.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-1">{feature.title}</h3>
+                    <p className="text-sm text-muted-foreground">{feature.desc}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Upgrade CTA */}
+          <Alert className="border-primary/50 bg-primary/5">
+            <Zap className="h-5 w-5 text-primary" />
+            <AlertDescription className="text-base">
+              <strong>Upgrade for 200+ module scans!</strong>
+              <p className="text-sm text-muted-foreground mt-1">
+                Get unlimited access to SpiderFoot's comprehensive OSINT toolkit with passive and active reconnaissance.
+              </p>
+            </AlertDescription>
+          </Alert>
+
+          <div className="flex gap-3">
+            <Button
+              size="lg"
+              className="flex-1 bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity"
+              onClick={() => navigate('/pricing')}
+            >
+              <Crown className="w-5 h-5 mr-2" />
+              Upgrade to Premium
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => navigate('/pricing')}
+            >
+              View Plans
+            </Button>
+          </div>
+
+          {/* Features List */}
+          <div className="pt-4 border-t">
+            <p className="text-sm font-medium mb-3">Premium includes:</p>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+              {[
+                'DNS enumeration & WHOIS lookups',
+                'Email reputation & breach checks',
+                'Social media profile discovery',
+                'Shodan & VirusTotal integration',
+                'Leak database searches',
+                'Passive & active reconnaissance',
+                'IP geolocation & ASN lookup',
+                'Real-time threat intelligence',
+              ].map((item, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Full functionality for premium users
   return (
     <div className="space-y-6">
       <Card className="p-6">
@@ -76,7 +187,13 @@ export function SpiderFootScanForm({ workspaceId }: SpiderFootScanFormProps) {
               <Shield className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold">SpiderFoot OSINT Recon</h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-2xl font-bold">SpiderFoot OSINT Recon</h2>
+                <Badge variant="secondary" className="bg-gradient-to-r from-primary/20 to-accent/20">
+                  <Crown className="w-3 h-3 mr-1" />
+                  Premium
+                </Badge>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Run 200+ intelligence gathering modules
               </p>
