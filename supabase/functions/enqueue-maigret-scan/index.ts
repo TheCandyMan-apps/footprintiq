@@ -178,27 +178,46 @@ Deno.serve(async (req) => {
     if (tags?.trim()) url.searchParams.set('tags', tags.trim());
     if (all_sites) url.searchParams.set('all_sites', 'true');
 
-    // Health check first
+    // Health check first with detailed diagnostics
+    console.log('=== Maigret Worker Configuration ===');
+    console.log(`Worker URL: ${WORKER_URL}`);
     console.log(`Worker token configured: ${WORKER_TOKEN ? 'YES' : 'NO'}`);
+    console.log(`Job ID: ${job.id}`);
+    console.log(`Username: ${username}`);
     
     try {
       const healthUrl = `${WORKER_URL}/health`;
+      console.log(`Checking health at: ${healthUrl}`);
+      
       const healthCheck = await fetch(healthUrl, {
         method: 'GET',
         signal: AbortSignal.timeout(5000),
       });
       
+      console.log(`Health check response: ${healthCheck.status} ${healthCheck.statusText}`);
+      console.log(`Health headers:`, Object.fromEntries(healthCheck.headers.entries()));
+      
       if (!healthCheck.ok) {
-        throw new Error(`Worker health check failed: ${healthCheck.status}`);
+        const healthBody = await healthCheck.text().catch(() => 'Unable to read body');
+        console.error(`Health check body:`, healthBody);
+        throw new Error(`Worker health check failed: ${healthCheck.status} - ${healthBody}`);
       }
-      console.log('Worker health check passed');
+      
+      const healthBody = await healthCheck.text();
+      console.log('Health check body:', healthBody);
+      console.log('✓ Worker health check passed');
     } catch (healthError) {
-      console.error('Worker health check failed:', healthError);
+      console.error('✗ Worker health check failed:', {
+        name: healthError.name,
+        message: healthError.message,
+        stack: healthError.stack
+      });
+      
       await supabaseUser
         .from('scan_jobs')
         .update({
           status: 'error',
-          error: 'Username scan service is temporarily unavailable. Please try again later.',
+          error: `Maigret worker unavailable: ${healthError.message}`,
           finished_at: new Date().toISOString(),
         })
         .eq('id', job.id);
@@ -207,10 +226,11 @@ Deno.serve(async (req) => {
         JSON.stringify({ 
           jobId: job.id, 
           status: 'error', 
-          error: 'Service temporarily unavailable'
+          error: 'Username scan service is temporarily unavailable. Please try again later.',
+          details: healthError.message
         }),
         {
-          status: 200,
+          status: 503,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
@@ -235,6 +255,10 @@ Deno.serve(async (req) => {
         clearTimeout(timeoutId);
         
         console.log(`Worker response: ${resp.status} ${resp.statusText}`);
+        console.log(`Response headers:`, Object.fromEntries(resp.headers.entries()));
+        console.log(`Content-Type: ${resp.headers.get('content-type')}`);
+        console.log(`Content-Length: ${resp.headers.get('content-length')}`);
+        console.log(`Has body: ${!!resp.body}`);
         
         if (resp.ok) break; // Success
         
@@ -257,8 +281,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!resp || !resp.ok || !resp.body) {
+    if (!resp || !resp.ok) {
       const errorMsg = lastError?.message || `Worker ${resp?.status || 'unreachable'}`;
+      console.error('Worker request failed:', {
+        hasResponse: !!resp,
+        status: resp?.status,
+        statusText: resp?.statusText,
+        error: errorMsg
+      });
+      
       await supabaseUser
         .from('scan_jobs')
         .update({
@@ -270,6 +301,38 @@ Deno.serve(async (req) => {
 
       return new Response(
         JSON.stringify({ jobId: job.id, status: 'error', error: errorMsg }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    
+    if (!resp.body) {
+      console.error('✗ Worker returned empty body (no stream)', {
+        status: resp.status,
+        headers: Object.fromEntries(resp.headers.entries())
+      });
+      
+      // Try to read any text that might be in the response
+      const bodyText = await resp.text().catch(() => 'Unable to read');
+      console.error('Response body text:', bodyText);
+      
+      await supabaseUser
+        .from('scan_jobs')
+        .update({
+          status: 'error',
+          error: 'Worker returned no stream - API may have changed or worker is misconfigured',
+          finished_at: new Date().toISOString()
+        })
+        .eq('id', job.id);
+
+      return new Response(
+        JSON.stringify({ 
+          jobId: job.id, 
+          status: 'error', 
+          error: 'Worker returned no data stream. Please contact support.'
+        }),
         {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -421,13 +484,19 @@ Deno.serve(async (req) => {
 
     // Check if worker returned empty response
     if (providersCompleted === 0) {
-      console.warn(`Worker returned empty response for job ${job.id}`);
+      console.error('✗ Worker stream completed but no providers returned data', {
+        jobId: job.id,
+        linesProcessed: lineNo,
+        rowsInserted: inserted,
+        workerUrl: WORKER_URL,
+        username
+      });
       
       await supabaseUser
         .from('scan_jobs')
         .update({ 
           status: 'error',
-          error: 'Worker returned no results - possible configuration or network issue',
+          error: 'Worker returned empty stream - no social media profiles found or worker error',
           finished_at: new Date().toISOString(),
         })
         .eq('id', job.id);
@@ -436,11 +505,23 @@ Deno.serve(async (req) => {
         JSON.stringify({
           jobId: job.id,
           status: 'error',
-          error: 'Worker returned no results'
+          error: 'No results returned from worker. The service may be experiencing issues.',
+          debug: {
+            linesProcessed: lineNo,
+            inserted,
+            normalized
+          }
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    console.log('✓ Stream processing completed successfully', {
+      providersCompleted,
+      linesProcessed: lineNo,
+      inserted,
+      normalized
+    });
 
     await supabaseUser
       .from('scan_jobs')
