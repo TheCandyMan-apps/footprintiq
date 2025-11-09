@@ -3,6 +3,7 @@ import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
+import * as Sentry from '@sentry/react';
 
 interface Props {
   children: ReactNode;
@@ -34,6 +35,24 @@ export class ScanErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ScanErrorBoundary caught:', error, errorInfo);
     this.setState({ errorInfo });
+    
+    // Report to Sentry with scan context
+    Sentry.captureException(error, {
+      contexts: {
+        react: {
+          componentStack: errorInfo.componentStack,
+        },
+        scan: {
+          context: this.props.context,
+          retryCount: this.state.retryCount,
+        },
+      },
+      tags: {
+        errorBoundary: 'scan',
+        scanContext: this.props.context || 'unknown',
+      },
+      level: 'error',
+    });
     
     // Show user-friendly toast based on error type
     if (error.message?.includes('timeout') || error.message?.includes('timed out')) {
