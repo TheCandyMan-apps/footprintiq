@@ -16,40 +16,44 @@ import { useSubscription } from '@/hooks/useSubscription';
 const CREDIT_PACKAGES = [
   {
     id: "starter",
-    name: "Starter Pack",
-    credits: 10,
-    price: 9,
-    pricePerCredit: 0.9,
-    popular: false,
-  },
-  {
-    id: "osint-pro",
-    name: "OSINT Pro",
+    name: "OSINT Starter",
     credits: 500,
-    price: 350,
-    pricePerCredit: 0.7,
-    popular: true,
-    savings: "22%",
-    badge: "Best Value",
+    price: 9,
+    pricePerCredit: 0.018,
+    popular: false,
+    description: "Perfect for occasional investigations",
   },
   {
     id: "investigator",
-    name: "Investigator Bundle",
-    credits: 100,
-    price: 75,
-    pricePerCredit: 0.75,
+    name: "Investigator Pack",
+    credits: 1500,
+    price: 29,
+    pricePerCredit: 0.019,
+    popular: true,
+    savings: "Best Value",
+    badge: "Popular",
+    description: "Great for active investigators",
+  },
+  {
+    id: "osint-pro",
+    name: "Pro Pack",
+    credits: 3500,
+    price: 79,
+    pricePerCredit: 0.023,
     popular: false,
-    savings: "17%",
+    savings: "Professional",
+    description: "For serious OSINT professionals",
   },
   {
     id: "enterprise",
     name: "Enterprise Pack",
-    credits: 1000,
-    price: 600,
-    pricePerCredit: 0.6,
+    credits: 10000,
+    price: 199,
+    pricePerCredit: 0.020,
     popular: false,
-    savings: "33%",
-    badge: "Maximum Savings",
+    savings: "Maximum Volume",
+    badge: "Best ROI",
+    description: "For large-scale operations",
   },
 ];
 
@@ -201,8 +205,8 @@ export default function BuyCredits() {
                 } ${pkg.popular ? "relative" : ""}`}
                 onClick={() => setSelectedPackage(pkg.id)}
               >
-                {pkg.badge && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">
+                 {pkg.badge && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
                     {pkg.badge}
                   </Badge>
                 )}
@@ -211,17 +215,22 @@ export default function BuyCredits() {
                     <div className="text-sm font-semibold text-muted-foreground mb-1">
                       {pkg.name}
                     </div>
-                    <div className="text-4xl font-bold">{pkg.credits}</div>
+                    <div className="text-4xl font-bold">{pkg.credits.toLocaleString()}</div>
                     <div className="text-sm text-muted-foreground">credits</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold">${pkg.price}</div>
-                    <div className="text-sm text-muted-foreground">
-                      ${pkg.pricePerCredit.toFixed(2)} per credit
+                    <div className="text-xs text-muted-foreground mt-1">
+                      ${pkg.pricePerCredit.toFixed(3)} per credit
                     </div>
+                    {pkg.description && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {pkg.description}
+                      </p>
+                    )}
                     {pkg.savings && (
                       <Badge variant="secondary" className="mt-2">
-                        Save {pkg.savings}
+                        {pkg.savings}
                       </Badge>
                     )}
                   </div>

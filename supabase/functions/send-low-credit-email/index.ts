@@ -106,17 +106,23 @@ serve(async (req) => {
                   <div class="pack">
                     <div class="pack-title">🚀 OSINT Starter</div>
                     <div class="pack-price">$9</div>
-                    <p style="margin: 5px 0; color: #6b7280;">500 credits • Perfect for regular users</p>
+                    <p style="margin: 5px 0; color: #6b7280;">500 credits • Perfect for occasional investigations</p>
                   </div>
 
                   <div class="pack">
-                    <div class="pack-title">⚡ Pro Pack</div>
+                    <div class="pack-title">⚡ Investigator Pack</div>
                     <div class="pack-price">$29</div>
-                    <p style="margin: 5px 0; color: #6b7280;">2,000 credits • Best value • ~138 advanced scans</p>
+                    <p style="margin: 5px 0; color: #6b7280;">1,500 credits • Best value • Great for active users</p>
+                  </div>
+
+                  <div class="pack">
+                    <div class="pack-title">💎 Pro Pack</div>
+                    <div class="pack-price">$79</div>
+                    <p style="margin: 5px 0; color: #6b7280;">3,500 credits • For serious OSINT professionals</p>
                   </div>
 
                   <center>
-                    <a href="${supabaseUrl.replace('supabase.co', 'lovable.app')}/settings/billing" class="cta-button">
+                    <a href="${supabaseUrl.replace('supabase.co', 'lovable.app')}/buy-credits" class="cta-button">
                       Buy Credits Now →
                     </a>
                   </center>

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 const LOW_CREDIT_THRESHOLD = 50;
 const ALERT_STORAGE_KEY = 'low_credit_alert_shown';
@@ -32,12 +32,16 @@ export function useLowCreditAlert(workspaceId: string | undefined) {
     const alertShown = sessionStorage.getItem(ALERT_STORAGE_KEY);
     if (alertShown) return;
 
-    // Show toast notification
-    toast({
-      title: '⚠️ Low Credits Alert',
-      description: `You have ${credits} credits left. Buy more to continue using premium features.`,
-      variant: 'destructive',
-      duration: 10000,
+    // Show toast notification with action
+    toast.warning('⚠️ Low Credits Alert', {
+      description: `You have ${credits} credits left. Top up now to keep using premium features.`,
+      duration: 15000,
+      action: {
+        label: 'Buy Credits',
+        onClick: () => {
+          window.location.href = '/buy-credits';
+        },
+      },
     });
 
     // Mark alert as shown for this session
