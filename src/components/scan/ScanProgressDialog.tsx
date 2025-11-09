@@ -348,6 +348,36 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     }
   };
 
+  const handleRetry = async () => {
+    if (!scanId) return;
+    
+    try {
+      // Close the dialog
+      onOpenChange(false);
+      
+      // Fetch scan details to retry with same parameters
+      const { data: scan, error: scanError } = await supabase
+        .from('scans')
+        .select('*')
+        .eq('id', scanId)
+        .single();
+
+      if (scanError || !scan) {
+        toast.error('Unable to retry - scan details not found');
+        return;
+      }
+
+      toast.info('Retrying scan with same parameters...');
+      
+      // Trigger callback to restart the scan
+      setTimeout(() => {
+        onComplete?.();
+      }, 500);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to retry scan');
+    }
+  };
+
   const getStatusIcon = (status: ProviderStatus['status']) => {
     switch (status) {
       case 'success':
@@ -451,8 +481,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <div className="text-sm">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t">
+            <div className="text-sm order-2 sm:order-1">
               {status === 'completed' && totalResults > 0 && (
                 <span className="text-green-600 dark:text-green-400 font-medium animate-fade-in">
                   🎉 Found {totalResults} results!
@@ -464,7 +494,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
                 </span>
               )}
               {status === 'failed' && (
-                <span className="text-destructive font-medium">Scan failed</span>
+                <span className="text-destructive font-medium">Scan failed - you can retry</span>
               )}
               {status === 'cancelled' && (
                 <span className="text-muted-foreground">Scan cancelled - partial results saved</span>
@@ -475,32 +505,50 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
                 </span>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 order-1 sm:order-2">
               {status === 'running' && (
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={handleCancel}
                   disabled={isCancelling}
+                  className="flex-1 sm:flex-none"
                 >
                   {isCancelling ? (
                     <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Cancelling...
                     </>
                   ) : (
                     <>
-                      <X className="mr-2 h-4 w-4" />
+                      <X className="h-4 w-4 mr-2" />
                       Cancel Scan
                     </>
                   )}
                 </Button>
               )}
-              <Button
-                variant={status === 'completed' ? 'default' : 'outline'}
-                onClick={() => onOpenChange(false)}
-              >
-                {status === 'completed' ? 'View Results' : 'Close'}
-              </Button>
+              {status === 'failed' && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={handleRetry}
+                  className="flex-1 sm:flex-none"
+                >
+                  <Loader2 className="h-4 w-4 mr-2" />
+                  Retry Scan
+                </Button>
+              )}
+              {(status === 'completed' || status === 'cancelled') && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => onOpenChange(false)}
+                  className="flex-1 sm:flex-none"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Close
+                </Button>
+              )}
             </div>
           </div>
         </div>

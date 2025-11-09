@@ -43,7 +43,7 @@ import { useActiveScanContext } from "@/contexts/ActiveScanContext";
 import { useWorkerStatus } from "@/hooks/useWorkerStatus";
 import { WorkerStatusBanner } from "@/components/scan/WorkerStatusBanner";
 import { WhatsMyNameTab } from "@/components/scan/WhatsMyNameTab";
-import { MultiToolScanForm } from "@/components/scan/MultiToolScanForm";
+import { ToolSelector } from "@/components/scan/ToolSelector";
 import { UpgradeTeaser } from "@/components/upsell/UpgradeTeaser";
 
 export default function AdvancedScan() {
@@ -85,6 +85,7 @@ export default function AdvancedScan() {
   const [progressOpen, setProgressOpen] = useState(false);
   const [modalScanId, setModalScanId] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
+  const [selectedTool, setSelectedTool] = useState<string>("spiderfoot");
 
   // Geocoding for IP addresses
   const { 
@@ -447,13 +448,8 @@ export default function AdvancedScan() {
 
               {/* Tabs for scan types */}
               <Tabs defaultValue="standard" className="w-full">
-                <TabsList className={`grid w-full ${import.meta.env.VITE_SPIDERFOOT_API_URL ? 'grid-cols-4' : 'grid-cols-3'}`}>
-                  <TabsTrigger value="standard">Standard Scan</TabsTrigger>
-                  <TabsTrigger value="multi-tool" className="flex items-center gap-2">
-                    <Zap className="w-4 h-4" />
-                    Multi-Tool
-                    <Badge variant="secondary" className="text-xs">New</Badge>
-                  </TabsTrigger>
+                <TabsList className={`grid w-full ${import.meta.env.VITE_SPIDERFOOT_API_URL ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                  <TabsTrigger value="standard">Advanced Scan</TabsTrigger>
                   {import.meta.env.VITE_SPIDERFOOT_API_URL && (
                     <TabsTrigger value="spiderfoot" className="flex items-center gap-2">
                       <Shield className="w-4 h-4" />
@@ -469,6 +465,15 @@ export default function AdvancedScan() {
 
           {/* Main Form */}
           <Card className="p-6 space-y-6">
+            {/* Tool Selector */}
+            <ToolSelector
+              selectedTool={selectedTool}
+              onToolChange={setSelectedTool}
+              scanType={scanType}
+              userTier={isFree ? 'free' : subscriptionTier === 'enterprise' ? 'enterprise' : 'pro'}
+              disabled={isScanning}
+            />
+
             {/* Target Input */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
@@ -835,11 +840,6 @@ export default function AdvancedScan() {
               </p>
             </Card>
           </div>
-                </TabsContent>
-
-                {/* Multi-Tool Tab */}
-                <TabsContent value="multi-tool" className="space-y-6 mt-6">
-                  <MultiToolScanForm workspaceId={workspace.id} />
                 </TabsContent>
 
                 {import.meta.env.VITE_SPIDERFOOT_API_URL ? (
