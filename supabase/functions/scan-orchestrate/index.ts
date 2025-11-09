@@ -79,6 +79,10 @@ serve(async (req) => {
     return bad(401, 'missing_authorization_header');
   }
 
+  // Check if SpiderFoot integration is being requested (indirectly through premium options)
+  // Note: SpiderFoot is handled by a separate edge function (spiderfoot-scan)
+  // This orchestrator handles standard scans only
+
   const startTime = Date.now();
 
   try {
