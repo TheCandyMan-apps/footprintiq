@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { SensitiveConsentModal } from "@/components/providers/SensitiveConsentModal";
 import { Search, Shield, Zap, Database, Globe, Lock, AlertTriangle, Info } from "lucide-react";
@@ -31,6 +33,8 @@ import { HighPrecisionToggle } from "@/components/scan/HighPrecisionToggle";
 import { GeocodingProgress } from "@/components/scan/GeocodingProgress";
 import { BuyCreditsModal } from "@/components/scan/BuyCreditsModal";
 import { ReverseImageComponent } from "@/components/scan/ReverseImageComponent";
+import { SpiderFootScanForm } from "@/components/scan/SpiderFootScanForm";
+import { SpiderFootResults } from "@/components/scan/SpiderFootResults";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGeocoding } from "@/hooks/useGeocoding";
 import { useActiveScanContext } from "@/contexts/ActiveScanContext";
@@ -414,8 +418,12 @@ export default function AdvancedScan() {
 
               {/* Tabs for scan types */}
               <Tabs defaultValue="standard" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="standard">Standard Scan</TabsTrigger>
+                  <TabsTrigger value="spiderfoot">
+                    <Shield className="w-4 h-4 mr-2" />
+                    SpiderFoot Recon
+                  </TabsTrigger>
                   <TabsTrigger value="reverse-image">Reverse Image Intel</TabsTrigger>
                 </TabsList>
 
@@ -742,6 +750,11 @@ export default function AdvancedScan() {
               </p>
             </Card>
           </div>
+                </TabsContent>
+
+                <TabsContent value="spiderfoot" className="space-y-6 mt-6">
+                  <SpiderFootScanForm workspaceId={workspace.id} />
+                  <SpiderFootResults workspaceId={workspace.id} />
                 </TabsContent>
 
                 <TabsContent value="reverse-image" className="mt-6">
