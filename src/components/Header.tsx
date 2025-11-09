@@ -1,7 +1,8 @@
-import { Shield, Menu, X, User, CreditCard, ChevronDown, Search, UserCircle } from "lucide-react";
+import { Shield, Menu, X, User, CreditCard, ChevronDown, Search, UserCircle, Coins } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "@/components/workspace/NotificationBell";
 import { DarkWebBell } from "@/components/DarkWebBell";
 import { WorkspacePresence } from "@/components/workspace/WorkspacePresence";
@@ -15,19 +16,66 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import { CommandPalette } from "@/components/CommandPalette";
 import { WorkspaceSwitcher } from "@/components/workspace/WorkspaceSwitcher";
 
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [lowBalanceShown, setLowBalanceShown] = useState(false);
   const navigate = useNavigate();
   const { user, isPremium } = useSubscription();
   const { toast } = useToast();
+
+  // Get user's workspace and credits
+  const { data: workspace } = useQuery({
+    queryKey: ['user-workspace', user?.id],
+    queryFn: async () => {
+      if (!user) return null;
+      const { data } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('owner_id', user.id)
+        .single();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: credits } = useQuery({
+    queryKey: ['credits-balance', workspace?.id],
+    queryFn: async () => {
+      if (!workspace?.id) return 0;
+      const { data, error } = await supabase.rpc('get_credits_balance', {
+        _workspace_id: workspace.id,
+      });
+      if (error) throw error;
+      return data as number;
+    },
+    enabled: !!workspace?.id,
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
+
+  // Show low balance warning
+  useEffect(() => {
+    if (credits !== undefined && credits < 50 && !lowBalanceShown && !isPremium) {
+      setLowBalanceShown(true);
+      toast({
+        title: "⚠️ Low Credit Balance",
+        description: `You have ${credits} credits left. Buy more to continue using premium features.`,
+        action: (
+          <Button size="sm" onClick={() => navigate('/settings/billing')}>
+            Buy Credits
+          </Button>
+        ),
+      });
+    }
+  }, [credits, lowBalanceShown, isPremium, toast, navigate]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -278,6 +326,19 @@ export const Header = () => {
                 </div>
               </form>
             )}
+            
+            {/* Credits Display */}
+            {user && !isPremium && workspace?.id && (
+              <Badge 
+                variant={credits && credits > 0 ? "default" : "destructive"} 
+                className="gap-1 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => navigate('/settings/billing')}
+              >
+                <Coins className="h-3 w-3" />
+                <span>⚡ {credits ?? 0} credits</span>
+              </Badge>
+            )}
+            
             <ThemeToggle />
             <WorkspaceSwitcher />
             <WorkspacePresence />

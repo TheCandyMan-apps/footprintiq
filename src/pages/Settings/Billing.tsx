@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Calendar, Download, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import { CreditCard, Calendar, Download, CheckCircle2, Loader2, ArrowRight, Zap } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
 import { Separator } from '@/components/ui/separator';
@@ -12,6 +12,8 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { StripePaymentForm } from '@/components/billing/StripePaymentForm';
 import { TestModeToggle } from '@/components/billing/TestModeToggle';
 import { PaymentErrorBoundary } from '@/components/billing/PaymentErrorBoundary';
+import { CreditPackCard } from '@/components/CreditPackCard';
+import { useSearchParams } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
@@ -70,6 +72,31 @@ export default function BillingSettings() {
   const [pollingAttempts, setPollingAttempts] = useState(0);
   const MAX_POLLING_ATTEMPTS = 6; // 30 seconds with 5s intervals
   const { subscriptionTier, isPremium, refreshSubscription } = useSubscription();
+  const [searchParams] = useSearchParams();
+  const [purchasingPack, setPurchasingPack] = useState<string | null>(null);
+
+  // Handle credit purchase success/cancel
+  useEffect(() => {
+    const creditsSuccess = searchParams.get('credits_success');
+    const pack = searchParams.get('pack');
+    const creditsCanceled = searchParams.get('credits_canceled');
+
+    if (creditsSuccess && pack) {
+      toast({
+        title: '✅ Credits Purchased!',
+        description: `Your ${pack === 'starter' ? '500' : '2000'} credits have been added to your account.`,
+      });
+      // Remove query params
+      window.history.replaceState({}, '', '/settings/billing');
+    } else if (creditsCanceled) {
+      toast({
+        title: 'Purchase Canceled',
+        description: 'Your credit purchase was canceled.',
+        variant: 'destructive',
+      });
+      window.history.replaceState({}, '', '/settings/billing');
+    }
+  }, [searchParams]);
 
   const { data: subscriptionData, refetch: refetchSubscription } = useQuery({
     queryKey: ['subscription-details'],
@@ -341,6 +368,102 @@ export default function BillingSettings() {
             </Card>
           )}
         </div>
+
+        {/* Credit Packs */}
+        <Card className="p-6">
+          <div className="flex items-center gap-2 mb-6">
+            <Zap className="w-6 h-6 text-primary" />
+            <h3 className="text-xl font-bold">Buy Credit Packs</h3>
+          </div>
+          <p className="text-muted-foreground mb-6">
+            Purchase credits for advanced OSINT features, premium scans, and AI analysis.
+          </p>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            <CreditPackCard
+              name="OSINT Starter"
+              credits={500}
+              price={9}
+              onPurchase={async () => {
+                setPurchasingPack('starter');
+                try {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!user) throw new Error('Not authenticated');
+                  
+                  // Get user's workspace
+                  const { data: workspace } = await supabase
+                    .from('workspaces')
+                    .select('id')
+                    .eq('owner_id', user.id)
+                    .single();
+
+                  if (!workspace) throw new Error('No workspace found');
+
+                  const { data, error } = await supabase.functions.invoke('purchase-credit-pack', {
+                    body: { packType: 'starter', workspaceId: workspace.id },
+                  });
+
+                  if (error) throw error;
+                  if (data?.url) {
+                    window.open(data.url, '_blank');
+                  }
+                } catch (error) {
+                  console.error('Purchase error:', error);
+                  toast({
+                    title: 'Purchase Failed',
+                    description: error.message || 'Failed to initiate purchase',
+                    variant: 'destructive',
+                  });
+                } finally {
+                  setPurchasingPack(null);
+                }
+              }}
+              loading={purchasingPack === 'starter'}
+            />
+
+            <CreditPackCard
+              name="Pro Pack"
+              credits={2000}
+              price={29}
+              popular
+              onPurchase={async () => {
+                setPurchasingPack('pro');
+                try {
+                  const { data: { user } } = await supabase.auth.getUser();
+                  if (!user) throw new Error('Not authenticated');
+                  
+                  // Get user's workspace
+                  const { data: workspace } = await supabase
+                    .from('workspaces')
+                    .select('id')
+                    .eq('owner_id', user.id)
+                    .single();
+
+                  if (!workspace) throw new Error('No workspace found');
+
+                  const { data, error } = await supabase.functions.invoke('purchase-credit-pack', {
+                    body: { packType: 'pro', workspaceId: workspace.id },
+                  });
+
+                  if (error) throw error;
+                  if (data?.url) {
+                    window.open(data.url, '_blank');
+                  }
+                } catch (error) {
+                  console.error('Purchase error:', error);
+                  toast({
+                    title: 'Purchase Failed',
+                    description: error.message || 'Failed to initiate purchase',
+                    variant: 'destructive',
+                  });
+                } finally {
+                  setPurchasingPack(null);
+                }
+              }}
+              loading={purchasingPack === 'pro'}
+            />
+          </div>
+        </Card>
 
         {/* Billing History */}
         <Card className="p-6">
