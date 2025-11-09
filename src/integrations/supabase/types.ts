@@ -5394,6 +5394,108 @@ export type Database = {
           },
         ]
       }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          user_id: string
+          uses: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          user_id: string
+          uses?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          user_id?: string
+          uses?: number | null
+        }
+        Relationships: []
+      }
+      referral_stats: {
+        Row: {
+          created_at: string | null
+          pending_referrals: number | null
+          successful_referrals: number | null
+          total_credits_earned: number | null
+          total_referrals: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          pending_referrals?: number | null
+          successful_referrals?: number | null
+          total_credits_earned?: number | null
+          total_referrals?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          pending_referrals?: number | null
+          successful_referrals?: number | null
+          total_credits_earned?: number | null
+          total_referrals?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          referee_id: string
+          referee_reward_credits: number | null
+          referral_code: string
+          referrer_id: string
+          referrer_reward_credits: number | null
+          rewarded_at: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          referee_id: string
+          referee_reward_credits?: number | null
+          referral_code: string
+          referrer_id: string
+          referrer_reward_credits?: number | null
+          rewarded_at?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          referee_id?: string
+          referee_reward_credits?: number | null
+          referral_code?: string
+          referrer_id?: string
+          referrer_reward_credits?: number | null
+          rewarded_at?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       removal_campaigns: {
         Row: {
           completed_at: string | null
@@ -7731,6 +7833,7 @@ export type Database = {
       cleanup_scan_pii: { Args: never; Returns: undefined }
       generate_case_number: { Args: never; Returns: string }
       generate_incident_number: { Args: never; Returns: string }
+      generate_referral_code: { Args: { _user_id: string }; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       get_credits_balance: { Args: { _workspace_id: string }; Returns: number }
       get_workspace_role: {
@@ -7774,6 +7877,10 @@ export type Database = {
         }
         Returns: string
       }
+      process_referral_reward: {
+        Args: { _referral_id: string }
+        Returns: boolean
+      }
       reset_expired_rate_limits: { Args: never; Returns: undefined }
       spend_credits: {
         Args: {
@@ -7784,6 +7891,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      update_referral_stats: { Args: { _user_id: string }; Returns: undefined }
       update_user_streak: { Args: { _user_id: string }; Returns: undefined }
       update_user_subscription: {
         Args: {
