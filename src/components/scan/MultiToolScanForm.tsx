@@ -11,6 +11,8 @@ import { useUserPersona } from '@/hooks/useUserPersona';
 import { useNavigate } from 'react-router-dom';
 import { useSpiderFootHealth } from '@/hooks/useSpiderFootHealth';
 import { useWorkerStatus } from '@/hooks/useWorkerStatus';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import { 
   Loader2, 
   Shield, 
@@ -20,7 +22,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
-  Info
+  Info,
+  Lightbulb
 } from 'lucide-react';
 
 interface ToolConfig {
@@ -42,6 +45,9 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
   const [target, setTarget] = useState('');
   const [targetType, setTargetType] = useState<'username' | 'email' | 'ip' | 'domain'>('username');
   const [selectedTools, setSelectedTools] = useState<string[]>([]);
+  const [showRescanSuggestions, setShowRescanSuggestions] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
+  const [loadingAI, setLoadingAI] = useState(false);
   const { isStandard } = useUserPersona();
   const { isScanning, startMultiToolScan, progress } = useMultiToolScan();
   const { health: spiderFootHealth } = useSpiderFootHealth();
@@ -96,33 +102,105 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
     return sum + (tool?.creditCost || 0);
   }, 0);
 
+  const handleAIRescanSuggest = async () => {
+    if (!target.trim()) {
+      toast.error('Please enter a target first');
+      return;
+    }
+
+    setLoadingAI(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-rescan-suggest', {
+        body: {
+          username: target,
+          targetType,
+          previousError: 'No results found'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.suggestions && data.suggestions.length > 0) {
+        setAiSuggestions(data.suggestions);
+        setShowRescanSuggestions(true);
+        toast.success('AI suggestions generated');
+      } else {
+        toast.info('No alternative suggestions available');
+      }
+    } catch (error: any) {
+      console.error('AI suggestion error:', error);
+      if (error.message?.includes('429')) {
+        toast.error('Rate limit exceeded. Please try again later.');
+      } else if (error.message?.includes('402')) {
+        toast.error('Insufficient AI credits. Please add credits.');
+      } else {
+        toast.error('Failed to generate suggestions');
+      }
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+
+  const applySuggestion = (suggestion: string) => {
+    setTarget(suggestion);
+    setShowRescanSuggestions(false);
+    toast.success(`Applied suggestion: ${suggestion}`);
+  };
+
   const handleStartScan = async () => {
     if (!target.trim()) {
+      toast.error('Please enter a target');
       return;
     }
 
     if (selectedTools.length === 0) {
+      toast.error('Please select at least one tool');
       return;
     }
 
+    // Pre-scan validation: Check for unavailable tools
     const unavailableTools = selectedTools.filter(toolId => {
       const tool = tools.find(t => t.id === toolId);
       return tool?.status === 'unavailable';
     });
 
     if (unavailableTools.length > 0) {
-      return;
+      const toolNames = unavailableTools
+        .map(id => tools.find(t => t.id === id)?.name)
+        .filter(Boolean)
+        .join(', ');
+      toast.warning(`Skipping unavailable tools: ${toolNames}`);
     }
 
-    const result = await startMultiToolScan({
-      target,
-      targetType,
-      tools: selectedTools,
-      workspaceId,
-    });
+    // Pre-scan validation: Check credits (approximate)
+    // Note: Actual credit check happens server-side
+    if (totalCost > 0) {
+      console.log(`Starting scan with estimated cost: ${totalCost} credits`);
+    }
 
-    if (result?.scanId) {
-      // Progress tracking is handled by the hook
+    try {
+      const result = await startMultiToolScan({
+        target,
+        targetType,
+        tools: selectedTools,
+        workspaceId,
+      });
+
+      if (result?.scanId) {
+        // Progress tracking is handled by the hook
+        toast.success('Scan started successfully');
+      }
+    } catch (error: any) {
+      console.error('Scan start error:', error);
+      
+      // Handle specific error cases
+      if (error.message?.includes('insufficient credits')) {
+        toast.error('Insufficient credits to start scan');
+      } else if (error.message?.includes('rate limit')) {
+        toast.error('Rate limit exceeded. Please try again later.');
+      } else {
+        toast.error('Failed to start scan. Please try again.');
+      }
     }
   };
 
@@ -347,6 +425,47 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
         </Alert>
       )}
 
+      {/* AI Rescan Suggestions */}
+      {showRescanSuggestions && aiSuggestions.length > 0 && (
+        <Card className="p-4 bg-primary/5 border-primary/20">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-primary" />
+              <h4 className="font-semibold">AI Suggested Alternatives</h4>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Try these variations if your search returned no results:
+            </p>
+            <div className="space-y-2">
+              {aiSuggestions.slice(0, 5).map((suggestion, idx) => (
+                <Card key={idx} className="p-3 hover:bg-accent/50 cursor-pointer transition-colors" onClick={() => applySuggestion(suggestion.query)}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <code className="text-sm font-mono bg-muted px-2 py-1 rounded">{suggestion.query}</code>
+                        <Badge variant={suggestion.confidence === 'high' ? 'default' : 'secondary'} className="text-xs">
+                          {suggestion.confidence}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">{suggestion.reason}</p>
+                    </div>
+                    <Button size="sm" variant="ghost" onClick={(e) => {
+                      e.stopPropagation();
+                      applySuggestion(suggestion.query);
+                    }}>
+                      Try
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setShowRescanSuggestions(false)} className="w-full">
+              Dismiss
+            </Button>
+          </div>
+        </Card>
+      )}
+
       {/* Progress Display */}
       {isScanning && progress && (
         <Card className="p-4 bg-muted/50">
@@ -368,6 +487,29 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
               ))}
             </div>
             <p className="text-sm text-muted-foreground">{progress.message}</p>
+            
+            {/* Show AI suggestions button if scan completed with no results */}
+            {progress.stage === 'completed' && progress.tools?.every(t => t.status === 'completed' && t.message?.includes('No results')) && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleAIRescanSuggest}
+                disabled={loadingAI}
+                className="w-full"
+              >
+                {loadingAI ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating suggestions...
+                  </>
+                ) : (
+                  <>
+                    <Lightbulb className="mr-2 h-4 w-4" />
+                    Get AI Rescan Suggestions
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </Card>
       )}

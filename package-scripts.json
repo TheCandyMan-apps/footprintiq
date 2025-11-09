@@ -24,6 +24,7 @@
     "test:payments": "playwright test tests/e2e/subscription-upgrade.spec.ts tests/e2e/credit-purchase.spec.ts --project=chromium",
     "ci:verify": "npm run lint && npm run typecheck && npm run check:secrets && npm run test:run && npm run check:build",
     "ci:pre-deploy": "npm run test:payments && npm run test:e2e",
+    "test:scan-glitches": "vitest run tests/scan-glitch-recovery.test.ts",
     "audit:prod": "node scripts/audit-prod.mjs",
     "audit:scans": "tsx scripts/audit-scans.ts",
     "audit:watch": "tsx scripts/audit-scans.ts --watch",

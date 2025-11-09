@@ -254,7 +254,7 @@ Deno.serve(async (req) => {
       );
     }
     
-    // Retry logic with exponential backoff
+    // Retry logic with exponential backoff and enhanced logging
     let resp: Response | null = null;
     let lastError: any;
     
@@ -263,7 +263,10 @@ Deno.serve(async (req) => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
         
-        console.log(`[Attempt ${attempt}] Calling Maigret worker: ${url.toString()}`);
+        console.log(`[Attempt ${attempt}/3] Calling Maigret worker: ${url.toString()}`);
+        console.log(`  Job ID: ${job.id}`);
+        console.log(`  Username: ${username}`);
+        console.log(`  Plan: ${plan}`);
         
         resp = await fetch(url, {
           headers: { 'X-Worker-Token': WORKER_TOKEN },
@@ -272,29 +275,42 @@ Deno.serve(async (req) => {
         
         clearTimeout(timeoutId);
         
-        console.log(`Worker response: ${resp.status} ${resp.statusText}`);
-        console.log(`Response headers:`, Object.fromEntries(resp.headers.entries()));
-        console.log(`Content-Type: ${resp.headers.get('content-type')}`);
-        console.log(`Content-Length: ${resp.headers.get('content-length')}`);
-        console.log(`Has body: ${!!resp.body}`);
+        console.log(`✓ Worker response received (attempt ${attempt}): ${resp.status} ${resp.statusText}`);
+        console.log(`  Response headers:`, Object.fromEntries(resp.headers.entries()));
+        console.log(`  Content-Type: ${resp.headers.get('content-type')}`);
+        console.log(`  Content-Length: ${resp.headers.get('content-length')}`);
+        console.log(`  Has body: ${!!resp.body}`);
         
-        if (resp.ok) break; // Success
+        if (resp.ok) {
+          console.log(`✓ Scan request successful on attempt ${attempt}`);
+          break; // Success
+        }
         
         // Check if retryable
         if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) {
           // 4xx client errors (except rate limit) - don't retry
+          console.error(`✗ Non-retryable client error: ${resp.status}`);
           lastError = new Error(`Worker error ${resp.status}`);
           break;
         }
         
+        console.warn(`⚠ Retryable error on attempt ${attempt}: ${resp.status}`);
         lastError = new Error(`Worker error ${resp.status}`);
       } catch (error: any) {
         lastError = error;
-        console.error(`Attempt ${attempt} failed:`, error.message);
+        console.error(`✗ Attempt ${attempt} failed:`, {
+          error: error.message,
+          name: error.name,
+          isTimeout: error.name === 'AbortError'
+        });
         
         if (attempt < 3) {
           const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s
+          console.log(`⏳ Waiting ${delay}ms before retry...`);
           await new Promise(resolve => setTimeout(resolve, delay));
+          console.log(`🔄 Retrying scan (attempt ${attempt + 1}/3)...`);
+        } else {
+          console.error(`✗ All retry attempts exhausted for job ${job.id}`);
         }
       }
     }
@@ -509,12 +525,17 @@ Deno.serve(async (req) => {
         workerUrl: WORKER_URL,
         username
       });
+      console.error('⚠ Worker empty – this may indicate:');
+      console.error('  1. Username not found on any platform');
+      console.error('  2. Worker internal error');
+      console.error('  3. Network issues during streaming');
+      console.error('  Recommendation: User should try broader search terms');
       
       await supabaseAdmin
         .from('scan_jobs')
         .update({
-          status: 'error',
-          error: 'Worker returned empty stream - no social media profiles found or worker error',
+          status: 'no_results',
+          error: 'No results found - try broader query or different username',
           finished_at: new Date().toISOString(),
         })
         .eq('id', job.id);
@@ -522,8 +543,9 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({
           jobId: job.id,
-          status: 'error',
-          error: 'No results returned from worker. The service may be experiencing issues.',
+          status: 'no_results',
+          error: 'No results found - try broader query or different username',
+          suggestion: 'Try alternative spellings, variations, or related usernames',
           debug: {
             linesProcessed: lineNo,
             inserted,
