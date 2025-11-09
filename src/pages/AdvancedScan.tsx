@@ -45,6 +45,9 @@ import { WorkerStatusBanner } from "@/components/scan/WorkerStatusBanner";
 import { WhatsMyNameTab } from "@/components/scan/WhatsMyNameTab";
 import { ToolSelector } from "@/components/scan/ToolSelector";
 import { UpgradeTeaser } from "@/components/upsell/UpgradeTeaser";
+import { TemplateManager } from "@/components/scan/TemplateManager";
+import { SaveTemplateDialog } from "@/components/scan/SaveTemplateDialog";
+import { useScanTemplates, ScanTemplate } from "@/hooks/useScanTemplates";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -86,6 +89,8 @@ export default function AdvancedScan() {
   const [modalScanId, setModalScanId] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [selectedTool, setSelectedTool] = useState<string>("spiderfoot");
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const { saveTemplate } = useScanTemplates();
 
   // Geocoding for IP addresses
   const { 
@@ -380,6 +385,38 @@ export default function AdvancedScan() {
     setModalScanId(null);
   };
 
+  const handleApplyTemplate = (template: ScanTemplate) => {
+    const config = template.configuration;
+    setScanType(config.scanType);
+    setProviders(config.providers || []);
+    setSensitiveSources(config.sensitiveSources || []);
+    setDarkwebEnabled(config.darkwebEnabled || false);
+    setDarkwebDepth(config.darkwebDepth || 2);
+    setPremiumOptions(config.premiumOptions || {});
+    if (config.selectedTool) {
+      setSelectedTool(config.selectedTool);
+    }
+    toast.success(`Template "${template.name}" applied`);
+  };
+
+  const handleSaveTemplate = async (
+    name: string,
+    description: string | null,
+    config: any
+  ) => {
+    await saveTemplate(name, description, config);
+  };
+
+  const getCurrentConfig = () => ({
+    scanType,
+    providers,
+    sensitiveSources,
+    darkwebEnabled,
+    darkwebDepth,
+    premiumOptions,
+    selectedTool,
+  });
+
   return (
     <ScanErrorBoundary context="scan">
       <div className="min-h-screen bg-background">
@@ -461,6 +498,12 @@ export default function AdvancedScan() {
                 </TabsList>
 
                 <TabsContent value="standard" className="space-y-8 mt-6">
+                  {/* Template Manager */}
+                  <TemplateManager
+                    onApplyTemplate={handleApplyTemplate}
+                    onSaveTemplate={() => setSaveTemplateOpen(true)}
+                  />
+
                   {/* Standard scan form continues below */}
 
           {/* Main Form */}
@@ -912,6 +955,14 @@ export default function AdvancedScan() {
           onComplete={handleScanComplete}
         />
       )}
+
+      {/* Save Template Dialog */}
+      <SaveTemplateDialog
+        open={saveTemplateOpen}
+        onOpenChange={setSaveTemplateOpen}
+        currentConfig={getCurrentConfig()}
+        onSave={handleSaveTemplate}
+      />
     </div>
   </ScanErrorBoundary>
   );
