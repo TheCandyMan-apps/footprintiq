@@ -40,6 +40,7 @@ import { useGeocoding } from "@/hooks/useGeocoding";
 import { useActiveScanContext } from "@/contexts/ActiveScanContext";
 import { useWorkerStatus } from "@/hooks/useWorkerStatus";
 import { WorkerStatusBanner } from "@/components/scan/WorkerStatusBanner";
+import { WhatsMyNameTab } from "@/components/scan/WhatsMyNameTab";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -78,6 +79,7 @@ export default function AdvancedScan() {
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
   const [progressOpen, setProgressOpen] = useState(false);
   const [modalScanId, setModalScanId] = useState<string | null>(null);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
 
   // Geocoding for IP addresses
   const { 
@@ -466,12 +468,23 @@ export default function AdvancedScan() {
                 </SelectContent>
               </Select>
               {scanType === 'username' && (
-                <Alert>
-                  <Info className="h-4 w-4" />
-                  <AlertDescription className="text-sm">
-                    Username scans use our Maigret integration for comprehensive social media discovery across 400+ platforms
-                  </AlertDescription>
-                </Alert>
+                <>
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      Username scans use our Maigret integration for comprehensive social media discovery across 400+ platforms
+                    </AlertDescription>
+                  </Alert>
+                  
+                  {/* WhatsMyName Premium Tab */}
+                  <Card className="p-4 bg-primary/5 border-primary/20 mt-4">
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-primary" />
+                      WhatsMyName Enrich (Premium)
+                    </h4>
+                    <WhatsMyNameTab subscriptionTier={subscriptionTier} />
+                  </Card>
+                </>
               )}
             </div>
 

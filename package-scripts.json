@@ -5,6 +5,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest watch",
+    "test:whatsmyname": "vitest run tests/whatsmyname.test.ts",
     "typecheck": "tsc --noEmit",
     "check:build": "vite build --mode production",
     "check:secrets": "bash -c 'if grep -R \"VITE_.*_KEY\" src/providers 2>/dev/null | grep -v registry.meta; then echo \"❌ VITE secret in client code\"; exit 1; else echo \"✅ No client secrets\"; fi'",
