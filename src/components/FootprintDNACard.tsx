@@ -30,67 +30,71 @@ interface FootprintDNACardProps {
 }
 
 export function FootprintDNACard({ userId, jobId }: FootprintDNACardProps) {
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Get current user ID
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      if (userId) {
+        setCurrentUserId(userId);
+      } else {
+        const { data: { user } } = await supabase.auth.getUser();
+        setCurrentUserId(user?.id || null);
+      }
+    };
+    getCurrentUser();
+  }, [userId]);
+
   // Fetch real data from Supabase
-  const { data: footprintData, refetch } = useQuery({
-    queryKey: ["footprint-metrics", userId, jobId],
+  const { data: footprintData, refetch, isLoading } = useQuery({
+    queryKey: ["footprint-metrics", currentUserId, jobId],
     queryFn: async () => {
-      const currentUserId = userId || (await supabase.auth.getUser()).data.user?.id;
-      
       if (!currentUserId) {
         return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
       }
 
-      // Query darkweb findings for breach data
-      const { data: darkwebData, error: darkwebError } = await supabase
-        .from("darkweb_findings")
-        .select("finding_type, severity, data_exposed")
-        .eq("user_id", currentUserId);
+      try {
+        // Query darkweb findings only (simpler and more reliable)
+        const darkwebResponse = await supabase
+          .from("darkweb_findings")
+          .select("*")
+          .eq("user_id", currentUserId);
 
-      if (darkwebError) {
-        console.error("Error fetching darkweb findings:", darkwebError);
+        const darkwebData = darkwebResponse.data || [];
+
+        // Calculate metrics from darkweb findings
+        const breaches = darkwebData.filter((f: any) => 
+          f.finding_type?.includes("breach") || 
+          f.severity === "critical" ||
+          f.severity === "high"
+        ).length;
+
+        const exposures = darkwebData.filter((f: any) => 
+          f.data_exposed && f.data_exposed.length > 0
+        ).length;
+
+        const dataBrokers = darkwebData.filter((f: any) => 
+          f.finding_type?.includes("broker") ||
+          f.finding_type?.includes("data_aggregator")
+        ).length;
+
+        const darkWeb = darkwebData.filter((f: any) => 
+          f.finding_type?.includes("darkweb") ||
+          f.finding_type?.includes("marketplace")
+        ).length;
+
+        return { breaches, exposures, dataBrokers, darkWeb };
+      } catch (error) {
+        console.error("Error fetching footprint data:", error);
+        return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
       }
-
-      // Query scan jobs to get scan data
-      const { data: scanData, error: scanError } = await supabase
-        .from("scan_jobs")
-        .select("id, status, artifacts")
-        .eq("requested_by", currentUserId)
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      if (scanError) {
-        console.error("Error fetching scan jobs:", scanError);
-      }
-
-      // Calculate metrics from real data
-      const breaches = darkwebData?.filter(f => 
-        f.finding_type?.includes("breach") || 
-        f.severity === "critical" ||
-        f.severity === "high"
-      ).length || 0;
-
-      const exposures = darkwebData?.filter(f => 
-        f.data_exposed && f.data_exposed.length > 0
-      ).length || 0;
-
-      const dataBrokers = darkwebData?.filter(f => 
-        f.finding_type?.includes("broker") ||
-        f.finding_type?.includes("data_aggregator")
-      ).length || 0;
-
-      const darkWeb = darkwebData?.filter(f => 
-        f.finding_type?.includes("darkweb") ||
-        f.finding_type?.includes("marketplace")
-      ).length || 0;
-
-      return { breaches, exposures, dataBrokers, darkWeb };
     },
     initialData: { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 },
+    enabled: !!currentUserId,
   });
 
   // Set up real-time subscription for updates
   useEffect(() => {
-    const currentUserId = userId;
     if (!currentUserId) return;
 
     const channel = supabase
@@ -112,7 +116,7 @@ export function FootprintDNACard({ userId, jobId }: FootprintDNACardProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, refetch]);
+  }, [currentUserId, refetch]);
 
   // AI-generated risk score
   const [score, setScore] = useState<number | null>(null);

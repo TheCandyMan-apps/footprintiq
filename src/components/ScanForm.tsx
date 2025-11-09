@@ -3,9 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Upload, X, Shield } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Upload, X, Shield, Crown, Lock } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useNavigate } from "react-router-dom";
 
 interface ScanFormProps {
   onSubmit: (data: ScanFormData) => void;
@@ -50,8 +53,19 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const { toast } = useToast();
+  const { isPremium } = useSubscription();
+  const navigate = useNavigate();
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isPremium) {
+      toast({
+        title: "Premium Feature",
+        description: "Profile photo reverse search requires a Pro plan. Upgrade to unlock this feature.",
+        variant: "default",
+      });
+      return;
+    }
+
     const file = e.target.files?.[0];
     if (file) {
       // Validate file size (10MB limit)
@@ -119,24 +133,59 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div data-tour="search-input" className="space-y-2">
-            <Label htmlFor="image">Profile Photo (Optional)</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="image">Profile Photo (Optional)</Label>
+              {!isPremium && (
+                <Badge variant="secondary" className="text-xs">
+                  <Crown className="w-3 h-3 mr-1" />
+                  Pro
+                </Badge>
+              )}
+            </div>
             <div className="flex flex-col gap-3">
               {!imagePreview ? (
-                <label 
-                  htmlFor="image"
-                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg cursor-pointer bg-secondary hover:bg-secondary/80 transition-colors"
-                >
-                  <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Click to upload profile photo</span>
-                  <span className="text-xs text-muted-foreground mt-1">PNG, JPG up to 10MB</span>
-                  <Input
-                    id="image"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                    className="hidden"
-                  />
-                </label>
+                <div className="relative">
+                  <label 
+                    htmlFor="image"
+                    className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-border rounded-lg transition-colors ${
+                      isPremium ? 'cursor-pointer bg-secondary hover:bg-secondary/80' : 'cursor-not-allowed bg-secondary/50 opacity-60'
+                    }`}
+                  >
+                    {isPremium ? (
+                      <Upload className="w-8 h-8 mb-2 text-muted-foreground" />
+                    ) : (
+                      <Lock className="w-8 h-8 mb-2 text-muted-foreground" />
+                    )}
+                    <span className="text-sm text-muted-foreground">
+                      {isPremium ? 'Click to upload profile photo' : 'Reverse image search - Pro feature'}
+                    </span>
+                    <span className="text-xs text-muted-foreground mt-1">
+                      {isPremium ? 'PNG, JPG up to 10MB' : 'Upgrade to unlock face recognition'}
+                    </span>
+                    <Input
+                      id="image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      disabled={!isPremium}
+                    />
+                  </label>
+                  {!isPremium && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        onClick={() => navigate('/pricing')}
+                        className="shadow-lg"
+                      >
+                        <Crown className="w-4 h-4 mr-2" />
+                        Upgrade to Pro
+                      </Button>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="relative w-full h-32 border-2 border-border rounded-lg overflow-hidden">
                   <img 
