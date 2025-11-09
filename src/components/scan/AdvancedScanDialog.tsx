@@ -12,9 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { useAdvancedScan, AdvancedScanOptions } from '@/hooks/useAdvancedScan';
 import { ScanProgressDialog } from './ScanProgressDialog';
-import { Loader2, Zap } from 'lucide-react';
+import { useMaltegoScan } from '@/hooks/useMaltegoScan';
+import { Loader2, Zap, Crown, Lock } from 'lucide-react';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface AdvancedScanDialogProps {
   open: boolean;
@@ -24,6 +28,9 @@ interface AdvancedScanDialogProps {
 export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogProps) {
   const navigate = useNavigate();
   const { startAdvancedScan, isScanning, progress } = useAdvancedScan();
+  const { startMaltegoScan, isScanning: isMaltegoScanning, isPremium } = useMaltegoScan();
+  const { workspace } = useWorkspace();
+  const [activeTab, setActiveTab] = useState('advanced');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -42,6 +49,14 @@ export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogPro
     correlationEngine: true,
   });
 
+  // Maltego-specific state
+  const [maltegoEntity, setMaltegoEntity] = useState('');
+  const [maltegoEntityType, setMaltegoEntityType] = useState<'username' | 'email' | 'ip' | 'domain'>('username');
+  const [maltegoTransforms, setMaltegoTransforms] = useState<string[]>([
+    'To IP from Domain',
+    'To Email from Domain'
+  ]);
+
   const [progressOpen, setProgressOpen] = useState(false);
   const [currentScanId, setCurrentScanId] = useState<string | null>(null);
 
@@ -58,171 +73,323 @@ export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogPro
     }
   };
 
+  const handleMaltegoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!workspace?.id) {
+      return;
+    }
+
+    try {
+      const result = await startMaltegoScan({
+        entity: maltegoEntity,
+        entityType: maltegoEntityType,
+        transforms: maltegoTransforms,
+        workspaceId: workspace.id
+      });
+      
+      if (result.scanId) {
+        setCurrentScanId(result.scanId);
+        onOpenChange(false);
+        setProgressOpen(true);
+      }
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Zap className="h-5 w-5 text-primary" />
               Advanced Scan
             </DialogTitle>
             <DialogDescription>
-              Run a comprehensive scan with AI-powered features and deep web monitoring
+              Run comprehensive scans with AI-powered features, deep web monitoring, and OSINT graph analysis
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Input Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="user@example.com"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+1234567890"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  placeholder="John"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                  placeholder="Doe"
-                />
-              </div>
-              <div className="space-y-2 col-span-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  placeholder="johndoe"
-                />
-              </div>
-            </div>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="advanced">Advanced Scan</TabsTrigger>
+              <TabsTrigger value="maltego" disabled={!isPremium}>
+                Maltego AI Graph
+                {!isPremium && <Lock className="ml-2 h-3 w-3" />}
+              </TabsTrigger>
+            </TabsList>
 
-            {/* Advanced Options */}
-            <div className="space-y-3 border rounded-lg p-4">
-              <Label className="text-base font-semibold">Advanced Features</Label>
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="deepWeb"
-                    checked={options.deepWeb}
-                    onCheckedChange={(checked) =>
-                      setOptions({ ...options, deepWeb: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="deepWeb" className="text-sm font-normal cursor-pointer">
-                    Dark Web Monitoring
-                  </Label>
+            <TabsContent value="advanced" className="mt-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Input Fields */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="user@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="+1234567890"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                      placeholder="John"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                      placeholder="Doe"
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      value={formData.username}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      placeholder="johndoe"
+                    />
+                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="socialMedia"
-                    checked={options.socialMedia}
-                    onCheckedChange={(checked) =>
-                      setOptions({ ...options, socialMedia: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="socialMedia" className="text-sm font-normal cursor-pointer">
-                    Social Media Deep Scan
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="behavioralAnalysis"
-                    checked={options.behavioralAnalysis}
-                    onCheckedChange={(checked) =>
-                      setOptions({ ...options, behavioralAnalysis: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="behavioralAnalysis" className="text-sm font-normal cursor-pointer">
-                    Behavioral Pattern Analysis
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="correlationEngine"
-                    checked={options.correlationEngine}
-                    onCheckedChange={(checked) =>
-                      setOptions({ ...options, correlationEngine: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="correlationEngine" className="text-sm font-normal cursor-pointer">
-                    Data Correlation Engine
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="threatForecasting"
-                    checked={options.threatForecasting}
-                    onCheckedChange={(checked) =>
-                      setOptions({ ...options, threatForecasting: checked as boolean })
-                    }
-                  />
-                  <Label htmlFor="threatForecasting" className="text-sm font-normal cursor-pointer">
-                    Threat Forecasting
-                  </Label>
-                </div>
-              </div>
-            </div>
 
-            {/* Progress */}
-            {isScanning && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{progress.message}</span>
-                  <span className="font-medium">{progress.progress}%</span>
+                {/* Advanced Options */}
+                <div className="space-y-3 border rounded-lg p-4">
+                  <Label className="text-base font-semibold">Advanced Features</Label>
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="deepWeb"
+                        checked={options.deepWeb}
+                        onCheckedChange={(checked) =>
+                          setOptions({ ...options, deepWeb: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="deepWeb" className="text-sm font-normal cursor-pointer">
+                        Dark Web Monitoring
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="socialMedia"
+                        checked={options.socialMedia}
+                        onCheckedChange={(checked) =>
+                          setOptions({ ...options, socialMedia: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="socialMedia" className="text-sm font-normal cursor-pointer">
+                        Social Media Deep Scan
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="behavioralAnalysis"
+                        checked={options.behavioralAnalysis}
+                        onCheckedChange={(checked) =>
+                          setOptions({ ...options, behavioralAnalysis: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="behavioralAnalysis" className="text-sm font-normal cursor-pointer">
+                        Behavioral Pattern Analysis
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="correlationEngine"
+                        checked={options.correlationEngine}
+                        onCheckedChange={(checked) =>
+                          setOptions({ ...options, correlationEngine: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="correlationEngine" className="text-sm font-normal cursor-pointer">
+                        Data Correlation Engine
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="threatForecasting"
+                        checked={options.threatForecasting}
+                        onCheckedChange={(checked) =>
+                          setOptions({ ...options, threatForecasting: checked as boolean })
+                        }
+                      />
+                      <Label htmlFor="threatForecasting" className="text-sm font-normal cursor-pointer">
+                        Threat Forecasting
+                      </Label>
+                    </div>
+                  </div>
                 </div>
-                <Progress value={progress.progress} />
-              </div>
-            )}
 
-            {/* Actions */}
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={isScanning}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isScanning}>
-                {isScanning ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Scanning...
-                  </>
-                ) : (
-                  'Start Advanced Scan'
+                {/* Progress */}
+                {isScanning && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{progress.message}</span>
+                      <span className="font-medium">{progress.progress}%</span>
+                    </div>
+                    <Progress value={progress.progress} />
+                  </div>
                 )}
-              </Button>
-            </div>
-          </form>
+
+                {/* Actions */}
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={isScanning}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isScanning}>
+                    {isScanning ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Scanning...
+                      </>
+                    ) : (
+                      'Start Advanced Scan'
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </TabsContent>
+
+            <TabsContent value="maltego" className="mt-4">
+              {!isPremium ? (
+                <div className="text-center py-8 space-y-4">
+                  <div className="flex justify-center">
+                    <Crown className="h-12 w-12 text-yellow-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Premium Feature</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Upgrade to premium to unlock AI-driven OSINT graph analysis with Maltego
+                    </p>
+                  </div>
+                  <div className="flex justify-center gap-2">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                      Maybe Later
+                    </Button>
+                    <Button onClick={() => navigate('/pricing')}>
+                      Upgrade to Premium
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleMaltegoSubmit} className="space-y-4">
+                  {/* Entity Input */}
+                  <div className="space-y-2">
+                    <Label htmlFor="maltegoEntity">Target Entity</Label>
+                    <Input
+                      id="maltegoEntity"
+                      value={maltegoEntity}
+                      onChange={(e) => setMaltegoEntity(e.target.value)}
+                      placeholder="username, email, IP, or domain"
+                      required
+                    />
+                  </div>
+
+                  {/* Entity Type */}
+                  <div className="space-y-2">
+                    <Label>Entity Type</Label>
+                    <div className="grid grid-cols-4 gap-2">
+                      {(['username', 'email', 'ip', 'domain'] as const).map((type) => (
+                        <Button
+                          key={type}
+                          type="button"
+                          variant={maltegoEntityType === type ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setMaltegoEntityType(type)}
+                        >
+                          {type}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Transforms */}
+                  <div className="space-y-3 border rounded-lg p-4">
+                    <Label className="text-base font-semibold">AI Transforms</Label>
+                    <div className="space-y-2">
+                      {[
+                        'To IP from Domain',
+                        'To Email from Domain',
+                        'To Phone from Name',
+                        'To Social Media from Username',
+                        'To WHOIS from Domain'
+                      ].map((transform) => (
+                        <div key={transform} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={transform}
+                            checked={maltegoTransforms.includes(transform)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setMaltegoTransforms([...maltegoTransforms, transform]);
+                              } else {
+                                setMaltegoTransforms(maltegoTransforms.filter(t => t !== transform));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={transform} className="text-sm font-normal cursor-pointer">
+                            {transform}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Cost Badge */}
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <span className="text-sm text-muted-foreground">Scan Cost</span>
+                    <Badge variant="secondary">10 Credits</Badge>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onOpenChange(false)}
+                      disabled={isMaltegoScanning}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={isMaltegoScanning || !maltegoEntity}>
+                      {isMaltegoScanning ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Analyzing...
+                        </>
+                      ) : (
+                        'Run Maltego AI'
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
