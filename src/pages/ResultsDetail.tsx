@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { AddToCaseButton } from "@/components/case/AddToCaseButton";
+import { ExportEnrichedButton } from "@/components/scan/ExportEnrichedButton";
 
 interface DataSource {
   id: string;
@@ -1019,16 +1020,21 @@ const ResultsDetail = () => {
               <Shield className="w-6 h-6 text-primary" />
               <h3 className="text-lg font-semibold">Actions</h3>
             </div>
-            {scan && (
-              <AddToCaseButton
-                itemType="scan"
-                itemId={scan.id}
-                title={`Scan ${scan.id}`}
-                summary={`Type: ${scan.scan_type} • Date: ${new Date(scan.created_at).toLocaleString()}`}
-                buttonLabel="Add Scan to Case"
-                size="sm"
-              />
-            )}
+            <div className="flex gap-2">
+              {scan && (
+                <>
+                  <ExportEnrichedButton scanId={scan.id} size="sm" variant="outline" />
+                  <AddToCaseButton
+                    itemType="scan"
+                    itemId={scan.id}
+                    title={`Scan ${scan.id}`}
+                    summary={`Type: ${scan.scan_type} • Date: ${new Date(scan.created_at).toLocaleString()}`}
+                    buttonLabel="Add Scan to Case"
+                    size="sm"
+                  />
+                </>
+              )}
+            </div>
           </div>
         </Card>
 

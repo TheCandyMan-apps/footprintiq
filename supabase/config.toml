@@ -311,3 +311,6 @@ verify_jwt = true
 
 [functions.quick-analysis]
 verify_jwt = true
+
+[functions.export-enriched-report]
+verify_jwt = true

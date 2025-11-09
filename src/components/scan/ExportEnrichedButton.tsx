@@ -1,0 +1,138 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { FileDown, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { toast } from "sonner";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+
+interface ExportEnrichedButtonProps {
+  scanId: string;
+  variant?: "default" | "outline" | "ghost";
+  size?: "default" | "sm" | "lg" | "icon";
+}
+
+export function ExportEnrichedButton({ scanId, variant = "default", size = "default" }: ExportEnrichedButtonProps) {
+  const { workspace } = useWorkspace();
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (!workspace?.id) {
+      toast.error("No workspace selected");
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('export-enriched-report', {
+        body: {
+          scanId,
+          workspaceId: workspace.id
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        if (data.error === 'insufficient_credits') {
+          toast.error(`Insufficient credits. Need 10 credits, have ${data.balance}`);
+        } else {
+          toast.error(`Export failed: ${data.error}`);
+        }
+        return;
+      }
+
+      // Create a temporary container for HTML rendering
+      const container = document.createElement('div');
+      container.innerHTML = data.html;
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.width = '210mm'; // A4 width
+      document.body.appendChild(container);
+
+      // Wait for any images to load
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Convert HTML to canvas
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowWidth: 794, // A4 width in pixels at 96 DPI
+      });
+
+      // Remove temporary container
+      document.body.removeChild(container);
+
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Add first page
+      pdf.addImage(
+        canvas.toDataURL('image/png'),
+        'PNG',
+        0,
+        position,
+        imgWidth,
+        imgHeight
+      );
+      heightLeft -= 297; // A4 height in mm
+
+      // Add additional pages if content is longer
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(
+          canvas.toDataURL('image/png'),
+          'PNG',
+          0,
+          position,
+          imgWidth,
+          imgHeight
+        );
+        heightLeft -= 297;
+      }
+
+      // Download PDF
+      pdf.save(`osint-enriched-report-${scanId.slice(0, 8)}.pdf`);
+
+      toast.success(`Report exported successfully! (10 credits used)`, {
+        description: `${data.finding_count} findings, ${data.enrichment_count} enrichments`
+      });
+
+    } catch (error: any) {
+      console.error('Export error:', error);
+      toast.error("Failed to export report");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <Button
+      variant={variant}
+      size={size}
+      onClick={handleExport}
+      disabled={isExporting}
+      className="gap-2"
+    >
+      {isExporting ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <FileDown className="h-4 w-4" />
+      )}
+      {isExporting ? "Exporting..." : "Export Report (10 credits)"}
+    </Button>
+  );
+}
