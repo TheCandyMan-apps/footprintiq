@@ -5,12 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Loader2, Play, CheckCircle2, XCircle, AlertTriangle, Clock } from 'lucide-react';
+import { Loader2, Play, CheckCircle2, XCircle, AlertTriangle, Clock, Brain, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 export default function Audit() {
   const [runningAudit, setRunningAudit] = useState(false);
+  const [analyzingWithAI, setAnalyzingWithAI] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [showAnalysis, setShowAnalysis] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch recent audit runs
@@ -44,6 +48,54 @@ export default function Audit() {
       return data;
     },
     enabled: !!auditRuns?.[0]?.id,
+  });
+
+  // AI Analysis mutation
+  const analyzeWithAI = useMutation({
+    mutationFn: async () => {
+      if (!latestResults || !latestRun) {
+        throw new Error('No audit data available for analysis');
+      }
+
+      setAnalyzingWithAI(true);
+      
+      const { data: analysisData, error: analysisError } = await supabase.functions.invoke('ai-glitch-detection', {
+        body: {
+          logs: latestResults,
+          auditRun: latestRun
+        }
+      });
+
+      if (analysisError) throw analysisError;
+
+      // If should alert, send email
+      if (analysisData.metadata.should_alert) {
+        const failureRate = analysisData.metadata.failure_rate;
+        
+        await supabase.functions.invoke('send-glitch-alert', {
+          body: {
+            auditRun: latestRun,
+            analysis: analysisData.analysis,
+            failureRate
+          }
+        });
+
+        toast.warning(`Alert sent to admin@footprintiq.app (${failureRate.toFixed(1)}% failure rate)`);
+      }
+
+      return analysisData;
+    },
+    onSuccess: (data) => {
+      setAiAnalysis(data);
+      setShowAnalysis(true);
+      toast.success('AI analysis complete');
+    },
+    onError: (error: Error) => {
+      toast.error(`AI analysis failed: ${error.message}`);
+    },
+    onSettled: () => {
+      setAnalyzingWithAI(false);
+    },
   });
 
   // Run audit mutation
@@ -118,24 +170,166 @@ export default function Audit() {
             Automated testing for premium reliability and error-free operation
           </p>
         </div>
-        <Button
-          onClick={() => runAudit.mutate()}
-          disabled={runningAudit}
-          size="lg"
-        >
-          {runningAudit ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Running Audit...
-            </>
-          ) : (
-            <>
-              <Play className="mr-2 h-4 w-4" />
-              Run Audit Suite
-            </>
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => analyzeWithAI.mutate()}
+            disabled={analyzingWithAI || !latestResults || latestResults.length === 0}
+            variant="outline"
+            size="lg"
+          >
+            {analyzingWithAI ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Brain className="mr-2 h-4 w-4" />
+                AI Analysis
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={() => runAudit.mutate()}
+            disabled={runningAudit}
+            size="lg"
+          >
+            {runningAudit ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Running Audit...
+              </>
+            ) : (
+              <>
+                <Play className="mr-2 h-4 w-4" />
+                Run Audit Suite
+              </>
+            )}
+          </Button>
+        </div>
       </div>
+
+      {/* AI Analysis Section */}
+      {aiAnalysis && (
+        <Card className="border-primary/50 bg-primary/5">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Brain className="h-5 w-5 text-primary" />
+                <CardTitle>AI Glitch Detection Analysis</CardTitle>
+              </div>
+              <div className="flex items-center gap-2">
+                {aiAnalysis.metadata.should_alert && (
+                  <Badge variant="destructive" className="gap-1">
+                    <Mail className="h-3 w-3" />
+                    Alert Sent
+                  </Badge>
+                )}
+                <Badge variant="outline">
+                  Analyzed {new Date(aiAnalysis.metadata.analyzed_at).toLocaleString()}
+                </Badge>
+              </div>
+            </div>
+            <CardDescription>
+              AI-powered pattern detection and recommendations using Grok
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {aiAnalysis.analysis.risk_assessment && (
+              <div className={`p-4 rounded-lg border-l-4 ${
+                aiAnalysis.analysis.risk_assessment === 'critical' ? 'bg-destructive/10 border-destructive' :
+                aiAnalysis.analysis.risk_assessment === 'high' ? 'bg-warning/10 border-warning' :
+                aiAnalysis.analysis.risk_assessment === 'medium' ? 'bg-yellow-500/10 border-yellow-500' :
+                'bg-success/10 border-success'
+              }`}>
+                <p className="font-semibold">
+                  Risk Assessment: {aiAnalysis.analysis.risk_assessment.toUpperCase()}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Failure Rate: {aiAnalysis.metadata.failure_rate.toFixed(2)}%
+                </p>
+              </div>
+            )}
+
+            {aiAnalysis.analysis.priority_issues && aiAnalysis.analysis.priority_issues.length > 0 && (
+              <Collapsible defaultOpen>
+                <CollapsibleTrigger className="flex items-center gap-2 font-semibold text-lg hover:underline">
+                  🚨 Priority Issues ({aiAnalysis.analysis.priority_issues.length})
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2">
+                  {aiAnalysis.analysis.priority_issues.map((issue: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-destructive/10 rounded border-l-4 border-destructive">
+                      <p className="font-medium">{issue.description}</p>
+                      <Badge variant="destructive" className="mt-1">{issue.severity}</Badge>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {aiAnalysis.analysis.patterns && aiAnalysis.analysis.patterns.length > 0 && (
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center gap-2 font-semibold text-lg hover:underline">
+                  📊 Detected Patterns ({aiAnalysis.analysis.patterns.length})
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2">
+                  {aiAnalysis.analysis.patterns.map((pattern: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-accent rounded">
+                      <p>{pattern.description}</p>
+                      <Badge variant="outline" className="mt-1">{pattern.severity}</Badge>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {aiAnalysis.analysis.anomalies && aiAnalysis.analysis.anomalies.length > 0 && (
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center gap-2 font-semibold text-lg hover:underline">
+                  ⚠️ Anomalies ({aiAnalysis.analysis.anomalies.length})
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2">
+                  {aiAnalysis.analysis.anomalies.map((anomaly: any, idx: number) => (
+                    <div key={idx} className="p-3 bg-warning/10 rounded border-l-4 border-warning">
+                      <p>{anomaly.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1">Impact: {anomaly.impact}</p>
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {aiAnalysis.analysis.fixes && aiAnalysis.analysis.fixes.length > 0 && (
+              <Collapsible>
+                <CollapsibleTrigger className="flex items-center gap-2 font-semibold text-lg hover:underline">
+                  🔧 Suggested Fixes ({aiAnalysis.analysis.fixes.length})
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-3">
+                  {aiAnalysis.analysis.fixes.map((fix: any, idx: number) => (
+                    <div key={idx} className="p-4 bg-primary/5 rounded border">
+                      <p className="font-medium mb-2">{idx + 1}. {fix.description}</p>
+                      {fix.steps && fix.steps.length > 0 && (
+                        <ol className="list-decimal list-inside space-y-1 text-sm">
+                          {fix.steps.map((step: string, stepIdx: number) => (
+                            <li key={stepIdx} className="text-muted-foreground">{step}</li>
+                          ))}
+                        </ol>
+                      )}
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
+
+            {aiAnalysis.analysis.raw_analysis && !aiAnalysis.analysis.patterns && (
+              <div className="p-4 bg-muted rounded">
+                <p className="font-semibold mb-2">Raw Analysis:</p>
+                <pre className="text-sm whitespace-pre-wrap">{aiAnalysis.analysis.raw_analysis}</pre>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Latest Run Summary */}
       {latestRun && (

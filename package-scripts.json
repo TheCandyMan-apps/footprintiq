@@ -28,6 +28,7 @@
     "audit:prod": "node scripts/audit-prod.mjs",
     "audit:scans": "tsx scripts/audit-scans.ts",
     "audit:watch": "tsx scripts/audit-scans.ts --watch",
-    "audit:ci": "tsx scripts/audit-scans.ts --ci"
+    "audit:ci": "tsx scripts/audit-scans.ts --ci",
+    "test:ai-glitches": "vitest run tests/ai-glitch-detection.test.ts"
   }
 }
