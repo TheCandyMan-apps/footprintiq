@@ -308,3 +308,6 @@ verify_jwt = true
 
 [functions.enrich-finding]
 verify_jwt = true
+
+[functions.quick-analysis]
+verify_jwt = true

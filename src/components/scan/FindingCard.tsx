@@ -17,11 +17,13 @@ import {
   Clock,
   ExternalLink,
   Sparkles,
+  Zap,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { toast } from 'sonner';
 import { EnrichmentDialog } from './EnrichmentDialog';
+import { QuickAnalysisDialog } from './QuickAnalysisDialog';
 
 interface Evidence {
   key?: string;
@@ -139,9 +141,55 @@ export function FindingCard({ finding }: FindingCardProps) {
   const [isEnriching, setIsEnriching] = useState(false);
   const [enrichmentOpen, setEnrichmentOpen] = useState(false);
   const [enrichmentData, setEnrichmentData] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  const [analysisData, setAnalysisData] = useState<any>(null);
 
   const remediationSteps = getRemediationSteps(finding.kind, finding.severity);
   const severityColor = getSeverityColor(finding.severity);
+
+  const handleQuickAnalysis = async () => {
+    if (!workspace?.id) {
+      toast.error("No workspace selected");
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisOpen(true);
+    setAnalysisData(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('quick-analysis', {
+        body: {
+          findingId: finding.id,
+          workspaceId: workspace.id
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.error) {
+        if (data.error === 'insufficient_credits') {
+          toast.error(`Insufficient credits. Need 2 credits, have ${data.balance}`);
+        } else if (data.error === 'rate_limit_exceeded') {
+          toast.error("Rate limit exceeded. Please try again later.");
+        } else {
+          toast.error(`Analysis failed: ${data.error}`);
+        }
+        setAnalysisOpen(false);
+        return;
+      }
+
+      setAnalysisData(data.analysis);
+      toast.success(`Quick analysis complete! (2 credits used)`);
+    } catch (error: any) {
+      console.error('Analysis error:', error);
+      toast.error("Failed to analyze finding");
+      setAnalysisOpen(false);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleDeepEnrichment = async () => {
     if (!workspace?.id) {
@@ -231,8 +279,18 @@ export function FindingCard({ finding }: FindingCardProps) {
         </div>
       </div>
 
-      {/* Deep Enrichment Button */}
-      <div className="mb-3">
+      {/* AI Action Buttons */}
+      <div className="flex gap-2 mb-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleQuickAnalysis}
+          disabled={isAnalyzing}
+          className="gap-2"
+        >
+          <Zap className="h-4 w-4" />
+          {isAnalyzing ? "Analyzing..." : "Quick Analysis (2 credits)"}
+        </Button>
         <Button
           variant="outline"
           size="sm"
@@ -333,6 +391,14 @@ export function FindingCard({ finding }: FindingCardProps) {
           </div>
         </details>
       )}
+
+      <QuickAnalysisDialog
+        open={analysisOpen}
+        onOpenChange={setAnalysisOpen}
+        analysis={analysisData}
+        isLoading={isAnalyzing}
+        creditsSpent={2}
+      />
 
       <EnrichmentDialog
         open={enrichmentOpen}
