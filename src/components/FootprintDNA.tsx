@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Shield, AlertTriangle, Database, Skull } from 'lucide-react';
+import { Shield, AlertTriangle, Database, Skull, RefreshCw } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { TrendDataPoint } from '@/lib/trends';
 
@@ -12,6 +13,8 @@ interface FootprintDNAProps {
   darkWeb: number;
   trendData?: TrendDataPoint[];
   onOpenDetails?: () => void;
+  onRescan?: () => void;
+  isRescanning?: boolean;
 }
 
 interface MetricData {
@@ -29,7 +32,9 @@ export const FootprintDNA = ({
   dataBrokers, 
   darkWeb,
   trendData = [],
-  onOpenDetails
+  onOpenDetails,
+  onRescan,
+  isRescanning = false
 }: FootprintDNAProps) => {
   // Determine color based on score
   const getScoreColor = (score: number) => {
@@ -134,17 +139,35 @@ export const FootprintDNA = ({
 
           {/* Title and Metrics */}
           <div className="flex-1 w-full space-y-6">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                Your Digital DNA
-              </h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                {score < 40 
-                  ? 'Low risk - Your digital footprint is well protected' 
-                  : score <= 70 
-                  ? 'Medium risk - Some areas need attention' 
-                  : 'High risk - Immediate action recommended'}
-              </p>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  Your Digital DNA
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {score < 40 
+                    ? 'Low risk - Your digital footprint is well protected' 
+                    : score <= 70 
+                    ? 'Medium risk - Some areas need attention' 
+                    : 'High risk - Immediate action recommended'}
+                </p>
+              </div>
+              
+              {onRescan && (
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRescan();
+                  }}
+                  disabled={isRescanning}
+                  variant="outline"
+                  size="sm"
+                  className="flex-shrink-0"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isRescanning ? 'animate-spin' : ''}`} />
+                  {isRescanning ? 'Updating...' : 'Rescan'}
+                </Button>
+              )}
             </div>
 
             {/* Mini Metrics Grid */}

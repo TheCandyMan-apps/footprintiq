@@ -63,6 +63,7 @@ const Dashboard = () => {
   });
   const [isDNAModalOpen, setIsDNAModalOpen] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
+  const [isRescanning, setIsRescanning] = useState(false);
   useEffect(() => {
     const checkAuth = async () => {
       const {
@@ -325,6 +326,34 @@ const Dashboard = () => {
       setSelectedScans(new Set());
     } else {
       setSelectedScans(new Set(scans.map(s => s.id)));
+    }
+  };
+
+  const handleRescan = async () => {
+    if (!user?.id) return;
+    
+    setIsRescanning(true);
+    try {
+      toast({
+        title: 'Refreshing DNA metrics',
+        description: 'Updating your Digital DNA data...',
+      });
+      
+      await fetchDashboardData(user.id);
+      
+      toast({
+        title: 'DNA metrics updated',
+        description: 'Your Digital DNA has been refreshed with the latest data.',
+      });
+    } catch (error: any) {
+      console.error('Rescan error:', error);
+      toast({
+        title: 'Error updating metrics',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRescanning(false);
     }
   };
 
@@ -600,7 +629,17 @@ const Dashboard = () => {
 
                   {/* Footprint DNA Card */}
                   {scans.length > 0 && <div className="mb-8">
-                      <FootprintDNA score={dnaMetrics.score} breaches={dnaMetrics.breaches} exposures={dnaMetrics.exposures} dataBrokers={dnaMetrics.dataBrokers} darkWeb={dnaMetrics.darkWeb} trendData={trendData} onOpenDetails={() => setIsDNAModalOpen(true)} />
+                      <FootprintDNA 
+                        score={dnaMetrics.score} 
+                        breaches={dnaMetrics.breaches} 
+                        exposures={dnaMetrics.exposures} 
+                        dataBrokers={dnaMetrics.dataBrokers} 
+                        darkWeb={dnaMetrics.darkWeb} 
+                        trendData={trendData} 
+                        onOpenDetails={() => setIsDNAModalOpen(true)}
+                        onRescan={handleRescan}
+                        isRescanning={isRescanning}
+                      />
 
                       <FootprintDNAModal open={isDNAModalOpen} onOpenChange={setIsDNAModalOpen} trendData={trendData} currentScore={dnaMetrics.score} />
                     </div>}
