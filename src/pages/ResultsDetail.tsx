@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ScanErrorBoundary } from "@/components/ScanErrorBoundary";
 import { AIAnalysis } from "@/components/AIAnalysis";
+import { AIInsightsCard } from "@/components/AIInsightsCard";
 import { CatfishDetection } from '@/components/CatfishDetection';
 import { TimelineChart } from "@/components/TimelineChart";
 import { ShareReportDialog } from "@/components/ShareReportDialog";
@@ -647,6 +648,13 @@ const ResultsDetail = () => {
         <div className="mb-8">
           <AIAnalysis scanId={scanId!} />
         </div>
+
+        {/* AI Insights - Correlation Analysis */}
+        {findings.length > 0 && (
+          <div className="mb-8">
+            <AIInsightsCard findings={findings} subscriptionTier={subscriptionTier} />
+          </div>
+        )}
 
         {/* Removal Queue */}
         <div className="mb-8">
