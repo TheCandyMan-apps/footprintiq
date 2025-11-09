@@ -79,11 +79,11 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'You are an expert OSINT analyst. Analyze security findings and identify patterns, risks, and correlations. Provide concise, actionable insights in bullet points.'
+            content: 'You are an expert OSINT analyst. Analyze security findings and provide actionable remediation steps.'
           },
           {
             role: 'user',
-            content: `Correlate these findings and highlight risks/links:\n\n${JSON.stringify(findings, null, 2)}\n\nProvide:\n1. Key risk patterns\n2. Data correlations\n3. Critical vulnerabilities\n4. Recommended actions\n\nFormat as concise bullet points.`
+            content: `Analyze these findings and provide insights with specific actions:\n\n${JSON.stringify(findings, null, 2)}\n\nProvide:\n1. Analysis of risks and patterns (as bullet points)\n2. Specific recommended actions (as JSON array)\n\nFormat the response as:\n\nANALYSIS:\n[bullet points here]\n\nACTIONS:\n[JSON array of action objects with fields: title, description, type (one of: 'removal', 'monitoring', 'security', 'privacy'), priority ('high'|'medium'|'low'), sourceIds (array of relevant source IDs from findings)]`
           }
         ],
         temperature: 0.7,
@@ -98,16 +98,37 @@ serve(async (req) => {
     }
 
     const grokData = await grokResponse.json();
-    const analysis = grokData.choices?.[0]?.message?.content;
+    const rawContent = grokData.choices?.[0]?.message?.content;
 
-    if (!analysis) {
+    if (!rawContent) {
       throw new Error('No analysis returned from Grok');
     }
 
-    console.log('[ai-correlation] Analysis complete');
+    // Parse the response to extract analysis and actions
+    let analysis = rawContent;
+    let actions = [];
+
+    try {
+      const analysisSplit = rawContent.split('ACTIONS:');
+      if (analysisSplit.length > 1) {
+        analysis = analysisSplit[0].replace('ANALYSIS:', '').trim();
+        const actionsJson = analysisSplit[1].trim();
+        
+        // Try to extract JSON from the actions section
+        const jsonMatch = actionsJson.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          actions = JSON.parse(jsonMatch[0]);
+        }
+      }
+    } catch (parseError) {
+      console.warn('[ai-correlation] Could not parse actions, using full response:', parseError);
+    }
+
+    console.log('[ai-correlation] Analysis complete with', actions.length, 'actions');
 
     return new Response(JSON.stringify({
       analysis,
+      actions,
       timestamp: new Date().toISOString(),
       findings_analyzed: findings.length,
     }), {

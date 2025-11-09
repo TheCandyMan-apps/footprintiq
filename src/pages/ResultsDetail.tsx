@@ -652,7 +652,13 @@ const ResultsDetail = () => {
         {/* AI Insights - Correlation Analysis */}
         {findings.length > 0 && (
           <div className="mb-8">
-            <AIInsightsCard findings={findings} subscriptionTier={subscriptionTier} />
+            <AIInsightsCard 
+              findings={findings} 
+              subscriptionTier={subscriptionTier}
+              scanId={scanId!}
+              userId={user?.id}
+              dataSources={dataSources}
+            />
           </div>
         )}
 

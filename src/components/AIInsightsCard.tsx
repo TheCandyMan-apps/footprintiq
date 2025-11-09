@@ -1,20 +1,34 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, AlertTriangle, Info, TrendingUp, Shield, Loader2, Crown } from "lucide-react";
+import { Sparkles, AlertTriangle, Info, TrendingUp, Shield, Loader2, Crown, Zap } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Finding } from "@/lib/ufm";
+import { AIActionButton } from "@/components/AIActionButton";
+import { enableMonitoring } from "@/lib/monitoring";
+
+interface AIAction {
+  title: string;
+  description: string;
+  type: 'removal' | 'monitoring' | 'security' | 'privacy';
+  priority: 'high' | 'medium' | 'low';
+  sourceIds?: string[];
+}
 
 interface AIInsightsCardProps {
   findings: Finding[];
   subscriptionTier: string;
+  scanId: string;
+  userId?: string;
+  dataSources?: Array<{ id: string; name: string; category: string }>;
 }
 
-export const AIInsightsCard = ({ findings, subscriptionTier }: AIInsightsCardProps) => {
+export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dataSources = [] }: AIInsightsCardProps) => {
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<string | null>(null);
+  const [actions, setActions] = useState<AIAction[]>([]);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -58,9 +72,10 @@ export const AIInsightsCard = ({ findings, subscriptionTier }: AIInsightsCardPro
 
       if (data?.analysis) {
         setInsights(data.analysis);
+        setActions(data.actions || []);
         toast({
           title: "AI Analysis Complete",
-          description: `Analyzed ${data.findings_analyzed} findings`,
+          description: `Analyzed ${data.findings_analyzed} findings with ${data.actions?.length || 0} suggested actions`,
         });
       } else {
         throw new Error('No analysis returned');
@@ -87,6 +102,83 @@ export const AIInsightsCard = ({ findings, subscriptionTier }: AIInsightsCardPro
       .map(line => line.replace(/^[•\-*\d.]+\s*/, '')); // Remove bullet points
 
     return lines;
+  };
+
+  const executeAction = async (action: AIAction): Promise<void> => {
+    if (!userId) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to execute actions.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      switch (action.type) {
+        case 'removal':
+          // Request removal for all relevant sources
+          if (action.sourceIds && action.sourceIds.length > 0) {
+            for (const sourceId of action.sourceIds) {
+              const source = dataSources.find(s => s.id === sourceId);
+              if (source) {
+                await supabase.from("removal_requests").insert({
+                  user_id: userId,
+                  scan_id: scanId,
+                  source_id: sourceId,
+                  source_name: source.name,
+                  source_type: source.category,
+                  status: 'pending',
+                });
+              }
+            }
+            toast({
+              title: "Removal Requests Initiated",
+              description: `Started removal process for ${action.sourceIds.length} source(s)`,
+            });
+          } else {
+            toast({
+              title: "Manual Action Required",
+              description: action.description,
+            });
+          }
+          break;
+
+        case 'monitoring':
+          // Enable monitoring for the scan
+          const { error: monitoringError } = await enableMonitoring(scanId, userId);
+          if (monitoringError) throw monitoringError;
+          toast({
+            title: "Monitoring Enabled",
+            description: "You'll receive alerts for new data exposures",
+          });
+          break;
+
+        case 'security':
+        case 'privacy':
+          // For security/privacy actions, show guidance
+          toast({
+            title: "Action Guidance",
+            description: action.description,
+            duration: 8000,
+          });
+          break;
+
+        default:
+          toast({
+            title: "Action Noted",
+            description: action.description,
+          });
+      }
+    } catch (error) {
+      console.error('[AIInsightsCard] Action execution error:', error);
+      toast({
+        title: "Action Failed",
+        description: error instanceof Error ? error.message : "Failed to execute action",
+        variant: "destructive",
+      });
+      throw error;
+    }
   };
 
   return (
@@ -168,6 +260,25 @@ export const AIInsightsCard = ({ findings, subscriptionTier }: AIInsightsCardPro
               );
             })}
           </div>
+
+          {actions.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-border">
+              <div className="flex items-center gap-2 mb-4">
+                <Zap className="h-5 w-5 text-primary" />
+                <h4 className="font-semibold">Recommended Actions</h4>
+                <Badge variant="secondary" className="text-xs">{actions.length}</Badge>
+              </div>
+              <div className="space-y-3">
+                {actions.map((action, index) => (
+                  <AIActionButton
+                    key={index}
+                    action={action}
+                    onExecute={executeAction}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           <Button 
             onClick={generateInsights} 
