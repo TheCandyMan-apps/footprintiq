@@ -1,0 +1,400 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useMultiToolScan } from '@/hooks/useMultiToolScan';
+import { useUserPersona } from '@/hooks/useUserPersona';
+import { useNavigate } from 'react-router-dom';
+import { useSpiderFootHealth } from '@/hooks/useSpiderFootHealth';
+import { useWorkerStatus } from '@/hooks/useWorkerStatus';
+import { 
+  Loader2, 
+  Shield, 
+  Zap, 
+  Crown, 
+  Search, 
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Info
+} from 'lucide-react';
+
+interface ToolConfig {
+  id: string;
+  name: string;
+  description: string;
+  creditCost: number;
+  icon: typeof Shield;
+  supportedTypes: string[];
+  premium?: boolean;
+  status?: 'available' | 'unavailable' | 'checking';
+}
+
+interface MultiToolScanFormProps {
+  workspaceId: string;
+}
+
+export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
+  const [target, setTarget] = useState('');
+  const [targetType, setTargetType] = useState<'username' | 'email' | 'ip' | 'domain'>('username');
+  const [selectedTools, setSelectedTools] = useState<string[]>([]);
+  const { isStandard } = useUserPersona();
+  const { isScanning, startMultiToolScan, progress } = useMultiToolScan();
+  const { status: spiderFootStatus } = useSpiderFootHealth();
+  const { isWorkerOffline, getWorkerByName } = useWorkerStatus();
+  const navigate = useNavigate();
+
+  const maigretWorker = getWorkerByName('maigret');
+  const reconngWorker = getWorkerByName('reconng');
+  
+  const tools: ToolConfig[] = [
+    {
+      id: 'maigret',
+      name: 'Maigret',
+      description: 'Social media discovery across 400+ platforms',
+      creditCost: 5,
+      icon: Search,
+      supportedTypes: ['username'],
+      status: isWorkerOffline('maigret') ? 'unavailable' : 'available',
+    },
+    {
+      id: 'spiderfoot',
+      name: 'SpiderFoot',
+      description: '200+ OSINT modules for comprehensive recon',
+      creditCost: 10,
+      icon: Shield,
+      supportedTypes: ['email', 'ip', 'domain', 'username'],
+      premium: true,
+      status: spiderFootStatus === 'ok' ? 'available' : 'unavailable',
+    },
+    {
+      id: 'reconng',
+      name: 'Recon-ng',
+      description: 'Passive reconnaissance with 100+ modules',
+      creditCost: 10,
+      icon: Zap,
+      supportedTypes: ['username', 'email', 'ip', 'domain'],
+      premium: true,
+      status: reconngWorker?.is_online ? 'available' : 'unavailable',
+    },
+  ];
+
+  const compatibleTools = tools.filter(t => {
+    if (!t.supportedTypes.includes(targetType)) return false;
+    if (isStandard && t.premium) return false;
+    return true;
+  });
+
+  const toggleTool = (toolId: string) => {
+    setSelectedTools(prev =>
+      prev.includes(toolId) ? prev.filter(t => t !== toolId) : [...prev, toolId]
+    );
+  };
+
+  const totalCost = selectedTools.reduce((sum, toolId) => {
+    const tool = tools.find(t => t.id === toolId);
+    return sum + (tool?.creditCost || 0);
+  }, 0);
+
+  const handleStartScan = async () => {
+    if (!target.trim()) {
+      return;
+    }
+
+    if (selectedTools.length === 0) {
+      return;
+    }
+
+    const unavailableTools = selectedTools.filter(toolId => {
+      const tool = tools.find(t => t.id === toolId);
+      return tool?.status === 'unavailable';
+    });
+
+    if (unavailableTools.length > 0) {
+      return;
+    }
+
+    const result = await startMultiToolScan({
+      target,
+      targetType,
+      tools: selectedTools,
+      workspaceId,
+    });
+
+    if (result?.scanId) {
+      // Progress tracking is handled by the hook
+    }
+  };
+
+  // Auto-select available tools on target type change
+  useState(() => {
+    const availableTools = compatibleTools
+      .filter(t => t.status === 'available')
+      .map(t => t.id);
+    setSelectedTools(availableTools);
+  });
+
+  if (isStandard) {
+    return (
+      <Card className="p-8 border-2 border-primary/20">
+        <div className="text-center space-y-6">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
+            <Crown className="h-8 w-8 text-primary" />
+          </div>
+          
+          <div>
+            <h3 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2">
+              <Shield className="h-6 w-6 text-primary" />
+              Multi-Tool Orchestration
+              <span className="text-xs bg-gradient-to-r from-primary to-accent text-primary-foreground px-2 py-1 rounded-full">
+                Premium
+              </span>
+            </h3>
+            <p className="text-muted-foreground text-lg">
+              Upgrade to run parallel scans across multiple OSINT tools!
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 text-left">
+            <div className="flex items-start gap-3">
+              <Zap className="h-5 w-5 text-primary mt-1" />
+              <div>
+                <p className="font-semibold">Parallel Execution</p>
+                <p className="text-sm text-muted-foreground">Run Maigret, SpiderFoot, Recon-ng together</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Shield className="h-5 w-5 text-primary mt-1" />
+              <div>
+                <p className="font-semibold">Unified Results</p>
+                <p className="text-sm text-muted-foreground">Correlated findings in one view</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Zap className="h-5 w-5 text-primary mt-1" />
+              <div>
+                <p className="font-semibold">Smart Fallbacks</p>
+                <p className="text-sm text-muted-foreground">Auto-skip unavailable tools</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <Shield className="h-5 w-5 text-primary mt-1" />
+              <div>
+                <p className="font-semibold">Case Integration</p>
+                <p className="text-sm text-muted-foreground">Save combined data instantly</p>
+              </div>
+            </div>
+          </div>
+
+          <Button
+            size="lg"
+            onClick={() => navigate('/pricing')}
+            className="w-full max-w-xs"
+          >
+            <Crown className="mr-2 h-5 w-5" />
+            Upgrade to Premium
+          </Button>
+
+          <p className="text-xs text-muted-foreground">
+            Start your 14-day free trial • Cancel anytime
+          </p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-6 space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Multi-Tool OSINT Scan</h3>
+        <p className="text-sm text-muted-foreground">
+          Run parallel scans across multiple tools for comprehensive intelligence gathering
+        </p>
+      </div>
+
+      {/* Target Input */}
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="target">Target</Label>
+          <Input
+            id="target"
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            placeholder={`Enter ${targetType}...`}
+            disabled={isScanning}
+            className="text-lg"
+          />
+        </div>
+
+        <div className="grid grid-cols-4 gap-2">
+          {(['username', 'email', 'ip', 'domain'] as const).map((type) => (
+            <Button
+              key={type}
+              variant={targetType === type ? 'default' : 'outline'}
+              onClick={() => {
+                setTargetType(type);
+                setSelectedTools([]);
+              }}
+              disabled={isScanning}
+              className="capitalize"
+            >
+              {type}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Tool Selection */}
+      <div className="space-y-3">
+        <Label className="flex items-center gap-2">
+          Select Tools
+          <span className="text-xs text-muted-foreground">
+            ({compatibleTools.length} available for {targetType})
+          </span>
+        </Label>
+
+        {compatibleTools.length === 0 ? (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              No tools available for {targetType} scans. Try a different target type.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="space-y-2">
+            {compatibleTools.map((tool) => {
+              const Icon = tool.icon;
+              const isSelected = selectedTools.includes(tool.id);
+              const isUnavailable = tool.status === 'unavailable';
+
+              return (
+                <Card
+                  key={tool.id}
+                  className={`p-4 cursor-pointer transition-all ${
+                    isSelected
+                      ? 'border-primary bg-primary/5'
+                      : isUnavailable
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:border-muted-foreground/50'
+                  }`}
+                  onClick={() => !isUnavailable && toggleTool(tool.id)}
+                >
+                  <div className="flex items-start gap-3">
+                    <Checkbox 
+                      checked={isSelected} 
+                      disabled={isUnavailable}
+                      className="mt-1" 
+                    />
+                    <Icon className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="font-medium">{tool.name}</span>
+                        {tool.premium && <Badge variant="secondary" className="text-xs">Premium</Badge>}
+                        <Badge variant="outline" className="text-xs">
+                          {tool.creditCost} credits
+                        </Badge>
+                        {isUnavailable ? (
+                          <Badge variant="destructive" className="text-xs flex items-center gap-1">
+                            <XCircle className="w-3 h-3" />
+                            Unavailable
+                          </Badge>
+                        ) : (
+                          <Badge variant="default" className="text-xs flex items-center gap-1 bg-green-500">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Ready
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{tool.description}</p>
+                      {isUnavailable && (
+                        <p className="text-xs text-destructive mt-1">
+                          {tool.id === 'spiderfoot' && 'Configure SPIDERFOOT_API_URL in secrets'}
+                          {tool.id === 'maigret' && (maigretWorker?.error_message || 'Worker offline')}
+                          {tool.id === 'reconng' && (reconngWorker?.error_message || 'Worker offline')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Cost Summary */}
+      {selectedTools.length > 0 && (
+        <Alert className="bg-primary/5 border-primary/20">
+          <Info className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>
+              {selectedTools.length} tool{selectedTools.length > 1 ? 's' : ''} selected
+            </span>
+            <Badge variant="outline" className="font-semibold">
+              Total: {totalCost} credits
+            </Badge>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Warning for unavailable tools */}
+      {selectedTools.some(id => tools.find(t => t.id === id)?.status === 'unavailable') && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            Some selected tools are unavailable. They will be skipped automatically during the scan.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Progress Display */}
+      {isScanning && progress && (
+        <Card className="p-4 bg-muted/50">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Scan Progress</span>
+              <Badge>{progress.stage}</Badge>
+            </div>
+            <div className="space-y-2">
+              {progress.tools?.map((tool) => (
+                <div key={tool.name} className="flex items-center gap-2 text-sm">
+                  {tool.status === 'completed' && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                  {tool.status === 'running' && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+                  {tool.status === 'failed' && <XCircle className="w-4 h-4 text-destructive" />}
+                  {tool.status === 'skipped' && <AlertTriangle className="w-4 h-4 text-warning" />}
+                  <span className="flex-1">{tool.name}:</span>
+                  <span className="text-muted-foreground">{tool.message}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground">{progress.message}</p>
+          </div>
+        </Card>
+      )}
+
+      {/* Start Button */}
+      <Button
+        onClick={handleStartScan}
+        disabled={isScanning || !target.trim() || selectedTools.length === 0}
+        className="w-full"
+        size="lg"
+      >
+        {isScanning ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Scanning...
+          </>
+        ) : (
+          <>
+            <Zap className="mr-2 h-4 w-4" />
+            Start Multi-Tool Scan ({totalCost} Credits)
+          </>
+        )}
+      </Button>
+    </Card>
+  );
+}

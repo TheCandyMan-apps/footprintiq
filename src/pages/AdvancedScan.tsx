@@ -42,6 +42,7 @@ import { useActiveScanContext } from "@/contexts/ActiveScanContext";
 import { useWorkerStatus } from "@/hooks/useWorkerStatus";
 import { WorkerStatusBanner } from "@/components/scan/WorkerStatusBanner";
 import { WhatsMyNameTab } from "@/components/scan/WhatsMyNameTab";
+import { MultiToolScanForm } from "@/components/scan/MultiToolScanForm";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -443,8 +444,13 @@ export default function AdvancedScan() {
 
               {/* Tabs for scan types */}
               <Tabs defaultValue="standard" className="w-full">
-                <TabsList className={`grid w-full ${import.meta.env.VITE_SPIDERFOOT_API_URL ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                <TabsList className={`grid w-full ${import.meta.env.VITE_SPIDERFOOT_API_URL ? 'grid-cols-4' : 'grid-cols-3'}`}>
                   <TabsTrigger value="standard">Standard Scan</TabsTrigger>
+                  <TabsTrigger value="multi-tool" className="flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    Multi-Tool
+                    <Badge variant="secondary" className="text-xs">New</Badge>
+                  </TabsTrigger>
                   {import.meta.env.VITE_SPIDERFOOT_API_URL && (
                     <TabsTrigger value="spiderfoot" className="flex items-center gap-2">
                       <Shield className="w-4 h-4" />
@@ -789,6 +795,11 @@ export default function AdvancedScan() {
               </p>
             </Card>
           </div>
+                </TabsContent>
+
+                {/* Multi-Tool Tab */}
+                <TabsContent value="multi-tool" className="space-y-6 mt-6">
+                  <MultiToolScanForm workspaceId={workspace.id} />
                 </TabsContent>
 
                 {import.meta.env.VITE_SPIDERFOOT_API_URL ? (
