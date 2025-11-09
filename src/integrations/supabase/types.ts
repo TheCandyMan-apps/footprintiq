@@ -6177,6 +6177,74 @@ export type Database = {
           },
         ]
       }
+      spiderfoot_scans: {
+        Row: {
+          completed_at: string | null
+          correlations: Json | null
+          created_at: string
+          credits_used: number | null
+          error: string | null
+          id: string
+          modules: string[] | null
+          results: Json | null
+          scan_id: string | null
+          started_at: string | null
+          status: string
+          target: string
+          target_type: string
+          total_events: number | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          correlations?: Json | null
+          created_at?: string
+          credits_used?: number | null
+          error?: string | null
+          id?: string
+          modules?: string[] | null
+          results?: Json | null
+          scan_id?: string | null
+          started_at?: string | null
+          status?: string
+          target: string
+          target_type: string
+          total_events?: number | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          correlations?: Json | null
+          created_at?: string
+          credits_used?: number | null
+          error?: string | null
+          id?: string
+          modules?: string[] | null
+          results?: Json | null
+          scan_id?: string | null
+          started_at?: string | null
+          status?: string
+          target?: string
+          target_type?: string
+          total_events?: number | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spiderfoot_scans_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_tickets: {
         Row: {
           attachments: Json | null
