@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import * as Sentry from '@sentry/react';
 
 export interface SpiderFootScanRequest {
   target: string;
@@ -56,19 +57,43 @@ export function useSpiderFootScan() {
           details: error
         });
         
+        // Track error in Sentry
+        Sentry.captureException(error, {
+          tags: {
+            category: 'spiderfoot',
+            error_type: 'scan_start_failed',
+            workspace_id: request.workspace_id,
+          },
+          contexts: {
+            spiderfoot: {
+              target: request.target,
+              target_type: request.target_type,
+              modules_count: request.modules?.length || 0,
+            },
+          },
+          level: 'error',
+        });
+        
         // Provide more specific error messages
         let errorMessage = error.message || 'Failed to start SpiderFoot scan';
+        let errorTitle = 'Scan Failed';
         
-        if (error.message?.includes('not configured')) {
-          errorMessage = 'SpiderFoot service is not available. Please contact support.';
+        if (error.message?.includes('not configured') || error.message?.includes('localhost')) {
+          errorTitle = 'SpiderFoot Unavailable';
+          errorMessage = 'SpiderFoot service is not configured. Check status in admin panel or contact support.';
         } else if (error.message?.includes('Insufficient credits')) {
-          errorMessage = 'Insufficient credits. Please purchase more credits to continue.';
+          errorTitle = 'Insufficient Credits';
+          errorMessage = 'You need more credits to run this scan. Please purchase additional credits.';
         } else if (error.message?.includes('Not a member')) {
+          errorTitle = 'Access Denied';
           errorMessage = 'You do not have access to this workspace.';
+        } else if (error.message?.includes('500') || error.message?.includes('Internal')) {
+          errorTitle = 'SpiderFoot Unavailable';
+          errorMessage = 'SpiderFoot worker is experiencing issues. Check status in admin panel or retry later.';
         }
         
         toast({
-          title: 'Scan Failed',
+          title: errorTitle,
           description: errorMessage,
           variant: 'destructive',
         });
@@ -88,9 +113,26 @@ export function useSpiderFootScan() {
       return null;
     } catch (error) {
       console.error('[useSpiderFootScan] Unexpected error:', error);
+      
+      // Track unexpected errors in Sentry
+      Sentry.captureException(error, {
+        tags: {
+          category: 'spiderfoot',
+          error_type: 'scan_unexpected_error',
+          workspace_id: request.workspace_id,
+        },
+        contexts: {
+          spiderfoot: {
+            target: request.target,
+            target_type: request.target_type,
+          },
+        },
+        level: 'error',
+      });
+      
       toast({
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+        title: 'SpiderFoot Unavailable',
+        description: 'An unexpected error occurred with SpiderFoot. Check status in admin panel or retry later.',
         variant: 'destructive',
       });
       return null;

@@ -19,6 +19,7 @@ import { Search, Shield, Zap, Database, Globe, Lock, AlertTriangle, Info, BookOp
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useUserPersona } from "@/hooks/useUserPersona";
 import { useAnonMode } from "@/hooks/useAnonMode";
+import { SpiderFootStatusIndicator } from "@/components/scan/SpiderFootStatusIndicator";
 import { PremiumApifyOptions } from "@/components/scan/PremiumApifyOptions";
 import { AnonModeToggle } from "@/components/scan/AnonModeToggle";
 import { CreditsBadge } from "@/components/workspace/CreditsBadge";
@@ -445,9 +446,10 @@ export default function AdvancedScan() {
                 <TabsList className={`grid w-full ${import.meta.env.VITE_SPIDERFOOT_API_URL ? 'grid-cols-3' : 'grid-cols-2'}`}>
                   <TabsTrigger value="standard">Standard Scan</TabsTrigger>
                   {import.meta.env.VITE_SPIDERFOOT_API_URL && (
-                    <TabsTrigger value="spiderfoot">
-                      <Shield className="w-4 h-4 mr-2" />
+                    <TabsTrigger value="spiderfoot" className="flex items-center gap-2">
+                      <Shield className="w-4 h-4" />
                       SpiderFoot Recon
+                      <SpiderFootStatusIndicator />
                     </TabsTrigger>
                   )}
                   <TabsTrigger value="reverse-image">Reverse Image Intel</TabsTrigger>
