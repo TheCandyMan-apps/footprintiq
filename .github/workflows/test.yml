@@ -53,6 +53,12 @@ jobs:
       - name: Run ethics & compliance tests
         run: npm run test:ethics
 
+      - name: Run Glitch Audit
+        run: npm run audit:ci
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v3

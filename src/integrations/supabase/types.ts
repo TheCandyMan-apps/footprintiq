@@ -1079,6 +1079,101 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_results: {
+        Row: {
+          actual_behavior: string | null
+          created_at: string
+          duration_ms: number | null
+          error_message: string | null
+          expected_behavior: string | null
+          id: string
+          metadata: Json | null
+          severity: string | null
+          status: string
+          test_category: string
+          test_name: string
+          test_suite_run_id: string
+        }
+        Insert: {
+          actual_behavior?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          expected_behavior?: string | null
+          id?: string
+          metadata?: Json | null
+          severity?: string | null
+          status: string
+          test_category: string
+          test_name: string
+          test_suite_run_id: string
+        }
+        Update: {
+          actual_behavior?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          error_message?: string | null
+          expected_behavior?: string | null
+          id?: string
+          metadata?: Json | null
+          severity?: string | null
+          status?: string
+          test_category?: string
+          test_name?: string
+          test_suite_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_results_test_suite_run_id_fkey"
+            columns: ["test_suite_run_id"]
+            isOneToOne: false
+            referencedRelation: "audit_suite_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_suite_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration_ms: number | null
+          failed: number
+          id: string
+          passed: number
+          status: string
+          success_rate: number | null
+          total_tests: number
+          triggered_by: string | null
+          warnings: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          failed?: number
+          id?: string
+          passed?: number
+          status?: string
+          success_rate?: number | null
+          total_tests?: number
+          triggered_by?: string | null
+          warnings?: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          failed?: number
+          id?: string
+          passed?: number
+          status?: string
+          success_rate?: number | null
+          total_tests?: number
+          triggered_by?: string | null
+          warnings?: number
+        }
+        Relationships: []
+      }
       automated_removals: {
         Row: {
           attempt_count: number | null
