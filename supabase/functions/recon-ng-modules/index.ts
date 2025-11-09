@@ -169,6 +169,65 @@ serve(async (req) => {
         );
       }
 
+      case 'dependencies': {
+        const { modules } = await req.json();
+
+        if (!modules || !Array.isArray(modules)) {
+          throw new Error('Modules array is required');
+        }
+
+        console.log(`[ReconNG Modules] Resolving dependencies for ${modules.length} modules`);
+
+        const response = await fetch(`${WORKER_URL}/modules/dependencies`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ modules }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Worker returned ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        return new Response(
+          JSON.stringify(data),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'install-with-deps': {
+        const { module } = await req.json();
+
+        if (!module) {
+          throw new Error('Module name is required');
+        }
+
+        console.log(`[ReconNG Modules] Installing ${module} with dependencies`);
+
+        const response = await fetch(`${WORKER_URL}/modules/install-with-deps`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${WORKER_TOKEN}`,
+          },
+          body: JSON.stringify({ module }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Worker returned ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+
+        return new Response(
+          JSON.stringify(data),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       default:
         throw new Error(`Unknown action: ${action}`);
     }

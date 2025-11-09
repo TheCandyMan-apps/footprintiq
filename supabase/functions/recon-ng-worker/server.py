@@ -305,22 +305,91 @@ class ReconNgExecutor:
             
             info = {
                 'name': module_name,
-                'raw_output': result.stdout
+                'raw_output': result.stdout,
+                'dependencies': []
             }
             
-            # Parse key information
+            # Parse key information and dependencies
             for line in result.stdout.split('\n'):
                 line = line.strip()
                 if ':' in line:
                     key, value = line.split(':', 1)
                     key = key.strip().lower().replace(' ', '_')
-                    info[key] = value.strip()
+                    value = value.strip()
+                    info[key] = value
+                    
+                    # Extract dependencies
+                    if 'depend' in key.lower() and value:
+                        deps = [d.strip() for d in value.split(',') if d.strip()]
+                        info['dependencies'].extend(deps)
             
             return info
             
         except Exception as e:
             print(f"Error getting module info: {e}")
             return {'error': str(e)}
+    
+    def get_module_dependencies(self, module_name: str) -> List[str]:
+        """Get dependencies for a module"""
+        try:
+            info = self.get_module_info(module_name)
+            return info.get('dependencies', [])
+        except Exception as e:
+            print(f"Error getting dependencies: {e}")
+            return []
+    
+    def resolve_dependencies(self, module_names: List[str]) -> Dict[str, Any]:
+        """Resolve all dependencies for given modules"""
+        try:
+            all_modules = set(module_names)
+            dependency_map = {}
+            to_process = list(module_names)
+            processed = set()
+            
+            while to_process:
+                module = to_process.pop(0)
+                if module in processed:
+                    continue
+                    
+                processed.add(module)
+                deps = self.get_module_dependencies(module)
+                dependency_map[module] = deps
+                
+                # Add dependencies to processing queue
+                for dep in deps:
+                    if dep not in processed and dep not in to_process:
+                        to_process.append(dep)
+                        all_modules.add(dep)
+            
+            return {
+                'modules': list(all_modules),
+                'dependencies': dependency_map,
+                'graph': self._build_dependency_graph(dependency_map)
+            }
+            
+        except Exception as e:
+            print(f"Error resolving dependencies: {e}")
+            return {'modules': module_names, 'dependencies': {}, 'graph': []}
+    
+    def _build_dependency_graph(self, dependency_map: Dict[str, List[str]]) -> List[Dict[str, Any]]:
+        """Build graph structure for visualization"""
+        nodes = []
+        edges = []
+        
+        for module, deps in dependency_map.items():
+            nodes.append({
+                'id': module,
+                'label': module.split('/')[-1],
+                'category': module.split('/')[0] if '/' in module else 'unknown'
+            })
+            
+            for dep in deps:
+                edges.append({
+                    'source': module,
+                    'target': dep
+                })
+        
+        return {'nodes': nodes, 'edges': edges}
 
 if __name__ == '__main__':
     # Test execution

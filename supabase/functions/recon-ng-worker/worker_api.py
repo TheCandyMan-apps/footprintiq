@@ -255,6 +255,79 @@ def get_module_info():
             'message': str(e)
         }), 500
 
+@app.route('/modules/dependencies', methods=['POST'])
+def resolve_dependencies():
+    """Resolve dependencies for modules"""
+    try:
+        data = request.get_json()
+        modules = data.get('modules', [])
+        
+        if not modules:
+            return jsonify({'error': 'Modules list is required'}), 400
+        
+        logger.info(f"Resolving dependencies for {len(modules)} modules")
+        
+        result = executor.resolve_dependencies(modules)
+        
+        return jsonify({
+            'success': True,
+            **result
+        })
+        
+    except Exception as e:
+        logger.error(f"Error resolving dependencies: {str(e)}")
+        return jsonify({
+            'error': 'Failed to resolve dependencies',
+            'message': str(e)
+        }), 500
+
+@app.route('/modules/install-with-deps', methods=['POST'])
+def install_with_dependencies():
+    """Install module with all dependencies"""
+    # Verify authentication
+    if not verify_token():
+        logger.warning(f"Unauthorized install attempt from {request.remote_addr}")
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        module_name = data.get('module')
+        
+        if not module_name:
+            return jsonify({'error': 'Module name is required'}), 400
+        
+        logger.info(f"Installing {module_name} with dependencies")
+        
+        # Resolve dependencies
+        dep_result = executor.resolve_dependencies([module_name])
+        all_modules = dep_result['modules']
+        
+        # Install all modules in order
+        installed = []
+        failed = []
+        
+        for mod in all_modules:
+            result = executor.install_module(mod)
+            if result['success']:
+                installed.append(mod)
+            else:
+                failed.append({'module': mod, 'error': result.get('error', 'Unknown error')})
+        
+        return jsonify({
+            'success': len(failed) == 0,
+            'installed': installed,
+            'failed': failed,
+            'total_modules': len(all_modules),
+            'dependencies': dep_result['dependencies']
+        })
+        
+    except Exception as e:
+        logger.error(f"Error installing with dependencies: {str(e)}", exc_info=True)
+        return jsonify({
+            'error': 'Failed to install with dependencies',
+            'message': str(e)
+        }), 500
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Endpoint not found'}), 404

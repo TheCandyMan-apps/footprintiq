@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { Download, RefreshCw, Search, Package, CheckCircle2, AlertCircle } from "lucide-react";
+import { Download, RefreshCw, Search, Package, CheckCircle2, AlertCircle, GitBranch } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ReconNgDependencyGraph } from "./ReconNgDependencyGraph";
 
 interface ReconNgModule {
   name: string;
@@ -25,6 +27,8 @@ export function ReconNgModuleMarketplace() {
   const [searchQuery, setSearchQuery] = useState("");
   const [installingModule, setInstallingModule] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedModules, setSelectedModules] = useState<string[]>([]);
+  const [showDependencies, setShowDependencies] = useState(false);
 
   useEffect(() => {
     loadModules();
@@ -119,6 +123,37 @@ export function ReconNgModuleMarketplace() {
     }
   };
 
+  const handleInstallWithDeps = async (moduleName: string) => {
+    setInstallingModule(moduleName);
+    try {
+      const { data, error } = await supabase.functions.invoke('recon-ng-modules', {
+        body: { action: 'install-with-deps', module: moduleName }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success(`Installed ${data.installed.length} module(s) including dependencies`);
+        await loadModules();
+      } else {
+        toast.error(`Failed to install some modules: ${data.failed.length} failures`);
+      }
+    } catch (error: any) {
+      console.error("Error installing with dependencies:", error);
+      toast.error("Failed to install with dependencies");
+    } finally {
+      setInstallingModule(null);
+    }
+  };
+
+  const toggleModuleSelection = (moduleName: string) => {
+    setSelectedModules(prev =>
+      prev.includes(moduleName)
+        ? prev.filter(m => m !== moduleName)
+        : [...prev, moduleName]
+    );
+  };
+
   const categories = ["all", ...new Set(modules.map(m => m.category))];
   const installedCount = modules.filter(m => m.installed).length;
 
@@ -159,15 +194,35 @@ export function ReconNgModuleMarketplace() {
           </Badge>
         </div>
 
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
-          <TabsList className="w-full justify-start overflow-x-auto">
-            {categories.map(cat => (
-              <TabsTrigger key={cat} value={cat} className="capitalize">
-                {cat} {cat !== 'all' && `(${modules.filter(m => m.category === cat).length})`}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center justify-between">
+          <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
+            <TabsList className="overflow-x-auto">
+              {categories.map(cat => (
+                <TabsTrigger key={cat} value={cat} className="capitalize">
+                  {cat} {cat !== 'all' && `(${modules.filter(m => m.category === cat).length})`}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          
+          {selectedModules.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDependencies(!showDependencies)}
+            >
+              <GitBranch className="h-4 w-4 mr-2" />
+              {showDependencies ? 'Hide' : 'Show'} Dependencies ({selectedModules.length})
+            </Button>
+          )}
+        </div>
+
+        {showDependencies && selectedModules.length > 0 && (
+          <ReconNgDependencyGraph 
+            modules={selectedModules}
+            onInstallWithDeps={handleInstallWithDeps}
+          />
+        )}
 
         <ScrollArea className="h-[500px]">
           <div className="space-y-2">
@@ -183,20 +238,26 @@ export function ReconNgModuleMarketplace() {
               filteredModules.map((module) => (
                 <Card key={module.name} className="p-4">
                   <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <code className="text-sm font-mono">{module.name}</code>
-                        {module.installed && (
-                          <Badge variant="success" className="flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Installed
-                          </Badge>
-                        )}
-                        <Badge variant="outline">{module.category}</Badge>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span>v{module.version}</span>
-                        {module.updated && <span>Updated: {module.updated}</span>}
+                    <div className="flex items-center gap-3 flex-1">
+                      <Checkbox
+                        checked={selectedModules.includes(module.name)}
+                        onCheckedChange={() => toggleModuleSelection(module.name)}
+                      />
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <code className="text-sm font-mono">{module.name}</code>
+                          {module.installed && (
+                            <Badge variant="success" className="flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Installed
+                            </Badge>
+                          )}
+                          <Badge variant="outline">{module.category}</Badge>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>v{module.version}</span>
+                          {module.updated && <span>Updated: {module.updated}</span>}
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -220,23 +281,34 @@ export function ReconNgModuleMarketplace() {
                           )}
                         </Button>
                       ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => handleInstall(module.name)}
-                          disabled={installingModule === module.name}
-                        >
-                          {installingModule === module.name ? (
-                            <>
-                              <Download className="h-4 w-4 mr-2 animate-spin" />
-                              Installing...
-                            </>
-                          ) : (
-                            <>
-                              <Download className="h-4 w-4 mr-2" />
-                              Install
-                            </>
-                          )}
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleInstallWithDeps(module.name)}
+                            disabled={installingModule === module.name}
+                          >
+                            <GitBranch className="h-4 w-4 mr-2" />
+                            With Deps
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => handleInstall(module.name)}
+                            disabled={installingModule === module.name}
+                          >
+                            {installingModule === module.name ? (
+                              <>
+                                <Download className="h-4 w-4 mr-2 animate-spin" />
+                                Installing...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4 mr-2" />
+                                Install
+                              </>
+                            )}
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
