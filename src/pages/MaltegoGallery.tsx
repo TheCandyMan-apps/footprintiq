@@ -6,10 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BatchExportDialog } from '@/components/maltego/BatchExportDialog';
+import { MaltegoAnalyticsDashboard } from '@/components/maltego/MaltegoAnalyticsDashboard';
+import { calculateMaltegoMetrics } from '@/lib/maltegoAnalytics';
 import { supabase } from '@/integrations/supabase/client';
 import { Helmet } from 'react-helmet-async';
-import { Download, Search, Filter, Eye, Calendar, Network } from 'lucide-react';
+import { Download, Search, Filter, Eye, Calendar, Network, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -31,6 +34,9 @@ export default function MaltegoGallery() {
   const [filterType, setFilterType] = useState('all');
   const [filterDate, setFilterDate] = useState('all');
   const [batchExportOpen, setBatchExportOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('gallery');
+
+  const metrics = calculateMaltegoMetrics(scans);
 
   useEffect(() => {
     loadScans();
@@ -146,6 +152,21 @@ export default function MaltegoGallery() {
               Browse, filter, and export your AI-driven OSINT graph analysis results
             </p>
           </div>
+
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="gallery" className="flex items-center gap-2">
+                <Network className="h-4 w-4" />
+                Gallery
+              </TabsTrigger>
+              <TabsTrigger value="analytics" className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Analytics
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="gallery" className="space-y-6 mt-6">
 
           {/* Filters & Actions */}
           <Card>
@@ -305,6 +326,12 @@ export default function MaltegoGallery() {
               ))}
             </div>
           )}
+            </TabsContent>
+
+            <TabsContent value="analytics" className="space-y-6 mt-6">
+              <MaltegoAnalyticsDashboard metrics={metrics} />
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 
