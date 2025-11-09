@@ -14,10 +14,10 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const grokApiKey = Deno.env.get('GROK_API_KEY');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 
-    if (!grokApiKey) {
-      throw new Error('GROK_API_KEY not configured');
+    if (!lovableApiKey) {
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -67,15 +67,15 @@ serve(async (req) => {
 
     console.log('[ai-correlation] Analyzing', findings.length, 'findings');
 
-    // Call Grok API
-    const grokResponse = await fetch('https://api.x.ai/v1/chat/completions', {
+    // Call Lovable AI Gateway
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${grokApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'grok-beta',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'system',
@@ -86,22 +86,39 @@ serve(async (req) => {
             content: `Analyze these findings and provide insights with specific actions:\n\n${JSON.stringify(findings, null, 2)}\n\nProvide:\n1. Analysis of risks and patterns (as bullet points)\n2. Specific recommended actions (as JSON array)\n\nFormat the response as:\n\nANALYSIS:\n[bullet points here]\n\nACTIONS:\n[JSON array of action objects with fields: title, description, type (one of: 'removal', 'monitoring', 'security', 'privacy'), priority ('high'|'medium'|'low'), sourceIds (array of relevant source IDs from findings)]`
           }
         ],
-        temperature: 0.7,
-        max_tokens: 1000,
       }),
     });
 
-    if (!grokResponse.ok) {
-      const errorText = await grokResponse.text();
-      console.error('[ai-correlation] Grok API error:', grokResponse.status, errorText);
-      throw new Error(`Grok API error: ${grokResponse.status}`);
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('[ai-correlation] Lovable AI error:', aiResponse.status, errorText);
+      
+      // Handle rate limits and payment errors
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ 
+          error: 'Rate limit exceeded. Please try again in a moment.' 
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ 
+          error: 'Payment required. Please add credits to your workspace.' 
+        }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      throw new Error(`Lovable AI error: ${aiResponse.status}`);
     }
 
-    const grokData = await grokResponse.json();
-    const rawContent = grokData.choices?.[0]?.message?.content;
+    const aiData = await aiResponse.json();
+    const rawContent = aiData.choices?.[0]?.message?.content;
 
     if (!rawContent) {
-      throw new Error('No analysis returned from Grok');
+      throw new Error('No analysis returned from AI');
     }
 
     // Parse the response to extract analysis and actions
