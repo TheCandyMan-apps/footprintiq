@@ -59,7 +59,7 @@ export async function deductCredits(
   );
 
   const { data, error } = await supabase
-    .rpc('deduct_credits', {
+    .rpc('spend_credits', {
       _workspace_id: workspaceId,
       _amount: amount,
       _description: description
