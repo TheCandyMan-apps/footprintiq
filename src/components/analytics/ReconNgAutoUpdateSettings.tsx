@@ -60,7 +60,7 @@ export function ReconNgAutoUpdateSettings({ workspaceId }: ReconNgAutoUpdateSett
       if (error && error.code !== 'PGRST116') throw error;
 
       if (data) {
-        setSettings(data);
+        setSettings(data as AutoUpdateSettings);
       } else {
         // Create default settings
         const { data: newSettings, error: insertError } = await supabase
@@ -75,7 +75,7 @@ export function ReconNgAutoUpdateSettings({ workspaceId }: ReconNgAutoUpdateSett
           .single();
 
         if (insertError) throw insertError;
-        setSettings(newSettings);
+        setSettings(newSettings as AutoUpdateSettings);
       }
     } catch (error: any) {
       console.error("Error loading settings:", error);
@@ -95,7 +95,7 @@ export function ReconNgAutoUpdateSettings({ workspaceId }: ReconNgAutoUpdateSett
         .limit(20);
 
       if (error) throw error;
-      setHistory(data || []);
+      setHistory((data || []) as UpdateHistoryItem[]);
     } catch (error: any) {
       console.error("Error loading history:", error);
     }
@@ -268,7 +268,7 @@ export function ReconNgAutoUpdateSettings({ workspaceId }: ReconNgAutoUpdateSett
                         <div className="flex items-center gap-2">
                           <code className="text-sm font-mono">{item.module_name}</code>
                           {item.status === 'success' ? (
-                            <Badge variant="success" className="flex items-center gap-1">
+                            <Badge variant="default" className="flex items-center gap-1 bg-success text-success-foreground">
                               <CheckCircle2 className="h-3 w-3" />
                               Success
                             </Badge>

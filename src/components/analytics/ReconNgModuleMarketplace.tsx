@@ -247,7 +247,7 @@ export function ReconNgModuleMarketplace() {
                         <div className="flex items-center gap-2">
                           <code className="text-sm font-mono">{module.name}</code>
                           {module.installed && (
-                            <Badge variant="success" className="flex items-center gap-1">
+                            <Badge variant="default" className="flex items-center gap-1 bg-success text-success-foreground">
                               <CheckCircle2 className="h-3 w-3" />
                               Installed
                             </Badge>
