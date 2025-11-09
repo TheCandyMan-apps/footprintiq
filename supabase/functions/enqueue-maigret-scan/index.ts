@@ -178,6 +178,44 @@ Deno.serve(async (req) => {
     if (tags?.trim()) url.searchParams.set('tags', tags.trim());
     if (all_sites) url.searchParams.set('all_sites', 'true');
 
+    // Health check first
+    console.log(`Worker token configured: ${WORKER_TOKEN ? 'YES' : 'NO'}`);
+    
+    try {
+      const healthUrl = `${WORKER_URL}/health`;
+      const healthCheck = await fetch(healthUrl, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      });
+      
+      if (!healthCheck.ok) {
+        throw new Error(`Worker health check failed: ${healthCheck.status}`);
+      }
+      console.log('Worker health check passed');
+    } catch (healthError) {
+      console.error('Worker health check failed:', healthError);
+      await supabaseUser
+        .from('scan_jobs')
+        .update({
+          status: 'error',
+          error: 'Username scan service is temporarily unavailable. Please try again later.',
+          finished_at: new Date().toISOString(),
+        })
+        .eq('id', job.id);
+      
+      return new Response(
+        JSON.stringify({ 
+          jobId: job.id, 
+          status: 'error', 
+          error: 'Service temporarily unavailable'
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    
     // Retry logic with exponential backoff
     let resp: Response | null = null;
     let lastError: any;
@@ -188,7 +226,6 @@ Deno.serve(async (req) => {
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
         
         console.log(`[Attempt ${attempt}] Calling Maigret worker: ${url.toString()}`);
-        console.log(`Worker token configured: ${WORKER_TOKEN ? 'YES' : 'NO'}`);
         
         resp = await fetch(url, {
           headers: { 'X-Worker-Token': WORKER_TOKEN },
@@ -198,7 +235,6 @@ Deno.serve(async (req) => {
         clearTimeout(timeoutId);
         
         console.log(`Worker response: ${resp.status} ${resp.statusText}`);
-        console.log(`Worker response has body: ${resp.body ? 'YES' : 'NO'}`);
         
         if (resp.ok) break; // Success
         

@@ -70,6 +70,34 @@ export function UsernameScanForm() {
       // Pre-scan session check
       const sessionCheck = await checkAndRefreshSession();
       
+      // Worker health check
+      try {
+        const workerUrl = import.meta.env.VITE_MAIGRET_API_URL || 'https://maigret-api-312297078337.europe-west1.run.app';
+        const healthCheck = await fetch(`${workerUrl}/health`, { 
+          method: 'GET',
+          signal: AbortSignal.timeout(5000)
+        });
+        
+        if (!healthCheck.ok) {
+          toast({
+            title: 'Service Unavailable',
+            description: 'Username scan service is temporarily unavailable. Please try again later.',
+            variant: 'destructive',
+          });
+          setSubmitting(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Worker health check failed:', error);
+        toast({
+          title: 'Service Unavailable',
+          description: 'Username scan service is temporarily unavailable. Please try again later.',
+          variant: 'destructive',
+        });
+        setSubmitting(false);
+        return;
+      }
+      
       if (!sessionCheck.valid) {
         toast({
           title: 'Session Expired',

@@ -40,7 +40,7 @@ export function ReconNgScanForm({ workspaceId }: { workspaceId: string }) {
   const { isStandard } = useUserPersona();
   const navigate = useNavigate();
 
-  const handleStartScan = () => {
+  const handleStartScan = async () => {
     if (!target.trim()) {
       toast({
         title: 'Target Required',
@@ -49,6 +49,31 @@ export function ReconNgScanForm({ workspaceId }: { workspaceId: string }) {
       });
       return;
     }
+    
+    // Check Recon-ng service availability
+    try {
+      const { error } = await supabase.functions.invoke('recon-ng-modules', {
+        body: { action: 'list' }
+      });
+      
+      if (error) {
+        toast({
+          title: 'Service Unavailable',
+          description: 'Recon-ng service is temporarily unavailable. Please try again later.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Recon-ng health check failed:', error);
+      toast({
+        title: 'Service Unavailable',
+        description: 'Recon-ng service is temporarily unavailable. Please try again later.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setShowConsent(true);
   };
 
