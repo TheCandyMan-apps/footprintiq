@@ -280,3 +280,412 @@ test.describe('Advanced Scan - Error Handling', () => {
     await expect(page.url()).toContain('/auth');
   });
 });
+
+test.describe('Advanced Scan - Edge Cases: Offline Worker', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/scan/advanced');
+    await page.waitForLoadState('networkidle');
+  });
+
+  test('should handle offline Maigret worker gracefully', async ({ page }) => {
+    // Mock Maigret worker as offline
+    await page.route('**/functions/v1/enqueue-maigret-scan', route => {
+      route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ 
+          error: 'Worker unavailable',
+          message: 'Maigret scan worker is currently offline'
+        })
+      });
+    });
+
+    // Select username scan
+    await page.selectOption('[data-testid="scan-type-select"]', 'username');
+    await page.fill('input[placeholder*="Enter"]', 'testuser');
+    
+    // Enable Maigret tool
+    await page.getByLabel(/social media/i).check();
+    
+    // Start scan
+    await page.getByRole('button', { name: /start comprehensive scan/i }).click();
+    
+    // Should show worker offline error
+    await expect(page.getByText(/worker.*offline|unavailable/i)).toBeVisible({ timeout: 5000 });
+    
+    // Should suggest retry or alternative
+    await expect(page.getByText(/try again|retry/i)).toBeVisible();
+  });
+
+  test('should handle offline SpiderFoot worker with fallback', async ({ page }) => {
+    // Mock SpiderFoot worker as offline
+    await page.route('**/functions/v1/harvester-scan', route => {
+      route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ 
+          error: 'Service unavailable',
+          message: 'SpiderFoot worker timeout'
+        })
+      });
+    });
+
+    // Enter email target
+    await page.selectOption('[data-testid="scan-type-select"]', 'email');
+    await page.fill('input[placeholder*="Enter"]', 'test@example.com');
+    
+    // Enable OSINT scanning
+    await page.getByLabel(/osint sources/i).check();
+    
+    // Start scan
+    await page.getByRole('button', { name: /start comprehensive scan/i }).click();
+    
+    // Should show worker timeout error
+    await expect(page.getByText(/timeout|unavailable/i)).toBeVisible({ timeout: 10000 });
+    
+    // Should still show partial results from other workers
+    await expect(page.getByText(/partial results|some tools failed/i)).toBeVisible();
+  });
+
+  test('should display progress popup during multi-tool scan', async ({ page }) => {
+    // Mock successful scan with progress updates
+    await page.route('**/functions/v1/multi-tool-orchestrate', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          scanId: 'test-scan-123',
+          status: 'processing',
+          progress: 45,
+          message: 'Scanning social media profiles...'
+        })
+      });
+    });
+
+    await page.selectOption('[data-testid="scan-type-select"]', 'username');
+    await page.fill('input[placeholder*="Enter"]', 'johndoe');
+    
+    await page.getByRole('button', { name: /start comprehensive scan/i }).click();
+    
+    // Progress popup should appear
+    await expect(page.getByText(/scanning/i)).toBeVisible({ timeout: 3000 });
+    await expect(page.locator('[role="progressbar"], .progress-bar')).toBeVisible();
+    
+    // Should show percentage or status message
+    await expect(page.getByText(/45%|processing|scanning social media/i)).toBeVisible();
+  });
+
+  test('should retry failed worker with exponential backoff', async ({ page }) => {
+    let attemptCount = 0;
+    
+    // Mock worker that fails first 2 times, succeeds on 3rd
+    await page.route('**/functions/v1/enqueue-maigret-scan', route => {
+      attemptCount++;
+      
+      if (attemptCount < 3) {
+        route.fulfill({
+          status: 500,
+          body: JSON.stringify({ error: 'Temporary failure' })
+        });
+      } else {
+        route.fulfill({
+          status: 200,
+          body: JSON.stringify({ 
+            scanId: 'test-scan-retry',
+            status: 'queued'
+          })
+        });
+      }
+    });
+
+    await page.selectOption('[data-testid="scan-type-select"]', 'username');
+    await page.fill('input[placeholder*="Enter"]', 'retryuser');
+    
+    await page.getByRole('button', { name: /start comprehensive scan/i }).click();
+    
+    // Should show retry attempts
+    await expect(page.getByText(/retrying|attempt/i)).toBeVisible({ timeout: 8000 });
+    
+    // Eventually should succeed
+    await expect(page.getByText(/scan started|processing/i)).toBeVisible({ timeout: 15000 });
+    
+    // Verify it retried (should have made 3 attempts)
+    expect(attemptCount).toBe(3);
+  });
+});
+
+test.describe('Advanced Scan - Edge Cases: Zero Results', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/scan/advanced');
+    await page.waitForLoadState('networkidle');
+  });
+
+  test('should handle zero results from Maigret gracefully', async ({ page }) => {
+    // Mock Maigret returning no results
+    await page.route('**/functions/v1/enqueue-maigret-scan', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          scanId: 'test-scan-empty',
+          status: 'completed',
+          results: []
+        })
+      });
+    });
+
+    await page.route('**/rest/v1/findings*', route => {
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([])
+      });
+    });
+
+    await page.selectOption('[data-testid="scan-type-select"]', 'username');
+    await page.fill('input[placeholder*="Enter"]', 'nonexistentuser123456');
+    
+    await page.getByLabel(/social media/i).check();
+    await page.getByRole('button', { name: /start comprehensive scan/i }).click();
+    
+    // Wait for scan to complete
+    await page.waitForTimeout(2000);
+    
+    // Should show zero results message
+    await expect(page.getByText(/no results found|0 findings|no data found/i)).toBeVisible({ timeout: 10000 });
+    
+    // Should offer suggestions
+    await expect(page.getByText(/try different|suggestions|alternative search/i)).toBeVisible();
+  });
+
+  test('should show AI-powered rescan suggestions for zero results', async ({ page }) => {
+    // Mock zero results response
+    await page.route('**/functions/v1/multi-tool-orchestrate', route => {
+      route.fulfill({
+        status: 200,
+        body: JSON.stringify({
+          scanId: 'empty-scan',
+          findings: [],
+          totalFindings: 0
+        })
+      });
+    });
+
+    // Mock AI suggestion endpoint
+    await page.route('**/functions/v1/ai-rescan-suggest', route => {
+      route.fulfill({
+        status: 200,
+        body: JSON.stringify({
+          suggestions: [
+            'Try searching for "john.doe" instead',
+            'Check for variations like "johndoe123"',
+            'Expand to include email addresses'
+          ]
+        })
+      });
+    });
+
+    await page.selectOption('[data-testid="scan-type-select"]', 'username');
+    await page.fill('input[placeholder*="Enter"]', 'jdoe');
+    
+    await page.getByRole('button', { name: /start comprehensive scan/i }).click();
+    
+    // Wait for zero results
+    await expect(page.getByText(/no results found/i)).toBeVisible({ timeout: 8000 });
+    
+    // AI suggestions should appear
+    await expect(page.getByText(/suggestions|try these alternatives/i)).toBeVisible();
+    await expect(page.getByText(/john\.doe/i)).toBeVisible();
+    await expect(page.getByText(/johndoe123/i)).toBeVisible();
+  });
+
+  test('should handle partial zero results (some tools succeed, others return nothing)', async ({ page }) => {
+    // Mock mixed results
+    await page.route('**/functions/v1/enqueue-maigret-scan', route => {
+      route.fulfill({
+        status: 200,
+        body: JSON.stringify({
+          results: [
+            { platform: 'Twitter', found: true, url: 'https://twitter.com/user' }
+          ]
+        })
+      });
+    });
+
+    await page.route('**/functions/v1/harvester-scan', route => {
+      route.fulfill({
+        status: 200,
+        body: JSON.stringify({ results: [] }) // Empty results
+      });
+    });
+
+    await page.selectOption('[data-testid="scan-type-select"]', 'username');
+    await page.fill('input[placeholder*="Enter"]', 'partialuser');
+    
+    await page.getByLabel(/social media/i).check();
+    await page.getByLabel(/osint sources/i).check();
+    
+    await page.getByRole('button', { name: /start comprehensive scan/i }).click();
+    
+    // Should show partial results indicator
+    await expect(page.getByText(/partial results|limited data|1.*finding/i)).toBeVisible({ timeout: 10000 });
+    
+    // Should indicate which tools succeeded
+    await expect(page.getByText(/social media.*found|twitter/i)).toBeVisible();
+    
+    // Should note which tools returned nothing
+    await expect(page.getByText(/osint.*no results|no osint data/i)).toBeVisible();
+  });
+
+  test('should display empty state with helpful actions', async ({ page }) => {
+    await page.route('**/rest/v1/findings*', route => {
+      route.fulfill({
+        status: 200,
+        body: JSON.stringify([])
+      });
+    });
+
+    await page.selectOption('[data-testid="scan-type-select"]', 'email');
+    await page.fill('input[placeholder*="Enter"]', 'noresults@example.com');
+    
+    await page.getByRole('button', { name: /start comprehensive scan/i }).click();
+    
+    await page.waitForTimeout(2000);
+    
+    // Empty state should show helpful UI
+    await expect(page.getByText(/no findings|nothing found/i)).toBeVisible({ timeout: 8000 });
+    
+    // Should show action buttons
+    const scanAgainBtn = page.getByRole('button', { name: /scan again|try another/i });
+    await expect(scanAgainBtn).toBeVisible();
+    
+    const viewHistoryBtn = page.getByRole('button', { name: /view history|past scans/i });
+    await expect(viewHistoryBtn).toBeVisible();
+  });
+});
+
+test.describe('Advanced Scan - Progress & Results Display', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/scan/advanced');
+    await page.waitForLoadState('networkidle');
+  });
+
+  test('should show real-time progress updates during scan', async ({ page }) => {
+    const progressStages = [
+      { progress: 10, message: 'Initializing scan...' },
+      { progress: 30, message: 'Querying Maigret...' },
+      { progress: 60, message: 'Processing social media...' },
+      { progress: 85, message: 'Analyzing results...' },
+      { progress: 100, message: 'Scan complete!' }
+    ];
+
+    let stageIndex = 0;
+
+    // Mock progress endpoint
+    await page.route('**/rest/v1/scan_jobs*', route => {
+      const stage = progressStages[stageIndex] || progressStages[progressStages.length - 1];
+      stageIndex = Math.min(stageIndex + 1, progressStages.length - 1);
+      
+      route.fulfill({
+        status: 200,
+        body: JSON.stringify([{
+          id: 'progress-test',
+          status: stageIndex < progressStages.length - 1 ? 'processing' : 'completed',
+          progress: stage.progress,
+          message: stage.message
+        }])
+      });
+    });
+
+    await page.selectOption('[data-testid="scan-type-select"]', 'username');
+    await page.fill('input[placeholder*="Enter"]', 'progresstest');
+    
+    await page.getByRole('button', { name: /start comprehensive scan/i }).click();
+    
+    // Verify progress stages appear
+    await expect(page.getByText(/initializing/i)).toBeVisible({ timeout: 3000 });
+    
+    // Progress bar should exist and update
+    const progressBar = page.locator('[role="progressbar"], .progress-bar, [class*="progress"]').first();
+    await expect(progressBar).toBeVisible();
+    
+    // Eventually should show completion
+    await expect(page.getByText(/complete/i)).toBeVisible({ timeout: 10000 });
+  });
+
+  test('should display findings count and summary in results popup', async ({ page }) => {
+    // Mock successful scan with findings
+    await page.route('**/rest/v1/findings*', route => {
+      route.fulfill({
+        status: 200,
+        body: JSON.stringify([
+          {
+            id: '1',
+            type: 'social_media',
+            platform: 'Twitter',
+            data: { username: 'testuser', followers: 1000 }
+          },
+          {
+            id: '2',
+            type: 'social_media',
+            platform: 'Instagram',
+            data: { username: 'testuser', followers: 5000 }
+          },
+          {
+            id: '3',
+            type: 'email',
+            platform: 'Hunter.io',
+            data: { email: 'test@example.com', verified: true }
+          }
+        ])
+      });
+    });
+
+    await page.selectOption('[data-testid="scan-type-select"]', 'username');
+    await page.fill('input[placeholder*="Enter"]', 'testuser');
+    
+    await page.getByRole('button', { name: /start comprehensive scan/i }).click();
+    
+    // Wait for results
+    await page.waitForTimeout(2000);
+    
+    // Should show findings count
+    await expect(page.getByText(/3.*findings|found 3|3 results/i)).toBeVisible({ timeout: 8000 });
+    
+    // Should show category breakdown
+    await expect(page.getByText(/social media.*2|2.*social/i)).toBeVisible();
+    await expect(page.getByText(/email.*1|1.*email/i)).toBeVisible();
+    
+    // Results should be clickable/expandable
+    await expect(page.getByText(/twitter/i)).toBeVisible();
+    await expect(page.getByText(/instagram/i)).toBeVisible();
+  });
+
+  test('should show scan duration and credits consumed', async ({ page }) => {
+    await page.route('**/rest/v1/scan_jobs*', route => {
+      route.fulfill({
+        status: 200,
+        body: JSON.stringify([{
+          id: 'duration-test',
+          status: 'completed',
+          created_at: new Date(Date.now() - 45000).toISOString(), // 45 seconds ago
+          completed_at: new Date().toISOString(),
+          credits_consumed: 15
+        }])
+      });
+    });
+
+    await page.selectOption('[data-testid="scan-type-select"]', 'email');
+    await page.fill('input[placeholder*="Enter"]', 'test@example.com');
+    
+    await page.getByRole('button', { name: /start comprehensive scan/i }).click();
+    
+    await page.waitForTimeout(2000);
+    
+    // Should show scan duration
+    await expect(page.getByText(/45.*seconds|duration.*45|took 45/i)).toBeVisible({ timeout: 8000 });
+    
+    // Should show credits consumed
+    await expect(page.getByText(/15.*credits|credits.*15/i)).toBeVisible();
+  });
+});
