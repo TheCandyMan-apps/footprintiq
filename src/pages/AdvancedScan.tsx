@@ -19,6 +19,7 @@ import { Search, Shield, Zap, Database, Globe, Lock, AlertTriangle, Info, BookOp
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useUserPersona } from "@/hooks/useUserPersona";
 import { useAnonMode } from "@/hooks/useAnonMode";
+import { useTierGating } from "@/hooks/useTierGating";
 import { SpiderFootStatusIndicator } from "@/components/scan/SpiderFootStatusIndicator";
 import { PremiumApifyOptions } from "@/components/scan/PremiumApifyOptions";
 import { AnonModeToggle } from "@/components/scan/AnonModeToggle";
@@ -43,6 +44,7 @@ import { useWorkerStatus } from "@/hooks/useWorkerStatus";
 import { WorkerStatusBanner } from "@/components/scan/WorkerStatusBanner";
 import { WhatsMyNameTab } from "@/components/scan/WhatsMyNameTab";
 import { MultiToolScanForm } from "@/components/scan/MultiToolScanForm";
+import { UpgradeTeaser } from "@/components/upsell/UpgradeTeaser";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -51,6 +53,7 @@ export default function AdvancedScan() {
   const { anonModeEnabled, toggleAnonMode, isLoading: anonLoading } = useAnonMode();
   const { startTracking } = useActiveScanContext();
   const { isWorkerOffline, getWorkerByName } = useWorkerStatus();
+  const { isFree, checkFeatureAccess } = useTierGating();
   const [scanType, setScanType] = useState<string>("email");
   const [target, setTarget] = useState("");
   const [providers, setProviders] = useState<string[]>([]);
@@ -492,14 +495,33 @@ export default function AdvancedScan() {
                     </AlertDescription>
                   </Alert>
                   
+                  {/* Maigret Upgrade Teaser for Free Users */}
+                  {isFree && (
+                    <UpgradeTeaser
+                      feature="maigret"
+                      title="Unlock Maigret Username Scanning"
+                      description="Search for usernames across 400+ social media platforms and websites with our premium Maigret scanner."
+                      benefits={[
+                        "Scan 400+ platforms including Facebook, Instagram, Twitter, LinkedIn, GitHub, and more",
+                        "Advanced username discovery with pattern matching",
+                        "Export results in multiple formats (CSV, JSON, PDF)",
+                        "Priority scanning with faster results"
+                      ]}
+                      plan="pro"
+                      className="mt-4"
+                    />
+                  )}
+                  
                   {/* WhatsMyName Premium Tab */}
-                  <Card className="p-4 bg-primary/5 border-primary/20 mt-4">
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-primary" />
-                      WhatsMyName Enrich (Premium)
-                    </h4>
-                    <WhatsMyNameTab subscriptionTier={subscriptionTier} />
-                  </Card>
+                  {!isFree && (
+                    <Card className="p-4 bg-primary/5 border-primary/20 mt-4">
+                      <h4 className="font-semibold mb-3 flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-primary" />
+                        WhatsMyName Enrich (Premium)
+                      </h4>
+                      <WhatsMyNameTab subscriptionTier={subscriptionTier} />
+                    </Card>
+                  )}
                 </>
               )}
             </div>
@@ -688,12 +710,30 @@ export default function AdvancedScan() {
                     <Checkbox
                       checked={sensitiveSources.includes(source)}
                       onCheckedChange={() => handleSensitiveSourceToggle(source)}
+                      disabled={source === 'darkweb' && isFree}
                     />
                     <span className="capitalize">{source} Sources</span>
                     <Badge variant="outline" className="ml-auto">-1 credit/reveal</Badge>
                   </label>
                 ))}
               </div>
+              
+              {/* Dark Web Upgrade Teaser for Free Users */}
+              {isFree && (
+                <UpgradeTeaser
+                  feature="darkweb"
+                  title="Unlock Dark Web Monitoring"
+                  description="Monitor and scan the dark web for exposed data, credential leaks, and security threats with enterprise-grade tools."
+                  benefits={[
+                    "Deep dark web scanning with customizable crawl depth",
+                    "Real-time alerts for credential leaks and data exposures",
+                    "Access to hidden forums, marketplaces, and paste sites",
+                    "Comprehensive threat intelligence reports"
+                  ]}
+                  plan="pro"
+                  className="mt-4"
+                />
+              )}
             </div>
 
             {/* Dark Web Options */}
