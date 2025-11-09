@@ -3,7 +3,7 @@ import { useActiveScan } from '@/hooks/useActiveScan';
 
 interface ActiveScan {
   scanId: string;
-  type: 'advanced' | 'username';
+  type: 'advanced' | 'username' | 'spiderfoot';
   target: string;
   startedAt: string;
 }

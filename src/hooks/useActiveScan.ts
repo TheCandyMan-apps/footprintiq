@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ActiveScan {
   scanId: string;
-  type: 'advanced' | 'username';
+  type: 'advanced' | 'username' | 'spiderfoot';
   target: string;
   startedAt: string;
 }
@@ -43,6 +43,8 @@ export function useActiveScan() {
 
     const channelName = activeScan.type === 'username' 
       ? `scan_progress_${activeScan.scanId}`
+      : activeScan.type === 'spiderfoot'
+      ? `spiderfoot_progress_${activeScan.scanId}`
       : `scan_progress:${activeScan.scanId}`;
 
     console.log(`[useActiveScan] Subscribing to ${channelName}`);

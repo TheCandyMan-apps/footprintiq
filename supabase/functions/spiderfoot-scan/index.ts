@@ -175,10 +175,24 @@ async function startSpiderFootScan(
       })
       .eq('id', scanId);
 
+    // Broadcast initial progress
+    await supabase.channel(`spiderfoot_progress_${scanId}`).send({
+      type: 'broadcast',
+      event: 'progress',
+      payload: {
+        status: 'running',
+        completedProviders: 0,
+        totalProviders: modules.length,
+        totalFindings: 0,
+        message: 'Starting SpiderFoot scan...',
+        currentProviders: modules,
+      },
+    });
+
     console.log(`[${scanId}] Starting SpiderFoot API call`);
 
     // Call SpiderFoot API
-    const scanResult = await callSpiderFootAPI(target, targetType, modules);
+    const scanResult = await callSpiderFootAPI(target, targetType, modules, scanId, supabase);
 
     console.log(`[${scanId}] SpiderFoot scan completed. Events: ${scanResult.total_events}`);
 
@@ -198,14 +212,20 @@ async function startSpiderFootScan(
       })
       .eq('id', scanId);
 
-    console.log(`[${scanId}] Scan results stored successfully`);
+    // Broadcast completion
+    await supabase.channel(`spiderfoot_progress_${scanId}`).send({
+      type: 'broadcast',
+      event: 'progress',
+      payload: {
+        status: 'completed',
+        completedProviders: modules.length,
+        totalProviders: modules.length,
+        totalFindings: scanResult.total_events || 0,
+        message: 'Scan completed successfully!',
+      },
+    });
 
-    // Broadcast completion via Realtime
-    await supabase
-      .from('spiderfoot_scans')
-      .select('*')
-      .eq('id', scanId)
-      .single();
+    console.log(`[${scanId}] Scan results stored successfully`);
 
   } catch (error) {
     console.error(`[${scanId}] SpiderFoot scan failed:`, error);
@@ -219,6 +239,19 @@ async function startSpiderFootScan(
         completed_at: new Date().toISOString(),
       })
       .eq('id', scanId);
+
+    // Broadcast error
+    await supabase.channel(`spiderfoot_progress_${scanId}`).send({
+      type: 'broadcast',
+      event: 'progress',
+      payload: {
+        status: 'error',
+        completedProviders: 0,
+        totalProviders: modules.length,
+        totalFindings: 0,
+        message: `Scan failed: ${error.message}`,
+      },
+    });
   }
 }
 
@@ -228,7 +261,9 @@ async function startSpiderFootScan(
 async function callSpiderFootAPI(
   target: string,
   targetType: string,
-  modules: string[]
+  modules: string[],
+  scanId: string,
+  supabase: any
 ): Promise<SpiderFootScanResult> {
   // SpiderFoot API endpoint
   const url = `${SPIDERFOOT_API_URL}/api`;
@@ -288,6 +323,19 @@ async function callSpiderFootAPI(
     const status = await statusResponse.json();
 
     console.log(`SpiderFoot scan status: ${status.status}, Events: ${status.total}`);
+
+    // Broadcast progress update
+    await supabase.channel(`spiderfoot_progress_${scanId}`).send({
+      type: 'broadcast',
+      event: 'progress',
+      payload: {
+        status: 'running',
+        completedProviders: Math.floor((attempt / maxAttempts) * modules.length),
+        totalProviders: modules.length,
+        totalFindings: status.total || 0,
+        message: `Scanning... (${status.total || 0} events found)`,
+      },
+    });
 
     if (status.status === 'FINISHED' || status.status === 'ERROR-FAILED') {
       // Get scan results

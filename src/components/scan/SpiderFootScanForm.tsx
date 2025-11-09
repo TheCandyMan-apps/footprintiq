@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useSpiderFootScan } from '@/hooks/useSpiderFootScan';
 import { useUserPersona } from '@/hooks/useUserPersona';
+import { useActiveScanContext } from '@/contexts/ActiveScanContext';
 import { Shield, Search, Database, Globe, AlertCircle, Lock, Zap, Crown } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
@@ -32,6 +33,7 @@ export function SpiderFootScanForm({ workspaceId }: SpiderFootScanFormProps) {
   const navigate = useNavigate();
   const { startScan, isScanning } = useSpiderFootScan();
   const { persona, isStandard } = useUserPersona();
+  const { startTracking } = useActiveScanContext();
   const [target, setTarget] = useState('');
   const [targetType, setTargetType] = useState<'email' | 'ip' | 'domain' | 'username' | 'phone'>('email');
   const [selectedModules, setSelectedModules] = useState<string[]>(['sfp_dns', 'sfp_emailrep', 'sfp_whois']);
@@ -64,6 +66,14 @@ export function SpiderFootScanForm({ workspaceId }: SpiderFootScanFormProps) {
     });
 
     if (scanId) {
+      // Start tracking in floating progress tracker
+      startTracking({
+        scanId,
+        type: 'spiderfoot',
+        target: target.trim(),
+        startedAt: new Date().toISOString(),
+      });
+
       // Reset form
       setTarget('');
       setSelectedModules(['sfp_dns', 'sfp_emailrep', 'sfp_whois']);
