@@ -10,9 +10,11 @@ import confetti from 'canvas-confetti';
 
 interface ProviderStatus {
   name: string;
-  status: 'pending' | 'loading' | 'success' | 'failed';
+  status: 'pending' | 'loading' | 'success' | 'failed' | 'retrying';
   message?: string;
   resultCount?: number;
+  retryCount?: number;
+  maxRetries?: number;
 }
 
 interface ScanProgressDialogProps {
@@ -111,15 +113,29 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     setIsSavingCase(false);
 
     // Helper to upsert provider status
-    const upsertProvider = (name: string, status: ProviderStatus['status'], message?: string) => {
+    const upsertProvider = (
+      name: string, 
+      status: ProviderStatus['status'], 
+      message?: string,
+      retryCount?: number,
+      maxRetries?: number
+    ) => {
       setProviders((prev) => {
         const existing = prev.find((p) => p.name === name);
         if (existing) {
           return prev.map((p) =>
-            p.name === name ? { ...p, status, message: message || p.message } : p
+            p.name === name 
+              ? { 
+                  ...p, 
+                  status, 
+                  message: message || p.message,
+                  retryCount: retryCount !== undefined ? retryCount : p.retryCount,
+                  maxRetries: maxRetries !== undefined ? maxRetries : p.maxRetries
+                } 
+              : p
           );
         }
-        return [...prev, { name, status, message: message || '' }];
+        return [...prev, { name, status, message: message || '', retryCount, maxRetries }];
       });
     };
 
@@ -186,8 +202,18 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         if (update.message) {
           const queryMatch = update.message.match(/Querying (.+)\.\.\./);
           const completedMatch = update.message.match(/Completed (.+)\.\.\./);
+          const retryMatch = update.message.match(/Retry (\d+)\/(\d+) for (.+)\.\.\./);
           
-          if (queryMatch) {
+          if (retryMatch) {
+            const [, current, max, providerName] = retryMatch;
+            upsertProvider(
+              providerName, 
+              'retrying', 
+              `Retrying (${current}/${max})...`,
+              parseInt(current),
+              parseInt(max)
+            );
+          } else if (queryMatch) {
             upsertProvider(queryMatch[1], 'loading', 'Querying...');
           } else if (completedMatch) {
             const findingsText = update.findingsCount !== undefined 
@@ -326,6 +352,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'loading':
         return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+      case 'retrying':
+        return <Loader2 className="h-4 w-4 animate-spin text-yellow-500" />;
       case 'failed':
         return <XCircle className="h-4 w-4 text-red-500" />;
       case 'pending':
@@ -333,12 +361,18 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     }
   };
 
-  const getStatusBadge = (status: ProviderStatus['status']) => {
+  const getStatusBadge = (status: ProviderStatus['status'], retryCount?: number, maxRetries?: number) => {
     switch (status) {
       case 'success':
         return <Badge variant="default" className="bg-green-500">Done</Badge>;
       case 'loading':
         return <Badge variant="default" className="bg-blue-500">Loading</Badge>;
+      case 'retrying':
+        return (
+          <Badge variant="default" className="bg-yellow-500">
+            Retry {retryCount}/{maxRetries}
+          </Badge>
+        );
       case 'failed':
         return <Badge variant="destructive">Failed</Badge>;
       case 'pending':

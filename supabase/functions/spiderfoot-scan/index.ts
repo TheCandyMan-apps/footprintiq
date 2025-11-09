@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { corsHeaders } from '../_shared/secure.ts';
+import { retryWithBackoff } from '../_shared/retryWithBackoff.ts';
 
 const SPIDERFOOT_API_URL = Deno.env.get('SPIDERFOOT_API_URL') || 'http://localhost:5001';
 const SPIDERFOOT_API_KEY = Deno.env.get('SPIDERFOOT_API_KEY');

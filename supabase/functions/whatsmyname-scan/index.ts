@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { retryWithBackoff } from '../_shared/retryWithBackoff.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -93,20 +94,36 @@ serve(async (req) => {
       throw new Error(`Credit deduction failed: ${creditError.message}`);
     }
 
-    // Call WhatsMyName worker
-    const workerResponse = await fetch(`${WHATSMYNAME_WORKER_URL}/scan`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    console.log(`[WhatsMyName] Calling worker at ${WHATSMYNAME_WORKER_URL} for username: ${username}`);
+    
+    // Call WhatsMyName worker with retry logic
+    const workerResponse = await retryWithBackoff(
+      async () => {
+        const response = await fetch(`${WHATSMYNAME_WORKER_URL}/scan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            filters: filters || ''
+          })
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Worker returned ${response.status}: ${errorText}`);
+        }
+        
+        return response;
       },
-      body: JSON.stringify({ username, filters: filters || '' }),
-    });
-
-    if (!workerResponse.ok) {
-      const errorText = await workerResponse.text();
-      console.error('[whatsmyname-scan] Worker error:', workerResponse.status, errorText);
-      throw new Error(`WhatsMyName worker error: ${workerResponse.status}`);
-    }
+      {
+        maxAttempts: 3,
+        delays: [2000, 4000, 6000],
+        onRetry: (attempt, error) => {
+          console.log(`[WhatsMyName] Retry ${attempt}/3 for ${username} - ${error.message}`);
+        }
+      },
+      { providerId: 'whatsmyname' }
+    );
 
     const workerData = await workerResponse.json();
 
