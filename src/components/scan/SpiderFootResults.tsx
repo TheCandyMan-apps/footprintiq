@@ -15,9 +15,13 @@ import {
   Database,
   FileText,
   Loader2,
+  FolderPlus,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { createCase, saveCase } from '@/lib/case';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface SpiderFootResultsProps {
   workspaceId: string;
@@ -28,6 +32,9 @@ export function SpiderFootResults({ workspaceId }: SpiderFootResultsProps) {
   const [scans, setScans] = useState<SpiderFootScan[]>([]);
   const [selectedScan, setSelectedScan] = useState<SpiderFootScan | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadScans();
@@ -88,6 +95,73 @@ export function SpiderFootResults({ workspaceId }: SpiderFootResultsProps) {
         {status}
       </Badge>
     );
+  };
+
+  const handleSaveToCase = async () => {
+    if (!selectedScan) return;
+
+    setSaving(true);
+    try {
+      // Create a new case with scan data
+      const caseName = `SpiderFoot: ${selectedScan.target}`;
+      const caseDescription = `SpiderFoot scan of ${selectedScan.target_type} - ${selectedScan.total_events} events found`;
+      
+      const newCase = createCase(caseName, caseDescription);
+      
+      // Add correlations as notes
+      if (selectedScan.correlations && selectedScan.correlations.length > 0) {
+        selectedScan.correlations.forEach((corr: any) => {
+          const noteContent = `**Correlation:** ${corr.description}\n${corr.confidence ? `Confidence: ${corr.confidence}` : ''}`;
+          const now = new Date().toISOString();
+          newCase.notes.push({
+            id: crypto.randomUUID(),
+            findingId: selectedScan.id,
+            content: noteContent,
+            createdAt: now,
+            updatedAt: now,
+          });
+        });
+      }
+
+      // Add scan metadata as a note
+      const metadataNote = `**Scan Details:**
+- Target: ${selectedScan.target}
+- Type: ${selectedScan.target_type}
+- Status: ${selectedScan.status}
+- Total Events: ${selectedScan.total_events}
+- Modules: ${selectedScan.modules.join(', ') || 'Default'}
+- Scan ID: ${selectedScan.id}
+- Created: ${new Date(selectedScan.created_at).toLocaleString()}`;
+      
+      const now = new Date().toISOString();
+      newCase.notes.push({
+        id: crypto.randomUUID(),
+        findingId: selectedScan.id,
+        content: metadataNote,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // Save the case
+      await saveCase(newCase);
+
+      toast({
+        title: "Case Created",
+        description: `Successfully saved SpiderFoot scan to case "${caseName}"`,
+      });
+
+      // Navigate to cases page
+      navigate('/analyst');
+    } catch (error) {
+      console.error('Error saving to case:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create case. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -163,6 +237,22 @@ export function SpiderFootResults({ workspaceId }: SpiderFootResultsProps) {
       {/* Selected Scan Details */}
       {selectedScan && (
         <>
+          {/* Save to Case Button */}
+          <div className="flex justify-end">
+            <Button
+              onClick={handleSaveToCase}
+              disabled={saving || selectedScan.status === 'running'}
+              className="gap-2"
+            >
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <FolderPlus className="w-4 h-4" />
+              )}
+              {saving ? 'Saving...' : 'Save to Case'}
+            </Button>
+          </div>
+
           {/* Correlations */}
           {selectedScan.correlations && selectedScan.correlations.length > 0 && (
             <Card className="p-6">
