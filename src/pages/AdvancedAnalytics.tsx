@@ -6,6 +6,7 @@ import { ComparativeAnalysis } from "@/components/analytics/ComparativeAnalysis"
 import { CustomMetrics } from "@/components/analytics/CustomMetrics";
 import { ReconNgScanForm } from "@/components/analytics/ReconNgScanForm";
 import { ReconNgResults } from "@/components/analytics/ReconNgResults";
+import { ReconNgModuleMarketplace } from "@/components/analytics/ReconNgModuleMarketplace";
 import { BarChart3, GitCompare, TrendingUp, FileText, Database, Brain, Shield } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -95,9 +96,22 @@ export default function AdvancedAnalytics() {
             </TabsContent>
 
             {/* Recon-ng Intelligence */}
-            <TabsContent value="recon-ng" className="space-y-6">
-              <ReconNgScanForm workspaceId={workspaceId} />
-              <ReconNgResults workspaceId={workspaceId} />
+            <TabsContent value="recon-ng">
+              <Tabs defaultValue="scan" className="space-y-6">
+                <TabsList>
+                  <TabsTrigger value="scan">Run Scan</TabsTrigger>
+                  <TabsTrigger value="marketplace">Module Marketplace</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="scan" className="space-y-6">
+                  <ReconNgScanForm workspaceId={workspaceId} />
+                  <ReconNgResults workspaceId={workspaceId} />
+                </TabsContent>
+                
+                <TabsContent value="marketplace">
+                  <ReconNgModuleMarketplace />
+                </TabsContent>
+              </Tabs>
             </TabsContent>
 
             {/* Data Warehouse (Placeholder) */}

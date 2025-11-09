@@ -194,6 +194,133 @@ class ReconNgExecutor:
         except Exception as e:
             print(f"Error listing modules: {e}")
             return []
+    
+    def list_marketplace_modules(self) -> List[Dict[str, Any]]:
+        """List all available modules from marketplace with details"""
+        try:
+            result = subprocess.run(
+                ['recon-ng', '-w', 'default', '-x', 'marketplace search'],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            modules = []
+            for line in result.stdout.split('\n'):
+                line = line.strip()
+                if '|' in line and not line.startswith('|--'):
+                    parts = [p.strip() for p in line.split('|')]
+                    if len(parts) >= 4 and '/' in parts[1]:
+                        modules.append({
+                            'name': parts[1],
+                            'version': parts[2] if len(parts) > 2 else '',
+                            'status': parts[3] if len(parts) > 3 else 'not installed',
+                            'updated': parts[4] if len(parts) > 4 else '',
+                            'category': parts[1].split('/')[0] if '/' in parts[1] else 'unknown',
+                            'installed': parts[3].lower() == 'installed' if len(parts) > 3 else False
+                        })
+            
+            return modules
+            
+        except Exception as e:
+            print(f"Error listing marketplace modules: {e}")
+            return []
+    
+    def list_installed_modules(self) -> List[str]:
+        """List installed modules only"""
+        try:
+            all_modules = self.list_marketplace_modules()
+            return [m['name'] for m in all_modules if m.get('installed', False)]
+        except Exception as e:
+            print(f"Error listing installed modules: {e}")
+            return []
+    
+    def install_module(self, module_name: str) -> Dict[str, Any]:
+        """Install a module from marketplace"""
+        try:
+            print(f"Installing module: {module_name}")
+            
+            result = subprocess.run(
+                ['recon-ng', '-w', 'default', '-x', f'marketplace install {module_name}'],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            success = result.returncode == 0 and 'installed' in result.stdout.lower()
+            
+            return {
+                'success': success,
+                'module': module_name,
+                'message': result.stdout if success else result.stderr,
+                'output': result.stdout
+            }
+            
+        except Exception as e:
+            print(f"Error installing module {module_name}: {e}")
+            return {
+                'success': False,
+                'module': module_name,
+                'error': str(e)
+            }
+    
+    def update_module(self, module_name: str) -> Dict[str, Any]:
+        """Update an installed module"""
+        try:
+            print(f"Updating module: {module_name}")
+            
+            result = subprocess.run(
+                ['recon-ng', '-w', 'default', '-x', f'marketplace update; marketplace install {module_name}'],
+                capture_output=True,
+                text=True,
+                timeout=60
+            )
+            
+            success = result.returncode == 0
+            
+            return {
+                'success': success,
+                'module': module_name,
+                'message': result.stdout if success else result.stderr,
+                'output': result.stdout
+            }
+            
+        except Exception as e:
+            print(f"Error updating module {module_name}: {e}")
+            return {
+                'success': False,
+                'module': module_name,
+                'error': str(e)
+            }
+    
+    def get_module_info(self, module_name: str) -> Dict[str, Any]:
+        """Get detailed information about a module"""
+        try:
+            result = subprocess.run(
+                ['recon-ng', '-w', 'default', '-x', f'marketplace info {module_name}'],
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+            
+            info = {
+                'name': module_name,
+                'raw_output': result.stdout
+            }
+            
+            # Parse key information
+            for line in result.stdout.split('\n'):
+                line = line.strip()
+                if ':' in line:
+                    key, value = line.split(':', 1)
+                    key = key.strip().lower().replace(' ', '_')
+                    info[key] = value.strip()
+            
+            return info
+            
+        except Exception as e:
+            print(f"Error getting module info: {e}")
+            return {'error': str(e)}
 
 if __name__ == '__main__':
     # Test execution

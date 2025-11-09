@@ -135,6 +135,126 @@ def validate_target():
     except Exception as e:
         return jsonify({'valid': False, 'error': str(e)}), 400
 
+@app.route('/modules/marketplace', methods=['GET'])
+def list_marketplace_modules():
+    """List all available modules from Recon-ng marketplace"""
+    try:
+        modules = executor.list_marketplace_modules()
+        return jsonify({
+            'success': True,
+            'modules': modules,
+            'count': len(modules)
+        })
+    except Exception as e:
+        logger.error(f"Error listing marketplace modules: {str(e)}")
+        return jsonify({
+            'error': 'Failed to list marketplace modules',
+            'message': str(e)
+        }), 500
+
+@app.route('/modules/installed', methods=['GET'])
+def list_installed_modules():
+    """List installed Recon-ng modules"""
+    try:
+        modules = executor.list_installed_modules()
+        return jsonify({
+            'success': True,
+            'modules': modules,
+            'count': len(modules)
+        })
+    except Exception as e:
+        logger.error(f"Error listing installed modules: {str(e)}")
+        return jsonify({
+            'error': 'Failed to list installed modules',
+            'message': str(e)
+        }), 500
+
+@app.route('/modules/install', methods=['POST'])
+def install_module():
+    """Install a Recon-ng module"""
+    # Verify authentication
+    if not verify_token():
+        logger.warning(f"Unauthorized module install attempt from {request.remote_addr}")
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        module_name = data.get('module')
+        
+        if not module_name:
+            return jsonify({'error': 'Module name is required'}), 400
+        
+        logger.info(f"Installing module: {module_name}")
+        
+        result = executor.install_module(module_name)
+        
+        if result['success']:
+            logger.info(f"Module {module_name} installed successfully")
+        else:
+            logger.error(f"Failed to install module {module_name}: {result.get('error')}")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error installing module: {str(e)}", exc_info=True)
+        return jsonify({
+            'error': 'Failed to install module',
+            'message': str(e)
+        }), 500
+
+@app.route('/modules/update', methods=['POST'])
+def update_module():
+    """Update a Recon-ng module"""
+    # Verify authentication
+    if not verify_token():
+        logger.warning(f"Unauthorized module update attempt from {request.remote_addr}")
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    try:
+        data = request.get_json()
+        module_name = data.get('module')
+        
+        if not module_name:
+            return jsonify({'error': 'Module name is required'}), 400
+        
+        logger.info(f"Updating module: {module_name}")
+        
+        result = executor.update_module(module_name)
+        
+        if result['success']:
+            logger.info(f"Module {module_name} updated successfully")
+        else:
+            logger.error(f"Failed to update module {module_name}: {result.get('error')}")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Error updating module: {str(e)}", exc_info=True)
+        return jsonify({
+            'error': 'Failed to update module',
+            'message': str(e)
+        }), 500
+
+@app.route('/modules/info', methods=['POST'])
+def get_module_info():
+    """Get detailed information about a module"""
+    try:
+        data = request.get_json()
+        module_name = data.get('module')
+        
+        if not module_name:
+            return jsonify({'error': 'Module name is required'}), 400
+        
+        info = executor.get_module_info(module_name)
+        return jsonify(info)
+        
+    except Exception as e:
+        logger.error(f"Error getting module info: {str(e)}")
+        return jsonify({
+            'error': 'Failed to get module info',
+            'message': str(e)
+        }), 500
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Endpoint not found'}), 404
