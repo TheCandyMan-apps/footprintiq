@@ -2,7 +2,7 @@ name: Run Tests
 
 on:
   push:
-    branches: [main, develop, tests]
+    branches: [main, develop, tests, test-auto-thrive]
   pull_request:
     branches: [main, develop]
 
@@ -23,7 +23,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run unit tests
         run: npm run test:run
 
       - name: Generate coverage report
@@ -33,6 +36,19 @@ jobs:
       - name: Run edge case tests
         run: npm run test:run -- tests/workers tests/providers tests/components
 
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          CI: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
@@ -40,3 +56,20 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/test-auto-thrive' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Deploy to production
+        run: |
+          echo "✅ All tests passed on test-auto-thrive branch"
+          echo "🚀 Triggering auto-deployment..."
+          # Deployment will be handled by Lovable's deployment system
+        env:
+          BRANCH: test-auto-thrive

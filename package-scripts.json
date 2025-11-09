@@ -8,12 +8,16 @@
     "test:whatsmyname": "vitest run tests/whatsmyname.test.ts",
     "test:scans": "vitest run tests/retry-scans.test.ts",
     "test:credit-packs": "vitest run tests/credit-packs.test.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:scan": "playwright test tests/e2e/scan-flow.spec.ts --project=chromium",
     "typecheck": "tsc --noEmit",
     "check:build": "vite build --mode production",
     "check:secrets": "bash -c 'if grep -R \"VITE_.*_KEY\" src/providers 2>/dev/null | grep -v registry.meta; then echo \"❌ VITE secret in client code\"; exit 1; else echo \"✅ No client secrets\"; fi'",
     "test:payments": "playwright test tests/e2e/subscription-upgrade.spec.ts tests/e2e/credit-purchase.spec.ts --project=chromium",
     "ci:verify": "npm run lint && npm run typecheck && npm run check:secrets && npm run test:run && npm run check:build",
-    "ci:pre-deploy": "npm run test:payments",
+    "ci:pre-deploy": "npm run test:payments && npm run test:e2e",
     "audit:prod": "node scripts/audit-prod.mjs"
   }
 }
