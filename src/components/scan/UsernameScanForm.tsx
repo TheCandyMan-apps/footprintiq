@@ -70,7 +70,7 @@ export function UsernameScanForm() {
       // Pre-scan session check
       const sessionCheck = await checkAndRefreshSession();
       
-      // Worker health check
+      // Worker health check (non-blocking)
       try {
         const workerUrl = import.meta.env.VITE_MAIGRET_API_URL || 'https://maigret-api-312297078337.europe-west1.run.app';
         const healthCheck = await fetch(`${workerUrl}/health`, { 
@@ -80,22 +80,18 @@ export function UsernameScanForm() {
         
         if (!healthCheck.ok) {
           toast({
-            title: 'Service Unavailable',
-            description: 'Username scan service is temporarily unavailable. Please try again later.',
-            variant: 'destructive',
+            title: 'Worker Status Warning',
+            description: 'Username scan service may be slow. Your scan will retry automatically if needed.',
+            variant: 'default',
           });
-          setSubmitting(false);
-          return;
         }
       } catch (error) {
         console.error('Worker health check failed:', error);
         toast({
-          title: 'Service Unavailable',
-          description: 'Username scan service is temporarily unavailable. Please try again later.',
-          variant: 'destructive',
+          title: 'Worker Status Warning',
+          description: 'Username scan service may be slow. Your scan will retry automatically if needed.',
+          variant: 'default',
         });
-        setSubmitting(false);
-        return;
       }
       
       if (!sessionCheck.valid) {

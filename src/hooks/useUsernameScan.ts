@@ -63,26 +63,90 @@ export const useUsernameScan = () => {
       
       addLog({ level: 'debug', message: 'Authentication verified', data: { userId: user?.id } });
       
-      // Invoke scan with timeout protection
+      // Invoke scan with retry logic
       addLog({ level: 'info', message: 'Invoking scan function' });
       
-      const { data, error } = await supabase.functions.invoke('enqueue-maigret-scan', {
-        body: {
-          username: options.username,
-          tags: options.tags,
-          all_sites: options.allSites,
-          artifacts: options.artifacts,
-        },
-      });
+      let lastError: any;
+      const maxRetries = 3;
+      const delays = [1000, 2000, 4000]; // Exponential backoff: 1s, 2s, 4s
       
-      if (error) {
-        addLog({ level: 'error', message: 'Scan invocation failed', data: error });
-        throw error;
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          addLog({ 
+            level: 'debug', 
+            message: `Scan attempt ${attempt}/${maxRetries}` 
+          });
+          
+          const { data, error } = await supabase.functions.invoke('enqueue-maigret-scan', {
+            body: {
+              username: options.username,
+              tags: options.tags,
+              all_site: options.allSites,
+              artifacts: options.artifacts,
+            },
+          });
+          
+          if (error) {
+            lastError = error;
+            
+            // Check if error is retryable
+            const isRetryable = 
+              error.message?.includes('timeout') ||
+              error.message?.includes('network') ||
+              error.message?.includes('unavailable') ||
+              error.message?.includes('503') ||
+              error.message?.includes('502');
+            
+            if (!isRetryable || attempt >= maxRetries) {
+              addLog({ 
+                level: 'error', 
+                message: 'Scan invocation failed (non-retryable or max retries)', 
+                data: error 
+              });
+              throw error;
+            }
+            
+            // Wait before retry
+            const delay = delays[attempt - 1] || 4000;
+            addLog({ 
+              level: 'warn', 
+              message: `Retrying in ${delay}ms due to: ${error.message}`,
+              data: { attempt, delay } 
+            });
+            await new Promise(resolve => setTimeout(resolve, delay));
+            continue;
+          }
+          
+          addLog({ 
+            level: 'info', 
+            message: 'Scan started successfully', 
+            data: { jobId: data.jobId, attempts: attempt } 
+          });
+          
+          return data;
+        } catch (err: any) {
+          lastError = err;
+          
+          if (attempt >= maxRetries) {
+            addLog({ 
+              level: 'error', 
+              message: 'Scan failed after all retries', 
+              data: err 
+            });
+            throw err;
+          }
+          
+          const delay = delays[attempt - 1] || 4000;
+          addLog({ 
+            level: 'warn', 
+            message: `Retrying in ${delay}ms due to exception`,
+            data: { attempt, delay, error: err.message } 
+          });
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
       
-      addLog({ level: 'info', message: 'Scan started successfully', data: { jobId: data.jobId } });
-      
-      return data;
+      throw lastError;
     } catch (error) {
       addLog({ level: 'error', message: 'Scan failed', data: error });
       throw error;

@@ -1,12 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Activity } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Activity, RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 type HealthStatus = 'healthy' | 'degraded' | 'down' | 'unknown';
 
 export function WorkerStatus() {
   const [status, setStatus] = useState<HealthStatus>('unknown');
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
+  const [checking, setChecking] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     checkHealth();
@@ -14,11 +18,19 @@ export function WorkerStatus() {
     return () => clearInterval(interval);
   }, []);
 
-  const checkHealth = async () => {
+  const checkHealth = async (manual = false) => {
+    setChecking(true);
     try {
       const workerUrl = import.meta.env.VITE_MAIGRET_API_URL;
       if (!workerUrl) {
         setStatus('unknown');
+        if (manual) {
+          toast({
+            title: 'Configuration Error',
+            description: 'Worker URL not configured',
+            variant: 'destructive',
+          });
+        }
         return;
       }
 
@@ -27,14 +39,35 @@ export function WorkerStatus() {
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: AbortSignal.timeout(5000),
       });
 
       if (response.ok) {
         setStatus('healthy');
+        if (manual) {
+          toast({
+            title: 'Worker Online',
+            description: 'Username scan service is operational',
+          });
+        }
       } else if (response.status >= 500) {
         setStatus('down');
+        if (manual) {
+          toast({
+            title: 'Worker Offline',
+            description: 'Service is currently unavailable. Scans will retry automatically.',
+            variant: 'destructive',
+          });
+        }
       } else {
         setStatus('degraded');
+        if (manual) {
+          toast({
+            title: 'Worker Degraded',
+            description: 'Service is experiencing issues but scans may still work.',
+            variant: 'default',
+          });
+        }
       }
       
       setLastCheck(new Date());
@@ -42,6 +75,15 @@ export function WorkerStatus() {
       console.error('Health check failed:', error);
       setStatus('down');
       setLastCheck(new Date());
+      if (manual) {
+        toast({
+          title: 'Worker Offline',
+          description: 'Service is currently unavailable. Scans will retry automatically.',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setChecking(false);
     }
   };
 
@@ -61,13 +103,13 @@ export function WorkerStatus() {
   const getLabel = () => {
     switch (status) {
       case 'healthy':
-        return 'Worker Online';
+        return 'Online';
       case 'degraded':
-        return 'Worker Degraded';
+        return 'Degraded';
       case 'down':
-        return 'Worker Offline';
+        return 'Offline';
       default:
-        return 'Worker Unknown';
+        return 'Unknown';
     }
   };
 
@@ -79,9 +121,19 @@ export function WorkerStatus() {
       </Badge>
       {lastCheck && (
         <span className="text-xs text-muted-foreground">
-          Last checked: {lastCheck.toLocaleTimeString()}
+          {lastCheck.toLocaleTimeString()}
         </span>
       )}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => checkHealth(true)}
+        disabled={checking}
+        className="h-7 w-7 p-0"
+        title="Refresh worker status"
+      >
+        <RefreshCw className={`h-3.5 w-3.5 ${checking ? 'animate-spin' : ''}`} />
+      </Button>
     </div>
   );
 }
