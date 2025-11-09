@@ -38,6 +38,8 @@ import { SpiderFootResults } from "@/components/scan/SpiderFootResults";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGeocoding } from "@/hooks/useGeocoding";
 import { useActiveScanContext } from "@/contexts/ActiveScanContext";
+import { useWorkerStatus } from "@/hooks/useWorkerStatus";
+import { WorkerStatusBanner } from "@/components/scan/WorkerStatusBanner";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -45,6 +47,7 @@ export default function AdvancedScan() {
   const { persona, isStandard } = useUserPersona();
   const { anonModeEnabled, toggleAnonMode, isLoading: anonLoading } = useAnonMode();
   const { startTracking } = useActiveScanContext();
+  const { isWorkerOffline, getWorkerByName } = useWorkerStatus();
   const [scanType, setScanType] = useState<string>("email");
   const [target, setTarget] = useState("");
   const [providers, setProviders] = useState<string[]>([]);
@@ -225,6 +228,16 @@ export default function AdvancedScan() {
   const handleScan = async () => {
     // Redirect username scans to Maigret scanner
     if (scanType === 'username') {
+      // Check if Maigret worker is offline
+      if (isWorkerOffline('maigret')) {
+        const maigret = getWorkerByName('maigret');
+        toast.error("Maigret worker is offline", {
+          description: maigret?.error_message || "Please retry soon or use cached results",
+          duration: 5000,
+        });
+        return;
+      }
+      
       toast.info("Redirecting to Username Scanner (powered by Maigret)");
       navigate('/scan/usernames');
       return;
@@ -387,6 +400,9 @@ export default function AdvancedScan() {
 
           {!workspaceLoading && workspace && (
             <>
+              {/* Worker Status Banner */}
+              <WorkerStatusBanner />
+              
               {/* Real-time Status Indicator - compact inline version */}
               {isScanning && currentScanId && (
                 <div className="mb-6">

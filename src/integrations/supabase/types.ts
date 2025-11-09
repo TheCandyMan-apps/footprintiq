@@ -7296,6 +7296,48 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_status: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          last_check_at: string | null
+          last_success_at: string | null
+          metadata: Json | null
+          response_time_ms: number | null
+          status: string
+          updated_at: string | null
+          worker_name: string
+          worker_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_check_at?: string | null
+          last_success_at?: string | null
+          metadata?: Json | null
+          response_time_ms?: number | null
+          status?: string
+          updated_at?: string | null
+          worker_name: string
+          worker_type: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          last_check_at?: string | null
+          last_success_at?: string | null
+          metadata?: Json | null
+          response_time_ms?: number | null
+          status?: string
+          updated_at?: string | null
+          worker_name?: string
+          worker_type?: string
+        }
+        Relationships: []
+      }
       workspace_features: {
         Row: {
           created_at: string
