@@ -305,3 +305,6 @@ verify_jwt = false
 
 [functions."admin/send-glitch-alert"]
 verify_jwt = true
+
+[functions.enrich-finding]
+verify_jwt = true

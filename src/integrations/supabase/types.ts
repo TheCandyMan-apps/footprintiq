@@ -3178,6 +3178,53 @@ export type Database = {
           },
         ]
       }
+      finding_enrichments: {
+        Row: {
+          attack_vectors: Json | null
+          context: string
+          created_at: string
+          credits_spent: number
+          enriched_by: string
+          finding_id: string
+          id: string
+          links: Json | null
+          remediation_steps: Json | null
+          workspace_id: string
+        }
+        Insert: {
+          attack_vectors?: Json | null
+          context: string
+          created_at?: string
+          credits_spent?: number
+          enriched_by: string
+          finding_id: string
+          id?: string
+          links?: Json | null
+          remediation_steps?: Json | null
+          workspace_id: string
+        }
+        Update: {
+          attack_vectors?: Json | null
+          context?: string
+          created_at?: string
+          credits_spent?: number
+          enriched_by?: string
+          finding_id?: string
+          id?: string
+          links?: Json | null
+          remediation_steps?: Json | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finding_enrichments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       findings: {
         Row: {
           confidence: number
