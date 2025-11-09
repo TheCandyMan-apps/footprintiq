@@ -1,8 +1,62 @@
 import { test, expect } from '@playwright/test';
 
+// Test configuration
+const TEST_USER = {
+  email: 'test-upgrade@example.com',
+  password: 'SecureTestPass123!',
+};
+
+const STRIPE_TEST_CARDS = {
+  SUCCESS: '4242424242424242',
+  DECLINED: '4000000000000002',
+};
+
 test.describe('Subscription Upgrade E2E', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
+  });
+
+  test('should refresh session before upgrade', async ({ page }) => {
+    // Monitor network requests
+    let sessionRefreshed = false;
+    page.on('request', (request) => {
+      if (request.url().includes('/auth/v1/token') && request.method() === 'POST') {
+        sessionRefreshed = true;
+      }
+    });
+
+    await page.goto('/auth');
+    await page.fill('input[type="email"]', TEST_USER.email);
+    await page.fill('input[type="password"]', TEST_USER.password);
+    await page.click('button[type="submit"]');
+    
+    await page.waitForURL('/');
+    await page.goto('/pricing');
+    
+    // Click upgrade button
+    await page.click('button:has-text("Start Analyst Plan")');
+    
+    // Verify session was refreshed
+    await page.waitForTimeout(1000);
+    expect(sessionRefreshed).toBe(true);
+  });
+
+  test('should show loading state during upgrade', async ({ page }) => {
+    await page.goto('/auth');
+    await page.fill('input[type="email"]', TEST_USER.email);
+    await page.fill('input[type="password"]', TEST_USER.password);
+    await page.click('button[type="submit"]');
+    
+    await page.waitForURL('/');
+    await page.goto('/pricing');
+    
+    // Click upgrade button
+    const upgradeButton = page.locator('button:has-text("Start Analyst Plan")');
+    await upgradeButton.click();
+    
+    // Should show loading state
+    await expect(page.locator('text=Processing...')).toBeVisible();
+    await expect(page.locator('[class*="animate-spin"]')).toBeVisible();
   });
 
   test('should complete full upgrade flow from sign-in to premium features', async ({ page }) => {

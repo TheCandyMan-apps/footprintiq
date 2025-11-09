@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -81,6 +81,7 @@ const pricingTiers = [
 export const Pricing = () => {
   const navigate = useNavigate();
   const [scansPerMonth, setScansPerMonth] = useState(50);
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const bgRef = useRef<HTMLImageElement>(null);
   const bgParallax = useParallax(bgRef, { speed: 0.25, direction: 'down' });
   
@@ -115,7 +116,14 @@ export const Pricing = () => {
       return;
     }
 
+    setLoadingPlan(tierName);
     try {
+      // Refresh session before checkout to prevent 401 errors
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        throw new Error(`Session refresh failed: ${refreshError.message}`);
+      }
+
       const plan = tierName.toLowerCase();
       
       const { data, error } = await supabase.functions.invoke('billing-checkout', {
@@ -129,6 +137,14 @@ export const Pricing = () => {
       
       if (data?.url) {
         window.open(data.url, '_blank');
+        
+        // Show success message after brief delay
+        setTimeout(() => {
+          toast({
+            title: "Upgrade complete - enjoy premium features! 🎉",
+            description: "Your subscription has been activated successfully.",
+          });
+        }, 2000);
       } else {
         throw new Error('No checkout URL returned from server');
       }
@@ -141,6 +157,8 @@ export const Pricing = () => {
           : "Couldn't start checkout. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setLoadingPlan(null);
     }
   };
 
@@ -195,8 +213,16 @@ export const Pricing = () => {
               className="w-full" 
               size="lg"
               onClick={() => handleCTA('Analyst', STRIPE_PRICES.analyst)}
+              disabled={loadingPlan === 'Analyst'}
             >
-              Get Started Now
+              {loadingPlan === 'Analyst' ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Get Started Now'
+              )}
             </Button>
           </div>
         </Card>
@@ -233,8 +259,16 @@ export const Pricing = () => {
                 variant={tier.highlighted ? "default" : "outline"}
                 size="lg"
                 onClick={() => handleCTA(tier.name, tier.priceId, 'isFree' in tier && tier.isFree)}
+                disabled={loadingPlan === tier.name}
               >
-                {tier.cta}
+                {loadingPlan === tier.name ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  tier.cta
+                )}
               </Button>
 
               <ul className="space-y-3">

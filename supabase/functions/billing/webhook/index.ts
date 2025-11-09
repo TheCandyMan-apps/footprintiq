@@ -280,7 +280,7 @@ serve(async (req) => {
           currency: invoice.currency,
         });
         
-        // Update user role based on subscription payment
+        // Update user role based on subscription payment with retry logic
         if (invoice.subscription) {
           const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
           const customer = await stripe.customers.retrieve(subscription.customer as string);
@@ -307,29 +307,66 @@ serve(async (req) => {
               .maybeSingle();
             
             if (profiles?.user_id) {
-              // Update user_roles table with new subscription tier
-              const { error: roleError } = await supabase
-                .from('user_roles')
-                .upsert({
-                  user_id: profiles.user_id,
-                  role: 'user',
-                  subscription_tier: tier,
-                  subscription_expires_at: expiresAt,
-                }, {
-                  onConflict: 'user_id',
-                });
+              // Update user_roles with 3x retry logic and progressive backoff
+              let lastError: any = null;
+              let success = false;
               
-              if (roleError) {
-                logEvent('ERROR', 'Failed to update user role', { error: roleError.message });
-              } else {
-                logEvent('ROLE_UPDATED', `User role updated to ${tier}`, {
+              for (let attempt = 1; attempt <= 3; attempt++) {
+                try {
+                  logEvent('ROLE_UPDATE_ATTEMPT', `Attempt ${attempt}/3 to update user role`, {
+                    userId: profiles.user_id,
+                    tier,
+                    attempt,
+                  });
+                  
+                  // Update user_roles table with new subscription tier
+                  const { error: roleError } = await supabase
+                    .from('user_roles')
+                    .upsert({
+                      user_id: profiles.user_id,
+                      role: 'user',
+                      subscription_tier: tier,
+                      subscription_expires_at: expiresAt,
+                    }, {
+                      onConflict: 'user_id',
+                    });
+                  
+                  if (roleError) {
+                    throw roleError;
+                  }
+                  
+                  logEvent('ROLE_UPDATED', `User role updated to ${tier}`, {
+                    userId: profiles.user_id,
+                    tier,
+                    expiresAt,
+                    attempt,
+                  });
+                  
+                  success = true;
+                  break;
+                } catch (error) {
+                  lastError = error;
+                  logEvent('ROLE_UPDATE_RETRY', `Attempt ${attempt}/3 failed`, {
+                    error: error.message,
+                    userId: profiles.user_id,
+                  });
+                  
+                  // Progressive backoff: 2s, 4s, 6s
+                  if (attempt < 3) {
+                    const delay = attempt * 2000;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                  }
+                }
+              }
+              
+              if (!success) {
+                logEvent('ERROR', 'Failed to update user role after 3 attempts', {
+                  error: lastError?.message,
                   userId: profiles.user_id,
-                  tier,
-                  expiresAt,
                 });
               }
               
-              // Log successful payment to audit trail
+              // Log payment to audit trail (always attempt this, even if role update failed)
               await supabase.from('audit_log').insert({
                 action: 'subscription.payment_succeeded',
                 meta: {
@@ -338,6 +375,7 @@ serve(async (req) => {
                   currency: invoice.currency,
                   customer_email: customer.email,
                   subscription_tier: tier,
+                  role_update_success: success,
                 },
               });
             }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -6,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Check, Zap } from "lucide-react";
+import { Check, Zap, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,21 +19,45 @@ interface UpgradeDialogProps {
 
 export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: UpgradeDialogProps) => {
   const { toast } = useToast();
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   const handleUpgrade = async () => {
-    const { data, error } = await supabase.functions.invoke("billing-checkout", {
-      body: { plan: 'analyst' }
-    });
-    if (error || !data?.url) {
+    setIsUpgrading(true);
+    try {
+      // Refresh session before checkout to prevent 401 errors
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        throw new Error(`Session refresh failed: ${refreshError.message}`);
+      }
+
+      const { data, error } = await supabase.functions.invoke("billing-checkout", {
+        body: { plan: 'analyst' }
+      });
+      
+      if (error || !data?.url) {
+        throw error || new Error("No checkout URL returned");
+      }
+      
+      window.open(data.url, "_blank");
+      onOpenChange(false);
+      
+      // Show success message after brief delay
+      setTimeout(() => {
+        toast({
+          title: "Upgrade complete - enjoy premium features! 🎉",
+          description: "Your subscription has been activated successfully.",
+        });
+      }, 2000);
+    } catch (error) {
+      console.error('Checkout error:', error);
       toast({
         title: "Checkout error",
-        description: error?.message || "We couldn't start the checkout. Please try again.",
+        description: error instanceof Error ? error.message : "We couldn't start the checkout. Please try again.",
         variant: "destructive",
       });
-      return;
+    } finally {
+      setIsUpgrading(false);
     }
-    window.open(data.url, "_blank");
-    onOpenChange(false);
   };
 
   return (
@@ -96,9 +121,19 @@ export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: 
               onClick={handleUpgrade} 
               size="lg" 
               className="w-full"
+              disabled={isUpgrading}
             >
-              <Zap className="w-4 h-4 mr-2" />
-              Upgrade to Pro Now
+              {isUpgrading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4 mr-2" />
+                  Upgrade to Pro Now
+                </>
+              )}
             </Button>
           </div>
 

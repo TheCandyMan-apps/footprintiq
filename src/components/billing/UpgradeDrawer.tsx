@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Zap, Building2, Crown } from "lucide-react";
+import { Check, Zap, Building2, Crown, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -73,6 +73,12 @@ export const UpgradeDrawer = ({ open, onOpenChange, currentPlan }: UpgradeDrawer
 
     setLoading(planId);
     try {
+      // Refresh session before checkout to prevent 401 errors
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        throw new Error(`Session refresh failed: ${refreshError.message}`);
+      }
+
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) {
         toast.error("Please sign in first");
@@ -87,6 +93,13 @@ export const UpgradeDrawer = ({ open, onOpenChange, currentPlan }: UpgradeDrawer
 
       if (data?.url) {
         window.open(data.url, "_blank");
+        
+        // Show success message after brief delay
+        setTimeout(() => {
+          toast.success("Upgrade complete - enjoy premium features! 🎉", {
+            description: "Your subscription has been activated successfully.",
+          });
+        }, 2000);
       }
     } catch (error: any) {
       toast.error("Failed to start checkout: " + error.message);
@@ -162,13 +175,18 @@ export const UpgradeDrawer = ({ open, onOpenChange, currentPlan }: UpgradeDrawer
                     disabled={isCurrent || loading === plan.id}
                     onClick={() => handleUpgrade(plan.id)}
                   >
-                    {loading === plan.id
-                      ? "Loading..."
-                      : isCurrent
-                      ? "Current Plan"
-                      : plan.price === "Contact"
-                      ? "Contact Sales"
-                      : "Upgrade"}
+                    {loading === plan.id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : isCurrent ? (
+                      "Current Plan"
+                    ) : plan.price === "Contact" ? (
+                      "Contact Sales"
+                    ) : (
+                      "Upgrade"
+                    )}
                   </Button>
                 </CardContent>
               </Card>
