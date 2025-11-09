@@ -186,6 +186,9 @@ export const Header = () => {
                   <Link to="/graph" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">Entity Graph</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link to="/maltego-gallery" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">Maltego Gallery</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/search" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">Search Entities</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

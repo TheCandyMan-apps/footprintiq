@@ -2,8 +2,23 @@ import { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ZoomIn, ZoomOut, Maximize2, Download, Save } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ZoomIn, ZoomOut, Maximize2, Download, Save, FileJson, FileSpreadsheet, Image } from 'lucide-react';
 import { DataSet, Network } from 'vis-network/standalone';
+import { 
+  exportToJSON, 
+  exportToCSV, 
+  exportCanvasToPNG,
+  exportToGEXF 
+} from '@/lib/maltegoExport';
+import { toast } from 'sonner';
 
 interface MaltegoNode {
   id: string;
@@ -165,17 +180,24 @@ export function MaltegoGraphViewer({ data, onSaveToCase }: MaltegoGraphViewerPro
   const handleExport = () => {
     const canvas = containerRef.current?.querySelector('canvas');
     if (canvas) {
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `maltego-graph-${data.entity}.png`;
-          a.click();
-          URL.revokeObjectURL(url);
-        }
-      });
+      exportCanvasToPNG(canvas, `maltego-graph-${data.entity}.png`);
+      toast.success('Graph exported as PNG');
     }
+  };
+
+  const handleExportJSON = () => {
+    exportToJSON(data, `maltego-graph-${data.entity}.json`);
+    toast.success('Graph exported as JSON');
+  };
+
+  const handleExportCSV = () => {
+    exportToCSV(data, data.entity);
+    toast.success('Graph exported as CSV (nodes & edges)');
+  };
+
+  const handleExportGEXF = () => {
+    exportToGEXF(data, `maltego-graph-${data.entity}.gexf`);
+    toast.success('Graph exported as GEXF (Gephi format)');
   };
 
   return (
@@ -203,9 +225,36 @@ export function MaltegoGraphViewer({ data, onSaveToCase }: MaltegoGraphViewerPro
             <Button variant="outline" size="icon" onClick={handleFit}>
               <Maximize2 className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={handleExport}>
-              <Download className="h-4 w-4" />
-            </Button>
+            
+            {/* Export Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Download className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Export Graph</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleExport}>
+                  <Image className="mr-2 h-4 w-4" />
+                  Export as PNG
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportJSON}>
+                  <FileJson className="mr-2 h-4 w-4" />
+                  Export as JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportCSV}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportGEXF}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Export as GEXF (Gephi)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {onSaveToCase && (
               <Button onClick={onSaveToCase} size="sm">
                 <Save className="h-4 w-4 mr-2" />
