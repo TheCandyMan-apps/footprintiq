@@ -10,9 +10,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useSpiderFootScan } from '@/hooks/useSpiderFootScan';
 import { useUserPersona } from '@/hooks/useUserPersona';
 import { useActiveScanContext } from '@/contexts/ActiveScanContext';
-import { Shield, Search, Database, Globe, AlertCircle, Lock, Zap, Crown } from 'lucide-react';
+import { useSpiderFootHealth } from '@/hooks/useSpiderFootHealth';
+import { Shield, Search, Database, Globe, AlertCircle, Lock, Zap, Crown, XCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 
 interface SpiderFootScanFormProps {
   workspaceId: string;
@@ -34,6 +36,7 @@ export function SpiderFootScanForm({ workspaceId }: SpiderFootScanFormProps) {
   const { startScan, isScanning } = useSpiderFootScan();
   const { persona, isStandard } = useUserPersona();
   const { startTracking } = useActiveScanContext();
+  const { health, loading: healthLoading, isConfigured } = useSpiderFootHealth();
   const [target, setTarget] = useState('');
   const [targetType, setTargetType] = useState<'email' | 'ip' | 'domain' | 'username' | 'phone'>('email');
   const [selectedModules, setSelectedModules] = useState<string[]>(['sfp_dns', 'sfp_emailrep', 'sfp_whois']);
@@ -55,6 +58,14 @@ export function SpiderFootScanForm({ workspaceId }: SpiderFootScanFormProps) {
     e.preventDefault();
 
     if (!target.trim()) {
+      return;
+    }
+
+    // Check if SpiderFoot is configured before starting scan
+    if (!isConfigured) {
+      toast.error('Configure SpiderFoot in secrets for access', {
+        description: 'SpiderFoot must be configured before running scans. Contact admin@footprintiq.app for help.'
+      });
       return;
     }
 
@@ -225,6 +236,46 @@ export function SpiderFootScanForm({ workspaceId }: SpiderFootScanFormProps) {
             </AlertDescription>
           </Alert>
 
+          {/* SpiderFoot Health Check Alert */}
+          {!healthLoading && !isConfigured && (
+            <Alert variant="destructive" className="border-red-500 bg-red-500/5">
+              <XCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>SpiderFoot Not Configured</strong>
+                <p className="text-sm mt-1">
+                  {health?.message || 'SpiderFoot must be configured before running scans.'}
+                  {' '}Contact{' '}
+                  <a 
+                    href="mailto:admin@footprintiq.app" 
+                    className="underline hover:text-red-700"
+                  >
+                    admin@footprintiq.app
+                  </a>
+                  {' '}for help or{' '}
+                  <a 
+                    href="/docs/spiderfoot-setup" 
+                    target="_blank"
+                    className="underline hover:text-red-700"
+                  >
+                    view setup guide
+                  </a>.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {!healthLoading && health?.status === 'unreachable' && (
+            <Alert variant="destructive" className="border-yellow-500 bg-yellow-500/5">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <AlertDescription>
+                <strong className="text-yellow-700">SpiderFoot Unreachable</strong>
+                <p className="text-sm mt-1 text-yellow-700">
+                  SpiderFoot is configured but cannot be reached. Please verify your deployment is running.
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Target Type */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -323,13 +374,18 @@ export function SpiderFootScanForm({ workspaceId }: SpiderFootScanFormProps) {
           <Button
             type="submit"
             className="w-full"
-            disabled={isScanning || !target.trim() || selectedModules.length === 0}
+            disabled={isScanning || !target.trim() || selectedModules.length === 0 || !isConfigured}
             size="lg"
           >
             {isScanning ? (
               <>
                 <Search className="w-4 h-4 mr-2 animate-spin" />
                 Scanning...
+              </>
+            ) : !isConfigured ? (
+              <>
+                <XCircle className="w-4 h-4 mr-2" />
+                SpiderFoot Not Configured
               </>
             ) : (
               <>
