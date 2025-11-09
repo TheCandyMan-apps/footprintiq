@@ -101,7 +101,7 @@ const Dashboard = () => {
   const fetchDashboardData = async (userId: string) => {
     setLoading(true);
     try {
-      // Fetch recent scans (excluding archived)
+      // Fetch recent scans for display (excluding archived)
       const {
         data: scansData,
         error: scansError
@@ -111,27 +111,51 @@ const Dashboard = () => {
       if (scansError) throw scansError;
       setScans(scansData || []);
 
-      // Calculate stats from scans
-      const totalScans = scansData?.length || 0;
-      const highRisk = scansData?.reduce((sum, scan) => sum + (scan.high_risk_count || 0), 0) || 0;
+      // Get accurate total scan count
+      const { count: totalCount } = await supabase
+        .from('scans')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('archived_at', null);
 
-      // Count recent scans (last 24 hours)
-      const recent = scansData?.filter(scan => {
-        const createdDate = new Date(scan.created_at);
-        const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        return createdDate > dayAgo;
-      }).length || 0;
-
-      // Count scans this month
+      // Get scans this month count
       const monthStart = new Date();
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
-      const scansThisMonth = scansData?.filter(scan => new Date(scan.created_at) >= monthStart).length || 0;
+      
+      const { count: monthCount } = await supabase
+        .from('scans')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('archived_at', null)
+        .gte('created_at', monthStart.toISOString());
+
+      // Get recent (24h) scans count
+      const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const { count: recentCount } = await supabase
+        .from('scans')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .is('archived_at', null)
+        .gte('created_at', dayAgo.toISOString());
+
+      // Get aggregate high risk count from all scans
+      const { data: aggregateData } = await supabase
+        .from('scans')
+        .select('high_risk_count')
+        .eq('user_id', userId)
+        .is('archived_at', null);
+      
+      const totalHighRisk = aggregateData?.reduce(
+        (sum, scan) => sum + (scan.high_risk_count || 0), 
+        0
+      ) || 0;
+
       setStats({
-        totalScans,
-        highRiskFindings: highRisk,
-        recentFindings: recent,
-        scansThisMonth,
+        totalScans: totalCount || 0,
+        highRiskFindings: totalHighRisk,
+        recentFindings: recentCount || 0,
+        scansThisMonth: monthCount || 0,
         avgScanTime: 2.4,
         // Mock for now
         activeMonitoring: 8 // Mock for now

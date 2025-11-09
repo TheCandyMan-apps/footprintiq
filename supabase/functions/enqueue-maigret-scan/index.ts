@@ -41,6 +41,23 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Get user's workspace
+    const { data: workspaceMember } = await supabaseUser
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .single();
+
+    if (!workspaceMember?.workspace_id) {
+      return new Response(
+        JSON.stringify({ error: 'No workspace found for user' }), 
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const workspaceId = workspaceMember.workspace_id;
+
     const body: ScanRequest = await req.json();
     const { username, tags, all_sites = false, artifacts = [] } = body;
 
@@ -114,6 +131,7 @@ Deno.serve(async (req) => {
         status: 'running',
         started_at: new Date().toISOString(),
         requested_by: user.id,
+        workspace_id: workspaceId,
         plan,
         providers_total: estimatedProviders,
       })
