@@ -6822,6 +6822,54 @@ export type Database = {
         }
         Relationships: []
       }
+      system_audit_results: {
+        Row: {
+          ai_priority: string | null
+          ai_summary: string | null
+          audit_type: string
+          component: string | null
+          created_at: string
+          details: Json | null
+          failure_rate: number | null
+          id: string
+          metadata: Json | null
+          recommendations: string[] | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+        }
+        Insert: {
+          ai_priority?: string | null
+          ai_summary?: string | null
+          audit_type: string
+          component?: string | null
+          created_at?: string
+          details?: Json | null
+          failure_rate?: number | null
+          id?: string
+          metadata?: Json | null
+          recommendations?: string[] | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status: string
+        }
+        Update: {
+          ai_priority?: string | null
+          ai_summary?: string | null
+          audit_type?: string
+          component?: string | null
+          created_at?: string
+          details?: Json | null
+          failure_rate?: number | null
+          id?: string
+          metadata?: Json | null
+          recommendations?: string[] | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       takedown_submissions: {
         Row: {
           body: string
@@ -7874,6 +7922,10 @@ export type Database = {
       generate_referral_code: { Args: { _user_id: string }; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       get_credits_balance: { Args: { _workspace_id: string }; Returns: number }
+      get_system_audit_failure_rate: {
+        Args: { _audit_type?: string; _hours_back?: number }
+        Returns: number
+      }
       get_workspace_role: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: Database["public"]["Enums"]["workspace_role"]
