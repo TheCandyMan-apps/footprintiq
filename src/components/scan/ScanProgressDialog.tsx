@@ -28,6 +28,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
   const [creditsUsed, setCreditsUsed] = useState(0);
   const [status, setStatus] = useState<'running' | 'completed' | 'failed' | 'cancelled'>('running');
   const [isCancelling, setIsCancelling] = useState(false);
+  const [totalResults, setTotalResults] = useState(0);
+  const [isSavingCase, setIsSavingCase] = useState(false);
 
   const playSuccessSound = () => {
     try {
@@ -105,6 +107,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     setProviders([]);
     setCreditsUsed(0);
     setStatus('running');
+    setTotalResults(0);
+    setIsSavingCase(false);
 
     // Helper to upsert provider status
     const upsertProvider = (name: string, status: ProviderStatus['status'], message?: string) => {
@@ -135,13 +139,27 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         const total = 100;
         setProgress(Math.min((completed / total) * 100, 95));
       })
-      .on('broadcast', { event: 'scan_complete' }, (payload: any) => {
+      .on('broadcast', { event: 'scan_complete' }, async (payload: any) => {
         console.debug('[ScanProgressDialog] Maigret scan_complete:', payload);
         setStatus('completed');
         setProgress(100);
-        playSuccessSound();
-        triggerConfetti();
-        toast.success('Scan completed successfully');
+        
+        const resultsCount = payload.payload?.resultsCount || 0;
+        setTotalResults(resultsCount);
+        
+        if (resultsCount === 0) {
+          // Zero results - save partial case and show helpful toast
+          toast.info('No results found', {
+            description: 'Try a broader query or different username variant',
+            duration: 5000,
+          });
+          void handleZeroResults(); // Fire and forget
+        } else {
+          playSuccessSound();
+          triggerConfetti();
+          toast.success(`Scan completed - ${resultsCount} results found`);
+        }
+        
         setTimeout(() => onComplete?.(), 2000);
       })
       .on('broadcast', { event: 'scan_failed' }, (payload: any) => {
@@ -197,9 +215,23 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
           console.debug('[ScanProgressDialog] Orchestrator completed');
           setStatus('completed');
           setProgress(100);
-          playSuccessSound();
-          triggerConfetti();
-          toast.success('Scan completed successfully');
+          
+          const resultsCount = update.resultsCount || update.findingsCount || 0;
+          setTotalResults(resultsCount);
+          
+          if (resultsCount === 0) {
+            // Zero results - save partial case and show helpful toast
+            toast.info('No results found', {
+              description: 'Try a broader query or different identifier',
+              duration: 5000,
+            });
+            void handleZeroResults(); // Fire and forget
+          } else {
+            playSuccessSound();
+            triggerConfetti();
+            toast.success(`Scan completed - ${resultsCount} results found`);
+          }
+          
           setTimeout(() => onComplete?.(), 2000);
         } else if (update.status === 'failed') {
           console.debug('[ScanProgressDialog] Orchestrator failed');
@@ -221,6 +253,48 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     };
   }, [scanId, open, onComplete]);
 
+  const handleZeroResults = async () => {
+    if (!scanId || isSavingCase) return;
+    
+    setIsSavingCase(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Fetch scan details
+      const { data: scan } = await supabase
+        .from('scans')
+        .select('*')
+        .eq('id', scanId)
+        .single();
+
+      if (!scan) return;
+
+      // Save partial case with zero results
+      const { error: caseError } = await supabase
+        .from('cases')
+        .insert({
+          title: `No Results Scan - ${scan.scan_type || 'Unknown'}`,
+          description: `Scan completed with no findings. Target: ${scan.email || scan.username || scan.phone || 'N/A'}. Consider trying broader search terms or alternative identifiers.`,
+          user_id: user.id,
+          scan_id: scanId,
+          status: 'closed',
+          priority: 'low',
+          results: [], // Empty results
+        });
+
+      if (caseError) {
+        console.error('[ScanProgressDialog] Failed to save zero-results case:', caseError);
+      } else {
+        console.log('[ScanProgressDialog] Saved zero-results case for scan:', scanId);
+      }
+    } catch (error) {
+      console.error('[ScanProgressDialog] Error in handleZeroResults:', error);
+    } finally {
+      setIsSavingCase(false);
+    }
+  };
+
   const handleCancel = async () => {
     if (!scanId) return;
     
@@ -233,7 +307,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
       if (error) throw error;
 
       setStatus('cancelled');
-      toast.info('Scan cancelled');
+      toast.info('Scan cancelled - partial results saved');
+      
+      // Save partial results to case
+      await handleZeroResults();
+      
       onOpenChange(false);
     } catch (error: any) {
       toast.error(error.message || 'Failed to cancel scan');
@@ -339,19 +417,26 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
           {/* Action Buttons */}
           <div className="flex items-center justify-between pt-4 border-t">
             <div className="text-sm">
-              {status === 'completed' && (
+              {status === 'completed' && totalResults > 0 && (
                 <span className="text-green-600 dark:text-green-400 font-medium animate-fade-in">
-                  🎉 Scan completed successfully!
+                  🎉 Found {totalResults} results!
+                </span>
+              )}
+              {status === 'completed' && totalResults === 0 && (
+                <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                  ⚠️ No results found - partial case saved
                 </span>
               )}
               {status === 'failed' && (
                 <span className="text-destructive font-medium">Scan failed</span>
               )}
               {status === 'cancelled' && (
-                <span className="text-muted-foreground">Scan cancelled</span>
+                <span className="text-muted-foreground">Scan cancelled - partial results saved</span>
               )}
               {status === 'running' && (
-                <span className="text-muted-foreground">Scan in progress...</span>
+                <span className="text-muted-foreground">
+                  Scan in progress... {providers.filter(p => p.status === 'success').length}/{providers.length} providers complete
+                </span>
               )}
             </div>
             <div className="flex gap-2">
