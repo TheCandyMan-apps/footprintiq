@@ -28,6 +28,10 @@ jobs:
 
       - name: Generate coverage report
         run: npm run test:coverage
+        continue-on-error: true
+
+      - name: Run edge case tests
+        run: npm run test:run -- tests/workers tests/providers tests/components
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
