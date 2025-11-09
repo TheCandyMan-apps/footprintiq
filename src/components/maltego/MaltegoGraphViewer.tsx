@@ -159,7 +159,7 @@ export function MaltegoGraphViewer({ data, onSaveToCase }: MaltegoGraphViewerPro
   };
 
   const handleFit = () => {
-    networkRef.current?.fit({ animation: { duration: 500 } });
+    networkRef.current?.fit({ animation: true });
   };
 
   const handleExport = () => {

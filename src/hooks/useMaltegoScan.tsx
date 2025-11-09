@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MaltegoConsentModal } from '@/components/maltego/MaltegoConsentModal';
@@ -26,10 +26,10 @@ export function useMaltegoScan() {
   const [consentOpen, setConsentOpen] = useState(false);
   const [pendingRequest, setPendingRequest] = useState<MaltegoScanRequest | null>(null);
 
-  // Check premium status
-  useState(() => {
+  // Check premium status on mount
+  useEffect(() => {
     checkPremiumStatus();
-  });
+  }, []);
 
   const checkPremiumStatus = async () => {
     const { data: { user } } = await supabase.auth.getUser();
