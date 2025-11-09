@@ -5727,6 +5727,7 @@ export type Database = {
           status: string
           tags: string | null
           username: string
+          workspace_id: string
         }
         Insert: {
           all_sites?: boolean | null
@@ -5747,6 +5748,7 @@ export type Database = {
           status?: string
           tags?: string | null
           username: string
+          workspace_id: string
         }
         Update: {
           all_sites?: boolean | null
@@ -5767,8 +5769,17 @@ export type Database = {
           status?: string
           tags?: string | null
           username?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "scan_jobs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scan_results: {
         Row: {

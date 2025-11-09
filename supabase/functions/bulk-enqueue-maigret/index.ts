@@ -69,6 +69,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Get user's workspace
+    const { data: workspace } = await supabaseClient
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .single();
+
+    if (!workspace) {
+      return new Response(
+        JSON.stringify({ error: 'No workspace found for user' }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     const dailyLimit = parseInt(Deno.env.get('PUBLIC_PREMIUM_SCAN_DAILY_JOBS') || '200');
 
     // Check daily job limit
@@ -110,6 +129,7 @@ Deno.serve(async (req) => {
           artifacts,
           status: 'queued',
           requested_by: user.id,
+          workspace_id: workspace.workspace_id,
           plan,
         })
         .select()
