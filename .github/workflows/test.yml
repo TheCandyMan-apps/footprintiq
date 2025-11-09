@@ -46,6 +46,32 @@ jobs:
         env:
           CI: true
 
+      - name: Run Advanced Scan E2E tests
+        run: npx playwright test tests/e2e/advanced-scan.spec.ts --project=chromium
+        env:
+          CI: true
+
+      - name: Calculate test pass rate
+        run: |
+          echo "📊 Calculating test pass rate..."
+          npm run test:run -- --reporter=json > test-results.json || true
+          PASSED=$(jq '[.testResults[] | select(.status == "passed")] | length' test-results.json 2>/dev/null || echo "0")
+          FAILED=$(jq '[.testResults[] | select(.status == "failed")] | length' test-results.json 2>/dev/null || echo "0")
+          TOTAL=$((PASSED + FAILED))
+          if [ $TOTAL -eq 0 ]; then
+            echo "⚠️  No test results found"
+            exit 0
+          fi
+          PASS_RATE=$(awk "BEGIN {printf \"%.2f\", ($PASSED/$TOTAL)*100}")
+          echo "✅ Passed: $PASSED"
+          echo "❌ Failed: $FAILED"
+          echo "📈 Pass rate: $PASS_RATE%"
+          if (( $(echo "$PASS_RATE < 95" | bc -l) )); then
+            echo "❌ Test pass rate ($PASS_RATE%) is below 95% threshold"
+            exit 1
+          fi
+          echo "✅ Test pass rate ($PASS_RATE%) meets 95% threshold"
+
       - name: Run integration tests
         run: npm run test:integration
         continue-on-error: true

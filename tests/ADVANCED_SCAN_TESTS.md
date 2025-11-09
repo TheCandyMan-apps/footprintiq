@@ -1,11 +1,18 @@
 # Advanced Scan E2E Test Suite
 
 ## Overview
-Comprehensive end-to-end testing for advanced scanning features, including edge cases, error handling, and progress monitoring.
+Comprehensive end-to-end testing for advanced scanning features, including edge cases, error handling, and progress monitoring. Target: **>95% pass rate** for premium launch confidence.
 
 ## Test Coverage
 
-### 1. Batch Upload & Geocoding
+### 1. Full Premium Scan Flow (NEW)
+- ✅ **Complete sign-in → multi-tool → results flow**
+- ✅ **Multi-provider orchestration** (HIBP, Maigret, SpiderFoot)
+- ✅ **Real-time progress tracking** with stage updates
+- ✅ **Results aggregation** with provider breakdown
+- ✅ **Credit usage and duration metrics** display
+
+### 2. Batch Upload & Geocoding
 - ✅ Batch mode toggle for email scans
 - ✅ CSV file upload with item display
 - ✅ Map preview for IP batch scans
@@ -15,23 +22,28 @@ Comprehensive end-to-end testing for advanced scanning features, including edge 
 - ✅ Geocoding error handling
 - ✅ Dynamic scan button text
 
-### 2. Error Handling
+### 3. Premium Subscription Enforcement (NEW)
+- ✅ **Free user restrictions** - Dark web, face recognition blocked
+- ✅ **Upgrade CTAs** - Direct navigation to pricing
+- ✅ **Feature gating** - Premium-only capabilities disabled
+
+### 4. Error Handling
 - ✅ Error toast display for failed scans
 - ✅ Authentication requirement enforcement
 
-### 3. Edge Cases: Offline Worker (NEW)
+### 5. Edge Cases: Offline Worker (ENHANCED)
 - ✅ **Offline Maigret worker** - Graceful handling with retry suggestions
 - ✅ **Offline SpiderFoot worker** - Fallback to partial results
 - ✅ **Progress popup display** - Real-time scan progress updates
 - ✅ **Retry with exponential backoff** - Automatic retry on worker failure
 
-### 4. Edge Cases: Zero Results (NEW)
+### 6. Edge Cases: Zero Results (ENHANCED)
 - ✅ **Zero results from Maigret** - User-friendly empty state
 - ✅ **AI-powered rescan suggestions** - Smart alternative queries
 - ✅ **Partial zero results** - Mixed success/failure across tools
 - ✅ **Empty state with actions** - Helpful CTAs for users
 
-### 5. Progress & Results Display (NEW)
+### 7. Progress & Results Display (ENHANCED)
 - ✅ **Real-time progress updates** - Multiple stages with messages
 - ✅ **Findings count and summary** - Category breakdown in results
 - ✅ **Scan duration and credits** - Performance metrics display
@@ -84,16 +96,38 @@ const progressStages = [
 ];
 ```
 
+## Unit Tests - Edge Cases
+
+### Zero Results (`tests/edge-cases/zero-results.test.ts`)
+- ✅ Graceful zero result handling from Maigret
+- ✅ AI-powered rescan suggestions with alternative queries
+- ✅ Partial zero results across multiple providers
+- ✅ Empty state with helpful user actions
+- ✅ Zero-result rate tracking for quality monitoring
+
+### Provider Timeouts (`tests/edge-cases/provider-timeouts.test.ts`)
+- ✅ SpiderFoot timeout handling (30s limit)
+- ✅ Exponential backoff retry logic
+- ✅ Partial results when one provider times out
+- ✅ Timeout rate monitoring for health checks
+- ✅ Result caching to prevent redundant API calls
+
 ## Running Tests
 
 ### All Tests
 ```bash
-npm run test:e2e
+npm run test:e2e              # All E2E tests
+npm run test:run              # All unit tests
 ```
 
 ### Advanced Scan Tests Only
 ```bash
-npx playwright test tests/advanced-scan.spec.ts
+# E2E tests
+npx playwright test tests/e2e/advanced-scan.spec.ts --project=chromium
+
+# Unit tests - Edge cases
+npm run test -- tests/edge-cases/zero-results.test.ts
+npm run test -- tests/edge-cases/provider-timeouts.test.ts
 ```
 
 ### Specific Test Suite
@@ -114,18 +148,31 @@ npx playwright test tests/advanced-scan.spec.ts --debug
 ## CI/CD Integration
 
 Tests run automatically on:
-- All pushes to main branches
-- Pull requests
+- All pushes to main, develop, tests, test-auto-thrive branches
+- Pull requests to main and develop
 - Manual workflow dispatch
 
 ### CI Configuration
-Tests are configured in `playwright.config.ts`:
+Tests are configured in `playwright.config.ts` and `.github/workflows/test.yml`:
 - **Test Directory**: `./tests/e2e`
 - **Parallel Execution**: Enabled
 - **Retries**: 2 (in CI), 0 (locally)
 - **Workers**: 1 (CI), unlimited (local)
 - **Base URL**: `http://localhost:5173`
 - **Browsers**: Chromium, Firefox, WebKit
+
+### Pass Rate Requirement
+**Target: >95%**
+
+CI automatically calculates test pass rate:
+```bash
+PASS_RATE = (PASSED / TOTAL) × 100
+
+if PASS_RATE < 95%:
+  ❌ CI fails - blocks deployment
+else:
+  ✅ CI passes - deployment approved
+```
 
 ### CI Artifacts
 On test failure, the following artifacts are saved:
@@ -217,14 +264,30 @@ npm run dev
 - Ensure mock is registered before action
 - Use `page.route` not `page.context().route()`
 
+## Quality Metrics
+
+### Current Status
+- **Pass Rate Target**: >95%
+- **E2E Test Coverage**: 10+ scenarios
+- **Unit Test Coverage**: 10+ edge cases
+- **CI Integration**: ✅ Automated
+- **Auto-Deploy**: ✅ On test-auto-thrive branch
+
+### Monitoring
+- Track pass rates over time in CI logs
+- Monitor timeout patterns for provider health
+- Analyze zero-result frequencies
+- Review flaky test trends
+
 ## Future Enhancements
 
-- [ ] Add performance benchmarks
+- [ ] Add performance benchmarks (response times)
 - [ ] Test batch scans with 100+ items
-- [ ] Simulate network throttling
+- [ ] Simulate network throttling scenarios
 - [ ] Add visual regression testing
 - [ ] Test real-time updates with WebSockets
 - [ ] Add load testing for concurrent scans
+- [ ] Implement chaos engineering tests
 
 ## Contributing
 
