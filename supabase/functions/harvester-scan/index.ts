@@ -197,6 +197,148 @@ async function harvestFromCensys(domain: string): Promise<Partial<HarvestResult>
   }
 }
 
+async function harvestFromVirusTotal(domain: string): Promise<Partial<HarvestResult>> {
+  logStep('Harvesting from VirusTotal', { domain });
+  
+  try {
+    const apiKey = Deno.env.get('VIRUSTOTAL_API_KEY');
+    if (!apiKey) {
+      logStep('VirusTotal API not configured, skipping');
+      return { subdomains: [], hosts: [] };
+    }
+
+    const url = `https://www.virustotal.com/api/v3/domains/${domain}/subdomains?limit=40`;
+    const response = await fetch(url, {
+      headers: {
+        'x-apikey': apiKey,
+      },
+    });
+    
+    const data = await response.json();
+    const subdomains: string[] = [];
+    
+    if (data.data) {
+      data.data.forEach((item: any) => {
+        if (item.id) {
+          subdomains.push(item.id);
+        }
+      });
+    }
+    
+    logStep('VirusTotal harvest complete', { subdomains: subdomains.length });
+    return { subdomains, hosts: [] };
+  } catch (error) {
+    logStep('ERROR: VirusTotal harvest failed', { error: error.message });
+    return { subdomains: [], hosts: [] };
+  }
+}
+
+async function harvestFromSecurityTrails(domain: string): Promise<Partial<HarvestResult>> {
+  logStep('Harvesting from SecurityTrails', { domain });
+  
+  try {
+    const apiKey = Deno.env.get('SECURITYTRAILS_API_KEY');
+    if (!apiKey) {
+      logStep('SecurityTrails API not configured, skipping');
+      return { subdomains: [], ips: [] };
+    }
+
+    const url = `https://api.securitytrails.com/v1/domain/${domain}/subdomains`;
+    const response = await fetch(url, {
+      headers: {
+        'APIKEY': apiKey,
+      },
+    });
+    
+    const data = await response.json();
+    const subdomains: string[] = [];
+    const ips: string[] = [];
+    
+    if (data.subdomains) {
+      data.subdomains.forEach((sub: string) => {
+        subdomains.push(`${sub}.${domain}`);
+      });
+    }
+    
+    logStep('SecurityTrails harvest complete', { subdomains: subdomains.length });
+    return { subdomains, ips };
+  } catch (error) {
+    logStep('ERROR: SecurityTrails harvest failed', { error: error.message });
+    return { subdomains: [], ips: [] };
+  }
+}
+
+async function harvestFromWaybackMachine(domain: string): Promise<Partial<HarvestResult>> {
+  logStep('Harvesting from Wayback Machine', { domain });
+  
+  try {
+    const url = `https://web.archive.org/cdx/search/cdx?url=*.${domain}/*&output=json&fl=original&collapse=urlkey&limit=1000`;
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    const subdomains = new Set<string>();
+    const hosts: string[] = [];
+    
+    if (Array.isArray(data) && data.length > 1) {
+      // Skip header row
+      for (let i = 1; i < data.length; i++) {
+        const urlStr = data[i][0];
+        try {
+          const urlObj = new URL(urlStr);
+          const hostname = urlObj.hostname;
+          if (hostname.includes(domain)) {
+            subdomains.add(hostname);
+            hosts.push(urlStr);
+          }
+        } catch (e) {
+          // Invalid URL, skip
+        }
+      }
+    }
+    
+    logStep('Wayback Machine harvest complete', { subdomains: subdomains.size, urls: hosts.length });
+    return {
+      subdomains: Array.from(subdomains),
+      hosts: hosts.slice(0, 100) // Limit to 100 URLs
+    };
+  } catch (error) {
+    logStep('ERROR: Wayback Machine harvest failed', { error: error.message });
+    return { subdomains: [], hosts: [] };
+  }
+}
+
+async function harvestFromCertificateTransparency(domain: string): Promise<Partial<HarvestResult>> {
+  logStep('Harvesting from Certificate Transparency (crt.sh)', { domain });
+  
+  try {
+    const url = `https://crt.sh/?q=%.${domain}&output=json`;
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    const subdomains = new Set<string>();
+    
+    if (Array.isArray(data)) {
+      data.forEach((cert: any) => {
+        if (cert.name_value) {
+          const names = cert.name_value.split('\n');
+          names.forEach((name: string) => {
+            name = name.trim();
+            if (name.includes(domain) && !name.startsWith('*')) {
+              subdomains.add(name);
+            }
+          });
+        }
+      });
+    }
+    
+    logStep('Certificate Transparency harvest complete', { subdomains: subdomains.size });
+    return { subdomains: Array.from(subdomains), hosts: [] };
+  } catch (error) {
+    logStep('ERROR: Certificate Transparency harvest failed', { error: error.message });
+    return { subdomains: [], hosts: [] };
+  }
+}
+
 function generateCorrelations(results: HarvestResult): HarvestResult['correlations'] {
   const correlations: HarvestResult['correlations'] = [];
   
@@ -325,7 +467,7 @@ serve(async (req) => {
         scan_type: 'harvester',
         target: domain,
         status: 'running',
-        metadata: { sources: sources || ['google', 'hunter', 'shodan', 'censys'] }
+        metadata: { sources: sources || ['google', 'hunter', 'shodan', 'censys', 'virustotal', 'securitytrails', 'wayback', 'certransparency'] }
       })
       .select()
       .single();
@@ -349,7 +491,7 @@ serve(async (req) => {
     });
 
     // Perform harvesting from multiple sources
-    const selectedSources = sources || ['google', 'hunter', 'shodan', 'censys'];
+    const selectedSources = sources || ['google', 'hunter', 'shodan', 'censys', 'virustotal', 'securitytrails', 'wayback', 'certransparency'];
     const harvestPromises: Promise<Partial<HarvestResult>>[] = [];
 
     if (selectedSources.includes('google')) {
@@ -385,6 +527,42 @@ serve(async (req) => {
         type: 'broadcast',
         event: 'scan_update',
         payload: { scan_id: scanRecord.id, provider: 'censys', status: 'running' }
+      });
+    }
+
+    if (selectedSources.includes('virustotal')) {
+      harvestPromises.push(harvestFromVirusTotal(domain));
+      await supabase.channel('scan-progress').send({
+        type: 'broadcast',
+        event: 'scan_update',
+        payload: { scan_id: scanRecord.id, provider: 'virustotal', status: 'running' }
+      });
+    }
+
+    if (selectedSources.includes('securitytrails')) {
+      harvestPromises.push(harvestFromSecurityTrails(domain));
+      await supabase.channel('scan-progress').send({
+        type: 'broadcast',
+        event: 'scan_update',
+        payload: { scan_id: scanRecord.id, provider: 'securitytrails', status: 'running' }
+      });
+    }
+
+    if (selectedSources.includes('wayback')) {
+      harvestPromises.push(harvestFromWaybackMachine(domain));
+      await supabase.channel('scan-progress').send({
+        type: 'broadcast',
+        event: 'scan_update',
+        payload: { scan_id: scanRecord.id, provider: 'wayback', status: 'running' }
+      });
+    }
+
+    if (selectedSources.includes('certransparency')) {
+      harvestPromises.push(harvestFromCertificateTransparency(domain));
+      await supabase.channel('scan-progress').send({
+        type: 'broadcast',
+        event: 'scan_update',
+        payload: { scan_id: scanRecord.id, provider: 'certransparency', status: 'running' }
       });
     }
 

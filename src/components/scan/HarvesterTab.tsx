@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Zap, Mail, Globe, Server, Network, Loader2, Lock } from "lucide-react";
+import { Shield, Zap, Mail, Globe, Server, Network, Loader2, Lock, Database, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -20,6 +20,10 @@ const SOURCES = [
   { id: 'hunter', name: 'Hunter.io', icon: Mail, description: 'Professional email finder' },
   { id: 'shodan', name: 'Shodan', icon: Server, description: 'Internet-connected devices' },
   { id: 'censys', name: 'Censys', icon: Network, description: 'Internet infrastructure' },
+  { id: 'virustotal', name: 'VirusTotal', icon: Shield, description: 'Threat intelligence & subdomains' },
+  { id: 'securitytrails', name: 'SecurityTrails', icon: Database, description: 'DNS & subdomain history' },
+  { id: 'wayback', name: 'Wayback Machine', icon: Globe, description: 'Historical web archives' },
+  { id: 'certransparency', name: 'Certificate Transparency', icon: FileText, description: 'SSL certificate logs' },
 ];
 
 export const HarvesterTab = ({ onScanStart, workspaceId }: HarvesterTabProps) => {
@@ -182,10 +186,10 @@ export const HarvesterTab = ({ onScanStart, workspaceId }: HarvesterTabProps) =>
               <li>✓ Hunter.io</li>
               <li>✓ Shodan</li>
               <li>✓ Censys</li>
-              <li>✓ Bing Search</li>
-              <li>✓ DuckDuckGo</li>
-              <li>✓ Certificate Logs</li>
-              <li>✓ DNS Records</li>
+              <li>✓ VirusTotal</li>
+              <li>✓ SecurityTrails</li>
+              <li>✓ Wayback Machine</li>
+              <li>✓ Certificate Transparency</li>
             </ul>
           </div>
 
