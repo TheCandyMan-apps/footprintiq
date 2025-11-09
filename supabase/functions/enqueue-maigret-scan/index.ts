@@ -103,8 +103,8 @@ Deno.serve(async (req) => {
     // Estimate provider count based on scan mode
     const estimatedProviders = all_sites ? 500 : 100;
 
-    // Create job record
-    const { data: job, error: jobError } = await supabaseUser
+    // Create job record (use admin client to bypass RLS)
+    const { data: job, error: jobError } = await supabaseAdmin
       .from('scan_jobs')
       .insert({
         username: username.trim(),
@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
       });
 
       if (!resp.ok) {
-        await supabaseUser
+        await supabaseAdmin
           .from('scan_jobs')
           .update({
             status: 'error',
@@ -213,7 +213,7 @@ Deno.serve(async (req) => {
         stack: healthError.stack
       });
       
-      await supabaseUser
+      await supabaseAdmin
         .from('scan_jobs')
         .update({
           status: 'error',
@@ -290,7 +290,7 @@ Deno.serve(async (req) => {
         error: errorMsg
       });
       
-      await supabaseUser
+      await supabaseAdmin
         .from('scan_jobs')
         .update({
           status: 'error',
@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
       const bodyText = await resp.text().catch(() => 'Unable to read');
       console.error('Response body text:', bodyText);
       
-      await supabaseUser
+      await supabaseAdmin
         .from('scan_jobs')
         .update({
           status: 'error',
@@ -457,7 +457,7 @@ Deno.serve(async (req) => {
       
       // Save partial results on error
       const status = providersCompleted > 0 ? 'partial' : 'error';
-      await supabaseUser
+      await supabaseAdmin
         .from('scan_jobs')
         .update({
           status,
@@ -492,9 +492,9 @@ Deno.serve(async (req) => {
         username
       });
       
-      await supabaseUser
+      await supabaseAdmin
         .from('scan_jobs')
-        .update({ 
+        .update({
           status: 'error',
           error: 'Worker returned empty stream - no social media profiles found or worker error',
           finished_at: new Date().toISOString(),
@@ -523,9 +523,9 @@ Deno.serve(async (req) => {
       normalized
     });
 
-    await supabaseUser
+    await supabaseAdmin
       .from('scan_jobs')
-      .update({ 
+      .update({
         status: 'finished', 
         finished_at: new Date().toISOString(),
         partial_results: partialResults,
