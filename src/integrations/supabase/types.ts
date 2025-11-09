@@ -5058,6 +5058,65 @@ export type Database = {
         }
         Relationships: []
       }
+      recon_ng_scans: {
+        Row: {
+          completed_at: string | null
+          correlations: Json | null
+          created_at: string
+          error_message: string | null
+          id: string
+          modules: string[] | null
+          results: Json | null
+          status: string
+          target: string
+          target_type: string
+          total_results: number | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          correlations?: Json | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          modules?: string[] | null
+          results?: Json | null
+          status?: string
+          target: string
+          target_type: string
+          total_results?: number | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          correlations?: Json | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          modules?: string[] | null
+          results?: Json | null
+          status?: string
+          target?: string
+          target_type?: string
+          total_results?: number | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recon_ng_scans_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       removal_campaigns: {
         Row: {
           completed_at: string | null

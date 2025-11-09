@@ -3,7 +3,7 @@ import { useActiveScan } from '@/hooks/useActiveScan';
 
 interface ActiveScan {
   scanId: string;
-  type: 'advanced' | 'username' | 'spiderfoot';
+  type: 'advanced' | 'username' | 'spiderfoot' | 'recon-ng';
   target: string;
   startedAt: string;
 }

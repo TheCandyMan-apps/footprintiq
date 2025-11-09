@@ -4,9 +4,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ReportBuilder } from "@/components/analytics/ReportBuilder";
 import { ComparativeAnalysis } from "@/components/analytics/ComparativeAnalysis";
 import { CustomMetrics } from "@/components/analytics/CustomMetrics";
-import { BarChart3, GitCompare, TrendingUp, FileText, Database, Brain } from "lucide-react";
+import { ReconNgScanForm } from "@/components/analytics/ReconNgScanForm";
+import { ReconNgResults } from "@/components/analytics/ReconNgResults";
+import { BarChart3, GitCompare, TrendingUp, FileText, Database, Brain, Shield } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function AdvancedAnalytics() {
+  const { data: workspaces } = useQuery({
+    queryKey: ['workspaces'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('workspace_members')
+        .select('workspace_id, workspaces(id, name)')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      return data?.map(m => m.workspaces).filter(Boolean) || [];
+    },
+  });
+
+  const workspaceId = workspaces?.[0]?.id || '';
+
   return (
     <>
       <SEO 
@@ -30,7 +52,7 @@ export default function AdvancedAnalytics() {
 
           {/* Main Tabs */}
           <Tabs defaultValue="builder" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="builder">
                 <FileText className="h-4 w-4 mr-2" />
                 Report Builder
@@ -42,6 +64,10 @@ export default function AdvancedAnalytics() {
               <TabsTrigger value="metrics">
                 <TrendingUp className="h-4 w-4 mr-2" />
                 Custom Metrics
+              </TabsTrigger>
+              <TabsTrigger value="recon-ng">
+                <Shield className="h-4 w-4 mr-2" />
+                Recon-ng Intel
               </TabsTrigger>
               <TabsTrigger value="warehouse">
                 <Database className="h-4 w-4 mr-2" />
@@ -66,6 +92,12 @@ export default function AdvancedAnalytics() {
             {/* Custom Metrics */}
             <TabsContent value="metrics">
               <CustomMetrics />
+            </TabsContent>
+
+            {/* Recon-ng Intelligence */}
+            <TabsContent value="recon-ng" className="space-y-6">
+              <ReconNgScanForm workspaceId={workspaceId} />
+              <ReconNgResults workspaceId={workspaceId} />
             </TabsContent>
 
             {/* Data Warehouse (Placeholder) */}
