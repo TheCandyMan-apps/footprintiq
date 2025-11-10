@@ -5,6 +5,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { MonitoredUsernamesManager } from "@/components/maigret/MonitoredUsernamesManager";
 import { ProfileChangesHistory } from "@/components/maigret/ProfileChangesHistory";
 import { ProfileComparisonView } from "@/components/maigret/ProfileComparisonView";
+import { MaigretNetworkVisualization } from "@/components/maigret/MaigretNetworkVisualization";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -70,14 +71,19 @@ export default function MaigretMonitoring() {
 
           {/* Tabs for managing and viewing */}
           <Tabs defaultValue="manage" className="w-full">
-            <TabsList className="grid w-full max-w-2xl grid-cols-3">
-              <TabsTrigger value="manage">Manage Monitoring</TabsTrigger>
-              <TabsTrigger value="history">Change History</TabsTrigger>
-              <TabsTrigger value="compare">Compare Snapshots</TabsTrigger>
+            <TabsList className="grid w-full max-w-3xl grid-cols-4">
+              <TabsTrigger value="manage">Manage</TabsTrigger>
+              <TabsTrigger value="visualize">Network</TabsTrigger>
+              <TabsTrigger value="history">History</TabsTrigger>
+              <TabsTrigger value="compare">Compare</TabsTrigger>
             </TabsList>
 
             <TabsContent value="manage" className="space-y-6 mt-6">
               <MonitoredUsernamesManager workspaceId={workspace.id} />
+            </TabsContent>
+
+            <TabsContent value="visualize" className="mt-6">
+              <MaigretNetworkVisualization workspaceId={workspace.id} />
             </TabsContent>
 
             <TabsContent value="history" className="mt-6">
