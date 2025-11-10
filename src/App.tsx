@@ -30,6 +30,7 @@ import NotFound from "./pages/NotFound";
 // Lazy-loaded pages (loaded on demand)
 const ScanPage = lazy(() => import("./pages/ScanPage"));
 const ResultsDetail = lazy(() => import("./pages/ResultsDetail"));
+const AnomalyHistory = lazy(() => import("./pages/AnomalyHistory"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const ResponsibleUse = lazy(() => import("./pages/ResponsibleUse"));
@@ -219,6 +220,7 @@ function RouterContent() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/scan" element={<ScanPage />} />
           <Route path="/results/:scanId" element={<ResultsDetail />} />
+          <Route path="/anomaly-history" element={<AnomalyHistory />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />

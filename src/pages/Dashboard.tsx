@@ -448,6 +448,10 @@ const Dashboard = () => {
 
               {/* Action Buttons */}
               <div className="hidden md:flex gap-3">
+                <Button onClick={() => navigate('/anomaly-history')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Anomaly History
+                </Button>
                 <Button onClick={() => navigate('/graph')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
                   <Network className="h-4 w-4 mr-2" />
                   Entity Graph

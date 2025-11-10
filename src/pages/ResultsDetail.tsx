@@ -978,6 +978,16 @@ const ResultsDetail = () => {
         {/* Anomaly Detection */}
         <div className="mb-8">
           <AnomalyDetector scanId={scanId!} findings={findings} />
+          <div className="mt-4 flex justify-center">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/anomaly-history')}
+              className="gap-2"
+            >
+              <Zap className="w-4 h-4" />
+              View Anomaly History
+            </Button>
+          </div>
         </div>
 
         {/* Timeline & Graph - Enhanced Intelligence */}
