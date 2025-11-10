@@ -3,13 +3,17 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { X, Minimize2, Maximize2, ExternalLink, Loader2 } from 'lucide-react';
+import { X, Minimize2, Maximize2, ExternalLink, Loader2, StopCircle } from 'lucide-react';
 import { useActiveScan } from '@/hooks/useActiveScan';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
 export function FloatingProgressTracker() {
   const navigate = useNavigate();
   const { activeScan, progress, isMinimized, clearActiveScan, toggleMinimize } = useActiveScan();
+  const [isCancelling, setIsCancelling] = useState(false);
 
   if (!activeScan) return null;
 
@@ -25,6 +29,27 @@ export function FloatingProgressTracker() {
       ? `/scan/usernames/${activeScan.scanId}`
       : `/results/${activeScan.scanId}`;
     navigate(path);
+  };
+
+  const handleCancelScan = async () => {
+    if (!activeScan || isCancelling) return;
+
+    setIsCancelling(true);
+    try {
+      const { error } = await supabase.functions.invoke('cancel-scan', {
+        body: { scanId: activeScan.scanId }
+      });
+
+      if (error) throw error;
+
+      toast.success('Scan cancelled successfully');
+      clearActiveScan();
+    } catch (error) {
+      console.error('Failed to cancel scan:', error);
+      toast.error('Failed to cancel scan. Please try again.');
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   return (
@@ -124,15 +149,34 @@ export function FloatingProgressTracker() {
               </div>
             )}
 
-            {/* Action Button */}
-            <Button
-              onClick={handleViewResults}
-              className="w-full"
-              variant={isCompleted ? "default" : "outline"}
-            >
-              <ExternalLink className="h-4 w-4 mr-2" />
-              {isCompleted ? 'View Results' : 'View Progress'}
-            </Button>
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+              {!isCompleted && !isError && (
+                <Button
+                  onClick={handleCancelScan}
+                  disabled={isCancelling}
+                  variant="destructive"
+                  size="sm"
+                  className="flex-1"
+                >
+                  {isCancelling ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <StopCircle className="h-4 w-4 mr-2" />
+                  )}
+                  {isCancelling ? 'Cancelling...' : 'Cancel'}
+                </Button>
+              )}
+              <Button
+                onClick={handleViewResults}
+                className="flex-1"
+                variant={isCompleted ? "default" : "outline"}
+                size="sm"
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                {isCompleted ? 'View Results' : 'View Progress'}
+              </Button>
+            </div>
           </div>
         )}
       </Card>
