@@ -45,9 +45,11 @@ import { WorkerStatusBanner } from "@/components/scan/WorkerStatusBanner";
 import { WhatsMyNameTab } from "@/components/scan/WhatsMyNameTab";
 import { ToolSelector } from "@/components/scan/ToolSelector";
 import { UpgradeTeaser } from "@/components/upsell/UpgradeTeaser";
+import { PremiumUpgradeCTA } from "@/components/upsell/PremiumUpgradeCTA";
 import { TemplateManager } from "@/components/scan/TemplateManager";
 import { SaveTemplateDialog } from "@/components/scan/SaveTemplateDialog";
 import { useScanTemplates, ScanTemplate } from "@/hooks/useScanTemplates";
+import { useLowCreditToast } from "@/hooks/useLowCreditToast";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -57,6 +59,9 @@ export default function AdvancedScan() {
   const { startTracking } = useActiveScanContext();
   const { isWorkerOffline, getWorkerByName } = useWorkerStatus();
   const { isFree, checkFeatureAccess } = useTierGating();
+  
+  // Show low-credit toasts for free users
+  useLowCreditToast();
   const [scanType, setScanType] = useState<string>("email");
   const [target, setTarget] = useState("");
   const [providers, setProviders] = useState<string[]>([]);
@@ -455,6 +460,15 @@ export default function AdvancedScan() {
             <>
               {/* Worker Status Banner */}
               <WorkerStatusBanner />
+              
+              {/* Premium Upgrade CTA for Free Users */}
+              {isFree && (
+                <PremiumUpgradeCTA 
+                  variant="banner"
+                  message="Upgrade to Pro for unlimited scans"
+                  feature="unlimited scans and premium tools"
+                />
+              )}
               
               {/* Real-time Status Indicator - compact inline version */}
               {isScanning && currentScanId && (

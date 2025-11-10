@@ -61,16 +61,30 @@ export const Header = () => {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
-  // Show low balance warning
+  // Show low balance warning with premium upgrade CTA
   useEffect(() => {
     if (credits !== undefined && credits < 50 && !lowBalanceShown && !isPremium) {
       setLowBalanceShown(true);
       toast({
-        title: "⚠️ Low Credit Balance",
-        description: `You have ${credits} credits left. Buy more to continue using premium features.`,
+        title: "Low Credits",
+        description: "Unlock premium for more – try Pro! $15/mo for unlimited scans",
         action: (
-          <Button size="sm" onClick={() => navigate('/settings/billing')}>
-            Buy Credits
+          <Button 
+            size="sm" 
+            onClick={async () => {
+              try {
+                const { data, error } = await supabase.functions.invoke('billing-checkout', {
+                  body: { priceId: 'price_1SQwWCPNdM5SAyj7XS394cD8' }
+                });
+                if (error) throw error;
+                if (data?.url) window.open(data.url, '_blank');
+              } catch (error) {
+                console.error('Upgrade error:', error);
+                toast({ title: "Error", description: "Could not open checkout", variant: "destructive" });
+              }
+            }}
+          >
+            Upgrade Now
           </Button>
         ),
       });
