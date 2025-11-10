@@ -1,5 +1,6 @@
 import { Finding } from "./ufm";
 import { redactFindings } from "./redact";
+import { exportReactPDF } from "./pdf-export";
 
 /**
  * Export findings as JSON
@@ -82,9 +83,18 @@ export function exportAsCSV(findings: Finding[], redactPII: boolean = true): voi
 }
 
 /**
- * Export findings as PDF using jsPDF with professional formatting
+ * Export findings as PDF using @react-pdf/renderer with professional formatting
  */
 export async function exportAsPDF(findings: Finding[], redactPII: boolean = true): Promise<void> {
+  // Use the new React PDF implementation
+  return exportReactPDF(findings, redactPII);
+}
+
+/**
+ * LEGACY: Export findings as PDF using jsPDF (kept for compatibility)
+ * @deprecated Use exportAsPDF instead which uses @react-pdf/renderer
+ */
+export async function exportAsPDFLegacy(findings: Finding[], redactPII: boolean = true): Promise<void> {
   try {
     const { jsPDF } = await import('jspdf');
     const autoTable = (await import('jspdf-autotable')).default;

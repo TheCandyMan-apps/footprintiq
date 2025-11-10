@@ -590,18 +590,27 @@ const ResultsDetail = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline">
                     <Download className="w-4 h-4 mr-2" />
-                    More Exports
+                    Export Report
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Additional Exports</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => { exportAsPDF(findingsForExport, redactPII); toast({ title: "Exported", description: "PDF downloaded." }); }}>
-                    <FileText className="w-4 h-4 mr-2" /> Simple PDF
+                  <DropdownMenuLabel>Export Options</DropdownMenuLabel>
+                  <DropdownMenuItem 
+                    onClick={async () => { 
+                      try {
+                        await exportAsPDF(findingsForExport, redactPII); 
+                        toast({ title: "PDF Exported", description: "Premium PDF report downloaded." });
+                      } catch (error) {
+                        toast({ title: "Export Failed", description: "Could not generate PDF.", variant: "destructive" });
+                      }
+                    }}
+                  >
+                    <FileText className="w-4 h-4 mr-2" /> Premium PDF
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { exportAsCSV(findingsForExport, redactPII); toast({ title: "Exported", description: "CSV downloaded." }); }}>
+                  <DropdownMenuItem onClick={() => { exportAsCSV(findingsForExport, redactPII); toast({ title: "CSV Exported", description: "CSV report downloaded." }); }}>
                     <FileSpreadsheet className="w-4 h-4 mr-2" /> CSV
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => { exportAsJSON(findingsForExport, redactPII); toast({ title: "Exported", description: "JSON downloaded." }); }}>
+                  <DropdownMenuItem onClick={() => { exportAsJSON(findingsForExport, redactPII); toast({ title: "JSON Exported", description: "JSON report downloaded." }); }}>
                     <FileJson className="w-4 h-4 mr-2" /> JSON
                   </DropdownMenuItem>
                 </DropdownMenuContent>
