@@ -246,6 +246,22 @@ export default function AdvancedScan() {
   const handleScan = async () => {
     // Redirect username scans to Maigret scanner
     if (scanType === 'username') {
+      // Pre-scan health check for Maigret
+      try {
+        const { data: healthData, error: healthError } = await supabase.functions.invoke('maigret-health');
+        
+        if (healthError || healthData?.status === 'unhealthy') {
+          toast.error('Maigret offline – use fallback providers', {
+            description: 'Worker service is currently unavailable. Try again in a few minutes.',
+          });
+          console.error('Worker health check failed:', healthData);
+          return;
+        }
+      } catch (healthCheckError) {
+        console.error('Health check error:', healthCheckError);
+        toast.warning('Could not verify worker status – proceeding with scan');
+      }
+      
       // Check if Maigret worker is offline
       if (isWorkerOffline('maigret')) {
         const maigret = getWorkerByName('maigret');

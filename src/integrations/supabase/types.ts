@@ -6135,32 +6135,38 @@ export type Database = {
       }
       scan_templates: {
         Row: {
+          category: string | null
           configuration: Json
           created_at: string
           description: string | null
           id: string
           is_favorite: boolean | null
           name: string
+          tags: string[] | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          category?: string | null
           configuration: Json
           created_at?: string
           description?: string | null
           id?: string
           is_favorite?: boolean | null
           name: string
+          tags?: string[] | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          category?: string | null
           configuration?: Json
           created_at?: string
           description?: string | null
           id?: string
           is_favorite?: boolean | null
           name?: string
+          tags?: string[] | null
           updated_at?: string
           user_id?: string
         }
@@ -6995,6 +7001,57 @@ export type Database = {
         }
         Relationships: []
       }
+      template_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      template_tags: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          usage_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          usage_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
       threat_feeds: {
         Row: {
           created_at: string | null
@@ -7742,6 +7799,36 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_health_checks: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          response_time_ms: number | null
+          status: string
+          worker_name: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          status: string
+          worker_name: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          response_time_ms?: number | null
+          status?: string
+          worker_name?: string
+        }
+        Relationships: []
+      }
       worker_status: {
         Row: {
           created_at: string | null
@@ -7980,6 +8067,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_tag_usage: { Args: { tag_names: string[] }; Returns: undefined }
       is_workspace_member: {
         Args: { _user: string; _workspace: string }
         Returns: boolean

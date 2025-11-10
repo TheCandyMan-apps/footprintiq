@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     const finalArtifacts = config.allowArtifacts ? artifacts : [];
 
     // Estimate provider count based on scan mode
-    const estimatedProviders = all_sites ? 500 : 100;
+    const estimatedProviders = all_sites ? 400 : 100;
 
     // Create job record (use admin client to bypass RLS)
     const { data: job, error: jobError } = await supabaseAdmin
@@ -263,10 +263,13 @@ Deno.serve(async (req) => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
         
-        console.log(`[Attempt ${attempt}/3] Calling Maigret worker: ${url.toString()}`);
-        console.log(`  Job ID: ${job.id}`);
-        console.log(`  Username: ${username}`);
-        console.log(`  Plan: ${plan}`);
+        console.log(`[Attempt ${attempt}/3] Calling Maigret worker`);
+        console.log(`  📍 URL: ${url.toString()}`);
+        console.log(`  🔑 Token: ${WORKER_TOKEN ? 'Present (length=' + WORKER_TOKEN.length + ')' : 'MISSING'}`);
+        console.log(`  📋 Job ID: ${job.id}`);
+        console.log(`  👤 Username: ${username}`);
+        console.log(`  📦 Plan: ${plan}`);
+        console.log(`  ⏰ Timestamp: ${new Date().toISOString()}`);
         
         resp = await fetch(url, {
           headers: { 'X-Worker-Token': WORKER_TOKEN },
@@ -275,11 +278,13 @@ Deno.serve(async (req) => {
         
         clearTimeout(timeoutId);
         
-        console.log(`✓ Worker response received (attempt ${attempt}): ${resp.status} ${resp.statusText}`);
-        console.log(`  Response headers:`, Object.fromEntries(resp.headers.entries()));
-        console.log(`  Content-Type: ${resp.headers.get('content-type')}`);
-        console.log(`  Content-Length: ${resp.headers.get('content-length')}`);
-        console.log(`  Has body: ${!!resp.body}`);
+        console.log(`✅ Worker response received (attempt ${attempt})`);
+        console.log(`  📊 Status: ${resp.status} ${resp.statusText}`);
+        console.log(`  📝 Headers:`, Object.fromEntries(resp.headers.entries()));
+        console.log(`  📄 Content-Type: ${resp.headers.get('content-type')}`);
+        console.log(`  📏 Content-Length: ${resp.headers.get('content-length')}`);
+        console.log(`  💾 Has body: ${!!resp.body}`);
+        console.log(`  🔍 Body readable: ${resp.body?.locked === false}`);
         
         if (resp.ok) {
           console.log(`✓ Scan request successful on attempt ${attempt}`);
@@ -402,11 +407,15 @@ Deno.serve(async (req) => {
       }
     };
 
-    // Add timeout for streaming phase
+    // Add timeout for streaming phase (60s for initial data)
+    let hasReceivedData = false;
     const streamTimeout = setTimeout(() => {
-      reader.cancel();
-      console.error('Stream timeout - no data received from worker');
-    }, config.timeout * 1000);
+      if (!hasReceivedData) {
+        reader.cancel();
+        console.error('❌ Stream timeout - no data received from worker after 60s');
+        throw new Error('Timeout - no data received from worker');
+      }
+    }, 60000); // 60 second timeout for first data
 
     try {
       for (;;) {
@@ -427,6 +436,8 @@ Deno.serve(async (req) => {
           }
 
           lineNo++;
+          hasReceivedData = true; // Mark that we've received data
+          
           const { error: e1 } = await supabaseAdmin
             .from('scan_results')
             .insert({ job_id: job.id, line_no: lineNo, ndjson: json });
@@ -518,24 +529,28 @@ Deno.serve(async (req) => {
 
     // Check if worker returned empty response
     if (providersCompleted === 0) {
-      console.error('✗ Worker stream completed but no providers returned data', {
+      console.error('❌ CRITICAL: Worker stream completed but ZERO providers returned data');
+      console.error('📊 Empty Response Diagnostics:', {
         jobId: job.id,
+        username,
+        workerUrl: WORKER_URL,
         linesProcessed: lineNo,
         rowsInserted: inserted,
-        workerUrl: WORKER_URL,
-        username
+        plan,
+        timestamp: new Date().toISOString()
       });
-      console.error('⚠ Worker empty – this may indicate:');
-      console.error('  1. Username not found on any platform');
-      console.error('  2. Worker internal error');
-      console.error('  3. Network issues during streaming');
-      console.error('  Recommendation: User should try broader search terms');
+      console.error('⚠️  Possible causes:');
+      console.error('  1. Worker configuration issue (Maigret not properly installed)');
+      console.error('  2. Worker missing environment variables or API keys');
+      console.error('  3. All target sites blocking/rate-limiting the worker');
+      console.error('  4. Worker needs updating/redeployment');
+      console.error('  🔧 ACTION REQUIRED: Check worker logs and configuration');
       
       await supabaseAdmin
         .from('scan_jobs')
         .update({
-          status: 'no_results',
-          error: 'No results found - try broader query or different username',
+          status: 'error',
+          error: 'Worker empty - config issue. Check admin logs or retry.',
           finished_at: new Date().toISOString(),
         })
         .eq('id', job.id);
@@ -545,19 +560,41 @@ Deno.serve(async (req) => {
         type: 'broadcast',
         event: 'scan_complete',
         payload: {
-          status: 'completed',
+          status: 'error',
           totalProviders: 0,
           totalFindings: 0,
-          message: 'Scan completed - no results found',
+          message: 'No results – check admin logs or retry',
         },
       });
+      
+      // Auto-create partial case for tracking
+      try {
+        const { data: caseData } = await supabaseAdmin
+          .from('cases')
+          .insert({
+            user_id: user.id,
+            workspace_id: workspaceId,
+            title: `Empty scan: ${username}`,
+            description: 'Scan returned no results - Worker may need configuration',
+            status: 'open',
+            priority: 'low'
+          })
+          .select()
+          .single();
+        
+        if (caseData) {
+          console.log(`📝 Auto-created partial case: ${caseData.id}`);
+        }
+      } catch (caseError) {
+        console.error('Failed to auto-create partial case:', caseError);
+      }
         
       return new Response(
         JSON.stringify({
           jobId: job.id,
-          status: 'no_results',
-          error: 'No results found - try broader query or different username',
-          suggestion: 'Try alternative spellings, variations, or related usernames',
+          status: 'error',
+          error: 'No results – check admin logs or retry',
+          adminMessage: 'Worker configuration issue detected',
           debug: {
             linesProcessed: lineNo,
             inserted,
