@@ -73,15 +73,18 @@ serve(async (req) => {
       );
     }
 
-    // Count findings for this scan (no heavy payloads)
-    const { count: findingsCount, error: findingsError } = await supabase
+    // Fetch actual findings data for detailed analysis
+    const { data: findingsData, error: findingsError } = await supabase
       .from("findings")
-      .select("id", { count: "exact", head: true })
+      .select("id, provider, kind, severity, confidence, evidence")
       .eq("scan_id", scanId);
 
     if (findingsError) {
-      console.error("Findings count error:", findingsError);
+      console.error("Findings fetch error:", findingsError);
     }
+
+    const findings = findingsData || [];
+    const findingsCount = findings.length;
 
     // Build analysis context
     const context = {
@@ -91,79 +94,91 @@ serve(async (req) => {
       dataTypes: [], // kept minimal; can be expanded to fetch distinct data types if needed
     };
 
-    const systemPrompt = `You are an OSINT anomaly detection system. Analyze scan patterns and detect unusual behaviors or anomalies.
-
-Return a JSON array of detected anomalies. Each anomaly must have:
-- anomaly_type: "data_spike" | "unusual_provider" | "suspicious_pattern" | "behavioral_anomaly"
-- severity: "low" | "medium" | "high" | "critical"
-- description: Clear explanation of the anomaly
-- metadata: Additional context
-
-Output format (raw JSON array only):
-[
-  {
-    "anomaly_type": "data_spike",
-    "severity": "high",
-    "description": "Unusual spike in social media accounts detected",
-    "metadata": {"count": 25, "expected": 5}
-  }
-]`;
-
-    const userPrompt = `Analyze this scan for anomalies:
-Findings: ${context.findingCount}
-Risk Score: ${context.riskScore}
-Providers: ${context.providers.join(", ")}
-Data Types: ${context.dataTypes.join(", ")}`;
-
-    // Call Lovable AI
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.3,
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limits exceeded. Please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Payment required. Please add funds to your Lovable AI workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      throw new Error(`AI API error: ${aiResponse.status}`);
+    // Implement premium consistency logic
+    let baseAnomalies = [];
+    
+    if (findingsCount === 0) {
+      // No findings detected - possible bypass
+      baseAnomalies.push({
+        anomaly_type: "possible_bypass",
+        severity: "medium",
+        description: "Possible bypass detected: No findings returned despite scan execution. This could indicate evasion techniques, privacy tools, or incomplete data sources.",
+        metadata: {
+          findingsCount: 0,
+          expectedMinimum: 1,
+          scanId: scanId
+        }
+      });
+    } else {
+      // Findings present - low anomaly risk
+      baseAnomalies.push({
+        anomaly_type: "normal_operation",
+        severity: "low",
+        description: `Scan completed normally with ${findingsCount} findings detected. No bypass indicators.`,
+        metadata: {
+          findingsCount: findingsCount,
+          scanId: scanId
+        }
+      });
     }
 
-    const aiData = await aiResponse.json();
-    const content = aiData.choices[0]?.message?.content || "[]";
+    // Use Grok for detailed analysis of findings
+    const GROK_API_KEY = Deno.env.get("GROK_API_KEY");
+    let grokAnomalies = [];
+    
+    if (GROK_API_KEY && findings.length > 0) {
+      try {
+        const grokPrompt = `Analyze these ${findings.length} security findings for anomalies:
 
-    // Parse AI response
-    let anomalies = [];
-    try {
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        anomalies = JSON.parse(jsonMatch[0]);
-      } else {
-        anomalies = JSON.parse(content);
+${findings.map((f: any, i: number) => `
+Finding ${i + 1}:
+- Provider: ${f.provider}
+- Type: ${f.kind}
+- Severity: ${f.severity}
+- Confidence: ${f.confidence}
+- Evidence: ${JSON.stringify(f.evidence).substring(0, 200)}
+`).join('\n')}
+
+Detect unusual patterns, suspicious correlations, or behavioral anomalies. Return JSON array only:
+[{"anomaly_type": "type", "severity": "level", "description": "explanation", "metadata": {}}]`;
+
+        const grokResponse = await fetch("https://api.x.ai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${GROK_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "grok-beta",
+            messages: [
+              { role: "system", content: "You are an expert OSINT anomaly detector. Return only valid JSON arrays." },
+              { role: "user", content: grokPrompt }
+            ],
+            temperature: 0.3,
+          }),
+        });
+
+        if (grokResponse.ok) {
+          const grokData = await grokResponse.json();
+          const grokContent = grokData.choices[0]?.message?.content || "[]";
+          
+          try {
+            const jsonMatch = grokContent.match(/\[[\s\S]*\]/);
+            if (jsonMatch) {
+              grokAnomalies = JSON.parse(jsonMatch[0]);
+            }
+          } catch (e) {
+            console.error("Failed to parse Grok response:", grokContent);
+          }
+        }
+      } catch (error) {
+        console.error("Grok analysis error:", error);
       }
-    } catch (e) {
-      console.error("Failed to parse AI response:", content);
-      anomalies = [];
     }
+
+    // Combine base anomalies with Grok insights
+    const anomalies = [...baseAnomalies, ...grokAnomalies];
+
 
     // Store anomalies in database
     for (const anomaly of anomalies) {

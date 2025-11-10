@@ -15,9 +15,10 @@ interface Anomaly {
 
 interface AnomalyDetectorProps {
   scanId: string;
+  findings?: any[];
 }
 
-export function AnomalyDetector({ scanId }: AnomalyDetectorProps) {
+export function AnomalyDetector({ scanId, findings = [] }: AnomalyDetectorProps) {
   const [isDetecting, setIsDetecting] = useState(false);
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
 

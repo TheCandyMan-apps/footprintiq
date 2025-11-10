@@ -977,7 +977,7 @@ const ResultsDetail = () => {
 
         {/* Anomaly Detection */}
         <div className="mb-8">
-          <AnomalyDetector scanId={scanId!} />
+          <AnomalyDetector scanId={scanId!} findings={findings} />
         </div>
 
         {/* Timeline & Graph - Enhanced Intelligence */}
