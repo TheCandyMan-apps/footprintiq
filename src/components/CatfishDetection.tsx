@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Shield, AlertTriangle, CheckCircle2, XCircle, Loader2, UserCheck, Lock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -86,25 +87,61 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
     }
   };
 
+  const getRiskEmoji = (risk: string) => {
+    switch (risk) {
+      case 'LOW': return '✅';
+      case 'MEDIUM': return '⚠️';
+      case 'HIGH': return '🔴';
+      case 'CRITICAL': return '🚨';
+      default: return '🔍';
+    }
+  };
+
   const formatAnalysis = (text: string) => {
-    return text.split('\n').map((line, idx) => {
+    const lines = text.split('\n');
+    const sections: { [key: string]: string[] } = {};
+    let currentSection = 'Overview';
+    
+    lines.forEach(line => {
       if (line.startsWith('**') && line.endsWith('**')) {
-        return <h3 key={idx} className="text-lg font-semibold mt-6 mb-2">{line.replace(/\*\*/g, '')}</h3>;
+        currentSection = line.replace(/\*\*/g, '').trim();
+        sections[currentSection] = [];
+      } else if (line.trim()) {
+        if (!sections[currentSection]) sections[currentSection] = [];
+        sections[currentSection].push(line);
       }
-      if (line.startsWith('###')) {
-        return <h4 key={idx} className="text-md font-semibold mt-4 mb-2">{line.replace(/###/g, '')}</h4>;
-      }
-      if (line.trim().startsWith('-')) {
-        return <li key={idx} className="ml-6 mb-1">{line.replace(/^-\s*/, '')}</li>;
-      }
-      if (line.trim().startsWith('*') && !line.startsWith('**')) {
-        return <li key={idx} className="ml-6 mb-1">{line.replace(/^\*\s*/, '')}</li>;
-      }
-      if (line.trim()) {
-        return <p key={idx} className="mb-2">{line}</p>;
-      }
-      return <br key={idx} />;
     });
+
+    return Object.entries(sections).map(([section, content], sectionIdx) => (
+      <AccordionItem key={sectionIdx} value={`section-${sectionIdx}`}>
+        <AccordionTrigger className="text-left font-semibold">
+          {section}
+        </AccordionTrigger>
+        <AccordionContent>
+          <ul className="space-y-2">
+            {content.map((line, idx) => {
+              const cleanLine = line.replace(/^[-*]\s*/, '').trim();
+              const hasScore = /(\d+)%/.test(cleanLine);
+              
+              return (
+                <li key={idx} className="flex items-start gap-2 text-sm">
+                  <span className="text-primary mt-0.5">•</span>
+                  <span>
+                    {hasScore ? (
+                      cleanLine.split(/(\d+%)/).map((part, i) => 
+                        /\d+%/.test(part) ? (
+                          <strong key={i} className="text-primary font-bold">{part}</strong>
+                        ) : part
+                      )
+                    ) : cleanLine}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </AccordionContent>
+      </AccordionItem>
+    ));
   };
 
   return (
@@ -164,8 +201,11 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
             <Alert className={`border-2 ${getRiskColor(result.scores.catfishRisk)}/20`}>
               <div className="flex items-center gap-2">
                 {getRiskIcon(result.scores.catfishRisk)}
-                <div>
-                  <h4 className="font-semibold">Catfish Risk: {result.scores.catfishRisk}</h4>
+                <div className="flex-1">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <span>{getRiskEmoji(result.scores.catfishRisk)}</span>
+                    Catfish Risk: <strong className="text-primary">{result.scores.catfishRisk}</strong>
+                  </h4>
                   <AlertDescription>
                     {result.scores.catfishRisk === 'LOW' && 'Identity appears authentic with strong verification signals'}
                     {result.scores.catfishRisk === 'MEDIUM' && 'Some inconsistencies detected, exercise caution'}
@@ -221,11 +261,12 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-md">Detailed Analysis</CardTitle>
+                <CardDescription>Expand sections to view in-depth findings</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="prose prose-sm max-w-none dark:prose-invert">
+                <Accordion type="multiple" className="w-full">
                   {formatAnalysis(result.analysis)}
-                </div>
+                </Accordion>
               </CardContent>
             </Card>
 
