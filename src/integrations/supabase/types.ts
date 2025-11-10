@@ -3923,6 +3923,167 @@ export type Database = {
         }
         Relationships: []
       }
+      maigret_monitored_usernames: {
+        Row: {
+          alert_email: string | null
+          check_frequency_hours: number | null
+          created_at: string | null
+          email_alerts_enabled: boolean | null
+          id: string
+          last_checked_at: string | null
+          sites_filter: string[] | null
+          updated_at: string | null
+          user_id: string | null
+          username: string
+          workspace_id: string | null
+        }
+        Insert: {
+          alert_email?: string | null
+          check_frequency_hours?: number | null
+          created_at?: string | null
+          email_alerts_enabled?: boolean | null
+          id?: string
+          last_checked_at?: string | null
+          sites_filter?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          username: string
+          workspace_id?: string | null
+        }
+        Update: {
+          alert_email?: string | null
+          check_frequency_hours?: number | null
+          created_at?: string | null
+          email_alerts_enabled?: boolean | null
+          id?: string
+          last_checked_at?: string | null
+          sites_filter?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          username?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maigret_monitored_usernames_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maigret_profile_changes: {
+        Row: {
+          change_details: Json | null
+          change_type: string
+          detected_at: string | null
+          email_sent: boolean | null
+          email_sent_at: string | null
+          id: string
+          new_snapshot_id: string | null
+          old_snapshot_id: string | null
+          site: string
+          username: string
+          workspace_id: string | null
+        }
+        Insert: {
+          change_details?: Json | null
+          change_type: string
+          detected_at?: string | null
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          id?: string
+          new_snapshot_id?: string | null
+          old_snapshot_id?: string | null
+          site: string
+          username: string
+          workspace_id?: string | null
+        }
+        Update: {
+          change_details?: Json | null
+          change_type?: string
+          detected_at?: string | null
+          email_sent?: boolean | null
+          email_sent_at?: string | null
+          id?: string
+          new_snapshot_id?: string | null
+          old_snapshot_id?: string | null
+          site?: string
+          username?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maigret_profile_changes_new_snapshot_id_fkey"
+            columns: ["new_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "maigret_profile_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maigret_profile_changes_old_snapshot_id_fkey"
+            columns: ["old_snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "maigret_profile_snapshots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maigret_profile_changes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maigret_profile_snapshots: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          id: string
+          raw_data: Json | null
+          scan_id: string | null
+          site: string
+          status: string
+          url: string | null
+          username: string
+          workspace_id: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          raw_data?: Json | null
+          scan_id?: string | null
+          site: string
+          status: string
+          url?: string | null
+          username: string
+          workspace_id?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          id?: string
+          raw_data?: Json | null
+          scan_id?: string | null
+          site?: string
+          status?: string
+          url?: string | null
+          username?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maigret_profile_snapshots_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metrics_aggregations: {
         Row: {
           aggregation_period: string

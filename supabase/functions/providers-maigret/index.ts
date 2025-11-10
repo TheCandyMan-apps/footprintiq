@@ -10,6 +10,8 @@ interface MaigretRequest {
   usernames: string[];
   sites?: string[];
   timeout?: number;
+  workspaceId?: string;
+  scanId?: string;
 }
 
 interface MaigretFinding {
@@ -123,6 +125,36 @@ serve(async (req) => {
     }
 
     console.log(`📊 Transformed ${findings.length} findings`);
+
+    // If workspaceId and scanId provided, store snapshot for historical tracking
+    if (body.workspaceId && body.scanId) {
+      try {
+        const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+        await fetch(`${SUPABASE_URL}/functions/v1/maigret-store-snapshot`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          },
+          body: JSON.stringify({
+            username: body.usernames[0],
+            workspaceId: body.workspaceId,
+            scanId: body.scanId,
+            findings: findings.map(f => ({
+              site: f.evidence.site,
+              url: f.evidence.url,
+              status: f.evidence.status,
+              confidence: f.confidence,
+              rawData: f,
+            })),
+          }),
+        });
+        console.log('📸 Snapshot stored for historical tracking');
+      } catch (snapshotError) {
+        console.error('Failed to store snapshot:', snapshotError);
+        // Don't fail the request if snapshot storage fails
+      }
+    }
 
     return new Response(
       JSON.stringify({ findings }),

@@ -164,6 +164,7 @@ const Features = lazy(() => import("./pages/Features"));
 const ScanHealth = lazy(() => import("./pages/ScanHealth"));
 const BatchScan = lazy(() => import("./pages/BatchScan"));
 const MaigretScanner = lazy(() => import("./pages/MaigretScanner"));
+const MaigretMonitoring = lazy(() => import("./pages/MaigretMonitoring"));
 const UsernamesPage = lazy(() => import("./pages/scan/UsernamesPage"));
 const UsernameResultsPage = lazy(() => import("./pages/scan/UsernameResultsPage"));
 const SpiderFootSetup = lazy(() => import("./pages/docs/SpiderFootSetup"));
@@ -253,6 +254,7 @@ function RouterContent() {
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
           <Route path="/maigret-scanner" element={<MaigretScanner />} />
+          <Route path="/dashboard/maigret" element={<MaigretMonitoring />} />
           <Route path="/scan/usernames" element={<UsernamesPage />} />
           <Route path="/scan/usernames/:jobId" element={<UsernameResultsPage />} />
           <Route path="/maltego-gallery" element={<MaltegoGallery />} />
