@@ -248,20 +248,23 @@ export default function AdvancedScan() {
   const handleScan = async () => {
     // Redirect username scans to Maigret scanner
     if (scanType === 'username') {
-      // Pre-scan health check for Maigret
-      try {
-        const { data: healthData, error: healthError } = await supabase.functions.invoke('maigret-health');
-        
-        if (healthError || healthData?.status === 'unhealthy') {
-          toast.error('Maigret offline – use fallback providers', {
-            description: 'Worker service is currently unavailable. Try again in a few minutes.',
-          });
-          console.error('Worker health check failed:', healthData);
-          return;
+      // Pre-scan health check for Maigret - warn but don't block
+      if (maigretEnabled) {
+        try {
+          const { data: healthData, error: healthError } = await supabase.functions.invoke('maigret-health');
+          
+          if (healthError || healthData?.status === 'unhealthy') {
+            toast.warning('Maigret offline – using fallback providers', {
+              description: 'Scan will continue without Maigret results.',
+            });
+            console.error('Worker health check failed:', healthData);
+            // Disable Maigret for this scan but continue
+            setMaigretEnabled(false);
+          }
+        } catch (healthCheckError) {
+          console.error('Health check error:', healthCheckError);
+          toast.warning('Could not verify Maigret status – scan will proceed');
         }
-      } catch (healthCheckError) {
-        console.error('Health check error:', healthCheckError);
-        toast.warning('Could not verify worker status – proceeding with scan');
       }
       
       // Check if Maigret worker is offline

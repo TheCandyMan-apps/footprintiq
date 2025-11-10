@@ -247,6 +247,26 @@ test('should show friendly message for no results', async ({ page }) => {
 });
 ```
 
+## Health Check System
+
+### Fallback Mechanism
+
+The `maigret-health` edge function implements a resilient health check:
+
+1. **Primary**: Attempts `GET /health` endpoint (5s timeout)
+2. **Fallback**: If 404 or timeout, performs `POST /run` probe with test username (8s timeout)
+3. **Result**: Returns `{status: 'healthy'}` if either succeeds, `{status: 'unhealthy'}` otherwise
+
+**Pre-Scan Checks**:
+- AdvancedScan calls `maigret-health` before username scans
+- If unhealthy: shows warning toast, disables Maigret, continues scan with other providers
+- Scans never blocked by Maigret unavailability
+
+**WorkerStatus Component**:
+- Uses `supabase.functions.invoke('maigret-health')` instead of direct worker calls
+- Displays "Unknown" instead of "Offline" for ambiguous states
+- Refreshable badge with last check timestamp
+
 ## Monitoring
 
 ### Logs
@@ -254,6 +274,7 @@ test('should show friendly message for no results', async ({ page }) => {
 Check edge function logs:
 ```bash
 supabase functions logs providers-maigret
+supabase functions logs maigret-health
 ```
 
 ### Metrics
@@ -263,9 +284,15 @@ Provider timing logged in orchestrator:
 [orchestrate] Provider maigret returned 15 findings in 5.2s
 ```
 
+Health check logs show fallback usage:
+```
+⚠️ Health endpoint returned 404, trying fallback probe...
+✓ Fallback probe successful
+```
+
 ### Alerts
 
-Health checks monitor worker availability and alert on failures.
+Health checks monitor worker availability and send email alerts on repeated failures.
 
 ## Troubleshooting
 

@@ -63,7 +63,7 @@ describe('Maigret Worker Health Checks', () => {
     });
   });
 
-  it('should show error toast when worker is unhealthy', async () => {
+  it('should warn but continue when worker is unhealthy', async () => {
     const { toast } = await import('sonner');
     
     const mockUnhealthyResponse = {
@@ -76,10 +76,10 @@ describe('Maigret Worker Health Checks', () => {
     render(<AdvancedScan />, { wrapper });
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith(
-        'Maigret offline – use fallback providers',
+      expect(toast.warning).toHaveBeenCalledWith(
+        'Maigret offline – using fallback providers',
         expect.objectContaining({
-          description: expect.stringContaining('unavailable'),
+          description: expect.stringContaining('continue without Maigret'),
         })
       );
     });
@@ -96,7 +96,7 @@ describe('Maigret Worker Health Checks', () => {
 
     await waitFor(() => {
       expect(toast.warning).toHaveBeenCalledWith(
-        'Could not verify worker status – proceeding with scan'
+        'Could not verify Maigret status – scan will proceed'
       );
     });
   });

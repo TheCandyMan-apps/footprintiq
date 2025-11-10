@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Activity, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 type HealthStatus = 'healthy' | 'degraded' | 'down' | 'unknown';
 
@@ -21,64 +22,53 @@ export function WorkerStatus() {
   const checkHealth = async (manual = false) => {
     setChecking(true);
     try {
-      const workerUrl = import.meta.env.VITE_MAIGRET_API_URL;
-      if (!workerUrl) {
+      const { data, error } = await supabase.functions.invoke('maigret-health');
+
+      if (error) {
         setStatus('unknown');
         if (manual) {
           toast({
-            title: 'Configuration Error',
-            description: 'Worker URL not configured',
+            title: 'Health Check Failed',
+            description: 'Could not verify worker status',
             variant: 'destructive',
           });
         }
+        setLastCheck(new Date());
         return;
       }
 
-      const response = await fetch(`${workerUrl}/health`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        signal: AbortSignal.timeout(5000),
-      });
-
-      if (response.ok) {
+      if (data?.status === 'healthy') {
         setStatus('healthy');
         if (manual) {
           toast({
             title: 'Worker Online',
-            description: 'Username scan service is operational',
+            description: data.used_fallback 
+              ? 'Service operational (fallback mode)' 
+              : 'Username scan service is operational',
           });
         }
-      } else if (response.status >= 500) {
+      } else if (data?.status === 'unhealthy') {
         setStatus('down');
         if (manual) {
           toast({
             title: 'Worker Offline',
-            description: 'Service is currently unavailable. Scans will retry automatically.',
+            description: 'Service is currently unavailable. Scans will use fallback providers.',
             variant: 'destructive',
           });
         }
       } else {
-        setStatus('degraded');
-        if (manual) {
-          toast({
-            title: 'Worker Degraded',
-            description: 'Service is experiencing issues but scans may still work.',
-            variant: 'default',
-          });
-        }
+        setStatus('unknown');
       }
       
       setLastCheck(new Date());
     } catch (error) {
       console.error('Health check failed:', error);
-      setStatus('down');
+      setStatus('unknown');
       setLastCheck(new Date());
       if (manual) {
         toast({
-          title: 'Worker Offline',
-          description: 'Service is currently unavailable. Scans will retry automatically.',
+          title: 'Health Check Error',
+          description: 'Could not verify worker status',
           variant: 'destructive',
         });
       }

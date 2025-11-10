@@ -24,45 +24,63 @@ Deno.serve(async (req) => {
     console.log('🏥 Starting Maigret worker health check');
     console.log(`Worker URL: ${WORKER_URL}`);
 
-    // Test with known username
-    const testUsername = 'test_health_check';
     const healthUrl = `${WORKER_URL}/health`;
-    const scanUrl = `${WORKER_URL}/scan/${testUsername}`;
+    let healthData: any = null;
+    let usedFallback = false;
 
-    // Check 1: Basic health endpoint
+    // Check 1: Try health endpoint first
     console.log(`Checking ${healthUrl}`);
-    const healthCheck = await fetch(healthUrl, {
-      signal: AbortSignal.timeout(5000),
-    });
+    try {
+      const healthCheck = await fetch(healthUrl, {
+        signal: AbortSignal.timeout(5000),
+      });
 
-    if (!healthCheck.ok) {
-      throw new Error(`Health endpoint failed: ${healthCheck.status}`);
+      if (healthCheck.ok) {
+        healthData = await healthCheck.json();
+        console.log('✓ Health endpoint OK:', healthData);
+      } else if (healthCheck.status === 404) {
+        console.log('⚠️ Health endpoint returned 404, trying fallback probe...');
+        usedFallback = true;
+      } else {
+        throw new Error(`Health endpoint failed: ${healthCheck.status}`);
+      }
+    } catch (error: any) {
+      console.log('⚠️ Health endpoint failed, trying fallback probe:', error.message);
+      usedFallback = true;
     }
 
-    const healthData = await healthCheck.json();
-    console.log('✓ Health endpoint OK:', healthData);
+    // Fallback: Probe /run endpoint if /health unavailable
+    if (usedFallback) {
+      console.log('Fallback: Sending test scan request to /run');
+      const probeUrl = `${WORKER_URL}/run`;
+      const probeResponse = await fetch(probeUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WORKER_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          usernames: ['fp_healthcheck'],
+          sites: ['github'],
+          timeout: 5,
+        }),
+        signal: AbortSignal.timeout(8000),
+      });
 
-    // Check 2: Test scan with timeout
-    console.log(`Testing scan: ${scanUrl}`);
-    const scanCheck = await fetch(scanUrl, {
-      headers: { 'X-Worker-Token': WORKER_TOKEN },
-      signal: AbortSignal.timeout(10000),
-    });
+      if (!probeResponse.ok) {
+        throw new Error(`Fallback probe failed: ${probeResponse.status}`);
+      }
 
-    if (!scanCheck.ok) {
-      throw new Error(`Scan test failed: ${scanCheck.status}`);
+      // Check if response is parsable
+      const probeText = await probeResponse.text();
+      if (probeText.length === 0) {
+        throw new Error('Fallback probe returned empty response');
+      }
+
+      healthData = { status: 'healthy_via_fallback', probe: 'success' };
+      console.log('✓ Fallback probe successful');
     }
 
-    // Check if we get streaming data
-    let hasData = false;
-    const reader = scanCheck.body?.getReader();
-    if (reader) {
-      const { value, done } = await reader.read();
-      hasData = !done && value && value.length > 0;
-      reader.cancel();
-    }
-
-    console.log(`✓ Scan endpoint OK, streaming: ${hasData}`);
 
     // Log health check result
     await supabase
@@ -72,8 +90,8 @@ Deno.serve(async (req) => {
         status: 'healthy',
         response_time_ms: Date.now(),
         metadata: {
-          health_endpoint: healthData,
-          scan_streaming: hasData,
+          health_data: healthData,
+          used_fallback: usedFallback,
         },
       });
 
@@ -82,7 +100,7 @@ Deno.serve(async (req) => {
         status: 'healthy',
         worker_url: WORKER_URL,
         health_check: healthData,
-        scan_streaming: hasData,
+        used_fallback: usedFallback,
         timestamp: new Date().toISOString(),
       }),
       {
