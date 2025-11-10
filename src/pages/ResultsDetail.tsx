@@ -482,6 +482,22 @@ const ResultsDetail = () => {
     return "Your privacy is at risk. Take action now.";
   };
 
+  const getRiskLevel = (highCount: number, mediumCount: number, lowCount: number): { label: string; color: string; variant: "destructive" | "default" | "secondary" } => {
+    const totalFindings = highCount + mediumCount + lowCount;
+    if (totalFindings === 0) return { label: "No Risk", color: "text-green-500", variant: "secondary" };
+    
+    // Calculate weighted risk score
+    const riskScore = ((highCount * 100) + (mediumCount * 50) + (lowCount * 10)) / totalFindings;
+    
+    if (riskScore >= 70) {
+      return { label: "High Risk", color: "text-destructive", variant: "destructive" };
+    } else if (riskScore >= 30) {
+      return { label: "Medium Risk", color: "text-primary", variant: "default" };
+    } else {
+      return { label: "Low Risk", color: "text-accent", variant: "secondary" };
+    }
+  };
+
   const isRemovalRequested = (sourceId: string, sourceType: string) => {
     return removalRequests.some(
       r => r.source_id === sourceId && r.source_type === sourceType
@@ -1004,6 +1020,19 @@ const ResultsDetail = () => {
             <p className="text-lg text-muted-foreground mb-6">
               {getScoreMessage(scan.privacy_score)}
             </p>
+            
+            {/* Risk Level Badge */}
+            <div className="flex justify-center mb-6">
+              {(() => {
+                const riskLevel = getRiskLevel(scan.high_risk_count, scan.medium_risk_count, scan.low_risk_count);
+                return (
+                  <Badge variant={riskLevel.variant} className="text-lg px-6 py-2">
+                    <AlertTriangle className="w-5 h-5 mr-2" />
+                    {riskLevel.label}
+                  </Badge>
+                );
+              })()}
+            </div>
             
             <div className="grid md:grid-cols-4 gap-4 max-w-3xl mx-auto mb-6">
               <div className="p-4 rounded-lg bg-background/50">
