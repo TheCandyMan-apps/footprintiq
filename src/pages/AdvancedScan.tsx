@@ -257,7 +257,12 @@ export default function AdvancedScan() {
       }
       
       toast.info("Redirecting to Username Scanner (powered by Maigret)");
-      navigate('/scan/usernames');
+      navigate('/scan/usernames', { 
+        state: { 
+          username: target.trim(),
+          fromAdvanced: true 
+        } 
+      });
       return;
     }
 

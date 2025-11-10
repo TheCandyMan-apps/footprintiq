@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMaigretEntitlement } from '@/hooks/useMaigretEntitlement';
 import { Loader2, Info, Bug } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useUsernameScan } from '@/hooks/useUsernameScan';
 import { UsernameScanDebug } from './UsernameScanDebug';
 import { ScanProgressDialog } from './ScanProgressDialog';
@@ -41,6 +41,7 @@ export function UsernameScanForm() {
   const [currentScanId, setCurrentScanId] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { entitlement, isPremium, loading: entitlementLoading } = useMaigretEntitlement();
   const { startTracking } = useActiveScanContext();
   const { 
@@ -51,6 +52,84 @@ export function UsernameScanForm() {
     startScan, 
     clearLogs 
   } = useUsernameScan();
+  
+  const autoTriggeredRef = useRef(false);
+
+  // Auto-trigger scan if coming from advanced scan with username
+  useEffect(() => {
+    const state = location.state as { username?: string; fromAdvanced?: boolean } | null;
+    if (state?.fromAdvanced && state?.username && !autoTriggeredRef.current && !entitlementLoading) {
+      console.log('[UsernameScanForm] Auto-triggering scan from advanced:', state.username);
+      autoTriggeredRef.current = true;
+      setUsername(state.username);
+      
+      // Trigger scan after a brief delay to ensure state is set
+      setTimeout(async () => {
+        try {
+          setSubmitting(true);
+          
+          // Pre-scan session check
+          const sessionCheck = await checkAndRefreshSession();
+          if (!sessionCheck.valid) {
+            toast({
+              title: 'Session Expired',
+              description: 'Please log in again',
+              variant: 'destructive',
+            });
+            navigate('/auth');
+            return;
+          }
+
+          // Use enhanced scan hook
+          const data = await startScan({
+            username: state.username!.trim(),
+            tags: tags.trim() || undefined,
+            allSites: allSites,
+            artifacts: isPremium ? artifacts : [],
+            debugMode,
+          });
+
+          const jobId = data?.jobId;
+
+          // Open progress dialog and start floating tracker
+          if (jobId) {
+            setCurrentScanId(jobId);
+            setProgressDialogOpen(true);
+            
+            // Start floating tracker
+            startTracking({
+              scanId: jobId,
+              type: 'username',
+              target: state.username!.trim(),
+              startedAt: new Date().toISOString(),
+            });
+          }
+
+          toast({
+            title: 'Scan Started',
+            description: `Scan queued for username "${state.username}"`,
+          });
+
+          // Reset form
+          setUsername('');
+          setTags('');
+          setArtifacts([]);
+        } catch (error: any) {
+          console.error('Auto-scan error:', error);
+          toast({
+            title: 'Scan Failed',
+            description: error.message || 'Failed to start scan',
+            variant: 'destructive',
+          });
+        } finally {
+          setSubmitting(false);
+        }
+      }, 300);
+      
+      // Clear location state to prevent re-triggering
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state, entitlementLoading, isPremium, startScan, startTracking, toast, navigate, debugMode, tags, allSites, artifacts]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
