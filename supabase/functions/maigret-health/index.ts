@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   }
 
   // Declare env vars at function level so they're accessible in catch blocks
-  const WORKER_URL = Deno.env.get('VITE_MAIGRET_API_URL') ?? '';
+  const WORKER_URL = Deno.env.get('MAIGRET_WORKER_URL') ?? '';
   const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN') ?? '';
   const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';

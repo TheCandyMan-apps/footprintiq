@@ -164,6 +164,9 @@ const Features = lazy(() => import("./pages/Features"));
 const ScanHealth = lazy(() => import("./pages/ScanHealth"));
 const BatchScan = lazy(() => import("./pages/BatchScan"));
 const MaigretScanner = lazy(() => import("./pages/MaigretScanner"));
+const SimpleMaigretScan = lazy(() => import("./pages/SimpleMaigretScan"));
+const SimpleMaigretResults = lazy(() => import("./pages/SimpleMaigretResults"));
+const MaigretDebug = lazy(() => import("./pages/MaigretDebug"));
 const MaigretMonitoring = lazy(() => import("./pages/MaigretMonitoring"));
 const UsernamesPage = lazy(() => import("./pages/scan/UsernamesPage"));
 const UsernameResultsPage = lazy(() => import("./pages/scan/UsernameResultsPage"));
@@ -255,6 +258,9 @@ function RouterContent() {
           <Route path="/usernames" element={<UsernamePage />} />
           <Route path="/maigret-scanner" element={<MaigretScanner />} />
           <Route path="/dashboard/maigret" element={<MaigretMonitoring />} />
+          <Route path="/maigret/simple" element={<SimpleMaigretScan />} />
+          <Route path="/maigret/results/:jobId" element={<SimpleMaigretResults />} />
+          <Route path="/maigret/debug" element={<MaigretDebug />} />
           <Route path="/scan/usernames" element={<UsernamesPage />} />
           <Route path="/scan/usernames/:jobId" element={<UsernameResultsPage />} />
           <Route path="/maltego-gallery" element={<MaltegoGallery />} />

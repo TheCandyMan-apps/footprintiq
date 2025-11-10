@@ -44,7 +44,7 @@ export function MaigretNetworkVisualization({ workspaceId }: MaigretNetworkVisua
   const { data: monitoredUsernames } = useQuery({
     queryKey: ["monitored-usernames", workspaceId],
     queryFn: async () => {
-      // @ts-expect-error - Supabase type inference limitation
+      // @ts-ignore - Supabase type inference can be overly complex
       const response = await supabase
         .from("maigret_monitored_usernames")
         .select("username")

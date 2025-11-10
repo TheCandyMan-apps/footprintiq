@@ -4084,6 +4084,56 @@ export type Database = {
           },
         ]
       }
+      maigret_results: {
+        Row: {
+          batch_id: string | null
+          created_at: string | null
+          id: string
+          job_id: string
+          raw: Json | null
+          status: string
+          summary: Json | null
+          updated_at: string | null
+          user_id: string | null
+          username: string
+          workspace_id: string | null
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string | null
+          id?: string
+          job_id: string
+          raw?: Json | null
+          status?: string
+          summary?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+          username: string
+          workspace_id?: string | null
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string | null
+          id?: string
+          job_id?: string
+          raw?: Json | null
+          status?: string
+          summary?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+          username?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maigret_results_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metrics_aggregations: {
         Row: {
           aggregation_period: string

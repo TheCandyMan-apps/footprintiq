@@ -43,7 +43,7 @@ serve(async (req) => {
   }
 
   const WORKER_URL = Deno.env.get('MAIGRET_WORKER_URL') ?? '';
-  const WORKER_TOKEN = Deno.env.get('MAIGRET_WORKER_TOKEN') ?? '';
+  const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN') ?? '';
 
   if (!WORKER_URL || !WORKER_TOKEN) {
     console.error('❌ Missing Maigret worker configuration');
