@@ -167,6 +167,7 @@ const MaigretScanner = lazy(() => import("./pages/MaigretScanner"));
 const SimpleMaigretScan = lazy(() => import("./pages/SimpleMaigretScan"));
 const SimpleMaigretResults = lazy(() => import("./pages/SimpleMaigretResults"));
 const MaigretDebug = lazy(() => import("./pages/MaigretDebug"));
+const MaigretSelfTest = lazy(() => import("./pages/MaigretSelfTest"));
 const MaigretMonitoring = lazy(() => import("./pages/MaigretMonitoring"));
 const UsernamesPage = lazy(() => import("./pages/scan/UsernamesPage"));
 const UsernameResultsPage = lazy(() => import("./pages/scan/UsernameResultsPage"));
@@ -261,6 +262,7 @@ function RouterContent() {
           <Route path="/maigret/simple" element={<SimpleMaigretScan />} />
           <Route path="/maigret/results/:jobId" element={<SimpleMaigretResults />} />
           <Route path="/maigret/debug" element={<MaigretDebug />} />
+          <Route path="/maigret/self-test" element={<MaigretSelfTest />} />
           <Route path="/scan/usernames" element={<UsernamesPage />} />
           <Route path="/scan/usernames/:jobId" element={<UsernameResultsPage />} />
           <Route path="/maltego-gallery" element={<MaltegoGallery />} />

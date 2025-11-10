@@ -89,3 +89,33 @@ export function copyDiagnostics(diagnostics: DiagnosticsInfo): void {
   const text = JSON.stringify(sanitized, null, 2);
   navigator.clipboard.writeText(text);
 }
+
+/**
+ * Get self-test specific error hints
+ */
+export function getSelfTestHint(status: number, step: 'health' | 'scan' | 'webhook'): string {
+  if (status === 401 || status === 403) {
+    if (step === 'webhook') {
+      return 'RESULTS_WEBHOOK_TOKEN mismatch between Edge function and Cloud Run worker.';
+    }
+    return 'WORKER_TOKEN mismatch between Edge function and Cloud Run worker.';
+  }
+  
+  if (status === 404) {
+    return 'Worker route missing (/scan). Verify Cloud Run deployment includes this endpoint.';
+  }
+  
+  if (status >= 500) {
+    return 'Worker crashed or returned server error. Check Cloud Run logs for details.';
+  }
+  
+  if (status === 0) {
+    return 'Network error. MAIGRET_WORKER_URL environment variable may be incorrect or worker unreachable.';
+  }
+  
+  if (step === 'webhook' && status === 400) {
+    return 'Invalid webhook payload or database write failure. Check scan-results function logs.';
+  }
+  
+  return 'Unexpected error occurred during test.';
+}
