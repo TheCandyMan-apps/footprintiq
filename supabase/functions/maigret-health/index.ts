@@ -10,12 +10,14 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Declare env vars at function level so they're accessible in catch blocks
+  const WORKER_URL = Deno.env.get('VITE_MAIGRET_API_URL') ?? '';
+  const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN') ?? '';
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+  const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
   try {
-    const WORKER_URL = Deno.env.get('VITE_MAIGRET_API_URL') ?? '';
-    const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN') ?? '';
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
@@ -92,7 +94,6 @@ Deno.serve(async (req) => {
 
     // Send alert email
     try {
-      const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
       if (RESEND_API_KEY) {
         await fetch('https://api.resend.com/emails', {
           method: 'POST',
@@ -121,11 +122,9 @@ Deno.serve(async (req) => {
 
     // Log failed check
     try {
-      const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-      const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-      const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      const logSupabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
       
-      await supabase
+      await logSupabase
         .from('worker_health_checks')
         .insert({
           worker_name: 'maigret-api',
