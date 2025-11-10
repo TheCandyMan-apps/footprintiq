@@ -8,31 +8,31 @@ export const TOURS: Record<string, Tour> = {
     steps: [
       {
         id: "welcome",
-        sel: "[data-tour='search-bar']",
+        sel: "[data-tour='dashboard-hero']",
         title: "Welcome to FootprintIQ",
-        body: "FootprintIQ helps you investigate digital footprints across the internet. Let's start with a quick tour.",
+        body: "FootprintIQ helps you investigate digital footprints across the internet. Let's start with a quick tour of your dashboard.",
         placement: "bottom"
       },
       {
-        id: "search",
-        sel: "[data-tour='search-input']",
-        title: "Search Any Artifact",
-        body: "Type an email, username, domain, phone, or IP address. We'll auto-detect the type and query relevant providers.",
-        placement: "bottom"
-      },
-      {
-        id: "providers",
-        sel: "[data-tour='provider-select']",
-        title: "Choose Your Providers",
-        body: "Select which OSINT providers to query. Different providers excel at different artifact types.",
+        id: "dna",
+        sel: "[data-tour='digital-dna']",
+        title: "Your Digital DNA",
+        body: "Track your digital footprint health with real-time metrics on breaches, exposures, and data broker presence.",
         placement: "right"
       },
       {
-        id: "scan",
-        sel: "[data-tour='scan-button']",
-        title: "Launch Your Investigation",
-        body: "Click Scan to start querying providers. You'll see real-time progress as results come in.",
-        placement: "top"
+        id: "stats",
+        sel: "[data-tour='stats-overview']",
+        title: "Quick Stats",
+        body: "Monitor your total scans, high-risk findings, and recent activity at a glance.",
+        placement: "bottom"
+      },
+      {
+        id: "advanced-scan",
+        sel: "[data-tour='advanced-scan-btn']",
+        title: "Start an Investigation",
+        body: "Launch advanced OSINT scans to search emails, usernames, domains, and more across multiple providers.",
+        placement: "left"
       },
       {
         id: "command",

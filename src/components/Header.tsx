@@ -366,7 +366,9 @@ export const Header = () => {
             <ThemeToggle />
             <WorkspaceSwitcher />
             <WorkspacePresence />
-            <CommandPalette />
+            <div data-tour="command-palette">
+              <CommandPalette />
+            </div>
             {user && (
               <>
                 <DarkWebBell />

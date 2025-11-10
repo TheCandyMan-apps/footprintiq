@@ -33,6 +33,9 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useLowCreditToast } from '@/hooks/useLowCreditToast';
 import { shouldAutoStartTour, getTourAutoStartDelay, markTourTriggered, markOnboardingShown } from '@/lib/tour/firstTime';
+import { useTour } from '@/hooks/useTour';
+import { TourHighlight } from '@/components/tour/TourHighlight';
+import { TOURS } from '@/lib/tour/steps';
 import { Play, Network, AlertTriangle, CheckCircle2, Clock, Eye, FileSearch, Zap, Shield, FileStack, TrendingUp, Activity, Users, Target, Webhook, Archive, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { BarChart, Bar, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from 'recharts';
@@ -50,6 +53,10 @@ const Dashboard = () => {
   
   // Show low-credit toasts for free users
   useLowCreditToast();
+  
+  // Tour system
+  const tour = useTour(TOURS.onboarding);
+  const { isActive: isTourActive, currentStep, currentStepIndex, totalSteps, nextStep, prevStep, endTour } = tour;
   const [user, setUser] = useState<any>(null);
   const [scans, setScans] = useState<Scan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +98,7 @@ const Dashboard = () => {
         markTourTriggered();
         markOnboardingShown(); // ensure we only ever show once per browser/user
         const timer = setTimeout(() => {
-          navigate('/onboarding?tour=onboarding');
+          tour.startTour();
         }, getTourAutoStartDelay());
         return () => clearTimeout(timer);
       }
@@ -424,7 +431,7 @@ const Dashboard = () => {
         <Header />
 
         {/* Hero Section */}
-        <div className="relative bg-gradient-to-br from-primary/20 to-background p-8 rounded-xl shadow-[var(--shadow-elevated)] mx-6 mt-6 animate-fade-in border border-primary/10">
+        <div data-tour="dashboard-hero" className="relative bg-gradient-to-br from-primary/20 to-background p-8 rounded-xl shadow-[var(--shadow-elevated)] mx-6 mt-6 animate-fade-in border border-primary/10">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-start justify-between gap-8">
               <div className="flex items-start gap-4 flex-1">
@@ -467,7 +474,7 @@ const Dashboard = () => {
                   <FileStack className="h-4 w-4 mr-2" />
                   Batch Scan
                 </Button>
-                <Button onClick={() => navigate('/scan/advanced')} variant="outline" className="shadow-lg shadow-accent/20 hover:shadow-glow hover:border-accent transition-[var(--transition-smooth)]">
+                <Button data-tour="advanced-scan-btn" onClick={() => navigate('/scan/advanced')} variant="outline" className="shadow-lg shadow-accent/20 hover:shadow-glow hover:border-accent transition-[var(--transition-smooth)]">
                   <Zap className="h-4 w-4 mr-2" />
                   Advanced Scan
                 </Button>
@@ -524,7 +531,7 @@ const Dashboard = () => {
                 {/* Overview Tab */}
                 <TabsContent value="overview" className="space-y-6">
                   {/* Enhanced Stats Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  <div data-tour="stats-overview" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                     {/* Scans This Month */}
                     <div className="flex items-center gap-4 p-4 bg-secondary rounded-md hover:bg-secondary/80 transition-smooth group">
                       <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
@@ -656,8 +663,8 @@ const Dashboard = () => {
                       <FootprintDNASkeleton />
                     </div>
                   ) : scans.length > 0 ? (
-                    <div className="mb-8">
-                      <FootprintDNA 
+                    <div data-tour="digital-dna" className="mb-8">
+                      <FootprintDNA
                         score={dnaMetrics.score} 
                         breaches={dnaMetrics.breaches} 
                         exposures={dnaMetrics.exposures} 
@@ -867,6 +874,18 @@ const Dashboard = () => {
         
         {/* Scroll to Top Button */}
         <ScrollToTop />
+        
+        {/* Tour Highlight */}
+        {isTourActive && currentStep && (
+          <TourHighlight
+            step={currentStep}
+            currentStepIndex={currentStepIndex}
+            totalSteps={totalSteps}
+            onNext={nextStep}
+            onPrev={prevStep}
+            onSkip={endTour}
+          />
+        )}
       </div>
     </>;
 };
