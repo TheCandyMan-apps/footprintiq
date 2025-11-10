@@ -539,6 +539,18 @@ Deno.serve(async (req) => {
           finished_at: new Date().toISOString(),
         })
         .eq('id', job.id);
+      
+      // Broadcast completion event for zero-result scans
+      await supabaseAdmin.channel(`scan_progress_${job.id}`).send({
+        type: 'broadcast',
+        event: 'scan_complete',
+        payload: {
+          status: 'completed',
+          totalProviders: 0,
+          totalFindings: 0,
+          message: 'Scan completed - no results found',
+        },
+      });
         
       return new Response(
         JSON.stringify({
