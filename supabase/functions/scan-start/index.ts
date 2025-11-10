@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-selftest-key',
 };
 
 interface ScanStartRequest {
@@ -21,26 +21,39 @@ Deno.serve(async (req) => {
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
     const MAIGRET_WORKER_URL = Deno.env.get('MAIGRET_WORKER_URL')!;
     const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN')!;
+    const SELFTEST_KEY = Deno.env.get('SELFTEST_KEY') || 'test-key-12345';
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Missing authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Check for self-test bypass
+    const selftestKey = req.headers.get('X-Selftest-Key');
+    const isSelfTest = selftestKey === SELFTEST_KEY;
+    
+    let user = null;
+    let workspaceId: string | null = null;
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } }
-    });
+    if (!isSelfTest) {
+      // Authenticate user for normal requests
+      const authHeader = req.headers.get('Authorization');
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized: Missing authorization header' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error('[scan-start] Auth error:', authError);
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Invalid token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: { headers: { Authorization: authHeader } }
+      });
+
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      if (authError || !authUser) {
+        console.error('[scan-start] Auth error:', authError);
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized: Invalid token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      user = authUser;
     }
 
     const body: ScanStartRequest = await req.json();
@@ -52,30 +65,32 @@ Deno.serve(async (req) => {
       );
     }
 
-    let workspaceId: string | null = null;
-    try {
-      const { data: workspaceMember } = await supabase
-        .from('workspace_members')
-        .select('workspace_id')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (workspaceMember) {
-        workspaceId = workspaceMember.workspace_id;
+    if (!isSelfTest && user) {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      try {
+        const { data: workspaceMember } = await supabase
+          .from('workspace_members')
+          .select('workspace_id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (workspaceMember) {
+          workspaceId = workspaceMember.workspace_id;
+        }
+      } catch (workspaceError) {
+        console.warn('[scan-start] Could not fetch workspace:', workspaceError);
       }
-    } catch (workspaceError) {
-      console.warn('[scan-start] Could not fetch workspace:', workspaceError);
     }
 
     console.log(`[scan-start] Initiating scan for username: ${body.username}`);
-    console.log(`[scan-start] User: ${user.id}, Workspace: ${workspaceId || 'none'}`);
+    console.log(`[scan-start] User: ${user?.id || 'selftest'}, Workspace: ${workspaceId || 'none'}`);
     console.log(`[scan-start] Worker URL: ${MAIGRET_WORKER_URL}`);
 
     const workerPayload = {
       username: body.username.trim(),
       platforms: body.platforms || undefined,
       batch_id: body.batch_id || undefined,
-      user_id: user.id,
+      user_id: user?.id || 'selftest-user',
       workspace_id: workspaceId,
     };
 

@@ -12,14 +12,14 @@ Deno.serve(async (req) => {
     const MAIGRET_WORKER_URL = Deno.env.get('MAIGRET_WORKER_URL')!;
     const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN')!;
 
-    console.log(`[health-check] Checking worker at: ${MAIGRET_WORKER_URL}/healthz`);
+    console.log(`[health-check] Checking worker at: ${MAIGRET_WORKER_URL}/health`);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     let healthResponse;
     try {
-      healthResponse = await fetch(`${MAIGRET_WORKER_URL}/healthz`, {
+      healthResponse = await fetch(`${MAIGRET_WORKER_URL}/health`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${WORKER_TOKEN}`,

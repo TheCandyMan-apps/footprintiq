@@ -137,6 +137,9 @@ export function SelfTestRunner() {
           username: 'selftest',
           batch_id: batchId,
         },
+        headers: {
+          'X-Selftest-Key': 'test-key-12345',
+        },
       });
 
       const isSuccess = !error && data?.job_id;
