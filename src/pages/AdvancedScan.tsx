@@ -50,6 +50,7 @@ import { TemplateManager } from "@/components/scan/TemplateManager";
 import { SaveTemplateDialog } from "@/components/scan/SaveTemplateDialog";
 import { useScanTemplates, ScanTemplate } from "@/hooks/useScanTemplates";
 import { useLowCreditToast } from "@/hooks/useLowCreditToast";
+import { MaigretToggle } from "@/components/scan/MaigretToggle";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -95,6 +96,7 @@ export default function AdvancedScan() {
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [selectedTool, setSelectedTool] = useState<string>("spiderfoot");
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [maigretEnabled, setMaigretEnabled] = useState(true); // Maigret toggle for username scans
   const { saveTemplate } = useScanTemplates();
 
   // Geocoding for IP addresses
@@ -119,7 +121,7 @@ export default function AdvancedScan() {
   // Auto-select default providers when scan type changes
   const DEFAULT_PROVIDERS: Record<string, string[]> = {
     email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
-    username: ['dehashed', 'apify-social'],
+    username: maigretEnabled ? ['maigret', 'dehashed'] : ['dehashed'], // Include maigret if enabled
     domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
     phone: ['fullcontact'],
   };
@@ -132,7 +134,7 @@ export default function AdvancedScan() {
       setIsBatchMode(false);
       setBatchItems([]);
     }
-  }, [scanType]);
+  }, [scanType, maigretEnabled]); // Re-run when maigretEnabled changes
 
   const availableProviders = [
     { id: "hibp", name: "Have I Been Pwned", icon: Shield, types: ['email'] },
@@ -726,6 +728,15 @@ export default function AdvancedScan() {
               onChange={toggleAnonMode}
               isPremium={true}
             />
+
+            {/* Maigret Toggle for Username Scans */}
+            {scanType === 'username' && (
+              <MaigretToggle
+                enabled={maigretEnabled}
+                onChange={setMaigretEnabled}
+                disabled={isScanning}
+              />
+            )}
 
             {/* Provider Selection */}
             <div className="space-y-3">

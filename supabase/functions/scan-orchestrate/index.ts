@@ -39,7 +39,8 @@ const ALLOWED_PROVIDERS = new Set([
   'hibp', 'dehashed', 'clearbit', 'fullcontact',
   'censys', 'binaryedge', 'otx', 'shodan', 'virustotal',
   'securitytrails', 'urlscan',
-  'apify-social', 'apify-osint', 'apify-darkweb'
+  'apify-social', 'apify-osint', 'apify-darkweb',
+  'maigret'
 ]);
 
 interface ScanRequest {
@@ -247,7 +248,7 @@ serve(async (req) => {
     // Build provider list with sensible defaults
     const DEFAULT_PROVIDERS: Record<ScanRequest['type'], string[]> = {
       email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
-      username: ['dehashed', 'apify-social'], // wide presence + breaches
+      username: ['maigret', 'dehashed'], // maigret for profiles + dehashed for breaches
       domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
       phone: ['fullcontact']
     };
@@ -279,6 +280,7 @@ serve(async (req) => {
       censys: ['domain'],
       binaryedge: ['domain'],
       otx: ['domain'],
+      maigret: ['username'],
       'apify-social': ['username'],
       'apify-osint': ['email', 'username'],
       'apify-darkweb': ['email', 'username'],
@@ -343,18 +345,56 @@ serve(async (req) => {
         const result = await withCache(
           cacheKey,
           async () => {
-            // Call provider through the unified proxy to avoid missing function deployments
-            const { data, error } = await supabase.functions.invoke('provider-proxy', {
-              body: { provider, target: value, type }
-            });
+            let findings = [];
+            
+            // Maigret provider calls dedicated edge function
+            if (provider === 'maigret') {
+              try {
+                const { data, error } = await supabase.functions.invoke('providers-maigret', {
+                  body: { usernames: [value], timeout: 60 }
+                });
+                
+                if (error) {
+                  console.error(`[orchestrate] Maigret provider error:`, error);
+                  // Return informational finding instead of throwing
+                  return [{
+                    type: 'info',
+                    title: 'Maigret provider unavailable',
+                    severity: 'info',
+                    provider: 'maigret',
+                    confidence: 1.0,
+                    evidence: { message: 'Service temporarily unavailable' }
+                  }];
+                }
+                
+                findings = data?.findings || [];
+                console.log(`[orchestrate] Maigret returned ${findings.length} findings`);
+              } catch (maigretError) {
+                console.error(`[orchestrate] Maigret exception:`, maigretError);
+                return [{
+                  type: 'info',
+                  title: 'Maigret provider unavailable',
+                  severity: 'info',
+                  provider: 'maigret',
+                  confidence: 1.0,
+                  evidence: { message: 'Service temporarily unavailable' }
+                }];
+              }
+            } else {
+              // Call other providers through the unified proxy
+              const { data, error } = await supabase.functions.invoke('provider-proxy', {
+                body: { provider, target: value, type }
+              });
 
-            if (error) {
-              console.error(`[orchestrate] Provider ${provider} error:`, error);
-              throw error;
+              if (error) {
+                console.error(`[orchestrate] Provider ${provider} error:`, error);
+                throw error;
+              }
+              
+              findings = data?.findings || [];
+              console.log(`[orchestrate] Provider ${provider} returned ${findings.length} findings`);
             }
             
-            const findings = data?.findings || [];
-            console.log(`[orchestrate] Provider ${provider} returned ${findings.length} findings`);
             return findings;
           },
           { ttlSeconds: 86400 }
