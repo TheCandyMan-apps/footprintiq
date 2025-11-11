@@ -103,10 +103,16 @@ const { checkFeatureAccess } = useTierGating();
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      // Create signed URL (1 hour expiration) for TinEye access
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('scan-images')
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 3600);
+
+      if (signedUrlError || !signedUrlData) {
+        console.error('Failed to create signed URL:', signedUrlError);
+        await supabase.storage.from('scan-images').remove([fileName]);
+        throw new Error('Failed to create signed URL');
+      }
 
       // Small delay for "verifying" UX
       setTimeout(() => setShowVerifying(false), 300);
@@ -114,7 +120,7 @@ const { checkFeatureAccess } = useTierGating();
       // Call reverse image search backend
       const { data, error } = await supabase.functions.invoke('reverse-image-search', {
         body: {
-          imageUrl: publicUrl,
+          imageUrl: signedUrlData.signedUrl,
           workspaceId: workspace.id,
         }
       });
