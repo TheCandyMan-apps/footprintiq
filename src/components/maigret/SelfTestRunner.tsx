@@ -26,7 +26,7 @@ export function SelfTestRunner() {
     },
     {
       name: 'Step 1: Health Check',
-      description: 'GET /healthz (expect ok:true)',
+      description: 'Expects: Worker health diagnostics via edge function',
       status: 'pending',
     },
     {
@@ -164,7 +164,7 @@ export function SelfTestRunner() {
       });
 
       if (isSuccess) {
-        updateStep(0, { 
+        updateStep(1, { 
           status: 'pass', 
           httpStatus, 
           response: { 
@@ -175,7 +175,7 @@ export function SelfTestRunner() {
           } 
         });
       } else {
-        const hint = 'MAIGRET_WORKER_URL unreachable or /healthz not responding with ok:true';
+        const hint = 'MAIGRET_WORKER_URL unreachable or health check not responding';
         updateStep(1, {
           status: 'fail', 
           httpStatus, 

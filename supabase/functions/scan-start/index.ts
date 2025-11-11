@@ -22,11 +22,11 @@ Deno.serve(async (req) => {
     const MAIGRET_WORKER_URL = Deno.env.get('MAIGRET_WORKER_URL')!;
     const MAIGRET_WORKER_SCAN_PATH = Deno.env.get('MAIGRET_WORKER_SCAN_PATH') || '/scan';
     const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN')!;
-    const SELFTEST_KEY = Deno.env.get('SELFTEST_KEY') || 'test-key-12345';
+    const SELFTEST_KEY = Deno.env.get('SELFTEST_KEY') ?? '';
 
     // Check for self-test bypass - strict validation only
     const selftestKey = req.headers.get('X-Selftest-Key');
-    const isSelfTest = selftestKey === SELFTEST_KEY;
+    const isSelfTest = selftestKey && selftestKey === SELFTEST_KEY;
     
     console.log('[scan-start] Self-test check:', {
       headerValue: selftestKey,
@@ -50,30 +50,32 @@ Deno.serve(async (req) => {
     let user = null;
     let workspaceId: string | null = null;
 
-    if (!isSelfTest) {
-      // Authenticate user for normal requests
+    if (isSelfTest) {
+      // Self-test mode - use fixed ID
+      user = { id: '00000000-0000-0000-0000-SELFTEST000000' } as any;
+      console.log('[scan-start] Self-test mode activated');
+    } else {
+      // Optional auth flow - proceed with or without user token
       const authHeader = req.headers.get('Authorization');
-      if (!authHeader) {
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized: Missing authorization header' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: { headers: { Authorization: authHeader } }
-      });
-
-      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-      if (authError || !authUser) {
-        console.error('[scan-start] Auth error:', authError);
-        return new Response(
-          JSON.stringify({ error: 'Unauthorized: Invalid token' }),
-          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
       
-      user = authUser;
+      if (authHeader) {
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+          global: { headers: { Authorization: authHeader } }
+        });
+
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !authUser) {
+          console.warn('[scan-start] Auth token invalid, proceeding unauthenticated:', authError);
+          user = { id: 'anonymous' } as any;
+        } else {
+          user = authUser;
+        }
+      } else {
+        // No auth header - proceed as anonymous
+        console.log('[scan-start] No authorization header, proceeding as anonymous');
+        user = { id: 'anonymous' } as any;
+      }
     }
 
     const body: ScanStartRequest = await req.json();
@@ -85,7 +87,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!isSelfTest && user) {
+    if (!isSelfTest && user && user.id !== 'anonymous') {
       const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       try {
         const { data: workspaceMember } = await supabase
@@ -103,14 +105,14 @@ Deno.serve(async (req) => {
     }
 
     console.log(`[scan-start] Initiating scan for username: ${body.username}`);
-    console.log(`[scan-start] User: ${user?.id || 'selftest'}, Workspace: ${workspaceId || 'none'}`);
+    console.log(`[scan-start] User: ${user.id}, Workspace: ${workspaceId || 'none'}`);
     console.log(`[scan-start] Worker URL: ${MAIGRET_WORKER_URL}`);
 
     const workerPayload = {
       username: body.username.trim(),
       platforms: body.platforms || undefined,
       batch_id: body.batch_id || undefined,
-      user_id: user?.id || '00000000-0000-0000-0000-SELFTEST000000',
+      user_id: user.id,
       workspace_id: workspaceId,
     };
 

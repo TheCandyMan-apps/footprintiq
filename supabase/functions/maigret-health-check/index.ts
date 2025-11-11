@@ -1,7 +1,7 @@
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,OPTIONS',
-  'Access-Control-Allow-Headers': 'content-type',
+  'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
 Deno.serve(async (req) => {
@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
   
-  if (req.method !== 'GET') {
+  if (req.method !== 'GET' && req.method !== 'POST') {
     return new Response(
       JSON.stringify({ error: 'Method Not Allowed' }),
       { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

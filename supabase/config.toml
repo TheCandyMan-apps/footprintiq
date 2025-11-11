@@ -3,310 +3,34 @@ project_id = "byuzgvauaeldjqxlrjci"
 [functions.recon-ng-scan]
 verify_jwt = true
 
-[functions.recon-ng-modules]
+[functions.providers-maigret]
 verify_jwt = true
 
-[functions.recon-ng-auto-update]
-verify_jwt = false
-
-[functions.create-checkout-session]
+[functions.providers-spiderfoot]
 verify_jwt = true
 
-[functions.security-check]
-verify_jwt = true
-
-[functions.ml-train-feedback]
-verify_jwt = true
-
-[functions.ai-router]
-verify_jwt = true
-
-[functions.log-ai]
-verify_jwt = false
-
-[functions.results-webhook]
-verify_jwt = false
-
-[functions.provider-proxy]
-verify_jwt = true
-
-[functions.webhook-delivery]
-verify_jwt = true
-
-[functions.workspace-invitation]
-verify_jwt = true
-
-[functions.plugin-submit]
-verify_jwt = true
-
-[functions.plugin-review]
-verify_jwt = true
-
-[functions.plugin-install]
-verify_jwt = true
-
-[functions.quality-benchmark]
-verify_jwt = true
-
-[functions.slo-monitor]
-verify_jwt = false
-
-[functions.create-incident]
-verify_jwt = true
-
-[functions.circuit-breaker-manager]
-verify_jwt = false
-
-[functions.cost-tracker]
-verify_jwt = false
-
-[functions.cache-manager]
-verify_jwt = false
-
-[functions.job-processor]
-verify_jwt = false
-
-[functions.twitter-oauth-start]
-verify_jwt = false
-
-[functions.twitter-oauth-callback]
-verify_jwt = false
-
-[functions.osint-scan]
-verify_jwt = true
-
-[functions.correlation-engine]
-verify_jwt = true
-
-[functions.automated-removal]
-verify_jwt = true
-
-[functions.monitoring-scheduler]
-verify_jwt = true
-
-[functions.ai-analysis]
+[functions.scan-orchestrate]
 verify_jwt = true
 
 [functions.reverse-image-search]
 verify_jwt = true
 
-[functions.behavioral-analysis]
-verify_jwt = true
-
-[functions.send-support-email]
+[functions.maigret-health-check]
 verify_jwt = false
 
-[functions.create-checkout]
-verify_jwt = true
-
-[functions.check-subscription]
-verify_jwt = true
-
-[functions.customer-portal]
-verify_jwt = true
-
-[functions.insight-stream]
-verify_jwt = true
-
-[functions.ai-assistant]
-verify_jwt = true
-
-[functions.global-analytics]
+[functions.scan-start]
 verify_jwt = false
 
-[functions.abstract-phone]
-verify_jwt = true
-
-[functions.graph-api]
-verify_jwt = true
-
-[functions.maltego-scan]
-verify_jwt = true
-
-[functions.ai-analyst]
-verify_jwt = true
-
-[functions.ai-next-questions]
-verify_jwt = true
-
-[functions.ai-explain]
-verify_jwt = true
-
-[functions.ai-predict]
-verify_jwt = true
-
-[functions.send-monitoring-alert]
-verify_jwt = true
-
-[functions.ai-report-generator]
-verify_jwt = true
-
-[functions.ai-assistant-chat]
-verify_jwt = true
-
-[functions.graph-query]
-verify_jwt = true
-
-[functions.agent-execute]
-verify_jwt = true
-
-[functions.integration-deliver]
-verify_jwt = true
-
-[functions.copilot-chat]
-verify_jwt = true
-
-[functions.playbook-execute]
-verify_jwt = true
-
-[functions.partner-register]
+[functions.validate-selftest-key]
 verify_jwt = false
 
-[functions.webhook-delivery]
+[functions.selftest-webhook]
 verify_jwt = false
 
-[functions.api-v1]
+[functions.scan-results]
 verify_jwt = false
 
-[functions.export-case]
-verify_jwt = true
-
-[functions.detect-anomalies]
-verify_jwt = true
-
-[functions.create-share-link]
-verify_jwt = true
-
-[functions.ml-analysis]
-verify_jwt = true
-
-[functions.stripe-webhook]
-verify_jwt = false
-
-[functions.alert-manager]
-verify_jwt = false
-
-[functions.ai-fusion-builder]
-verify_jwt = true
-
-[functions.fusion-compare]
-verify_jwt = true
-
-[functions.ai-briefing]
-verify_jwt = true
-
-[functions.generate-report]
-verify_jwt = true
-
-[functions.intel-summary]
-verify_jwt = false
-
-[functions.predicta-search]
-verify_jwt = false
-
-[functions.scan-orchestrate]
-verify_jwt = true
-
-[functions."darkweb/monitor"]
-verify_jwt = false
-
-[functions."darkweb/weekly-summary"]
-verify_jwt = false
-
-[functions."darkweb/real-time-alert"]
-verify_jwt = false
-
-[functions."darkweb/social-media-search"]
-verify_jwt = false
-
-[functions."darkweb/osint-scraper"]
-verify_jwt = false
-
-[functions."darkweb/darkweb-scraper"]
-verify_jwt = false
-
-[functions.consent-manage]
-verify_jwt = true
-
-[functions.gdpr-consent]
-verify_jwt = true
-
-[functions."billing/webhook"]
-verify_jwt = false
-
-[functions."billing/check-subscription"]
-verify_jwt = true
-
-[functions."billing/customer-portal"]
-verify_jwt = true
-
-[functions."billing/checkout"]
-verify_jwt = true
-
-[functions."billing/create-payment-intent"]
-verify_jwt = true
-
-[functions."billing/create-portal"]
-verify_jwt = true
-
-[functions."billing/upcoming-invoice"]
-verify_jwt = true
-
-[functions."billing/history"]
-verify_jwt = true
-
-[functions.threat-forecast-generator]
-verify_jwt = false
-
-[functions.ai-rag-indexer]
-verify_jwt = true
-
-[functions.monitoring-executor]
-verify_jwt = false
-
-[functions.apify-run]
-verify_jwt = true
-
-[functions."billing/purchase-credits-checkout"]
-verify_jwt = true
-
-[functions.generate-insights]
-verify_jwt = true
-
-[functions.observability-metrics]
-verify_jwt = true
-
-[functions.scan-health]
-verify_jwt = false
-
-[functions.test-scan]
-verify_jwt = false
-
-[functions.ip-geocode]
-verify_jwt = false
-
-[functions.proxy-router]
-verify_jwt = true
-
-[functions.ai-credibility-scorer]
-verify_jwt = true
-
-[functions.ai-filter-findings]
-verify_jwt = true
-
-[functions.geocode-ip]
-verify_jwt = true
-
-[functions.geocode-location]
-verify_jwt = true
-
-[functions.create-checkout-session]
-verify_jwt = true
-
-[functions.worker-health]
-verify_jwt = false
-
-[functions."admin/send-glitch-alert"]
+[functions.enqueue-maigret-scan]
 verify_jwt = true
 
 [functions.enrich-finding]
