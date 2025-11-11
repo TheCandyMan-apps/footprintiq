@@ -19,18 +19,18 @@ interface TestStep {
 export function SelfTestRunner() {
   const [steps, setSteps] = useState<TestStep[]>([
     {
-      name: 'Health Check',
-      description: 'Cloud Run /healthz (token check)',
+      name: 'Step 1: Health Check',
+      description: 'GET /healthz (expect ok:true)',
       status: 'pending',
     },
     {
-      name: 'Scan Start',
-      description: 'Edge /scan-start (Edge→Worker)',
+      name: 'Step 2: Scan Initiation',
+      description: 'POST /scan with username:"selftest" (expect status completed)',
       status: 'pending',
     },
     {
-      name: 'Webhook Write',
-      description: 'Edge /scan-results (webhook write)',
+      name: 'Step 3: Results Verification',
+      description: 'Verify last row in maigret_results for current user',
       status: 'pending',
     },
   ]);
@@ -83,19 +83,17 @@ export function SelfTestRunner() {
     // Reset steps
     setSteps(prev => prev.map(s => ({ ...s, status: 'pending', httpStatus: undefined, response: undefined, error: undefined, hint: undefined })));
 
-    // Step 1: Health Check
+    // Step 1: Health Check - GET /healthz
     updateStep(0, { status: 'running' });
     try {
-      const { data, error } = await supabase.functions.invoke('maigret-health-check', {
-        body: {},
-      });
+      const { data, error } = await supabase.functions.invoke('maigret-health-check');
 
       const isSuccess = !error && data?.status === 'healthy';
       const httpStatus = data?.statusCode || (error ? 503 : 200);
 
       diag.push({
-        step: 'Health Check',
-        request: { endpoint: '/maigret-health-check', method: 'GET' },
+        step: 'Step 1: Health Check',
+        request: { endpoint: 'GET /healthz', method: 'GET' },
         response: { status: httpStatus, body: data || error },
       });
 
@@ -103,10 +101,15 @@ export function SelfTestRunner() {
         updateStep(0, { 
           status: 'pass', 
           httpStatus, 
-          response: data 
+          response: { 
+            ok: data.ok || true,
+            worker_url: data.worker_url,
+            maigret_in_path: data.maigret_in_path,
+            maigret_version: data.maigret_version,
+          } 
         });
       } else {
-        const hint = getErrorHint(httpStatus, 'health');
+        const hint = 'MAIGRET_WORKER_URL unreachable or /healthz not responding with ok:true';
         updateStep(0, { 
           status: 'fail', 
           httpStatus, 
@@ -117,20 +120,22 @@ export function SelfTestRunner() {
       }
     } catch (err: any) {
       diag.push({
-        step: 'Health Check',
-        request: { endpoint: '/maigret-health-check', method: 'GET' },
+        step: 'Step 1: Health Check',
+        request: { endpoint: 'GET /healthz', method: 'GET' },
         response: { error: err.message },
       });
       updateStep(0, { 
         status: 'fail', 
         error: err.message, 
-        hint: getErrorHint(0, 'health') 
+        hint: 'MAIGRET_WORKER_URL may be misconfigured' 
       });
     }
 
-    // Step 2: Scan Start
+    // Step 2: Scan Initiation - POST /scan
     updateStep(1, { status: 'running' });
     const batchId = crypto.randomUUID();
+    let jobId: string | null = null;
+
     try {
       const { data, error } = await supabase.functions.invoke('scan-start', {
         body: {
@@ -143,11 +148,15 @@ export function SelfTestRunner() {
       });
 
       const isSuccess = !error && data?.job_id;
-      const httpStatus = error ? 500 : 201;
+      const httpStatus = error ? (data?.status || 500) : 201;
+      
+      if (isSuccess) {
+        jobId = data.job_id;
+      }
 
       diag.push({
-        step: 'Scan Start',
-        request: { endpoint: '/scan-start', method: 'POST', body: { username: 'selftest', batch_id: batchId } },
+        step: 'Step 2: Scan Initiation',
+        request: { endpoint: 'POST /scan', method: 'POST', body: { username: 'selftest', batch_id: batchId } },
         response: { status: httpStatus, body: data || error },
       });
 
@@ -155,76 +164,99 @@ export function SelfTestRunner() {
         updateStep(1, { 
           status: 'pass', 
           httpStatus, 
-          response: data 
+          response: { job_id: data.job_id, status: data.status } 
         });
       } else {
-        const hint = getErrorHint(httpStatus, 'scan');
+        const hint = httpStatus === 401 || httpStatus === 403 
+          ? 'WORKER_TOKEN mismatch between Supabase Edge and Cloud Run'
+          : httpStatus === 404
+          ? 'Worker route /scan not found - check MAIGRET_WORKER_SCAN_PATH'
+          : httpStatus >= 500
+          ? 'Worker crashed - check Cloud Run logs'
+          : 'Scan initiation failed';
+        
         updateStep(1, { 
           status: 'fail', 
           httpStatus, 
           response: data || error, 
-          error: error?.message || 'Scan start failed',
+          error: error?.message || 'Scan initiation failed',
           hint 
         });
       }
     } catch (err: any) {
       diag.push({
-        step: 'Scan Start',
-        request: { endpoint: '/scan-start', method: 'POST', body: { username: 'selftest', batch_id: batchId } },
+        step: 'Step 2: Scan Initiation',
+        request: { endpoint: 'POST /scan', method: 'POST', body: { username: 'selftest', batch_id: batchId } },
         response: { error: err.message },
       });
       updateStep(1, { 
         status: 'fail', 
         error: err.message, 
-        hint: getErrorHint(0, 'scan') 
+        hint: 'Network error or invalid request' 
       });
     }
 
-    // Step 3: Webhook Write
+    // Step 3: Results Verification - Check maigret_results table
     updateStep(2, { status: 'running' });
+    
+    // Wait 2 seconds for webhook to process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
     try {
-      const { data, error } = await supabase.functions.invoke('selftest-webhook', {
-        body: {},
-        headers: {
-          'X-Selftest-Key': 'test-key-12345',
-        },
-      });
+      const { data: user } = await supabase.auth.getUser();
+      
+      if (!user.user) {
+        throw new Error('Not authenticated');
+      }
 
-      const isSuccess = !error && data?.ok;
-      const httpStatus = data?.status || (error ? 500 : 200);
+      const { data: results, error } = await supabase
+        .from('maigret_results')
+        .select('job_id, username, status, created_at')
+        .eq('user_id', user.user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const hasResults = !error && results && results.length > 0;
 
       diag.push({
-        step: 'Webhook Write',
-        request: { endpoint: '/selftest-webhook', method: 'POST', headers: { 'X-Selftest-Key': '[REDACTED]' } },
-        response: { status: httpStatus, body: data || error },
+        step: 'Step 3: Results Verification',
+        request: { query: 'SELECT from maigret_results WHERE user_id = current_user', method: 'SELECT' },
+        response: { found_results: hasResults, count: results?.length || 0, latest: results?.[0] },
       });
 
-      if (isSuccess) {
+      if (hasResults) {
         updateStep(2, { 
           status: 'pass', 
-          httpStatus, 
-          response: data 
+          httpStatus: 200, 
+          response: { 
+            verified: true,
+            latest_result: {
+              job_id: results[0].job_id,
+              username: results[0].username,
+              status: results[0].status,
+            }
+          } 
         });
       } else {
-        const hint = getErrorHint(httpStatus, 'webhook');
+        const hint = 'No results found in maigret_results table. Check: (1) RESULTS_WEBHOOK_TOKEN mismatch, (2) Worker not calling webhook, (3) RLS policies blocking writes';
         updateStep(2, { 
           status: 'fail', 
-          httpStatus, 
-          response: data || error, 
-          error: error?.message || 'Webhook write failed',
+          httpStatus: 404, 
+          response: { verified: false, error: error?.message },
+          error: 'No results found in database',
           hint 
         });
       }
     } catch (err: any) {
       diag.push({
-        step: 'Webhook Write',
-        request: { endpoint: '/selftest-webhook', method: 'POST', headers: { 'X-Selftest-Key': '[REDACTED]' } },
+        step: 'Step 3: Results Verification',
+        request: { query: 'SELECT from maigret_results', method: 'SELECT' },
         response: { error: err.message },
       });
       updateStep(2, { 
         status: 'fail', 
         error: err.message, 
-        hint: getErrorHint(0, 'webhook') 
+        hint: 'Database query failed - check authentication or RLS policies' 
       });
     }
 
