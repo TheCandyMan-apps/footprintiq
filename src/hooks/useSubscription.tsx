@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
-type SubscriptionTier = 'free' | 'analyst' | 'pro' | 'premium' | 'enterprise';
+type SubscriptionTier = 'free' | 'analyst' | 'pro' | 'premium' | 'enterprise' | 'family';
 
 interface SubscriptionContextType {
   user: User | null;
@@ -54,8 +54,22 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         setSubscriptionTier(data.tier as SubscriptionTier);
         setSubscriptionEnd(data.current_period_end || null);
       } else {
-        setSubscriptionTier('free');
-        setSubscriptionEnd(null);
+        // Fall back to manual tier from user_roles if no active Stripe subscription
+        if (roleData?.subscription_tier) {
+          // Map legacy tiers to current ones
+          const manualTier = roleData.subscription_tier as string;
+          if (manualTier === 'analyst' || manualTier === 'family') {
+            setSubscriptionTier('premium');
+          } else if (manualTier === 'premium' || manualTier === 'enterprise' || manualTier === 'pro') {
+            setSubscriptionTier(manualTier as SubscriptionTier);
+          } else {
+            setSubscriptionTier('free');
+          }
+          setSubscriptionEnd(null);
+        } else {
+          setSubscriptionTier('free');
+          setSubscriptionEnd(null);
+        }
       }
     } catch (error) {
       console.error('Error checking subscription:', error);

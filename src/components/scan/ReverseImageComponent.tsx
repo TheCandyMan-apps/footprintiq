@@ -11,6 +11,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useTierGating } from "@/hooks/useTierGating";
 import { Upload, Search, Lock, CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { SubscriptionDebug } from "@/components/debug/SubscriptionDebug";
 
 interface ImageMatch {
   thumbnail_url: string;
@@ -53,18 +54,27 @@ const { checkFeatureAccess } = useTierGating();
   };
 
   const handleSearch = async () => {
-    if (!selectedFile) {
+    if (!selectedFile || !workspace?.id) {
       toast.error("Please select an image first");
       return;
     }
 
-    if (!reverseAccess.hasAccess) {
-      toast.error("Premium subscription required", {
-        description: "Reverse Image Intel is a premium feature",
+    // Check credits first (10 credits required)
+    const CREDIT_COST = 10;
+    const { data: balanceData } = await supabase.rpc('get_credits_balance', {
+      _workspace_id: workspace.id
+    });
+    
+    const balance = balanceData || 0;
+    
+    // If no tier access and insufficient credits, show upgrade
+    if (!reverseAccess.hasAccess && balance < CREDIT_COST) {
+      toast.error("Premium subscription or credits required", {
+        description: `Reverse Image Intel requires premium access or ${CREDIT_COST} credits (you have ${balance})`,
         action: {
           label: "Upgrade",
-          onClick: () => navigate('/pricing')
-        }
+          onClick: () => navigate("/settings/billing"),
+        },
       });
       return;
     }
@@ -80,28 +90,6 @@ const { checkFeatureAccess } = useTierGating();
         return;
       }
 
-      if (!workspace?.id) {
-        toast.error("No workspace selected");
-        setIsSearching(false);
-        return;
-      }
-
-      // Check/deduct credits
-      const { data: balanceData } = await supabase.rpc('get_credits_balance', {
-        _workspace_id: workspace.id
-      });
-
-      const currentBalance = balanceData || 0;
-      const creditCost = 10; // Cost for reverse image search
-
-      if (currentBalance < creditCost) {
-        toast.error(`Insufficient credits. Need ${creditCost} credits`, {
-          description: "Purchase more credits to continue",
-        });
-        setIsSearching(false);
-        return;
-      }
-
       // Upload to temporary storage
       const fileName = `temp/${user.id}/${Date.now()}_${selectedFile.name}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -113,38 +101,50 @@ const { checkFeatureAccess } = useTierGating();
 
       if (uploadError) throw uploadError;
 
-      // Get signed URL
-      const { data: signedData } = await supabase.storage
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
         .from('scan-images')
-        .createSignedUrl(fileName, 3600);
-
-      if (!signedData?.signedUrl) throw new Error("Failed to create signed URL");
+        .getPublicUrl(fileName);
 
       // Small delay for "verifying" UX
       setTimeout(() => setShowVerifying(false), 300);
 
-      // Call reverse image search with TinEye
+      // Call reverse image search backend
       const { data, error } = await supabase.functions.invoke('reverse-image-search', {
         body: {
-          imageUrl: signedData.signedUrl,
+          imageUrl: publicUrl,
           workspaceId: workspace.id,
-          useTinEye: true,
-          creditCost
         }
       });
 
       if (error) throw error;
 
+      if (data.error) {
+        if (data.required && data.current !== undefined) {
+          throw new Error(`Insufficient credits: need ${data.required}, have ${data.current}`);
+        }
+        throw new Error(data.error);
+      }
+
       // Delete temporary file
       await supabase.storage.from('scan-images').remove([fileName]);
 
-      setResults(data.matches || []);
+      const matches = data.matches || [];
+      setResults(matches);
       setSearchComplete(true);
       
-      if (data.matches && data.matches.length > 0) {
-        toast.success(`Found ${data.matches.length} matches! 🎉`);
+      if (!data.providerConfigured && matches.length > 0) {
+        toast.success(`Found ${matches.length} matches (sample data - TinEye not configured yet)`, {
+          description: `${data.creditsDeducted} credits deducted`,
+        });
+      } else if (matches.length === 0) {
+        toast.info("No matches found", {
+          description: `${data.creditsDeducted} credits deducted`,
+        });
       } else {
-        toast.info("No matches – try another image");
+        toast.success(`Found ${matches.length} matches`, {
+          description: `${data.creditsDeducted} credits deducted`,
+        });
       }
 
     } catch (error) {
@@ -201,55 +201,29 @@ const { checkFeatureAccess } = useTierGating();
     }
   };
 
-  // Premium lock overlay for non-eligible tiers
-  if (!reverseAccess.hasAccess) {
-    return (
-      <Card className="relative">
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
-          <div className="text-center space-y-4 p-6">
-            <Lock className="w-12 h-12 mx-auto text-muted-foreground" />
-            <div>
-              <h3 className="text-xl font-semibold mb-2">Premium Feature</h3>
-              <p className="text-muted-foreground mb-4">
-                Unlock Reverse Image Intel – trace origins across billions of images!
-              </p>
-              <Button onClick={() => navigate('/pricing')}>
-                Unlock for $15/mo
-              </Button>
-            </div>
-          </div>
-        </div>
+  // No blocking overlay - show premium badge but allow credit-based access
+  return (
+    <div className="space-y-4">
+      <SubscriptionDebug />
+      
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="w-5 h-5" />
-            Reverse Image Intel
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Search className="w-5 w-5" />
+              Reverse Image Intel
+            </CardTitle>
+            {!reverseAccess.hasAccess && (
+              <Badge variant="default" className="gap-1">
+                <Lock className="h-3 w-3" />
+                Premium or Credits
+              </Badge>
+            )}
+          </div>
           <CardDescription>
-            Trace image origins across billions of indexed images
+            Trace image origins across billions of indexed images • 10 credits per search
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 blur-sm">
-          <div className="space-y-2">
-            <Label>Upload Image</Label>
-            <Input type="file" accept="image/*" disabled />
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Search className="w-5 h-5" />
-          Reverse Image Intel
-          <Badge variant="secondary" className="ml-auto">Premium</Badge>
-        </CardTitle>
-        <CardDescription>
-          Trace image origins across billions of indexed images • 10 credits per search
-        </CardDescription>
-      </CardHeader>
       <CardContent className="space-y-6">
         {/* Upload Section */}
         <div className="space-y-4">
@@ -374,5 +348,6 @@ const { checkFeatureAccess } = useTierGating();
         </Alert>
       </CardContent>
     </Card>
+    </div>
   );
 }
