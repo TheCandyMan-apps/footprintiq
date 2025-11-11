@@ -19,6 +19,8 @@ interface ReverseImageMatch {
   width?: number;
   height?: number;
   size?: number;
+  score?: number;
+  matchPercent?: number;
 }
 
 serve(async (req) => {
@@ -128,10 +130,70 @@ serve(async (req) => {
         },
       ];
     } else {
-      // TODO: Implement actual TinEye API integration
-      // For now, return empty matches until TinEye integration is complete
-      console.log('[ReverseImageSearch] TinEye API key found, but integration not yet implemented');
-      matches = [];
+      // Call TinEye API
+      console.log('[ReverseImageSearch] Calling TinEye API with image URL:', imageUrl);
+      
+      try {
+        const tineyeUrl = new URL('https://api.tineye.com/rest/search/');
+        tineyeUrl.searchParams.set('image_url', imageUrl);
+        tineyeUrl.searchParams.set('limit', '20'); // Return up to 20 matches
+        tineyeUrl.searchParams.set('sort', 'score'); // Sort by match score
+        tineyeUrl.searchParams.set('order', 'desc'); // Best matches first
+
+        const tineyeResponse = await fetch(tineyeUrl.toString(), {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'X-API-KEY': tineyeApiKey,
+          },
+        });
+
+        if (!tineyeResponse.ok) {
+          const errorText = await tineyeResponse.text();
+          console.error('[ReverseImageSearch] TinEye API error:', tineyeResponse.status, errorText);
+          
+          if (tineyeResponse.status === 429) {
+            throw new Error('TinEye rate limit exceeded. Please try again in a moment.');
+          } else if (tineyeResponse.status === 401 || tineyeResponse.status === 403) {
+            throw new Error('TinEye API authentication failed. Please check your API key.');
+          } else {
+            throw new Error(`TinEye API error: ${tineyeResponse.status}`);
+          }
+        }
+
+        const tineyeData = await tineyeResponse.json();
+        
+        console.log(`[ReverseImageSearch] TinEye returned ${tineyeData.results?.matches?.length || 0} matches`);
+
+        // Transform TinEye response to our format
+        if (tineyeData.results?.matches && Array.isArray(tineyeData.results.matches)) {
+          matches = tineyeData.results.matches.map((match: any) => {
+            // Get the first backlink for the source URL
+            const backlink = match.backlinks && match.backlinks.length > 0 
+              ? match.backlinks[0] 
+              : null;
+
+            return {
+              url: backlink?.backlink || match.image_url,
+              site: match.domain || 'unknown',
+              thumbnail: match.image_url,
+              crawlDate: backlink?.crawl_date || new Date().toISOString(),
+              width: match.width,
+              height: match.height,
+              size: match.size,
+              score: match.score,
+              matchPercent: match.query_match_percent,
+            };
+          });
+        }
+      } catch (error) {
+        console.error('[ReverseImageSearch] TinEye API call failed:', error);
+        // Re-throw specific errors, wrap generic ones
+        if (error.message.includes('TinEye')) {
+          throw error;
+        }
+        throw new Error(`Failed to search TinEye: ${error.message}`);
+      }
     }
 
     // Deduct credits after successful search

@@ -19,6 +19,8 @@ interface ImageMatch {
   domain: string;
   match_percent: number;
   crawl_date: string;
+  score?: number;
+  matchPercent?: number;
 }
 
 export function ReverseImageComponent() {
@@ -130,7 +132,15 @@ const { checkFeatureAccess } = useTierGating();
       await supabase.storage.from('scan-images').remove([fileName]);
 
       const matches = data.matches || [];
-      setResults(matches);
+      setResults(matches.map((m: any) => ({
+        thumbnail_url: m.thumbnail || m.url,
+        url: m.url,
+        domain: m.site,
+        match_percent: m.matchPercent || m.score || 85,
+        crawl_date: m.crawlDate || new Date().toISOString(),
+        score: m.score,
+        matchPercent: m.matchPercent,
+      })));
       setSearchComplete(true);
       
       if (!data.providerConfigured && matches.length > 0) {
@@ -312,7 +322,7 @@ const { checkFeatureAccess } = useTierGating();
                         className="absolute top-2 right-2"
                         variant={match.match_percent > 80 ? "default" : "secondary"}
                       >
-                        {match.match_percent}% match
+                        {match.score ? `Score: ${match.score.toFixed(1)}` : `${match.match_percent}% match`}
                       </Badge>
                     </div>
                     <CardContent className="p-4 space-y-2">
