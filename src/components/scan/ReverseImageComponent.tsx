@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useUserPersona } from "@/hooks/useUserPersona";
+import { useTierGating } from "@/hooks/useTierGating";
 import { Upload, Search, Lock, CheckCircle2, AlertTriangle, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -23,7 +23,8 @@ interface ImageMatch {
 export function ReverseImageComponent() {
   const navigate = useNavigate();
   const { workspace } = useWorkspace();
-  const { isStandard } = useUserPersona();
+const { checkFeatureAccess } = useTierGating();
+  const reverseAccess = checkFeatureAccess('reverse_image_search');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [isSearching, setIsSearching] = useState(false);
@@ -57,7 +58,7 @@ export function ReverseImageComponent() {
       return;
     }
 
-    if (isStandard) {
+    if (!reverseAccess.hasAccess) {
       toast.error("Premium subscription required", {
         description: "Reverse Image Intel is a premium feature",
         action: {
@@ -200,8 +201,8 @@ export function ReverseImageComponent() {
     }
   };
 
-  // Premium lock overlay for standard users
-  if (isStandard) {
+  // Premium lock overlay for non-eligible tiers
+  if (!reverseAccess.hasAccess) {
     return (
       <Card className="relative">
         <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
