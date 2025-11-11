@@ -24,16 +24,28 @@ Deno.serve(async (req) => {
     const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN')!;
     const SELFTEST_KEY = Deno.env.get('SELFTEST_KEY') || 'test-key-12345';
 
-    // Check for self-test bypass
+    // Check for self-test bypass - strict validation only
     const selftestKey = req.headers.get('X-Selftest-Key');
-    const isSelfTest = (selftestKey === SELFTEST_KEY) || (selftestKey === 'test-key-12345');
+    const isSelfTest = selftestKey === SELFTEST_KEY;
     
     console.log('[scan-start] Self-test check:', {
       headerValue: selftestKey,
       envValue: SELFTEST_KEY,
       isSelfTest,
-      headerPresent: selftestKey !== null
+      headerPresent: !!selftestKey
     });
+
+    // Enhanced error for selftest key mismatch
+    if (selftestKey && !isSelfTest) {
+      console.error('[scan-start] SELFTEST_KEY mismatch detected');
+      return new Response(
+        JSON.stringify({ 
+          error: 'Unauthorized: SELFTEST_KEY mismatch',
+          hint: 'Run /maigret/self-test validation to diagnose. Backend expects different key than provided.'
+        }),
+        { status: 401, headers: corsHeaders }
+      );
+    }
     
     let user = null;
     let workspaceId: string | null = null;

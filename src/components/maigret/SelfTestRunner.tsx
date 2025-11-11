@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, CheckCircle, XCircle, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { SelfTestConfigStatus } from './SelfTestConfigStatus';
 
 interface TestStep {
   name: string;
@@ -18,6 +19,11 @@ interface TestStep {
 
 export function SelfTestRunner() {
   const [steps, setSteps] = useState<TestStep[]>([
+    {
+      name: 'Step 0: Secret Configuration Check',
+      description: 'Validate SELFTEST_KEY matches between frontend and backend',
+      status: 'pending',
+    },
     {
       name: 'Step 1: Health Check',
       description: 'GET /healthz (expect ok:true)',
@@ -83,8 +89,68 @@ export function SelfTestRunner() {
     // Reset steps
     setSteps(prev => prev.map(s => ({ ...s, status: 'pending', httpStatus: undefined, response: undefined, error: undefined, hint: undefined })));
 
-    // Step 1: Health Check - GET /healthz
+    // Step 0: Secret Configuration Check
     updateStep(0, { status: 'running' });
+    try {
+      const { data: configData, error: configError } = await supabase.functions.invoke('validate-selftest-key', {
+        body: { test_key: 'test-key-12345' }
+      });
+
+      if (configError) throw configError;
+
+      diag.push({
+        step: 'Step 0: Secret Configuration Check',
+        request: { endpoint: 'POST /validate-selftest-key', method: 'POST', body: { test_key: 'test-key-12345' } },
+        response: { status: 200, body: configData },
+      });
+
+      if (!configData.valid) {
+        const hint = `SELFTEST_KEY mismatch! Backend expects: ${configData.expected_key_prefix}, received: ${configData.received_key_prefix}. Update SELFTEST_KEY in backend to: test-key-12345`;
+        updateStep(0, { 
+          status: 'fail', 
+          httpStatus: 200, 
+          response: configData, 
+          error: 'Configuration mismatch',
+          hint 
+        });
+        setIsRunning(false);
+        setDiagnostics(diag);
+        toast({
+          title: 'Configuration Error',
+          description: 'SELFTEST_KEY validation failed - cannot proceed with tests',
+          variant: 'destructive',
+        });
+        return; // Block remaining tests
+      }
+
+      updateStep(0, { 
+        status: 'pass', 
+        httpStatus: 200, 
+        response: { valid: true, message: configData.message } 
+      });
+    } catch (err: any) {
+      diag.push({
+        step: 'Step 0: Secret Configuration Check',
+        request: { endpoint: 'POST /validate-selftest-key', method: 'POST' },
+        response: { error: err.message },
+      });
+      updateStep(0, { 
+        status: 'fail', 
+        error: err.message, 
+        hint: 'Failed to validate configuration - check if validate-selftest-key function is deployed' 
+      });
+      setIsRunning(false);
+      setDiagnostics(diag);
+      toast({
+        title: 'Configuration Check Failed',
+        description: 'Could not validate SELFTEST_KEY',
+        variant: 'destructive',
+      });
+      return; // Block remaining tests
+    }
+
+    // Step 1: Health Check - GET /healthz
+    updateStep(1, { status: 'running' });
     try {
       const { data, error } = await supabase.functions.invoke('maigret-health-check');
 
@@ -110,7 +176,7 @@ export function SelfTestRunner() {
         });
       } else {
         const hint = 'MAIGRET_WORKER_URL unreachable or /healthz not responding with ok:true';
-        updateStep(0, { 
+        updateStep(1, {
           status: 'fail', 
           httpStatus, 
           response: data || error, 
@@ -124,7 +190,7 @@ export function SelfTestRunner() {
         request: { endpoint: 'GET /healthz', method: 'GET' },
         response: { error: err.message },
       });
-      updateStep(0, { 
+      updateStep(1, {
         status: 'fail', 
         error: err.message, 
         hint: 'MAIGRET_WORKER_URL may be misconfigured' 
@@ -132,7 +198,7 @@ export function SelfTestRunner() {
     }
 
     // Step 2: Scan Initiation - POST /scan
-    updateStep(1, { status: 'running' });
+    updateStep(2, { status: 'running' });
     const batchId = crypto.randomUUID();
     let jobId: string | null = null;
 
@@ -161,7 +227,7 @@ export function SelfTestRunner() {
       });
 
       if (isSuccess) {
-        updateStep(1, { 
+        updateStep(2, {
           status: 'pass', 
           httpStatus, 
           response: { job_id: data.job_id, status: data.status } 
@@ -175,7 +241,7 @@ export function SelfTestRunner() {
           ? 'Worker crashed - check Cloud Run logs'
           : 'Scan initiation failed';
         
-        updateStep(1, { 
+        updateStep(2, {
           status: 'fail', 
           httpStatus, 
           response: data || error, 
@@ -189,7 +255,7 @@ export function SelfTestRunner() {
         request: { endpoint: 'POST /scan', method: 'POST', body: { username: 'selftest', batch_id: batchId } },
         response: { error: err.message },
       });
-      updateStep(1, { 
+      updateStep(2, {
         status: 'fail', 
         error: err.message, 
         hint: 'Network error or invalid request' 
@@ -197,7 +263,7 @@ export function SelfTestRunner() {
     }
 
     // Step 3: Results Verification - Check maigret_results table
-    updateStep(2, { status: 'running' });
+    updateStep(3, { status: 'running' });
     
     // Wait 2 seconds for webhook to process
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -225,7 +291,7 @@ export function SelfTestRunner() {
       });
 
       if (hasResults) {
-        updateStep(2, { 
+        updateStep(3, {
           status: 'pass', 
           httpStatus: 200, 
           response: { 
@@ -239,7 +305,7 @@ export function SelfTestRunner() {
         });
       } else {
         const hint = 'No results found in maigret_results table. Check: (1) RESULTS_WEBHOOK_TOKEN mismatch, (2) Worker not calling webhook, (3) RLS policies blocking writes';
-        updateStep(2, { 
+        updateStep(3, {
           status: 'fail', 
           httpStatus: 404, 
           response: { verified: false, error: error?.message },
@@ -253,7 +319,7 @@ export function SelfTestRunner() {
         request: { query: 'SELECT from maigret_results', method: 'SELECT' },
         response: { error: err.message },
       });
-      updateStep(2, { 
+      updateStep(3, {
         status: 'fail', 
         error: err.message, 
         hint: 'Database query failed - check authentication or RLS policies' 
@@ -277,12 +343,15 @@ export function SelfTestRunner() {
   const failedCount = steps.filter(s => s.status === 'fail').length;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Simple Maigret Pipeline Self-Test</CardTitle>
-        <CardDescription>
-          End-to-end validation of the Maigret integration
-        </CardDescription>
+    <div className="space-y-6">
+      <SelfTestConfigStatus />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Simple Maigret Pipeline Self-Test</CardTitle>
+          <CardDescription>
+            End-to-end validation of the Maigret integration
+          </CardDescription>
         
         {(passedCount > 0 || failedCount > 0) && (
           <div className="flex gap-2 mt-4">
@@ -363,6 +432,7 @@ export function SelfTestRunner() {
           ))}
         </div>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 }
