@@ -28,6 +28,13 @@ Deno.serve(async (req) => {
     const selftestKey = req.headers.get('X-Selftest-Key');
     const isSelfTest = selftestKey === SELFTEST_KEY;
     
+    console.log('[scan-start] Self-test check:', {
+      headerValue: selftestKey,
+      envValue: SELFTEST_KEY,
+      isSelfTest,
+      headerPresent: selftestKey !== null
+    });
+    
     let user = null;
     let workspaceId: string | null = null;
 
