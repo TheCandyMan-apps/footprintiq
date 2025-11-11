@@ -20,6 +20,7 @@ Deno.serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
     const MAIGRET_WORKER_URL = Deno.env.get('MAIGRET_WORKER_URL')!;
+    const MAIGRET_WORKER_SCAN_PATH = Deno.env.get('MAIGRET_WORKER_SCAN_PATH') || '/scan';
     const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN')!;
     const SELFTEST_KEY = Deno.env.get('SELFTEST_KEY') || 'test-key-12345';
 
@@ -90,7 +91,7 @@ Deno.serve(async (req) => {
       username: body.username.trim(),
       platforms: body.platforms || undefined,
       batch_id: body.batch_id || undefined,
-      user_id: user?.id || 'selftest-user',
+      user_id: user?.id || '00000000-0000-0000-0000-SELFTEST000000',
       workspace_id: workspaceId,
     };
 
@@ -99,7 +100,8 @@ Deno.serve(async (req) => {
 
     let workerResponse;
     try {
-      workerResponse = await fetch(`${MAIGRET_WORKER_URL}/scan`, {
+      const scanPath = MAIGRET_WORKER_SCAN_PATH.startsWith('/') ? MAIGRET_WORKER_SCAN_PATH : `/${MAIGRET_WORKER_SCAN_PATH}`;
+      workerResponse = await fetch(`${MAIGRET_WORKER_URL}${scanPath}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${WORKER_TOKEN}`,

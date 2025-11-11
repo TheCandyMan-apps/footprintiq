@@ -1,62 +1,47 @@
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'content-type',
-};
-
-const H = (c: any) => ({
-  'Access-Control-Allow-Origin': c['Access-Control-Allow-Origin'],
-  'Access-Control-Allow-Headers': c['Access-Control-Allow-Headers']
-});
-
-const J = (d: any, s = 200) => new Response(
-  JSON.stringify(d),
-  { status: s, headers: { 'Content-Type': 'application/json', ...H(corsHeaders) } }
-);
+const C = { allowOrigins:'*', allowMethods:'GET,OPTIONS', allowHeaders:'content-type' }
+const H = (c:any)=>({'Access-Control-Allow-Origin':c.allowOrigins,'Access-Control-Allow-Methods':c.allowMethods,'Access-Control-Allow-Headers':c.allowHeaders})
+const J = (d:any,s=200)=>new Response(JSON.stringify(d),{status:s,headers:{'Content-Type':'application/json',...H(C)}})
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: H(corsHeaders) });
-  if (req.method !== 'GET') return J({ error: 'Method Not Allowed' }, 405);
+  if (req.method === 'OPTIONS') return new Response(null, { headers: H(C) })
+  if (req.method !== 'GET') return J({ error:'Method Not Allowed' },405)
 
-  const base = Deno.env.get('MAIGRET_WORKER_URL');
-  if (!base) return J({ error: 'Missing env MAIGRET_WORKER_URL' }, 500);
+  const base = env('MAIGRET_WORKER_URL')
+  const overrideHealth = Deno.env.get('MAIGRET_WORKER_HEALTH_PATH')?.trim()
+  const scanPath = Deno.env.get('MAIGRET_WORKER_SCAN_PATH')?.trim() || '/scan'
+  const tried:any[] = []
 
-  const candidates = ['/healthz', '/health', '/ping'];
-  const tried: any[] = [];
-
-  console.log(`[health-check] Trying endpoints on: ${base}`);
-
-  for (const p of candidates) {
+  async function probe(path:string, method:'GET'|'OPTIONS'='GET') {
+    const url = `${base}${path}`
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-      console.log(`[health-check] Attempting: ${base}${p}`);
-      const r = await fetch(`${base}${p}`, {
-        method: 'GET',
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      const body = await r.text().catch(() => '');
-      const entry = { path: p, status: r.status, ok: r.ok, body: body.slice(0, 300) };
-      tried.push(entry);
-
-      console.log(`[health-check] ${p} → ${r.status} ${r.ok ? 'OK' : 'FAIL'}`);
-
-      if (r.ok) {
-        return J({ ok: true, path: p, status: r.status, body, tried }, 200);
-      }
-    } catch (e: any) {
-      const entry = { path: p, error: e.name === 'AbortError' ? 'timeout' : String(e) };
-      tried.push(entry);
-      console.error(`[health-check] ${p} failed:`, e);
+      const r = await fetch(url, { method })
+      const body = await r.text().catch(()=> '')
+      const rec = { method, path, status:r.status, ok:r.ok, body: body.slice(0,300) }
+      tried.push(rec)
+      return r.ok ? rec : null
+    } catch (e:any) {
+      tried.push({ method, path, error:String(e) })
+      return null
     }
   }
 
-  console.error('[health-check] All endpoints failed');
-  return J({
-    status: 'unreachable',
-    message: 'No health endpoint responded OK',
-    tried
-  }, 503);
-});
+  // If override provided, try it first
+  if (overrideHealth) {
+    const hit = await probe(overrideHealth.startsWith('/') ? overrideHealth : `/${overrideHealth}`, 'GET')
+    if (hit) return J({ ok:true, type:'override', hit, tried })
+  }
+
+  // Try common health endpoints
+  for (const p of ['/healthz','/health','/ping']) {
+    const hit = await probe(p, 'GET')
+    if (hit) return J({ ok:true, type:'health', hit, tried })
+  }
+
+  // Finally, try OPTIONS on the scan path (reachability)
+  const scanHit = await probe(scanPath.startsWith('/') ? scanPath : `/${scanPath}`, 'OPTIONS')
+  if (scanHit) return J({ ok:true, type:'scan-options', hit:scanHit, tried })
+
+  return J({ status:'unreachable', message:'No health endpoint responded OK', workerUrl: base, tried }, 503)
+})
+
+function env(n:string){ const v=Deno.env.get(n); if(!v) throw new Error(`Missing env ${n}`); return v }
