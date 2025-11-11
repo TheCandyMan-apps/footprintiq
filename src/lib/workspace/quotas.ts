@@ -1,7 +1,7 @@
-export type SubscriptionTier = 'free' | 'pro' | 'enterprise';
+export type SubscriptionTier = 'free' | 'pro' | 'premium' | 'enterprise';
 
-// Legacy analyst tier maps to pro
-export type LegacySubscriptionTier = SubscriptionTier | 'analyst';
+// Legacy tiers that map to pro
+export type LegacySubscriptionTier = SubscriptionTier | 'analyst' | 'family';
 
 interface PlanQuotas {
   scansPerMonth: number;
@@ -38,6 +38,17 @@ export const PLAN_QUOTAS: Record<SubscriptionTier, PlanQuotas> = {
     ssoEnabled: false,
     prioritySupport: false,
   },
+  premium: {
+    scansPerMonth: 100,
+    monitorsPerWorkspace: 10,
+    apiCallsPerHour: 1000,
+    teamMembers: 5,
+    retentionDays: 90,
+    aiAnalystQueries: 50,
+    darkWebAccess: true,
+    ssoEnabled: false,
+    prioritySupport: false,
+  },
   enterprise: {
     scansPerMonth: -1, // unlimited
     monitorsPerWorkspace: -1,
@@ -61,8 +72,11 @@ export const SCAN_CREDITS: Record<string, number> = {
 };
 
 export function getQuotas(tier: LegacySubscriptionTier): PlanQuotas {
-  // Map legacy analyst tier to pro
-  const normalizedTier = tier === 'analyst' ? 'pro' : tier;
+  // Map legacy tiers to their equivalents
+  let normalizedTier: SubscriptionTier = tier as SubscriptionTier;
+  if (tier === 'analyst' || tier === 'family') {
+    normalizedTier = 'premium';
+  }
   return PLAN_QUOTAS[normalizedTier];
 }
 
@@ -72,6 +86,7 @@ export function hasFeatureAccess(tier: SubscriptionTier, feature: string): boole
   switch (feature) {
     case 'maigret':
     case 'darkweb':
+    case 'reverse_image_search':
       return quotas.darkWebAccess;
     case 'advanced_scan':
       return tier !== 'free';

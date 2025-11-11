@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
-type SubscriptionTier = 'free' | 'analyst' | 'pro' | 'enterprise';
+type SubscriptionTier = 'free' | 'analyst' | 'pro' | 'premium' | 'enterprise';
 
 interface SubscriptionContextType {
   user: User | null;
@@ -100,7 +100,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const isPremium = subscriptionTier !== 'free';
-  const isProOrHigher = subscriptionTier === 'pro' || subscriptionTier === 'enterprise';
+  const isProOrHigher = subscriptionTier === 'pro' || subscriptionTier === 'premium' || subscriptionTier === 'enterprise';
 
   return (
     <SubscriptionContext.Provider value={{ 
