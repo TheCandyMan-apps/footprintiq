@@ -131,7 +131,9 @@ serve(async (req) => {
       ];
     } else {
       // Call TinEye API
-      console.log('[ReverseImageSearch] Calling TinEye API with image URL:', imageUrl);
+      console.log('[ReverseImageSearch] Calling TinEye API');
+      console.log('[ReverseImageSearch] Image URL:', imageUrl);
+      console.log('[ReverseImageSearch] API Key configured:', !!tineyeApiKey);
       
       try {
         const tineyeUrl = new URL('https://api.tineye.com/rest/search/');
@@ -140,6 +142,8 @@ serve(async (req) => {
         tineyeUrl.searchParams.set('sort', 'score'); // Sort by match score
         tineyeUrl.searchParams.set('order', 'desc'); // Best matches first
 
+        console.log('[ReverseImageSearch] TinEye Request URL:', tineyeUrl.toString().replace(tineyeApiKey, 'REDACTED'));
+
         const tineyeResponse = await fetch(tineyeUrl.toString(), {
           method: 'GET',
           headers: {
@@ -147,6 +151,9 @@ serve(async (req) => {
             'X-API-KEY': tineyeApiKey,
           },
         });
+
+        console.log('[ReverseImageSearch] TinEye Response Status:', tineyeResponse.status);
+        console.log('[ReverseImageSearch] TinEye Response Headers:', JSON.stringify([...tineyeResponse.headers.entries()]));
 
         if (!tineyeResponse.ok) {
           const errorText = await tineyeResponse.text();
@@ -163,7 +170,16 @@ serve(async (req) => {
 
         const tineyeData = await tineyeResponse.json();
         
+        console.log('[ReverseImageSearch] TinEye Full Response:', JSON.stringify(tineyeData).substring(0, 500));
         console.log(`[ReverseImageSearch] TinEye returned ${tineyeData.results?.matches?.length || 0} matches`);
+        
+        if (tineyeData.results?.matches?.length === 0) {
+          console.log('[ReverseImageSearch] Zero matches - possible reasons:');
+          console.log('  - Image may not exist in TinEye database');
+          console.log('  - Image may be too new or rare');
+          console.log('  - TinEye may have trouble accessing signed URL');
+          console.log('  - Try testing with a well-known image URL');
+        }
 
         // Transform TinEye response to our format
         if (tineyeData.results?.matches && Array.isArray(tineyeData.results.matches)) {
@@ -200,7 +216,7 @@ serve(async (req) => {
     const { error: spendError } = await supabase.rpc('spend_credits', {
       _workspace_id: workspaceId,
       _cost: CREDIT_COST,
-      _reason: 'Reverse image search',
+      _reason: 'reverse_image_search',
       _meta: {
         imageUrl,
         matchCount: matches.length,
