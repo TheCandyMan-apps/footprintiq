@@ -22,6 +22,17 @@ export function SimpleScanForm() {
       return;
     }
 
+    // Check authentication first
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      const returnUrl = `/maigret/simple`;
+      navigate(`/auth?redirect=${encodeURIComponent(returnUrl)}`);
+      toast.error('Authentication Required', {
+        description: 'Please log in to submit a scan',
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     // Generate client-side job ID for tracking
