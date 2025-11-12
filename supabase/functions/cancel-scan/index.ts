@@ -52,19 +52,84 @@ Deno.serve(async (req) => {
 
     console.log('[cancel-scan] Cancelling scan:', scanId, 'for user:', user.id);
 
-    // Get scan details
+    // Try Advanced pipeline first (scan_jobs)
     const { data: scan, error: scanError } = await supabase
       .from('scan_jobs')
       .select('*, workspace:workspaces!inner(id, owner_id)')
       .eq('id', scanId)
-      .single();
+      .maybeSingle();
 
-    if (scanError || !scan) {
-      console.error('[cancel-scan] Scan not found:', scanError);
+    // If not in scan_jobs, check Simple pipeline (maigret_results)
+    if (!scan) {
+      console.log('[cancel-scan] Not found in scan_jobs, checking maigret_results...');
+      
+      const { data: maigretResult, error: maigretError } = await supabase
+        .from('maigret_results')
+        .select('*')
+        .eq('job_id', scanId)
+        .maybeSingle();
+
+      if (!maigretResult) {
+        console.error('[cancel-scan] Scan not found in either pipeline:', { scanError, maigretError });
+        return new Response(
+          JSON.stringify({ error: 'Scan not found' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Check if already in terminal state
+      if (maigretResult.status === 'completed' || maigretResult.status === 'failed') {
+        console.log('[cancel-scan] Simple pipeline scan already terminal:', maigretResult.status);
+        return new Response(
+          JSON.stringify({ 
+            error: `Scan already ${maigretResult.status}`,
+            status: maigretResult.status,
+            message: 'Cannot cancel a completed or failed scan'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Cancel Simple pipeline scan
+      const { error: updateError } = await supabase
+        .from('maigret_results')
+        .update({
+          status: 'failed',
+          raw: {
+            ...maigretResult.raw,
+            cancelled_by_user: true,
+            cancelled_at: new Date().toISOString()
+          },
+          updated_at: new Date().toISOString()
+        })
+        .eq('job_id', scanId);
+
+      if (updateError) {
+        console.error('[cancel-scan] Failed to cancel Simple pipeline scan:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to cancel scan' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log('[cancel-scan] Successfully cancelled Simple pipeline scan:', scanId);
+
       return new Response(
-        JSON.stringify({ error: 'Scan not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({
+          success: true,
+          scanId,
+          status: 'canceled',
+          message: 'Username scan cancelled',
+          pipeline: 'simple'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Continue with Advanced pipeline cancellation logic...
+    // At this point, scan is guaranteed to be non-null (from scan_jobs table)
+    if (!scan) {
+      throw new Error('Unexpected: scan should be non-null here');
     }
 
     // Check if user has permission to cancel (owner or workspace member)
