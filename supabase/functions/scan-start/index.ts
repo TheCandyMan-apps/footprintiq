@@ -11,6 +11,9 @@ interface ScanStartRequest {
   batch_id?: string;
 }
 
+// UUID validation helper
+const isUUID = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -51,8 +54,8 @@ Deno.serve(async (req) => {
     let workspaceId: string | null = null;
 
     if (isSelfTest) {
-      // Self-test mode - use fixed ID
-      user = { id: '00000000-0000-0000-0000-SELFTEST000000' } as any;
+      // Self-test mode - use valid zero UUID
+      user = { id: '00000000-0000-0000-0000-000000000000' } as any;
       console.log('[scan-start] Self-test mode activated');
     } else {
       // Optional auth flow - proceed with or without user token
@@ -108,12 +111,16 @@ Deno.serve(async (req) => {
     console.log(`[scan-start] User: ${user.id}, Workspace: ${workspaceId || 'none'}`);
     console.log(`[scan-start] Worker URL: ${MAIGRET_WORKER_URL}`);
 
+    // Only include user_id/workspace_id if valid UUIDs
+    const safeUserId = user?.id && isUUID(user.id) ? user.id : undefined;
+    const safeWorkspaceId = workspaceId && isUUID(workspaceId) ? workspaceId : undefined;
+
     const workerPayload = {
       username: body.username.trim(),
       platforms: body.platforms || undefined,
       batch_id: body.batch_id || undefined,
-      user_id: user.id,
-      workspace_id: workspaceId,
+      ...(safeUserId ? { user_id: safeUserId } : {}),
+      ...(safeWorkspaceId ? { workspace_id: safeWorkspaceId } : {}),
     };
 
     const controller = new AbortController();
