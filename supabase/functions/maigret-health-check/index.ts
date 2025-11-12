@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     checks: [],
   };
 
-  // Step 1: Check /healthz
+  // Step 1: Check /healthz (optional - 404 is OK if diagnostics work)
   try {
     const healthzUrl = `${MAIGRET_WORKER_URL}/healthz`;
     const healthzResponse = await fetch(healthzUrl, {
@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     try {
       healthzJson = JSON.parse(healthzBody);
     } catch {
-      healthzJson = { raw: healthzBody };
+      healthzJson = { raw: healthzBody.substring(0, 200) }; // Truncate HTML errors
     }
 
     diagnostics.checks.push({
@@ -60,6 +60,7 @@ Deno.serve(async (req) => {
       body: healthzJson,
     });
 
+    // If /healthz works, great!
     if (healthzResponse.ok && healthzJson.ok === true) {
       return new Response(
         JSON.stringify({ 
@@ -70,6 +71,9 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    
+    // If /healthz returns 404, that's OK - worker may not implement it
+    // We'll check diagnostics instead
   } catch (err: any) {
     diagnostics.checks.push({
       endpoint: '/healthz',
@@ -111,11 +115,30 @@ Deno.serve(async (req) => {
     diagnostics.diag_maigret_error = err.message;
   }
 
-  // If healthz failed, return unhealthy status
+  // If we got here, /healthz didn't respond with ok:true
+  // Check if diagnostics prove the worker is functional
+  const diagMaigretOk = diagnostics.diag_maigret?.ok === true;
+  const diagEnvOk = diagnostics.diag_env?.maigret_in_path;
+  
+  if (diagMaigretOk && diagEnvOk) {
+    // Worker is functional even without /healthz endpoint
+    return new Response(
+      JSON.stringify({ 
+        status: 'healthy',
+        statusCode: 200,
+        message: 'Worker functional (diagnostics passed, /healthz not required)',
+        ...diagnostics 
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  // Worker appears non-functional
   return new Response(
     JSON.stringify({ 
       status: 'unhealthy',
       statusCode: 503,
+      message: 'Worker diagnostics failed - Maigret may not be installed or worker is down',
       ...diagnostics 
     }),
     { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
