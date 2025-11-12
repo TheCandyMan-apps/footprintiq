@@ -125,11 +125,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update scan status to cancelled
+    // Update scan status to partial (cancelled by user)
     const { error: updateError } = await supabase
       .from('scan_jobs')
       .update({
-        status: 'cancelled',
+        status: 'partial',
+        error_message: 'Cancelled by user',
         finished_at: new Date().toISOString(),
       })
       .eq('id', scanId);
