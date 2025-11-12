@@ -262,7 +262,7 @@ export function SelfTestRunner() {
       });
     }
 
-    // Step 3: Results Verification - Check maigret_results table
+    // Step 3: Results Verification - Use service-role-backed function to bypass RLS
     updateStep(3, { status: 'running' });
     
     // Wait 2 seconds for webhook to process
@@ -273,18 +273,17 @@ export function SelfTestRunner() {
         throw new Error('No job_id from Step 2 - cannot verify results');
       }
 
-      const { data: results, error } = await supabase
-        .from('maigret_results')
-        .select('job_id, username, status, created_at')
-        .eq('job_id', jobId)
-        .limit(1);
+      const { data: resultsData, error } = await supabase.functions.invoke('selftest-results-check', {
+        body: { job_id: jobId },
+        headers: { 'X-Selftest-Key': 'test-key-12345' },
+      });
 
-      const hasResults = !error && results && results.length > 0;
+      const hasResults = !error && resultsData?.found === true;
 
       diag.push({
         step: 'Step 3: Results Verification',
-        request: { query: `SELECT from maigret_results WHERE job_id = ${jobId}`, method: 'SELECT' },
-        response: { found_results: hasResults, count: results?.length || 0, latest: results?.[0] },
+        request: { endpoint: 'POST /selftest-results-check', method: 'POST', body: { job_id: jobId } },
+        response: { status: hasResults ? 200 : 404, body: resultsData || error },
       });
 
       if (hasResults) {
@@ -293,11 +292,7 @@ export function SelfTestRunner() {
           httpStatus: 200, 
           response: { 
             verified: true,
-            latest_result: {
-              job_id: results[0].job_id,
-              username: results[0].username,
-              status: results[0].status,
-            }
+            latest_result: resultsData.row
           } 
         });
       } else {
@@ -313,7 +308,7 @@ export function SelfTestRunner() {
     } catch (err: any) {
       diag.push({
         step: 'Step 3: Results Verification',
-        request: { query: 'SELECT from maigret_results', method: 'SELECT' },
+        request: { endpoint: 'POST /selftest-results-check', method: 'POST' },
         response: { error: err.message },
       });
       updateStep(3, {

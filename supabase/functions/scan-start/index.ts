@@ -111,17 +111,25 @@ Deno.serve(async (req) => {
     console.log(`[scan-start] User: ${user.id}, Workspace: ${workspaceId || 'none'}`);
     console.log(`[scan-start] Worker URL: ${MAIGRET_WORKER_URL}`);
 
-    // Only include user_id/workspace_id if valid UUIDs
-    const safeUserId = user?.id && isUUID(user.id) ? user.id : undefined;
-    const safeWorkspaceId = workspaceId && isUUID(workspaceId) ? workspaceId : undefined;
-
-    const workerPayload = {
+    // Build base payload
+    const workerPayloadBase = {
       username: body.username.trim(),
       platforms: body.platforms || undefined,
       batch_id: body.batch_id || undefined,
-      ...(safeUserId ? { user_id: safeUserId } : {}),
-      ...(safeWorkspaceId ? { workspace_id: safeWorkspaceId } : {}),
     };
+
+    // In self-test mode, omit user_id/workspace_id to avoid FK constraints
+    const workerPayload = isSelfTest
+      ? workerPayloadBase
+      : {
+          ...workerPayloadBase,
+          ...(user?.id && isUUID(user.id) ? { user_id: user.id } : {}),
+          ...(workspaceId && isUUID(workspaceId) ? { workspace_id: workspaceId } : {}),
+        };
+
+    if (isSelfTest) {
+      console.log('[scan-start] Self-test mode: omitting user_id/workspace_id to avoid FK constraints');
+    }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000);

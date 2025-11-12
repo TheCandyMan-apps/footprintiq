@@ -52,11 +52,18 @@ Deno.serve(async (req) => {
     console.log(`[scan-results] Webhook received for job ${payload.job_id}: ${payload.status}`);
     console.log(`[scan-results] Username: ${payload.username}, User ID: ${payload.user_id || 'none'}`);
 
-    // Sanitize UUIDs before database insert
-    const safeUserId = payload.user_id && isUUID(payload.user_id) ? payload.user_id : null;
-    const safeWorkspaceId = payload.workspace_id && isUUID(payload.workspace_id) ? payload.workspace_id : null;
+    // Sanitize UUIDs before database insert - treat zero UUID as reserved
+    const zeroUUID = '00000000-0000-0000-0000-000000000000';
+    const safeUserId = payload.user_id && isUUID(payload.user_id) && payload.user_id !== zeroUUID 
+      ? payload.user_id 
+      : null;
+    const safeWorkspaceId = payload.workspace_id && isUUID(payload.workspace_id) 
+      ? payload.workspace_id 
+      : null;
     
-    if (payload.user_id && !safeUserId) {
+    if (payload.user_id === zeroUUID) {
+      console.warn('[scan-results] Reserved zero UUID detected; storing user_id as null');
+    } else if (payload.user_id && !safeUserId) {
       console.warn('[scan-results] Invalid user_id format in payload; storing as null');
     }
     if (payload.workspace_id && !safeWorkspaceId) {
