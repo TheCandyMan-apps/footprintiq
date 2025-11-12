@@ -289,9 +289,6 @@ export default function AdvancedScan() {
 
         const jobId = result?.jobId;
         if (jobId) {
-          // Open progress dialog
-          setModalScanId(jobId);
-          setProgressOpen(true);
           setCurrentScanId(jobId);
           
           // Start tracking
@@ -311,10 +308,8 @@ export default function AdvancedScan() {
             toast.success(`Username scan started for "${target.trim()}"`);
           }
 
-          // Navigate to SimpleMaigretResults page after showing preview
-          setTimeout(() => {
-            navigate(`/maigret/results/${jobId}`);
-          }, 3000);
+          // Navigate immediately to results page (no progress dialog for username scans)
+          navigate(`/maigret/results/${jobId}`);
         }
       } catch (error) {
         console.error("Username scan error:", error);
