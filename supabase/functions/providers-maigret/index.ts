@@ -72,7 +72,7 @@ serve(async (req) => {
     console.log(`🔍 Calling Maigret worker for ${body.usernames.length} username(s)`);
 
     // Call the Maigret worker
-    const workerResponse = await fetch(`${WORKER_URL}/run`, {
+    const workerResponse = await fetch(`${WORKER_URL}/scan`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${WORKER_TOKEN}`,
