@@ -382,11 +382,12 @@ Deno.serve(async (req) => {
 
     // Add timeout for streaming phase (60s for initial data)
     let hasReceivedData = false;
-    const streamTimeout = setTimeout(() => {
+    let timedOut = false;
+    const streamTimeout = setTimeout(async () => {
       if (!hasReceivedData) {
-        reader.cancel();
+        timedOut = true;
         console.error('❌ Stream timeout - no data received from worker after 60s');
-        throw new Error('Timeout - no data received from worker');
+        await reader.cancel().catch(() => {}); // Safe cancel
       }
     }, 60000); // 60 second timeout for first data
 
@@ -459,6 +460,42 @@ Deno.serve(async (req) => {
       }
       
       clearTimeout(streamTimeout);
+      
+      // Check if timeout occurred
+      if (timedOut && providersCompleted === 0) {
+        console.error('❌ Stream timed out with no data');
+        
+        // Broadcast scan failure
+        await supabaseAdmin.channel(`scan_progress_${job.id}`).send({
+          type: 'broadcast',
+          event: 'scan_failed',
+          payload: {
+            error: 'Timeout waiting for worker stream - no data received',
+            providersCompleted: 0,
+          },
+        });
+        
+        await supabaseAdmin
+          .from('scan_jobs')
+          .update({
+            status: 'error',
+            error: 'Timeout - no data received from worker after 60s',
+            finished_at: new Date().toISOString()
+          })
+          .eq('id', job.id);
+
+        return new Response(
+          JSON.stringify({ 
+            jobId: job.id, 
+            status: 'error',
+            error: 'Timeout waiting for worker stream'
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
     } catch (e) {
       clearTimeout(streamTimeout);
       console.error('Stream error:', e);
@@ -601,6 +638,7 @@ Deno.serve(async (req) => {
       event: 'scan_complete',
       payload: {
         status: 'completed',
+        resultsCount: normalized,
         totalProviders: providersCompleted,
         creditsUsed: providersCompleted,
         message: 'Scan completed successfully',

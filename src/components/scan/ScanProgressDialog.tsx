@@ -32,6 +32,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
   const [isCancelling, setIsCancelling] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
   const [isSavingCase, setIsSavingCase] = useState(false);
+  const [providersCompleted, setProvidersCompleted] = useState(0);
+  const [providersTotal, setProvidersTotal] = useState(0);
+  const [lastEventAt, setLastEventAt] = useState(Date.now());
+  const [showInactivityHint, setShowInactivityHint] = useState(false);
+  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
 
   const playSuccessSound = () => {
     try {
@@ -113,6 +118,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     setStatus('running');
     setTotalResults(0);
     setIsSavingCase(false);
+    setProvidersCompleted(0);
+    setProvidersTotal(0);
+    setLastEventAt(Date.now());
+    setShowInactivityHint(false);
+    setShowTimeoutWarning(false);
 
     // Helper to upsert provider status
     const upsertProvider = (
@@ -141,6 +151,45 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
       });
     };
 
+    // Subscribe to authoritative scan_jobs table for accurate progress
+    const jobChannel = supabase
+      .channel(`scan_jobs_${scanId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'scan_jobs',
+          filter: `id=eq.${scanId}`,
+        },
+        (payload) => {
+          console.debug('[ScanProgressDialog] scan_jobs UPDATE:', payload);
+          const job = payload.new as any;
+          
+          setLastEventAt(Date.now());
+          
+          if (job.providers_completed !== undefined && job.providers_total !== undefined) {
+            setProvidersCompleted(job.providers_completed);
+            setProvidersTotal(job.providers_total);
+            
+            if (job.providers_total > 0) {
+              const pct = Math.round((job.providers_completed / job.providers_total) * 100);
+              setProgress(Math.max(5, Math.min(pct, 95))); // Clamp between 5-95%
+            }
+          }
+          
+          if (job.status === 'finished') {
+            setStatus('completed');
+            setProgress(100);
+          } else if (job.status === 'error') {
+            setStatus('failed');
+          } else if (job.status === 'partial') {
+            setStatus('cancelled');
+          }
+        }
+      )
+      .subscribe();
+
     // Subscribe to Maigret scan progress updates (username scans)
     const maigretChannel = supabase
       .channel(`scan_progress_${scanId}`)
@@ -148,21 +197,30 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         console.debug('[ScanProgressDialog] Maigret provider_update:', payload);
         const update = payload.payload;
         upsertProvider(update.provider, update.status, update.message);
+        
+        setLastEventAt(Date.now());
 
         if (update.creditsUsed !== undefined) {
           setCreditsUsed(update.creditsUsed);
         }
-
-        const completed = update.creditsUsed || 0;
-        const total = 100;
-        setProgress(Math.min((completed / total) * 100, 95));
+        
+        // Use providersCompleted/totalProviders if available
+        if (update.providersCompleted !== undefined && update.totalProviders !== undefined) {
+          setProvidersCompleted(update.providersCompleted);
+          setProvidersTotal(update.totalProviders);
+          if (update.totalProviders > 0) {
+            const pct = Math.round((update.providersCompleted / update.totalProviders) * 100);
+            setProgress(Math.max(5, Math.min(pct, 95)));
+          }
+        }
       })
       .on('broadcast', { event: 'scan_complete' }, async (payload: any) => {
         console.debug('[ScanProgressDialog] Maigret scan_complete:', payload);
         setStatus('completed');
         setProgress(100);
+        setLastEventAt(Date.now());
         
-        const resultsCount = payload.payload?.resultsCount || 0;
+        const resultsCount = payload.payload?.resultsCount || payload.payload?.totalFindings || 0;
         setTotalResults(resultsCount);
         
         if (resultsCount === 0) {
@@ -183,15 +241,39 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
       .on('broadcast', { event: 'scan_failed' }, (payload: any) => {
         console.debug('[ScanProgressDialog] Maigret scan_failed:', payload);
         setStatus('failed');
+        setLastEventAt(Date.now());
         toast.error(payload.payload.error || 'Scan failed');
       })
       .on('broadcast', { event: 'scan_cancelled' }, () => {
         console.debug('[ScanProgressDialog] Maigret scan_cancelled');
         setStatus('cancelled');
+        setLastEventAt(Date.now());
         toast.info('Scan cancelled');
         setTimeout(() => onComplete?.(), 1000);
       })
       .subscribe();
+    
+    // Inactivity watchdog
+    const watchdogInterval = setInterval(() => {
+      const now = Date.now();
+      const timeSinceLastEvent = now - lastEventAt;
+      
+      if (status !== 'running') {
+        return; // Don't show warnings if scan completed/failed/cancelled
+      }
+      
+      if (timeSinceLastEvent > 60000 && timeSinceLastEvent < 120000) {
+        // 60-120 seconds: show hint
+        setShowInactivityHint(true);
+      } else if (timeSinceLastEvent >= 120000) {
+        // 120+ seconds: show timeout warning
+        setShowInactivityHint(false);
+        setShowTimeoutWarning(true);
+      } else {
+        setShowInactivityHint(false);
+        setShowTimeoutWarning(false);
+      }
+    }, 5000); // Check every 5 seconds
 
     // Subscribe to orchestrator progress updates (advanced scans)
     const orchestratorChannel = supabase
@@ -276,10 +358,12 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
       .subscribe();
 
     return () => {
+      clearInterval(watchdogInterval);
+      supabase.removeChannel(jobChannel);
       supabase.removeChannel(maigretChannel);
       supabase.removeChannel(orchestratorChannel);
     };
-  }, [scanId, open, onComplete]);
+  }, [scanId, open, onComplete, status, lastEventAt]);
 
   const handleZeroResults = async () => {
     if (!scanId || isSavingCase) return;
@@ -438,9 +522,30 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="font-medium">Overall Progress</span>
-              <span className="text-muted-foreground">{progress}%</span>
+              <div className="flex items-center gap-2">
+                {providersTotal > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {providersCompleted} / {providersTotal} providers
+                  </span>
+                )}
+                <span className="text-muted-foreground">{progress}%</span>
+              </div>
             </div>
             <Progress value={progress} className="h-2" />
+            
+            {/* Inactivity hints */}
+            {showInactivityHint && (
+              <div className="flex items-center gap-2 text-xs text-yellow-600 dark:text-yellow-400 animate-fade-in">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Still working – slow provider responses...</span>
+              </div>
+            )}
+            {showTimeoutWarning && (
+              <div className="flex items-center gap-2 text-xs text-orange-600 dark:text-orange-400 animate-fade-in">
+                <AlertCircle className="h-3 w-3" />
+                <span>Timeout waiting for provider updates. You can retry or cancel below.</span>
+              </div>
+            )}
           </div>
 
           {/* Provider List */}
