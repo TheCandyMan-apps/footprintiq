@@ -49,36 +49,14 @@ Deno.serve(async (req) => {
       usedFallback = true;
     }
 
-    // Fallback: Probe /run endpoint if /health unavailable
+    // Worker doesn't have /health endpoint - mark as unknown/informational only
     if (usedFallback) {
-      console.log('Fallback: Sending test scan request to /run');
-      const probeUrl = `${WORKER_URL}/run`;
-      const probeResponse = await fetch(probeUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${WORKER_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          usernames: ['fp_healthcheck'],
-          sites: ['github'],
-          timeout: 5,
-        }),
-        signal: AbortSignal.timeout(8000),
-      });
-
-      if (!probeResponse.ok) {
-        throw new Error(`Fallback probe failed: ${probeResponse.status}`);
-      }
-
-      // Check if response is parsable
-      const probeText = await probeResponse.text();
-      if (probeText.length === 0) {
-        throw new Error('Fallback probe returned empty response');
-      }
-
-      healthData = { status: 'healthy_via_fallback', probe: 'success' };
-      console.log('✓ Fallback probe successful');
+      console.log('ℹ️ Worker does not expose /health endpoint');
+      healthData = { 
+        status: 'unknown', 
+        note: 'Worker does not support health checks - status unknown',
+        worker_url: WORKER_URL
+      };
     }
 
 
