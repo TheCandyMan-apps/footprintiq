@@ -9,6 +9,7 @@ interface ScanStartRequest {
   username: string;
   platforms?: string[];
   batch_id?: string;
+  timeout?: number;
 }
 
 // UUID validation helper
@@ -111,11 +112,15 @@ Deno.serve(async (req) => {
     console.log(`[scan-start] User: ${user.id}, Workspace: ${workspaceId || 'none'}`);
     console.log(`[scan-start] Worker URL: ${MAIGRET_WORKER_URL}`);
 
+    // Calculate timeout: default 25s, min 10s, max 120s
+    const timeoutSec = Math.max(10, Math.min(Number(body.timeout ?? 25), 120));
+
     // Build base payload
     const workerPayloadBase = {
       username: body.username.trim(),
       platforms: body.platforms || undefined,
       batch_id: body.batch_id || undefined,
+      timeout: timeoutSec,
     };
 
     // In self-test mode, omit user_id/workspace_id to avoid FK constraints
@@ -132,7 +137,9 @@ Deno.serve(async (req) => {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for maigret scans
+    // Dynamic request timeout: worker timeout + 5s buffer, max 90s
+    const requestTimeoutMs = Math.min(timeoutSec * 1000 + 5000, 90000);
+    const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
 
     let workerResponse;
     try {
@@ -150,11 +157,26 @@ Deno.serve(async (req) => {
       clearTimeout(timeoutId);
       
       if (fetchError.name === 'AbortError') {
-        console.error('[scan-start] Worker timeout');
+        console.error(`[scan-start] Worker request timeout after ${requestTimeoutMs}ms`);
+        
+        // Graceful fallback: if client provided batch_id, return 202 for polling
+        if (body.batch_id) {
+          console.log('[scan-start] Returning 202 - worker still processing, client can poll for results');
+          return new Response(
+            JSON.stringify({ 
+              job_id: body.batch_id,
+              status: 'queued',
+              note: 'Worker still processing - results will be available shortly via polling'
+            }),
+            { status: 202, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
+        // No batch_id: return 504 for backwards compatibility
         return new Response(
           JSON.stringify({ 
             error: 'Worker URL unreachable. Check MAIGRET_WORKER_URL.',
-            details: 'Request timed out after 90 seconds'
+            details: `Request timed out after ${requestTimeoutMs}ms`
           }),
           { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );

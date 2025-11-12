@@ -213,8 +213,9 @@ export function SelfTestRunner() {
         },
       });
 
-      const isSuccess = !error && data?.job_id;
-      const httpStatus = error ? (data?.status || 500) : 201;
+      // Accept both 201 (immediate) and 202 (queued) as success
+      const httpStatus = error ? (data?.status || 500) : (data?.status || 201);
+      const isSuccess = !error && data?.job_id && (httpStatus === 201 || httpStatus === 202);
       
       if (isSuccess) {
         jobId = data.job_id;

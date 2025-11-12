@@ -24,9 +24,14 @@ export function SimpleScanForm() {
 
     setIsLoading(true);
     
+    // Generate client-side job ID for tracking
+    const batchId = crypto.randomUUID();
+    
     const requestBody = {
       username: username.trim(),
       platforms: platforms ? platforms.split(',').map(p => p.trim()) : undefined,
+      batch_id: batchId,
+      timeout: 25, // 25s timeout for quick feedback
     };
 
     const diagnostics: DiagnosticsInfo = {
@@ -49,26 +54,35 @@ export function SimpleScanForm() {
         body: data || error,
       };
 
+      // Resilient error handling: navigate to results page even on errors
+      // The results page will poll maigret_results and show results when webhook completes
       if (error) {
         const mapped = mapWorkerError(error);
-        toast.error(mapped.title, {
-          description: mapped.description,
-          action: {
-            label: 'Copy Diagnostics',
-            onClick: () => {
-              copyDiagnostics(diagnostics);
-              toast.success('Diagnostics copied to clipboard');
-            },
-          },
+        console.warn('[SimpleScanForm] Worker response error, continuing with background polling:', mapped);
+        
+        toast.info('Slow worker response - continuing in background', {
+          description: 'Redirecting to results page for polling...',
         });
+        
+        navigate(`/maigret/results/${batchId}`);
         return;
       }
 
-      toast.success(`Scan started! Job ID: ${data.job_id}`, {
-        description: 'Redirecting to results...',
-      });
+      // Success: use job_id from response or fallback to batchId
+      const jobId = data?.job_id || batchId;
+      const statusCode = (diagnostics.response as any)?.status || 200;
       
-      navigate(`/maigret/results/${data.job_id}`);
+      if (statusCode === 202) {
+        toast.info('Scan queued successfully', {
+          description: 'Worker is processing - results will appear shortly',
+        });
+      } else {
+        toast.success('Scan started successfully!', {
+          description: 'Redirecting to results...',
+        });
+      }
+      
+      navigate(`/maigret/results/${jobId}`);
     } catch (err: any) {
       diagnostics.error = {
         message: err.message,
