@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Download, Share2, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import confetti from 'canvas-confetti';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -154,7 +154,7 @@ export const ComprehensiveReportExport = ({
           source.data_found.slice(0, 2).join(', ') + (source.data_found.length > 2 ? '...' : ''),
         ]);
 
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: 105,
           head: [['Source', 'Category', 'Risk', 'Data Found']],
           body: tableData,
@@ -185,7 +185,7 @@ export const ComprehensiveReportExport = ({
           profile.profile_url,
         ]);
 
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: 30,
           head: [['Platform', 'Username', 'Profile URL']],
           body: socialData,

@@ -168,7 +168,7 @@ export function MaigretPDFExport({ username, summary, jobId }: MaigretPDFExportP
           ];
         });
 
-        (doc as any).autoTable({
+        autoTable(doc, {
           startY: yPosition,
           head: [['Platform', 'Profile URL', 'Status']],
           body: tableData,
