@@ -461,26 +461,30 @@ Deno.serve(async (req) => {
       
       clearTimeout(streamTimeout);
       
-      // Check if timeout occurred
-      if (timedOut && providersCompleted === 0) {
-        console.error('❌ Stream timed out with no data');
+      // Check if timeout occurred during streaming
+      if (timedOut) {
+        console.error('❌ Stream timed out', { providersCompleted, linesProcessed: lineNo });
         
         // Broadcast scan failure
         await supabaseAdmin.channel(`scan_progress_${job.id}`).send({
           type: 'broadcast',
           event: 'scan_failed',
           payload: {
-            error: 'Timeout waiting for worker stream - no data received',
-            providersCompleted: 0,
+            error: 'Stream timeout - worker stopped responding',
+            providersCompleted,
+            resultsCount: normalized,
           },
         });
         
+        // Update to error status
         await supabaseAdmin
           .from('scan_jobs')
           .update({
             status: 'error',
-            error: 'Timeout - no data received from worker after 60s',
-            finished_at: new Date().toISOString()
+            error: `Timeout after ${providersCompleted} providers completed`,
+            finished_at: new Date().toISOString(),
+            providers_completed: providersCompleted,
+            providers_total: providersCompleted,
           })
           .eq('id', job.id);
 
@@ -488,7 +492,9 @@ Deno.serve(async (req) => {
           JSON.stringify({ 
             jobId: job.id, 
             status: 'error',
-            error: 'Timeout waiting for worker stream'
+            error: 'Stream timeout - worker stopped responding',
+            providersCompleted,
+            resultsCount: normalized,
           }),
           {
             status: 200,
@@ -500,25 +506,26 @@ Deno.serve(async (req) => {
       clearTimeout(streamTimeout);
       console.error('Stream error:', e);
       
-      // Broadcast scan failure
+      // Broadcast scan failure with consistent payload
       await supabaseAdmin.channel(`scan_progress_${job.id}`).send({
         type: 'broadcast',
         event: 'scan_failed',
         payload: {
           error: String(e),
           providersCompleted,
+          resultsCount: normalized,
         },
       });
       
-      // Save partial results on error
-      const status = providersCompleted > 0 ? 'partial' : 'error';
+      // Save error state with partial results if any
       await supabaseAdmin
         .from('scan_jobs')
         .update({
-          status,
-          error: `stream ${String(e)}`,
+          status: 'error',
+          error: `Stream error: ${String(e)}`,
           partial_results: partialResults,
           providers_completed: providersCompleted,
+          providers_total: providersCompleted,
           finished_at: new Date().toISOString()
         })
         .eq('id', job.id);
@@ -629,6 +636,7 @@ Deno.serve(async (req) => {
         finished_at: new Date().toISOString(),
         partial_results: partialResults,
         providers_completed: providersCompleted,
+        providers_total: providersCompleted,
       })
       .eq('id', job.id);
 

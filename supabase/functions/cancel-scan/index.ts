@@ -82,8 +82,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if scan is already completed or cancelled
-    if (scan.status === 'completed' || scan.status === 'cancelled') {
+    // Check if scan is in a terminal state
+    const terminalStates = ['finished', 'error', 'canceled'];
+    if (terminalStates.includes(scan.status)) {
+      console.log('[cancel-scan] Scan already in terminal state:', scan.status);
       return new Response(
         JSON.stringify({ 
           error: `Scan already ${scan.status}`,
@@ -107,6 +109,8 @@ Deno.serve(async (req) => {
       ? Math.abs(ledgerEntries.reduce((sum, entry) => sum + (entry.delta || 0), 0))
       : 0;
     
+    console.log('[cancel-scan] Total cost from ledger:', totalCost, 'Current status:', scan.status);
+    
     if (totalCost > 0 && scan.status === 'running') {
       // Get scan progress from results
       const { data: results, error: resultsError } = await supabase
@@ -125,15 +129,17 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Update scan status to partial (cancelled by user)
+    // Update scan status to canceled (valid DB status)
     const { error: updateError } = await supabase
       .from('scan_jobs')
       .update({
-        status: 'partial',
+        status: 'canceled',
         error: 'Cancelled by user',
         finished_at: new Date().toISOString(),
       })
       .eq('id', scanId);
+    
+    console.log('[cancel-scan] Updated scan status to canceled');
 
     if (updateError) {
       console.error('[cancel-scan] Failed to update scan status:', updateError);
@@ -165,6 +171,8 @@ Deno.serve(async (req) => {
       } else {
         console.log('[cancel-scan] Refunded', creditRefund, 'credits to workspace:', scan.workspace_id);
       }
+    } else {
+      console.log('[cancel-scan] No credit refund needed. totalCost:', totalCost, 'status:', scan.status);
     }
 
     // Broadcast cancellation event via Supabase Realtime to both channel patterns
@@ -207,7 +215,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         scanId,
-        status: 'cancelled',
+        status: 'canceled',
         creditRefund,
         message: creditRefund > 0 
           ? `Scan cancelled. ${creditRefund} credits refunded.`

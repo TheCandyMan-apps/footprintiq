@@ -183,7 +183,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
             setProgress(100);
           } else if (job.status === 'error') {
             setStatus('failed');
-          } else if (job.status === 'partial') {
+          } else if (job.status === 'canceled') {
             setStatus('cancelled');
           }
         }
@@ -412,20 +412,26 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     
     setIsCancelling(true);
     try {
-      const { error } = await supabase.functions.invoke('cancel-scan', {
+      const { data, error } = await supabase.functions.invoke('cancel-scan', {
         body: { scanId },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check if it's already terminal (400 error)
+        if (error.message?.includes('already')) {
+          toast.info(error.message);
+          onOpenChange(false);
+          return;
+        }
+        throw error;
+      }
 
       setStatus('cancelled');
-      toast.info('Scan cancelled - partial results saved');
-      
-      // Save partial results to case
-      await handleZeroResults();
+      toast.info(data?.message || 'Scan cancelled');
       
       onOpenChange(false);
     } catch (error: any) {
+      console.error('[ScanProgressDialog] Cancel error:', error);
       toast.error(error.message || 'Failed to cancel scan');
     } finally {
       setIsCancelling(false);
