@@ -49,104 +49,57 @@ export const useUsernameScan = () => {
       
       if (authError || !user) {
         addLog({ level: 'warn', message: 'Session invalid, attempting refresh' });
-        
         const { error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError) {
           addLog({ level: 'error', message: 'Session refresh failed', data: refreshError });
           toast.error('Please log in again');
           throw new Error('Authentication required');
         }
-        
         addLog({ level: 'info', message: 'Session refreshed successfully' });
-        toast.success('Session refreshed—retry scan');
       }
       
-      addLog({ level: 'debug', message: 'Authentication verified', data: { userId: user?.id } });
+      // Generate client-side batch ID for tracking
+      const batchId = crypto.randomUUID();
+      addLog({ level: 'debug', message: 'Generated batch ID', data: { batchId } });
       
-      // Invoke scan with retry logic
-      addLog({ level: 'info', message: 'Invoking scan function' });
+      // Call scan-start with resilient pattern (same as SimpleScanForm)
+      const requestBody = {
+        username: options.username,
+        platforms: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined,
+        batch_id: batchId,
+        timeout: 25, // 25s timeout for quick feedback
+      };
       
-      let lastError: any;
-      const maxRetries = 3;
-      const delays = [1000, 2000, 4000]; // Exponential backoff: 1s, 2s, 4s
+      addLog({ level: 'info', message: 'Invoking scan-start', data: requestBody });
       
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          addLog({ 
-            level: 'debug', 
-            message: `Scan attempt ${attempt}/${maxRetries}` 
-          });
-          
-          const { data, error } = await supabase.functions.invoke('enqueue-maigret-scan', {
-            body: {
-              username: options.username,
-              tags: options.tags,
-              all_site: options.allSites,
-              artifacts: options.artifacts,
-            },
-          });
-          
-          if (error) {
-            lastError = error;
-            
-            // Check if error is retryable
-            const isRetryable = 
-              error.message?.includes('timeout') ||
-              error.message?.includes('network') ||
-              error.message?.includes('unavailable') ||
-              error.message?.includes('503') ||
-              error.message?.includes('502');
-            
-            if (!isRetryable || attempt >= maxRetries) {
-              addLog({ 
-                level: 'error', 
-                message: 'Scan invocation failed (non-retryable or max retries)', 
-                data: error 
-              });
-              throw error;
-            }
-            
-            // Wait before retry
-            const delay = delays[attempt - 1] || 4000;
-            addLog({ 
-              level: 'warn', 
-              message: `Retrying in ${delay}ms due to: ${error.message}`,
-              data: { attempt, delay } 
-            });
-            await new Promise(resolve => setTimeout(resolve, delay));
-            continue;
-          }
-          
-          addLog({ 
-            level: 'info', 
-            message: 'Scan started successfully', 
-            data: { jobId: data.jobId, attempts: attempt } 
-          });
-          
-          return data;
-        } catch (err: any) {
-          lastError = err;
-          
-          if (attempt >= maxRetries) {
-            addLog({ 
-              level: 'error', 
-              message: 'Scan failed after all retries', 
-              data: err 
-            });
-            throw err;
-          }
-          
-          const delay = delays[attempt - 1] || 4000;
-          addLog({ 
-            level: 'warn', 
-            message: `Retrying in ${delay}ms due to exception`,
-            data: { attempt, delay, error: err.message } 
-          });
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
+      const { data, error } = await supabase.functions.invoke('scan-start', {
+        body: requestBody,
+      });
+      
+      // Resilient error handling - even on error, return batchId for polling
+      if (error) {
+        addLog({ 
+          level: 'warn', 
+          message: 'Worker response slow/timeout - continuing with background polling',
+          data: error 
+        });
+        
+        // Return batchId for results page polling
+        return { jobId: batchId, status: 'queued' };
       }
       
-      throw lastError;
+      // Success - use job_id from response or fallback to batchId
+      const jobId = data?.job_id || batchId;
+      const statusCode = data?.status;
+      
+      addLog({ 
+        level: 'info', 
+        message: statusCode === 'queued' ? 'Scan queued (202)' : 'Scan started (201)', 
+        data: { jobId, statusCode } 
+      });
+      
+      return { jobId, status: statusCode === 'queued' ? 'queued' : 'started' };
+      
     } catch (error) {
       addLog({ level: 'error', message: 'Scan failed', data: error });
       throw error;

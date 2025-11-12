@@ -52,6 +52,8 @@ import { useScanTemplates, ScanTemplate } from "@/hooks/useScanTemplates";
 import { useLowCreditToast } from "@/hooks/useLowCreditToast";
 import { MaigretToggle } from "@/components/scan/MaigretToggle";
 import { WorkerStatus } from "@/components/maigret/WorkerStatus";
+import { useUsernameScan } from "@/hooks/useUsernameScan";
+import { Switch } from "@/components/ui/switch";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -99,6 +101,12 @@ export default function AdvancedScan() {
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [maigretEnabled, setMaigretEnabled] = useState(true); // Maigret toggle for username scans
   const { saveTemplate } = useScanTemplates();
+  
+  // Username scan specific options
+  const [usernameTags, setUsernameTags] = useState('');
+  const [usernameAllSites, setUsernameAllSites] = useState(false);
+  const [usernameArtifacts, setUsernameArtifacts] = useState<string[]>([]);
+  const { startScan: startUsernameScan } = useUsernameScan();
 
   // Geocoding for IP addresses
   const { 
@@ -247,18 +255,69 @@ export default function AdvancedScan() {
   }
 
   const handleScan = async () => {
-    // Redirect username scans to Maigret scanner
+    // Handle username scans inline with resilient pattern
     if (scanType === 'username') {
-      toast.info("Configure your username scan");
-      navigate('/scan/usernames', { 
-        state: { 
+      if (!target.trim()) {
+        toast.error("Please enter a username to scan");
+        return;
+      }
+
+      setIsScanning(true);
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error("Please log in to perform scans");
+          setIsScanning(false);
+          return;
+        }
+
+        if (!workspace?.id) {
+          toast.error("No workspace found");
+          setIsScanning(false);
+          return;
+        }
+
+        // Use resilient username scan hook
+        const result = await startUsernameScan({
           username: target.trim(),
-          fromAdvanced: true,
-          maigretEnabled,
-          scanAllSites: false
-        } 
-      });
-      return;
+          tags: usernameTags.trim() || undefined,
+          allSites: usernameAllSites,
+          artifacts: !isFree ? usernameArtifacts : [],
+          debugMode: false,
+        });
+
+        const jobId = result?.jobId;
+        if (jobId) {
+          // Open progress dialog
+          setModalScanId(jobId);
+          setProgressOpen(true);
+          setCurrentScanId(jobId);
+          
+          // Start tracking
+          startTracking({
+            scanId: jobId,
+            type: 'username',
+            target: target.trim(),
+            startedAt: new Date().toISOString(),
+          });
+
+          // Show success toast based on status
+          if (result.status === 'queued') {
+            toast.info(`Username scan queued for "${target.trim()}"`, {
+              description: 'Worker processing - results will appear shortly'
+            });
+          } else {
+            toast.success(`Username scan started for "${target.trim()}"`);
+          }
+        }
+      } catch (error) {
+        console.error("Username scan error:", error);
+        toast.error(error instanceof Error ? error.message : "Scan failed");
+      } finally {
+        setIsScanning(false);
+      }
+      return; // Exit early for username scans
     }
 
     // Validation
@@ -563,6 +622,108 @@ export default function AdvancedScan() {
                   <div className="flex items-center gap-2 p-3 rounded-lg border bg-card">
                     <span className="text-sm font-medium">Maigret Worker Status:</span>
                     <WorkerStatus />
+                  </div>
+                  
+                  {/* Username Scan Options */}
+                  <div className="space-y-4 border-t pt-4">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                      <Search className="h-5 w-5" />
+                      Username Scan Options
+                    </h3>
+                    
+                    {/* Tags Input */}
+                    <div className="space-y-2">
+                      <Label htmlFor="username-tags">Tags (optional)</Label>
+                      <Input
+                        id="username-tags"
+                        placeholder="investigation, case-123, social-media"
+                        value={usernameTags}
+                        onChange={(e) => setUsernameTags(e.target.value)}
+                        disabled={isScanning}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Comma-separated tags for organization
+                      </p>
+                    </div>
+
+                    {/* Scan All Sites Toggle */}
+                    <div className="flex items-center justify-between p-4 border rounded-lg">
+                      <div className="space-y-0.5">
+                        <Label className="text-base">Scan All Sites</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Check 300+ platforms (may take 60-120 seconds)
+                        </p>
+                      </div>
+                      <Switch
+                        checked={usernameAllSites}
+                        onCheckedChange={setUsernameAllSites}
+                        disabled={isScanning}
+                      />
+                    </div>
+
+                    {/* Free Tier Warning */}
+                    {isFree && usernameAllSites && (
+                      <Alert>
+                        <Info className="h-4 w-4" />
+                        <AlertDescription>
+                          Free tier scans may timeout on all-sites mode. Consider upgrading to Premium for full coverage.
+                        </AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Export Artifacts - Premium Only */}
+                    {!isFree && (
+                      <div className="space-y-3 p-4 border rounded-lg">
+                        <Label className="text-base">Export Artifacts</Label>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Generate additional export formats (Premium feature)
+                        </p>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[
+                            { id: 'html', label: 'HTML Report' },
+                            { id: 'pdf', label: 'PDF Export' },
+                            { id: 'csv', label: 'CSV Data' },
+                            { id: 'txt', label: 'Text File' },
+                            { id: 'xmind', label: 'XMind Map' },
+                          ].map((option) => (
+                            <div key={option.id} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`artifact-${option.id}`}
+                                checked={usernameArtifacts.includes(option.id)}
+                                onCheckedChange={(checked) => {
+                                  setUsernameArtifacts(
+                                    checked
+                                      ? [...usernameArtifacts, option.id]
+                                      : usernameArtifacts.filter((a) => a !== option.id)
+                                  );
+                                }}
+                                disabled={isScanning}
+                              />
+                              <label htmlFor={`artifact-${option.id}`} className="text-sm cursor-pointer">
+                                {option.label}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Upgrade CTA for Free Users */}
+                    {isFree && (
+                      <Alert className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-800">
+                        <Lock className="h-4 w-4" />
+                        <AlertDescription>
+                          <strong>Unlock Premium Features:</strong> Export artifacts, priority scanning, and unlimited sites.
+                          <Button 
+                            variant="link" 
+                            className="p-0 h-auto ml-2"
+                            onClick={() => navigate('/pricing')}
+                          >
+                            Upgrade Now →
+                          </Button>
+                        </AlertDescription>
+                      </Alert>
+                    )}
                   </div>
                   
                   {/* Maigret Upgrade Teaser for Free Users */}
