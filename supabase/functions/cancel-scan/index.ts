@@ -95,7 +95,17 @@ Deno.serve(async (req) => {
 
     // Calculate partial credit refund based on progress
     let creditRefund = 0;
-    const totalCost = scan.metadata?.estimated_cost || 0;
+    
+    // Get credits spent on this scan from ledger
+    const { data: ledgerEntries } = await supabase
+      .from('credits_ledger')
+      .select('delta')
+      .eq('workspace_id', scan.workspace_id)
+      .contains('meta', { scan_id: scanId });
+    
+    const totalCost = ledgerEntries 
+      ? Math.abs(ledgerEntries.reduce((sum, entry) => sum + (entry.delta || 0), 0))
+      : 0;
     
     if (totalCost > 0 && scan.status === 'running') {
       // Get scan progress from results
@@ -104,16 +114,10 @@ Deno.serve(async (req) => {
         .select('*')
         .eq('job_id', scanId);
 
-      if (!resultsError && results) {
-        const totalExpectedResults = scan.metadata?.total_providers || 100;
-        const completedProviders = results.length;
-        const progressPercentage = Math.min((completedProviders / totalExpectedResults) * 100, 100);
-        
-        // Refund unused portion (e.g., if 30% complete, refund 70%)
-        const unusedPercentage = 100 - progressPercentage;
-        creditRefund = Math.floor((totalCost * unusedPercentage) / 100);
-        
-        console.log('[cancel-scan] Progress:', progressPercentage, '% - Refund:', creditRefund, 'credits');
+      if (!resultsError && results && results.length > 0) {
+        // Estimate 50% refund for partial completion
+        creditRefund = Math.floor(totalCost * 0.5);
+        console.log('[cancel-scan] Partial completion - 50% refund:', creditRefund, 'credits');
       } else {
         // If no results yet, refund full amount
         creditRefund = totalCost;
@@ -127,12 +131,6 @@ Deno.serve(async (req) => {
       .update({
         status: 'cancelled',
         finished_at: new Date().toISOString(),
-        metadata: {
-          ...scan.metadata,
-          cancelled_by: user.id,
-          cancelled_at: new Date().toISOString(),
-          credit_refund: creditRefund,
-        },
       })
       .eq('id', scanId);
 
@@ -155,7 +153,9 @@ Deno.serve(async (req) => {
           meta: {
             scan_id: scanId,
             cancelled_by: user.id,
+            cancelled_at: new Date().toISOString(),
             original_cost: totalCost,
+            refund_amount: creditRefund,
           },
         });
 

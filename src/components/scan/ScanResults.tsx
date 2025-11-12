@@ -39,9 +39,11 @@ interface ScanJob {
 export function ScanResults({ jobId }: ScanResultsProps) {
   const [job, setJob] = useState<ScanJob | null>(null);
   const [jobLoading, setJobLoading] = useState(true);
+  const [broadcastResultCount, setBroadcastResultCount] = useState(0);
   const { results, loading: resultsLoading } = useRealtimeResults(jobId);
   const { toast } = useToast();
   const jobChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const progressChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     loadJob();
@@ -75,9 +77,31 @@ export function ScanResults({ jobId }: ScanResultsProps) {
 
     jobChannelRef.current = channel;
 
+    // Subscribe to Maigret progress broadcasts for real-time progress bar updates
+    const progressChannel = supabase
+      .channel(`scan_progress_${jobId}`)
+      .on('broadcast', { event: 'provider_update' }, (payload) => {
+        console.debug('[ScanResults] Provider update:', payload);
+        // Update broadcast result count for optimistic progress display
+        if (payload.payload?.resultCount !== undefined) {
+          setBroadcastResultCount(payload.payload.resultCount);
+        }
+      })
+      .on('broadcast', { event: 'scan_complete' }, (payload) => {
+        console.debug('[ScanResults] Scan complete broadcast:', payload);
+        // Refresh job data on completion
+        loadJob();
+      })
+      .subscribe();
+
+    progressChannelRef.current = progressChannel;
+
     return () => {
       if (jobChannelRef.current) {
         supabase.removeChannel(jobChannelRef.current);
+      }
+      if (progressChannelRef.current) {
+        supabase.removeChannel(progressChannelRef.current);
       }
     };
   }, [jobId]);
@@ -212,7 +236,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
           startedAt={job.started_at}
           finishedAt={job.finished_at}
           status={job.status}
-          resultCount={results.length}
+          resultCount={Math.max(results.length, broadcastResultCount)}
           allSites={job.all_sites || false}
         />
 
