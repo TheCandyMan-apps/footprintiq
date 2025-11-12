@@ -152,14 +152,26 @@ Deno.serve(async (req) => {
     if (useWebhook) {
       // Webhook mode - worker will push results to our webhook
       const callbackUrl = new URL('/functions/v1/results-webhook', req.url);
-      const url = new URL(`${WORKER_URL}/scan/${encodeURIComponent(username.trim())}`);
-      if (tags?.trim()) url.searchParams.set('tags', tags.trim());
-      if (all_sites) url.searchParams.set('all_sites', 'true');
-      url.searchParams.set('callback', callbackUrl.toString());
-      url.searchParams.set('job_id', job.id);
+      const url = `${WORKER_URL}/scan`;
+      
+      const workerPayload = {
+        username: username.trim(),
+        platforms: undefined,
+        batch_id: job.id,
+        user_id: user.id,
+        workspace_id: workspaceId,
+        tags: tags?.trim() || undefined,
+        all_sites: all_sites || undefined,
+        callback: callbackUrl.toString(),
+      };
 
       const resp = await fetch(url, {
-        headers: { 'X-Worker-Token': WORKER_TOKEN }
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${WORKER_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(workerPayload),
       });
 
       if (!resp.ok) {
@@ -192,9 +204,17 @@ Deno.serve(async (req) => {
     }
 
     // Streaming mode (Standard) with timeout and retry
-    const url = new URL(`${WORKER_URL}/scan/${encodeURIComponent(username.trim())}`);
-    if (tags?.trim()) url.searchParams.set('tags', tags.trim());
-    if (all_sites) url.searchParams.set('all_sites', 'true');
+    const url = `${WORKER_URL}/scan`;
+    
+    const workerPayload = {
+      username: username.trim(),
+      platforms: undefined,
+      batch_id: job.id,
+      user_id: user.id,
+      workspace_id: workspaceId,
+      tags: tags?.trim() || undefined,
+      all_sites: all_sites || undefined,
+    };
 
     console.log('=== Starting Maigret Scan ===');
     console.log(`Worker URL: ${WORKER_URL}`);
@@ -211,15 +231,21 @@ Deno.serve(async (req) => {
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
         
         console.log(`[Attempt ${attempt}/3] Calling Maigret worker`);
-        console.log(`  📍 URL: ${url.toString()}`);
+        console.log(`  📍 URL: ${url}`);
         console.log(`  🔑 Token: ${WORKER_TOKEN ? 'Present (length=' + WORKER_TOKEN.length + ')' : 'MISSING'}`);
         console.log(`  📋 Job ID: ${job.id}`);
         console.log(`  👤 Username: ${username}`);
         console.log(`  📦 Plan: ${plan}`);
         console.log(`  ⏰ Timestamp: ${new Date().toISOString()}`);
+        console.log(`  📦 Payload:`, JSON.stringify(workerPayload, null, 2));
         
         resp = await fetch(url, {
-          headers: { 'X-Worker-Token': WORKER_TOKEN },
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${WORKER_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(workerPayload),
           signal: controller.signal,
         });
         
