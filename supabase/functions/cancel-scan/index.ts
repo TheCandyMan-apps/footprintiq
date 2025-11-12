@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
       .from('scan_jobs')
       .update({
         status: 'partial',
-        error_message: 'Cancelled by user',
+        error: 'Cancelled by user',
         finished_at: new Date().toISOString(),
       })
       .eq('id', scanId);
