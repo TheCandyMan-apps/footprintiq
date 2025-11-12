@@ -134,21 +134,39 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {result.summary.map((item: any, idx: number) => (
-                <div key={idx} className="border-b pb-2 last:border-0">
-                  <div className="font-medium">{item.site || item.platform}</div>
-                  {item.url && (
-                    <a 
-                      href={item.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-sm text-primary hover:underline"
-                    >
-                      {item.url}
-                    </a>
-                  )}
-                </div>
-              ))}
+              {result.summary.map((item: any, idx: number) => {
+                const getEvidenceValue = (evidence: any[], key: string) => {
+                  const found = evidence?.find((e: any) => e.key === key);
+                  return found?.value;
+                };
+                
+                const site = getEvidenceValue(item.evidence, 'site');
+                const url = getEvidenceValue(item.evidence, 'url');
+                const status = getEvidenceValue(item.evidence, 'status');
+                
+                return (
+                  <div key={idx} className="border-b pb-2 last:border-0">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium">{site || 'Unknown Site'}</div>
+                      {status && (
+                        <Badge variant="outline" className="text-xs">
+                          {status}
+                        </Badge>
+                      )}
+                    </div>
+                    {url && (
+                      <a 
+                        href={url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline break-all"
+                      >
+                        {url}
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
