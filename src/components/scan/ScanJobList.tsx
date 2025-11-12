@@ -4,7 +4,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, RefreshCw, ExternalLink, Archive } from 'lucide-react';
+import { Loader2, RefreshCw, ExternalLink, Archive, Activity } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -19,6 +20,8 @@ interface ScanJob {
   all_sites: boolean;
   artifacts: string[];
   error: string | null;
+  providers_completed: number | null;
+  providers_total: number | null;
 }
 
 export function ScanJobList() {
@@ -61,6 +64,34 @@ export function ScanJobList() {
 
   useEffect(() => {
     loadJobs();
+
+    // Subscribe to real-time scan updates
+    if (!workspace?.id) return;
+
+    const channel = supabase
+      .channel('scan_jobs_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'scan_jobs',
+          filter: `workspace_id=eq.${workspace.id}`,
+        },
+        (payload) => {
+          const updatedJob = payload.new as ScanJob;
+          setJobs((prevJobs) =>
+            prevJobs.map((job) =>
+              job.id === updatedJob.id ? { ...job, ...updatedJob } : job
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [workspace?.id]);
 
   const getStatusVariant = (status: string) => {
@@ -139,6 +170,9 @@ export function ScanJobList() {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium truncate">{job.username}</span>
                     <Badge variant={getStatusVariant(job.status)} className="text-xs">
+                      {job.status === 'running' && (
+                        <Activity className="h-3 w-3 mr-1 animate-pulse" />
+                      )}
                       {job.status}
                     </Badge>
                     <Badge variant="outline" className="text-xs">
@@ -155,6 +189,25 @@ export function ScanJobList() {
                       <span>• {job.artifacts.length} artifacts</span>
                     )}
                   </div>
+                  
+                  {/* Real-time Progress Bar */}
+                  {job.status === 'running' && job.providers_total && job.providers_total > 0 && (
+                    <div className="mt-2 space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground font-medium">
+                          Scanning providers...
+                        </span>
+                        <span className="text-primary font-semibold animate-fade-in">
+                          {job.providers_completed || 0} / {job.providers_total}
+                        </span>
+                      </div>
+                      <Progress 
+                        value={((job.providers_completed || 0) / job.providers_total) * 100} 
+                        className="h-2 animate-scale-in"
+                      />
+                    </div>
+                  )}
+                  
                   {job.error && (
                     <p className="text-xs text-destructive mt-1 line-clamp-1">{job.error}</p>
                   )}
