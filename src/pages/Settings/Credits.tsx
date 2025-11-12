@@ -44,7 +44,7 @@ export default function CreditsSettings() {
 
   const creditPackages = [
     {
-      name: "Starter Pack",
+      name: "Tiny Pack",
       credits: 10,
       price: 5,
       priceId: "price_1SQtRIPNdM5SAyj7WIxLQDeq",
@@ -52,22 +52,37 @@ export default function CreditsSettings() {
       popular: false,
     },
     {
-      name: "Pro Pack",
-      credits: 200,
-      price: 29.99,
-      priceId: "price_1SQtTrPNdM5SAyj7KyY2S4B4",
+      name: "Small Pack",
+      credits: 50,
+      price: 20,
+      priceId: "price_1SQtTSPNdM5SAyj77N2cBl6B",
       icon: Zap,
-      popular: true,
-      savings: "25% off",
+      popular: false,
     },
     {
-      name: "Enterprise Pack",
-      credits: 1000,
-      price: 99.99,
-      priceId: "price_1SQtUfPNdM5SAyj7spAyUFST",
+      name: "Medium Pack",
+      credits: 100,
+      price: 35,
+      priceId: "price_1SQtTfPNdM5SAyj7jrfjyTL7",
       icon: CreditCard,
       popular: false,
-      savings: "40% off",
+    },
+    {
+      name: "Starter Pack",
+      credits: 500,
+      price: 9,
+      priceId: "price_1SRP2KPNdM5SAyj7j99PagEP",
+      icon: Zap,
+      popular: true,
+    },
+    {
+      name: "Pro Pack",
+      credits: 2000,
+      price: 29,
+      priceId: "price_1SRP2WPNdM5SAyj7GLCvttAF",
+      icon: CreditCard,
+      popular: false,
+      savings: "Best Value",
     },
   ];
 

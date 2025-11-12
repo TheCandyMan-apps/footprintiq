@@ -21,7 +21,7 @@ const CREDIT_PACKAGES = [
     credits: 50,
     price: 20,
     priceId: "price_1SQtTSPNdM5SAyj77N2cBl6B",
-    popular: true,
+    popular: false,
   },
   {
     credits: 100,
@@ -31,8 +31,14 @@ const CREDIT_PACKAGES = [
   },
   {
     credits: 500,
-    price: 150,
-    priceId: "price_1SQtUCPNdM5SAyj7Zat6OZcB",
+    price: 9,
+    priceId: "price_1SRP2KPNdM5SAyj7j99PagEP",
+    popular: true,
+  },
+  {
+    credits: 2000,
+    price: 29,
+    priceId: "price_1SRP2WPNdM5SAyj7GLCvttAF",
     popular: false,
   },
 ];
