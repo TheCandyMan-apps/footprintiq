@@ -25,6 +25,29 @@ const logEvent = (eventType: string, message: string, metadata?: any) => {
   console.log(`[${timestamp}] [${eventType}] ${message}`, metadata ? JSON.stringify(metadata) : '');
 };
 
+// **CENTRALIZED PRICE-TO-TIER MAPPING** - Single source of truth
+// This mapping aligns with actual Stripe products and database schema
+const PRICE_TO_TIER_MAP: Record<string, 'free' | 'premium' | 'enterprise'> = {
+  // Basic ($5/mo) - free tier in database
+  'price_1SQwVyPNdM5SAyj7gXDm8Mkc': 'free',
+  
+  // Pro ($15/mo) - premium tier
+  'price_1SQwWCPNdM5SAyj7XS394cD8': 'premium',
+  
+  // Analyst ($29/mo) - premium tier  
+  'price_1SQh7LPNdM5SAyj7PMKySuO6': 'premium',
+  
+  // Professional ($79/mo) - premium tier
+  'price_1SPXcEPNdM5SAyj7AbannmpP': 'premium',
+  
+  // Enterprise ($299/mo) - enterprise tier
+  'price_1SQh9JPNdM5SAyj722p376Qh': 'enterprise',
+};
+
+const getTierFromPriceId = (priceId: string): 'free' | 'premium' | 'enterprise' => {
+  return PRICE_TO_TIER_MAP[priceId] || 'free';
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders() });
@@ -100,13 +123,8 @@ serve(async (req) => {
           const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
           const priceId = subscription.items.data[0].price.id;
           
-          // Map price IDs to tiers
-          const tierMap: Record<string, 'free' | 'analyst' | 'pro' | 'enterprise'> = {
-            'price_1SPXbHPNdM5SAyj7lPBHvjIi': 'analyst',
-            'price_1SPXcEPNdM5SAyj7AbannmpP': 'pro',
-          };
-          
-          const tier = tierMap[priceId] || 'free';
+          // Use centralized tier mapping
+          const tier = getTierFromPriceId(priceId);
           const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
           
           // Update user subscription tier
@@ -119,7 +137,7 @@ serve(async (req) => {
           console.log(`Updated user ${userId} to ${tier} tier`);
           
           // Grant monthly credits for premium tiers
-          if (workspaceId && ['pro', 'enterprise'].includes(tier)) {
+          if (workspaceId && ['premium', 'enterprise'].includes(tier)) {
             const monthlyCredits = tier === 'enterprise' ? 1000 : 200;
             const { error: creditsError } = await supabase
               .from('credits_ledger')
@@ -153,12 +171,9 @@ serve(async (req) => {
           
           if (profile) {
             const priceId = subscription.items.data[0].price.id;
-            const tierMap: Record<string, 'free' | 'analyst' | 'pro' | 'enterprise'> = {
-              'price_1SPXbHPNdM5SAyj7lPBHvjIi': 'analyst',
-              'price_1SPXcEPNdM5SAyj7AbannmpP': 'pro',
-            };
             
-            const tier = subscription.status === 'active' ? (tierMap[priceId] || 'free') : 'free';
+            // Use centralized tier mapping
+            const tier = subscription.status === 'active' ? getTierFromPriceId(priceId) : 'free';
             const expiresAt = subscription.status === 'active' 
               ? new Date(subscription.current_period_end * 1000).toISOString()
               : null;
@@ -172,7 +187,7 @@ serve(async (req) => {
             console.log(`Updated subscription for user ${profile.user_id} to ${tier}`);
             
             // Grant monthly credits on subscription renewal for premium tiers
-            if (subscription.status === 'active' && ['pro', 'enterprise'].includes(tier)) {
+            if (subscription.status === 'active' && ['premium', 'enterprise'].includes(tier)) {
               const { data: workspaces } = await supabase
                 .from('workspace_members')
                 .select('workspace_id')
@@ -247,12 +262,9 @@ serve(async (req) => {
           
           if (profile) {
             const priceId = subscription.items.data[0].price.id;
-            const tierMap: Record<string, 'free' | 'analyst' | 'pro' | 'enterprise'> = {
-              'price_1SPXbHPNdM5SAyj7lPBHvjIi': 'analyst',
-              'price_1SPXcEPNdM5SAyj7AbannmpP': 'pro',
-            };
             
-            const tier = tierMap[priceId] || 'free';
+            // Use centralized tier mapping
+            const tier = getTierFromPriceId(priceId);
             const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
             
             await supabase.rpc('update_user_subscription', {
@@ -288,15 +300,8 @@ serve(async (req) => {
           if ('email' in customer && customer.email) {
             const priceId = subscription.items.data[0].price.id;
             
-            // Map price IDs to subscription tiers
-            const tierMap: Record<string, 'free' | 'basic' | 'pro' | 'analyst' | 'enterprise'> = {
-              'price_1SQwVyPNdM5SAyj7gXDm8Mkc': 'basic',  // $5/month
-              'price_1SQwWCPNdM5SAyj7XS394cD8': 'pro',    // $15/month
-              'price_1SPXbHPNdM5SAyj7lPBHvjIi': 'analyst',
-              'price_1SPXcEPNdM5SAyj7AbannmpP': 'enterprise',
-            };
-            
-            const tier = tierMap[priceId] || 'free';
+            // Use centralized tier mapping
+            const tier = getTierFromPriceId(priceId);
             const expiresAt = new Date(subscription.current_period_end * 1000).toISOString();
             
             // Get or create user profile

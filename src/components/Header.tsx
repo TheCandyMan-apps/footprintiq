@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { SUBSCRIPTION_PLANS } from "@/config/stripe";
 import { NotificationBell } from "@/components/workspace/NotificationBell";
 import { DarkWebBell } from "@/components/DarkWebBell";
 import { WorkspacePresence } from "@/components/workspace/WorkspacePresence";
@@ -107,7 +108,7 @@ export const Header = () => {
             onClick={async () => {
               try {
                 const { data, error } = await supabase.functions.invoke('billing-checkout', {
-                  body: { priceId: 'price_1SQwWCPNdM5SAyj7XS394cD8' }
+                  body: { priceId: SUBSCRIPTION_PLANS.pro.priceId }
                 });
                 if (error) throw error;
                 if (data?.url) window.open(data.url, '_blank');

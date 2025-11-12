@@ -9,12 +9,7 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import pricingHero from "@/assets/pricing-hero.jpg";
 import { useParallax } from "@/hooks/useParallax";
-
-// Stripe price IDs for each tier
-const STRIPE_PRICES = {
-  analyst: 'price_1SQgxEPNdM5SAyj7pZEUc11u', // $29/month
-  enterprise: 'price_1SQh9JPNdM5SAyj722p376Qh', // $299/month
-};
+import { SUBSCRIPTION_PLANS } from "@/config/stripe";
 
 const pricingTiers = [
   {
@@ -35,44 +30,22 @@ const pricingTiers = [
     isFree: true,
   },
   {
-    name: "Analyst",
-    price: "$29",
+    name: SUBSCRIPTION_PLANS.analyst.name,
+    price: `$${SUBSCRIPTION_PLANS.analyst.price}`,
     period: "per month",
     description: "For security analysts & investigators",
-    priceId: STRIPE_PRICES.analyst,
-    features: [
-      "Unlimited scans",
-      "Advanced OSINT detection (100+ sources)",
-      "Dark web monitoring",
-      "AI-powered catfish detection",
-      "Automated removal requests",
-      "Continuous monitoring & alerts",
-      "Social media profile analysis",
-      "PDF report exports",
-      "Priority email support",
-      "Monthly privacy reports",
-    ],
+    priceId: SUBSCRIPTION_PLANS.analyst.priceId,
+    features: SUBSCRIPTION_PLANS.analyst.features,
     cta: "Start Analyst Plan",
     highlighted: true,
   },
   {
-    name: "Enterprise",
-    price: "$299",
+    name: SUBSCRIPTION_PLANS.enterprise.name,
+    price: `$${SUBSCRIPTION_PLANS.enterprise.price}`,
     period: "per month",
     description: "Advanced enterprise solution",
-    priceId: STRIPE_PRICES.enterprise,
-    features: [
-      "Everything in Analyst",
-      "Unlimited team members",
-      "API access (10,000 calls/hour)",
-      "Custom integrations",
-      "White-label reports",
-      "SSO authentication",
-      "Advanced admin controls",
-      "Dedicated account manager",
-      "Custom SLA & compliance",
-      "24/7 enterprise support",
-    ],
+    priceId: SUBSCRIPTION_PLANS.enterprise.priceId,
+    features: SUBSCRIPTION_PLANS.enterprise.features,
     cta: "Start Enterprise Plan",
     highlighted: false,
   },
@@ -214,7 +187,7 @@ export const Pricing = () => {
             <Button 
               className="w-full" 
               size="lg"
-              onClick={() => handleCTA('Analyst', STRIPE_PRICES.analyst)}
+              onClick={() => handleCTA('Analyst', SUBSCRIPTION_PLANS.analyst.priceId)}
               disabled={loadingPlan === 'Analyst'}
             >
               {loadingPlan === 'Analyst' ? (

@@ -14,6 +14,7 @@ import { TestModeToggle } from '@/components/billing/TestModeToggle';
 import { PaymentErrorBoundary } from '@/components/billing/PaymentErrorBoundary';
 import { CreditPackCard } from '@/components/CreditPackCard';
 import { useSearchParams } from 'react-router-dom';
+import { SUBSCRIPTION_PLANS, CREDIT_PACKS } from '@/config/stripe';
 import {
   Dialog,
   DialogContent,
@@ -40,35 +41,20 @@ interface UpcomingInvoice {
   next_payment_attempt: number;
 }
 
-// Pricing tiers with new $5 Basic and $15 Pro plans
+// Pricing tiers - using centralized config
 const PRICING_TIERS = {
-  basic: {
-    name: 'Basic',
-    price: 5,
-    priceId: 'price_1SQwVyPNdM5SAyj7gXDm8Mkc',
-  },
-  pro: {
-    name: 'Pro',
-    price: 15,
-    priceId: 'price_1SQwWCPNdM5SAyj7XS394cD8',
-  },
+  basic: SUBSCRIPTION_PLANS.basic,
+  pro: SUBSCRIPTION_PLANS.pro,
   pro_annual: {
+    ...SUBSCRIPTION_PLANS.pro,
     name: 'Pro Annual',
     price: 150,
     period: 'year',
     priceId: 'price_1SQwWCPNdM5SAyj7XS394cD9', // Annual price ID
-    savings: 30, // $30 savings vs monthly
+    savings: 30,
   },
-  analyst: {
-    name: 'Analyst',
-    price: 29,
-    priceId: 'price_1SPXbHPNdM5SAyj7lPBHvjIi',
-  },
-  enterprise: {
-    name: 'Enterprise',
-    price: 299,
-    priceId: 'price_1SPXcEPNdM5SAyj7AbannmpP',
-  },
+  analyst: SUBSCRIPTION_PLANS.analyst,
+  enterprise: SUBSCRIPTION_PLANS.enterprise,
 };
 
 export default function BillingSettings() {

@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Crown, Zap, Shield, Sparkles, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { SUBSCRIPTION_PLANS } from '@/config/stripe';
 
 interface PremiumUpgradeCTAProps {
   variant?: 'banner' | 'card' | 'inline';
@@ -23,7 +24,7 @@ export const PremiumUpgradeCTA = ({
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('billing-checkout', {
-        body: { priceId: 'price_1SQwWCPNdM5SAyj7XS394cD8' }
+        body: { priceId: SUBSCRIPTION_PLANS.pro.priceId }
       });
 
       if (error) throw error;

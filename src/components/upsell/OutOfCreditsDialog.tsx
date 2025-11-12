@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Crown, CreditCard, Zap, ArrowRight, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { SUBSCRIPTION_PLANS } from '@/config/stripe';
 
 interface OutOfCreditsDialogProps {
   open: boolean;
@@ -29,7 +30,7 @@ export const OutOfCreditsDialog = ({
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('billing-checkout', {
-        body: { priceId: 'price_1SQwWCPNdM5SAyj7XS394cD8' }
+        body: { priceId: SUBSCRIPTION_PLANS.pro.priceId }
       });
 
       if (error) throw error;
