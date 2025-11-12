@@ -443,7 +443,12 @@ export default function AdvancedScan() {
     setIsScanning(false);
     setProgressOpen(false);
     if (currentScanId) {
-      navigate(`/results/${currentScanId}`);
+      // Navigate to appropriate results page based on scan type
+      if (scanType === 'username') {
+        navigate(`/maigret/results/${currentScanId}`);
+      } else {
+        navigate(`/results/${currentScanId}`);
+      }
     } else {
       navigate("/dashboard");
     }
