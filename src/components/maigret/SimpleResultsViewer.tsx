@@ -6,6 +6,7 @@ import { Loader2, CheckCircle, XCircle, Clock, ExternalLink, Sparkles } from 'lu
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { MaigretPDFExport } from './MaigretPDFExport';
 
 interface MaigretResult {
   id: string;
@@ -145,13 +146,22 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
                 Job ID: {result.job_id}
               </CardDescription>
             </div>
-            <Badge 
-              variant={result.status === 'completed' ? 'default' : result.status === 'failed' ? 'destructive' : 'secondary'}
-              className="text-sm px-3 py-1 shadow-sm"
-            >
-              <StatusIcon className={`h-4 w-4 mr-1.5 ${result.status === 'running' ? 'animate-spin' : ''}`} />
-              {result.status}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {result.status === 'completed' && result.summary && result.summary.length > 0 && (
+                <MaigretPDFExport 
+                  username={result.username}
+                  summary={result.summary}
+                  jobId={result.job_id}
+                />
+              )}
+              <Badge 
+                variant={result.status === 'completed' ? 'default' : result.status === 'failed' ? 'destructive' : 'secondary'}
+                className="text-sm px-3 py-1 shadow-sm"
+              >
+                <StatusIcon className={`h-4 w-4 mr-1.5 ${result.status === 'running' ? 'animate-spin' : ''}`} />
+                {result.status}
+              </Badge>
+            </div>
           </div>
           
           <div className="flex items-center gap-6 text-sm text-muted-foreground pt-2 border-t border-border/50">
