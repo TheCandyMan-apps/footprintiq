@@ -102,6 +102,27 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
 
   return (
     <div className="space-y-4">
+      {/* Progress Indicator for In-Progress Scans */}
+      {(result.status === 'queued' || result.status === 'running') && (
+        <Card className="border-primary/50 bg-primary/5">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">
+                  Scan in progress...
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {result.status === 'queued' 
+                    ? 'Waiting in queue...' 
+                    : 'Checking platforms for username presence...'}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">

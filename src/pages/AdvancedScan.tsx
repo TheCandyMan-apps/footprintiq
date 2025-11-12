@@ -310,6 +310,11 @@ export default function AdvancedScan() {
           } else {
             toast.success(`Username scan started for "${target.trim()}"`);
           }
+
+          // Navigate to SimpleMaigretResults page after showing preview
+          setTimeout(() => {
+            navigate(`/maigret/results/${jobId}`);
+          }, 3000);
         }
       } catch (error) {
         console.error("Username scan error:", error);

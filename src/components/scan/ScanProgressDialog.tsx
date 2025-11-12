@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { detectScanPipeline } from '@/utils/scanPipeline';
 
 interface ProviderStatus {
   name: string;
@@ -47,6 +48,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
   const [topFindings, setTopFindings] = useState<TopFinding[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [pipelineType, setPipelineType] = useState<'simple' | 'advanced' | null>(null);
 
   const playSuccessSound = () => {
     try {
@@ -135,6 +137,98 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     setShowTimeoutWarning(false);
     setTopFindings([]);
     setShowPreview(false);
+    setPipelineType(null);
+
+    // Detect pipeline type
+    const initializePipeline = async () => {
+      const pipeline = await detectScanPipeline(scanId);
+      setPipelineType(pipeline);
+      console.log('[ScanProgressDialog] Detected pipeline:', pipeline);
+
+      if (pipeline === 'simple') {
+        // Start polling maigret_results for Simple pipeline
+        startSimplePipelinePolling();
+      } else if (pipeline === 'advanced') {
+        // Use existing Advanced pipeline subscriptions (already set up below)
+        console.log('[ScanProgressDialog] Using Advanced pipeline mode');
+      }
+    };
+
+    initializePipeline();
+
+    // Simple pipeline polling - polls maigret_results every 3 seconds
+    const startSimplePipelinePolling = () => {
+      const pollInterval = setInterval(async () => {
+        try {
+          const { data: result, error } = await supabase
+            .from('maigret_results')
+            .select('*')
+            .eq('job_id', scanId)
+            .maybeSingle();
+
+          if (error) {
+            console.error('[ScanProgressDialog] Simple polling error:', error);
+            return;
+          }
+
+          if (!result) return;
+
+          // Map status to progress
+          if (result.status === 'queued') {
+            setProgress(5);
+          } else if (result.status === 'running') {
+            setProgress(50);
+          } else if (result.status === 'completed') {
+            setProgress(100);
+            setStatus('completed');
+            
+            // Extract results from summary
+            const summary = result.summary as any;
+            const summaryArray = Array.isArray(summary) ? summary : [];
+            setTotalResults(summaryArray.length);
+
+            // Fetch top findings
+            const mapped = summaryArray.slice(0, 10).map((item: any) => ({
+              site: item.evidence?.find((e: any) => e.key === 'site')?.value || 'Unknown',
+              url: item.evidence?.find((e: any) => e.key === 'url')?.value || null,
+              status: item.evidence?.find((e: any) => e.key === 'status')?.value || 'found',
+            }));
+            setTopFindings(mapped);
+
+            if (summaryArray.length > 0) {
+              setShowPreview(true);
+              playSuccessSound();
+              triggerConfetti();
+              toast.success(`Scan completed - ${summaryArray.length} results found`);
+            } else {
+              toast.info('No results found', {
+                description: 'Try a broader query or different username variant',
+                duration: 5000,
+              });
+            }
+
+            // Auto-navigate after showing preview
+            setTimeout(() => {
+              onComplete?.();
+            }, 3000);
+
+            clearInterval(pollInterval);
+          } else if (result.status === 'failed') {
+            setProgress(0);
+            setStatus('failed');
+            toast.error('Scan failed');
+            clearInterval(pollInterval);
+          }
+
+          setLastEventAt(Date.now());
+        } catch (error) {
+          console.error('[ScanProgressDialog] Simple polling error:', error);
+        }
+      }, 3000); // Poll every 3 seconds
+
+      // Cleanup function will clear this interval
+      return pollInterval;
+    };
 
     // Fetch top findings from scan_findings table or maigret_results
     const fetchTopFindings = async () => {
@@ -294,8 +388,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
       });
     };
 
-    // Subscribe to authoritative scan_jobs table for accurate progress
-    const jobChannel = supabase
+    // Subscribe to authoritative scan_jobs table for accurate progress (Advanced pipeline only)
+    const jobChannel = pipelineType === 'advanced' ? supabase
       .channel(`scan_jobs_${scanId}`)
       .on(
         'postgres_changes',
@@ -331,10 +425,10 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
           }
         }
       )
-      .subscribe();
+      .subscribe() : null;
 
-    // Subscribe to Maigret scan progress updates (username scans)
-    const maigretChannel = supabase
+    // Subscribe to Maigret scan progress updates (Advanced username scans only)
+    const maigretChannel = pipelineType === 'advanced' ? supabase
       .channel(`scan_progress_${scanId}`)
       .on('broadcast', { event: 'provider_update' }, (payload: any) => {
         console.debug('[ScanProgressDialog] Maigret provider_update:', payload);
@@ -398,7 +492,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         toast.info('Scan cancelled');
         setTimeout(() => onComplete?.(), 1000);
       })
-      .subscribe();
+      .subscribe() : null;
     
     // Inactivity watchdog
     const watchdogInterval = setInterval(() => {
@@ -422,8 +516,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
       }
     }, 5000); // Check every 5 seconds
 
-    // Subscribe to orchestrator progress updates (advanced scans)
-    const orchestratorChannel = supabase
+    // Subscribe to orchestrator progress updates (Advanced scans only)
+    const orchestratorChannel = pipelineType === 'advanced' ? supabase
       .channel(`scan_progress:${scanId}`)
       .on('broadcast', { event: 'progress' }, (payload: any) => {
         console.debug('[ScanProgressDialog] Orchestrator progress:', payload);
@@ -506,17 +600,17 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         toast.info('Scan cancelled');
         setTimeout(() => onComplete?.(), 1000);
       })
-      .subscribe();
+      .subscribe() : null;
 
     return () => {
       clearInterval(watchdogInterval);
-      supabase.removeChannel(jobChannel);
-      supabase.removeChannel(maigretChannel);
-      supabase.removeChannel(orchestratorChannel);
+      if (jobChannel) supabase.removeChannel(jobChannel);
+      if (maigretChannel) supabase.removeChannel(maigretChannel);
+      if (orchestratorChannel) supabase.removeChannel(orchestratorChannel);
       supabase.removeChannel(findingsChannel);
       supabase.removeChannel(maigretResultsChannel);
     };
-  }, [scanId, open, onComplete, status, lastEventAt]);
+  }, [scanId, open, onComplete, status, lastEventAt, pipelineType]);
 
   const handleZeroResults = async () => {
     if (!scanId || isSavingCase) return;
