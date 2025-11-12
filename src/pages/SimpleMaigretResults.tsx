@@ -56,15 +56,29 @@ export default function SimpleMaigretResults() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       <Header />
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate('/scan/advanced')}>
+        <div className="max-w-5xl mx-auto space-y-8">
+          <div className="space-y-4 animate-fade-in">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/scan/advanced')}
+              className="hover:bg-primary/10 transition-all hover:scale-105"
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Scanner
             </Button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-primary/5 blur-3xl -z-10" />
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+                Username Scan Results
+              </h1>
+              <p className="text-muted-foreground mt-2 text-lg">
+                Detailed OSINT analysis across 300+ platforms
+              </p>
+            </div>
           </div>
 
           <SimpleResultsViewer jobId={jobId} />
