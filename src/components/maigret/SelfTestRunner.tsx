@@ -269,24 +269,21 @@ export function SelfTestRunner() {
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     try {
-      const { data: user } = await supabase.auth.getUser();
-      
-      if (!user.user) {
-        throw new Error('Not authenticated');
+      if (!jobId) {
+        throw new Error('No job_id from Step 2 - cannot verify results');
       }
 
       const { data: results, error } = await supabase
         .from('maigret_results')
         .select('job_id, username, status, created_at')
-        .eq('user_id', user.user.id)
-        .order('created_at', { ascending: false })
+        .eq('job_id', jobId)
         .limit(1);
 
       const hasResults = !error && results && results.length > 0;
 
       diag.push({
         step: 'Step 3: Results Verification',
-        request: { query: 'SELECT from maigret_results WHERE user_id = current_user', method: 'SELECT' },
+        request: { query: `SELECT from maigret_results WHERE job_id = ${jobId}`, method: 'SELECT' },
         response: { found_results: hasResults, count: results?.length || 0, latest: results?.[0] },
       });
 
@@ -304,7 +301,7 @@ export function SelfTestRunner() {
           } 
         });
       } else {
-        const hint = 'No results found in maigret_results table. Check: (1) RESULTS_WEBHOOK_TOKEN mismatch, (2) Worker not calling webhook, (3) RLS policies blocking writes';
+        const hint = 'No results found in maigret_results table. Check: (1) RESULTS_WEBHOOK_TOKEN mismatch preventing webhook delivery, (2) Worker not calling webhook, (3) scan-results function error';
         updateStep(3, {
           status: 'fail', 
           httpStatus: 404, 
@@ -322,7 +319,7 @@ export function SelfTestRunner() {
       updateStep(3, {
         status: 'fail', 
         error: err.message, 
-        hint: 'Database query failed - check authentication or RLS policies' 
+        hint: 'Database query failed - likely no job_id from Step 2' 
       });
     }
 
