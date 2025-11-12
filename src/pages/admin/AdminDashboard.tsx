@@ -251,6 +251,38 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUpdateRole = async (userId: string, newRole: 'admin' | 'premium' | 'free') => {
+    try {
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ role: newRole })
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      toast.success('User role updated successfully');
+      fetchUsers(); // Refresh user list
+    } catch (error) {
+      console.error('Error updating role:', error);
+      toast.error('Failed to update user role');
+    }
+  };
+
+  const handleResetPassword = async (userEmail: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast.success('Password reset email sent');
+    } catch (error) {
+      console.error('Error sending password reset:', error);
+      toast.error('Failed to send password reset email');
+    }
+  };
+
   const filteredUsers = users.filter(user =>
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -389,42 +421,81 @@ export default function AdminDashboard() {
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {filteredUsers.map((user) => (
+                           {filteredUsers.map((user) => (
                             <Card key={user.id} className="p-4">
-                              <div className="flex items-start justify-between gap-4">
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium truncate">{user.email}</p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <Badge variant="outline" className="text-xs">
-                                      {user.role}
-                                    </Badge>
-                                    <Badge variant="secondary" className="text-xs">
-                                      {user.subscription_tier}
-                                    </Badge>
-                                    <Badge variant="default" className="text-xs">
-                                      <Coins className="h-3 w-3 mr-1" />
-                                      {user.credits_balance} credits
-                                    </Badge>
-                                  </div>
-                                  {user.subscription_expires_at && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      Expires: {new Date(user.subscription_expires_at).toLocaleDateString()}
+                              <div className="space-y-3">
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium truncate">{user.email}</p>
+                                    <p className="text-xs text-muted-foreground font-mono mt-1">
+                                      ID: {user.id.substring(0, 8)}...
                                     </p>
-                                  )}
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <Badge variant="outline" className="text-xs">
+                                        {user.role}
+                                      </Badge>
+                                      <Badge variant="secondary" className="text-xs">
+                                        {user.subscription_tier}
+                                      </Badge>
+                                      <Badge variant="default" className="text-xs">
+                                        <Coins className="h-3 w-3 mr-1" />
+                                        {user.credits_balance} credits
+                                      </Badge>
+                                    </div>
+                                    {user.subscription_expires_at && (
+                                      <p className="text-xs text-muted-foreground mt-1">
+                                        Expires: {new Date(user.subscription_expires_at).toLocaleDateString()}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
-                                <Select
-                                  defaultValue={user.subscription_tier}
-                                  onValueChange={(value: 'free' | 'premium' | 'family') => handleUpdateTier(user.id, value)}
-                                >
-                                  <SelectTrigger className="w-32">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="free">Free</SelectItem>
-                                    <SelectItem value="premium">Premium</SelectItem>
-                                    <SelectItem value="family">Family</SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                
+                                <div className="flex items-center gap-2 pt-2 border-t">
+                                  <div className="flex-1">
+                                    <Label className="text-xs text-muted-foreground mb-1">Role</Label>
+                                    <Select
+                                      defaultValue={user.role}
+                                      onValueChange={(value: 'admin' | 'premium' | 'free') => handleUpdateRole(user.id, value)}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="admin">Admin</SelectItem>
+                                        <SelectItem value="premium">Premium</SelectItem>
+                                        <SelectItem value="free">Free</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="flex-1">
+                                    <Label className="text-xs text-muted-foreground mb-1">Tier</Label>
+                                    <Select
+                                      defaultValue={user.subscription_tier}
+                                      onValueChange={(value: 'free' | 'premium' | 'family') => handleUpdateTier(user.id, value)}
+                                    >
+                                      <SelectTrigger className="h-8 text-xs">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="free">Free</SelectItem>
+                                        <SelectItem value="premium">Premium</SelectItem>
+                                        <SelectItem value="family">Family</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="flex items-end">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleResetPassword(user.email)}
+                                      className="h-8 text-xs"
+                                    >
+                                      Reset Password
+                                    </Button>
+                                  </div>
+                                </div>
                               </div>
                             </Card>
                           ))}
