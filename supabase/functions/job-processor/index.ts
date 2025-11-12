@@ -12,25 +12,54 @@ serve(async (req) => {
   }
 
   try {
-    // Internal authentication check
-    const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN');
-    const authHeader = req.headers.get('x-internal-token');
+    const url = new URL(req.url);
+    const action = url.searchParams.get("action") || "enqueue";
     
-    if (!authHeader || authHeader !== WORKER_TOKEN) {
-      console.warn('Unauthorized access attempt to job-processor');
+    // Dual authentication: internal token OR authenticated user for read-only ops
+    const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN');
+    const internalToken = req.headers.get('x-internal-token');
+    const authHeader = req.headers.get('authorization');
+    
+    const isReadOnly = ['stats', 'status'].includes(action);
+    
+    // For write operations, require internal token
+    if (!isReadOnly && (!internalToken || internalToken !== WORKER_TOKEN)) {
+      console.warn('Unauthorized access attempt to job-processor write operation');
       return new Response(
         JSON.stringify({ error: 'Unauthorized - Valid internal token required' }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-
-    const url = new URL(req.url);
-    const action = url.searchParams.get("action") || "enqueue";
+    
+    // For read operations, allow authenticated users
+    let supabase;
+    if (isReadOnly && !internalToken && authHeader) {
+      // Verify user authentication using service role client with auth header
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { global: { headers: { Authorization: authHeader } } }
+      );
+      
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+      
+      if (authError || !user) {
+        console.warn('Unauthenticated access attempt to job-processor stats');
+        return new Response(
+          JSON.stringify({ error: 'Authentication required' }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Use same client for operations
+      supabase = supabaseClient;
+    } else {
+      // Internal token provided or write operation
+      supabase = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+    }
 
     // Enqueue a new job
     if (action === "enqueue" && req.method === "POST") {
