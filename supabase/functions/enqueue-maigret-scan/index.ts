@@ -196,63 +196,10 @@ Deno.serve(async (req) => {
     if (tags?.trim()) url.searchParams.set('tags', tags.trim());
     if (all_sites) url.searchParams.set('all_sites', 'true');
 
-    // Health check first with detailed diagnostics
-    console.log('=== Maigret Worker Configuration ===');
+    console.log('=== Starting Maigret Scan ===');
     console.log(`Worker URL: ${WORKER_URL}`);
-    console.log(`Worker token configured: ${WORKER_TOKEN ? 'YES' : 'NO'}`);
     console.log(`Job ID: ${job.id}`);
     console.log(`Username: ${username}`);
-    
-    try {
-      const healthUrl = `${WORKER_URL}/health`;
-      console.log(`Checking health at: ${healthUrl}`);
-      
-      const healthCheck = await fetch(healthUrl, {
-        method: 'GET',
-        signal: AbortSignal.timeout(5000),
-      });
-      
-      console.log(`Health check response: ${healthCheck.status} ${healthCheck.statusText}`);
-      console.log(`Health headers:`, Object.fromEntries(healthCheck.headers.entries()));
-      
-      if (!healthCheck.ok) {
-        const healthBody = await healthCheck.text().catch(() => 'Unable to read body');
-        console.error(`Health check body:`, healthBody);
-        throw new Error(`Worker health check failed: ${healthCheck.status} - ${healthBody}`);
-      }
-      
-      const healthBody = await healthCheck.text();
-      console.log('Health check body:', healthBody);
-      console.log('✓ Worker health check passed');
-    } catch (healthError) {
-      console.error('✗ Worker health check failed:', {
-        name: healthError.name,
-        message: healthError.message,
-        stack: healthError.stack
-      });
-      
-      await supabaseAdmin
-        .from('scan_jobs')
-        .update({
-          status: 'error',
-          error: `Maigret worker unavailable: ${healthError.message}`,
-          finished_at: new Date().toISOString(),
-        })
-        .eq('id', job.id);
-      
-      return new Response(
-        JSON.stringify({ 
-          jobId: job.id, 
-          status: 'error', 
-          error: 'Username scan service is temporarily unavailable. Please try again later.',
-          details: healthError.message
-        }),
-        {
-          status: 503,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
     
     // Retry logic with exponential backoff and enhanced logging
     let resp: Response | null = null;
