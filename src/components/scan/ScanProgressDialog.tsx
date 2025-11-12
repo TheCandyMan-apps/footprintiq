@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, Loader2, XCircle, AlertCircle, X } from 'lucide-react';
+import { CheckCircle, Loader2, XCircle, AlertCircle, X, Eye, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 interface ProviderStatus {
   name: string;
@@ -15,6 +17,12 @@ interface ProviderStatus {
   resultCount?: number;
   retryCount?: number;
   maxRetries?: number;
+}
+
+interface TopFinding {
+  site: string;
+  url: string | null;
+  status: string | null;
 }
 
 interface ScanProgressDialogProps {
@@ -37,6 +45,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
   const [lastEventAt, setLastEventAt] = useState(Date.now());
   const [showInactivityHint, setShowInactivityHint] = useState(false);
   const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
+  const [topFindings, setTopFindings] = useState<TopFinding[]>([]);
+  const [showPreview, setShowPreview] = useState(false);
 
   const playSuccessSound = () => {
     try {
@@ -123,6 +133,139 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     setLastEventAt(Date.now());
     setShowInactivityHint(false);
     setShowTimeoutWarning(false);
+    setTopFindings([]);
+    setShowPreview(false);
+
+    // Fetch top findings from scan_findings table or maigret_results
+    const fetchTopFindings = async () => {
+      try {
+        // First try scan_findings (for advanced/orchestrator scans)
+        const { data: findings, error: findingsError } = await supabase
+          .from('scan_findings')
+          .select('site, url, status')
+          .eq('job_id', scanId)
+          .order('site', { ascending: true })
+          .limit(10);
+
+        if (!findingsError && findings && findings.length > 0) {
+          setTopFindings(findings as TopFinding[]);
+          setTotalResults(findings.length);
+          return;
+        }
+
+        // Fallback to maigret_results (for simple username scans)
+        const { data: maigretResult, error: maigretError } = await supabase
+          .from('maigret_results')
+          .select('summary')
+          .eq('job_id', scanId)
+          .maybeSingle();
+
+        if (!maigretError && maigretResult?.summary) {
+          const summary = maigretResult.summary as any;
+          const summaryArray = Array.isArray(summary) ? summary : [];
+          
+          const mapped = summaryArray.slice(0, 10).map((item: any) => ({
+            site: item.evidence?.find((e: any) => e.key === 'site')?.value || 'Unknown',
+            url: item.evidence?.find((e: any) => e.key === 'url')?.value || null,
+            status: item.evidence?.find((e: any) => e.key === 'status')?.value || 'found',
+          }));
+          
+          setTopFindings(mapped);
+          setTotalResults(summaryArray.length);
+        }
+      } catch (error) {
+        console.error('[ScanProgressDialog] Error fetching top findings:', error);
+      }
+    };
+
+    // Subscribe to real-time updates for scan_findings
+    const findingsChannel = supabase
+      .channel(`scan_findings_${scanId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'scan_findings',
+          filter: `job_id=eq.${scanId}`,
+        },
+        (payload) => {
+          console.debug('[ScanProgressDialog] New finding:', payload);
+          const finding = payload.new as TopFinding;
+          
+          setTopFindings(prev => {
+            const updated = [...prev, finding];
+            return updated.slice(0, 10); // Keep only top 10
+          });
+          
+          setTotalResults(prev => prev + 1);
+        }
+      )
+      .subscribe();
+
+    // Subscribe to real-time updates for maigret_results (simple scans)
+    const maigretResultsChannel = supabase
+      .channel(`maigret_results_${scanId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'maigret_results',
+          filter: `job_id=eq.${scanId}`,
+        },
+        (payload) => {
+          console.debug('[ScanProgressDialog] Maigret result inserted:', payload);
+          const result = payload.new as any;
+          
+          if (result.summary) {
+            const summary = result.summary as any;
+            const summaryArray = Array.isArray(summary) ? summary : [];
+            
+            const mapped = summaryArray.slice(0, 10).map((item: any) => ({
+              site: item.evidence?.find((e: any) => e.key === 'site')?.value || 'Unknown',
+              url: item.evidence?.find((e: any) => e.key === 'url')?.value || null,
+              status: item.evidence?.find((e: any) => e.key === 'status')?.value || 'found',
+            }));
+            
+            setTopFindings(mapped);
+            setTotalResults(summaryArray.length);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'maigret_results',
+          filter: `job_id=eq.${scanId}`,
+        },
+        (payload) => {
+          console.debug('[ScanProgressDialog] Maigret result updated:', payload);
+          const result = payload.new as any;
+          
+          if (result.status === 'completed' && result.summary) {
+            const summary = result.summary as any;
+            const summaryArray = Array.isArray(summary) ? summary : [];
+            
+            const mapped = summaryArray.slice(0, 10).map((item: any) => ({
+              site: item.evidence?.find((e: any) => e.key === 'site')?.value || 'Unknown',
+              url: item.evidence?.find((e: any) => e.key === 'url')?.value || null,
+              status: item.evidence?.find((e: any) => e.key === 'status')?.value || 'found',
+            }));
+            
+            setTopFindings(mapped);
+            setTotalResults(summaryArray.length);
+            
+            // Show preview when maigret scan completes
+            if (summaryArray.length > 0) {
+              setShowPreview(true);
+            }
+          }
+        }
+      )
+      .subscribe();
 
     // Helper to upsert provider status
     const upsertProvider = (
@@ -231,12 +374,16 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
           });
           void handleZeroResults(); // Fire and forget
         } else {
+          // Fetch final findings and show preview
+          fetchTopFindings().then(() => {
+            setShowPreview(true);
+          });
           playSuccessSound();
           triggerConfetti();
           toast.success(`Scan completed - ${resultsCount} results found`);
         }
         
-        setTimeout(() => onComplete?.(), 2000);
+        setTimeout(() => onComplete?.(), 3000); // Extra time to view preview
       })
       .on('broadcast', { event: 'scan_failed' }, (payload: any) => {
         console.debug('[ScanProgressDialog] Maigret scan_failed:', payload);
@@ -337,12 +484,16 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
             });
             void handleZeroResults(); // Fire and forget
           } else {
+            // Fetch final findings and show preview
+            fetchTopFindings().then(() => {
+              setShowPreview(true);
+            });
             playSuccessSound();
             triggerConfetti();
             toast.success(`Scan completed - ${resultsCount} results found`);
           }
           
-          setTimeout(() => onComplete?.(), 2000);
+          setTimeout(() => onComplete?.(), 3000); // Extra time to view preview
         } else if (update.status === 'failed') {
           console.debug('[ScanProgressDialog] Orchestrator failed');
           setStatus('failed');
@@ -362,6 +513,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
       supabase.removeChannel(jobChannel);
       supabase.removeChannel(maigretChannel);
       supabase.removeChannel(orchestratorChannel);
+      supabase.removeChannel(findingsChannel);
+      supabase.removeChannel(maigretResultsChannel);
     };
   }, [scanId, open, onComplete, status, lastEventAt]);
 
@@ -590,6 +743,72 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
               ))
             )}
           </div>
+
+          {/* Results Preview Section */}
+          {showPreview && topFindings.length > 0 && (
+            <div className="space-y-4 p-4 rounded-lg border bg-muted/50 animate-fade-in">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Scan Results Preview</h3>
+                </div>
+                <Badge variant="secondary" className="text-sm">
+                  {totalResults} total findings
+                </Badge>
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">Providers Scanned</p>
+                  <p className="text-2xl font-bold">{providersCompleted}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">Results Found</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                    {totalResults}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Top Findings:</p>
+                <ScrollArea className="h-[120px] w-full rounded-md border">
+                  <div className="p-2 space-y-2">
+                    {topFindings.map((finding, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-start justify-between gap-2 p-2 rounded bg-card hover:bg-accent/50 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{finding.site}</p>
+                          {finding.url && (
+                            <a
+                              href={finding.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-muted-foreground hover:text-primary truncate flex items-center gap-1"
+                            >
+                              <span className="truncate">{finding.url}</span>
+                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
+                            </a>
+                          )}
+                        </div>
+                        <Badge variant="outline" className="flex-shrink-0 text-xs">
+                          {finding.status || 'Found'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Viewing full results in a moment...
+              </p>
+            </div>
+          )}
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t">
