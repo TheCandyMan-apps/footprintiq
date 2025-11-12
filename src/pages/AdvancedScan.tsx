@@ -249,40 +249,13 @@ export default function AdvancedScan() {
   const handleScan = async () => {
     // Redirect username scans to Maigret scanner
     if (scanType === 'username') {
-      // Pre-scan health check for Maigret - warn but don't block
-      if (maigretEnabled) {
-        try {
-          const { data: healthData, error: healthError } = await supabase.functions.invoke('maigret-health');
-          
-          if (healthError || healthData?.status === 'unhealthy') {
-            toast.warning('Maigret offline – using fallback providers', {
-              description: 'Scan will continue without Maigret results.',
-            });
-            console.error('Worker health check failed:', healthData);
-            // Disable Maigret for this scan but continue
-            setMaigretEnabled(false);
-          }
-        } catch (healthCheckError) {
-          console.error('Health check error:', healthCheckError);
-          toast.warning('Could not verify Maigret status – scan will proceed');
-        }
-      }
-      
-      // Check if Maigret worker is offline
-      if (isWorkerOffline('maigret')) {
-        const maigret = getWorkerByName('maigret');
-        toast.error("Maigret worker is offline", {
-          description: maigret?.error_message || "Please retry soon or use cached results",
-          duration: 5000,
-        });
-        return;
-      }
-      
-      toast.info("Redirecting to Username Scanner (powered by Maigret)");
+      toast.info("Configure your username scan");
       navigate('/scan/usernames', { 
         state: { 
           username: target.trim(),
-          fromAdvanced: true 
+          fromAdvanced: true,
+          maigretEnabled,
+          scanAllSites: false
         } 
       });
       return;

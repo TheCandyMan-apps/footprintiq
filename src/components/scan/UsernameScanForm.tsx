@@ -55,81 +55,28 @@ export function UsernameScanForm() {
   
   const autoTriggeredRef = useRef(false);
 
-  // Auto-trigger scan if coming from advanced scan with username
+  // Pre-populate form from advanced scan redirect (no auto-trigger)
   useEffect(() => {
-    const state = location.state as { username?: string; fromAdvanced?: boolean } | null;
-    if (state?.fromAdvanced && state?.username && !autoTriggeredRef.current && !entitlementLoading) {
-      console.log('[UsernameScanForm] Auto-triggering scan from advanced:', state.username);
+    const state = location.state as { username?: string; fromAdvanced?: boolean; scanAllSites?: boolean } | null;
+    if (state?.fromAdvanced && state?.username && !autoTriggeredRef.current) {
+      console.log('[UsernameScanForm] Pre-populating from advanced scan:', state.username);
       autoTriggeredRef.current = true;
       setUsername(state.username);
       
-      // Trigger scan after a brief delay to ensure state is set
-      setTimeout(async () => {
-        try {
-          setSubmitting(true);
-          
-          // Pre-scan session check
-          const sessionCheck = await checkAndRefreshSession();
-          if (!sessionCheck.valid) {
-            toast({
-              title: 'Session Expired',
-              description: 'Please log in again',
-              variant: 'destructive',
-            });
-            navigate('/auth');
-            return;
-          }
-
-          // Use enhanced scan hook
-          const data = await startScan({
-            username: state.username!.trim(),
-            tags: tags.trim() || undefined,
-            allSites: allSites,
-            artifacts: isPremium ? artifacts : [],
-            debugMode,
-          });
-
-          const jobId = data?.jobId;
-
-          // Open progress dialog and start floating tracker
-          if (jobId) {
-            setCurrentScanId(jobId);
-            setProgressDialogOpen(true);
-            
-            // Start floating tracker
-            startTracking({
-              scanId: jobId,
-              type: 'username',
-              target: state.username!.trim(),
-              startedAt: new Date().toISOString(),
-            });
-          }
-
-          toast({
-            title: 'Scan Started',
-            description: `Scan queued for username "${state.username}"`,
-          });
-
-          // Reset form
-          setUsername('');
-          setTags('');
-          setArtifacts([]);
-        } catch (error: any) {
-          console.error('Auto-scan error:', error);
-          toast({
-            title: 'Scan Failed',
-            description: error.message || 'Failed to start scan',
-            variant: 'destructive',
-          });
-        } finally {
-          setSubmitting(false);
-        }
-      }, 300);
+      // Pre-populate scan all sites if provided
+      if (state.scanAllSites !== undefined) {
+        setAllSites(state.scanAllSites);
+      }
+      
+      toast({
+        title: 'Username Pre-filled',
+        description: 'Configure your scan options and click "Run Scan"',
+      });
       
       // Clear location state to prevent re-triggering
       window.history.replaceState({}, document.title);
     }
-  }, [location.state, entitlementLoading, isPremium, startScan, startTracking, toast, navigate, debugMode, tags, allSites, artifacts]);
+  }, [location.state, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
