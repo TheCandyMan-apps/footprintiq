@@ -51,6 +51,7 @@ import { SaveTemplateDialog } from "@/components/scan/SaveTemplateDialog";
 import { useScanTemplates, ScanTemplate } from "@/hooks/useScanTemplates";
 import { useLowCreditToast } from "@/hooks/useLowCreditToast";
 import { MaigretToggle } from "@/components/scan/MaigretToggle";
+import { WorkerStatus } from "@/components/maigret/WorkerStatus";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -584,6 +585,12 @@ export default function AdvancedScan() {
                       Username scans use our Maigret integration for comprehensive social media discovery across 400+ platforms
                     </AlertDescription>
                   </Alert>
+                  
+                  {/* Maigret Worker Status */}
+                  <div className="flex items-center gap-2 p-3 rounded-lg border bg-card">
+                    <span className="text-sm font-medium">Maigret Worker Status:</span>
+                    <WorkerStatus />
+                  </div>
                   
                   {/* Maigret Upgrade Teaser for Free Users */}
                   {isFree && (
