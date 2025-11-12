@@ -320,6 +320,165 @@ Deno.serve(async (req) => {
       );
     }
     
+    // Detect response format based on Content-Type
+    const contentType = resp.headers.get('content-type') || '';
+    const isSingleJsonResponse = contentType.includes('application/json') && !contentType.includes('ndjson');
+    
+    if (isSingleJsonResponse) {
+      // ========================================
+      // SINGLE JSON RESPONSE HANDLER
+      // ========================================
+      console.log('📦 Detected single JSON response format - processing synchronously');
+      
+      let responseData: any;
+      try {
+        responseData = await resp.json();
+      } catch (error) {
+        console.error('Failed to parse JSON response:', error);
+        await supabaseAdmin
+          .from('scan_jobs')
+          .update({
+            status: 'error',
+            error: 'Failed to parse worker response',
+            finished_at: new Date().toISOString()
+          })
+          .eq('id', job.id);
+
+        return new Response(
+          JSON.stringify({ 
+            jobId: job.id, 
+            status: 'error', 
+            error: 'Invalid JSON response from worker'
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      
+      console.log('📊 Worker response:', JSON.stringify(responseData).substring(0, 500));
+      
+      // Extract findings from summary array
+      const findings = responseData.summary || [];
+      console.log(`📊 Extracted ${findings.length} findings from summary array`);
+      
+      // Broadcast initial loading state
+      try {
+        await supabaseAdmin.channel(`scan_progress_${job.id}`).send({
+          type: 'broadcast',
+          event: 'provider_update',
+          payload: {
+            provider: 'maigret',
+            status: 'loading',
+            message: `Processing ${findings.length} results`,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to broadcast progress:', error);
+      }
+      
+      // Insert findings into database
+      let insertedCount = 0;
+      for (let i = 0; i < findings.length; i++) {
+        const finding = findings[i];
+        
+        // Validate finding has required fields
+        if (!finding.provider || !finding.kind || !finding.evidence) {
+          console.warn(`Skipping invalid finding at index ${i}:`, finding);
+          continue;
+        }
+        
+        // Extract site and URL from evidence array
+        const siteEvidence = finding.evidence.find((e: any) => e.key === 'site');
+        const urlEvidence = finding.evidence.find((e: any) => e.key === 'url');
+        const statusEvidence = finding.evidence.find((e: any) => e.key === 'status');
+        
+        const site = siteEvidence?.value;
+        const url = urlEvidence?.value;
+        const status = statusEvidence?.value;
+        
+        if (!site) {
+          console.warn(`Skipping finding without site at index ${i}:`, finding);
+          continue;
+        }
+        
+        // Insert into scan_findings
+        const { error: insertError } = await supabaseAdmin
+          .from('scan_findings')
+          .upsert({
+            job_id: job.id,
+            site,
+            url: url || null,
+            status: status || null,
+            raw: finding
+          });
+        
+        if (insertError) {
+          console.error(`Failed to insert finding ${i}:`, insertError);
+        } else {
+          insertedCount++;
+        }
+      }
+      
+      console.log(`✅ Inserted ${insertedCount} findings into scan_results`);
+      
+      // Determine final status based on worker response
+      const finalStatus = responseData.status === 'completed' ? 'finished' : 'error';
+      const errorMessage = responseData.status === 'failed' 
+        ? (responseData.raw?.stderr || 'Worker reported failure')
+        : null;
+      
+      if (errorMessage) {
+        console.error('❌ Worker reported error:', errorMessage.substring(0, 500));
+      }
+      
+      // Update scan job with final status
+      await supabaseAdmin
+        .from('scan_jobs')
+        .update({
+          status: finalStatus,
+          error: errorMessage,
+          finished_at: new Date().toISOString(),
+          providers_completed: 1, // Maigret is one provider
+          providers_total: 1,
+        })
+        .eq('id', job.id);
+      
+      // Broadcast scan completion
+      await supabaseAdmin.channel(`scan_progress_${job.id}`).send({
+        type: 'broadcast',
+        event: 'scan_complete',
+        payload: {
+          status: finalStatus === 'finished' ? 'success' : 'error',
+          resultsCount: insertedCount,
+          creditsUsed: 1,
+          message: finalStatus === 'finished' 
+            ? 'Scan completed successfully' 
+            : 'Scan failed - check logs',
+        },
+      });
+      
+      return new Response(
+        JSON.stringify({
+          jobId: job.id,
+          status: finalStatus,
+          findingsUpserted: insertedCount,
+          providersCompleted: 1,
+          error: errorMessage,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    
+    // ========================================
+    // STREAMING NDJSON RESPONSE HANDLER
+    // ========================================
+    console.log('📡 Detected streaming response format - processing NDJSON stream');
+    
     if (!resp.body) {
       console.error('✗ Worker returned empty body (no stream)', {
         status: resp.status,
