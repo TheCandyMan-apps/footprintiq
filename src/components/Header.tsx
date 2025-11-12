@@ -24,6 +24,39 @@ import { useQuery } from "@tanstack/react-query";
 import { CommandPalette } from "@/components/CommandPalette";
 import { WorkspaceSwitcher } from "@/components/workspace/WorkspaceSwitcher";
 
+// Admin menu item component with role check
+function AdminMenuItem() {
+  const { user } = useSubscription();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+      setIsAdmin(data?.role === 'admin');
+    };
+    checkAdminRole();
+  }, [user]);
+
+  if (!isAdmin) return null;
+
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem asChild>
+        <Link to="/admin" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">
+          <Shield className="w-4 h-4 mr-2" />
+          Admin Dashboard
+        </Link>
+      </DropdownMenuItem>
+    </>
+  );
+}
+
 export const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -306,6 +339,7 @@ export const Header = () => {
                       Manage Workspaces
                     </Link>
                   </DropdownMenuItem>
+                  <AdminMenuItem />
                   {isPremium && (
                     <DropdownMenuItem onClick={handleManageSubscription} className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">
                       <CreditCard className="w-4 h-4 mr-2" />
