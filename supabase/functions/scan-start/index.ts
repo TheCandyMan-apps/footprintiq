@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90s timeout for maigret scans
 
     let workerResponse;
     try {
@@ -154,7 +154,7 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({ 
             error: 'Worker URL unreachable. Check MAIGRET_WORKER_URL.',
-            details: 'Request timed out after 30 seconds'
+            details: 'Request timed out after 90 seconds'
           }),
           { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
