@@ -446,54 +446,52 @@ const Dashboard = () => {
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
           
           <div className="max-w-7xl mx-auto relative z-10">
-            <div className="flex items-center justify-between gap-8">
-              <div className="flex items-center gap-6 flex-1">
-                {/* Logo Shield */}
-                <div className="relative shrink-0 group">
-                  <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl group-hover:blur-3xl transition-all duration-500" />
-                  <img 
-                    src="/logo-dark.png" 
-                    alt="FootprintIQ Shield" 
-                    className="relative h-20 w-auto animate-float drop-shadow-2xl"
-                  />
-                </div>
-
-                {/* Heading and Subtitle */}
-                <div className="flex-1 min-w-0">
-                  <h1 className="text-4xl font-bold bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent whitespace-nowrap">
-                    Your Intelligence Command Center
-                  </h1>
-                  <p className="text-base text-muted-foreground/80 font-medium mt-2 whitespace-nowrap">
-                    Real-time monitoring and threat intelligence at your fingertips
-                  </p>
-                </div>
+            <div className="flex items-center gap-6">
+              {/* Logo Shield */}
+              <div className="relative shrink-0 group">
+                <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl group-hover:blur-3xl transition-all duration-500" />
+                <img 
+                  src="/logo-dark.png" 
+                  alt="FootprintIQ Shield" 
+                  className="relative h-20 w-auto animate-float drop-shadow-2xl"
+                />
               </div>
 
-              {/* Action Buttons */}
-              <div className="hidden md:flex gap-3">
-                <Button onClick={() => navigate('/anomaly-history')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
-                  <Zap className="h-4 w-4 mr-2" />
-                  Anomaly History
-                </Button>
-                <Button onClick={() => navigate('/graph')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
-                  <Network className="h-4 w-4 mr-2" />
-                  Entity Graph
-                </Button>
-                <Button onClick={() => navigate('/scan/batch')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
-                  <FileStack className="h-4 w-4 mr-2" />
-                  Batch Scan
-                </Button>
-                <Button data-tour="advanced-scan-btn" onClick={() => navigate('/scan/advanced')} variant="outline" className="shadow-lg shadow-accent/20 hover:shadow-glow hover:border-accent transition-[var(--transition-smooth)]">
-                  <Zap className="h-4 w-4 mr-2" />
-                  Advanced Scan
-                </Button>
-                <Button onClick={() => navigate('/scan')} className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-[var(--transition-smooth)] hover:scale-105">
-                  <Play className="h-4 w-4 mr-2" />
-                  Start New Scan
-                </Button>
+              {/* Heading and Subtitle */}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-4xl font-bold bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent whitespace-nowrap">
+                  Your Intelligence Command Center
+                </h1>
+                <p className="text-base text-muted-foreground/80 font-medium mt-2 whitespace-nowrap">
+                  Real-time monitoring and threat intelligence at your fingertips
+                </p>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="mx-6 mt-4 flex flex-wrap gap-3 justify-center md:justify-start">
+          <Button onClick={() => navigate('/anomaly-history')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
+            <Zap className="h-4 w-4 mr-2" />
+            Anomaly History
+          </Button>
+          <Button onClick={() => navigate('/graph')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
+            <Network className="h-4 w-4 mr-2" />
+            Entity Graph
+          </Button>
+          <Button onClick={() => navigate('/scan/batch')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
+            <FileStack className="h-4 w-4 mr-2" />
+            Batch Scan
+          </Button>
+          <Button data-tour="advanced-scan-btn" onClick={() => navigate('/scan/advanced')} variant="outline" className="shadow-lg shadow-accent/20 hover:shadow-glow hover:border-accent transition-[var(--transition-smooth)]">
+            <Zap className="h-4 w-4 mr-2" />
+            Advanced Scan
+          </Button>
+          <Button onClick={() => navigate('/scan')} className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-[var(--transition-smooth)] hover:scale-105">
+            <Play className="h-4 w-4 mr-2" />
+            Start New Scan
+          </Button>
         </div>
 
         <main className="flex-1 overflow-auto">
