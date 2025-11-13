@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Linkedin, Twitter, Facebook, Globe, Mail } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 interface SocialLink {
   platform: 'linkedin' | 'twitter' | 'facebook' | 'web' | 'email';
@@ -44,7 +45,7 @@ export function EntityCard({
       glowColor="purple"
       disableHover={!onClick}
       className={cn(
-        "p-6 transition-all duration-300",
+        "p-6",
         onClick && "cursor-pointer",
         className
       )}
