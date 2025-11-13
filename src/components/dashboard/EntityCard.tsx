@@ -17,6 +17,8 @@ interface EntityCardProps {
   tags?: string[];
   socialLinks?: SocialLink[];
   confidence?: number;
+  entityType?: string;
+  lastUpdated?: string;
   onClick?: () => void;
   className?: string;
 }
@@ -36,6 +38,8 @@ export function EntityCard({
   tags = [],
   socialLinks = [],
   confidence,
+  entityType,
+  lastUpdated,
   onClick,
   className,
 }: EntityCardProps) {
@@ -64,9 +68,16 @@ export function EntityCard({
         </div>
 
         <div className="flex-1 min-w-0">
-          {/* Name and confidence */}
+          {/* Name, entity type, and confidence */}
           <div className="flex items-center justify-between gap-2 mb-1">
-            <h3 className="text-lg font-semibold truncate">{name}</h3>
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="text-lg font-semibold truncate">{name}</h3>
+              {entityType && (
+                <Badge variant="outline" className="shrink-0 text-xs">
+                  {entityType}
+                </Badge>
+              )}
+            </div>
             {confidence !== undefined && (
               <Badge variant="secondary" className="shrink-0">
                 {confidence}% match
@@ -74,10 +85,17 @@ export function EntityCard({
             )}
           </div>
 
-          {/* Subtitle */}
-          {subtitle && (
-            <p className="text-sm text-muted-foreground mb-3">{subtitle}</p>
-          )}
+          {/* Subtitle and last updated */}
+          <div className="space-y-1 mb-3">
+            {subtitle && (
+              <p className="text-sm text-muted-foreground">{subtitle}</p>
+            )}
+            {lastUpdated && (
+              <p className="text-xs text-muted-foreground/70">
+                Last updated: {lastUpdated}
+              </p>
+            )}
+          </div>
 
           {/* Social links */}
           {socialLinks.length > 0 && (

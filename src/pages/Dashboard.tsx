@@ -96,6 +96,7 @@ const Dashboard = () => {
   const [isDNAModalOpen, setIsDNAModalOpen] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [isRescanning, setIsRescanning] = useState(false);
+  const [scanSocialLinks, setScanSocialLinks] = useState<Record<string, any[]>>({});
   useEffect(() => {
     const checkAuth = async () => {
       const {
@@ -234,6 +235,42 @@ const Dashboard = () => {
         const {
           data: sources
         } = await supabase.from('data_sources').select('*').eq('scan_id', recentScan.id);
+        
+        // Fetch social media links for recent scans
+        const scanIds = scansData.slice(0, 3).map(s => s.id);
+        const { data: allSources } = await supabase
+          .from('data_sources')
+          .select('scan_id, name, url, category')
+          .in('scan_id', scanIds);
+        
+        // Group social links by scan_id
+        const socialLinksMap: Record<string, any[]> = {};
+        allSources?.forEach(source => {
+          const isSocialMedia = 
+            source.category?.toLowerCase().includes('social') ||
+            source.name?.toLowerCase().match(/linkedin|twitter|facebook|instagram|github/);
+          
+          if (isSocialMedia && source.url) {
+            if (!socialLinksMap[source.scan_id]) {
+              socialLinksMap[source.scan_id] = [];
+            }
+            
+            // Determine platform from name or URL
+            let platform: 'linkedin' | 'twitter' | 'facebook' | 'web' = 'web';
+            const lowerName = source.name?.toLowerCase() || '';
+            const lowerUrl = source.url?.toLowerCase() || '';
+            
+            if (lowerName.includes('linkedin') || lowerUrl.includes('linkedin')) platform = 'linkedin';
+            else if (lowerName.includes('twitter') || lowerUrl.includes('twitter') || lowerUrl.includes('x.com')) platform = 'twitter';
+            else if (lowerName.includes('facebook') || lowerUrl.includes('facebook')) platform = 'facebook';
+            
+            socialLinksMap[source.scan_id].push({
+              platform,
+              url: source.url
+            });
+          }
+        });
+        setScanSocialLinks(socialLinksMap);
         const breachCount = sources?.filter(s => s.category?.toLowerCase().includes('breach') || s.name?.toLowerCase().includes('breach')).length || 0;
         const dataBrokersCount = sources?.filter(s => s.category?.toLowerCase().includes('broker') || s.category?.toLowerCase().includes('people')).length || 0;
         const darkWebCount = sources?.filter(s => s.category?.toLowerCase().includes('dark') || s.name?.toLowerCase().includes('dark')).length || 0;
@@ -262,6 +299,13 @@ const Dashboard = () => {
   };
   const getTarget = (scan: Scan) => {
     return scan.email || scan.phone || scan.username || 'Unknown target';
+  };
+  
+  const getEntityType = (scan: Scan) => {
+    if (scan.email) return 'Email';
+    if (scan.phone) return 'Phone';
+    if (scan.username) return 'Username';
+    return 'Unknown';
   };
   const getRiskColor = (scan: Scan) => {
     const highRisk = scan.high_risk_count || 0;
@@ -554,7 +598,16 @@ const Dashboard = () => {
                         {scans.slice(0, 3).map((scan, index) => <div key={scan.id} style={{
                       animationDelay: `${0.4 + index * 0.1}s`
                     }}>
-                            <EntityCard name={getTarget(scan)} subtitle={`Scanned ${format(new Date(scan.created_at), 'MMM d, yyyy')}`} tags={[`${scan.high_risk_count || 0} High Risk`, `${scan.medium_risk_count || 0} Medium`, `Score: ${getRiskScore(scan)}`]} confidence={Math.round(getRiskScore(scan))} onClick={() => navigate(`/scan/${scan.id}/results`)} />
+                            <EntityCard 
+                              name={getTarget(scan)} 
+                              subtitle={`Scanned ${format(new Date(scan.created_at), 'MMM d, yyyy')}`}
+                              entityType={getEntityType(scan)}
+                              lastUpdated={scan.completed_at ? format(new Date(scan.completed_at), 'MMM d, yyyy h:mm a') : undefined}
+                              tags={[`${scan.high_risk_count || 0} High Risk`, `${scan.medium_risk_count || 0} Medium`, `Score: ${getRiskScore(scan)}`]} 
+                              confidence={Math.round(getRiskScore(scan))}
+                              socialLinks={scanSocialLinks[scan.id] || []}
+                              onClick={() => navigate(`/scan/${scan.id}/results`)} 
+                            />
                           </div>)}
                       </div>
                     </div>
