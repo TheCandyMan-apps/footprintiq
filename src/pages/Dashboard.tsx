@@ -440,32 +440,38 @@ const Dashboard = () => {
         <Header />
 
         {/* Hero Section */}
-        <div data-tour="dashboard-hero" className="relative bg-gradient-to-br from-primary/20 to-background p-8 rounded-xl shadow-[var(--shadow-elevated)] mx-6 mt-6 animate-fade-in border border-primary/10">
-          <div className="max-w-7xl mx-auto">
+        <div data-tour="dashboard-hero" className="relative bg-gradient-to-br from-primary/10 via-background to-accent/5 p-8 rounded-2xl shadow-[var(--shadow-elevated)] mx-6 mt-6 animate-fade-in border border-primary/20 overflow-hidden">
+          {/* Decorative background elements */}
+          <div className="absolute inset-0 bg-grid-primary/[0.02] pointer-events-none" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="max-w-7xl mx-auto relative z-10">
             <div className="flex items-start justify-between gap-8">
-              <div className="flex items-start gap-4 flex-1">
-                {/* Digital Footprint Shield Icon */}
-                <div className="relative shrink-0">
-                  <div className="absolute inset-0 bg-primary/20 rounded-lg blur-xl animate-pulse" />
-                  <svg className="relative w-16 h-16 text-primary" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M32 4L8 16V28C8 42 18 54 32 60C46 54 56 42 56 28V16L32 4Z" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="currentColor" fillOpacity="0.1" />
-                    <path d="M32 20V32M32 40H32.02" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="24" cy="48" r="2" fill="currentColor" fillOpacity="0.6" />
-                    <circle cx="40" cy="48" r="2" fill="currentColor" fillOpacity="0.6" />
-                    <circle cx="32" cy="52" r="2" fill="currentColor" fillOpacity="0.6" />
-                  </svg>
+              <div className="flex items-center gap-6 flex-1">
+                {/* Logo Shield */}
+                <div className="relative shrink-0 group">
+                  <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl group-hover:blur-3xl transition-all duration-500" />
+                  <img 
+                    src="/logo-dark.png" 
+                    alt="FootprintIQ Shield" 
+                    className="relative h-20 w-auto animate-float drop-shadow-2xl"
+                  />
                 </div>
 
-                {/* Heading and Subtitle */}
-                <div className="space-y-2 transition-[var(--transition-smooth)]">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 mb-2">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-sm font-medium text-primary">Live Protection Active</span>
+                {/* Heading and Status */}
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 backdrop-blur-sm">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.6)]" />
+                    <span className="text-sm font-semibold text-primary">Live Protection Active</span>
                   </div>
-                  <h1 className="text-3xl font-bold text-primary">FootprintIQ Dashboard</h1>
-                  <p className="text-lg text-muted-foreground">
-                    Monitor and protect your digital presence
-                  </p>
+                  <div>
+                    <h1 className="text-4xl font-bold bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent mb-2">
+                      Your Intelligence Command Center
+                    </h1>
+                    <p className="text-base text-muted-foreground/80 font-medium">
+                      Real-time monitoring and threat intelligence at your fingertips
+                    </p>
+                  </div>
                 </div>
               </div>
 
