@@ -456,27 +456,29 @@ const Dashboard = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="mx-6 mt-4 flex flex-wrap gap-3 justify-center md:justify-start rounded-md">
-          <Button onClick={() => navigate('/anomaly-history')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
-            <Zap className="h-4 w-4 mr-2" />
-            Anomaly History
-          </Button>
-          <Button onClick={() => navigate('/graph')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
-            <Network className="h-4 w-4 mr-2" />
-            Entity Graph
-          </Button>
-          <Button onClick={() => navigate('/scan/batch')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
-            <FileStack className="h-4 w-4 mr-2" />
-            Batch Scan
-          </Button>
-          <Button data-tour="advanced-scan-btn" onClick={() => navigate('/scan/advanced')} variant="outline" className="shadow-lg shadow-accent/20 hover:shadow-glow hover:border-accent transition-[var(--transition-smooth)]">
-            <Zap className="h-4 w-4 mr-2" />
-            Advanced Scan
-          </Button>
-          <Button onClick={() => navigate('/scan')} className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-[var(--transition-smooth)] hover:scale-105">
-            <Play className="h-4 w-4 mr-2" />
-            Start New Scan
-          </Button>
+        <div className="max-w-7xl mx-auto px-6 mt-6 mb-2">
+          <div className="flex flex-wrap gap-4 justify-center items-center">
+            <Button onClick={() => navigate('/anomaly-history')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
+              <Zap className="h-4 w-4 mr-2" />
+              Anomaly History
+            </Button>
+            <Button onClick={() => navigate('/graph')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
+              <Network className="h-4 w-4 mr-2" />
+              Entity Graph
+            </Button>
+            <Button onClick={() => navigate('/scan/batch')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
+              <FileStack className="h-4 w-4 mr-2" />
+              Batch Scan
+            </Button>
+            <Button data-tour="advanced-scan-btn" onClick={() => navigate('/scan/advanced')} variant="outline" className="shadow-lg shadow-accent/20 hover:shadow-glow hover:border-accent transition-[var(--transition-smooth)]">
+              <Zap className="h-4 w-4 mr-2" />
+              Advanced Scan
+            </Button>
+            <Button onClick={() => navigate('/scan')} className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-[var(--transition-smooth)] hover:scale-105">
+              <Play className="h-4 w-4 mr-2" />
+              Start New Scan
+            </Button>
+          </div>
         </div>
 
         <main className="flex-1 overflow-auto">
