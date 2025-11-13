@@ -554,13 +554,7 @@ const Dashboard = () => {
                         {scans.slice(0, 3).map((scan, index) => <div key={scan.id} style={{
                       animationDelay: `${0.4 + index * 0.1}s`
                     }}>
-                            <EntityCard name={getTarget(scan)} subtitle={`Scanned ${format(new Date(scan.created_at), 'MMM d, yyyy')}`} tags={[`${scan.high_risk_count || 0} High Risk`, `${scan.medium_risk_count || 0} Medium`, `Score: ${getRiskScore(scan)}`]} confidence={Math.round(getRiskScore(scan))} socialLinks={[{
-                        platform: 'linkedin',
-                        url: '#'
-                      }, {
-                        platform: 'twitter',
-                        url: '#'
-                      }]} onClick={() => navigate(`/scan/${scan.id}/results`)} />
+                            <EntityCard name={getTarget(scan)} subtitle={`Scanned ${format(new Date(scan.created_at), 'MMM d, yyyy')}`} tags={[`${scan.high_risk_count || 0} High Risk`, `${scan.medium_risk_count || 0} Medium`, `Score: ${getRiskScore(scan)}`]} confidence={Math.round(getRiskScore(scan))} onClick={() => navigate(`/scan/${scan.id}/results`)} />
                           </div>)}
                       </div>
                     </div>
