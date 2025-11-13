@@ -56,14 +56,24 @@ const Dashboard = () => {
   const {
     workspace
   } = useWorkspace();
-  const { isPremium } = useSubscription();
-  
+  const {
+    isPremium
+  } = useSubscription();
+
   // Show low-credit toasts for free users
   useLowCreditToast();
-  
+
   // Tour system
   const tour = useTour(TOURS.onboarding);
-  const { isActive: isTourActive, currentStep, currentStepIndex, totalSteps, nextStep, prevStep, endTour } = tour;
+  const {
+    isActive: isTourActive,
+    currentStep,
+    currentStepIndex,
+    totalSteps,
+    nextStep,
+    prevStep,
+    endTour
+  } = tour;
   const [user, setUser] = useState<any>(null);
   const [scans, setScans] = useState<Scan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,49 +136,39 @@ const Dashboard = () => {
   // Set up real-time subscription for scan changes
   useEffect(() => {
     if (!user?.id) return;
-
     console.log('Setting up realtime subscription for scans');
-    
-    const channel = supabase
-      .channel('dashboard-scans-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'scans',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('Scan change detected:', payload.eventType, payload);
-          
-          // Refresh dashboard data when scans change
-          fetchDashboardData(user.id);
-          
-          // Show a toast notification for new scans
-          if (payload.eventType === 'INSERT') {
-            toast({
-              title: 'New scan detected',
-              description: 'Dashboard updating with latest data...',
-            });
-          } else if (payload.eventType === 'UPDATE') {
-            toast({
-              title: 'Scan updated',
-              description: 'Dashboard refreshing...',
-            });
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
-      });
+    const channel = supabase.channel('dashboard-scans-changes').on('postgres_changes', {
+      event: '*',
+      // Listen to all events (INSERT, UPDATE, DELETE)
+      schema: 'public',
+      table: 'scans',
+      filter: `user_id=eq.${user.id}`
+    }, payload => {
+      console.log('Scan change detected:', payload.eventType, payload);
 
+      // Refresh dashboard data when scans change
+      fetchDashboardData(user.id);
+
+      // Show a toast notification for new scans
+      if (payload.eventType === 'INSERT') {
+        toast({
+          title: 'New scan detected',
+          description: 'Dashboard updating with latest data...'
+        });
+      } else if (payload.eventType === 'UPDATE') {
+        toast({
+          title: 'Scan updated',
+          description: 'Dashboard refreshing...'
+        });
+      }
+    }).subscribe(status => {
+      console.log('Realtime subscription status:', status);
+    });
     return () => {
       console.log('Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [user?.id, toast]);
-
   const fetchDashboardData = async (userId: string) => {
     setLoading(true);
     try {
@@ -183,45 +183,38 @@ const Dashboard = () => {
       setScans(scansData || []);
 
       // Get accurate total scan count
-      const { count: totalCount } = await supabase
-        .from('scans')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .is('archived_at', null);
+      const {
+        count: totalCount
+      } = await supabase.from('scans').select('*', {
+        count: 'exact',
+        head: true
+      }).eq('user_id', userId).is('archived_at', null);
 
       // Get scans this month count
       const monthStart = new Date();
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
-      
-      const { count: monthCount } = await supabase
-        .from('scans')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .is('archived_at', null)
-        .gte('created_at', monthStart.toISOString());
+      const {
+        count: monthCount
+      } = await supabase.from('scans').select('*', {
+        count: 'exact',
+        head: true
+      }).eq('user_id', userId).is('archived_at', null).gte('created_at', monthStart.toISOString());
 
       // Get recent (24h) scans count
       const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const { count: recentCount } = await supabase
-        .from('scans')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .is('archived_at', null)
-        .gte('created_at', dayAgo.toISOString());
+      const {
+        count: recentCount
+      } = await supabase.from('scans').select('*', {
+        count: 'exact',
+        head: true
+      }).eq('user_id', userId).is('archived_at', null).gte('created_at', dayAgo.toISOString());
 
       // Get aggregate high risk count from all scans
-      const { data: aggregateData } = await supabase
-        .from('scans')
-        .select('high_risk_count')
-        .eq('user_id', userId)
-        .is('archived_at', null);
-      
-      const totalHighRisk = aggregateData?.reduce(
-        (sum, scan) => sum + (scan.high_risk_count || 0), 
-        0
-      ) || 0;
-
+      const {
+        data: aggregateData
+      } = await supabase.from('scans').select('high_risk_count').eq('user_id', userId).is('archived_at', null);
+      const totalHighRisk = aggregateData?.reduce((sum, scan) => sum + (scan.high_risk_count || 0), 0) || 0;
       setStats({
         totalScans: totalCount || 0,
         highRiskFindings: totalHighRisk,
@@ -350,29 +343,25 @@ const Dashboard = () => {
       setSelectedScans(new Set(scans.map(s => s.id)));
     }
   };
-
   const handleRescan = async () => {
     if (!user?.id) return;
-    
     setIsRescanning(true);
     try {
       toast({
         title: 'Refreshing DNA metrics',
-        description: 'Updating your Digital DNA data...',
+        description: 'Updating your Digital DNA data...'
       });
-      
       await fetchDashboardData(user.id);
-      
       toast({
         title: 'DNA metrics updated',
-        description: 'Your Digital DNA has been refreshed with the latest data.',
+        description: 'Your Digital DNA has been refreshed with the latest data.'
       });
     } catch (error: any) {
       console.error('Rescan error:', error);
       toast({
         title: 'Error updating metrics',
         description: error.message,
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsRescanning(false);
@@ -450,19 +439,15 @@ const Dashboard = () => {
               {/* Logo Shield */}
               <div className="relative shrink-0 group">
                 <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl group-hover:blur-3xl transition-all duration-500" />
-                <img 
-                  src="/logo-dark.png" 
-                  alt="FootprintIQ Shield" 
-                  className="relative h-20 w-auto animate-float drop-shadow-2xl"
-                />
+                <img src="/logo-dark.png" alt="FootprintIQ Shield" className="relative h-20 w-auto animate-float drop-shadow-2xl" />
               </div>
 
               {/* Heading and Subtitle */}
               <div className="flex-1 min-w-0">
-                <h1 className="text-4xl font-bold bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent whitespace-nowrap">
+                <h1 className="font-bold bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent whitespace-nowrap text-6xl">
                   Your Intelligence Command Center
                 </h1>
-                <p className="text-base text-muted-foreground/80 font-medium mt-2 whitespace-nowrap">
+                <p className="text-muted-foreground/80 font-medium mt-2 whitespace-nowrap text-base text-center">
                   Real-time monitoring and threat intelligence at your fingertips
                 </p>
               </div>
@@ -471,7 +456,7 @@ const Dashboard = () => {
         </div>
 
         {/* Action Buttons */}
-        <div className="mx-6 mt-4 flex flex-wrap gap-3 justify-center md:justify-start">
+        <div className="mx-6 mt-4 flex flex-wrap gap-3 justify-center md:justify-start rounded-md">
           <Button onClick={() => navigate('/anomaly-history')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
             <Zap className="h-4 w-4 mr-2" />
             Anomaly History
@@ -497,15 +482,9 @@ const Dashboard = () => {
         <main className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto px-6 py-8">
               {/* Premium Upgrade CTA for Free Users */}
-              {!isPremium && (
-                <div className="mb-8">
-                  <PremiumUpgradeCTA 
-                    variant="banner"
-                    message="Upgrade to Pro for unlimited scans"
-                    feature="unlimited scans, advanced tools, and AI analysis"
-                  />
-                </div>
-              )}
+              {!isPremium && <div className="mb-8">
+                  <PremiumUpgradeCTA variant="banner" message="Upgrade to Pro for unlimited scans" feature="unlimited scans, advanced tools, and AI analysis" />
+                </div>}
               
               <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="grid w-full grid-cols-6 mb-8">
@@ -547,43 +526,19 @@ const Dashboard = () => {
                     {/* Main Metrics with Glassmorphic Cards */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <GlassCard delay={0} intensity="medium" glowColor="purple" className="p-6 flex items-center justify-center">
-                        <CircularMetric
-                          value={dnaMetrics.score / 10}
-                          max={10}
-                          label="Risk Score"
-                          size="md"
-                          gradient
-                        />
+                        <CircularMetric value={dnaMetrics.score / 10} max={10} label="Risk Score" size="md" gradient />
                       </GlassCard>
                       
                       <GlassCard delay={0.1} intensity="medium" glowColor="pink" className="p-6 flex items-center justify-center">
-                        <CircularMetric
-                          value={dnaMetrics.exposures}
-                          max={50}
-                          label="Exposures"
-                          size="md"
-                          gradient
-                        />
+                        <CircularMetric value={dnaMetrics.exposures} max={50} label="Exposures" size="md" gradient />
                       </GlassCard>
                       
                       <GlassCard delay={0.2} intensity="medium" glowColor="cyan" className="p-6 flex items-center justify-center">
-                        <CircularMetric
-                          value={dnaMetrics.dataBrokers}
-                          max={30}
-                          label="Data Brokers"
-                          size="md"
-                          gradient
-                        />
+                        <CircularMetric value={dnaMetrics.dataBrokers} max={30} label="Data Brokers" size="md" gradient />
                       </GlassCard>
                       
                       <GlassCard delay={0.3} intensity="medium" glowColor="purple" className="p-6 flex items-center justify-center">
-                        <CircularMetric
-                          value={dnaMetrics.darkWeb}
-                          max={20}
-                          label="Dark Web"
-                          size="md"
-                          gradient
-                        />
+                        <CircularMetric value={dnaMetrics.darkWeb} max={20} label="Dark Web" size="md" gradient />
                       </GlassCard>
                     </div>
 
@@ -594,34 +549,23 @@ const Dashboard = () => {
                         Recent Entities Discovered
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {scans.slice(0, 3).map((scan, index) => (
-                          <div key={scan.id} style={{ animationDelay: `${0.4 + index * 0.1}s` }}>
-                            <EntityCard
-                              name={getTarget(scan)}
-                              subtitle={`Scanned ${format(new Date(scan.created_at), 'MMM d, yyyy')}`}
-                              tags={[
-                              `${scan.high_risk_count || 0} High Risk`,
-                              `${scan.medium_risk_count || 0} Medium`,
-                              `Score: ${getRiskScore(scan)}`
-                            ]}
-                            confidence={Math.round(getRiskScore(scan))}
-                            socialLinks={[
-                              { platform: 'linkedin', url: '#' },
-                              { platform: 'twitter', url: '#' },
-                            ]}
-                            onClick={() => navigate(`/scan/${scan.id}/results`)}
-                          />
-                          </div>
-                        ))}
+                        {scans.slice(0, 3).map((scan, index) => <div key={scan.id} style={{
+                      animationDelay: `${0.4 + index * 0.1}s`
+                    }}>
+                            <EntityCard name={getTarget(scan)} subtitle={`Scanned ${format(new Date(scan.created_at), 'MMM d, yyyy')}`} tags={[`${scan.high_risk_count || 0} High Risk`, `${scan.medium_risk_count || 0} Medium`, `Score: ${getRiskScore(scan)}`]} confidence={Math.round(getRiskScore(scan))} socialLinks={[{
+                        platform: 'linkedin',
+                        url: '#'
+                      }, {
+                        platform: 'twitter',
+                        url: '#'
+                      }]} onClick={() => navigate(`/scan/${scan.id}/results`)} />
+                          </div>)}
                       </div>
                     </div>
 
                     {/* Data Visualization Section */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <NetworkPreview
-                        nodeCount={12}
-                        onClick={() => navigate('/graph')}
-                      />
+                      <NetworkPreview nodeCount={12} onClick={() => navigate('/graph')} />
                       
                       <GlassCard intensity="medium" glowColor="purple" className="p-6">
                         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -655,27 +599,13 @@ const Dashboard = () => {
                   </div>
 
                   {/* Footprint DNA Card */}
-                  {loading ? (
-                    <div className="mb-8">
+                  {loading ? <div className="mb-8">
                       <FootprintDNASkeleton />
-                    </div>
-                  ) : scans.length > 0 ? (
-                    <div data-tour="digital-dna" className="mb-8">
-                      <FootprintDNA
-                        score={dnaMetrics.score} 
-                        breaches={dnaMetrics.breaches} 
-                        exposures={dnaMetrics.exposures} 
-                        dataBrokers={dnaMetrics.dataBrokers} 
-                        darkWeb={dnaMetrics.darkWeb} 
-                        trendData={trendData} 
-                        onOpenDetails={() => setIsDNAModalOpen(true)}
-                        onRescan={handleRescan}
-                        isRescanning={isRescanning}
-                      />
+                    </div> : scans.length > 0 ? <div data-tour="digital-dna" className="mb-8">
+                      <FootprintDNA score={dnaMetrics.score} breaches={dnaMetrics.breaches} exposures={dnaMetrics.exposures} dataBrokers={dnaMetrics.dataBrokers} darkWeb={dnaMetrics.darkWeb} trendData={trendData} onOpenDetails={() => setIsDNAModalOpen(true)} onRescan={handleRescan} isRescanning={isRescanning} />
 
                       <FootprintDNAModal open={isDNAModalOpen} onOpenChange={setIsDNAModalOpen} trendData={trendData} currentScore={dnaMetrics.score} />
-                    </div>
-                  ) : null}
+                    </div> : null}
 
                   {/* Quick Actions */}
                   <Card className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow transition-all duration-300">
@@ -873,16 +803,7 @@ const Dashboard = () => {
         <ScrollToTop />
         
         {/* Tour Highlight */}
-        {isTourActive && currentStep && (
-          <TourHighlight
-            step={currentStep}
-            currentStepIndex={currentStepIndex}
-            totalSteps={totalSteps}
-            onNext={nextStep}
-            onPrev={prevStep}
-            onSkip={endTour}
-          />
-        )}
+        {isTourActive && currentStep && <TourHighlight step={currentStep} currentStepIndex={currentStepIndex} totalSteps={totalSteps} onNext={nextStep} onPrev={prevStep} onSkip={endTour} />}
       </div>
     </>;
 };
