@@ -606,7 +606,7 @@ const Dashboard = () => {
                               tags={[`${scan.high_risk_count || 0} High Risk`, `${scan.medium_risk_count || 0} Medium`, `Score: ${getRiskScore(scan)}`]} 
                               confidence={Math.round(getRiskScore(scan))}
                               socialLinks={scanSocialLinks[scan.id] || []}
-                              onClick={() => navigate(`/scan/${scan.id}/results`)} 
+                              onClick={() => navigate(`/results/${scan.id}`)}
                             />
                           </div>)}
                       </div>
