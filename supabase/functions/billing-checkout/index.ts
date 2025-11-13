@@ -37,10 +37,12 @@ serve(async (req) => {
       );
     }
 
-    const { plan } = await req.json();
-    if (!plan) {
+    const { plan, priceId: directPriceId } = await req.json();
+    
+    // Accept either plan name or direct priceId
+    if (!plan && !directPriceId) {
       return new Response(
-        JSON.stringify({ error: 'Missing plan' }),
+        JSON.stringify({ error: 'Missing plan or priceId' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -66,13 +68,15 @@ serve(async (req) => {
     // Map plan names to price IDs
     const priceMap: Record<string, string> = {
       analyst: 'price_1SQgxEPNdM5SAyj7pZEUc11u',
+      pro: 'price_1SQwWCPNdM5SAyj7XS394cD8',
       enterprise: 'price_1SQh9JPNdM5SAyj722p376Qh',
     };
 
-    const priceId = priceMap[plan];
+    // Use direct priceId if provided, otherwise map from plan name
+    const priceId = directPriceId || priceMap[plan];
     if (!priceId) {
       return new Response(
-        JSON.stringify({ error: 'Invalid plan' }),
+        JSON.stringify({ error: 'Invalid plan or priceId' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
