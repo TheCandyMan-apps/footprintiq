@@ -29,12 +29,37 @@ export function CircularMetric({
   const { dimension, stroke, fontSize } = sizeMap[size];
   const radius = (dimension - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
-  const percentage = (value / max) * 100;
+  const percentage = (animatedValue / max) * 100;
   const offset = circumference - (percentage / 100) * circumference;
 
   useEffect(() => {
-    const timer = setTimeout(() => setAnimatedValue(value), 100);
-    return () => clearTimeout(timer);
+    let startTime: number;
+    let animationFrame: number;
+    const duration = 1500; // 1.5 seconds
+    
+    const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+    
+    const animate = (currentTime: number) => {
+      if (!startTime) startTime = currentTime;
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const easedProgress = easeOutCubic(progress);
+      setAnimatedValue(easedProgress * value);
+      
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      }
+    };
+    
+    const timer = setTimeout(() => {
+      animationFrame = requestAnimationFrame(animate);
+    }, 100);
+    
+    return () => {
+      clearTimeout(timer);
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+    };
   }, [value]);
 
   return (
