@@ -3,6 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Play, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+const getImagePaths = (pngPath: string) => {
+  const webpPath = pngPath.replace(/\.png$/, '.webp');
+  return { pngPath, webpPath };
+};
+
 interface FeatureDemoProps {
   title: string;
   steps: {
@@ -51,6 +56,32 @@ export const FeatureDemo = ({ title, steps }: FeatureDemoProps) => {
     setImageLoading(true);
     setImageError(false);
   }, [currentStep]);
+
+  // Prefetch next and previous images
+  useEffect(() => {
+    const prefetchImage = (index: number) => {
+      const step = steps[index];
+      if (!step) return;
+      
+      const { pngPath, webpPath } = getImagePaths(step.screenshot);
+      
+      // Prefetch WebP
+      const webpImg = new Image();
+      webpImg.src = webpPath;
+      
+      // Prefetch PNG fallback
+      const pngImg = new Image();
+      pngImg.src = pngPath;
+    };
+
+    // Prefetch next step
+    const nextStep = (currentStep + 1) % steps.length;
+    prefetchImage(nextStep);
+
+    // Prefetch previous step
+    const prevStep = (currentStep - 1 + steps.length) % steps.length;
+    prefetchImage(prevStep);
+  }, [currentStep, steps]);
 
   const handleStepClick = (index: number) => {
     clearAnimation();
@@ -119,23 +150,30 @@ export const FeatureDemo = ({ title, steps }: FeatureDemoProps) => {
             </div>
           )}
 
-          {/* Image */}
-          <img
-            src={steps[currentStep].screenshot}
-            alt={steps[currentStep].label}
-            loading="lazy"
-            decoding="async"
-            className={cn(
-              "w-full h-full object-contain transition-opacity duration-300",
-              imageLoading || imageError ? "opacity-0" : "opacity-100 animate-fade-in"
-            )}
-            onLoad={() => setImageLoading(false)}
-            onError={() => {
-              setImageLoading(false);
-              setImageError(true);
-            }}
-            key={currentStep}
-          />
+          {/* Image with WebP support */}
+          <picture>
+            <source 
+              type="image/webp" 
+              srcSet={getImagePaths(steps[currentStep].screenshot).webpPath}
+            />
+            <img
+              src={getImagePaths(steps[currentStep].screenshot).pngPath}
+              alt={steps[currentStep].label}
+              loading="lazy"
+              decoding="async"
+              sizes="(max-width: 768px) 100vw, 1280px"
+              className={cn(
+                "w-full h-full object-contain transition-opacity duration-300",
+                imageLoading || imageError ? "opacity-0" : "opacity-100 animate-fade-in"
+              )}
+              onLoad={() => setImageLoading(false)}
+              onError={() => {
+                setImageLoading(false);
+                setImageError(true);
+              }}
+              key={currentStep}
+            />
+          </picture>
 
           {/* Step Indicator */}
           <div className="absolute top-4 left-4 bg-primary/90 text-primary-foreground px-3 py-1 rounded-full text-sm font-medium shadow-lg">
