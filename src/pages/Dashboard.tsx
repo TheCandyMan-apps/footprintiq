@@ -34,6 +34,7 @@ import { CircularMetric } from '@/components/dashboard/CircularMetric';
 import { EntityCard } from '@/components/dashboard/EntityCard';
 import { NetworkPreview } from '@/components/dashboard/NetworkPreview';
 import { SocialIntegrations } from '@/components/dashboard/SocialIntegrations';
+import { ParticleBackground } from '@/components/dashboard/ParticleBackground';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useLowCreditToast } from '@/hooks/useLowCreditToast';
@@ -428,11 +429,12 @@ const Dashboard = () => {
   }];
   if (!user) return null;
   return <>
+      <ParticleBackground />
       <InitializeDarkWebDemo />
       <SEO title="Dashboard — FootprintIQ" description="View your OSINT scans, findings, and entity relationships" canonical="https://footprintiq.app/dashboard" />
       <AnnouncementBar message="💡 Pro Tip: Use AI Analyst to get instant insights from your scan results." link="/ai-analyst" linkText="Try AI Analyst" storageKey="ai-analyst-dashboard-tip" variant="update" />
       <ScrollProgressBar />
-      <div className="min-h-screen bg-background flex flex-col w-full animate-fadeIn">
+      <div className="min-h-screen bg-background flex flex-col w-full animate-fadeIn relative z-10">
         <Header />
 
         {/* Hero Section */}
