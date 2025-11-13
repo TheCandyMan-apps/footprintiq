@@ -439,7 +439,7 @@ const Dashboard = () => {
               {/* Logo Shield */}
               <div className="relative shrink-0 group">
                 <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl group-hover:blur-3xl transition-all duration-500" />
-                <img src="/logo-dark.png" alt="FootprintIQ Shield" className="relative h-20 w-auto animate-float drop-shadow-2xl" />
+                
               </div>
 
               {/* Heading and Subtitle */}
