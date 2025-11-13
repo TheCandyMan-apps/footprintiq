@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Pause } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -15,31 +15,44 @@ interface FeatureDemoProps {
 export const FeatureDemo = ({ title, steps }: FeatureDemoProps) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const clearAnimation = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => clearAnimation();
+  }, []);
+
+  useEffect(() => {
+    if (isPlaying) {
+      intervalRef.current = setInterval(() => {
+        setCurrentStep((prev) => {
+          const next = (prev + 1) % steps.length;
+          if (next === 0) {
+            clearAnimation();
+            setIsPlaying(false);
+          }
+          return next;
+        });
+      }, 3000);
+    } else {
+      clearAnimation();
+    }
+  }, [isPlaying, steps.length]);
 
   const handleStepClick = (index: number) => {
+    clearAnimation();
     setCurrentStep(index);
     setIsPlaying(false);
   };
 
   const handlePlayPause = () => {
-    if (isPlaying) {
-      setIsPlaying(false);
-    } else {
-      setIsPlaying(true);
-      playAnimation();
-    }
-  };
-
-  const playAnimation = () => {
-    let step = currentStep;
-    const interval = setInterval(() => {
-      step = (step + 1) % steps.length;
-      setCurrentStep(step);
-      if (step === steps.length - 1) {
-        clearInterval(interval);
-        setIsPlaying(false);
-      }
-    }, 3000);
+    setIsPlaying(!isPlaying);
   };
 
   return (
