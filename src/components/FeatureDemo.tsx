@@ -123,6 +123,8 @@ export const FeatureDemo = ({ title, steps }: FeatureDemoProps) => {
           <img
             src={steps[currentStep].screenshot}
             alt={steps[currentStep].label}
+            loading="lazy"
+            decoding="async"
             className={cn(
               "w-full h-full object-contain transition-opacity duration-300",
               imageLoading || imageError ? "opacity-0" : "opacity-100 animate-fade-in"
