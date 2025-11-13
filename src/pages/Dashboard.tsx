@@ -444,7 +444,7 @@ const Dashboard = () => {
 
               {/* Heading and Subtitle */}
               <div className="flex-1 min-w-0">
-                <h1 className="font-bold bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent whitespace-nowrap text-6xl">
+                <h1 className="font-bold bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent whitespace-nowrap text-4xl">
                   Your Intelligence Command Center
                 </h1>
                 <p className="text-muted-foreground/80 font-medium mt-2 whitespace-nowrap text-base text-center">
