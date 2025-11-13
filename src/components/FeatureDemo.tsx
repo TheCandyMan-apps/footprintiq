@@ -81,32 +81,16 @@ export const FeatureDemo = ({ title, steps }: FeatureDemoProps) => {
 
       {/* Demo Display */}
       <div className="relative rounded-lg overflow-hidden bg-background/50 border border-border mb-4 aspect-video">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative w-full h-full">
-            {/* Animated Screenshot */}
-            <div
-              className="absolute inset-0 flex items-center justify-center p-8 animate-fade-in"
-              key={currentStep}
-            >
-              <div className="text-center">
-                <div className="w-full max-w-2xl mx-auto bg-card/80 backdrop-blur-sm rounded-lg border border-primary/20 p-8 shadow-2xl">
-                  <div className="space-y-4">
-                    <div className="h-8 bg-gradient-to-r from-primary/20 to-accent/20 rounded animate-pulse" />
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="h-32 bg-gradient-card rounded border border-border/50" />
-                      <div className="h-32 bg-gradient-card rounded border border-border/50" />
-                    </div>
-                    <div className="h-4 bg-gradient-to-r from-primary/10 to-transparent rounded w-3/4 mx-auto" />
-                    <div className="h-4 bg-gradient-to-r from-primary/10 to-transparent rounded w-1/2 mx-auto" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Step Indicator */}
-            <div className="absolute top-4 left-4 bg-primary/90 text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
-              Step {currentStep + 1} of {steps.length}
-            </div>
+        <div className="absolute inset-0">
+          <img
+            src={steps[currentStep].screenshot}
+            alt={steps[currentStep].label}
+            className="w-full h-full object-contain animate-fade-in"
+            key={currentStep}
+          />
+          {/* Step Indicator */}
+          <div className="absolute top-4 left-4 bg-primary/90 text-primary-foreground px-3 py-1 rounded-full text-sm font-medium shadow-lg">
+            Step {currentStep + 1} of {steps.length}
           </div>
         </div>
       </div>
