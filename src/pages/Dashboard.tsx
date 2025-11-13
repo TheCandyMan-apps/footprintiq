@@ -446,7 +446,7 @@ const Dashboard = () => {
           <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
           
           <div className="max-w-7xl mx-auto relative z-10">
-            <div className="flex items-start justify-between gap-8">
+            <div className="flex items-center justify-between gap-8">
               <div className="flex items-center gap-6 flex-1">
                 {/* Logo Shield */}
                 <div className="relative shrink-0 group">
@@ -458,20 +458,14 @@ const Dashboard = () => {
                   />
                 </div>
 
-                {/* Heading and Status */}
-                <div className="space-y-3">
-                  <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/30 backdrop-blur-sm">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.6)]" />
-                    <span className="text-sm font-semibold text-primary">Live Protection Active</span>
-                  </div>
-                  <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent mb-2">
-                      Your Intelligence Command Center
-                    </h1>
-                    <p className="text-base text-muted-foreground/80 font-medium">
-                      Real-time monitoring and threat intelligence at your fingertips
-                    </p>
-                  </div>
+                {/* Heading and Subtitle */}
+                <div className="flex-1 min-w-0">
+                  <h1 className="text-4xl font-bold bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent whitespace-nowrap">
+                    Your Intelligence Command Center
+                  </h1>
+                  <p className="text-base text-muted-foreground/80 font-medium mt-2 whitespace-nowrap">
+                    Real-time monitoring and threat intelligence at your fingertips
+                  </p>
                 </div>
               </div>
 
