@@ -37,10 +37,15 @@ serve(async (req) => {
       );
     }
 
-    const { plan, priceId: directPriceId } = await req.json();
+    const body = await req.json();
+    console.log('Received request body:', JSON.stringify(body));
+    
+    const { plan, priceId: directPriceId } = body;
+    console.log('Extracted plan:', plan, 'priceId:', directPriceId);
     
     // Accept either plan name or direct priceId
     if (!plan && !directPriceId) {
+      console.error('Missing both plan and priceId');
       return new Response(
         JSON.stringify({ error: 'Missing plan or priceId' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
