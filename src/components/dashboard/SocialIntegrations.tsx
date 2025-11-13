@@ -82,15 +82,16 @@ export function SocialIntegrations() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {platforms.map((platform) => {
+        {platforms.map((platform, index) => {
           const Icon = platform.icon;
           return (
             <GlassCard
               key={platform.name}
+              delay={index * 0.1}
               intensity="medium"
               glowColor={platform.connected ? 'purple' : 'none'}
               className={cn(
-                "p-5 transition-all duration-300",
+                "p-5",
                 !platform.connected && "opacity-60"
               )}
             >

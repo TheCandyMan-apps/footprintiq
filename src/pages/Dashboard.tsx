@@ -544,7 +544,7 @@ const Dashboard = () => {
                     
                     {/* Main Metrics with Glassmorphic Cards */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <GlassCard intensity="medium" glowColor="purple" className="p-6 flex items-center justify-center">
+                      <GlassCard delay={0} intensity="medium" glowColor="purple" className="p-6 flex items-center justify-center">
                         <CircularMetric
                           value={dnaMetrics.score / 10}
                           max={10}
@@ -554,7 +554,7 @@ const Dashboard = () => {
                         />
                       </GlassCard>
                       
-                      <GlassCard intensity="medium" glowColor="pink" className="p-6 flex items-center justify-center">
+                      <GlassCard delay={0.1} intensity="medium" glowColor="pink" className="p-6 flex items-center justify-center">
                         <CircularMetric
                           value={dnaMetrics.exposures}
                           max={50}
@@ -564,7 +564,7 @@ const Dashboard = () => {
                         />
                       </GlassCard>
                       
-                      <GlassCard intensity="medium" glowColor="cyan" className="p-6 flex items-center justify-center">
+                      <GlassCard delay={0.2} intensity="medium" glowColor="cyan" className="p-6 flex items-center justify-center">
                         <CircularMetric
                           value={dnaMetrics.dataBrokers}
                           max={30}
@@ -574,7 +574,7 @@ const Dashboard = () => {
                         />
                       </GlassCard>
                       
-                      <GlassCard intensity="medium" glowColor="purple" className="p-6 flex items-center justify-center">
+                      <GlassCard delay={0.3} intensity="medium" glowColor="purple" className="p-6 flex items-center justify-center">
                         <CircularMetric
                           value={dnaMetrics.darkWeb}
                           max={20}
@@ -592,12 +592,12 @@ const Dashboard = () => {
                         Recent Entities Discovered
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {scans.slice(0, 3).map((scan) => (
-                          <EntityCard
-                            key={scan.id}
-                            name={getTarget(scan)}
-                            subtitle={`Scanned ${format(new Date(scan.created_at), 'MMM d, yyyy')}`}
-                            tags={[
+                        {scans.slice(0, 3).map((scan, index) => (
+                          <div key={scan.id} style={{ animationDelay: `${0.4 + index * 0.1}s` }}>
+                            <EntityCard
+                              name={getTarget(scan)}
+                              subtitle={`Scanned ${format(new Date(scan.created_at), 'MMM d, yyyy')}`}
+                              tags={[
                               `${scan.high_risk_count || 0} High Risk`,
                               `${scan.medium_risk_count || 0} Medium`,
                               `Score: ${getRiskScore(scan)}`
@@ -609,6 +609,7 @@ const Dashboard = () => {
                             ]}
                             onClick={() => navigate(`/scan/${scan.id}/results`)}
                           />
+                          </div>
                         ))}
                       </div>
                     </div>
