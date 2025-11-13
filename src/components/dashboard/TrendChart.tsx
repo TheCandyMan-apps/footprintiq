@@ -55,28 +55,32 @@ export function TrendChart({ data, showForecast = false, loading }: TrendChartPr
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="relative p-6 rounded-lg backdrop-blur-xl bg-background/40 border border-border/50 shadow-[0_0_40px_hsl(280_70%_60%/0.2)]">
+      <CardHeader className="p-0 pb-4">
         <CardTitle>Findings Trend by Severity</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <AreaChart data={processedData} accessibilityLayer>
             <defs>
               <linearGradient id="colorLow" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.5} />
+                <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0.05} />
               </linearGradient>
               <linearGradient id="colorMedium" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(280 70% 50%)" stopOpacity={0.5} />
+                <stop offset="95%" stopColor="hsl(280 70% 50%)" stopOpacity={0.05} />
               </linearGradient>
               <linearGradient id="colorHigh" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+                <stop offset="5%" stopColor="hsl(320 70% 50%)" stopOpacity={0.5} />
+                <stop offset="95%" stopColor="hsl(320 70% 50%)" stopOpacity={0.05} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              stroke="hsl(var(--border))" 
+              opacity={0.3}
+            />
             <XAxis 
               dataKey="date" 
               stroke="hsl(var(--muted-foreground))"
@@ -99,7 +103,7 @@ export function TrendChart({ data, showForecast = false, loading }: TrendChartPr
               type="monotone"
               dataKey="medium"
               stackId="1"
-              stroke="hsl(var(--primary))"
+              stroke="hsl(280 70% 50%)"
               fill="url(#colorMedium)"
               strokeWidth={2}
             />
@@ -107,7 +111,7 @@ export function TrendChart({ data, showForecast = false, loading }: TrendChartPr
               type="monotone"
               dataKey="high"
               stackId="1"
-              stroke="hsl(var(--destructive))"
+              stroke="hsl(320 70% 50%)"
               fill="url(#colorHigh)"
               strokeWidth={2}
             />
@@ -130,6 +134,6 @@ export function TrendChart({ data, showForecast = false, loading }: TrendChartPr
           </AreaChart>
         </ChartContainer>
       </CardContent>
-    </Card>
+    </div>
   );
 }

@@ -106,6 +106,20 @@ All colors MUST be HSL.
     --shadow-card: 0 8px 32px hsl(240 10% 0% / 0.4);
     --shadow-elevated: 0 20px 60px hsl(240 10% 0% / 0.6), 0 0 80px hsl(263 70% 60% / 0.15);
     --shadow-inner: inset 0 2px 8px hsl(240 10% 0% / 0.3);
+    
+    /* OSINT Glassmorphism */
+    --glass-background: hsl(240 10% 10% / 0.6);
+    --glass-border: hsl(263 70% 60% / 0.2);
+    --glass-blur: blur(12px);
+    
+    /* Enhanced Cyber Gradients */
+    --gradient-cyber: linear-gradient(135deg, hsl(280 70% 50%) 0%, hsl(320 70% 50%) 50%, hsl(263 70% 60%) 100%);
+    --gradient-mesh-cyber: radial-gradient(at 20% 30%, hsl(280 70% 35% / 0.4) 0px, transparent 50%), radial-gradient(at 80% 70%, hsl(320 70% 35% / 0.3) 0px, transparent 50%);
+    --gradient-circular: conic-gradient(from 180deg at 50% 50%, hsl(280 70% 50%), hsl(320 70% 50%), hsl(263 70% 60%), hsl(280 70% 50%));
+    
+    /* Enhanced Shadows */
+    --shadow-glow-intense: 0 0 60px hsl(280 70% 60% / 0.4), 0 0 100px hsl(320 70% 60% / 0.2);
+    --shadow-cyber: 0 8px 32px hsl(240 10% 0% / 0.6), 0 0 80px hsl(280 70% 60% / 0.15);
   }
 }
 

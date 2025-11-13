@@ -29,6 +29,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ThreatAnalyticsPanel } from '@/components/ThreatAnalyticsPanel';
 import { SkeletonStatCard, SkeletonRecentScans } from '@/components/dashboard/SkeletonCard';
 import { SkeletonThreatAnalytics } from '@/components/analytics/SkeletonAnalytics';
+import { GlassCard } from '@/components/dashboard/GlassCard';
+import { CircularMetric } from '@/components/dashboard/CircularMetric';
+import { EntityCard } from '@/components/dashboard/EntityCard';
+import { NetworkPreview } from '@/components/dashboard/NetworkPreview';
+import { SocialIntegrations } from '@/components/dashboard/SocialIntegrations';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useLowCreditToast } from '@/hooks/useLowCreditToast';
@@ -529,131 +534,120 @@ const Dashboard = () => {
                 </TabsList>
 
                 {/* Overview Tab */}
-                <TabsContent value="overview" className="space-y-6">
-                  {/* Enhanced Stats Grid */}
-                  <div data-tour="stats-overview" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                    {/* Scans This Month */}
-                    <div className="flex items-center gap-4 p-4 bg-secondary rounded-md hover:bg-secondary/80 transition-smooth group">
-                      <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
-                        <Target className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground mb-1">Scans This Month</p>
-                        <p className="text-2xl font-bold animate-pulse text-accent">{stats.scansThisMonth}</p>
-                      </div>
-                      <div className="w-20 h-12">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={monthlyTrendData}>
-                            <Bar dataKey="value" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
+                <TabsContent value="overview" className="space-y-8">
+                  {/* Circular Metrics Grid - OSINT Style */}
+                  <div data-tour="stats-overview" className="space-y-6">
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      <Shield className="w-6 h-6 text-primary" />
+                      OSINT Intelligence Dashboard
+                    </h2>
+                    
+                    {/* Main Metrics with Glassmorphic Cards */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <GlassCard intensity="medium" glowColor="purple" className="p-6 flex items-center justify-center">
+                        <CircularMetric
+                          value={dnaMetrics.score / 10}
+                          max={10}
+                          label="Risk Score"
+                          size="md"
+                          gradient
+                        />
+                      </GlassCard>
+                      
+                      <GlassCard intensity="medium" glowColor="pink" className="p-6 flex items-center justify-center">
+                        <CircularMetric
+                          value={dnaMetrics.exposures}
+                          max={50}
+                          label="Exposures"
+                          size="md"
+                          gradient
+                        />
+                      </GlassCard>
+                      
+                      <GlassCard intensity="medium" glowColor="cyan" className="p-6 flex items-center justify-center">
+                        <CircularMetric
+                          value={dnaMetrics.dataBrokers}
+                          max={30}
+                          label="Data Brokers"
+                          size="md"
+                          gradient
+                        />
+                      </GlassCard>
+                      
+                      <GlassCard intensity="medium" glowColor="purple" className="p-6 flex items-center justify-center">
+                        <CircularMetric
+                          value={dnaMetrics.darkWeb}
+                          max={20}
+                          label="Dark Web"
+                          size="md"
+                          gradient
+                        />
+                      </GlassCard>
+                    </div>
+
+                    {/* Entity Cards Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-xl font-semibold flex items-center gap-2">
+                        <Users className="w-5 h-5 text-primary" />
+                        Recent Entities Discovered
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {scans.slice(0, 3).map((scan) => (
+                          <EntityCard
+                            key={scan.id}
+                            name={getTarget(scan)}
+                            subtitle={`Scanned ${format(new Date(scan.created_at), 'MMM d, yyyy')}`}
+                            tags={[
+                              `${scan.high_risk_count || 0} High Risk`,
+                              `${scan.medium_risk_count || 0} Medium`,
+                              `Score: ${getRiskScore(scan)}`
+                            ]}
+                            confidence={Math.round(getRiskScore(scan))}
+                            socialLinks={[
+                              { platform: 'linkedin', url: '#' },
+                              { platform: 'twitter', url: '#' },
+                            ]}
+                            onClick={() => navigate(`/scan/${scan.id}/results`)}
+                          />
+                        ))}
                       </div>
                     </div>
 
-                    {/* High Risk Findings */}
-                    <div className="flex items-center gap-4 p-4 bg-secondary rounded-md hover:bg-secondary/80 transition-smooth group">
-                      <div className="p-3 rounded-lg bg-destructive/10 text-destructive group-hover:scale-110 transition-transform duration-300">
-                        <AlertTriangle className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground mb-1">High Risk Findings</p>
-                        <p className="text-2xl font-bold animate-pulse text-destructive">{stats.highRiskFindings}</p>
-                      </div>
-                      <div className="w-20 h-12">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={riskTrendData}>
-                            <Bar dataKey="value" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
+                    {/* Data Visualization Section */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <NetworkPreview
+                        nodeCount={12}
+                        onClick={() => navigate('/graph')}
+                      />
+                      
+                      <GlassCard intensity="medium" glowColor="purple" className="p-6">
+                        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                          <Activity className="w-5 h-5 text-primary" />
+                          Activity Overview
+                        </h3>
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Scans This Month</span>
+                            <span className="text-lg font-bold text-primary">{stats.scansThisMonth}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">High Risk Findings</span>
+                            <span className="text-lg font-bold text-destructive">{stats.highRiskFindings}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Total Scans</span>
+                            <span className="text-lg font-bold text-accent">{stats.totalScans}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-bold text-success">{stats.activeMonitoring}</span>
+                          </div>
+                        </div>
+                      </GlassCard>
                     </div>
 
-                    {/* Total Scans */}
-                    <div className="flex items-center gap-4 p-4 bg-secondary rounded-md hover:bg-secondary/80 transition-smooth group">
-                      <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
-                        <FileSearch className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground mb-1">Total Scans</p>
-                        <p className="text-2xl font-bold text-accent">{stats.totalScans}</p>
-                      </div>
-                      <div className="w-20 h-12">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={activityData}>
-                            <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-
-                    {/* Weekly Activity */}
-                    <div className="flex items-center gap-4 p-4 bg-secondary rounded-md hover:bg-secondary/80 transition-smooth group">
-                      <div className="p-3 rounded-lg bg-accent/10 text-accent group-hover:scale-110 transition-transform duration-300">
-                        <Activity className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground mb-1">Recent Activity</p>
-                        <p className="text-2xl font-bold animate-pulse text-accent">{stats.recentFindings}</p>
-                      </div>
-                      <div className="w-20 h-12">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart data={activityData}>
-                            <Line type="monotone" dataKey="value" stroke="hsl(var(--accent))" strokeWidth={2} dot={false} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-
-                    {/* Avg Scan Time */}
-                    <div className="flex items-center gap-4 p-4 bg-secondary rounded-md hover:bg-secondary/80 transition-smooth group">
-                      <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
-                        <Clock className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground mb-1">Avg Scan Time</p>
-                        <p className="text-2xl font-bold text-accent">{stats.avgScanTime}s</p>
-                      </div>
-                      <div className="w-20 h-12">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={[{
-                        v: 2.1
-                      }, {
-                        v: 2.4
-                      }, {
-                        v: 2.2
-                      }, {
-                        v: 2.4
-                      }]}>
-                            <Bar dataKey="v" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-
-                    {/* Active Monitoring */}
-                    <div className="flex items-center gap-4 p-4 bg-secondary rounded-md hover:bg-secondary/80 transition-smooth group">
-                      <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
-                        <Shield className="h-6 w-6" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground mb-1">Active Monitoring</p>
-                        <p className="text-2xl font-bold animate-pulse text-accent">{stats.activeMonitoring}</p>
-                      </div>
-                      <div className="w-20 h-12">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={[{
-                        v: 6
-                      }, {
-                        v: 7
-                      }, {
-                        v: 8
-                      }, {
-                        v: 8
-                      }]}>
-                            <Bar dataKey="v" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
+                    {/* Social Integrations */}
+                    <div className="mt-8">
+                      <SocialIntegrations />
                     </div>
                   </div>
 

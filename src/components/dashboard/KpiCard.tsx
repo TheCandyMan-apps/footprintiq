@@ -34,26 +34,35 @@ export function KpiCard({
   const deltaInfo = delta !== undefined ? formatDelta(delta) : null;
 
   return (
-    <Card
-      disableHover={!onClick}
+    <div
       className={cn(
-        'p-6 bg-gradient-card border-border transition-all',
-        onClick && 'cursor-pointer hover:shadow-glow hover:border-primary/50 hover:-translate-y-1 hover:scale-[1.02]'
+        'relative p-6 rounded-lg backdrop-blur-xl bg-background/40 border border-border/50',
+        'transition-all duration-300 ease-out',
+        'shadow-[0_0_40px_hsl(280_70%_60%/0.2)]',
+        onClick && 'cursor-pointer hover:-translate-y-1 hover:scale-[1.02] hover:border-primary/50 hover:shadow-[0_0_60px_hsl(280_70%_60%/0.4)]'
       )}
       onClick={onClick}
     >
+      {/* Icon with gradient background */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-muted-foreground">{title}</span>
         </div>
-        <Icon className="w-5 h-5 text-primary opacity-70" />
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-accent rounded-lg blur-md opacity-60" />
+          <div className="relative flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 backdrop-blur-sm">
+            <Icon className="w-5 h-5 text-primary" />
+          </div>
+        </div>
       </div>
 
       {loading ? (
         <div className="h-9 w-24 animate-pulse bg-muted rounded" />
       ) : (
         <>
-          <div className="text-3xl font-bold mb-2">{formattedValue}</div>
+          <div className="text-3xl font-bold mb-2 bg-gradient-to-br from-foreground to-muted-foreground bg-clip-text text-transparent">
+            {formattedValue}
+          </div>
           
           {deltaInfo && (
             <Badge variant="secondary" className={cn('gap-1', deltaInfo.color)}>
@@ -64,6 +73,6 @@ export function KpiCard({
           )}
         </>
       )}
-    </Card>
+    </div>
   );
 }
