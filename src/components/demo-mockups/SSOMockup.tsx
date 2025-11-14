@@ -1,4 +1,5 @@
 import { Lock, Link2, Shield, Activity } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface SSOMockupProps {
   step: number;
@@ -6,7 +7,12 @@ interface SSOMockupProps {
 
 export function SSOMockup({ step }: SSOMockupProps) {
   return (
-    <div className="w-full h-full p-8 animate-fade-in">
+    <motion.div 
+      className="w-full h-full p-8"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       {step === 0 && (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="text-center space-y-4">
@@ -160,6 +166,6 @@ export function SSOMockup({ step }: SSOMockupProps) {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Pause } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
 import { EnrichmentMockup } from './demo-mockups/EnrichmentMockup';
 import { DarkWebMockup } from './demo-mockups/DarkWebMockup';
 import { BulkScanMockup } from './demo-mockups/BulkScanMockup';
@@ -96,7 +97,18 @@ export function InteractiveDemo({ title, steps, demoType }: InteractiveDemoProps
       </div>
 
       <div className="relative rounded-lg border-2 border-border overflow-hidden bg-muted/20 min-h-[400px] flex items-center justify-center">
-        {renderMockup()}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="w-full h-full"
+          >
+            {renderMockup()}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <div className="space-y-3">
