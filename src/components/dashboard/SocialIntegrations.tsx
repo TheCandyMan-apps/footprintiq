@@ -10,6 +10,8 @@ import { useTwitterAuth } from '@/hooks/useTwitterAuth';
 import { useLinkedInAuth } from '@/hooks/useLinkedInAuth';
 import { useFacebookAuth } from '@/hooks/useFacebookAuth';
 import { useSocialIntegrations } from '@/hooks/useSocialIntegrations';
+import { useSocialMediaFindings } from '@/hooks/useSocialMediaFindings';
+import { SocialMediaFindings } from './SocialMediaFindings';
 
 interface SocialPlatform {
   name: string;
@@ -66,6 +68,7 @@ export function SocialIntegrations() {
   const { signInWithLinkedIn, isLoading: linkedinLoading } = useLinkedInAuth();
   const { signInWithFacebook, isLoading: facebookLoading } = useFacebookAuth();
   const { integrations, isLoading, isConnected, getIntegration, disconnect } = useSocialIntegrations();
+  const { scanPlatform, isScanning } = useSocialMediaFindings();
 
   const handleConnect = async (platformName: string) => {
     switch (platformName) {
@@ -103,10 +106,7 @@ export function SocialIntegrations() {
   };
 
   const handleScan = (platformName: string) => {
-    toast({
-      title: "Scan Started",
-      description: `Scanning ${platformName} for new findings...`,
-    });
+    scanPlatform(platformName.toLowerCase());
   };
 
   const handleView = (platformName: string) => {
@@ -194,9 +194,10 @@ export function SocialIntegrations() {
                       variant="outline" 
                       className="flex-1"
                       onClick={() => handleScan(platformConfig.name)}
+                      disabled={isScanning}
                     >
-                      <Scan className="w-4 h-4 mr-1" />
-                      Scan
+                      <Scan className={cn("w-4 h-4 mr-1", isScanning && "animate-spin")} />
+                      {isScanning ? 'Scanning...' : 'Scan'}
                     </Button>
                     <Button 
                       size="sm" 
@@ -238,6 +239,9 @@ export function SocialIntegrations() {
           );
         })}
       </div>
+      
+      {/* Findings Display */}
+      <SocialMediaFindings />
     </div>
   );
 }
