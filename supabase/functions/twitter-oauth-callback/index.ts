@@ -90,51 +90,42 @@ Deno.serve(async (req) => {
 
     console.log('Twitter user:', twitterUser);
 
-    // Create or sign in user with Supabase
-    // Use Twitter ID as email substitute
-    const email = `${twitterUser.id}@twitter.oauth`;
-    const password = crypto.randomUUID(); // Random password for OAuth users
-
-    // Try to sign up (will fail if user exists)
-    const { data: signUpData, error: signUpError } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: {
-        provider: 'twitter',
-        twitter_id: twitterUser.id,
-        twitter_username: twitterUser.username,
-        avatar_url: twitterUser.profile_image_url,
-        full_name: twitterUser.name,
-      },
-    });
-
-    let userId = signUpData?.user?.id;
-
-    // If user exists, get their ID
-    if (signUpError && signUpError.message.includes('already registered')) {
-      const { data: users } = await supabase.auth.admin.listUsers();
-      const existingUser = users.users.find(u => u.email === email);
-      userId = existingUser?.id;
+    // Get the authenticated user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Failed to get user:', userError);
+      throw new Error('User not authenticated');
     }
 
-    if (!userId) {
-      throw new Error('Failed to create or find user');
+    // Store the integration in the database
+    const { error: integrationError } = await supabase
+      .from('social_integrations')
+      .upsert({
+        user_id: user.id,
+        platform: 'twitter',
+        platform_user_id: twitterUser.id,
+        platform_username: twitterUser.username,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        token_expires_at: tokens.expires_in 
+          ? new Date(Date.now() + tokens.expires_in * 1000).toISOString()
+          : null,
+        metadata: {
+          name: twitterUser.name,
+          profile_image_url: twitterUser.profile_image_url,
+        },
+      }, {
+        onConflict: 'user_id,platform'
+      });
+
+    if (integrationError) {
+      console.error('Failed to store integration:', integrationError);
     }
 
-    // Generate a session for the user
-    const { data: sessionData, error: sessionError } = await supabase.auth.admin.generateLink({
-      type: 'magiclink',
-      email,
-    });
-
-    if (sessionError) {
-      throw new Error('Failed to generate session');
-    }
-
-    // Redirect to app with session
+    // Redirect to app with success message
     const appUrl = url.origin;
-    const redirectUrl = `${appUrl}/?twitter_auth=success#access_token=${sessionData.properties.hashed_token}`;
+    const redirectUrl = `${appUrl}/dashboard?twitter_auth=success`;
     
     return new Response(null, {
       status: 302,
