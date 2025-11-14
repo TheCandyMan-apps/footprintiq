@@ -1,0 +1,70 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { AdminAnalytics } from '@/components/admin/AdminAnalytics';
+import { UserManagementTable } from '@/components/admin/UserManagementTable';
+import { Shield } from 'lucide-react';
+import { toast } from 'sonner';
+
+export default function Admin() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkAdminAccess();
+  }, []);
+
+  const checkAdminAccess = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast.error('Please sign in to access the admin dashboard');
+      navigate('/');
+      return;
+    }
+
+    // Check if user has admin role
+    const { data: userRole, error } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error || userRole?.role !== 'admin') {
+      toast.error('Access denied. Admin privileges required.');
+      navigate('/dashboard');
+      return;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto py-8 px-4">
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-8">
+          <div className="p-3 rounded-lg bg-red-500/10">
+            <Shield className="w-6 h-6 text-red-500" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+            <p className="text-muted-foreground">
+              Manage users, monitor system activity, and configure settings
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-8">
+          {/* Analytics */}
+          <section>
+            <h2 className="text-xl font-semibold mb-4">System Overview</h2>
+            <AdminAnalytics />
+          </section>
+
+          {/* User Management */}
+          <section>
+            <UserManagementTable />
+          </section>
+        </div>
+      </div>
+    </div>
+  );
+}
