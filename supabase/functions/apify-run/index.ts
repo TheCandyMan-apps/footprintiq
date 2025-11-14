@@ -1,6 +1,10 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders } from '../_shared/secure.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -247,6 +251,7 @@ serve(async (req) => {
     return jsonResponse(200, { findings, taskId, debited });
   } catch (e) {
     console.error('[apify-run] Error:', e);
-    return jsonResponse(500, { error: String(e?.message ?? e) });
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    return jsonResponse(500, { error: errorMessage });
   }
 });

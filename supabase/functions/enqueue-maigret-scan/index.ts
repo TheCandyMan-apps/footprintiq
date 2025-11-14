@@ -689,10 +689,11 @@ Deno.serve(async (req) => {
         })
         .eq('id', job.id);
 
+      const statusValue = 'failed';
       return new Response(
         JSON.stringify({ 
           jobId: job.id, 
-          status, 
+          status: statusValue, 
           providersCompleted,
           error: String(e)
         }),

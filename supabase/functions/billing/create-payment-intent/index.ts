@@ -1,7 +1,11 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@18.5.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad, allowedOrigin } from '../../../_shared/secure.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 /**
  * Creates a Stripe PaymentIntent for subscription payments
@@ -10,11 +14,15 @@ import { corsHeaders, ok, bad, allowedOrigin } from '../../../_shared/secure.ts'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') return bad(405, 'method_not_allowed');
-  if (!allowedOrigin(req)) return bad(403, 'forbidden');
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 
   try {
     const supabase = createClient(
@@ -77,9 +85,16 @@ serve(async (req) => {
 
     console.log(`Created PaymentIntent ${paymentIntent.id} for user ${user.email}`);
 
-    return ok({ clientSecret: paymentIntent.client_secret });
+    return new Response(
+      JSON.stringify({ clientSecret: paymentIntent.client_secret }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    );
   } catch (error) {
     console.error('Payment intent error:', error);
-    return bad(500, error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
   }
 });
