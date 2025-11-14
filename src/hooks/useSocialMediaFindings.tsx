@@ -8,7 +8,7 @@ export function useSocialMediaFindings() {
   const { data: findings, isLoading } = useQuery({
     queryKey: ['social-media-findings'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('social_media_findings')
         .select('*')
         .order('discovered_at', { ascending: false });
@@ -38,7 +38,7 @@ export function useSocialMediaFindings() {
 
   const deleteFindings = useMutation({
     mutationFn: async (platform: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('social_media_findings')
         .delete()
         .eq('platform', platform);

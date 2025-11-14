@@ -27,7 +27,7 @@ const findingTypeIcons = {
 };
 
 export function SocialMediaFindings() {
-  const { findings, isLoading } = useSocialMediaFindings();
+  const { findings, isLoading } = useSocialMediaFindings() as any;
 
   if (isLoading) {
     return (
@@ -52,18 +52,18 @@ export function SocialMediaFindings() {
     );
   }
 
-  const groupedFindings = findings.reduce((acc, finding) => {
+  const groupedFindings = (findings as any[]).reduce((acc: any, finding: any) => {
     if (!acc[finding.platform]) {
       acc[finding.platform] = [];
     }
     acc[finding.platform].push(finding);
     return acc;
-  }, {} as Record<string, typeof findings>);
+  }, {} as Record<string, any[]>);
 
   const stats = {
-    total: findings.length,
-    high_risk: findings.filter(f => f.risk_level === 'high' || f.risk_level === 'critical').length,
-    public: findings.filter(f => f.visibility === 'public').length,
+    total: (findings as any[]).length,
+    high_risk: (findings as any[]).filter((f: any) => f.risk_level === 'high' || f.risk_level === 'critical').length,
+    public: (findings as any[]).filter((f: any) => f.visibility === 'public').length,
   };
 
   return (
@@ -98,14 +98,14 @@ export function SocialMediaFindings() {
               <div>
                 <CardTitle className="capitalize">{platform} Findings</CardTitle>
                 <CardDescription>
-                  {platformFindings.length} items discovered
+                  {(platformFindings as any[]).length} items discovered
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {platformFindings.map((finding) => {
+              {(platformFindings as any[]).map((finding: any) => {
                 const VisibilityIcon = visibilityIcons[finding.visibility as keyof typeof visibilityIcons] || Eye;
                 const TypeIcon = findingTypeIcons[finding.finding_type as keyof typeof findingTypeIcons] || findingTypeIcons.default;
                 
