@@ -33,9 +33,14 @@ export function DarkWebMockup({ step }: DarkWebMockupProps) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               {['Marketplaces', 'Forums', 'Paste Sites', 'Chat Rooms'].map((source) => (
-                <div key={source} className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-sm text-center">
+                <motion.div 
+                  key={source} 
+                  className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-sm text-center cursor-pointer"
+                  whileHover={{ scale: 1.05, backgroundColor: "hsl(var(--primary) / 0.2)" }}
+                  whileTap={{ scale: 0.95 }}
+                >
                   {source}
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>

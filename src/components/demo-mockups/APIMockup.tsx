@@ -73,9 +73,14 @@ export function APIMockup({ step }: APIMockupProps) {
               <label className="text-sm text-muted-foreground mb-2 block">Events</label>
               <div className="grid grid-cols-2 gap-2">
                 {['scan.completed', 'alert.triggered', 'result.found', 'error.occurred'].map((event) => (
-                  <div key={event} className="p-2 bg-primary/10 border border-primary/20 rounded text-xs font-mono">
+                  <motion.div 
+                    key={event} 
+                    className="p-2 bg-primary/10 border border-primary/20 rounded text-xs font-mono cursor-pointer"
+                    whileHover={{ scale: 1.05, backgroundColor: "hsl(var(--primary) / 0.15)" }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     {event}
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
