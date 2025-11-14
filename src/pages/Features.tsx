@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FeatureDemo } from "@/components/FeatureDemo";
+import { InteractiveDemo } from "@/components/InteractiveDemo";
 import { 
   Shield, 
   Zap, 
@@ -534,9 +534,19 @@ const Features = () => {
                             <Play className="w-5 h-5 text-primary" />
                             <h4 className="font-semibold">Interactive Walkthrough</h4>
                           </div>
-                          <FeatureDemo
+                          <InteractiveDemo
                             title={feature.demo.title}
                             steps={feature.demo.steps}
+                            demoType={
+                              index === 0 ? 'enrichment' :
+                              index === 1 ? 'darkweb' :
+                              index === 2 ? 'bulk' :
+                              index === 3 ? 'api' :
+                              index === 4 ? 'ai' :
+                              index === 5 ? 'team' :
+                              index === 6 ? 'report' :
+                              'sso'
+                            }
                           />
                         </div>
                       )}
