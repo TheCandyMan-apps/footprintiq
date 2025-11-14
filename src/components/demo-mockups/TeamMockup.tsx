@@ -69,9 +69,13 @@ export function TeamMockup({ step }: TeamMockupProps) {
                 <option>Analyst</option>
                 <option>Viewer</option>
               </select>
-              <button className="px-4 py-2 bg-primary text-primary-foreground rounded">
+              <motion.button 
+                className="px-4 py-2 bg-primary text-primary-foreground rounded cursor-pointer"
+                whileHover={{ scale: 1.05, boxShadow: "0 4px 12px hsl(var(--primary) / 0.3)" }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Invite
-              </button>
+              </motion.button>
             </div>
             <div className="space-y-2">
               {[
@@ -109,12 +113,20 @@ export function TeamMockup({ step }: TeamMockupProps) {
                 { permission: 'Export Reports', granted: false },
                 { permission: 'Manage Billing', granted: false },
               ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-3 rounded border border-border">
+                <motion.div 
+                  key={i} 
+                  className="flex items-center justify-between p-3 rounded border border-border cursor-pointer"
+                  whileHover={{ backgroundColor: "hsl(var(--muted) / 0.5)" }}
+                  whileTap={{ scale: 0.98 }}
+                >
                   <span className="text-sm">{item.permission}</span>
-                  <div className={`w-10 h-6 rounded-full flex items-center ${item.granted ? 'bg-primary' : 'bg-muted'}`}>
+                  <motion.div 
+                    className={`w-10 h-6 rounded-full flex items-center ${item.granted ? 'bg-primary' : 'bg-muted'}`}
+                    whileHover={{ scale: 1.1 }}
+                  >
                     <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${item.granted ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                  </div>
-                </div>
+                  </motion.div>
+                </motion.div>
               ))}
             </div>
           </div>

@@ -25,18 +25,20 @@ export function ReportMockup({ step }: ReportMockupProps) {
               { name: 'Technical', desc: 'Detailed findings' },
               { name: 'Compliance', desc: 'Regulatory mapping' }
             ].map((template, i) => (
-              <div
+              <motion.div
                 key={i}
                 className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                   i === 0 ? 'bg-primary/10 border-primary' : 'bg-muted border-border hover:border-primary/50'
                 }`}
+                whileHover={{ scale: 1.05, y: -4 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <div className="aspect-[3/4] bg-background rounded mb-2 border border-border flex items-center justify-center">
                   <FileText className="w-8 h-8 text-muted-foreground" />
                 </div>
                 <div className="text-sm font-medium">{template.name}</div>
                 <div className="text-xs text-muted-foreground">{template.desc}</div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -60,10 +62,12 @@ export function ReportMockup({ step }: ReportMockupProps) {
                 <label className="text-sm text-muted-foreground mb-2 block">Brand Colors</label>
                 <div className="flex gap-2">
                   {['#3B82F6', '#10B981', '#F59E0B'].map((color) => (
-                    <div
+                    <motion.div
                       key={color}
-                      className="w-12 h-12 rounded border-2 border-border"
+                      className="w-12 h-12 rounded border-2 border-border cursor-pointer"
                       style={{ backgroundColor: color }}
+                      whileHover={{ scale: 1.15, borderColor: color }}
+                      whileTap={{ scale: 0.9 }}
                     />
                   ))}
                 </div>
@@ -97,7 +101,12 @@ export function ReportMockup({ step }: ReportMockupProps) {
               { section: 'Remediation Steps', included: false },
               { section: 'Compliance Mapping', included: false },
             ].map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded border border-border">
+              <motion.div 
+                key={i} 
+                className="flex items-center justify-between p-3 rounded border border-border cursor-pointer"
+                whileHover={{ backgroundColor: "hsl(var(--muted) / 0.5)" }}
+                whileTap={{ scale: 0.98 }}
+              >
                 <div className="flex items-center gap-3">
                   <input type="checkbox" checked={item.included} readOnly className="rounded" />
                   <span className="text-sm">{item.section}</span>
@@ -105,7 +114,7 @@ export function ReportMockup({ step }: ReportMockupProps) {
                 <span className="text-xs text-muted-foreground">
                   {item.included ? '✓ Included' : 'Optional'}
                 </span>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -123,9 +132,13 @@ export function ReportMockup({ step }: ReportMockupProps) {
                 <div className="text-sm font-medium">Executive Security Report</div>
                 <div className="text-xs text-muted-foreground">Ready to generate</div>
               </div>
-              <button className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm">
+              <motion.button 
+                className="px-4 py-2 bg-primary text-primary-foreground rounded text-sm cursor-pointer"
+                whileHover={{ scale: 1.05, boxShadow: "0 4px 12px hsl(var(--primary) / 0.4)" }}
+                whileTap={{ scale: 0.95 }}
+              >
                 Generate PDF
-              </button>
+              </motion.button>
             </div>
             <div className="pt-4 border-t border-border space-y-3">
               <div className="text-sm font-medium">Automated Distribution</div>

@@ -19,10 +19,14 @@ export function BulkScanMockup({ step }: BulkScanMockupProps) {
             <Upload className="w-12 h-12 text-primary mx-auto" />
             <h3 className="text-xl font-semibold">Bulk Upload</h3>
           </div>
-          <div className="bg-background rounded-lg border-2 border-dashed border-primary/50 p-12 text-center space-y-4">
+          <motion.div 
+            className="bg-background rounded-lg border-2 border-dashed border-primary/50 p-12 text-center space-y-4 cursor-pointer transition-colors"
+            whileHover={{ borderColor: "hsl(var(--primary))", scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
             <div className="text-sm text-muted-foreground">Drop CSV file or click to browse</div>
             <div className="text-xs text-muted-foreground">Supports up to 10,000 targets per upload</div>
-          </div>
+          </motion.div>
           <div className="bg-muted/50 rounded-lg border border-border p-4">
             <div className="text-xs font-medium mb-2">Sample Format:</div>
             <div className="font-mono text-xs text-muted-foreground">
@@ -41,18 +45,30 @@ export function BulkScanMockup({ step }: BulkScanMockupProps) {
             <h3 className="text-xl font-semibold">Processing Queue</h3>
           </div>
           <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="bg-primary/10 rounded-lg border border-primary/20 p-3 text-center">
+            <motion.div 
+              className="bg-primary/10 rounded-lg border border-primary/20 p-3 text-center cursor-pointer"
+              whileHover={{ scale: 1.05, borderColor: "hsl(var(--primary))" }}
+              whileTap={{ scale: 0.95 }}
+            >
               <div className="text-xl font-bold text-primary">1,247</div>
               <div className="text-xs text-muted-foreground">Total Targets</div>
-            </div>
-            <div className="bg-muted rounded-lg border border-border p-3 text-center">
+            </motion.div>
+            <motion.div 
+              className="bg-muted rounded-lg border border-border p-3 text-center cursor-pointer"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <div className="text-xl font-bold">892</div>
               <div className="text-xs text-muted-foreground">Completed</div>
-            </div>
-            <div className="bg-accent/10 rounded-lg border border-accent/20 p-3 text-center">
+            </motion.div>
+            <motion.div 
+              className="bg-accent/10 rounded-lg border border-accent/20 p-3 text-center cursor-pointer"
+              whileHover={{ scale: 1.05, borderColor: "hsl(var(--accent))" }}
+              whileTap={{ scale: 0.95 }}
+            >
               <div className="text-xl font-bold text-accent">355</div>
               <div className="text-xs text-muted-foreground">In Progress</div>
-            </div>
+            </motion.div>
           </div>
           <div className="space-y-2">
             {[72, 45, 20].map((progress, i) => (
@@ -78,13 +94,18 @@ export function BulkScanMockup({ step }: BulkScanMockupProps) {
           </div>
           <div className="bg-background rounded-lg border border-border p-4 space-y-2">
             {['user1@example.com', 'user2@example.com', 'user3@example.com', 'user4@example.com'].map((email, i) => (
-              <div key={i} className="flex items-center justify-between p-2 rounded hover:bg-muted/50 transition-colors">
+              <motion.div 
+                key={i} 
+                className="flex items-center justify-between p-2 rounded transition-colors cursor-pointer"
+                whileHover={{ backgroundColor: "hsl(var(--muted))", x: 4 }}
+                whileTap={{ scale: 0.98 }}
+              >
                 <span className="text-sm font-mono">{email}</span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded">12 Results</span>
                   <span className="text-xs text-muted-foreground">View →</span>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -101,9 +122,14 @@ export function BulkScanMockup({ step }: BulkScanMockupProps) {
               <div className="text-sm font-medium mb-3">Export Format</div>
               <div className="grid grid-cols-3 gap-2">
                 {['CSV', 'JSON', 'PDF'].map((format) => (
-                  <div key={format} className="p-3 bg-primary/10 border border-primary/20 rounded text-sm text-center">
+                  <motion.div 
+                    key={format} 
+                    className="p-3 bg-primary/10 border border-primary/20 rounded text-sm text-center cursor-pointer"
+                    whileHover={{ scale: 1.05, backgroundColor: "hsl(var(--primary) / 0.2)" }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     {format}
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>

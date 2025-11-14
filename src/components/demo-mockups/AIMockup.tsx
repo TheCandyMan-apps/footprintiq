@@ -28,9 +28,13 @@ export function AIMockup({ step }: AIMockupProps) {
                 value="Show me all compromised accounts from last month"
                 readOnly
               />
-              <button className="px-4 py-3 bg-primary text-primary-foreground rounded-lg">
+              <motion.button 
+                className="px-4 py-3 bg-primary text-primary-foreground rounded-lg cursor-pointer"
+                whileHover={{ scale: 1.05, boxShadow: "0 4px 12px hsl(var(--primary) / 0.4)" }}
+                whileTap={{ scale: 0.9 }}
+              >
                 <Send className="w-5 h-5" />
-              </button>
+              </motion.button>
             </div>
             <div className="text-xs text-muted-foreground">
               Try: "What's our risk score?" or "Find connections between these emails"
@@ -80,14 +84,22 @@ export function AIMockup({ step }: AIMockupProps) {
               <div className="flex-1 space-y-3">
                 <div className="text-sm">Found <span className="font-semibold text-primary">23 compromised accounts</span> from last month.</div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-destructive/10 rounded-lg border border-destructive/20 p-3 text-center">
+                  <motion.div 
+                    className="bg-destructive/10 rounded-lg border border-destructive/20 p-3 text-center cursor-pointer"
+                    whileHover={{ scale: 1.05, borderColor: "hsl(var(--destructive) / 0.4)" }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     <div className="text-xl font-bold text-destructive">8</div>
                     <div className="text-xs text-muted-foreground">High Risk</div>
-                  </div>
-                  <div className="bg-accent/10 rounded-lg border border-accent/20 p-3 text-center">
+                  </motion.div>
+                  <motion.div 
+                    className="bg-accent/10 rounded-lg border border-accent/20 p-3 text-center cursor-pointer"
+                    whileHover={{ scale: 1.05, borderColor: "hsl(var(--accent) / 0.4)" }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     <div className="text-xl font-bold text-accent">15</div>
                     <div className="text-xs text-muted-foreground">Medium Risk</div>
-                  </div>
+                  </motion.div>
                 </div>
                 <div className="text-xs text-muted-foreground pt-2 border-t border-border">
                   Recommendation: Immediate password reset required for high-risk accounts
@@ -121,9 +133,14 @@ export function AIMockup({ step }: AIMockupProps) {
                 <div className="text-sm">Here are the high-risk accounts with breach details:</div>
                 <div className="space-y-1">
                   {['admin@company.com - LinkedIn (2023)', 'ceo@company.com - Adobe (2022)', 'finance@company.com - Facebook (2023)'].map((detail, i) => (
-                    <div key={i} className="text-xs p-2 bg-destructive/10 rounded border border-destructive/20">
+                    <motion.div 
+                      key={i} 
+                      className="text-xs p-2 bg-destructive/10 rounded border border-destructive/20 cursor-pointer"
+                      whileHover={{ x: 4, backgroundColor: "hsl(var(--destructive) / 0.15)" }}
+                      whileTap={{ scale: 0.98 }}
+                    >
                       {detail}
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>

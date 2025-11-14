@@ -24,14 +24,16 @@ export function SSOMockup({ step }: SSOMockupProps) {
               <label className="text-sm text-muted-foreground mb-3 block">Select Identity Provider</label>
               <div className="grid grid-cols-3 gap-3">
                 {['Okta', 'Azure AD', 'Google'].map((provider, i) => (
-                  <div
+                  <motion.div
                     key={provider}
                     className={`p-4 rounded-lg border-2 text-center cursor-pointer transition-all ${
                       i === 0 ? 'bg-primary/10 border-primary' : 'bg-muted border-border hover:border-primary/50'
                     }`}
+                    whileHover={{ scale: 1.05, y: -4 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <div className="text-sm font-medium">{provider}</div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -39,9 +41,14 @@ export function SSOMockup({ step }: SSOMockupProps) {
               <label className="text-sm text-muted-foreground mb-2 block">Protocol</label>
               <div className="flex gap-2">
                 {['SAML 2.0', 'OAuth 2.0'].map((protocol) => (
-                  <div key={protocol} className="flex-1 p-2 bg-primary/10 border border-primary/20 rounded text-sm text-center">
+                  <motion.div 
+                    key={protocol} 
+                    className="flex-1 p-2 bg-primary/10 border border-primary/20 rounded text-sm text-center cursor-pointer"
+                    whileHover={{ scale: 1.05, backgroundColor: "hsl(var(--primary) / 0.15)" }}
+                    whileTap={{ scale: 0.95 }}
+                  >
                     {protocol}
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>

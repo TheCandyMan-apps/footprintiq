@@ -48,18 +48,24 @@ export function EnrichmentMockup({ step }: EnrichmentMockupProps) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             {['Social Media APIs', 'Breach Databases', 'Professional Networks', 'Domain Records', 'Phone Lookup', 'Email Verification'].map((api, i) => (
-              <div
+              <motion.div
                 key={i}
                 className={cn(
-                  "p-4 rounded-lg border-2 transition-all",
+                  "p-4 rounded-lg border-2 transition-all cursor-pointer",
                   i < 4 ? "bg-primary/10 border-primary" : "bg-muted border-border"
                 )}
+                whileHover={{ 
+                  scale: 1.05, 
+                  borderColor: i < 4 ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.5)",
+                  backgroundColor: i < 4 ? "hsl(var(--primary) / 0.15)" : "hsl(var(--primary) / 0.05)"
+                }}
+                whileTap={{ scale: 0.95 }}
               >
                 <div className="flex items-center gap-2">
                   {i < 4 && <CheckCircle2 className="w-4 h-4 text-primary" />}
                   <span className="text-sm font-medium">{api}</span>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -105,10 +111,15 @@ export function EnrichmentMockup({ step }: EnrichmentMockupProps) {
           </div>
           <div className="space-y-2">
             {['LinkedIn Profile', 'Twitter Account', 'Data Breach (2023)'].map((item, i) => (
-              <div key={i} className="bg-background rounded border border-border p-3 flex items-center justify-between">
+              <motion.div 
+                key={i} 
+                className="bg-background rounded border border-border p-3 flex items-center justify-between cursor-pointer"
+                whileHover={{ x: 4, borderColor: "hsl(var(--primary) / 0.5)" }}
+                whileTap={{ scale: 0.98 }}
+              >
                 <span className="text-sm">{item}</span>
                 <span className="text-xs text-primary">View Details →</span>
-              </div>
+              </motion.div>
             ))}
           </div>
         </div>
