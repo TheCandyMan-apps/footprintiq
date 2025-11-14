@@ -63,13 +63,13 @@ export function useAdminUsers() {
       expiresAt 
     }: { 
       userId: string; 
-      tier: string; 
+      tier: 'free' | 'premium' | 'family'; 
       expiresAt?: string;
     }) => {
       const { error } = await supabase
         .from('user_roles')
         .update({ 
-          subscription_tier: tier,
+          subscription_tier: tier as any,
           subscription_expires_at: expiresAt 
         })
         .eq('user_id', userId);

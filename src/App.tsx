@@ -367,6 +367,7 @@ function RouterContent() {
           <Route path="/admin/workspace-audit" element={<WorkspaceAudit />} />
           <Route path="/admin/performance" element={<Performance />} />
           <Route path="/admin/users" element={<Admin />} />
+          <Route path="/admin/roles" element={<Admin />} />
           <Route path="/admin" element={<Admin />} />
         
           {/* AI Fusion & Predictive Routes */}

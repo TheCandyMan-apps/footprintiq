@@ -16,7 +16,7 @@ export function useSocialIntegrations() {
   const { data: integrations = [], isLoading } = useQuery({
     queryKey: ['social-integrations'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('social_integrations')
         .select('*')
         .order('created_at', { ascending: false });
@@ -28,7 +28,7 @@ export function useSocialIntegrations() {
 
   const disconnectMutation = useMutation({
     mutationFn: async (platform: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('social_integrations')
         .delete()
         .eq('platform', platform.toLowerCase());
