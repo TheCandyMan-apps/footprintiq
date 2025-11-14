@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Linkedin, Twitter, Facebook, Instagram, Github, Globe, Scan, Eye, Unplug } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface SocialPlatform {
   name: string;
@@ -71,11 +73,43 @@ function formatTimeAgo(date: Date): string {
 }
 
 export function SocialIntegrations() {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleConnect = (platformName: string) => {
+    toast({
+      title: "Connecting...",
+      description: `Initiating connection to ${platformName}`,
+    });
+  };
+
+  const handleScan = (platformName: string) => {
+    toast({
+      title: "Scan Started",
+      description: `Scanning ${platformName} for new findings...`,
+    });
+  };
+
+  const handleView = (platformName: string) => {
+    toast({
+      title: "View Findings",
+      description: `Opening ${platformName} findings...`,
+    });
+    // Navigate to a findings page or open a modal
+  };
+
+  const handleAddPlatform = () => {
+    toast({
+      title: "Add Platform",
+      description: "Platform connection dialog coming soon...",
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Social Integrations</h2>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={handleAddPlatform}>
           <Globe className="w-4 h-4 mr-2" />
           Add Platform
         </Button>
@@ -137,17 +171,31 @@ export function SocialIntegrations() {
               <div className="flex gap-2">
                 {platform.connected ? (
                   <>
-                    <Button size="sm" variant="outline" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => handleScan(platform.name)}
+                    >
                       <Scan className="w-4 h-4 mr-1" />
                       Scan
                     </Button>
-                    <Button size="sm" variant="outline" className="flex-1">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => handleView(platform.name)}
+                    >
                       <Eye className="w-4 h-4 mr-1" />
                       View
                     </Button>
                   </>
                 ) : (
-                  <Button size="sm" className="flex-1">
+                  <Button 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => handleConnect(platform.name)}
+                  >
                     Connect
                   </Button>
                 )}
