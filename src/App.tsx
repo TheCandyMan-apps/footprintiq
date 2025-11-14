@@ -135,6 +135,7 @@ const ObservabilityDashboard = lazy(() => import("./pages/admin/ObservabilityDas
 const CircuitBreakers = lazy(() => import("./pages/admin/CircuitBreakers"));
 const CostTracking = lazy(() => import("./pages/admin/CostTracking"));
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const Admin = lazy(() => import("./pages/Admin"));
 const OrganizationNew = lazy(() => import("./pages/OrganizationNew"));
 const Performance = lazy(() => import("./pages/admin/Performance"));
 const Subscription = lazy(() => import("./pages/Subscription"));
@@ -365,7 +366,8 @@ function RouterContent() {
           <Route path="/admin/cost-tracking" element={<CostTracking />} />
           <Route path="/admin/workspace-audit" element={<WorkspaceAudit />} />
           <Route path="/admin/performance" element={<Performance />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/users" element={<Admin />} />
+          <Route path="/admin" element={<Admin />} />
         
           {/* AI Fusion & Predictive Routes */}
           <Route path="/persona-resolver" element={<PersonaResolver />} />
