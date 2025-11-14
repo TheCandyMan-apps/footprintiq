@@ -1,4 +1,5 @@
 import { Key, Webhook, Code, BarChart3 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface APIMockupProps {
   step: number;
@@ -6,7 +7,12 @@ interface APIMockupProps {
 
 export function APIMockup({ step }: APIMockupProps) {
   return (
-    <div className="w-full h-full p-8 animate-fade-in">
+    <motion.div 
+      className="w-full h-full p-8"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       {step === 0 && (
         <div className="max-w-2xl mx-auto space-y-6">
           <div className="text-center space-y-4">
@@ -136,6 +142,6 @@ export function APIMockup({ step }: APIMockupProps) {
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
