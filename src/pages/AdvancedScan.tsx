@@ -578,13 +578,7 @@ export default function AdvancedScan() {
                 </TabsList>
 
                 <TabsContent value="standard" className="space-y-8 mt-6">
-                  {/* Template Manager */}
-                  <TemplateManager
-                    onApplyTemplate={handleApplyTemplate}
-                    onSaveTemplate={() => setSaveTemplateOpen(true)}
-                  />
-
-                  {/* Standard scan form continues below */}
+                  {/* Standard scan form */}
 
           {/* Main Form */}
           <Card className="p-6 space-y-6">
@@ -1080,6 +1074,12 @@ export default function AdvancedScan() {
               </p>
             </Card>
           </div>
+
+          {/* Template Manager */}
+          <TemplateManager
+            onApplyTemplate={handleApplyTemplate}
+            onSaveTemplate={() => setSaveTemplateOpen(true)}
+          />
                 </TabsContent>
 
                 {import.meta.env.VITE_SPIDERFOOT_API_URL ? (
