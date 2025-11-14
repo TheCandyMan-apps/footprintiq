@@ -6796,6 +6796,121 @@ export type Database = {
           },
         ]
       }
+      social_integrations: {
+        Row: {
+          access_token: string | null
+          created_at: string
+          id: string
+          last_scan_at: string | null
+          metadata: Json | null
+          platform: string
+          platform_user_id: string | null
+          platform_username: string | null
+          refresh_token: string | null
+          token_expires_at: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string | null
+        }
+        Insert: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          last_scan_at?: string | null
+          metadata?: Json | null
+          platform: string
+          platform_user_id?: string | null
+          platform_username?: string | null
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id?: string | null
+        }
+        Update: {
+          access_token?: string | null
+          created_at?: string
+          id?: string
+          last_scan_at?: string | null
+          metadata?: Json | null
+          platform?: string
+          platform_user_id?: string | null
+          platform_username?: string | null
+          refresh_token?: string | null
+          token_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_integrations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_media_findings: {
+        Row: {
+          content: Json | null
+          created_at: string | null
+          description: string | null
+          discovered_at: string | null
+          finding_type: string
+          id: string
+          integration_id: string
+          platform: string
+          risk_level: string | null
+          title: string
+          updated_at: string | null
+          url: string | null
+          user_id: string
+          visibility: string | null
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string | null
+          description?: string | null
+          discovered_at?: string | null
+          finding_type: string
+          id?: string
+          integration_id: string
+          platform: string
+          risk_level?: string | null
+          title: string
+          updated_at?: string | null
+          url?: string | null
+          user_id: string
+          visibility?: string | null
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string | null
+          description?: string | null
+          discovered_at?: string | null
+          finding_type?: string
+          id?: string
+          integration_id?: string
+          platform?: string
+          risk_level?: string | null
+          title?: string
+          updated_at?: string | null
+          url?: string | null
+          user_id?: string
+          visibility?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_media_findings_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "social_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_profiles: {
         Row: {
           account_id: string | null

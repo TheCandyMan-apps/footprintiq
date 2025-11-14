@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminAnalytics } from '@/components/admin/AdminAnalytics';
 import { UserManagementTable } from '@/components/admin/UserManagementTable';
+import { ActivityLogs } from '@/components/admin/ActivityLogs';
 import { Shield } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
 export default function Admin() {
@@ -52,18 +54,25 @@ export default function Admin() {
           </div>
         </div>
 
-        <div className="space-y-8">
-          {/* Analytics */}
-          <section>
-            <h2 className="text-xl font-semibold mb-4">System Overview</h2>
+        <Tabs defaultValue="overview" className="space-y-8">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
+            <TabsTrigger value="activity">Activity Logs</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview">
             <AdminAnalytics />
-          </section>
-
-          {/* User Management */}
-          <section>
+          </TabsContent>
+          
+          <TabsContent value="users">
             <UserManagementTable />
-          </section>
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="activity">
+            <ActivityLogs />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
