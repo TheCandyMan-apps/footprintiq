@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { useTwitterAuth } from '@/hooks/useTwitterAuth';
+import { useLinkedInAuth } from '@/hooks/useLinkedInAuth';
+import { useFacebookAuth } from '@/hooks/useFacebookAuth';
 import { useSocialIntegrations } from '@/hooks/useSocialIntegrations';
 
 interface SocialPlatform {
@@ -61,16 +63,26 @@ export function SocialIntegrations() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { signInWithTwitter, isLoading: twitterLoading } = useTwitterAuth();
+  const { signInWithLinkedIn, isLoading: linkedinLoading } = useLinkedInAuth();
+  const { signInWithFacebook, isLoading: facebookLoading } = useFacebookAuth();
   const { integrations, isLoading, isConnected, getIntegration, disconnect } = useSocialIntegrations();
 
   const handleConnect = async (platformName: string) => {
-    if (platformName === 'Twitter') {
-      await signInWithTwitter();
-    } else {
-      toast({
-        title: "Coming Soon",
-        description: `${platformName} integration will be available soon.`,
-      });
+    switch (platformName) {
+      case 'Twitter':
+        await signInWithTwitter();
+        break;
+      case 'LinkedIn':
+        await signInWithLinkedIn();
+        break;
+      case 'Facebook':
+        await signInWithFacebook();
+        break;
+      default:
+        toast({
+          title: "Coming Soon",
+          description: `${platformName} integration will be available soon.`,
+        });
     }
   };
 
@@ -208,9 +220,17 @@ export function SocialIntegrations() {
                     size="sm" 
                     className="flex-1"
                     onClick={() => handleConnect(platformConfig.name)}
-                    disabled={twitterLoading && platformConfig.name === 'Twitter'}
+                    disabled={
+                      (twitterLoading && platformConfig.name === 'Twitter') ||
+                      (linkedinLoading && platformConfig.name === 'LinkedIn') ||
+                      (facebookLoading && platformConfig.name === 'Facebook')
+                    }
                   >
-                    {twitterLoading && platformConfig.name === 'Twitter' ? 'Connecting...' : 'Connect'}
+                    {((twitterLoading && platformConfig.name === 'Twitter') ||
+                      (linkedinLoading && platformConfig.name === 'LinkedIn') ||
+                      (facebookLoading && platformConfig.name === 'Facebook'))
+                      ? 'Connecting...'
+                      : 'Connect'}
                   </Button>
                 )}
               </div>
