@@ -693,7 +693,22 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
       onOpenChange(false);
     } catch (error: any) {
       console.error('[ScanProgressDialog] Cancel error:', error);
-      toast.error(error.message || 'Failed to cancel scan');
+      
+      // Handle scan not found specifically
+      if (error.message?.includes('Scan not found') || error.message?.includes('404')) {
+        toast.error('Cannot cancel - scan not found', {
+          description: 'This scan may have failed to start. Try closing the dialog.',
+          duration: 5000,
+        });
+        setStatus('failed'); // Update status so retry button shows
+      } else if (error.message?.includes('already')) {
+        toast.info(error.message);
+        onOpenChange(false);
+      } else {
+        toast.error('Failed to cancel scan', {
+          description: error.message || 'Please try closing the dialog',
+        });
+      }
     } finally {
       setIsCancelling(false);
     }

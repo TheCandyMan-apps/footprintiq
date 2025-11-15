@@ -72,7 +72,11 @@ Deno.serve(async (req) => {
       if (!maigretResult) {
         console.error('[cancel-scan] Scan not found in either pipeline:', { scanError, maigretError });
         return new Response(
-          JSON.stringify({ error: 'Scan not found' }),
+          JSON.stringify({ 
+            error: 'Scan not found',
+            message: 'This scan does not exist or failed to start. It may have been created with invalid parameters.',
+            hint: 'Try closing the progress dialog and starting a new scan.'
+          }),
           { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
