@@ -103,13 +103,13 @@ serve(async (req) => {
 
     // Find or create Stripe customer with retries
     console.log(`[PURCHASE] Finding customer for ${user.email}`);
-    const customers = await retryWithBackoff(
+    const customers: Stripe.ApiList<Stripe.Customer> = await retryWithBackoff(
       () => stripe.customers.list({ email: user.email, limit: 1 }),
       3,
       1000
     );
     
-    let customerId;
+    let customerId: string;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
       console.log(`[PURCHASE] Found existing customer ${customerId}`);
@@ -124,7 +124,7 @@ serve(async (req) => {
     const timeoutId = setTimeout(() => controller.abort(), 15000);
     
     try {
-      const session = await retryWithBackoff(
+      const session: Stripe.Checkout.Session = await retryWithBackoff(
         () => stripe.checkout.sessions.create({
           customer: customerId,
           customer_email: customerId ? undefined : user.email,

@@ -1,7 +1,11 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@18.5.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad } from '../../_shared/secure.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 /**
  * Stripe Webhook Handler for Production
@@ -50,12 +54,15 @@ const getTierFromPriceId = (priceId: string): 'free' | 'premium' | 'enterprise' 
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: corsHeaders });
   }
 
   if (req.method !== 'POST') {
     logEvent('ERROR', 'Invalid method', { method: req.method });
-    return bad(405, 'method_not_allowed');
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 
   const startTime = Date.now();
@@ -81,8 +88,9 @@ serve(async (req) => {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
       logEvent('SUCCESS', 'Webhook signature verified', { eventType: event.type, eventId: event.id });
     } catch (err) {
-      logEvent('ERROR', 'Webhook signature verification failed', { error: err.message });
-      throw new Error(`Webhook signature verification failed: ${err.message}`);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      logEvent('ERROR', 'Webhook signature verification failed', { error: errorMessage });
+      throw new Error(`Webhook signature verification failed: ${errorMessage}`);
     }
 
     const supabase = createClient(
@@ -350,9 +358,9 @@ serve(async (req) => {
                   success = true;
                   break;
                 } catch (error) {
-                  lastError = error;
-                  logEvent('ROLE_UPDATE_RETRY', `Attempt ${attempt}/3 failed`, {
-                    error: error.message,
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logEvent('ROLE_UPDATE_RETRY', `Attempt ${attempt}/3 failed`, {
+      error: errorMessage,
                     userId: profiles.user_id,
                   });
                   
@@ -441,7 +449,8 @@ serve(async (req) => {
               
               logEvent('EMAIL_SENT', 'Payment failure notification sent', { email: customer.email });
             } catch (emailError) {
-              logEvent('EMAIL_ERROR', 'Failed to send payment failure email', { error: emailError.message });
+              const errorMessage = emailError instanceof Error ? emailError.message : String(emailError);
+              logEvent('EMAIL_ERROR', 'Failed to send payment failure email', { error: errorMessage });
             }
           }
         }
@@ -484,8 +493,9 @@ serve(async (req) => {
               });
               
               logEvent('EMAIL_SENT', 'Trial ending notification sent', { email: customer.email });
-            } catch (emailError) {
-              logEvent('EMAIL_ERROR', 'Failed to send trial ending email', { error: emailError.message });
+        } catch (emailError) {
+          const errorMessage = emailError instanceof Error ? emailError.message : String(emailError);
+          logEvent('EMAIL_ERROR', 'Failed to send trial ending email', { error: errorMessage });
             }
           }
         }
@@ -510,14 +520,21 @@ serve(async (req) => {
     const duration = Date.now() - startTime;
     logEvent('SUCCESS', `Webhook processed successfully in ${duration}ms`, { eventType: event.type });
     
-    return ok({ received: true, processed: event.type, duration });
+    return new Response(
+      JSON.stringify({ received: true, processed: event.type, duration }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    );
   } catch (error) {
     const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Webhook error';
     logEvent('ERROR', 'Webhook processing failed', {
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: errorMessage,
       duration,
     });
     
-    return bad(400, error instanceof Error ? error.message : 'Webhook error');
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+    );
   }
 });

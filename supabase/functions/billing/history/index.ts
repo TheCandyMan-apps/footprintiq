@@ -1,15 +1,23 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@18.5.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad, allowedOrigin } from '../../_shared/secure.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== 'GET') return bad(405, 'method_not_allowed');
-  if (!allowedOrigin(req)) return bad(403, 'forbidden');
+  if (req.method !== 'GET') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 
   try {
     const supabase = createClient(
@@ -30,7 +38,10 @@ serve(async (req) => {
     // Find customer by email
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     if (customers.data.length === 0) {
-      return ok({ invoices: [], charges: [] });
+      return new Response(
+        JSON.stringify({ invoices: [], charges: [] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
     }
 
     const customerId = customers.data[0].id;
@@ -53,8 +64,9 @@ serve(async (req) => {
       limit: 20,
     });
 
-    return ok({
-      invoices: invoices.data.map(inv => ({
+    return new Response(
+      JSON.stringify({
+        invoices: invoices.data.map((inv: Stripe.Invoice) => ({
         id: inv.id,
         amount: inv.amount_paid,
         currency: inv.currency,
@@ -64,7 +76,7 @@ serve(async (req) => {
         hosted_invoice_url: inv.hosted_invoice_url,
         description: inv.description || 'Subscription',
       })),
-      charges: charges.data.map(charge => ({
+      charges: charges.data.map((charge: Stripe.Charge) => ({
         id: charge.id,
         amount: charge.amount,
         currency: charge.currency,
@@ -73,16 +85,22 @@ serve(async (req) => {
         receipt_url: charge.receipt_url,
         description: charge.description || 'One-time payment',
       })),
-      paymentMethods: paymentMethods.data.map(pm => ({
-        id: pm.id,
-        brand: pm.card?.brand,
-        last4: pm.card?.last4,
-        exp_month: pm.card?.exp_month,
-        exp_year: pm.card?.exp_year,
-      })),
-    });
+       paymentMethods: paymentMethods.data.map((pm: Stripe.PaymentMethod) => ({
+         id: pm.id,
+         brand: pm.card?.brand,
+         last4: pm.card?.last4,
+         exp_month: pm.card?.exp_month,
+         exp_year: pm.card?.exp_year,
+       })),
+     }),
+     { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+   );
   } catch (error) {
     console.error('Billing history error:', error);
-    return bad(500, error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
   }
 });
