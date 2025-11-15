@@ -19,6 +19,7 @@ export interface UsernameScanOptions {
   artifacts?: string[];
   debugMode?: boolean;
   providers?: string[]; // New: selected tools to use
+  workspaceId?: string; // ✅ NEW: optional workspace override for race condition prevention
 }
 
 export const useUsernameScan = () => {
@@ -65,11 +66,16 @@ export const useUsernameScan = () => {
       const batchId = options.scanId || crypto.randomUUID();
       addLog({ level: 'debug', message: options.scanId ? 'Using provided scan ID' : 'Generated batch ID', data: { batchId } });
       
+      // ✅ Use provided workspaceId as override, fallback to hook workspace
+      const workspaceId = options.workspaceId || workspace?.id;
+      
       // Validate workspace
-      if (!workspace?.id) {
+      if (!workspaceId) {
         addLog({ level: 'error', message: 'No workspace found - please refresh and try again' });
         throw new Error('Workspace not loaded');
       }
+      
+      addLog({ level: 'debug', message: 'Using workspace', data: { workspaceId } });
       
       // All validations passed, now set scanning state
       setIsScanning(true);
@@ -84,7 +90,7 @@ export const useUsernameScan = () => {
         scanId: batchId,
         type: 'username' as const,           // ✅ Correct field name
         value: options.username,             // ✅ Correct field name  
-        workspaceId: workspace.id,           // ✅ Required workspace ID
+        workspaceId: workspaceId,            // ✅ Use ensured workspace ID
         options: {
           providers: selectedProviders,      // ✅ Moved inside options
           platforms: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined,

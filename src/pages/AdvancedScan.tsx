@@ -306,10 +306,28 @@ export default function AdvancedScan() {
           return;
         }
 
-        if (!workspace?.id) {
-          toast.error("No workspace found");
-          setIsScanning(false);
-          return;
+        // ✅ ENSURE WORKSPACE IS READY BEFORE STARTING SCAN
+        let ensuredWorkspaceId = workspace?.id;
+        
+        if (!ensuredWorkspaceId) {
+          toast.info("Preparing your workspace...");
+          
+          // Try quick-create
+          await handleQuickCreateWorkspace();
+          
+          // Refresh workspace state
+          await refreshWorkspace();
+          
+          // Final check - try sessionStorage as fallback
+          ensuredWorkspaceId = workspace?.id || sessionStorage.getItem('current_workspace_id') || undefined;
+          
+          if (!ensuredWorkspaceId) {
+            toast.error("Workspace failed to initialize. Please reload the page.");
+            setIsScanning(false);
+            return;
+          }
+          
+          toast.success("Workspace ready!");
         }
 
         // Generate pre-scan ID for progress tracking
@@ -340,6 +358,7 @@ export default function AdvancedScan() {
           artifacts: !isFree ? usernameArtifacts : [],
           debugMode: false,
           providers, // Pass selected providers to scan orchestrator
+          workspaceId: ensuredWorkspaceId, // ✅ Override workspace ID
         });
 
         // Progress dialog will handle navigation on completion
@@ -1063,7 +1082,7 @@ export default function AdvancedScan() {
 
             {/* Action Buttons */}
             <div className="flex gap-3 pt-4">
-              <Button
+              <Button 
                 onClick={handleScan}
                 disabled={isScanning || workspaceLoading || (isBatchMode ? batchItems.length === 0 : !target.trim())}
                 className="flex-1"
@@ -1071,7 +1090,7 @@ export default function AdvancedScan() {
               >
                 <Zap className="w-5 h-5 mr-2" />
                 {workspaceLoading
-                  ? "Loading workspace..."
+                  ? "Preparing workspace..."
                   : isScanning 
                     ? "Scanning..." 
                     : isBatchMode && batchItems.length > 0
@@ -1193,6 +1212,7 @@ export default function AdvancedScan() {
           onOpenChange={handleProgressClose}
           scanId={modalScanId}
           onComplete={handleScanComplete}
+          initialProviders={scanType === 'username' ? providers : undefined}
         />
       )}
 
