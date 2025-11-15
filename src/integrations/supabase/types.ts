@@ -6318,6 +6318,59 @@ export type Database = {
           },
         ]
       }
+      scan_progress: {
+        Row: {
+          completed_providers: number | null
+          created_at: string | null
+          current_provider: string | null
+          current_providers: string[] | null
+          error: boolean | null
+          findings_count: number | null
+          id: string
+          message: string | null
+          scan_id: string
+          status: string
+          total_providers: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          completed_providers?: number | null
+          created_at?: string | null
+          current_provider?: string | null
+          current_providers?: string[] | null
+          error?: boolean | null
+          findings_count?: number | null
+          id?: string
+          message?: string | null
+          scan_id: string
+          status: string
+          total_providers?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          completed_providers?: number | null
+          created_at?: string | null
+          current_provider?: string | null
+          current_providers?: string[] | null
+          error?: boolean | null
+          findings_count?: number | null
+          id?: string
+          message?: string | null
+          scan_id?: string
+          status?: string
+          total_providers?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_scan"
+            columns: ["scan_id"]
+            isOneToOne: true
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scan_results: {
         Row: {
           job_id: string

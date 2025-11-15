@@ -253,13 +253,31 @@ serve(async (req) => {
       console.warn('[orchestrate] Exception upserting scan record:', e);
     }
 
-    // Create and subscribe to realtime channel for progress updates
-    const channelName = `scan_progress:${scanId}`;
-    const progressChannel = supabaseService.channel(channelName);
-    
-    await progressChannel.subscribe((status) => {
-      console.log(`[orchestrate] Channel ${channelName} status:`, status);
-    });
+    // Helper function to update progress in database
+    const updateProgress = async (payload: {
+      status: string;
+      total_providers?: number;
+      completed_providers?: number;
+      current_provider?: string;
+      current_providers?: string[];
+      findings_count?: number;
+      message: string;
+      error?: boolean;
+    }) => {
+      try {
+        await supabaseService
+          .from('scan_progress')
+          .upsert({
+            scan_id: scanId,
+            ...payload,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'scan_id'
+          });
+      } catch (err) {
+        console.error('[orchestrate] Failed to update progress:', err);
+      }
+    };
 
     // Build provider list with sensible defaults
     const DEFAULT_PROVIDERS: Record<ScanRequest['type'], string[]> = {
@@ -338,18 +356,13 @@ serve(async (req) => {
     const queue = createQueue({ concurrency: 7, retries: 3 });
     const allFindings: UFMFinding[] = [];
 
-    // Broadcast initial progress
-    await progressChannel.send({
-      type: 'broadcast',
-      event: 'progress',
-      payload: {
-        scanId,
-        status: 'started',
-        totalProviders: providers.length,
-        completedProviders: 0,
-        currentProviders: providers.slice(0, 7),
-        message: 'Starting scan...'
-      }
+    // Update initial progress
+    await updateProgress({
+      status: 'started',
+      total_providers: providers.length,
+      completed_providers: 0,
+      current_providers: providers.slice(0, 7),
+      message: 'Starting scan...'
     });
 
     let completedCount = 0;
@@ -360,18 +373,13 @@ serve(async (req) => {
       
       console.log(`[orchestrate] Calling provider: ${provider} for ${type}:${value}`);
       
-      // Broadcast provider start
-      await progressChannel.send({
-        type: 'broadcast',
-        event: 'progress',
-        payload: {
-          scanId,
-          status: 'processing',
-          totalProviders: providers.length,
-          completedProviders: completedCount,
-          currentProvider: provider,
-          message: `Querying ${provider}...`
-        }
+      // Update provider start
+      await updateProgress({
+        status: 'processing',
+        total_providers: providers.length,
+        completed_providers: completedCount,
+        current_provider: provider,
+        message: `Querying ${provider}...`
       });
       
       try {
@@ -435,19 +443,14 @@ serve(async (req) => {
         
         completedCount++;
         
-        // Broadcast provider completion
-        await progressChannel.send({
-          type: 'broadcast',
-          event: 'progress',
-          payload: {
-            scanId,
-            status: 'processing',
-            totalProviders: providers.length,
-            completedProviders: completedCount,
-            currentProvider: provider,
-            findingsCount: result.length,
-            message: `Completed ${provider} (${completedCount}/${providers.length})`
-          }
+        // Update provider completion
+        await updateProgress({
+          status: 'processing',
+          total_providers: providers.length,
+          completed_providers: completedCount,
+          current_provider: provider,
+          findings_count: result.length,
+          message: `Completed ${provider} (${completedCount}/${providers.length})`
         });
         
         return result;
@@ -455,19 +458,14 @@ serve(async (req) => {
         console.error(`[orchestrate] Provider ${provider} failed:`, error);
         completedCount++;
         
-        // Broadcast provider error
-        await progressChannel.send({
-          type: 'broadcast',
-          event: 'progress',
-          payload: {
-            scanId,
-            status: 'processing',
-            totalProviders: providers.length,
-            completedProviders: completedCount,
-            currentProvider: provider,
-            error: true,
-            message: `Failed ${provider} (${completedCount}/${providers.length})`
-          }
+        // Update provider error
+        await updateProgress({
+          status: 'processing',
+          total_providers: providers.length,
+          completed_providers: completedCount,
+          current_provider: provider,
+          error: true,
+          message: `Failed ${provider} (${completedCount}/${providers.length})`
         });
         
         return []; // Continue with other providers
@@ -483,17 +481,12 @@ serve(async (req) => {
       }
     }
 
-    // Broadcast completion of standard providers
-    await progressChannel.send({
-      type: 'broadcast',
-      event: 'progress',
-      payload: {
-        scanId,
-        status: 'aggregating',
-        totalProviders: providers.length,
-        completedProviders: providers.length,
-        message: 'Processing findings...'
-      }
+    // Update completion of standard providers
+    await updateProgress({
+      status: 'aggregating',
+      total_providers: providers.length,
+      completed_providers: providers.length,
+      message: 'Processing findings...'
     });
 
     // === Premium Apify actors (if enabled in options) ===
@@ -501,14 +494,9 @@ serve(async (req) => {
     if (premium && (premium.socialMediaFinder || premium.osintScraper || premium.darkwebScraper)) {
       console.log('[orchestrate] Running premium Apify actors...');
       
-      await progressChannel.send({
-        type: 'broadcast',
-        event: 'progress',
-        payload: {
-          scanId,
-          status: 'premium',
-          message: 'Running premium searches...'
-        }
+      await updateProgress({
+        status: 'premium',
+        message: 'Running premium searches...'
       });
       
       const callApify = async (actorSlug: string, payload: any, label: string) => {
@@ -694,29 +682,15 @@ serve(async (req) => {
 
     console.log(`[orchestrate] Completed in ${tookMs}ms: ${sortedFindings.length} findings`);
 
-    // Broadcast final completion
-    await progressChannel.send({
-      type: 'broadcast',
-      event: 'progress',
-      payload: {
-        scanId,
-        status: 'completed',
-        totalProviders: providers.length,
-        completedProviders: providers.length,
-        totalFindings: sortedFindings.length,
-        message: `Scan completed with ${sortedFindings.length} findings`,
-        tookMs,
-        currentProviders: []
-      }
+    // Update final completion
+    await updateProgress({
+      status: 'completed',
+      total_providers: providers.length,
+      completed_providers: providers.length,
+      findings_count: sortedFindings.length,
+      message: `Scan completed with ${sortedFindings.length} findings`,
+      current_providers: []
     });
-
-    // Wait for frontend to receive the final event before closing channel
-    console.log(`[orchestrate] Keeping channel alive for 2 seconds to ensure delivery`);
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Unsubscribe from channel
-    console.log(`[orchestrate] Unsubscribing from channel ${channelName}`);
-    await progressChannel.unsubscribe();
 
     return ok({
       scanId,
