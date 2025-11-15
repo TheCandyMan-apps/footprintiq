@@ -23,6 +23,8 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
   const [result, setResult] = useState<MaigretResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pollCount, setPollCount] = useState(0);
+  const [timedOut, setTimedOut] = useState(false);
 
   useEffect(() => {
     const fetchResult = async () => {
@@ -47,15 +49,21 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
     fetchResult();
 
     const interval = setInterval(() => {
-      if (result?.status === 'completed' || result?.status === 'failed') {
+      // Stop polling after final status or timeout (20 polls = 60 seconds)
+      if (result?.status === 'completed' || result?.status === 'failed' || pollCount >= 20) {
         clearInterval(interval);
+        if (pollCount >= 20 && !result) {
+          setTimedOut(true);
+          setLoading(false);
+        }
         return;
       }
+      setPollCount(prev => prev + 1);
       fetchResult();
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [jobId, result?.status]);
+  }, [jobId, result?.status, pollCount]);
 
   if (loading && !result) {
     return (
@@ -73,12 +81,49 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
 
   if (error) {
     return (
-      <Card>
+      <Card className="border-destructive/50">
         <CardHeader>
-          <CardTitle className="text-destructive">Error</CardTitle>
+          <CardTitle className="text-destructive flex items-center gap-2">
+            <XCircle className="h-5 w-5" />
+            Error Loading Results
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p>{error}</p>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">{error}</p>
+          <Button variant="outline" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (timedOut && !result) {
+    return (
+      <Card className="border-yellow-500/50 bg-yellow-50/5">
+        <CardHeader>
+          <CardTitle className="text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Scan Timeout
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">
+            The scan is taking longer than expected. This could mean:
+          </p>
+          <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground ml-4">
+            <li>The scan is still processing in the background</li>
+            <li>The worker may be experiencing high load</li>
+            <li>The username may not exist on any platforms</li>
+          </ul>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Check Again
+            </Button>
+            <Button variant="ghost" onClick={() => window.history.back()}>
+              Back to Scanner
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -90,11 +135,49 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
         <CardHeader>
           <CardTitle>Not Found</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <p>No results found for job ID: {jobId}</p>
           <p className="text-sm text-muted-foreground mt-2">
             The scan may still be queued or the job ID is invalid.
           </p>
+          <Button variant="outline" onClick={() => window.history.back()}>
+            Back to Scanner
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Handle failed scans
+  if (result.status === 'failed') {
+    const errorMessage = result.raw?.error || 'Scan failed due to an unknown error';
+    return (
+      <Card className="border-destructive/50">
+        <CardHeader>
+          <CardTitle className="text-destructive flex items-center gap-2">
+            <XCircle className="h-5 w-5" />
+            Scan Failed
+          </CardTitle>
+          <CardDescription>Job ID: {result.job_id}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+            <p className="text-sm font-mono text-destructive">{errorMessage}</p>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Username: <span className="font-medium">{result.username}</span>
+          </p>
+          <div className="flex gap-2">
+            <Button 
+              variant="default" 
+              onClick={() => window.history.back()}
+            >
+              Try Again
+            </Button>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Refresh
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -106,6 +189,13 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
     completed: CheckCircle,
     failed: XCircle,
   }[result.status];
+
+  const badgeVariant = (() => {
+    const status = result.status as 'queued' | 'running' | 'completed' | 'failed';
+    if (status === 'completed') return 'default';
+    if (status === 'failed') return 'destructive';
+    return 'secondary';
+  })();
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -155,7 +245,7 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
                 />
               )}
               <Badge 
-                variant={result.status === 'completed' ? 'default' : result.status === 'failed' ? 'destructive' : 'secondary'}
+                variant={badgeVariant}
                 className="text-sm px-3 py-1 shadow-sm"
               >
                 <StatusIcon className={`h-4 w-4 mr-1.5 ${result.status === 'running' ? 'animate-spin' : ''}`} />
@@ -204,10 +294,18 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
                   const site = getEvidenceValue(item.evidence, 'site');
                   const url = getEvidenceValue(item.evidence, 'url');
                   const status = getEvidenceValue(item.evidence, 'status');
+                  const provider = item.provider || 'maigret'; // Default to maigret for legacy results
+                  
+                  // Provider badge colors
+                  const providerColors = {
+                    maigret: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+                    whatsmyname: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+                    gosearch: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+                  };
                   
                   return (
                     <div 
-                      key={idx} 
+                      key={idx}
                       className="group p-4 rounded-lg border border-border/50 bg-gradient-to-br from-card to-card/50 hover:border-primary/50 hover:shadow-md transition-all duration-300 hover:scale-[1.02] animate-fade-in"
                       style={{ animationDelay: `${idx * 50}ms` }}
                     >
