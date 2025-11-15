@@ -99,7 +99,7 @@ export default function AdvancedScan() {
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [selectedTool, setSelectedTool] = useState<string>("spiderfoot");
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
-  const [maigretEnabled, setMaigretEnabled] = useState(true); // Maigret toggle for username scans
+  const [maigretEnabled, setMaigretEnabled] = useState(true); // Legacy state - no longer used
   const { saveTemplate } = useScanTemplates();
   
   // Username scan specific options
@@ -130,7 +130,7 @@ export default function AdvancedScan() {
   // Auto-select default providers when scan type changes
   const DEFAULT_PROVIDERS: Record<string, string[]> = {
     email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
-    username: maigretEnabled ? ['maigret', 'dehashed'] : ['dehashed'], // Include maigret if enabled
+    username: ['maigret', 'whatsmyname', 'gosearch'], // Multi-tool username scanning
     domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
     phone: ['fullcontact'],
   };
@@ -255,7 +255,7 @@ export default function AdvancedScan() {
   }
 
   const handleScan = async () => {
-    // Handle username scans inline with resilient pattern
+    // Handle username scans with progress dialog
     if (scanType === 'username') {
       if (!target.trim()) {
         toast.error("Please enter a username to scan");
@@ -278,8 +278,28 @@ export default function AdvancedScan() {
           return;
         }
 
-        // Use resilient username scan hook
+        // Generate pre-scan ID for progress tracking
+        const preScanId = self.crypto.randomUUID();
+        
+        // Open progress dialog BEFORE starting scan
+        setModalScanId(preScanId);
+        setProgressOpen(true);
+        setCurrentScanId(preScanId);
+        
+        // Start tracking
+        startTracking({
+          scanId: preScanId,
+          type: 'username',
+          target: target.trim(),
+          startedAt: new Date().toISOString(),
+        });
+        
+        // Small delay to ensure subscription is established
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Start the scan with pre-generated ID
         const result = await startUsernameScan({
+          scanId: preScanId,
           username: target.trim(),
           tags: usernameTags.trim() || undefined,
           allSites: usernameAllSites,
@@ -287,35 +307,13 @@ export default function AdvancedScan() {
           debugMode: false,
         });
 
-        const jobId = result?.jobId;
-        if (jobId) {
-          setCurrentScanId(jobId);
-          
-          // Start tracking
-          startTracking({
-            scanId: jobId,
-            type: 'username',
-            target: target.trim(),
-            startedAt: new Date().toISOString(),
-          });
-
-          // Show success toast based on status
-          if (result.status === 'queued') {
-            toast.info(`Username scan queued for "${target.trim()}"`, {
-              description: 'Worker processing - results will appear shortly'
-            });
-          } else {
-            toast.success(`Username scan started for "${target.trim()}"`);
-          }
-
-          // Navigate immediately to results page (no progress dialog for username scans)
-          navigate(`/maigret/results/${jobId}`);
-        }
+        // Progress dialog will handle navigation on completion
+        setIsScanning(false);
       } catch (error) {
         console.error("Username scan error:", error);
         toast.error(error instanceof Error ? error.message : "Scan failed");
-      } finally {
         setIsScanning(false);
+        setProgressOpen(false);
       }
       return; // Exit early for username scans
     }
@@ -603,7 +601,7 @@ export default function AdvancedScan() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="email">Email Address</SelectItem>
-                  <SelectItem value="username">Username (Uses Maigret Scanner)</SelectItem>
+                  <SelectItem value="username">Username</SelectItem>
                   <SelectItem value="domain">Domain</SelectItem>
                   <SelectItem value="phone">Phone Number</SelectItem>
                 </SelectContent>
@@ -613,13 +611,13 @@ export default function AdvancedScan() {
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertDescription className="text-sm">
-                      Username scans use our Maigret integration for comprehensive social media discovery across 400+ platforms
+                      Username scans use multiple OSINT tools (Maigret, WhatsMyName, GoSearch) for comprehensive social media discovery across 400+ platforms
                     </AlertDescription>
                   </Alert>
                   
-                  {/* Maigret Worker Status */}
+                  {/* Username Scan Tools Status */}
                   <div className="flex items-center gap-2 p-3 rounded-lg border bg-card">
-                    <span className="text-sm font-medium">Maigret Worker Status:</span>
+                    <span className="text-sm font-medium">Username Scan Tools Status:</span>
                     <WorkerStatus />
                   </div>
                   
@@ -725,14 +723,15 @@ export default function AdvancedScan() {
                     )}
                   </div>
                   
-                  {/* Maigret Upgrade Teaser for Free Users */}
+                  {/* Username Scan Upgrade Teaser for Free Users */}
                   {isFree && (
                     <UpgradeTeaser
-                      feature="maigret"
-                      title="Unlock Maigret Username Scanning"
-                      description="Search for usernames across 400+ social media platforms and websites with our premium Maigret scanner."
+                      feature="username-scan"
+                      title="Unlock Premium Username Scanning"
+                      description="Search for usernames across 400+ social media platforms using multiple OSINT tools including Maigret, WhatsMyName, and GoSearch."
                       benefits={[
                         "Scan 400+ platforms including Facebook, Instagram, Twitter, LinkedIn, GitHub, and more",
+                        "Multiple OSINT tools for comprehensive coverage",
                         "Advanced username discovery with pattern matching",
                         "Export results in multiple formats (CSV, JSON, PDF)",
                         "Priority scanning with faster results"
@@ -872,14 +871,7 @@ export default function AdvancedScan() {
               isPremium={true}
             />
 
-            {/* Maigret Toggle for Username Scans */}
-            {scanType === 'username' && (
-              <MaigretToggle
-                enabled={maigretEnabled}
-                onChange={setMaigretEnabled}
-                disabled={isScanning}
-              />
-            )}
+            {/* Tool selection for Username Scans is now handled via providers checkboxes above */}
 
             {/* Provider Selection */}
             <div className="space-y-3">
