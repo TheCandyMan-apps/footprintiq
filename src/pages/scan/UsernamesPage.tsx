@@ -14,7 +14,7 @@ export default function UsernamesPage() {
         <title>Username Scan - FootprintIQ</title>
         <meta
           name="description"
-          content="Search for usernames across hundreds of social media platforms and websites with our advanced Maigret scanner"
+          content="Search for usernames across hundreds of social media platforms and websites with our multi-tool OSINT scanner"
         />
       </Helmet>
       
