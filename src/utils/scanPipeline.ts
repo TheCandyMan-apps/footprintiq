@@ -21,14 +21,14 @@ export async function detectScanPipeline(
       return 'simple';
     }
 
-    // Check scan_jobs (Advanced pipeline)
-    const { data: scanJob, error: scanJobError } = await supabase
-      .from('scan_jobs')
+    // Check scans table (Advanced pipeline)
+    const { data: scan, error: scanError } = await supabase
+      .from('scans')
       .select('id')
       .eq('id', jobId)
       .maybeSingle();
 
-    if (!scanJobError && scanJob) {
+    if (!scanError && scan) {
       console.log('[scanPipeline] Detected Advanced pipeline for jobId:', jobId);
       return 'advanced';
     }
