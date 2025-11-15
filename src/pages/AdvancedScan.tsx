@@ -64,6 +64,40 @@ export default function AdvancedScan() {
   const { isWorkerOffline, getWorkerByName } = useWorkerStatus();
   const { isFree, checkFeatureAccess } = useTierGating();
   
+  // Guard: Show loading state while workspace initializes
+  if (workspaceLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <Card className="p-8">
+            <div className="flex items-center justify-center space-x-3">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <p className="text-muted-foreground">Loading workspace...</p>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+  
+  // Guard: Show banner if workspace is missing
+  if (!workspace) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <Alert className="mb-4">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Creating workspace... please wait a moment.
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
+  
   // Show low-credit toasts for free users
   useLowCreditToast();
   const [scanType, setScanType] = useState<string>("email");
