@@ -145,6 +145,29 @@ export function FindingCard({ finding }: FindingCardProps) {
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
 
+  const extractPlatformName = (evidence: Evidence[]) => {
+    const siteEvidence = evidence.find(e => e.key === 'site');
+    if (!siteEvidence) return null;
+    
+    const siteValue = String(siteEvidence.value);
+    // Strip ANSI color codes and prefixes like [+] or [-]
+    return siteValue
+      .replace(/\[\d+m|\[0m/g, '')
+      .replace(/^\[[\+\-]\]\s*/, '')
+      .trim();
+  };
+
+  const getSmartTitle = (kind: string, evidence: Evidence[]) => {
+    // For presence hits, try to extract the platform name
+    if (kind === 'presence.hit') {
+      const platformName = extractPlatformName(evidence);
+      if (platformName) return platformName;
+    }
+    
+    // Fallback to formatting the kind
+    return kind.replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
   const remediationSteps = getRemediationSteps(finding.kind, finding.severity);
   const severityColor = getSeverityColor(finding.severity);
 
@@ -263,7 +286,7 @@ export function FindingCard({ finding }: FindingCardProps) {
               </span>
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">
-              {finding.kind.replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              {getSmartTitle(finding.kind, finding.evidence)}
             </h3>
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
