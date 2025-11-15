@@ -57,7 +57,7 @@ serve(async (req) => {
         period_start: upcomingInvoice.period_start,
         period_end: upcomingInvoice.period_end,
         next_payment_attempt: upcomingInvoice.next_payment_attempt,
-        lines: upcomingInvoice.lines.data.map(line => ({
+        lines: upcomingInvoice.lines.data.map((line: Stripe.InvoiceLineItem) => ({
           description: line.description,
           amount: line.amount,
           period: {

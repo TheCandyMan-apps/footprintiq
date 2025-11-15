@@ -348,8 +348,9 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error('Audit error:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -389,19 +390,20 @@ async function runTest(
     console.log(`✓ ${config.name} passed (${duration}ms)`);
   } catch (error) {
     const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : String(error);
     
     results.push({
       test_name: config.name,
       test_category: config.category,
       status: 'fail',
       duration_ms: duration,
-      error_message: error.message,
+      error_message: errorMessage,
       expected_behavior: config.expectedBehavior,
-      actual_behavior: `Error: ${error.message}`,
+      actual_behavior: `Error: ${errorMessage}`,
       severity: config.severity,
-      metadata: { error: error.message },
+      metadata: { error: errorMessage },
     });
 
-    console.log(`✗ ${config.name} failed: ${error.message}`);
+    console.log(`✗ ${config.name} failed: ${errorMessage}`);
   }
 }

@@ -1,6 +1,10 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders } from '../_shared/secure.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 /**
  * TheHarvester OSINT Scanner - Premium Feature
@@ -76,7 +80,8 @@ async function harvestFromGoogle(domain: string, limit: number): Promise<Partial
       hosts: []
     };
   } catch (error) {
-    logStep('ERROR: Google harvest failed', { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep('ERROR: Google harvest failed', { error: errorMessage });
     return { emails: [], subdomains: [], hosts: [] };
   }
 }
@@ -106,7 +111,8 @@ async function harvestFromHunter(domain: string): Promise<Partial<HarvestResult>
     logStep('Hunter.io harvest complete', { emails: emails.length });
     return { emails };
   } catch (error) {
-    logStep('ERROR: Hunter.io harvest failed', { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep('ERROR: Hunter.io harvest failed', { error: errorMessage });
     return { emails: [] };
   }
 }
@@ -143,7 +149,8 @@ async function harvestFromShodan(domain: string): Promise<Partial<HarvestResult>
     logStep('Shodan harvest complete', { subdomains: subdomains.length, ips: ips.length });
     return { subdomains, ips, hosts: [] };
   } catch (error) {
-    logStep('ERROR: Shodan harvest failed', { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep('ERROR: Shodan harvest failed', { error: errorMessage });
     return { hosts: [], ips: [] };
   }
 }
@@ -192,7 +199,8 @@ async function harvestFromCensys(domain: string): Promise<Partial<HarvestResult>
       hosts: []
     };
   } catch (error) {
-    logStep('ERROR: Censys harvest failed', { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep('ERROR: Censys harvest failed', { error: errorMessage });
     return { subdomains: [], hosts: [], ips: [] };
   }
 }
@@ -228,7 +236,8 @@ async function harvestFromVirusTotal(domain: string): Promise<Partial<HarvestRes
     logStep('VirusTotal harvest complete', { subdomains: subdomains.length });
     return { subdomains, hosts: [] };
   } catch (error) {
-    logStep('ERROR: VirusTotal harvest failed', { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep('ERROR: VirusTotal harvest failed', { error: errorMessage });
     return { subdomains: [], hosts: [] };
   }
 }
@@ -263,7 +272,8 @@ async function harvestFromSecurityTrails(domain: string): Promise<Partial<Harves
     logStep('SecurityTrails harvest complete', { subdomains: subdomains.length });
     return { subdomains, ips };
   } catch (error) {
-    logStep('ERROR: SecurityTrails harvest failed', { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep('ERROR: SecurityTrails harvest failed', { error: errorMessage });
     return { subdomains: [], ips: [] };
   }
 }
@@ -302,7 +312,8 @@ async function harvestFromWaybackMachine(domain: string): Promise<Partial<Harves
       hosts: hosts.slice(0, 100) // Limit to 100 URLs
     };
   } catch (error) {
-    logStep('ERROR: Wayback Machine harvest failed', { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep('ERROR: Wayback Machine harvest failed', { error: errorMessage });
     return { subdomains: [], hosts: [] };
   }
 }
@@ -334,7 +345,8 @@ async function harvestFromCertificateTransparency(domain: string): Promise<Parti
     logStep('Certificate Transparency harvest complete', { subdomains: subdomains.size });
     return { subdomains: Array.from(subdomains), hosts: [] };
   } catch (error) {
-    logStep('ERROR: Certificate Transparency harvest failed', { error: error.message });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep('ERROR: Certificate Transparency harvest failed', { error: errorMessage });
     return { subdomains: [], hosts: [] };
   }
 }

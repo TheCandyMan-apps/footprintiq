@@ -1,7 +1,11 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@18.5.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad } from '../../../_shared/secure.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 // Sentry-like logging for payment operations
 const logPaymentEvent = (event: string, context: any) => {
@@ -10,10 +14,15 @@ const logPaymentEvent = (event: string, context: any) => {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') return bad(405, 'method_not_allowed');
+  if (req.method !== 'POST') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
 
   try {
     logPaymentEvent('audit_started', { timestamp: new Date().toISOString() });
@@ -68,7 +77,7 @@ serve(async (req) => {
       has_more: paymentIntents.has_more 
     });
 
-    const failedPayments = paymentIntents.data.filter(pi => 
+    const failedPayments = paymentIntents.data.filter((pi: Stripe.PaymentIntent) => 
       pi.status === 'requires_payment_method' || 
       pi.status === 'canceled' ||
       pi.last_payment_error
@@ -78,7 +87,7 @@ serve(async (req) => {
       logPaymentEvent('failed_payments_detected', { count: failedPayments.length });
     }
 
-    failedPayments.forEach(payment => {
+    failedPayments.forEach((payment: Stripe.PaymentIntent) => {
       logPaymentEvent('payment_failure_detail', {
         payment_id: payment.id,
         error_code: payment.last_payment_error?.code,
@@ -227,13 +236,20 @@ serve(async (req) => {
 
     console.log('Payment audit completed:', report.summary);
 
-    return ok(report);
+    return new Response(
+      JSON.stringify(report),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+    );
   } catch (error) {
     logPaymentEvent('audit_failed', { 
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
     });
     console.error('Payment audit error:', error);
-    return bad(500, error instanceof Error ? error.message : 'Unknown error');
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+    );
   }
 });
