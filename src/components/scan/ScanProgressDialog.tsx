@@ -139,11 +139,25 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     setShowPreview(false);
     setPipelineType(null);
 
-    // Detect pipeline type
+    // Detect pipeline type and check if scan exists
     const initializePipeline = async () => {
+      // Wait 2 seconds before checking - gives edge function time to create records
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       const pipeline = await detectScanPipeline(scanId);
       setPipelineType(pipeline);
       console.log('[ScanProgressDialog] Detected pipeline:', pipeline);
+
+      // If no pipeline detected after 2s, scan likely failed to start
+      if (!pipeline) {
+        console.error('[ScanProgressDialog] No pipeline detected - scan may have failed to start');
+        setStatus('failed');
+        toast.error('Scan failed to start', {
+          description: 'The scan request may have been invalid. Please try again.',
+          duration: 5000,
+        });
+        return;
+      }
 
       if (pipeline === 'simple') {
         // Start polling maigret_results for Simple pipeline

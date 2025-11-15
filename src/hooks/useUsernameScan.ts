@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 export interface ScanLog {
   timestamp: string;
@@ -21,6 +22,7 @@ export interface UsernameScanOptions {
 }
 
 export const useUsernameScan = () => {
+  const { workspace } = useWorkspace();
   const [isScanning, setIsScanning] = useState(false);
   const [debugLogs, setDebugLogs] = useState<ScanLog[]>([]);
   const [debugMode, setDebugMode] = useState(false);
@@ -64,22 +66,29 @@ export const useUsernameScan = () => {
       const batchId = options.scanId || crypto.randomUUID();
       addLog({ level: 'debug', message: options.scanId ? 'Using provided scan ID' : 'Generated batch ID', data: { batchId } });
       
+      // Validate workspace
+      if (!workspace?.id) {
+        addLog({ level: 'error', message: 'No workspace found - please refresh and try again' });
+        throw new Error('Workspace not loaded');
+      }
+
       // Default providers if not specified
       const selectedProviders = options.providers?.length 
         ? options.providers 
         : ['maigret', 'whatsmyname', 'gosearch'];
       
-      // Call scan-orchestrate with multi-tool support
+      // Call scan-orchestrate with multi-tool support - CORRECT FIELD NAMES
       const requestBody = {
-        scan_type: 'username' as const,
-        username: options.username,
-        providers: selectedProviders,
+        scanId: batchId,
+        type: 'username' as const,           // ✅ Correct field name
+        value: options.username,             // ✅ Correct field name  
+        workspaceId: workspace.id,           // ✅ Required workspace ID
         options: {
+          providers: selectedProviders,      // ✅ Moved inside options
           platforms: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined,
           all_sites: options.allSites,
           artifacts: options.artifacts,
         },
-        timeout: 60, // Longer timeout for multi-tool scans
       };
       
       addLog({ level: 'info', message: 'Invoking scan-orchestrate', data: requestBody });
@@ -88,8 +97,22 @@ export const useUsernameScan = () => {
         body: requestBody,
       });
       
-      // Resilient error handling - even on error, return scanId for polling
+      // Enhanced error handling - detect validation errors
       if (error) {
+        const errorMsg = error.message || 'Unknown error';
+        
+        // Check for validation errors (bad request format)
+        if (errorMsg.includes('type') || errorMsg.includes('value') || errorMsg.includes('workspaceId') || errorMsg.includes('Invalid request')) {
+          addLog({ 
+            level: 'error', 
+            message: 'Invalid scan request format',
+            data: { error: errorMsg, sentBody: requestBody }
+          });
+          toast.error('Failed to start scan. Please refresh and try again.');
+          throw new Error('Invalid scan request - missing required fields');
+        }
+        
+        // Resilient handling for timeouts
         addLog({ 
           level: 'warn', 
           message: 'Orchestrator response slow/timeout - continuing with background polling',
