@@ -18,15 +18,16 @@ export const WorkerStatusBanner = ({
     loading, 
     anyOffline, 
     anyDegraded, 
-    allOnline, 
-    getStatusEmoji,
+    allOperational,
+    getOperationalStatusEmoji,
+    getWorkerDisplayName,
     refresh 
   } = useWorkerStatus({ workerType });
 
   if (loading) return null;
   
   // Don't show banner if all workers are online and showIfAllOnline is false
-  if (!showIfAllOnline && allOnline) return null;
+  if (!showIfAllOnline && allOperational) return null;
 
   // Filter workers if workerType is specified
   const displayWorkers = workerType 
@@ -42,15 +43,15 @@ export const WorkerStatusBanner = ({
   };
 
   const getIcon = () => {
-    if (anyOffline) return <XCircle className="w-5 h-5" />;
-    if (anyDegraded) return <AlertCircle className="w-5 h-5" />;
-    return <CheckCircle2 className="w-5 h-5" />;
+    if (anyOffline) return <XCircle className="w-5 h-5 text-destructive" />;
+    if (anyDegraded) return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+    return <CheckCircle2 className="w-5 h-5 text-green-500" />;
   };
 
   const getTitle = () => {
     if (anyOffline) return 'Some workers are offline';
     if (anyDegraded) return 'Some workers are degraded';
-    return 'All workers operational';
+    return 'All OSINT tools operational';
   };
 
   const getDescription = () => {
@@ -60,11 +61,14 @@ export const WorkerStatusBanner = ({
     if (anyDegraded) {
       return 'Some workers are experiencing slow response times. Scans may take longer than usual.';
     }
-    return 'All systems are running normally.';
+    return 'Maigret, WhatsMyName, and GoSearch are ready to find digital footprints across 500+ platforms.';
   };
 
   return (
-    <Alert variant={getVariant()} className="mb-6">
+    <Alert 
+      variant={getVariant()} 
+      className={`mb-6 ${allOperational ? 'bg-green-500/10 border-green-500/20' : ''}`}
+    >
       <div className="flex items-start gap-3">
         {getIcon()}
         <div className="flex-1 space-y-2">
@@ -89,8 +93,8 @@ export const WorkerStatusBanner = ({
           {displayWorkers.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {displayWorkers.map((worker) => {
-                // Treat 'unknown' as 'online' when all systems are operational
-                const displayStatus = worker.status === 'unknown' && allOnline ? 'online' : worker.status;
+                const displayStatus = worker.status === 'unknown' && allOperational ? 'online' : worker.status;
+                const displayName = getWorkerDisplayName(worker.worker_name);
                 
                 return (
                   <Badge 
@@ -100,9 +104,15 @@ export const WorkerStatusBanner = ({
                       displayStatus === 'degraded' ? 'secondary' : 
                       'destructive'
                     }
-                    className="text-xs"
+                    className={`text-xs ${
+                      displayStatus === 'online' 
+                        ? 'bg-green-500/10 text-green-700 border-green-500/30' 
+                        : displayStatus === 'degraded'
+                        ? 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30'
+                        : ''
+                    }`}
                   >
-                    {getStatusEmoji(displayStatus)} {worker.worker_name}
+                    {getOperationalStatusEmoji(displayStatus)} {displayName}
                     {worker.response_time_ms && (
                       <span className="ml-1 opacity-70">
                         ({worker.response_time_ms}ms)

@@ -17,6 +17,13 @@ interface UseWorkerStatusOptions {
   refreshInterval?: number;
 }
 
+const WORKER_DISPLAY_NAMES: Record<string, string> = {
+  'maigret': 'Maigret',
+  'whatsmyname': 'WhatsMyName',
+  'gosearch': 'GoSearch',
+  'holehe': 'Holehe'
+};
+
 export function useWorkerStatus(options: UseWorkerStatusOptions = {}) {
   const { workerType, autoRefresh = true, refreshInterval = 30000 } = options;
   const [workers, setWorkers] = useState<WorkerStatus[]>([]);
@@ -116,6 +123,19 @@ export function useWorkerStatus(options: UseWorkerStatusOptions = {}) {
   const allOnline = workers.length > 0 && workers.every(w => w.status === 'online');
   const anyOffline = workers.some(w => w.status === 'offline');
   const anyDegraded = workers.some(w => w.status === 'degraded');
+  const allOperational = workers.length > 0 && !anyOffline && !anyDegraded;
+
+  const getOperationalStatusEmoji = (status: WorkerStatus['status']): string => {
+    if (status === 'unknown' && allOperational) return '🟢';
+    if (status === 'online') return '🟢';
+    if (status === 'degraded') return '🟡';
+    if (status === 'offline') return '🔴';
+    return '⚪';
+  };
+
+  const getWorkerDisplayName = (name: string): string => {
+    return WORKER_DISPLAY_NAMES[name] || name;
+  };
 
   return {
     workers,
@@ -127,7 +147,10 @@ export function useWorkerStatus(options: UseWorkerStatusOptions = {}) {
     isWorkerOnline,
     isWorkerOffline,
     getStatusEmoji,
+    getOperationalStatusEmoji,
+    getWorkerDisplayName,
     allOnline,
+    allOperational,
     anyOffline,
     anyDegraded,
   };
