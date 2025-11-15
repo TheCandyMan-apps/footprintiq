@@ -41,7 +41,6 @@ export const useUsernameScan = () => {
   }, [debugMode]);
 
   const startScan = useCallback(async (options: UsernameScanOptions) => {
-    setIsScanning(true);
     setDebugLogs([]);
     
     try {
@@ -71,6 +70,9 @@ export const useUsernameScan = () => {
         addLog({ level: 'error', message: 'No workspace found - please refresh and try again' });
         throw new Error('Workspace not loaded');
       }
+      
+      // All validations passed, now set scanning state
+      setIsScanning(true);
 
       // Default providers if not specified
       const selectedProviders = options.providers?.length 
