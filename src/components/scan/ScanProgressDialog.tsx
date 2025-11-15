@@ -31,9 +31,10 @@ interface ScanProgressDialogProps {
   onOpenChange: (open: boolean) => void;
   scanId: string | null;
   onComplete?: () => void;
+  initialProviders?: string[]; // ✅ NEW: show providers immediately
 }
 
-export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: ScanProgressDialogProps) {
+export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, initialProviders }: ScanProgressDialogProps) {
   const [progress, setProgress] = useState(0);
   const [providers, setProviders] = useState<ProviderStatus[]>([]);
   const [creditsUsed, setCreditsUsed] = useState(0);
@@ -126,13 +127,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
 
     // Reset state
     setProgress(5); // Show 5% to indicate we're listening
-    setProviders([]);
     setCreditsUsed(0);
     setStatus('running');
     setTotalResults(0);
     setIsSavingCase(false);
     setProvidersCompleted(0);
-    setProvidersTotal(0);
     setLastEventAt(Date.now());
     setShowInactivityHint(false);
     setShowTimeoutWarning(false);
@@ -140,18 +139,64 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     setShowPreview(false);
     setPipelineType(null);
 
-    // ✅ Initialize providers from scan record
+    // ✅ IMMEDIATE PROVIDER DISPLAY - show selected providers instantly
+    if (initialProviders && initialProviders.length > 0) {
+      console.log('[ScanProgressDialog] Showing initial providers immediately:', initialProviders);
+      setProviders(initialProviders.map(name => ({
+        name,
+        status: 'pending' as const,
+        message: 'Queued...',
+      })));
+      setProvidersTotal(initialProviders.length);
+    } else {
+      setProviders([]);
+      setProvidersTotal(0);
+    }
+
+    // ✅ SCAN STATUS SUBSCRIPTION - detect failures immediately
+    const scanStatusChannel = supabase
+      .channel(`scan-status:${scanId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'scans',
+          filter: `id=eq.${scanId}`,
+        },
+        (payload) => {
+          const newStatus = payload.new.status;
+          console.log('[ScanProgressDialog] Scan status changed:', newStatus);
+          
+          if (newStatus === 'failed' || newStatus === 'cancelled') {
+            setStatus('failed');
+            setProgress(0);
+            toast.error(newStatus === 'cancelled' ? 'Scan was cancelled' : 'Scan failed to start');
+          }
+        }
+      )
+      .subscribe();
+
+    // Backup: Also initialize from DB (secondary source)
     const initializeProviders = async () => {
       const { data: scanRecord } = await supabase
         .from('scans')
-        .select('provider_counts')
+        .select('provider_counts, status')
         .eq('id', scanId)
         .maybeSingle();
       
-      if (scanRecord?.provider_counts) {
+      // Check for immediate failure
+      if (scanRecord?.status === 'failed' || scanRecord?.status === 'cancelled') {
+        setStatus('failed');
+        setProgress(0);
+        toast.error('Scan failed - please try again');
+        return;
+      }
+      
+      if (scanRecord?.provider_counts && !initialProviders) {
         const providerNames = Object.keys(scanRecord.provider_counts);
         if (providerNames.length > 0) {
-          console.log('[ScanProgressDialog] Initializing providers:', providerNames);
+          console.log('[ScanProgressDialog] Initializing providers from DB:', providerNames);
           setProviders(providerNames.map(name => ({
             name,
             status: 'pending' as const,
@@ -662,13 +707,14 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     return () => {
       console.log('[ScanProgressDialog] Cleaning up channels');
       clearInterval(watchdogInterval);
+      supabase.removeChannel(scanStatusChannel);
       supabase.removeChannel(jobChannel);
       supabase.removeChannel(maigretChannel);
       supabase.removeChannel(orchestratorChannel);
       supabase.removeChannel(findingsChannel);
       supabase.removeChannel(maigretResultsChannel);
     };
-  }, [scanId, open, onComplete, status, lastEventAt, pipelineType]);
+  }, [scanId, open, onComplete, status, lastEventAt, pipelineType, initialProviders]);
 
   const handleZeroResults = async () => {
     if (!scanId || isSavingCase) return;
