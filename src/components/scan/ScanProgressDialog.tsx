@@ -49,6 +49,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
   const [topFindings, setTopFindings] = useState<TopFinding[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [pipelineType, setPipelineType] = useState<'simple' | 'advanced' | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   const playSuccessSound = () => {
     try {
@@ -141,19 +142,20 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
 
     // Detect pipeline type and check if scan exists
     const initializePipeline = async () => {
-      // Wait 2 seconds before checking - gives edge function time to create records
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait 3 seconds before checking - gives edge function time to create records
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
       const pipeline = await detectScanPipeline(scanId);
       setPipelineType(pipeline);
+      setIsInitializing(false);
       console.log('[ScanProgressDialog] Detected pipeline:', pipeline);
 
-      // If no pipeline detected after 2s, scan likely failed to start
+      // If no pipeline detected after 3s, scan likely failed to start
       if (!pipeline) {
         console.error('[ScanProgressDialog] No pipeline detected - scan may have failed to start');
         setStatus('failed');
         toast.error('Scan failed to start', {
-          description: 'The scan request may have been invalid. Please try again.',
+          description: 'The scan request may have been invalid. Try closing and retrying.',
           duration: 5000,
         });
         return;
@@ -964,13 +966,18 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
                   variant="outline"
                   size="sm"
                   onClick={handleCancel}
-                  disabled={isCancelling}
+                  disabled={isCancelling || isInitializing}
                   className="flex-1 sm:flex-none"
                 >
                   {isCancelling ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                       Cancelling...
+                    </>
+                  ) : isInitializing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Starting...
                     </>
                   ) : (
                     <>
