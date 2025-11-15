@@ -3,6 +3,26 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useWorkspace } from '@/hooks/useWorkspace';
 
+function buildProvidersList(type: 'email' | 'username' | 'domain' | 'phone', customProviders?: string[]): string[] {
+  const providers: string[] = [];
+  
+  if (type === 'username') {
+    providers.push('maigret', 'whatsmyname', 'gosearch');
+  }
+  
+  if (type === 'email') {
+    providers.push('holehe');
+  }
+
+  // Merge with any custom providers specified
+  const uniqueProviders = Array.from(new Set([
+    ...providers,
+    ...(customProviders || [])
+  ]));
+
+  return uniqueProviders;
+}
+
 export interface AdvancedScanOptions {
   deepWeb?: boolean;
   socialMedia?: boolean;
@@ -17,6 +37,7 @@ export interface AdvancedScanOptions {
   darkwebUrls?: string[];
   darkwebDepth?: number;
   darkwebPages?: number;
+  providers?: string[];
 }
 
 export interface ScanProgress {
@@ -76,6 +97,7 @@ export function useAdvancedScan() {
           workspaceId: workspace.id,
           options: {
             includeDarkweb: !!options.deepWeb,
+            providers: buildProvidersList(type, options.providers),
             premium: {
               socialMediaFinder: !!options.socialMedia,
               osintScraper: !!options.osintScraper,
