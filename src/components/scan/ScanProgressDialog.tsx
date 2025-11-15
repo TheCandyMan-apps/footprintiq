@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -35,6 +35,12 @@ interface ScanProgressDialogProps {
 }
 
 export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, initialProviders }: ScanProgressDialogProps) {
+  // Create stable reference for initialProviders to prevent infinite re-renders
+  const initialProvidersKey = useMemo(
+    () => initialProviders?.join(',') || '',
+    [initialProviders]
+  );
+
   const [progress, setProgress] = useState(0);
   const [providers, setProviders] = useState<ProviderStatus[]>([]);
   const [creditsUsed, setCreditsUsed] = useState(0);
@@ -714,7 +720,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       supabase.removeChannel(findingsChannel);
       supabase.removeChannel(maigretResultsChannel);
     };
-  }, [scanId, open, onComplete, status, lastEventAt, pipelineType, initialProviders]);
+  }, [scanId, open, onComplete, status, lastEventAt, pipelineType, initialProvidersKey]);
 
   const handleZeroResults = async () => {
     if (!scanId || isSavingCase) return;
