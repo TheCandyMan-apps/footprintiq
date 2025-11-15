@@ -151,6 +151,7 @@ export function UsernameScanForm() {
         allSites: allSites,
         artifacts: isPremium ? artifacts : [],
         debugMode,
+        providers,
       });
 
       const jobId = data?.jobId;

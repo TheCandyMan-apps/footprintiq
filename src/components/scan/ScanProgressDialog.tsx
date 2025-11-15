@@ -966,7 +966,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
                   variant="outline"
                   size="sm"
                   onClick={handleCancel}
-                  disabled={isCancelling || isInitializing}
+                  disabled={isCancelling || isInitializing || status !== 'running'}
                   className="flex-1 sm:flex-none"
                 >
                   {isCancelling ? (
