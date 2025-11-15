@@ -16,6 +16,7 @@ export interface UsernameScanOptions {
   allSites?: boolean;
   artifacts?: string[];
   debugMode?: boolean;
+  providers?: string[]; // New: selected tools to use
 }
 
 export const useUsernameScan = () => {
@@ -62,43 +63,53 @@ export const useUsernameScan = () => {
       const batchId = crypto.randomUUID();
       addLog({ level: 'debug', message: 'Generated batch ID', data: { batchId } });
       
-      // Call scan-start with resilient pattern (same as SimpleScanForm)
+      // Default providers if not specified
+      const selectedProviders = options.providers?.length 
+        ? options.providers 
+        : ['maigret', 'whatsmyname', 'gosearch'];
+      
+      // Call scan-orchestrate with multi-tool support
       const requestBody = {
+        scan_type: 'username' as const,
         username: options.username,
-        platforms: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined,
-        batch_id: batchId,
-        timeout: 25, // 25s timeout for quick feedback
+        providers: selectedProviders,
+        options: {
+          platforms: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined,
+          all_sites: options.allSites,
+          artifacts: options.artifacts,
+        },
+        timeout: 60, // Longer timeout for multi-tool scans
       };
       
-      addLog({ level: 'info', message: 'Invoking scan-start', data: requestBody });
+      addLog({ level: 'info', message: 'Invoking scan-orchestrate', data: requestBody });
       
-      const { data, error } = await supabase.functions.invoke('scan-start', {
+      const { data, error } = await supabase.functions.invoke('scan-orchestrate', {
         body: requestBody,
       });
       
-      // Resilient error handling - even on error, return batchId for polling
+      // Resilient error handling - even on error, return scanId for polling
       if (error) {
         addLog({ 
           level: 'warn', 
-          message: 'Worker response slow/timeout - continuing with background polling',
+          message: 'Orchestrator response slow/timeout - continuing with background polling',
           data: error 
         });
         
-        // Return batchId for results page polling
+        // Return batchId as fallback for results page polling
         return { jobId: batchId, status: 'queued' };
       }
       
-      // Success - use job_id from response or fallback to batchId
-      const jobId = data?.job_id || batchId;
+      // Success - use scan_id from orchestrator response
+      const scanId = data?.scan_id || data?.job_id || batchId;
       const statusCode = data?.status;
       
       addLog({ 
         level: 'info', 
-        message: statusCode === 'queued' ? 'Scan queued (202)' : 'Scan started (201)', 
-        data: { jobId, statusCode } 
+        message: `Multi-tool scan initiated: ${selectedProviders.join(', ')}`, 
+        data: { scanId, statusCode, providers: selectedProviders } 
       });
       
-      return { jobId, status: statusCode === 'queued' ? 'queued' : 'started' };
+      return { jobId: scanId, status: statusCode === 'queued' ? 'queued' : 'started' };
       
     } catch (error) {
       addLog({ level: 'error', message: 'Scan failed', data: error });

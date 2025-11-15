@@ -31,11 +31,18 @@ const ARTIFACT_OPTIONS = [
   { id: 'xmind', label: 'XMind' },
 ];
 
+const PROVIDER_OPTIONS = [
+  { id: 'maigret', label: 'Maigret', description: 'Social media & websites (300+ platforms)' },
+  { id: 'whatsmyname', label: 'WhatsMyName', description: 'Username presence detection' },
+  { id: 'gosearch', label: 'GoSearch', description: 'Extended username search' },
+];
+
 export function UsernameScanForm() {
   const [username, setUsername] = useState('');
   const [tags, setTags] = useState('');
   const [allSites, setAllSites] = useState(false);
   const [artifacts, setArtifacts] = useState<string[]>([]);
+  const [providers, setProviders] = useState<string[]>(['maigret', 'whatsmyname', 'gosearch']); // All tools by default
   const [submitting, setSubmitting] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [currentScanId, setCurrentScanId] = useState<string | null>(null);
@@ -249,6 +256,67 @@ export function UsernameScanForm() {
             <p className="text-xs text-muted-foreground">Comma-separated tags for organization</p>
           </div>
 
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Scan Tools</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setProviders(['maigret', 'whatsmyname', 'gosearch'])}
+                disabled={submitting}
+                className="h-7 text-xs"
+              >
+                Select All
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {PROVIDER_OPTIONS.map((option) => (
+                <div key={option.id} className="flex items-start space-x-2">
+                  <Checkbox
+                    id={`provider-${option.id}`}
+                    checked={providers.includes(option.id)}
+                    onCheckedChange={(checked) => {
+                      setProviders(
+                        checked
+                          ? [...providers, option.id]
+                          : providers.filter((p) => p !== option.id)
+                      );
+                    }}
+                    disabled={submitting}
+                  />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor={`provider-${option.id}`}
+                      className="text-sm font-medium leading-none cursor-pointer"
+                    >
+                      {option.label}
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      {option.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {providers.length === 0 && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  Select at least one scan tool
+                </AlertDescription>
+              </Alert>
+            )}
+            {providers.length > 1 && (
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  Using multiple tools provides more comprehensive results
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label>Scan All Sites</Label>
@@ -340,14 +408,14 @@ export function UsernameScanForm() {
             </div>
           )}
 
-          <Button type="submit" disabled={submitting || isScanning} className="w-full h-11">
+          <Button type="submit" disabled={submitting || isScanning || providers.length === 0} className="w-full h-11">
             {(submitting || isScanning) ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Starting Scan...
+                Starting Multi-Tool Scan...
               </>
             ) : (
-              'Run Scan'
+              `Run Scan (${providers.length} ${providers.length === 1 ? 'Tool' : 'Tools'})`
             )}
           </Button>
         </form>
