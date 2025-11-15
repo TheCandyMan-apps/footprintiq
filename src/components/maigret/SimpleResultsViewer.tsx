@@ -367,6 +367,14 @@ export function SimpleResultsViewer({
                           <span className="font-semibold text-base group-hover:text-primary transition-colors">
                             {site || 'Unknown Site'}
                           </span>
+                          {provider && (
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${providerColors[provider as keyof typeof providerColors] || 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'}`}
+                            >
+                              {provider}
+                            </Badge>
+                          )}
                         </div>
                         {status && (
                           <Badge variant="outline" className="text-xs font-mono">
