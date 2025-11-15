@@ -108,6 +108,33 @@ export function ScanResults({ jobId }: ScanResultsProps) {
 
   const loadJob = async () => {
     try {
+      // Try new scans table first (used by scan-orchestrate)
+      const { data: scanData, error: scanError } = await supabase
+        .from('scans')
+        .select('id, username, scan_type, status, created_at, user_id')
+        .eq('id', jobId)
+        .maybeSingle();
+
+      if (scanData) {
+        // Map scans table fields to expected ScanJob interface
+        const mappedJob: ScanJob = {
+          id: scanData.id,
+          username: scanData.username || '',
+          status: scanData.status,
+          created_at: scanData.created_at,
+          started_at: scanData.created_at,
+          finished_at: scanData.status === 'completed' || scanData.status === 'failed' ? scanData.created_at : null,
+          error: null,
+          all_sites: false,
+          requested_by: scanData.user_id
+        };
+        console.debug('[ScanResults] Loaded from scans table:', mappedJob);
+        setJob(mappedJob);
+        setJobLoading(false);
+        return;
+      }
+
+      // Fallback to legacy scan_jobs table
       const { data, error } = await supabase
         .from('scan_jobs')
         .select('*')
@@ -115,6 +142,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
         .single();
 
       if (error) throw error;
+      console.debug('[ScanResults] Loaded from scan_jobs table:', data);
       setJob(data);
     } catch (error: any) {
       console.error('Failed to load job:', error);

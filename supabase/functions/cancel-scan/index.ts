@@ -52,16 +52,80 @@ Deno.serve(async (req) => {
 
     console.log('[cancel-scan] Cancelling scan:', scanId, 'for user:', user.id);
 
-    // Try Advanced pipeline first (scan_jobs)
-    const { data: scan, error: scanError } = await supabase
+    // Check scans table first (created by scan-orchestrate)
+    const { data: scanRecord, error: scanError } = await supabase
+      .from('scans')
+      .select('id, user_id, status')
+      .eq('id', scanId)
+      .maybeSingle();
+
+    if (scanRecord) {
+      // Check if already in terminal state
+      if (scanRecord.status === 'completed' || scanRecord.status === 'failed' || scanRecord.status === 'cancelled') {
+        console.log('[cancel-scan] Scan already terminal:', scanRecord.status);
+        return new Response(
+          JSON.stringify({ 
+            error: `Scan already ${scanRecord.status}`,
+            status: scanRecord.status,
+            message: 'Cannot cancel a completed or failed scan'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Verify user owns the scan
+      if (scanRecord.user_id !== user.id) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized to cancel this scan' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Cancel the scan
+      const { error: updateError } = await supabase
+        .from('scans')
+        .update({
+          status: 'cancelled',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', scanId);
+
+      if (updateError) {
+        console.error('[cancel-scan] Failed to cancel scan:', updateError);
+        return new Response(
+          JSON.stringify({ error: 'Failed to cancel scan' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Broadcast cancellation
+      await supabase.channel(`scan_progress:${scanId}`).send({
+        type: 'broadcast',
+        event: 'scan_cancelled',
+        payload: { scanId, cancelledAt: new Date().toISOString() }
+      });
+
+      console.log('[cancel-scan] Scan cancelled successfully');
+      return new Response(
+        JSON.stringify({ 
+          message: 'Scan cancelled successfully',
+          scanId,
+          status: 'cancelled'
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Fallback: Try legacy scan_jobs table
+    const { data: scan, error: jobError } = await supabase
       .from('scan_jobs')
       .select('*, workspace:workspaces!inner(id, owner_id)')
       .eq('id', scanId)
       .maybeSingle();
 
-    // If not in scan_jobs, check Simple pipeline (maigret_results)
+    // If not in scan_jobs, check maigret_results
     if (!scan) {
-      console.log('[cancel-scan] Not found in scan_jobs, checking maigret_results...');
+      console.log('[cancel-scan] Not found in scans or scan_jobs, checking maigret_results...');
       
       const { data: maigretResult, error: maigretError } = await supabase
         .from('maigret_results')
@@ -70,7 +134,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!maigretResult) {
-        console.error('[cancel-scan] Scan not found in either pipeline:', { scanError, maigretError });
+        console.error('[cancel-scan] Scan not found in any table:', { scanError, jobError, maigretError });
         return new Response(
           JSON.stringify({ 
             error: 'Scan not found',
