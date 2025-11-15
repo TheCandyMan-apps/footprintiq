@@ -37,43 +37,75 @@ export function useActiveScan() {
     }
   }, [activeScan]);
 
-  // Subscribe to progress updates
+  // Subscribe to progress updates via database
   useEffect(() => {
     if (!activeScan?.scanId) return;
 
-    const channelName = activeScan.type === 'username' 
-      ? `scan_progress_${activeScan.scanId}`
-      : activeScan.type === 'spiderfoot'
-      ? `spiderfoot_progress_${activeScan.scanId}`
-      : activeScan.type === 'recon-ng'
-      ? `recon_ng_progress_${activeScan.scanId}`
-      : `scan_progress:${activeScan.scanId}`;
+    console.log(`[useActiveScan] Subscribing to progress for scan: ${activeScan.scanId}`);
 
-    console.log(`[useActiveScan] Subscribing to ${channelName}`);
-
-    const channel = supabase.channel(channelName);
+    // Fetch initial progress (in case scan already started)
+    const fetchInitialProgress = async () => {
+      const { data, error } = await supabase
+        .from('scan_progress')
+        .select('*')
+        .eq('scan_id', activeScan.scanId)
+        .maybeSingle();
+      
+      if (data && !error) {
+        setProgress({
+          status: data.status,
+          completedProviders: data.completed_providers || 0,
+          totalProviders: data.total_providers || 0,
+          currentProviders: data.current_providers || [],
+          totalFindings: data.findings_count || 0,
+          message: data.message || ''
+        });
+      }
+    };
     
-    channel
-      .on('broadcast', { event: 'progress' }, ({ payload }) => {
-        console.log('[useActiveScan] Progress update:', payload);
-        setProgress(payload);
+    fetchInitialProgress();
 
-        // Auto-clear when completed
-        if (payload.status === 'completed' || payload.status === 'error') {
-          setTimeout(() => {
-            clearActiveScan();
-          }, 5000);
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel(`scan_progress_updates_${activeScan.scanId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'scan_progress',
+          filter: `scan_id=eq.${activeScan.scanId}`
+        },
+        (payload) => {
+          console.log('[useActiveScan] Progress update:', payload);
+          const progressData = payload.new as any;
+          
+          setProgress({
+            status: progressData.status,
+            completedProviders: progressData.completed_providers || 0,
+            totalProviders: progressData.total_providers || 0,
+            currentProviders: progressData.current_providers || [],
+            totalFindings: progressData.findings_count || 0,
+            message: progressData.message || ''
+          });
+
+          // Auto-clear when completed
+          if (progressData.status === 'completed' || progressData.status === 'error') {
+            setTimeout(() => {
+              clearActiveScan();
+            }, 5000);
+          }
         }
-      })
+      )
       .subscribe((status) => {
-        console.log(`[useActiveScan] Channel ${channelName} status:`, status);
+        console.log(`[useActiveScan] Channel status:`, status);
       });
 
     return () => {
-      console.log(`[useActiveScan] Unsubscribing from ${channelName}`);
+      console.log(`[useActiveScan] Unsubscribing`);
       supabase.removeChannel(channel);
     };
-  }, [activeScan?.scanId, activeScan?.type]);
+  }, [activeScan?.scanId]);
 
   const startTracking = (scan: ActiveScan) => {
     setActiveScan(scan);
