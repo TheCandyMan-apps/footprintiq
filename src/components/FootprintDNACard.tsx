@@ -45,50 +45,59 @@ export function FootprintDNACard({ userId, jobId }: FootprintDNACardProps) {
     getCurrentUser();
   }, [userId]);
 
-  // Fetch real data from Supabase
+// Fetch real data from Supabase
+  const fetchFootprintMetrics = async () => {
+    if (!currentUserId) {
+      return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
+    }
+
+    try {
+      // Query findings table - type as any to bypass deep instantiation error
+      const query: any = supabase.from("findings").select("kind, severity, evidence, provider");
+      const response = jobId 
+        ? await query.eq("scan_id", jobId)
+        : await query.eq("user_id", currentUserId);
+      
+      const findings = (response.data || []) as Array<{
+        kind?: string;
+        severity?: string;
+        evidence?: any[];
+        provider?: string;
+      }>;
+
+      // Calculate metrics
+      const breaches = findings.filter((f) => 
+        f.kind?.includes("breach") || 
+        f.severity === "critical" ||
+        f.severity === "high"
+      ).length;
+
+      const exposures = findings.filter((f) => 
+        f.evidence && Array.isArray(f.evidence) && f.evidence.length > 0
+      ).length;
+
+      const dataBrokers = findings.filter((f) => 
+        f.kind?.includes("people_search") ||
+        f.provider?.toLowerCase().includes("broker") ||
+        f.provider?.toLowerCase().includes("people")
+      ).length;
+
+      const darkWeb = findings.filter((f) => 
+        f.kind?.includes("darkweb") ||
+        f.kind?.includes("paste") ||
+        f.provider?.toLowerCase().includes("dark")
+      ).length;
+
+      return { breaches, exposures, dataBrokers, darkWeb };
+    } catch (error) {
+      console.error("Error fetching footprint data:", error);
+      return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
+    }
+  };
+
   const { data: footprintData, refetch, isLoading } = useQuery({
     queryKey: ["footprint-metrics", currentUserId, jobId],
-    queryFn: async () => {
-      if (!currentUserId) {
-        return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
-      }
-
-      try {
-        // Query darkweb findings only (simpler and more reliable)
-        const darkwebResponse = await supabase
-          .from("darkweb_findings")
-          .select("*")
-          .eq("user_id", currentUserId);
-
-        const darkwebData = darkwebResponse.data || [];
-
-        // Calculate metrics from darkweb findings
-        const breaches = darkwebData.filter((f: any) => 
-          f.finding_type?.includes("breach") || 
-          f.severity === "critical" ||
-          f.severity === "high"
-        ).length;
-
-        const exposures = darkwebData.filter((f: any) => 
-          f.data_exposed && f.data_exposed.length > 0
-        ).length;
-
-        const dataBrokers = darkwebData.filter((f: any) => 
-          f.finding_type?.includes("broker") ||
-          f.finding_type?.includes("data_aggregator")
-        ).length;
-
-        const darkWeb = darkwebData.filter((f: any) => 
-          f.finding_type?.includes("darkweb") ||
-          f.finding_type?.includes("marketplace")
-        ).length;
-
-        return { breaches, exposures, dataBrokers, darkWeb };
-      } catch (error) {
-        console.error("Error fetching footprint data:", error);
-        return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
-      }
-    },
+    queryFn: fetchFootprintMetrics,
     initialData: { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 },
     enabled: !!currentUserId,
   });
@@ -104,8 +113,8 @@ export function FootprintDNACard({ userId, jobId }: FootprintDNACardProps) {
         {
           event: "*",
           schema: "public",
-          table: "darkweb_findings",
-          filter: `user_id=eq.${currentUserId}`,
+          table: "findings",
+          filter: jobId ? `scan_id=eq.${jobId}` : `user_id=eq.${currentUserId}`,
         },
         () => {
           refetch();

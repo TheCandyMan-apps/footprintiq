@@ -694,18 +694,24 @@ const ResultsDetail = () => {
         <div className="mb-8">
           <FootprintDNA
             score={scan.privacy_score || 0}
-            breaches={dataSources.filter(s => 
-              s.category?.toLowerCase().includes('breach') || 
-              s.name?.toLowerCase().includes('breach')
+            breaches={findings.filter(f => 
+              f.raw?.kind?.includes('breach') || 
+              f.severity === 'critical' ||
+              f.severity === 'high'
             ).length}
-            exposures={scan.high_risk_count + scan.medium_risk_count}
-            dataBrokers={dataSources.filter(s => 
-              s.category?.toLowerCase().includes('broker') || 
-              s.category?.toLowerCase().includes('people')
+            exposures={findings.filter(f => 
+              f.evidence && f.evidence.length > 0 &&
+              (f.raw?.kind?.includes('exposure') || f.severity === 'medium')
             ).length}
-            darkWeb={dataSources.filter(s => 
-              s.category?.toLowerCase().includes('dark') || 
-              s.name?.toLowerCase().includes('dark')
+            dataBrokers={findings.filter(f => 
+              f.provider?.toLowerCase().includes('broker') ||
+              f.provider?.toLowerCase().includes('people') ||
+              f.raw?.kind?.includes('people_search')
+            ).length}
+            darkWeb={findings.filter(f => 
+              f.provider?.toLowerCase().includes('dark') ||
+              f.raw?.kind?.includes('darkweb') ||
+              f.raw?.kind?.includes('paste')
             ).length}
             trendData={trendData}
             onOpenDetails={() => setIsDNAModalOpen(true)}
