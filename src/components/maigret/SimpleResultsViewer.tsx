@@ -19,7 +19,19 @@ interface MaigretResult {
   updated_at: string;
 }
 
-export function SimpleResultsViewer({ jobId }: { jobId: string }) {
+interface SimpleResultsViewerProps {
+  jobId: string;
+  searchQuery?: string;
+  selectedProviders?: string[];
+  onProvidersDetected?: (providers: string[], stats: Record<string, number>) => void;
+}
+
+export function SimpleResultsViewer({ 
+  jobId, 
+  searchQuery = '', 
+  selectedProviders = [],
+  onProvidersDetected 
+}: SimpleResultsViewerProps) {
   const [result, setResult] = useState<MaigretResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +55,20 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
       if (data) {
         setResult(data as MaigretResult);
         setLoading(false);
+        
+        // Detect providers and calculate stats
+        if (data.summary && Array.isArray(data.summary) && onProvidersDetected) {
+          const providerCounts: Record<string, number> = {};
+          const providerSet = new Set<string>();
+          
+          data.summary.forEach((item: any) => {
+            const provider = item.provider || 'maigret';
+            providerSet.add(provider);
+            providerCounts[provider] = (providerCounts[provider] || 0) + 1;
+          });
+          
+          onProvidersDetected(Array.from(providerSet), providerCounts);
+        }
       }
     };
 
@@ -285,7 +311,33 @@ export function SimpleResultsViewer({ jobId }: { jobId: string }) {
           <CardContent className="p-0">
             <ScrollArea className="h-[500px]">
               <div className="p-6 space-y-3">
-                {result.summary.map((item: any, idx: number) => {
+                {result.summary
+                  .filter((item: any) => {
+                    const getEvidenceValue = (evidence: any[], key: string) => {
+                      const found = evidence?.find((e: any) => e.key === key);
+                      return found?.value;
+                    };
+                    
+                    const site = getEvidenceValue(item.evidence, 'site');
+                    const url = getEvidenceValue(item.evidence, 'url');
+                    const provider = item.provider || 'maigret';
+                    
+                    // Filter by search query
+                    if (searchQuery) {
+                      const searchLower = searchQuery.toLowerCase();
+                      const matchesSite = site?.toLowerCase().includes(searchLower);
+                      const matchesUrl = url?.toLowerCase().includes(searchLower);
+                      if (!matchesSite && !matchesUrl) return false;
+                    }
+                    
+                    // Filter by selected providers
+                    if (selectedProviders.length > 0 && !selectedProviders.includes(provider)) {
+                      return false;
+                    }
+                    
+                    return true;
+                  })
+                  .map((item: any, idx: number) => {
                   const getEvidenceValue = (evidence: any[], key: string) => {
                     const found = evidence?.find((e: any) => e.key === key);
                     return found?.value;
