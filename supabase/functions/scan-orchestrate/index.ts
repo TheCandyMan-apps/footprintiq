@@ -113,7 +113,12 @@ serve(async (req) => {
     
     if (!parseResult.success) {
       const errors = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
-      console.error('[orchestrate] Validation failed:', errors);
+      console.error('[orchestrate] ❌ Validation failed:', {
+        errors,
+        receivedFields: Object.keys(rawBody),
+        expectedFields: ['type', 'value', 'workspaceId'],
+        receivedBody: rawBody
+      });
       return bad(400, `Invalid request: ${errors}`);
     }
 
