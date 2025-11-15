@@ -19,7 +19,7 @@ export function MaigretToggle({ enabled, onChange, disabled }: MaigretToggleProp
     <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-card">
       <div className="flex items-center gap-2">
         <Label htmlFor="maigret-toggle" className="cursor-pointer">
-          Use Maigret (OSINT username scan)
+          Username OSINT Scan (Multi-Tool)
         </Label>
         <TooltipProvider>
           <Tooltip>
@@ -28,7 +28,7 @@ export function MaigretToggle({ enabled, onChange, disabled }: MaigretToggleProp
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
               <p className="text-sm">
-                Checks 300+ social platforms for handle presence via Maigret. 
+                Checks 300+ social platforms for username presence using multiple OSINT tools (Maigret, WhatsMyName, GoSearch). 
                 Results show linked profiles with confidence scores.
               </p>
             </TooltipContent>

@@ -54,8 +54,8 @@ export function WorkerHealth() {
             {isHealthy === null
               ? 'Worker status unknown'
               : isHealthy
-              ? 'Maigret worker healthy'
-              : 'Maigret worker offline'}
+              ? 'OSINT worker healthy'
+              : 'OSINT worker offline'}
           </p>
           {lastCheck && (
             <p className="text-xs text-muted-foreground mt-1">
