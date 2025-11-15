@@ -28,7 +28,7 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({
                 'status': 'healthy',
                 'service': 'osint-worker',
-                'tools': ['whatsmyname', 'holehe', 'gosearch']
+                'tools': ['sherlock', 'holehe', 'gosearch']
             }).encode())
         else:
             self._set_headers(404)
@@ -89,39 +89,62 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
         if not username:
             raise ValueError('Username required for whatsmyname')
 
-        # Build whatsmyname command
-        cmd = ['whatsmyname', '-u', username, '-j']
+        # Use sherlock instead (more reliable, proper CLI)
+        import tempfile
+        with tempfile.NamedTemporaryFile(mode='w+', suffix='.json', delete=False) as f:
+            output_file = f.name
         
-        # Add filters if provided (e.g., category:social)
-        if filters:
-            cmd.extend(['--filter', filters])
-
-        # Execute whatsmyname
-        print(f"[WhatsMyName] Scanning username: {username}, filters: {filters}")
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=300  # 5 minute timeout
-        )
-
-        if result.returncode != 0:
-            print(f"[WhatsMyName] Error: {result.stderr}")
-            raise RuntimeError(f'WhatsMyName failed: {result.stderr}')
-
-        # Parse JSON output
         try:
-            scan_results = json.loads(result.stdout)
-        except json.JSONDecodeError:
-            # If not JSON, wrap the output
-            scan_results = []
+            # Build sherlock command
+            cmd = ['sherlock', username, '--json', output_file, '--timeout', '30']
+            
+            # Add site filtering if provided
+            if filters:
+                # Sherlock doesn't have category filters like whatsmyname
+                # Let it search all sites for now
+                pass
+            
+            # Execute sherlock
+            print(f"[Sherlock/WhatsMyName] Scanning username: {username}")
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minute timeout
+            )
 
-        return {
-            'tool': 'whatsmyname',
-            'username': username,
-            'results': scan_results,
-            'raw_output': result.stdout if not scan_results else None
-        }
+            # Sherlock returns 0 even if username not found on all sites
+            # Read JSON output
+            with open(output_file, 'r') as f:
+                scan_results = json.load(f)
+            
+            # Transform sherlock format to whatsmyname-like format
+            # Sherlock JSON: { "username": { "site": {"url": "...", "status": "Claimed"} } }
+            transformed_results = []
+            for username_key, sites in scan_results.items():
+                if isinstance(sites, dict):
+                    for site_name, site_data in sites.items():
+                        if isinstance(site_data, dict) and site_data.get('url_user'):
+                            transformed_results.append({
+                                'site': site_name,
+                                'url': site_data.get('url_user'),
+                                'status': site_data.get('http_status'),
+                                'response_time': site_data.get('response_time_s'),
+                                'found': True
+                            })
+            
+            return {
+                'tool': 'whatsmyname',  # Keep identifier for compatibility
+                'username': username,
+                'results': transformed_results,
+                'raw_output': None
+            }
+        
+        finally:
+            # Clean up temp file
+            import os
+            if os.path.exists(output_file):
+                os.remove(output_file)
 
     def _handle_holehe(self, data):
         email = data.get('email')

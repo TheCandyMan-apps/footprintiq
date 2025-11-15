@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python tools
-RUN pip install --no-cache-dir whatsmyname holehe
+RUN pip install --no-cache-dir sherlock-project holehe
 
 # Install GoSearch
 ENV GOPATH=/root/go
