@@ -230,10 +230,11 @@ serve(async (req) => {
         .eq('id', scan.id);
 
       // Broadcast failure
+      const errorMsg = workerError instanceof Error ? workerError.message : 'Unknown error';
       await channel.send({
         type: 'broadcast',
         event: 'failed',
-        payload: { error: workerError.message }
+        payload: { error: errorMsg }
       });
 
       return new Response(
@@ -247,8 +248,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[maltego-scan] Error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMsg }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

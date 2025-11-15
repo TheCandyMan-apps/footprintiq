@@ -1,7 +1,11 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders } from '../_shared/secure.ts';
 import { retryWithBackoff } from '../_shared/retryWithBackoff.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const SPIDERFOOT_API_URL = Deno.env.get('SPIDERFOOT_API_URL');
 const SPIDERFOOT_API_KEY = Deno.env.get('SPIDERFOOT_API_KEY');
@@ -180,15 +184,20 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    const errorName = error instanceof Error ? error.name : 'Error';
+    
     console.error('[SpiderFoot] Unhandled error:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
+      message: errorMsg,
+      stack: errorStack,
+      name: errorName
     });
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
-        type: error.name 
+        error: errorMsg || 'Internal server error',
+        type: errorName
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -275,11 +284,13 @@ async function startSpiderFootScan(
     console.error(`[${scanId}] SpiderFoot scan failed:`, error);
 
     // Update scan with error
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    
     await supabase
       .from('spiderfoot_scans')
       .update({
         status: 'failed',
-        error: error.message || 'Unknown error',
+        error: errorMsg || 'Unknown error',
         completed_at: new Date().toISOString(),
       })
       .eq('id', scanId);
@@ -293,7 +304,7 @@ async function startSpiderFootScan(
         completedProviders: 0,
         totalProviders: modules.length,
         totalFindings: 0,
-        message: `Scan failed: ${error.message}`,
+        message: `Scan failed: ${errorMsg}`,
       },
     });
   }

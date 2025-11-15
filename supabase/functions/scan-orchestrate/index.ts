@@ -615,8 +615,8 @@ serve(async (req) => {
               eventId: scanId,
               payload: {
                 scanId,
-                type: request.type,
-                value: request.value,
+                type,
+                value,
                 status: 'completed',
                 completedAt: new Date().toISOString(),
                 findings: {
@@ -626,11 +626,11 @@ serve(async (req) => {
                   medium: lowRiskCount,
                 },
                 privacyScore,
-                topFindings: sortedFindings.slice(0, 5).map(f => ({
-                  title: f.title,
+                topFindings: sortedFindings.slice(0, 5).map((f: any) => ({
+                  title: f.title || 'No title',
                   severity: f.severity,
                   provider: f.provider,
-                  category: f.category,
+                  category: f.category || 'Uncategorized',
                 })),
               },
             },
