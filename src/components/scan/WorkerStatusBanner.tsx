@@ -61,7 +61,7 @@ export const WorkerStatusBanner = ({
     if (anyDegraded) {
       return 'Some workers are experiencing slow response times. Scans may take longer than usual.';
     }
-    return 'Maigret, WhatsMyName, and GoSearch are ready to find digital footprints across 500+ platforms.';
+    return 'OSINT scanning tools are ready: Maigret, theHarvester, Recon-ng, and SpiderFoot.';
   };
 
   return (
