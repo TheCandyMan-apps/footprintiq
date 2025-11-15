@@ -64,6 +64,84 @@ export default function AdvancedScan() {
   const { isWorkerOffline, getWorkerByName } = useWorkerStatus();
   const { isFree, checkFeatureAccess } = useTierGating();
   
+  // ✅ ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
+  useLowCreditToast();
+  
+  const [scanType, setScanType] = useState<string>("email");
+  const [target, setTarget] = useState("");
+  const [providers, setProviders] = useState<string[]>([]);
+  const [sensitiveSources, setSensitiveSources] = useState<string[]>([]);
+  const [darkwebEnabled, setDarkwebEnabled] = useState(false);
+  const [darkwebDepth, setDarkwebDepth] = useState(2);
+  const [isScanning, setIsScanning] = useState(false);
+  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
+  const [showConsentModal, setShowConsentModal] = useState(false);
+  const [pendingSensitiveSources, setPendingSensitiveSources] = useState<string[]>([]);
+  const [workspaceAutoCreated, setWorkspaceAutoCreated] = useState(false);
+  const [premiumOptions, setPremiumOptions] = useState<{
+    socialMediaFinder?: boolean;
+    osintScraper?: boolean;
+    osintKeywords?: string[];
+    darkwebScraper?: boolean;
+    darkwebUrls?: string[];
+    darkwebSearch?: string;
+    darkwebDepth?: number;
+    darkwebPages?: number;
+  }>({});
+  const [batchItems, setBatchItems] = useState<string[]>([]);
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  const [darkWebPolicyAccepted, setDarkWebPolicyAccepted] = useState(false);
+  const [highPrecisionMode, setHighPrecisionMode] = useState(false);
+  const [regionFilter, setRegionFilter] = useState<string>("all");
+  const [ipLocations, setIpLocations] = useState<Array<{ ip: string; lat?: number; lon?: number }>>([]);
+  const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
+  const [progressOpen, setProgressOpen] = useState(false);
+  const [modalScanId, setModalScanId] = useState<string | null>(null);
+  const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
+  const [selectedTool, setSelectedTool] = useState<string>("spiderfoot");
+  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
+  const [maigretEnabled, setMaigretEnabled] = useState(true);
+  const [usernameTags, setUsernameTags] = useState('');
+  const [usernameAllSites, setUsernameAllSites] = useState(false);
+  const [usernameArtifacts, setUsernameArtifacts] = useState<string[]>([]);
+  
+  const { saveTemplate } = useScanTemplates();
+  const { startScan: startUsernameScan } = useUsernameScan();
+  
+  const { 
+    locations, 
+    loading: geocodingLoading, 
+    getLocationForIP, 
+    getErrorForIP,
+    progressItems,
+    isProcessing,
+    totalCount,
+    completedCount,
+    errorCount 
+  } = useGeocoding(
+    ipLocations,
+    { 
+      enabled: scanType === 'ip' && ipLocations.length > 0,
+      highPrecisionMode 
+    }
+  );
+
+  // Auto-select default providers when scan type changes
+  const DEFAULT_PROVIDERS: Record<string, string[]> = {
+    email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
+    username: ['maigret', 'whatsmyname', 'gosearch'],
+    domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
+    phone: ['fullcontact'],
+  };
+
+  useEffect(() => {
+    setProviders(DEFAULT_PROVIDERS[scanType] || []);
+    if (scanType !== 'email' && scanType !== 'ip') {
+      setIsBatchMode(false);
+      setBatchItems([]);
+    }
+  }, [scanType, maigretEnabled]);
+  
   // Guard: Show loading state while workspace initializes
   if (workspaceLoading) {
     return (
@@ -98,87 +176,6 @@ export default function AdvancedScan() {
     );
   }
   
-  // Show low-credit toasts for free users
-  useLowCreditToast();
-  const [scanType, setScanType] = useState<string>("email");
-  const [target, setTarget] = useState("");
-  const [providers, setProviders] = useState<string[]>([]);
-  const [sensitiveSources, setSensitiveSources] = useState<string[]>([]);
-  const [darkwebEnabled, setDarkwebEnabled] = useState(false);
-  const [darkwebDepth, setDarkwebDepth] = useState(2);
-  const [isScanning, setIsScanning] = useState(false);
-  const [currentScanId, setCurrentScanId] = useState<string | null>(null);
-  const [showConsentModal, setShowConsentModal] = useState(false);
-  const [pendingSensitiveSources, setPendingSensitiveSources] = useState<string[]>([]);
-  const [workspaceAutoCreated, setWorkspaceAutoCreated] = useState(false);
-  const [premiumOptions, setPremiumOptions] = useState<{
-    socialMediaFinder?: boolean;
-    osintScraper?: boolean;
-    osintKeywords?: string[];
-    darkwebScraper?: boolean;
-    darkwebUrls?: string[];
-    darkwebSearch?: string;
-    darkwebDepth?: number;
-    darkwebPages?: number;
-  }>({});
-  const [batchItems, setBatchItems] = useState<string[]>([]);
-  const [isBatchMode, setIsBatchMode] = useState(false);
-  const [darkWebPolicyAccepted, setDarkWebPolicyAccepted] = useState(false);
-  const [highPrecisionMode, setHighPrecisionMode] = useState(false);
-  const [regionFilter, setRegionFilter] = useState<string>("all");
-  const [ipLocations, setIpLocations] = useState<Array<{ ip: string; lat?: number; lon?: number }>>([]);
-  const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
-  const [progressOpen, setProgressOpen] = useState(false);
-  const [modalScanId, setModalScanId] = useState<string | null>(null);
-  const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
-  const [selectedTool, setSelectedTool] = useState<string>("spiderfoot");
-  const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
-  const [maigretEnabled, setMaigretEnabled] = useState(true); // Legacy state - no longer used
-  const { saveTemplate } = useScanTemplates();
-  
-  // Username scan specific options
-  const [usernameTags, setUsernameTags] = useState('');
-  const [usernameAllSites, setUsernameAllSites] = useState(false);
-  const [usernameArtifacts, setUsernameArtifacts] = useState<string[]>([]);
-  const { startScan: startUsernameScan } = useUsernameScan();
-
-  // Geocoding for IP addresses
-  const { 
-    locations, 
-    loading: geocodingLoading, 
-    getLocationForIP, 
-    getErrorForIP,
-    progressItems,
-    isProcessing,
-    totalCount,
-    completedCount,
-    errorCount 
-  } = useGeocoding(
-    ipLocations,
-    { 
-      enabled: scanType === 'ip' && ipLocations.length > 0,
-      highPrecisionMode 
-    }
-  );
-
-  // Auto-select default providers when scan type changes
-  const DEFAULT_PROVIDERS: Record<string, string[]> = {
-    email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
-    username: ['maigret', 'whatsmyname', 'gosearch'], // Multi-tool username scanning
-    domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
-    phone: ['fullcontact'],
-  };
-
-  // Set default providers on mount and when scan type changes
-  useEffect(() => {
-    setProviders(DEFAULT_PROVIDERS[scanType] || []);
-    // Reset batch mode when switching types
-    if (scanType !== 'email' && scanType !== 'ip') {
-      setIsBatchMode(false);
-      setBatchItems([]);
-    }
-  }, [scanType, maigretEnabled]); // Re-run when maigretEnabled changes
-
   const availableProviders = [
     { id: "hibp", name: "Have I Been Pwned", icon: Shield, types: ['email'] },
     { id: "dehashed", name: "DeHashed", icon: Database, types: ['email', 'username'] },
