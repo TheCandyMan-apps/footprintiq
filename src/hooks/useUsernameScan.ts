@@ -97,30 +97,38 @@ export const useUsernameScan = () => {
         body: requestBody,
       });
       
-      // Enhanced error handling - detect validation errors
+      // Enhanced error handling - detect validation errors / timeouts
       if (error) {
         const errorMsg = error.message || 'Unknown error';
-        
-        // Check for validation errors (bad request format)
-        if (errorMsg.includes('type') || errorMsg.includes('value') || errorMsg.includes('workspaceId') || errorMsg.includes('Invalid request')) {
-          addLog({ 
-            level: 'error', 
+        const status = (error as any).status as number | undefined;
+        const isTimeout = /timeout|timed out|AbortSignal/i.test(errorMsg || '') || status === 504 || status === 408;
+
+        // Validation or bad request
+        if (
+          errorMsg.includes('type') ||
+          errorMsg.includes('value') ||
+          errorMsg.includes('workspaceId') ||
+          errorMsg.includes('Invalid request') ||
+          status === 400 || status === 403
+        ) {
+          addLog({
+            level: 'error',
             message: 'Invalid scan request format',
-            data: { error: errorMsg, sentBody: requestBody }
+            data: { error: errorMsg, sentBody: requestBody, status }
           });
           toast.error('Failed to start scan. Please refresh and try again.');
-          throw new Error('Invalid scan request - missing required fields');
+          throw new Error('Invalid scan request - missing or invalid fields');
         }
-        
-        // Resilient handling for timeouts
-        addLog({ 
-          level: 'warn', 
-          message: 'Orchestrator response slow/timeout - continuing with background polling',
-          data: error 
-        });
-        
-        // Return batchId as fallback for results page polling
-        return { jobId: batchId, status: 'queued' };
+
+        if (isTimeout) {
+          // Resilient handling for timeouts only
+          addLog({ level: 'warn', message: 'Orchestrator timeout - continuing with background polling', data: error });
+          return { jobId: batchId, status: 'queued' };
+        }
+
+        // All other errors: surface to user
+        addLog({ level: 'error', message: 'Orchestrator error', data: error });
+        throw new Error(errorMsg);
       }
       
       // Success - use scan_id from orchestrator response
