@@ -438,7 +438,18 @@ export default function AdvancedScan() {
             },
           });
 
-          if (error) throw error;
+          if (error) {
+            // For first target failure, close dialog and reset state
+            if (index === 0) {
+              setProgressOpen(false);
+              setCurrentScanId(null);
+              setIsScanning(false);
+              toast.error('Scan failed to start', {
+                description: error.message || 'Unable to initiate scan',
+              });
+            }
+            throw error;
+          }
           return { success: true, scanId: preScanId, target: targetValue };
         } catch (err) {
           console.error(`Scan failed for ${targetValue}:`, err);

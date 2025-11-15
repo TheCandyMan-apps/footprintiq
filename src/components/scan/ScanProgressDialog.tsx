@@ -140,33 +140,21 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     setShowPreview(false);
     setPipelineType(null);
 
-    // Detect pipeline type and check if scan exists
+    // Detect pipeline type in background (non-blocking)
     const initializePipeline = async () => {
-      // Wait 3 seconds before checking - gives edge function time to create records
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Wait 2 seconds before checking - gives edge function time to create records
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       const pipeline = await detectScanPipeline(scanId);
-      setPipelineType(pipeline);
-      setIsInitializing(false);
-      console.log('[ScanProgressDialog] Detected pipeline:', pipeline);
-
-      // If no pipeline detected after 3s, scan likely failed to start
-      if (!pipeline) {
-        console.error('[ScanProgressDialog] No pipeline detected - scan may have failed to start');
-        setStatus('failed');
-        toast.error('Scan failed to start', {
-          description: 'The scan request may have been invalid. Try closing and retrying.',
-          duration: 5000,
-        });
-        return;
+      if (pipeline && !pipelineType) {
+        setPipelineType(pipeline);
+        console.log('[ScanProgressDialog] Detected pipeline:', pipeline);
       }
+      setIsInitializing(false);
 
       if (pipeline === 'simple') {
         // Start polling maigret_results for Simple pipeline
         startSimplePipelinePolling();
-      } else if (pipeline === 'advanced') {
-        // Use existing Advanced pipeline subscriptions (already set up below)
-        console.log('[ScanProgressDialog] Using Advanced pipeline mode');
       }
     };
 
@@ -404,8 +392,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
       });
     };
 
-    // Subscribe to authoritative scan_jobs table for accurate progress (Advanced pipeline only)
-    const jobChannel = pipelineType === 'advanced' ? supabase
+    // Subscribe to authoritative scan_jobs table for accurate progress
+    const jobChannel = supabase
       .channel(`scan_jobs_${scanId}`)
       .on(
         'postgres_changes',
@@ -420,6 +408,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
           const job = payload.new as any;
           
           setLastEventAt(Date.now());
+          
+          // If we receive job updates, assume advanced pipeline
+          if (!pipelineType) {
+            setPipelineType('advanced');
+          }
           
           if (job.providers_completed !== undefined && job.providers_total !== undefined) {
             setProvidersCompleted(job.providers_completed);
@@ -441,10 +434,10 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
           }
         }
       )
-      .subscribe() : null;
+      .subscribe();
 
-    // Subscribe to Maigret scan progress updates (Advanced username scans only)
-    const maigretChannel = pipelineType === 'advanced' ? supabase
+    // Subscribe to Maigret scan progress updates
+    const maigretChannel = supabase
       .channel(`scan_progress_${scanId}`)
       .on('broadcast', { event: 'provider_update' }, (payload: any) => {
         console.debug('[ScanProgressDialog] Maigret provider_update:', payload);
@@ -452,6 +445,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         upsertProvider(update.provider, update.status, update.message);
         
         setLastEventAt(Date.now());
+        
+        // If we receive maigret updates, assume advanced pipeline
+        if (!pipelineType) {
+          setPipelineType('advanced');
+        }
 
         if (update.creditsUsed !== undefined) {
           setCreditsUsed(update.creditsUsed);
@@ -508,9 +506,9 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         toast.info('Scan cancelled');
         setTimeout(() => onComplete?.(), 1000);
       })
-      .subscribe() : null;
+      .subscribe();
     
-    // Inactivity watchdog
+    // Inactivity watchdog with early failure detection
     const watchdogInterval = setInterval(() => {
       const now = Date.now();
       const timeSinceLastEvent = now - lastEventAt;
@@ -519,9 +517,24 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         return; // Don't show warnings if scan completed/failed/cancelled
       }
       
-      if (timeSinceLastEvent > 60000 && timeSinceLastEvent < 120000) {
-        // 60-120 seconds: show hint
+      // Early failure detection: if no events in 20 seconds and still initializing
+      if (timeSinceLastEvent > 20000 && isInitializing && !pipelineType) {
+        console.error('[ScanProgressDialog] No events received in 20s - scan failed to start');
+        setStatus('failed');
+        setShowTimeoutWarning(true);
+        toast.error('Scan failed to start', {
+          description: 'No response from scanner. Please try again.',
+          duration: 5000,
+        });
+        return;
+      }
+      
+      if (timeSinceLastEvent > 3000 && timeSinceLastEvent < 60000) {
+        // 3-60 seconds: show waiting hint
         setShowInactivityHint(true);
+      } else if (timeSinceLastEvent > 60000 && timeSinceLastEvent < 120000) {
+        // 60-120 seconds: still scanning
+        setShowInactivityHint(false);
       } else if (timeSinceLastEvent >= 120000) {
         // 120+ seconds: show timeout warning
         setShowInactivityHint(false);
@@ -530,14 +543,21 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
         setShowInactivityHint(false);
         setShowTimeoutWarning(false);
       }
-    }, 5000); // Check every 5 seconds
+    }, 3000); // Check every 3 seconds
 
-    // Subscribe to orchestrator progress updates (Advanced scans only)
-    const orchestratorChannel = pipelineType === 'advanced' ? supabase
+    // Subscribe to orchestrator progress updates
+    const orchestratorChannel = supabase
       .channel(`scan_progress:${scanId}`)
       .on('broadcast', { event: 'progress' }, (payload: any) => {
         console.debug('[ScanProgressDialog] Orchestrator progress:', payload);
         const update = payload.payload;
+        
+        setLastEventAt(Date.now());
+        
+        // If we receive orchestrator updates, assume advanced pipeline
+        if (!pipelineType) {
+          setPipelineType('advanced');
+        }
         
         // Map orchestrator messages to provider updates
         if (update.message) {
@@ -569,8 +589,10 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
 
         // Update overall progress from orchestrator
         if (update.completedProviders !== undefined && update.totalProviders !== undefined) {
-          const pct = (update.completedProviders / update.totalProviders) * 100;
-          setProgress(Math.min(pct, 95));
+          setProvidersCompleted(update.completedProviders);
+          setProvidersTotal(update.totalProviders);
+          const pct = Math.round((update.completedProviders / update.totalProviders) * 100);
+          setProgress(Math.max(5, Math.min(pct, 95)));
         }
 
         if (update.creditsUsed !== undefined) {
@@ -603,26 +625,22 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
             toast.success(`Scan completed - ${resultsCount} results found`);
           }
           
-          setTimeout(() => onComplete?.(), 3000); // Extra time to view preview
+          setTimeout(() => onComplete?.(), 3000);
         } else if (update.status === 'failed') {
-          console.debug('[ScanProgressDialog] Orchestrator failed');
           setStatus('failed');
-          toast.error(update.message || 'Scan failed');
+          toast.error('Scan failed', {
+            description: update.error || 'An error occurred during scanning',
+          });
         }
       })
-      .on('broadcast', { event: 'scan_cancelled' }, () => {
-        console.debug('[ScanProgressDialog] Orchestrator scan_cancelled');
-        setStatus('cancelled');
-        toast.info('Scan cancelled');
-        setTimeout(() => onComplete?.(), 1000);
-      })
-      .subscribe() : null;
+      .subscribe();
 
     return () => {
+      console.log('[ScanProgressDialog] Cleaning up channels');
       clearInterval(watchdogInterval);
-      if (jobChannel) supabase.removeChannel(jobChannel);
-      if (maigretChannel) supabase.removeChannel(maigretChannel);
-      if (orchestratorChannel) supabase.removeChannel(orchestratorChannel);
+      supabase.removeChannel(jobChannel);
+      supabase.removeChannel(maigretChannel);
+      supabase.removeChannel(orchestratorChannel);
       supabase.removeChannel(findingsChannel);
       supabase.removeChannel(maigretResultsChannel);
     };
