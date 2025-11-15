@@ -155,6 +155,9 @@ export default function AdvancedScan() {
     { id: "shodan", name: "Shodan", icon: Globe, types: ['domain', 'ip'] },
     { id: "virustotal", name: "VirusTotal", icon: Shield, types: ['domain'] },
     { id: "abuseipdb", name: "AbuseIPDB", icon: Shield, types: ['ip'] },
+    { id: "maigret", name: "Maigret", icon: Search, types: ['username'], description: "Advanced username reconnaissance across 500+ platforms including social media, forums, and gaming sites" },
+    { id: "whatsmyname", name: "WhatsMyName", icon: Globe, types: ['username'], description: "Username enumeration across 300+ websites with high-accuracy presence detection" },
+    { id: "gosearch", name: "GoSearch", icon: Shield, premium: true, types: ['username'], description: "Digital footprint discovery across 300+ websites with deep OSINT capabilities (Enterprise tier)" },
     { id: "apify-social", name: "Social Media Finder Pro (400+ platforms)", icon: Search, premium: true, types: ['username'], description: "Discover profiles across Facebook, Instagram, Twitter, TikTok, LinkedIn, GitHub, Reddit, and 400+ more" },
     { id: "apify-osint", name: "OSINT Scraper (Paste sites)", icon: Database, premium: true, types: ['email', 'username'], description: "Search Pastebin, GitHub Gist, Codepad, and other paste sites for exposed data" },
   ];
@@ -305,6 +308,7 @@ export default function AdvancedScan() {
           allSites: usernameAllSites,
           artifacts: !isFree ? usernameArtifacts : [],
           debugMode: false,
+          providers, // Pass selected providers to scan orchestrator
         });
 
         // Progress dialog will handle navigation on completion

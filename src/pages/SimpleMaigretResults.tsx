@@ -6,11 +6,16 @@ import { SimpleResultsViewer } from '@/components/maigret/SimpleResultsViewer';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { ResultsFilters } from '@/components/maigret/ResultsFilters';
 
 export default function SimpleMaigretResults() {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
+  const [availableProviders, setAvailableProviders] = useState<string[]>([]);
+  const [providerStats, setProviderStats] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -81,7 +86,31 @@ export default function SimpleMaigretResults() {
             </div>
           </div>
 
-          <SimpleResultsViewer jobId={jobId} />
+          {/* Filters */}
+          <ResultsFilters
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            selectedProviders={selectedProviders}
+            onProviderToggle={(provider) => {
+              setSelectedProviders(prev =>
+                prev.includes(provider)
+                  ? prev.filter(p => p !== provider)
+                  : [...prev, provider]
+              );
+            }}
+            availableProviders={availableProviders}
+            providerStats={providerStats}
+          />
+
+          <SimpleResultsViewer 
+            jobId={jobId}
+            searchQuery={searchQuery}
+            selectedProviders={selectedProviders}
+            onProvidersDetected={(providers, stats) => {
+              setAvailableProviders(providers);
+              setProviderStats(stats);
+            }}
+          />
         </div>
       </main>
       <Footer />

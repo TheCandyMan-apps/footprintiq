@@ -817,6 +817,49 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
             </div>
             <Progress value={progress} className="h-2" />
             
+            {/* Tool-specific progress indicators for username scans */}
+            {providers.length > 0 && providers.some(p => ['maigret', 'whatsmyname', 'gosearch'].includes(p.name.toLowerCase())) && (
+              <div className="mt-4 space-y-2 animate-fade-in">
+                <div className="text-xs text-muted-foreground font-medium">Tool Progress</div>
+                {providers
+                  .filter(p => ['maigret', 'whatsmyname', 'gosearch'].includes(p.name.toLowerCase()))
+                  .map((provider) => {
+                    const providerProgress = provider.status === 'success' ? 100 : 
+                                            provider.status === 'loading' ? 50 : 
+                                            provider.status === 'retrying' ? 25 : 
+                                            provider.status === 'failed' ? 0 : 0;
+                    
+                    return (
+                      <div key={provider.name} className="flex items-center gap-2 text-xs">
+                        <Badge 
+                          variant={
+                            provider.status === 'success' ? 'default' : 
+                            provider.status === 'loading' ? 'secondary' : 
+                            provider.status === 'failed' ? 'destructive' : 
+                            'outline'
+                          }
+                          className="min-w-[100px] justify-center"
+                        >
+                          {provider.name === 'maigret' ? 'Maigret' :
+                           provider.name === 'whatsmyname' ? 'WhatsMyName' :
+                           provider.name === 'gosearch' ? 'GoSearch' :
+                           provider.name}
+                        </Badge>
+                        <div className="flex-1">
+                          <Progress 
+                            value={providerProgress} 
+                            className="h-1.5"
+                          />
+                        </div>
+                        <span className="text-muted-foreground min-w-[40px] text-right">
+                          {providerProgress}%
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+            
             {/* Inactivity hints */}
             {showInactivityHint && (
               <div className="flex items-center gap-2 text-xs text-yellow-600 dark:text-yellow-400 animate-fade-in">
