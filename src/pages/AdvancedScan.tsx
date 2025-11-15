@@ -567,7 +567,7 @@ export default function AdvancedScan() {
           {!workspaceLoading && workspace && (
             <>
               {/* Worker Status Banner */}
-              <WorkerStatusBanner showIfAllOnline={true} />
+              <WorkerStatusBanner showIfAllOnline={true} workerNames={['maigret', 'whatsmyname', 'gosearch']} />
               
               {/* Premium Upgrade CTA for Free Users */}
               {isFree && (

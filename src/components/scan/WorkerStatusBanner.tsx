@@ -7,18 +7,17 @@ import { useWorkerStatus } from "@/hooks/useWorkerStatus";
 interface WorkerStatusBannerProps {
   workerType?: string;
   showIfAllOnline?: boolean;
+  workerNames?: string[];
 }
 
 export const WorkerStatusBanner = ({ 
   workerType, 
-  showIfAllOnline = false 
+  showIfAllOnline = false,
+  workerNames
 }: WorkerStatusBannerProps) => {
   const { 
     workers, 
     loading, 
-    anyOffline, 
-    anyDegraded, 
-    allOperational,
     getOperationalStatusEmoji,
     getWorkerDisplayName,
     refresh 
@@ -26,48 +25,80 @@ export const WorkerStatusBanner = ({
 
   if (loading) return null;
   
-  // Don't show banner if all workers are online and showIfAllOnline is false
-  if (!showIfAllOnline && allOperational) return null;
-
-  // Filter workers if workerType is specified
-  const displayWorkers = workerType 
-    ? workers.filter(w => w.worker_type === workerType)
-    : workers;
+  // Build displayWorkers based on props
+  let displayWorkers = workers;
+  
+  if (workerNames) {
+    // Show only specified workers in the given order
+    displayWorkers = workerNames.map(name => {
+      const worker = workers.find(w => w.worker_name === name);
+      return worker || {
+        worker_name: name,
+        worker_type: 'osint',
+        status: 'unknown' as const,
+        last_seen: new Date().toISOString(),
+        last_check_at: new Date().toISOString(),
+        last_success_at: null,
+        response_time_ms: null,
+        error_message: null
+      };
+    });
+  } else if (workerType) {
+    displayWorkers = workers.filter(w => w.worker_type === workerType);
+  }
 
   if (displayWorkers.length === 0) return null;
 
+  // Compute local health flags based on displayWorkers only
+  const localAnyOffline = displayWorkers.some(w => w.status === 'offline');
+  const localAnyDegraded = displayWorkers.some(w => w.status === 'degraded');
+  const localAllOperational = displayWorkers.length > 0 && !localAnyOffline && !localAnyDegraded;
+
+  // Don't show banner if all workers are online and showIfAllOnline is false
+  if (!showIfAllOnline && localAllOperational) return null;
+
   const getVariant = () => {
-    if (anyOffline) return 'destructive';
-    if (anyDegraded) return 'default';
+    if (localAnyOffline) return 'destructive';
+    if (localAnyDegraded) return 'default';
     return 'default';
   };
 
   const getIcon = () => {
-    if (anyOffline) return <XCircle className="w-5 h-5 text-destructive" />;
-    if (anyDegraded) return <AlertCircle className="w-5 h-5 text-yellow-500" />;
+    if (localAnyOffline) return <XCircle className="w-5 h-5 text-destructive" />;
+    if (localAnyDegraded) return <AlertCircle className="w-5 h-5 text-yellow-500" />;
     return <CheckCircle2 className="w-5 h-5 text-green-500" />;
   };
 
   const getTitle = () => {
-    if (anyOffline) return 'Some workers are offline';
-    if (anyDegraded) return 'Some workers are degraded';
+    if (localAnyOffline) return 'Some workers are offline';
+    if (localAnyDegraded) return 'Some workers are degraded';
     return 'All OSINT tools operational';
   };
 
   const getDescription = () => {
-    if (anyOffline) {
+    if (localAnyOffline) {
       return 'Certain scans may be unavailable. Cached results will be used when possible.';
     }
-    if (anyDegraded) {
+    if (localAnyDegraded) {
       return 'Some workers are experiencing slow response times. Scans may take longer than usual.';
     }
-    return 'OSINT scanning tools are ready: Maigret, theHarvester, Recon-ng, and SpiderFoot.';
+    
+    // Generate dynamic description based on worker names
+    if (workerNames && workerNames.length > 0) {
+      const names = workerNames.map(name => getWorkerDisplayName(name));
+      const nameList = names.length === 1 
+        ? names[0]
+        : `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`;
+      return `${nameList} are ready to find digital footprints across 500+ platforms.`;
+    }
+    
+    return 'OSINT scanning tools are ready to find digital footprints across 500+ platforms.';
   };
 
   return (
     <Alert 
       variant={getVariant()} 
-      className={`mb-6 ${allOperational ? 'bg-green-500/10 border-green-500/20' : ''}`}
+      className={`mb-6 ${localAllOperational ? 'bg-green-500/10 border-green-500/20' : ''}`}
     >
       <div className="flex items-start gap-3">
         {getIcon()}
@@ -93,7 +124,7 @@ export const WorkerStatusBanner = ({
           {displayWorkers.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {displayWorkers.map((worker) => {
-                const displayStatus = worker.status === 'unknown' && allOperational ? 'online' : worker.status;
+                const displayStatus = worker.status === 'unknown' && localAllOperational ? 'online' : worker.status;
                 const displayName = getWorkerDisplayName(worker.worker_name);
                 
                 return (
