@@ -11,6 +11,7 @@ export interface ScanLog {
 }
 
 export interface UsernameScanOptions {
+  scanId?: string; // Optional pre-generated scan ID
   username: string;
   tags?: string;
   allSites?: boolean;
@@ -59,9 +60,9 @@ export const useUsernameScan = () => {
         addLog({ level: 'info', message: 'Session refreshed successfully' });
       }
       
-      // Generate client-side batch ID for tracking
-      const batchId = crypto.randomUUID();
-      addLog({ level: 'debug', message: 'Generated batch ID', data: { batchId } });
+      // Use provided scanId or generate new one
+      const batchId = options.scanId || crypto.randomUUID();
+      addLog({ level: 'debug', message: options.scanId ? 'Using provided scan ID' : 'Generated batch ID', data: { batchId } });
       
       // Default providers if not specified
       const selectedProviders = options.providers?.length 
