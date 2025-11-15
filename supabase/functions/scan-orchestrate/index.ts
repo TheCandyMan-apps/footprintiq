@@ -119,7 +119,15 @@ serve(async (req) => {
 
     const { scanId: providedScanId, type, value, workspaceId, options = {} } = parseResult.data;
 
-    console.log(`[orchestrate] Scanning ${type}:${value} for workspace ${workspaceId}`);
+    // Enhanced logging for username scans with provider info
+    const requestedProviders = options.providers || [];
+    console.log(`[orchestrate] Scanning ${type}:${value} for workspace ${workspaceId}`, {
+      scanId: providedScanId,
+      providers: requestedProviders.length > 0 ? requestedProviders : 'all-default',
+      includeDarkweb: options.includeDarkweb,
+      includeDating: options.includeDating,
+      includeNsfw: options.includeNsfw
+    });
 
     // Use service role for workspace operations (initialize BEFORE any usage)
     const supabaseService = createClient(
