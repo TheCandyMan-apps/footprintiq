@@ -40,7 +40,10 @@ const ALLOWED_PROVIDERS = new Set([
   'censys', 'binaryedge', 'otx', 'shodan', 'virustotal',
   'securitytrails', 'urlscan',
   'apify-social', 'apify-osint', 'apify-darkweb',
-  'maigret'
+  'maigret',
+  'whatsmyname',
+  'holehe',
+  'gosearch',
 ]);
 
 interface ScanRequest {

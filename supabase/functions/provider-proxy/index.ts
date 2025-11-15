@@ -130,6 +130,84 @@ serve(async (req) => {
       case 'shodan':
         result = await callShodan(target);
         break;
+      case 'whatsmyname': {
+        // Only valid for username scans
+        if (type !== 'username') {
+          result = { findings: [] };
+          break;
+        }
+        const data = await callOsintWorker('whatsmyname', { username: target });
+        const results = (data?.results ?? []) as any[];
+        const now = new Date().toISOString();
+        const findings = results.map((item) => ({
+          provider: 'whatsmyname',
+          kind: 'presence.hit',
+          severity: 'low' as const,
+          confidence: 0.85,
+          observedAt: now,
+          evidence: [
+            { key: 'site', value: item.site || item.name || 'unknown' },
+            { key: 'url', value: item.url || '' },
+            { key: 'username', value: target },
+          ],
+          meta: item,
+        }));
+        result = { findings };
+        break;
+      }
+      case 'holehe': {
+        // Only valid for email scans
+        if (type !== 'email') {
+          result = { findings: [] };
+          break;
+        }
+        const data = await callOsintWorker('holehe', { email: target });
+        const results = (data?.results ?? []) as any[];
+        const now = new Date().toISOString();
+        const findings = results.map((item) => ({
+          provider: 'holehe',
+          kind: 'presence.hit',
+          severity: item.exists ? ('medium' as const) : ('info' as const),
+          confidence: item.exists ? 0.9 : 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'service', value: item.name || 'unknown' },
+            { key: 'exists', value: String(item.exists) },
+            { key: 'email', value: target },
+            ...(item.emailrecovery ? [{ key: 'emailrecovery', value: String(item.emailrecovery) }] : []),
+            ...(item.phoneNumber ? [{ key: 'phoneNumber', value: String(item.phoneNumber) }] : []),
+          ],
+          meta: item,
+        }));
+        result = { findings };
+        break;
+      }
+      case 'gosearch': {
+        // Username focused
+        if (type !== 'username') {
+          result = { findings: [] };
+          break;
+        }
+        const data = await callOsintWorker('gosearch', { username: target });
+        const results = (data?.results ?? []) as any[];
+        const now = new Date().toISOString();
+        const findings = results.map((item) => ({
+          provider: 'gosearch',
+          kind: 'presence.hit',
+          severity: 'low' as const,
+          confidence: 0.8,
+          observedAt: now,
+          evidence: [
+            { key: 'site', value: item.site || 'unknown' },
+            { key: 'url', value: item.url || '' },
+            { key: 'username', value: target },
+            ...(item.category ? [{ key: 'category', value: String(item.category) }] : []),
+          ],
+          meta: item,
+        }));
+        result = { findings };
+        break;
+      }
       default:
         console.warn(`[provider-proxy] Unknown provider: ${provider}`);
         result = { findings: [] };
@@ -149,6 +227,38 @@ serve(async (req) => {
     });
   }
 });
+
+async function callOsintWorker(
+  tool: 'whatsmyname' | 'holehe' | 'gosearch',
+  payload: { username?: string; email?: string }
+): Promise<any> {
+  const workerUrl = Deno.env.get('OSINT_WORKER_URL');
+  const workerToken = Deno.env.get('OSINT_WORKER_TOKEN');
+
+  if (!workerUrl || !workerToken) {
+    throw new Error('OSINT worker not configured');
+  }
+
+  const resp = await fetch(new URL('/scan', workerUrl).toString(), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      tool,
+      ...payload,
+      token: workerToken,
+    }),
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text();
+    console.error(`[osint-worker] ${tool} error:`, resp.status, text);
+    throw new Error(`OSINT worker ${tool} failed: ${resp.status}`);
+  }
+
+  return await resp.json();
+}
 
 async function callProvider(name: string, body: any) {
   // Map to actual provider implementations

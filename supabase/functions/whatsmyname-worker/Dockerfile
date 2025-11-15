@@ -6,10 +6,16 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    golang-go \
     && rm -rf /var/lib/apt/lists/*
 
-# Install whatsmyname
-RUN pip install --no-cache-dir whatsmyname
+# Install Python tools
+RUN pip install --no-cache-dir whatsmyname holehe
+
+# Install GoSearch
+ENV GOPATH=/root/go
+ENV PATH=$PATH:$GOPATH/bin
+RUN go install github.com/ibnaleem/gosearch@latest
 
 # Copy the API server
 COPY server.py /app/

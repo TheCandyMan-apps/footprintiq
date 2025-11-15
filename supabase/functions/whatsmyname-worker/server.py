@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-WhatsMyName Worker API Server
-Exposes REST API for username OSINT lookups
+Multi-Tool OSINT Worker API Server
+Exposes REST API for WhatsMyName, Holehe, and GoSearch
 """
 
 import json
@@ -10,7 +10,7 @@ import os
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
-class WhatsMyNameHandler(BaseHTTPRequestHandler):
+class OsintWorkerHandler(BaseHTTPRequestHandler):
     def _set_headers(self, status=200, content_type='application/json'):
         self.send_response(status)
         self.send_header('Content-Type', content_type)
@@ -27,7 +27,8 @@ class WhatsMyNameHandler(BaseHTTPRequestHandler):
             self._set_headers()
             self.wfile.write(json.dumps({
                 'status': 'healthy',
-                'service': 'whatsmyname-worker'
+                'service': 'osint-worker',
+                'tools': ['whatsmyname', 'holehe', 'gosearch']
             }).encode())
         else:
             self._set_headers(404)
@@ -40,62 +41,38 @@ class WhatsMyNameHandler(BaseHTTPRequestHandler):
                 post_data = self.rfile.read(content_length)
                 data = json.loads(post_data.decode('utf-8'))
 
-                username = data.get('username')
-                filters = data.get('filters', '')
+                # Validate token if OSINT_WORKER_TOKEN is set
+                worker_token = os.environ.get('OSINT_WORKER_TOKEN')
+                if worker_token:
+                    request_token = data.get('token')
+                    if not request_token or request_token != worker_token:
+                        self._set_headers(401)
+                        self.wfile.write(json.dumps({'error': 'Unauthorized: invalid token'}).encode())
+                        return
+
+                # Determine tool (default to whatsmyname for backwards compatibility)
+                tool = data.get('tool', 'whatsmyname')
                 
-                if not username:
+                # Route to appropriate handler
+                if tool == 'whatsmyname':
+                    result = self._handle_whatsmyname(data)
+                elif tool == 'holehe':
+                    result = self._handle_holehe(data)
+                elif tool == 'gosearch':
+                    result = self._handle_gosearch(data)
+                else:
                     self._set_headers(400)
-                    self.wfile.write(json.dumps({'error': 'Username required'}).encode())
+                    self.wfile.write(json.dumps({'error': f'Unknown tool: {tool}'}).encode())
                     return
 
-                # Build whatsmyname command
-                cmd = ['whatsmyname', '-u', username, '-j']
-                
-                # Add filters if provided (e.g., category:social)
-                if filters:
-                    cmd.extend(['--filter', filters])
-
-                # Execute whatsmyname
-                print(f"[WhatsMyName] Scanning username: {username}, filters: {filters}")
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=300  # 5 minute timeout
-                )
-
-                if result.returncode != 0:
-                    print(f"[WhatsMyName] Error: {result.stderr}")
-                    self._set_headers(500)
-                    self.wfile.write(json.dumps({
-                        'error': 'Scan failed',
-                        'details': result.stderr
-                    }).encode())
-                    return
-
-                # Parse JSON output
-                try:
-                    scan_results = json.loads(result.stdout)
-                except json.JSONDecodeError:
-                    # If not JSON, wrap the output
-                    scan_results = {
-                        'username': username,
-                        'raw_output': result.stdout
-                    }
-
-                print(f"[WhatsMyName] Scan complete for {username}")
                 self._set_headers()
-                self.wfile.write(json.dumps({
-                    'success': True,
-                    'username': username,
-                    'results': scan_results
-                }).encode())
+                self.wfile.write(json.dumps(result).encode())
 
             except subprocess.TimeoutExpired:
                 self._set_headers(504)
                 self.wfile.write(json.dumps({'error': 'Scan timeout'}).encode())
             except Exception as e:
-                print(f"[WhatsMyName] Exception: {str(e)}")
+                print(f"[OSINT Worker] Exception: {str(e)}")
                 self._set_headers(500)
                 self.wfile.write(json.dumps({
                     'error': 'Internal server error',
@@ -105,10 +82,138 @@ class WhatsMyNameHandler(BaseHTTPRequestHandler):
             self._set_headers(404)
             self.wfile.write(json.dumps({'error': 'Not found'}).encode())
 
+    def _handle_whatsmyname(self, data):
+        username = data.get('username')
+        filters = data.get('filters', '')
+        
+        if not username:
+            raise ValueError('Username required for whatsmyname')
+
+        # Build whatsmyname command
+        cmd = ['whatsmyname', '-u', username, '-j']
+        
+        # Add filters if provided (e.g., category:social)
+        if filters:
+            cmd.extend(['--filter', filters])
+
+        # Execute whatsmyname
+        print(f"[WhatsMyName] Scanning username: {username}, filters: {filters}")
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minute timeout
+        )
+
+        if result.returncode != 0:
+            print(f"[WhatsMyName] Error: {result.stderr}")
+            raise RuntimeError(f'WhatsMyName failed: {result.stderr}')
+
+        # Parse JSON output
+        try:
+            scan_results = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            # If not JSON, wrap the output
+            scan_results = []
+
+        return {
+            'tool': 'whatsmyname',
+            'username': username,
+            'results': scan_results,
+            'raw_output': result.stdout if not scan_results else None
+        }
+
+    def _handle_holehe(self, data):
+        email = data.get('email')
+        
+        if not email:
+            raise ValueError('Email required for holehe')
+
+        # Build holehe command
+        cmd = ['holehe', email, '--json', '--no-color']
+
+        # Execute holehe
+        print(f"[Holehe] Scanning email: {email}")
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minute timeout
+        )
+
+        if result.returncode != 0:
+            print(f"[Holehe] Error: {result.stderr}")
+            raise RuntimeError(f'Holehe failed: {result.stderr}')
+
+        # Parse JSON output
+        try:
+            scan_results = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            # If not JSON, wrap the output
+            scan_results = []
+
+        return {
+            'tool': 'holehe',
+            'email': email,
+            'results': scan_results,
+            'raw_output': result.stdout if not scan_results else None
+        }
+
+    def _handle_gosearch(self, data):
+        username = data.get('username')
+        
+        if not username:
+            raise ValueError('Username required for gosearch')
+
+        # Build gosearch command
+        cmd = ['gosearch', '-u', username, '--no-false-positives']
+
+        # Execute gosearch
+        print(f"[GoSearch] Scanning username: {username}")
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minute timeout
+        )
+
+        if result.returncode != 0:
+            print(f"[GoSearch] Error: {result.stderr}")
+            # GoSearch might return non-zero even on success, check output
+            if not result.stdout:
+                raise RuntimeError(f'GoSearch failed: {result.stderr}')
+
+        # GoSearch may not support JSON output, parse text output
+        results = []
+        raw_output = result.stdout
+        
+        # Try to parse structured output if available
+        for line in result.stdout.split('\n'):
+            line = line.strip()
+            if line and not line.startswith('#') and not line.startswith('['):
+                # Basic parsing: look for patterns like "site: url"
+                if ':' in line:
+                    parts = line.split(':', 1)
+                    if len(parts) == 2:
+                        results.append({
+                            'site': parts[0].strip(),
+                            'url': parts[1].strip(),
+                            'username': username,
+                            'status': 'found'
+                        })
+
+        return {
+            'tool': 'gosearch',
+            'username': username,
+            'results': results,
+            'raw_output': raw_output if not results else None
+        }
+
 def run_server(port=8080):
     server_address = ('', port)
-    httpd = HTTPServer(server_address, WhatsMyNameHandler)
-    print(f'[WhatsMyName] Server running on port {port}')
+    httpd = HTTPServer(server_address, OsintWorkerHandler)
+    print(f'[OSINT Worker] Server running on port {port}')
+    print(f'[OSINT Worker] Available tools: WhatsMyName, Holehe, GoSearch')
     httpd.serve_forever()
 
 if __name__ == '__main__':
