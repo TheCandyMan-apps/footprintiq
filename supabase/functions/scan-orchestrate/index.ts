@@ -308,6 +308,20 @@ serve(async (req) => {
     }
     providers = providers.filter(p => providerTypeSupport[p]?.includes(type));
 
+    // ✅ Now update scan record with provider counts after providers are finalized
+    try {
+      const initialProviderCounts = providers.reduce((acc, p) => ({ ...acc, [p]: 0 }), {});
+      
+      await supabaseService
+        .from('scans')
+        .update({ provider_counts: initialProviderCounts })
+        .eq('id', scanId);
+        
+      console.log('[orchestrate] Updated scan with provider_counts:', initialProviderCounts);
+    } catch (e) {
+      console.warn('[orchestrate] Failed to update provider_counts:', e);
+    }
+
     // Ensure we always have at least one provider
     if (providers.length === 0) {
       console.warn('[orchestrate] No compatible providers, using defaults');

@@ -140,6 +140,30 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     setShowPreview(false);
     setPipelineType(null);
 
+    // ✅ Initialize providers from scan record
+    const initializeProviders = async () => {
+      const { data: scanRecord } = await supabase
+        .from('scans')
+        .select('provider_counts')
+        .eq('id', scanId)
+        .maybeSingle();
+      
+      if (scanRecord?.provider_counts) {
+        const providerNames = Object.keys(scanRecord.provider_counts);
+        if (providerNames.length > 0) {
+          console.log('[ScanProgressDialog] Initializing providers:', providerNames);
+          setProviders(providerNames.map(name => ({
+            name,
+            status: 'pending' as const,
+            message: 'Queued...',
+          })));
+          setProvidersTotal(providerNames.length);
+        }
+      }
+    };
+
+    initializeProviders();
+
     // Detect pipeline type in background (non-blocking)
     const initializePipeline = async () => {
       // Wait 2 seconds before checking - gives edge function time to create records
