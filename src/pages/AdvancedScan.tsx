@@ -1020,16 +1020,18 @@ export default function AdvancedScan() {
             <div className="flex gap-3 pt-4">
               <Button
                 onClick={handleScan}
-                disabled={isScanning || (isBatchMode ? batchItems.length === 0 : !target.trim())}
+                disabled={isScanning || workspaceLoading || (isBatchMode ? batchItems.length === 0 : !target.trim())}
                 className="flex-1"
                 size="lg"
               >
                 <Zap className="w-5 h-5 mr-2" />
-                {isScanning 
-                  ? "Scanning..." 
-                  : isBatchMode && batchItems.length > 0
-                    ? `Scan ${batchItems.length} Target${batchItems.length > 1 ? 's' : ''}`
-                    : "Start Comprehensive Scan"
+                {workspaceLoading
+                  ? "Loading workspace..."
+                  : isScanning 
+                    ? "Scanning..." 
+                    : isBatchMode && batchItems.length > 0
+                      ? `Scan ${batchItems.length} Target${batchItems.length > 1 ? 's' : ''}`
+                      : "Start Comprehensive Scan"
                 }
               </Button>
               {!isStandard && (
