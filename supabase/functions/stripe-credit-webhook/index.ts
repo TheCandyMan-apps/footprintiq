@@ -96,8 +96,9 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('[stripe-credit-webhook] Error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMsg }),
       { status: 400 }
     );
   }

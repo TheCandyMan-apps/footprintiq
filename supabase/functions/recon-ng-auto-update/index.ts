@@ -145,7 +145,8 @@ serve(async (req) => {
             }
           } catch (error) {
             console.error(`[Auto-Update] Error updating ${moduleName}:`, error);
-            failedModules.push({ module: moduleName, error: error.message });
+            const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+            failedModules.push({ module: moduleName, error: errorMsg });
           }
         }
 
@@ -174,9 +175,10 @@ serve(async (req) => {
 
       } catch (error) {
         console.error(`[Auto-Update] Error processing workspace ${config.workspace_id}:`, error);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         results.push({
           workspace_id: config.workspace_id,
-          error: error.message,
+          error: errorMsg,
         });
       }
     }
@@ -195,8 +197,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[Auto-Update] Error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMsg }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

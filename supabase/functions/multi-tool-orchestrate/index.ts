@@ -333,9 +333,10 @@ async function runSpiderFoot(
     };
   } catch (error) {
     console.error('[runSpiderFoot] Error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return {
       tool: 'spiderfoot',
-      status: error.message?.includes('not configured') ? 'skipped' : 'failed',
+      status: errorMsg?.includes('not configured') ? 'skipped' : 'failed',
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
@@ -377,9 +378,10 @@ async function runReconNg(
     };
   } catch (error) {
     console.error('[runReconNg] Error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return {
       tool: 'reconng',
-      status: error.message?.includes('unavailable') ? 'skipped' : 'failed',
+      status: errorMsg?.includes('unavailable') ? 'skipped' : 'failed',
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }

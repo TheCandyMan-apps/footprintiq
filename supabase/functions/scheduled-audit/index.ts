@@ -35,14 +35,14 @@ Deno.serve(async (req) => {
     }
 
     // Create service role token for audit function
-    const { data: { session } } = await supabaseClient.auth.admin.createUser({
+    const { data: authData } = await supabaseClient.auth.admin.createUser({
       email: `audit-system-${Date.now()}@system.internal`,
       password: crypto.randomUUID(),
       email_confirm: true,
       user_metadata: { system: true, purpose: 'scheduled_audit' }
     });
 
-    if (!session) {
+    if (!authData?.user) {
       throw new Error('Failed to create audit session');
     }
 
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       'audit-scans',
       {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
         },
       }
     );
@@ -70,16 +70,17 @@ Deno.serve(async (req) => {
       console.warn(`⚠️ Success rate (${successRate}%) below threshold (${threshold}%)`);
 
       // Send alert to admins
+      const { data: adminRoles } = await supabaseClient
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'admin');
+      
+      const adminUserIds = adminRoles?.map(r => r.user_id) || [];
+      
       const { data: admins } = await supabaseClient
         .from('profiles')
         .select('email, user_id')
-        .in(
-          'user_id',
-          supabaseClient
-            .from('user_roles')
-            .select('user_id')
-            .eq('role', 'admin')
-        );
+        .in('user_id', adminUserIds);
 
       if (admins && admins.length > 0) {
         // Log alert (email function can be added separately)
@@ -104,7 +105,7 @@ Deno.serve(async (req) => {
     }
 
     // Cleanup temporary audit user
-    await supabaseClient.auth.admin.deleteUser(session.user.id);
+    await supabaseClient.auth.admin.deleteUser(authData.user.id);
 
     return new Response(
       JSON.stringify({
@@ -122,8 +123,9 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error('Scheduled audit error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMsg }),
       {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

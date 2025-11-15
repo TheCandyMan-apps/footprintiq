@@ -204,11 +204,12 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error('[ReverseImageSearch] TinEye API call failed:', error);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         // Re-throw specific errors, wrap generic ones
-        if (error.message.includes('TinEye')) {
+        if (errorMsg.includes('TinEye')) {
           throw error;
         }
-        throw new Error(`Failed to search TinEye: ${error.message}`);
+        throw new Error(`Failed to search TinEye: ${errorMsg}`);
       }
     }
 
@@ -242,8 +243,9 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('[ReverseImageSearch] Error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMsg }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

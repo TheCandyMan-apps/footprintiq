@@ -164,10 +164,11 @@ serve(async (req) => {
       
       // Log specific Stripe errors
       if (error instanceof Stripe.errors.StripeError) {
+        const stripeError = error as Stripe.errors.StripeError;
         console.error('[Credits Checkout] Stripe error details:', {
-          type: error.type || 'unknown',
-          code: error.code || 'unknown',
-          message: error.message,
+          type: stripeError.type || 'unknown',
+          code: stripeError.code || 'unknown',
+          message: stripeError.message,
         });
       }
       
@@ -186,7 +187,9 @@ serve(async (req) => {
     console.error(`[Credits Checkout] Error after ${duration}ms:`, error);
     
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    const errorType = error instanceof Stripe.errors.StripeError ? (error.type || 'general_error') : 'general_error';
+    const isStripeError = error instanceof Stripe.errors.StripeError;
+    const stripeError = isStripeError ? error as Stripe.errors.StripeError : null;
+    const errorType = stripeError?.type || 'general_error';
     
     // Log error for monitoring
     console.error('[Credits Checkout] Error details:', {

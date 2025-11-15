@@ -110,6 +110,7 @@ serve(async (req) => {
 
     } catch (pingError) {
       console.error('[spiderfoot-health] Failed to ping SpiderFoot API:', pingError);
+      const errorMsg = pingError instanceof Error ? pingError.message : 'Unknown error';
       return new Response(
         JSON.stringify({
           status: 'unreachable',
@@ -117,7 +118,7 @@ serve(async (req) => {
           url: spiderfootUrl,
           has_api_key: !!spiderfootKey,
           reachable: false,
-          error: pingError.message,
+          error: errorMsg,
           message: 'SpiderFoot configured but unreachable'
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -126,10 +127,11 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[spiderfoot-health] Error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({
         error: 'Internal server error',
-        message: error.message
+        message: errorMsg
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

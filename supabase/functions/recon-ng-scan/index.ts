@@ -89,8 +89,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Recon-ng scan error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMsg }),
       { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -170,7 +171,8 @@ async function processReconNgScan(
 
       } catch (error) {
         lastError = error;
-        console.error(`[ReconNG] Attempt ${attempt} failed:`, error.message);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`[ReconNG] Attempt ${attempt} failed:`, errorMsg);
 
         if (attempt < MAX_RETRIES) {
           // Broadcast retry notification
@@ -189,7 +191,8 @@ async function processReconNgScan(
           await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * attempt));
         } else {
           // All retries exhausted
-          throw new Error(`All ${MAX_RETRIES} attempts failed. Last error: ${error.message}`);
+          const lastErrorMsg = lastError instanceof Error ? lastError.message : 'Unknown error';
+          throw new Error(`All ${MAX_RETRIES} attempts failed. Last error: ${lastErrorMsg}`);
         }
       }
     }
@@ -312,11 +315,13 @@ async function processReconNgScan(
   } catch (error) {
     console.error('[ReconNG] Error processing scan:', error);
 
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+
     await supabase
       .from('recon_ng_scans')
       .update({
         status: 'failed',
-        error_message: error.message,
+        error_message: errorMsg,
       })
       .eq('id', scanId);
 
@@ -326,7 +331,7 @@ async function processReconNgScan(
       payload: {
         scanId,
         status: 'failed',
-        message: `Scan failed: ${error.message}`,
+        message: `Scan failed: ${errorMsg}`,
         progress: 0,
       },
     });
