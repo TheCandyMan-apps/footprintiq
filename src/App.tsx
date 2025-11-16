@@ -41,7 +41,6 @@ const MyTickets = lazy(() => import("./pages/MyTickets"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const UsernamePage = lazy(() => import("./pages/UsernamePage"));
-const MaltegoGallery = lazy(() => import("./pages/MaltegoGallery"));
 const ApiDocsOld = lazy(() => import("./pages/docs/ApiDocs"));
 const DeveloperPortal = lazy(() => import("./pages/DeveloperPortal"));
 const ExecutiveDashboard = lazy(() => import("./pages/ExecutiveDashboard"));
@@ -266,7 +265,6 @@ function RouterContent() {
           <Route path="/maigret/self-test" element={<MaigretSelfTest />} />
           <Route path="/scan/usernames" element={<UsernamesPage />} />
           <Route path="/scan/usernames/:jobId" element={<UsernameResultsPage />} />
-          <Route path="/maltego-gallery" element={<MaltegoGallery />} />
           <Route path="/docs/api" element={<ApiDocsOld />} />
           
           <Route path="/api" element={<ApiDocs />} />

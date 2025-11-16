@@ -12,12 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAdvancedScan, AdvancedScanOptions } from '@/hooks/useAdvancedScan';
 import { ScanProgressDialog } from './ScanProgressDialog';
-import { useMaltegoScan } from '@/hooks/useMaltegoScan';
-import { Loader2, Zap, Crown, Lock } from 'lucide-react';
+import { Loader2, Zap } from 'lucide-react';
 import { useWorkspace } from '@/hooks/useWorkspace';
 
 interface AdvancedScanDialogProps {
@@ -28,9 +26,7 @@ interface AdvancedScanDialogProps {
 export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogProps) {
   const navigate = useNavigate();
   const { startAdvancedScan, isScanning, progress } = useAdvancedScan();
-  const { startMaltegoScan, isScanning: isMaltegoScanning, isPremium } = useMaltegoScan();
   const { workspace } = useWorkspace();
-  const [activeTab, setActiveTab] = useState('advanced');
 
   const [formData, setFormData] = useState({
     email: '',
@@ -49,14 +45,6 @@ export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogPro
     correlationEngine: true,
   });
 
-  // Maltego-specific state
-  const [maltegoEntity, setMaltegoEntity] = useState('');
-  const [maltegoEntityType, setMaltegoEntityType] = useState<'username' | 'email' | 'ip' | 'domain'>('username');
-  const [maltegoTransforms, setMaltegoTransforms] = useState<string[]>([
-    'To IP from Domain',
-    'To Email from Domain'
-  ]);
-
   const [progressOpen, setProgressOpen] = useState(false);
   const [currentScanId, setCurrentScanId] = useState<string | null>(null);
 
@@ -73,31 +61,6 @@ export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogPro
     }
   };
 
-  const handleMaltegoSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!workspace?.id) {
-      return;
-    }
-
-    try {
-      const result = await startMaltegoScan({
-        entity: maltegoEntity,
-        entityType: maltegoEntityType,
-        transforms: maltegoTransforms,
-        workspaceId: workspace.id
-      });
-      
-      if (result.scanId) {
-        setCurrentScanId(result.scanId);
-        onOpenChange(false);
-        setProgressOpen(true);
-      }
-    } catch (error) {
-      // Error handled in hook
-    }
-  };
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -108,21 +71,11 @@ export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogPro
               Advanced Scan
             </DialogTitle>
             <DialogDescription>
-              Run comprehensive scans with AI-powered features, deep web monitoring, and OSINT graph analysis
+              Run comprehensive scans with AI-powered features, deep web monitoring, and behavioral analysis
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="advanced">Advanced Scan</TabsTrigger>
-              <TabsTrigger value="maltego" disabled={!isPremium}>
-                Maltego AI Graph
-                {!isPremium && <Lock className="ml-2 h-3 w-3" />}
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="advanced" className="mt-4">
-              <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Input Fields */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -273,123 +226,6 @@ export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogPro
                   </Button>
                 </div>
               </form>
-            </TabsContent>
-
-            <TabsContent value="maltego" className="mt-4">
-              {!isPremium ? (
-                <div className="text-center py-8 space-y-4">
-                  <div className="flex justify-center">
-                    <Crown className="h-12 w-12 text-yellow-500" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Premium Feature</h3>
-                    <p className="text-muted-foreground mb-4">
-                      Upgrade to premium to unlock AI-driven OSINT graph analysis with Maltego
-                    </p>
-                  </div>
-                  <div className="flex justify-center gap-2">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                      Maybe Later
-                    </Button>
-                    <Button onClick={() => navigate('/pricing')}>
-                      Upgrade to Premium
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleMaltegoSubmit} className="space-y-4">
-                  {/* Entity Input */}
-                  <div className="space-y-2">
-                    <Label htmlFor="maltegoEntity">Target Entity</Label>
-                    <Input
-                      id="maltegoEntity"
-                      value={maltegoEntity}
-                      onChange={(e) => setMaltegoEntity(e.target.value)}
-                      placeholder="username, email, IP, or domain"
-                      required
-                    />
-                  </div>
-
-                  {/* Entity Type */}
-                  <div className="space-y-2">
-                    <Label>Entity Type</Label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {(['username', 'email', 'ip', 'domain'] as const).map((type) => (
-                        <Button
-                          key={type}
-                          type="button"
-                          variant={maltegoEntityType === type ? 'default' : 'outline'}
-                          size="sm"
-                          onClick={() => setMaltegoEntityType(type)}
-                        >
-                          {type}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Transforms */}
-                  <div className="space-y-3 border rounded-lg p-4">
-                    <Label className="text-base font-semibold">AI Transforms</Label>
-                    <div className="space-y-2">
-                      {[
-                        'To IP from Domain',
-                        'To Email from Domain',
-                        'To Phone from Name',
-                        'To Social Media from Username',
-                        'To WHOIS from Domain'
-                      ].map((transform) => (
-                        <div key={transform} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={transform}
-                            checked={maltegoTransforms.includes(transform)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setMaltegoTransforms([...maltegoTransforms, transform]);
-                              } else {
-                                setMaltegoTransforms(maltegoTransforms.filter(t => t !== transform));
-                              }
-                            }}
-                          />
-                          <Label htmlFor={transform} className="text-sm font-normal cursor-pointer">
-                            {transform}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Cost Badge */}
-                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <span className="text-sm text-muted-foreground">Scan Cost</span>
-                    <Badge variant="secondary">10 Credits</Badge>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => onOpenChange(false)}
-                      disabled={isMaltegoScanning}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={isMaltegoScanning || !maltegoEntity}>
-                      {isMaltegoScanning ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Analyzing...
-                        </>
-                      ) : (
-                        'Run Maltego AI'
-                      )}
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </TabsContent>
-          </Tabs>
         </DialogContent>
       </Dialog>
 

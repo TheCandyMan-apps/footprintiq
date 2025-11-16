@@ -299,10 +299,6 @@ export default function UsernameSecurity() {
                         <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                         <span><strong>Pipl:</strong> People search engine linking usernames to profiles</span>
                       </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span><strong>Maltego:</strong> Professional OSINT tool for relationship mapping</span>
-                      </li>
                     </ul>
                   </CardContent>
                 </Card>
