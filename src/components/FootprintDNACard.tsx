@@ -27,9 +27,10 @@ interface MetricData {
 interface FootprintDNACardProps {
   userId?: string;
   jobId?: string;
+  scanId?: string; // Add scanId prop
 }
 
-export function FootprintDNACard({ userId, jobId }: FootprintDNACardProps) {
+export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Get current user ID
@@ -45,91 +46,68 @@ export function FootprintDNACard({ userId, jobId }: FootprintDNACardProps) {
     getCurrentUser();
   }, [userId]);
 
-// Fetch real data from Supabase
+// Fetch real data from Supabase with realtime support
   const fetchFootprintMetrics = async () => {
-    // When showing metrics for a specific scan, derive from scan_findings
-    if (jobId) {
+    // Helper to calculate metrics from findings
+    const calculateMetrics = (findings: any[]) => {
+      const BROKER_KEYWORDS = ['whitepages', 'spokeo', 'intelius', 'beenverified', 'truthfinder',
+        'pipl', 'radaris', 'fastpeoplesearch', 'peoplefinder', 'ussearch', 'peekyou', 'mylife', 'broker', 'data broker'];
+      const DARK_WEB_KEYWORDS = ['intelx', 'paste', 'dark', 'onion', 'breach', 'leak', 'darkweb'];
+      const BREACH_KEYWORDS = ['hibp', 'haveibeenpwned', 'breach', 'leak', 'password'];
+
+      let breaches = 0, exposures = 0, dataBrokers = 0, darkWeb = 0;
+
+      for (const finding of findings) {
+        const kind = (finding.kind || '').toLowerCase();
+        const provider = (finding.provider || '').toLowerCase();
+        const severity = finding.severity || '';
+
+        if (BREACH_KEYWORDS.some(k => kind.includes(k) || provider.includes(k)) || severity === 'critical' || severity === 'high') breaches++;
+        exposures++;
+        if (BROKER_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) dataBrokers++;
+        if (DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) darkWeb++;
+      }
+
+      return { breaches, exposures, dataBrokers, darkWeb };
+    };
+
+    // Priority 1: Use scanId if provided (most direct)
+    if (scanId) {
       try {
-        const { data, error } = await (supabase as any)
-          .from('scan_findings')
-          .select('site, status, raw')
-          .eq('job_id', jobId);
-
+        const { data, error } = await (supabase as any).from('findings').select('kind, severity, evidence, provider').eq('scan_id', scanId);
         if (error) throw error;
-        const items = (data || []) as Array<{ site: string; status?: string; raw?: any }>;
-
-        const lower = (s: string | undefined) => (s || '').toLowerCase();
-        const BROKER_SITES = [
-          'whitepages','spokeo','intelius','beenverified','truthfinder','pipl','radaris','fastpeoplesearch','peoplefinder','ussearch','peekyou','mylife'
-        ];
-        const DARK_WEB_KEYWORDS = ['intelx','paste','dark','onion','breach','leak'];
-        const BREACH_KEYWORDS = ['hibp','haveibeenpwned','intelx','leak','breach'];
-
-        let breaches = 0;
-        let exposures = 0;
-        let dataBrokers = 0;
-        let darkWeb = 0;
-
-        for (const it of items) {
-          const site = lower(it.site);
-          if (BREACH_KEYWORDS.some(k => site.includes(k))) breaches++;
-          if (it.status && lower(it.status) === 'found') exposures++;
-          if (BROKER_SITES.some(k => site.includes(k))) dataBrokers++;
-          if (DARK_WEB_KEYWORDS.some(k => site.includes(k))) darkWeb++;
-        }
-
-        return { breaches, exposures, dataBrokers, darkWeb };
+        return calculateMetrics(data || []);
       } catch (err) {
-        console.error('Error fetching scan metrics from scan_findings:', err);
+        console.error('Error fetching scan metrics from findings:', err);
         return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
       }
     }
 
-    // Otherwise, fall back to unified findings by user
-    if (!currentUserId) {
-      return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
+    // Priority 2: Try to map jobId to scanId
+    if (jobId) {
+      try {
+        const { data: jobData } = await (supabase as any).from('scan_jobs').select('username, requested_by').eq('id', jobId).single();
+        if (jobData?.username) {
+          const { data: scanData } = await (supabase as any).from('scans').select('id').eq('username', jobData.username).eq('user_id', jobData.requested_by).order('created_at', { ascending: false }).limit(1).single();
+          if (scanData?.id) {
+            const { data: findings } = await (supabase as any).from('findings').select('kind, severity, evidence, provider').eq('scan_id', scanData.id);
+            if (findings && findings.length > 0) return calculateMetrics(findings);
+          }
+        }
+      } catch (err) {
+        console.error('Error mapping jobId to scanId:', err);
+      }
     }
 
+    // Priority 3: Fall back to user-wide findings
+    if (!currentUserId) return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
+
     try {
-      // Query findings table - type as any to bypass deep instantiation error
-      const query: any = (supabase as any)
-        .from('findings')
-        .select('kind, severity, evidence, provider');
-      const response = await query.eq('user_id', currentUserId);
-
-      const findings = (response.data || []) as Array<{
-        kind?: string;
-        severity?: string;
-        evidence?: any[];
-        provider?: string;
-      }>;
-
-      // Calculate metrics
-      const breaches = findings.filter((f) =>
-        f.kind?.includes('breach') ||
-        f.severity === 'critical' ||
-        f.severity === 'high'
-      ).length;
-
-      const exposures = findings.filter((f) =>
-        f.evidence && Array.isArray(f.evidence) && f.evidence.length > 0
-      ).length;
-
-      const dataBrokers = findings.filter((f) =>
-        f.kind?.includes('people_search') ||
-        f.provider?.toLowerCase().includes('broker') ||
-        f.provider?.toLowerCase().includes('people')
-      ).length;
-
-      const darkWeb = findings.filter((f) =>
-        f.kind?.includes('darkweb') ||
-        f.kind?.includes('paste') ||
-        f.provider?.toLowerCase().includes('dark')
-      ).length;
-
-      return { breaches, exposures, dataBrokers, darkWeb };
-    } catch (error) {
-      console.error('Error fetching footprint data:', error);
+      const { data, error } = await (supabase as any).from('findings').select('kind, severity, evidence, provider').eq('user_id', currentUserId);
+      if (error) throw error;
+      return calculateMetrics(data || []);
+    } catch (err) {
+      console.error('Error fetching user-wide findings:', err);
       return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
     }
   };
