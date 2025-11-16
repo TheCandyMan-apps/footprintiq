@@ -100,9 +100,9 @@ export const FootprintDNAModal = ({
     });
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     try {
-      exportDNAasPDF(trendData, currentScore, brandingSettings, selectedTemplate);
+      await exportDNAasPDF(trendData, currentScore, brandingSettings, selectedTemplate);
       toast({
         title: "Export successful",
         description: `Your ${selectedTemplate} report has been downloaded as PDF`,
