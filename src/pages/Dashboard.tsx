@@ -93,6 +93,7 @@ const Dashboard = () => {
     dataBrokers: 0,
     darkWeb: 0
   });
+  const [latestScanId, setLatestScanId] = useState<string | null>(null);
   const [isDNAModalOpen, setIsDNAModalOpen] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [isRescanning, setIsRescanning] = useState(false);
@@ -170,6 +171,28 @@ const Dashboard = () => {
       supabase.removeChannel(channel);
     };
   }, [user?.id, toast]);
+
+  // Realtime subscription for DNA tiles
+  useEffect(() => {
+    if (!latestScanId) return;
+
+    const channel = supabase
+      .channel(`findings_${latestScanId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'findings',
+        filter: `scan_id=eq.${latestScanId}`
+      }, () => {
+        // Refetch DNA metrics when new findings arrive
+        if (user?.id) fetchDashboardData(user.id);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [latestScanId, user?.id]);
   const fetchDashboardData = async (userId: string) => {
     setLoading(true);
     try {
@@ -230,6 +253,32 @@ const Dashboard = () => {
       if (scansData && scansData.length > 0) {
         // Get the most recent scan for DNA calculation
         const recentScan = scansData[0];
+        setLatestScanId(recentScan.id);
+
+        // Fetch findings for DNA metrics
+        const { data: dnaFindings } = await supabase
+          .from('findings')
+          .select('kind, severity, provider')
+          .eq('scan_id', recentScan.id);
+
+        if (dnaFindings) {
+          const BROKER_KEYWORDS = ['whitepages', 'spokeo', 'broker'];
+          const DARK_WEB_KEYWORDS = ['intelx', 'paste', 'dark', 'darkweb'];
+          const BREACH_KEYWORDS = ['hibp', 'breach', 'leak'];
+
+          let breaches = 0, exposures = 0, dataBrokers = 0, darkWeb = 0;
+          for (const f of dnaFindings) {
+            const kind = (f.kind || '').toLowerCase();
+            const provider = (f.provider || '').toLowerCase();
+            
+            if (BREACH_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) breaches++;
+            exposures++;
+            if (BROKER_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) dataBrokers++;
+            if (DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) darkWeb++;
+          }
+
+          setDnaMetrics({ score: Math.max(0, 100 - (breaches * 10 + darkWeb * 5)), breaches, exposures, dataBrokers, darkWeb });
+        }
 
         // Fetch data sources for the recent scan
         const {

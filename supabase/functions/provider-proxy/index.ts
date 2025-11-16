@@ -51,6 +51,8 @@ serve(async (req) => {
         break;
       case 'dehashed':
         result = await callDeHashed(target, type);
+        // Map to UFM
+        result = { findings: normalizeDeHashed(result, target) };
         break;
       case 'censys':
         result = await callCensys(target, type);
@@ -81,12 +83,18 @@ serve(async (req) => {
         break;
       case 'apify-social':
         result = await callApifyRunner('xtech/social-media-finder-pro', target, { searchTerm: target });
+        // Map to UFM
+        result = { findings: normalizeApifyResults(result, 'apify-social', 'presence.hit') };
         break;
       case 'apify-osint':
         result = await callApifyRunner('epctex/osint-scraper', target, { keywords: [target], modules: ['pastebin', 'github_gist', 'codepad'] });
+        // Map to UFM
+        result = { findings: normalizeApifyResults(result, 'apify-osint', 'leak.paste') };
         break;
       case 'apify-darkweb':
         result = await callApifyRunner('epctex/darkweb-scraper', target, { keywords: [target], maxDepth: options.darkwebDepth || 2 });
+        // Map to UFM
+        result = { findings: normalizeApifyResults(result, 'apify-darkweb', 'darkweb.hit') };
         break;
       case 'googlecse':
         result = await callGoogleCSE(target);
@@ -963,6 +971,70 @@ async function callApifyRunner(actorId: string, target: string, input: Record<st
     console.error('[callApifyRunner] Exception:', error);
     return { findings: [] };
   }
+}
+
+// Normalizer functions for UFM mapping
+function normalizeDeHashed(rawResult: any, target: string): any[] {
+  const entries = rawResult?.entries || [];
+  if (entries.length === 0) return [];
+  
+  return entries.slice(0, 50).map((entry: any) => ({
+    provider: 'dehashed',
+    kind: 'breach.credential',
+    severity: (entry.password || entry.hashed_password) ? 'high' : 'medium',
+    confidence: 0.9,
+    observedAt: new Date().toISOString(),
+    evidence: [
+      { key: 'database', value: entry.database_name || '' },
+      { key: 'email', value: entry.email || '' },
+      { key: 'username', value: entry.username || '' },
+      { key: 'name', value: entry.name || '' },
+    ].filter(e => e.value),
+    meta: {
+      hasPassword: !!(entry.password || entry.hashed_password),
+      database: entry.database_name,
+    },
+  }));
+}
+
+function normalizeWhatsMyName(rawResult: any, username: string): any[] {
+  const hits = rawResult?.results || rawResult?.hits || [];
+  if (!Array.isArray(hits) || hits.length === 0) return [];
+  
+  return hits.map((hit: any) => ({
+    provider: 'whatsmyname',
+    kind: 'presence.hit',
+    severity: 'info',
+    confidence: hit.confidence || 0.7,
+    observedAt: new Date().toISOString(),
+    evidence: [
+      { key: 'site', value: hit.site || hit.name || '' },
+      { key: 'url', value: hit.url || '' },
+      { key: 'username', value: username },
+    ].filter(e => e.value),
+    meta: hit,
+  }));
+}
+
+function normalizeApifyResults(rawResult: any, provider: string, kind: string): any[] {
+  // Apify can return data in various shapes
+  const items = rawResult?.items || rawResult?.results || rawResult?.data || [];
+  if (!Array.isArray(items) || items.length === 0) return [];
+  
+  return items.slice(0, 100).map((item: any) => ({
+    provider,
+    kind,
+    severity: kind.includes('darkweb') ? 'high' : 'medium',
+    confidence: 0.75,
+    observedAt: new Date().toISOString(),
+    evidence: [
+      { key: 'title', value: item.title || item.name || '' },
+      { key: 'url', value: item.url || item.link || '' },
+      { key: 'source', value: item.source || item.site || '' },
+      { key: 'snippet', value: (item.snippet || item.text || item.description || '').slice(0, 200) },
+    ].filter(e => e.value),
+    meta: item,
+  }));
 }
 
 async function callVirusTotal(target: string, type: 'domain' | 'ip' | 'url' | 'file') {

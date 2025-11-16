@@ -22,9 +22,9 @@ const actionColors: Record<string, string> = {
 };
 
 export function ActivityLogs() {
-  const { logs, isLoading } = useActivityLogs();
+  const { logs, loading } = useActivityLogs();
 
-  if (isLoading) {
+  if (loading) {
     return (
       <Card>
         <CardHeader>
