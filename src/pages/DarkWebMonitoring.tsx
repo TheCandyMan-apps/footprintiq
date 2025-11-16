@@ -11,40 +11,41 @@ import { toast } from "sonner";
 import { Shield, Plus, Trash2, AlertTriangle, CheckCircle2, Clock, Search } from "lucide-react";
 import { DarkWebFindingsCard } from "@/components/darkweb/DarkWebFindingsCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 export default function DarkWebMonitoring() {
   const [newTarget, setNewTarget] = useState("");
   const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { workspace } = useWorkspace();
 
   // Fetch targets
   const { data: targets, isLoading } = useQuery({
-    queryKey: ["darkweb-targets"],
+    queryKey: ["darkweb-targets", workspace?.id],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!workspace?.id) throw new Error("No workspace found");
 
       const { data, error } = await supabase
         .from("darkweb_targets")
         .select("*")
-        .eq("workspace_id", user.id)
+        .eq("workspace_id", workspace.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data || [];
     },
+    enabled: !!workspace?.id,
   });
 
   // Add target mutation
   const addMutation = useMutation({
     mutationFn: async (identifier: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
+      if (!workspace?.id) throw new Error("No workspace found");
 
       const { data, error } = await supabase
         .from("darkweb_targets")
         .insert({
-          workspace_id: user.id,
+          workspace_id: workspace.id,
           value: identifier,
           type: "email", // Auto-detect type in future
           frequency: "daily",
