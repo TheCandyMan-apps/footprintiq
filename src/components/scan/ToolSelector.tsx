@@ -77,21 +77,6 @@ const TOOLS: Tool[] = [
     scanTypes: ['email'],
   },
   {
-    id: 'spiderfoot',
-    name: 'SpiderFoot',
-    description: 'Comprehensive OSINT automation for emails, IPs, domains with 200+ modules and threat intelligence',
-    icon: Globe,
-    tier: 'pro',
-    features: [
-      'Email intelligence',
-      'IP geolocation',
-      'Domain reconnaissance',
-      'Threat intelligence',
-      'Dark web monitoring',
-    ],
-    scanTypes: ['email', 'ip', 'domain', 'phone'],
-  },
-  {
     id: 'recon-ng',
     name: 'Recon-ng',
     description: 'Enterprise-grade reconnaissance framework with advanced correlation and relationship mapping',

@@ -20,7 +20,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { useUserPersona } from "@/hooks/useUserPersona";
 import { useAnonMode } from "@/hooks/useAnonMode";
 import { useTierGating } from "@/hooks/useTierGating";
-import { SpiderFootStatusIndicator } from "@/components/scan/SpiderFootStatusIndicator";
+
 import { PremiumApifyOptions } from "@/components/scan/PremiumApifyOptions";
 import { AnonModeToggle } from "@/components/scan/AnonModeToggle";
 import { CreditsBadge } from "@/components/workspace/CreditsBadge";
@@ -35,8 +35,6 @@ import { HighPrecisionToggle } from "@/components/scan/HighPrecisionToggle";
 import { GeocodingProgress } from "@/components/scan/GeocodingProgress";
 import { BuyCreditsModal } from "@/components/scan/BuyCreditsModal";
 import { ReverseImageComponent } from "@/components/scan/ReverseImageComponent";
-import { SpiderFootScanForm } from "@/components/scan/SpiderFootScanForm";
-import { SpiderFootResults } from "@/components/scan/SpiderFootResults";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGeocoding } from "@/hooks/useGeocoding";
 import { useActiveScanContext } from "@/contexts/ActiveScanContext";
@@ -98,7 +96,7 @@ export default function AdvancedScan() {
   const [progressOpen, setProgressOpen] = useState(false);
   const [modalScanId, setModalScanId] = useState<string | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
-  const [selectedTool, setSelectedTool] = useState<string>("spiderfoot");
+  const [selectedTool, setSelectedTool] = useState<string>("maigret");
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [maigretEnabled, setMaigretEnabled] = useState(true);
   const [usernameTags, setUsernameTags] = useState('');
@@ -631,15 +629,8 @@ export default function AdvancedScan() {
 
               {/* Tabs for scan types */}
               <Tabs defaultValue="standard" className="w-full">
-                <TabsList className={`grid w-full ${import.meta.env.VITE_SPIDERFOOT_API_URL ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="standard">Advanced Scan</TabsTrigger>
-                  {import.meta.env.VITE_SPIDERFOOT_API_URL && (
-                    <TabsTrigger value="spiderfoot" className="flex items-center gap-2">
-                      <Shield className="w-4 h-4" />
-                      SpiderFoot Recon
-                      <SpiderFootStatusIndicator />
-                    </TabsTrigger>
-                  )}
                   <TabsTrigger value="reverse-image">Reverse Image Intel</TabsTrigger>
                 </TabsList>
 
@@ -1143,47 +1134,6 @@ export default function AdvancedScan() {
             onSaveTemplate={() => setSaveTemplateOpen(true)}
           />
                 </TabsContent>
-
-                {import.meta.env.VITE_SPIDERFOOT_API_URL ? (
-                  <TabsContent value="spiderfoot" className="space-y-6 mt-6">
-                    <SpiderFootScanForm workspaceId={workspace.id} />
-                    <SpiderFootResults workspaceId={workspace.id} />
-                  </TabsContent>
-                ) : (
-                  <TabsContent value="spiderfoot" className="space-y-6 mt-6">
-                    <Card className="p-8 border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
-                      <div className="text-center space-y-4">
-                        <div className="flex justify-center">
-                          <div className="p-4 rounded-full bg-primary/10">
-                            <Shield className="w-12 h-12 text-primary" />
-                          </div>
-                        </div>
-                        <div>
-                          <h3 className="text-2xl font-bold mb-2">SpiderFoot Coming Soon</h3>
-                          <p className="text-muted-foreground max-w-2xl mx-auto">
-                            Deploy your own SpiderFoot server to unlock 200+ module reconnaissance capabilities for comprehensive OSINT gathering.
-                          </p>
-                        </div>
-                        <div className="flex gap-3 justify-center pt-4">
-                          <Button
-                            variant="default"
-                            onClick={() => window.open('/docs/spiderfoot-setup', '_blank')}
-                            className="bg-gradient-to-r from-primary to-accent hover:opacity-90"
-                          >
-                            <BookOpen className="w-4 h-4 mr-2" />
-                            Learn More
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => window.location.href = 'mailto:admin@footprintiq.app?subject=SpiderFoot Setup Help'}
-                          >
-                            Contact Support
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  </TabsContent>
-                )}
 
                 <TabsContent value="reverse-image" className="mt-6">
                   <ReverseImageComponent />

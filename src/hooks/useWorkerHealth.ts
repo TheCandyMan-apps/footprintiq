@@ -13,7 +13,6 @@ export interface WorkerHealth {
 export interface WorkerHealthState {
   maigret: WorkerHealth;
   reconng: WorkerHealth;
-  spiderfoot: WorkerHealth;
   checking: boolean;
 }
 
@@ -32,13 +31,6 @@ export function useWorkerHealth() {
       lastCheck: null,
       responseTime: null,
       endpoint: '/functions/v1/recon-ng-modules',
-    },
-    spiderfoot: {
-      name: 'SpiderFoot',
-      status: 'checking',
-      lastCheck: null,
-      responseTime: null,
-      endpoint: '/functions/v1/spiderfoot-scan',
     },
     checking: false,
   });
@@ -110,37 +102,6 @@ export function useWorkerHealth() {
       }));
     }
 
-    // Check SpiderFoot - just verify function exists
-    try {
-      const start = Date.now();
-      // Try a lightweight call to verify the function is deployed
-      const { error } = await supabase.functions.invoke('spiderfoot-scan', {
-        body: { _healthCheck: true },
-      });
-      const responseTime = Date.now() - start;
-
-      setHealth((prev) => ({
-        ...prev,
-        spiderfoot: {
-          ...prev.spiderfoot,
-          status: error && error.message.includes('not found') ? 'offline' : 'online',
-          lastCheck: new Date(),
-          responseTime,
-          error: error && error.message.includes('not found') ? 'Function not deployed' : undefined,
-        },
-      }));
-    } catch (error) {
-      setHealth((prev) => ({
-        ...prev,
-        spiderfoot: {
-          ...prev.spiderfoot,
-          status: 'offline',
-          lastCheck: new Date(),
-          responseTime: null,
-          error: error instanceof Error ? error.message : 'Connection failed',
-        },
-      }));
-    }
 
     setChecking(false);
   };

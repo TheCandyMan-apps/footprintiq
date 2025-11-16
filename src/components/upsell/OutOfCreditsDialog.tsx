@@ -109,7 +109,7 @@ export const OutOfCreditsDialog = ({
               </li>
               <li className="flex items-start gap-2 text-sm">
                 <Zap className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <span><strong>Advanced OSINT tools</strong> – Maigret, SpiderFoot, and more</span>
+                <span><strong>Advanced OSINT tools</strong> – Maigret and more</span>
               </li>
               <li className="flex items-start gap-2 text-sm">
                 <Zap className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />

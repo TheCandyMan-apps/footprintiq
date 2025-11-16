@@ -20,9 +20,9 @@ export default function SystemStatus() {
             <Server className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3 Services</div>
+            <div className="text-2xl font-bold">2 Services</div>
             <p className="text-xs text-muted-foreground">
-              Username, Recon-ng, SpiderFoot
+              Username, Recon-ng
             </p>
           </CardContent>
         </Card>

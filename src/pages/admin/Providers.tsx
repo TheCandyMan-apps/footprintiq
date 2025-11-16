@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PROVIDER_META } from "@/providers/registry.meta";
 import { supabase } from "@/integrations/supabase/client";
-import { SpiderFootStatus } from "@/components/admin/SpiderFootStatus";
+
 
 export default function Providers() {
   const [circuits, setCircuits] = useState<Record<string, { open: boolean; failures: number; cooldownUntil?: number }>>({});
@@ -52,11 +52,6 @@ export default function Providers() {
         </p>
       </div>
 
-      {/* SpiderFoot Premium Provider Status */}
-      <div className="mb-6">
-        <h2 className="text-2xl font-semibold mb-4">Premium Providers</h2>
-        <SpiderFootStatus />
-      </div>
 
       <div className="mb-4">
         <h2 className="text-2xl font-semibold">Standard Providers</h2>

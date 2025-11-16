@@ -6,8 +6,6 @@ verify_jwt = true
 [functions.providers-maigret]
 verify_jwt = true
 
-[functions.providers-spiderfoot]
-verify_jwt = true
 
 [functions.scan-orchestrate]
 verify_jwt = true

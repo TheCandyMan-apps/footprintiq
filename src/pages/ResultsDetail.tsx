@@ -1214,41 +1214,6 @@ const ResultsDetail = () => {
           </Card>
         )}
 
-        {/* SpiderFoot Not Available Info */}
-        {scan.status === 'completed' && !import.meta.env.VITE_SPIDERFOOT_API_URL && (
-          <Card className="p-6 mb-8 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/30">
-            <div className="flex items-start gap-4">
-              <div className="p-3 rounded-full bg-primary/10 shrink-0">
-                <Shield className="w-6 h-6 text-primary" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2">SpiderFoot OSINT Not Available</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  SpiderFoot reconnaissance with 200+ intelligence modules is not configured for this workspace. 
-                  {scan.scan_type === 'username' || scan.scan_type === 'personal_details' 
-                    ? ' Configure SpiderFoot to unlock comprehensive OSINT gathering capabilities.'
-                    : ' Upgrade your workspace or contact support to enable advanced reconnaissance.'}
-                </p>
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => window.open('/docs/spiderfoot-setup', '_blank')}
-                  >
-                    Setup Guide
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => window.location.href = 'mailto:admin@footprintiq.app?subject=SpiderFoot Configuration'}
-                  >
-                    Contact Support
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Card>
-        )}
 
         {/* Findings Section - Enhanced detailed cards */}
         {findings.length > 0 && (

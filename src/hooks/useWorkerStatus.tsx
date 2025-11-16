@@ -23,8 +23,7 @@ const WORKER_DISPLAY_NAMES: Record<string, string> = {
   'gosearch': 'GoSearch',
   'holehe': 'Holehe',
   'harvester': 'theHarvester',
-  'recon-ng': 'Recon-ng',
-  'spiderfoot': 'SpiderFoot'
+  'recon-ng': 'Recon-ng'
 };
 
 export function useWorkerStatus(options: UseWorkerStatusOptions = {}) {
