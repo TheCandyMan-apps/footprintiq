@@ -27,6 +27,17 @@ const SEVERITY_COLORS = {
   low: "#3b82f6",
 };
 
+const ANOMALY_TYPE_COLORS = [
+  "#8b5cf6", // violet
+  "#ec4899", // pink
+  "#10b981", // green
+  "#f59e0b", // amber
+  "#3b82f6", // blue
+  "#ef4444", // red
+  "#14b8a6", // teal
+  "#f97316", // orange
+];
+
 export default function AnomalyHistory() {
   const navigate = useNavigate();
   const [anomalies, setAnomalies] = useState<Anomaly[]>([]);
@@ -371,7 +382,7 @@ export default function AnomalyHistory() {
                 config={{
                   count: { label: "Count", color: "hsl(var(--primary))" },
                 }}
-                className="h-[300px]"
+                className="h-[350px]"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -381,16 +392,25 @@ export default function AnomalyHistory() {
                       nameKey="type"
                       cx="50%"
                       cy="50%"
-                      outerRadius={100}
-                      label={(entry) => `${entry.type}: ${entry.count}`}
+                      outerRadius={90}
+                      label={false}
                     >
                       {typeData.map((_, index) => (
                         <Cell
                           key={`cell-${index}`}
-                          fill={`hsl(var(--chart-${(index % 5) + 1}))`}
+                          fill={ANOMALY_TYPE_COLORS[index % ANOMALY_TYPE_COLORS.length]}
                         />
                       ))}
                     </Pie>
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36}
+                      formatter={(value, entry: any) => (
+                        <span className="text-sm font-medium text-foreground">
+                          {value}: {entry.payload.count}
+                        </span>
+                      )}
+                    />
                     <ChartTooltip content={<ChartTooltipContent />} />
                   </PieChart>
                 </ResponsiveContainer>

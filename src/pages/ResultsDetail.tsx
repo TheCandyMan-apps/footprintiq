@@ -23,6 +23,7 @@ import { TimelineChart } from "@/components/TimelineChart";
 import { ShareReportDialog } from "@/components/ShareReportDialog";
 import { PDFReportButton } from "@/components/PDFReportButton";
 import { ComprehensiveReportExport } from "@/components/ComprehensiveReportExport";
+import { ComprehensivePDFReport } from "@/components/reports/ComprehensivePDFReport";
 import { GraphExplorer } from "@/components/GraphExplorer";
 import { MonitoringToggle } from "@/components/MonitoringToggle";
 import { ScanSummary } from "@/components/ScanSummary";
@@ -623,6 +624,7 @@ const ResultsDetail = () => {
             </Button>
             <div className="flex gap-2">
               <QuickExportButton scanId={scanId!} />
+              <ComprehensivePDFReport scanId={scanId!} />
               <ComprehensiveReportExport
                 scanId={scanId!}
                 scan={scan}
