@@ -67,9 +67,10 @@ Be direct, actionable, and concise.`;
 
     const userPrompt = `Quick analysis for:
 Provider: ${finding.provider}
-Category: ${finding.provider_category}
+Type: ${finding.kind}
 Severity: ${finding.severity}
 Confidence: ${finding.confidence}
+Evidence: ${JSON.stringify(finding.evidence || {})}
 
 Provide a brief 2-3 sentence analysis with immediate next step.`;
 
