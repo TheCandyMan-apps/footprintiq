@@ -382,6 +382,19 @@ serve(async (req) => {
           totalProviders: providers.length
         }
       });
+
+      // Log provider start event
+      try {
+        await supabaseService.from('scan_provider_events').insert({
+          scan_id: scanId,
+          provider,
+          event: 'start',
+          message: `Starting ${provider}`,
+          result_count: 0
+        });
+      } catch (e) {
+        console.warn('[orchestrate] Failed to log start event:', e);
+      }
       
       // Update provider start
       await updateProgress({
@@ -468,6 +481,19 @@ serve(async (req) => {
             findingsCount: allFindings.length + result.length
           }
         });
+
+        // Log provider success event
+        try {
+          await supabaseService.from('scan_provider_events').insert({
+            scan_id: scanId,
+            provider,
+            event: 'success',
+            message: `Completed with ${result.length} results`,
+            result_count: result.length
+          });
+        } catch (e) {
+          console.warn('[orchestrate] Failed to log success event:', e);
+        }
         
         // Update provider completion
         await updateProgress({
@@ -498,6 +524,20 @@ serve(async (req) => {
             totalProviders: providers.length
           }
         });
+
+        // Log provider failed event
+        try {
+          await supabaseService.from('scan_provider_events').insert({
+            scan_id: scanId,
+            provider,
+            event: 'failed',
+            message: errorMessage,
+            result_count: 0,
+            error: { message: errorMessage }
+          });
+        } catch (e) {
+          console.warn('[orchestrate] Failed to log failed event:', e);
+        }
         
         // Update provider error
         await updateProgress({

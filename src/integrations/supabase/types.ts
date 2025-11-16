@@ -6371,6 +6371,47 @@ export type Database = {
           },
         ]
       }
+      scan_provider_events: {
+        Row: {
+          created_at: string
+          error: Json | null
+          event: string
+          id: string
+          message: string | null
+          provider: string
+          result_count: number | null
+          scan_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: Json | null
+          event: string
+          id?: string
+          message?: string | null
+          provider: string
+          result_count?: number | null
+          scan_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: Json | null
+          event?: string
+          id?: string
+          message?: string | null
+          provider?: string
+          result_count?: number | null
+          scan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_provider_events_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scan_results: {
         Row: {
           job_id: string
