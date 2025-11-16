@@ -1,29 +1,29 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle, Loader2, XCircle, AlertCircle, X, Eye, ExternalLink } from 'lucide-react';
+import { CheckCircle, Loader2, XCircle, AlertCircle, X, Eye, Wifi, WifiOff, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { detectScanPipeline } from '@/utils/scanPipeline';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ProviderStatus {
   name: string;
-  status: 'pending' | 'loading' | 'success' | 'failed' | 'retrying';
+  status: 'pending' | 'loading' | 'success' | 'failed' | 'skipped' | 'retrying';
   message?: string;
   resultCount?: number;
-  retryCount?: number;
-  maxRetries?: number;
+  lastUpdated?: number;
 }
 
-interface TopFinding {
-  site: string;
-  url: string | null;
-  status: string | null;
+interface DebugEvent {
+  timestamp: number;
+  source: 'broadcast' | 'database' | 'polling';
+  provider?: string;
+  message: string;
 }
 
 interface ScanProgressDialogProps {
@@ -31,65 +31,47 @@ interface ScanProgressDialogProps {
   onOpenChange: (open: boolean) => void;
   scanId: string | null;
   onComplete?: () => void;
-  initialProviders?: string[]; // ✅ NEW: show providers immediately
+  initialProviders?: string[];
 }
 
 export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, initialProviders }: ScanProgressDialogProps) {
-  // Create stable reference for initialProviders to prevent infinite re-renders
-  const initialProvidersKey = useMemo(
-    () => initialProviders?.join(',') || '',
-    [initialProviders]
-  );
+  const initialProvidersKey = useMemo(() => initialProviders?.join(',') || '', [initialProviders]);
 
+  // State
   const [progress, setProgress] = useState(0);
   const [providers, setProviders] = useState<ProviderStatus[]>([]);
-  const [creditsUsed, setCreditsUsed] = useState(0);
   const [status, setStatus] = useState<'running' | 'completed' | 'failed' | 'cancelled'>('running');
   const [isCancelling, setIsCancelling] = useState(false);
   const [totalResults, setTotalResults] = useState(0);
-  const [isSavingCase, setIsSavingCase] = useState(false);
-  const [providersCompleted, setProvidersCompleted] = useState(0);
-  const [providersTotal, setProvidersTotal] = useState(0);
+  
+  // Connection health
+  const [connectionMode, setConnectionMode] = useState<'live' | 'fallback'>('live');
   const [lastEventAt, setLastEventAt] = useState(Date.now());
-  const [showInactivityHint, setShowInactivityHint] = useState(false);
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState(false);
-  const [topFindings, setTopFindings] = useState<TopFinding[]>([]);
-  const [showPreview, setShowPreview] = useState(false);
-  const [pipelineType, setPipelineType] = useState<'simple' | 'advanced' | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [isPolling, setIsPolling] = useState(false);
+  
+  // Debug
+  const [debugEvents, setDebugEvents] = useState<DebugEvent[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
 
+  // Add debug event
+  const addDebugEvent = useCallback((source: DebugEvent['source'], message: string, provider?: string) => {
+    setDebugEvents(prev => [...prev.slice(-19), { timestamp: Date.now(), source, provider, message }]);
+  }, []);
+
+  // Success effects
   const playSuccessSound = () => {
     try {
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
-      // Play a pleasant success sound (C major chord)
-      oscillator.frequency.value = 523.25; // C5
+      oscillator.frequency.value = 523.25;
       oscillator.type = 'sine';
-      
       gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-      
       oscillator.start(audioContext.currentTime);
       oscillator.stop(audioContext.currentTime + 0.5);
-      
-      // Add second note for harmony
-      const oscillator2 = audioContext.createOscillator();
-      const gainNode2 = audioContext.createGain();
-      oscillator2.connect(gainNode2);
-      gainNode2.connect(audioContext.destination);
-      
-      oscillator2.frequency.value = 659.25; // E5
-      oscillator2.type = 'sine';
-      gainNode2.gain.setValueAtTime(0.2, audioContext.currentTime + 0.1);
-      gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.6);
-      
-      oscillator2.start(audioContext.currentTime + 0.1);
-      oscillator2.stop(audioContext.currentTime + 0.6);
     } catch (error) {
       console.log('Could not play success sound:', error);
     }
@@ -99,1089 +81,392 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     const duration = 3000;
     const animationEnd = Date.now() + duration;
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
-
-    const randomInRange = (min: number, max: number) => {
-      return Math.random() * (max - min) + min;
-    };
+    const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
     const interval = setInterval(() => {
       const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval);
-      }
-
+      if (timeLeft <= 0) return clearInterval(interval);
       const particleCount = 50 * (timeLeft / duration);
-      
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-      });
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-      });
+      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+      confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
     }, 250);
   };
 
+  // Unified provider update
+  const updateProvider = useCallback((
+    name: string,
+    newStatus: ProviderStatus['status'],
+    message?: string,
+    resultCount?: number
+  ) => {
+    const now = Date.now();
+    setProviders(prev => {
+      const existing = prev.find(p => p.name === name);
+      if (existing) {
+        return prev.map(p =>
+          p.name === name
+            ? { ...p, status: newStatus, message: message || p.message, resultCount: resultCount !== undefined ? resultCount : p.resultCount, lastUpdated: now }
+            : p
+        );
+      }
+      return [...prev, { name, status: newStatus, message: message || '', resultCount, lastUpdated: now }];
+    });
+    setLastEventAt(now);
+  }, []);
+
+  // Compute stats
+  const stats = useMemo(() => {
+    const total = providers.length;
+    const completed = providers.filter(p => p.status === 'success' || p.status === 'failed' || p.status === 'skipped').length;
+    const active = providers.filter(p => p.status === 'loading' || p.status === 'retrying');
+    const findingsCount = providers.reduce((sum, p) => sum + (p.resultCount || 0), 0);
+    const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { total, completed, active, findingsCount, progressPct };
+  }, [providers]);
+
+  // Update progress based on stats
+  useEffect(() => {
+    if (status === 'running' && stats.total > 0) {
+      setProgress(Math.max(5, Math.min(stats.progressPct, 95)));
+    }
+  }, [stats, status]);
+
+  // Fallback polling
+  useEffect(() => {
+    if (!scanId || !open || !isPolling) return;
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data } = await supabase.from('scan_progress').select('*').eq('scan_id', scanId).maybeSingle();
+        if (data) {
+          addDebugEvent('polling', `Progress: ${data.completed_providers}/${data.total_providers}`);
+          
+          if (data.current_providers && Array.isArray(data.current_providers)) {
+            data.current_providers.forEach((providerName: string) => {
+              updateProvider(providerName, 'loading', 'Processing...');
+            });
+          }
+
+          if (data.status === 'completed') {
+            setStatus('completed');
+            setProgress(100);
+            setTotalResults(data.findings_count || 0);
+            setIsPolling(false);
+          } else if (data.status === 'failed') {
+            setStatus('failed');
+            setIsPolling(false);
+          }
+        }
+      } catch (error) {
+        console.error('[Polling] Error:', error);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [scanId, open, isPolling, updateProvider, addDebugEvent]);
+
+  // Main effect: Setup realtime + health monitoring
   useEffect(() => {
     if (!scanId || !open) return;
 
-    console.log('[ScanProgressDialog] Subscribing to channels for scanId:', scanId);
-
+    console.log('[ScanProgress] Initializing for scanId:', scanId);
+    
     // Reset state
-    setProgress(5); // Show 5% to indicate we're listening
-    setCreditsUsed(0);
+    setProgress(5);
     setStatus('running');
     setTotalResults(0);
-    setIsSavingCase(false);
-    setProvidersCompleted(0);
+    setConnectionMode('live');
     setLastEventAt(Date.now());
-    setShowInactivityHint(false);
-    setShowTimeoutWarning(false);
-    setTopFindings([]);
-    setShowPreview(false);
-    setPipelineType(null);
+    setIsPolling(false);
+    setDebugEvents([]);
 
-    // ✅ IMMEDIATE PROVIDER DISPLAY - show selected providers instantly
+    // Initialize providers immediately
     if (initialProviders && initialProviders.length > 0) {
-      console.log('[ScanProgressDialog] Showing initial providers immediately:', initialProviders);
       setProviders(initialProviders.map(name => ({
         name,
-        status: 'pending' as const,
+        status: 'pending',
         message: 'Queued...',
+        lastUpdated: Date.now()
       })));
-      setProvidersTotal(initialProviders.length);
+      addDebugEvent('database', `Initialized ${initialProviders.length} providers`);
     } else {
       setProviders([]);
-      setProvidersTotal(0);
     }
 
-    // ✅ SCAN STATUS SUBSCRIPTION - detect failures immediately
-    const scanStatusChannel = supabase
-      .channel(`scan-status:${scanId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'scans',
-          filter: `id=eq.${scanId}`,
-        },
-        (payload) => {
-          const newStatus = payload.new.status;
-          console.log('[ScanProgressDialog] Scan status changed:', newStatus);
-          
-          if (newStatus === 'failed' || newStatus === 'cancelled') {
-            setStatus('failed');
-            setProgress(0);
-            toast.error(newStatus === 'cancelled' ? 'Scan was cancelled' : 'Scan failed to start');
-          }
-        }
-      )
-      .subscribe();
-
-    // Backup: Also initialize from DB (secondary source)
-    const initializeProviders = async () => {
-      const { data: scanRecord } = await supabase
-        .from('scans')
-        .select('provider_counts, status')
-        .eq('id', scanId)
-        .maybeSingle();
-      
-      // Check for immediate failure
-      if (scanRecord?.status === 'failed' || scanRecord?.status === 'cancelled') {
-        setStatus('failed');
-        setProgress(0);
-        toast.error('Scan failed - please try again');
-        return;
-      }
-      
-      if (scanRecord?.provider_counts && !initialProviders) {
-        const providerNames = Object.keys(scanRecord.provider_counts);
-        if (providerNames.length > 0) {
-          console.log('[ScanProgressDialog] Initializing providers from DB:', providerNames);
-          setProviders(providerNames.map(name => ({
-            name,
-            status: 'pending' as const,
-            message: 'Queued...',
-          })));
-          setProvidersTotal(providerNames.length);
-        }
-      }
-    };
-
-    initializeProviders();
-
-    // Detect pipeline type in background (non-blocking)
-    const initializePipeline = async () => {
-      // Wait 2 seconds before checking - gives edge function time to create records
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const pipeline = await detectScanPipeline(scanId);
-      if (pipeline && !pipelineType) {
-        setPipelineType(pipeline);
-        console.log('[ScanProgressDialog] Detected pipeline:', pipeline);
-      }
-      setIsInitializing(false);
-
-      if (pipeline === 'simple') {
-        // Start polling maigret_results for Simple pipeline
-        startSimplePipelinePolling();
-      }
-    };
-
-    initializePipeline();
-
-    // Simple pipeline polling - polls maigret_results every 3 seconds
-    const startSimplePipelinePolling = () => {
-      const pollInterval = setInterval(async () => {
-        try {
-          const { data: result, error } = await supabase
-            .from('maigret_results')
-            .select('*')
-            .eq('job_id', scanId)
-            .maybeSingle();
-
-          if (error) {
-            console.error('[ScanProgressDialog] Simple polling error:', error);
-            return;
-          }
-
-          if (!result) return;
-
-          // Map status to progress
-          if (result.status === 'queued') {
-            setProgress(5);
-          } else if (result.status === 'running') {
-            setProgress(50);
-          } else if (result.status === 'completed') {
-            setProgress(100);
-            setStatus('completed');
-            
-            // Extract results from summary
-            const summary = result.summary as any;
-            const summaryArray = Array.isArray(summary) ? summary : [];
-            setTotalResults(summaryArray.length);
-
-            // Fetch top findings
-            const mapped = summaryArray.slice(0, 10).map((item: any) => ({
-              site: item.evidence?.find((e: any) => e.key === 'site')?.value || 'Unknown',
-              url: item.evidence?.find((e: any) => e.key === 'url')?.value || null,
-              status: item.evidence?.find((e: any) => e.key === 'status')?.value || 'found',
-            }));
-            setTopFindings(mapped);
-
-            if (summaryArray.length > 0) {
-              setShowPreview(true);
-              playSuccessSound();
-              triggerConfetti();
-              toast.success(`Scan completed - ${summaryArray.length} results found`);
-            } else {
-              toast.info('No results found', {
-                description: 'Try a broader query or different username variant',
-                duration: 5000,
-              });
-            }
-
-            // Auto-navigate after showing preview
-            setTimeout(() => {
-              onComplete?.();
-            }, 3000);
-
-            clearInterval(pollInterval);
-          } else if (result.status === 'failed') {
-            setProgress(0);
-            setStatus('failed');
-            toast.error('Scan failed');
-            clearInterval(pollInterval);
-          }
-
-          setLastEventAt(Date.now());
-        } catch (error) {
-          console.error('[ScanProgressDialog] Simple polling error:', error);
-        }
-      }, 3000); // Poll every 3 seconds
-
-      // Cleanup function will clear this interval
-      return pollInterval;
-    };
-
-    // Fetch top findings from scan_findings table or maigret_results
-    const fetchTopFindings = async () => {
-      try {
-        // First try scan_findings (for advanced/orchestrator scans)
-        const { data: findings, error: findingsError } = await supabase
-          .from('scan_findings')
-          .select('site, url, status')
-          .eq('job_id', scanId)
-          .order('site', { ascending: true })
-          .limit(10);
-
-        if (!findingsError && findings && findings.length > 0) {
-          setTopFindings(findings as TopFinding[]);
-          setTotalResults(findings.length);
-          return;
-        }
-
-        // Fallback to maigret_results (for simple username scans)
-        const { data: maigretResult, error: maigretError } = await supabase
-          .from('maigret_results')
-          .select('summary')
-          .eq('job_id', scanId)
-          .maybeSingle();
-
-        if (!maigretError && maigretResult?.summary) {
-          const summary = maigretResult.summary as any;
-          const summaryArray = Array.isArray(summary) ? summary : [];
-          
-          const mapped = summaryArray.slice(0, 10).map((item: any) => ({
-            site: item.evidence?.find((e: any) => e.key === 'site')?.value || 'Unknown',
-            url: item.evidence?.find((e: any) => e.key === 'url')?.value || null,
-            status: item.evidence?.find((e: any) => e.key === 'status')?.value || 'found',
-          }));
-          
-          setTopFindings(mapped);
-          setTotalResults(summaryArray.length);
-        }
-      } catch (error) {
-        console.error('[ScanProgressDialog] Error fetching top findings:', error);
-      }
-    };
-
-    // Subscribe to real-time updates for scan_findings
-    const findingsChannel = supabase
-      .channel(`scan_findings_${scanId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'scan_findings',
-          filter: `job_id=eq.${scanId}`,
-        },
-        (payload) => {
-          console.debug('[ScanProgressDialog] New finding:', payload);
-          const finding = payload.new as TopFinding;
-          
-          setTopFindings(prev => {
-            const updated = [...prev, finding];
-            return updated.slice(0, 10); // Keep only top 10
-          });
-          
-          setTotalResults(prev => prev + 1);
-        }
-      )
-      .subscribe();
-
-    // Subscribe to real-time updates for maigret_results (simple scans)
-    const maigretResultsChannel = supabase
-      .channel(`maigret_results_${scanId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'maigret_results',
-          filter: `job_id=eq.${scanId}`,
-        },
-        (payload) => {
-          console.debug('[ScanProgressDialog] Maigret result inserted:', payload);
-          const result = payload.new as any;
-          
-          if (result.summary) {
-            const summary = result.summary as any;
-            const summaryArray = Array.isArray(summary) ? summary : [];
-            
-            const mapped = summaryArray.slice(0, 10).map((item: any) => ({
-              site: item.evidence?.find((e: any) => e.key === 'site')?.value || 'Unknown',
-              url: item.evidence?.find((e: any) => e.key === 'url')?.value || null,
-              status: item.evidence?.find((e: any) => e.key === 'status')?.value || 'found',
-            }));
-            
-            setTopFindings(mapped);
-            setTotalResults(summaryArray.length);
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'maigret_results',
-          filter: `job_id=eq.${scanId}`,
-        },
-        (payload) => {
-          console.debug('[ScanProgressDialog] Maigret result updated:', payload);
-          const result = payload.new as any;
-          
-          if (result.status === 'completed' && result.summary) {
-            const summary = result.summary as any;
-            const summaryArray = Array.isArray(summary) ? summary : [];
-            
-            const mapped = summaryArray.slice(0, 10).map((item: any) => ({
-              site: item.evidence?.find((e: any) => e.key === 'site')?.value || 'Unknown',
-              url: item.evidence?.find((e: any) => e.key === 'url')?.value || null,
-              status: item.evidence?.find((e: any) => e.key === 'status')?.value || 'found',
-            }));
-            
-            setTopFindings(mapped);
-            setTotalResults(summaryArray.length);
-            
-            // Show preview when maigret scan completes
-            if (summaryArray.length > 0) {
-              setShowPreview(true);
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    // Helper to upsert provider status
-    const upsertProvider = (
-      name: string, 
-      status: ProviderStatus['status'], 
-      message?: string,
-      retryCount?: number,
-      maxRetries?: number
-    ) => {
-      setProviders((prev) => {
-        const existing = prev.find((p) => p.name === name);
-        if (existing) {
-          return prev.map((p) =>
-            p.name === name 
-              ? { 
-                  ...p, 
-                  status, 
-                  message: message || p.message,
-                  retryCount: retryCount !== undefined ? retryCount : p.retryCount,
-                  maxRetries: maxRetries !== undefined ? maxRetries : p.maxRetries
-                } 
-              : p
-          );
-        }
-        return [...prev, { name, status, message: message || '', retryCount, maxRetries }];
-      });
-    };
-
-    // Subscribe to authoritative scan_jobs table for accurate progress
-    const jobChannel = supabase
-      .channel(`scan_jobs_${scanId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'scan_jobs',
-          filter: `id=eq.${scanId}`,
-        },
-        (payload) => {
-          console.debug('[ScanProgressDialog] scan_jobs UPDATE:', payload);
-          const job = payload.new as any;
-          
-          setLastEventAt(Date.now());
-          
-          // If we receive job updates, assume advanced pipeline
-          if (!pipelineType) {
-            setPipelineType('advanced');
-          }
-          
-          if (job.providers_completed !== undefined && job.providers_total !== undefined) {
-            setProvidersCompleted(job.providers_completed);
-            setProvidersTotal(job.providers_total);
-            
-            if (job.providers_total > 0) {
-              const pct = Math.round((job.providers_completed / job.providers_total) * 100);
-              setProgress(Math.max(5, Math.min(pct, 95))); // Clamp between 5-95%
-            }
-          }
-          
-          if (job.status === 'finished') {
-            setStatus('completed');
-            setProgress(100);
-          } else if (job.status === 'error') {
-            setStatus('failed');
-          } else if (job.status === 'canceled') {
-            setStatus('cancelled');
-          }
-        }
-      )
-      .subscribe();
-
-    // Subscribe to Maigret scan progress updates
-    const maigretChannel = supabase
-      .channel(`scan_progress_${scanId}`)
-      .on('broadcast', { event: 'provider_update' }, (payload: any) => {
-        console.debug('[ScanProgressDialog] Maigret provider_update:', payload);
-        const update = payload.payload;
-        upsertProvider(update.provider, update.status, update.message);
-        
-        setLastEventAt(Date.now());
-        
-        // If we receive maigret updates, assume advanced pipeline
-        if (!pipelineType) {
-          setPipelineType('advanced');
-        }
-
-        if (update.creditsUsed !== undefined) {
-          setCreditsUsed(update.creditsUsed);
-        }
-        
-        // Use providersCompleted/totalProviders if available
-        if (update.providersCompleted !== undefined && update.totalProviders !== undefined) {
-          setProvidersCompleted(update.providersCompleted);
-          setProvidersTotal(update.totalProviders);
-          if (update.totalProviders > 0) {
-            const pct = Math.round((update.providersCompleted / update.totalProviders) * 100);
-            setProgress(Math.max(5, Math.min(pct, 95)));
-          }
-        }
-      })
-      .on('broadcast', { event: 'scan_complete' }, async (payload: any) => {
-        console.debug('[ScanProgressDialog] Maigret scan_complete:', payload);
-        setStatus('completed');
-        setProgress(100);
-        setLastEventAt(Date.now());
-        
-        const resultsCount = payload.payload?.resultsCount || payload.payload?.totalFindings || 0;
-        setTotalResults(resultsCount);
-        
-        if (resultsCount === 0) {
-          // Zero results - save partial case and show helpful toast
-          toast.info('No results found', {
-            description: 'Try a broader query or different username variant',
-            duration: 5000,
-          });
-          void handleZeroResults(); // Fire and forget
-        } else {
-          // Fetch final findings and show preview
-          fetchTopFindings().then(() => {
-            setShowPreview(true);
-          });
-          playSuccessSound();
-          triggerConfetti();
-          toast.success(`Scan completed - ${resultsCount} results found`);
-        }
-        
-        setTimeout(() => onComplete?.(), 3000); // Extra time to view preview
-      })
-      .on('broadcast', { event: 'scan_failed' }, (payload: any) => {
-        console.debug('[ScanProgressDialog] Maigret scan_failed:', payload);
-        setStatus('failed');
-        setLastEventAt(Date.now());
-        toast.error(payload.payload.error || 'Scan failed');
-      })
-      .on('broadcast', { event: 'scan_cancelled' }, () => {
-        console.debug('[ScanProgressDialog] Maigret scan_cancelled');
-        setStatus('cancelled');
-        setLastEventAt(Date.now());
-        toast.info('Scan cancelled');
-        setTimeout(() => onComplete?.(), 1000);
-      })
-      .subscribe();
-    
-    // Inactivity watchdog with early failure detection
-    const watchdogInterval = setInterval(() => {
-      const now = Date.now();
-      const timeSinceLastEvent = now - lastEventAt;
-      
-      if (status !== 'running') {
-        return; // Don't show warnings if scan completed/failed/cancelled
-      }
-      
-      // Early failure detection: if no events in 20 seconds and still initializing
-      if (timeSinceLastEvent > 20000 && isInitializing && !pipelineType) {
-        console.error('[ScanProgressDialog] No events received in 20s - scan failed to start');
-        setStatus('failed');
-        setShowTimeoutWarning(true);
-        toast.error('Scan failed to start', {
-          description: 'No response from scanner. Please try again.',
-          duration: 5000,
-        });
-        return;
-      }
-      
-      if (timeSinceLastEvent > 3000 && timeSinceLastEvent < 60000) {
-        // 3-60 seconds: show waiting hint
-        setShowInactivityHint(true);
-      } else if (timeSinceLastEvent > 60000 && timeSinceLastEvent < 120000) {
-        // 60-120 seconds: still scanning
-        setShowInactivityHint(false);
-      } else if (timeSinceLastEvent >= 120000) {
-        // 120+ seconds: show timeout warning
-        setShowInactivityHint(false);
-        setShowTimeoutWarning(true);
-      } else {
-        setShowInactivityHint(false);
-        setShowTimeoutWarning(false);
-      }
-    }, 3000); // Check every 3 seconds
-
-    // Fetch initial progress on mount
+    // Fetch initial progress
     const fetchInitialProgress = async () => {
-      const { data, error } = await supabase
-        .from('scan_progress')
-        .select('*')
-        .eq('scan_id', scanId)
-        .maybeSingle();
-      
-      if (data && !error) {
-        setProvidersTotal(data.total_providers || 0);
-        setProvidersCompleted(data.completed_providers || 0);
-        
-        if (data.total_providers && data.completed_providers) {
-          const pct = Math.round((data.completed_providers / data.total_providers) * 100);
-          setProgress(Math.max(5, Math.min(pct, 95)));
-        }
-        
+      const { data } = await supabase.from('scan_progress').select('*').eq('scan_id', scanId).maybeSingle();
+      if (data) {
+        addDebugEvent('database', `Initial: ${data.completed_providers}/${data.total_providers}`);
         if (data.status === 'completed') {
           setStatus('completed');
           setProgress(100);
           setTotalResults(data.findings_count || 0);
+        } else if (data.status === 'failed') {
+          setStatus('failed');
         }
       }
     };
-
     fetchInitialProgress();
 
-    // Subscribe to scan_progress table updates
+    // Subscribe to scan_progress table
     const progressChannel = supabase
-      .channel(`scan_progress_updates_${scanId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'scan_progress',
-          filter: `scan_id=eq.${scanId}`
-        },
-        (payload) => {
-          console.debug('[ScanProgressDialog] Database progress update:', payload);
-          const update = payload.new as any;
-          
-          setLastEventAt(Date.now());
-          
-          // If we receive progress updates, assume advanced pipeline
-          if (!pipelineType) {
-            setPipelineType('advanced');
-          }
-          
-          // Map database fields to component state
-          if (update.message) {
-            const queryMatch = update.message.match(/Querying (.+)\.\.\./);
-            const completedMatch = update.message.match(/Completed (.+)/);
-            const retryMatch = update.message.match(/Retry (\d+)\/(\d+) for (.+)\.\.\./);
-            
-            if (retryMatch) {
-              const [, current, max, providerName] = retryMatch;
-              upsertProvider(
-                providerName, 
-                'retrying', 
-                `Retrying (${current}/${max})...`,
-                parseInt(current),
-                parseInt(max)
-              );
-            } else if (queryMatch) {
-              upsertProvider(queryMatch[1], 'loading', 'Querying...');
-            } else if (completedMatch) {
-              const providerName = completedMatch[1].split(' ')[0]; // Extract provider name before count
-              const findingsText = update.findings_count !== undefined 
-                ? ` (${update.findings_count} findings)` 
-                : '';
-              upsertProvider(providerName, 'success', `Completed${findingsText}`);
-            } else if (update.error && update.current_provider) {
-              upsertProvider(update.current_provider, 'failed', update.message);
-            }
-          }
-
-          // Update overall progress
-          if (update.completed_providers !== undefined && update.total_providers !== undefined) {
-            setProvidersCompleted(update.completed_providers);
-            setProvidersTotal(update.total_providers);
-            const pct = Math.round((update.completed_providers / update.total_providers) * 100);
-            setProgress(Math.max(5, Math.min(pct, 95)));
-          }
-
-          // Handle completion
-          if (update.status === 'completed') {
-            console.debug('[ScanProgressDialog] Scan completed');
-            setStatus('completed');
-            setProgress(100);
-            
-            const resultsCount = update.findings_count || 0;
-            setTotalResults(resultsCount);
-            
-            if (resultsCount === 0) {
-              toast.info('No results found', {
-                description: 'Try a broader query or different identifier',
-                duration: 5000,
-              });
-              void handleZeroResults();
-            } else {
-              fetchTopFindings().then(() => {
-                setShowPreview(true);
-              });
-              playSuccessSound();
-              triggerConfetti();
-              toast.success(`Scan completed - ${resultsCount} results found`);
-            }
-          }
-
-          // Handle failure
-          if (update.status === 'failed' || update.error) {
-            setStatus('failed');
-            toast.error('Scan failed', {
-              description: update.message || 'An error occurred during scanning',
-              duration: 5000,
-            });
-          }
+      .channel(`scan_progress_${scanId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'scan_progress', filter: `scan_id=eq.${scanId}` }, (payload) => {
+        const data = payload.new as any;
+        addDebugEvent('database', `DB update: ${data.completed_providers}/${data.total_providers}`);
+        
+        if (data.current_providers && Array.isArray(data.current_providers)) {
+          data.current_providers.forEach((providerName: string) => {
+            updateProvider(providerName, 'loading', data.message || 'Processing...');
+          });
         }
-      )
-      .subscribe((status) => {
-        console.log('[ScanProgressDialog] Progress channel status:', status);
-      });
 
-    return () => {
-      console.log('[ScanProgressDialog] Cleaning up channels');
-      clearInterval(watchdogInterval);
-      supabase.removeChannel(scanStatusChannel);
-      supabase.removeChannel(jobChannel);
-      supabase.removeChannel(maigretChannel);
-      supabase.removeChannel(progressChannel);
-      supabase.removeChannel(findingsChannel);
-      supabase.removeChannel(maigretResultsChannel);
-    };
-  }, [scanId, open, onComplete, status, lastEventAt, pipelineType, initialProvidersKey]);
+        if (data.status === 'completed') {
+          setStatus('completed');
+          setProgress(100);
+          setTotalResults(data.findings_count || 0);
+        } else if (data.status === 'failed') {
+          setStatus('failed');
+        }
 
-  const handleZeroResults = async () => {
-    if (!scanId || isSavingCase) return;
-    
-    setIsSavingCase(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+        setLastEventAt(Date.now());
+        setConnectionMode('live');
+        if (isPolling) setIsPolling(false);
+      })
+      .subscribe();
 
-      // Fetch scan details
-      const { data: scan } = await supabase
-        .from('scans')
-        .select('*')
-        .eq('id', scanId)
-        .single();
+    // Subscribe to broadcast channel
+    const broadcastChannel = supabase
+      .channel(`scan_progress:${scanId}`)
+      .on('broadcast', { event: 'provider_update' }, (payload: any) => {
+        const { provider, status: providerStatus, message, resultCount } = payload.payload;
+        addDebugEvent('broadcast', message || `${provider}: ${providerStatus}`, provider);
+        
+        if (provider) {
+          updateProvider(provider, providerStatus, message, resultCount);
+        }
 
-      if (!scan) return;
+        setLastEventAt(Date.now());
+        setConnectionMode('live');
+        if (isPolling) setIsPolling(false);
+      })
+      .on('broadcast', { event: 'scan_complete' }, (payload: any) => {
+        addDebugEvent('broadcast', 'Scan completed');
+        setStatus('completed');
+        setProgress(100);
+        setTotalResults(payload.payload.findingsCount || 0);
+        
+        if (payload.payload.findingsCount > 0) {
+          playSuccessSound();
+          triggerConfetti();
+          toast.success(`Scan completed - ${payload.payload.findingsCount} results found`);
+        } else {
+          toast.info('Scan completed with no results');
+        }
+        
+        setTimeout(() => onComplete?.(), 3000);
+      })
+      .on('broadcast', { event: 'scan_failed' }, (payload: any) => {
+        addDebugEvent('broadcast', payload.payload.error || 'Scan failed');
+        setStatus('failed');
+        toast.error(payload.payload.error || 'Scan failed');
+      })
+      .on('broadcast', { event: 'scan_cancelled' }, () => {
+        addDebugEvent('broadcast', 'Scan cancelled');
+        setStatus('cancelled');
+        toast.info('Scan cancelled');
+        setTimeout(() => onComplete?.(), 1000);
+      })
+      .subscribe();
 
-      // Save partial case with zero results
-      const { error: caseError } = await supabase
-        .from('cases')
-        .insert({
-          title: `No Results Scan - ${scan.scan_type || 'Unknown'}`,
-          description: `Scan completed with no findings. Target: ${scan.email || scan.username || scan.phone || 'N/A'}. Consider trying broader search terms or alternative identifiers.`,
-          user_id: user.id,
-          scan_id: scanId,
-          status: 'closed',
-          priority: 'low',
-          results: [], // Empty results
-        });
+    // Subscribe to findings
+    const findingsChannel = supabase
+      .channel(`findings_${scanId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'findings', filter: `scan_id=eq.${scanId}` }, (payload) => {
+        addDebugEvent('database', `New finding from ${payload.new.provider}`, payload.new.provider);
+        setTotalResults(prev => prev + 1);
+        
+        if (payload.new.provider) {
+          setProviders(prev => prev.map(p =>
+            p.name === payload.new.provider ? { ...p, resultCount: (p.resultCount || 0) + 1 } : p
+          ));
+        }
+      })
+      .subscribe();
 
-      if (caseError) {
-        console.error('[ScanProgressDialog] Failed to save zero-results case:', caseError);
-      } else {
-        console.log('[ScanProgressDialog] Saved zero-results case for scan:', scanId);
+    // Health monitor
+    const healthInterval = setInterval(() => {
+      const timeSinceLastEvent = Date.now() - lastEventAt;
+      if (status !== 'running') return;
+      
+      if (timeSinceLastEvent > 12000 && !isPolling) {
+        console.log('[ScanProgress] No realtime events, switching to polling');
+        setConnectionMode('fallback');
+        setIsPolling(true);
+        toast.info('Connection interrupted - using fallback updates', { duration: 3000 });
       }
-    } catch (error) {
-      console.error('[ScanProgressDialog] Error in handleZeroResults:', error);
-    } finally {
-      setIsSavingCase(false);
-    }
-  };
+    }, 3000);
 
+    // Cleanup
+    return () => {
+      console.log('[ScanProgress] Cleaning up');
+      supabase.removeChannel(progressChannel);
+      supabase.removeChannel(broadcastChannel);
+      supabase.removeChannel(findingsChannel);
+      clearInterval(healthInterval);
+    };
+  }, [scanId, open, initialProvidersKey, onComplete, updateProvider, addDebugEvent, isPolling, lastEventAt, status]);
+
+  // Handle cancel
   const handleCancel = async () => {
     if (!scanId) return;
-    
     setIsCancelling(true);
     try {
-      const { data, error } = await supabase.functions.invoke('cancel-scan', {
-        body: { scanId },
-      });
-
-      if (error) {
-        // Check if it's already terminal (400 error)
-        if (error.message?.includes('already')) {
-          toast.info(error.message);
-          onOpenChange(false);
-          return;
-        }
-        throw error;
-      }
-
+      const { error } = await supabase.functions.invoke('cancel-scan', { body: { scanId } });
+      if (error) throw error;
+      toast.success('Scan cancelled');
       setStatus('cancelled');
-      toast.info(data?.message || 'Scan cancelled');
-      
-      onOpenChange(false);
-    } catch (error: any) {
-      console.error('[ScanProgressDialog] Cancel error:', error);
-      
-      // Handle scan not found specifically
-      if (error.message?.includes('Scan not found') || error.message?.includes('404')) {
-        toast.error('Cannot cancel - scan not found', {
-          description: 'This scan may have failed to start. Try closing the dialog.',
-          duration: 5000,
-        });
-        setStatus('failed'); // Update status so retry button shows
-      } else if (error.message?.includes('already')) {
-        toast.info(error.message);
-        onOpenChange(false);
-      } else {
-        toast.error('Failed to cancel scan', {
-          description: error.message || 'Please try closing the dialog',
-        });
-      }
+      setTimeout(() => onOpenChange(false), 1000);
+    } catch (error) {
+      console.error('[Cancel] Error:', error);
+      toast.error('Failed to cancel scan');
     } finally {
       setIsCancelling(false);
     }
   };
 
-  const handleRetry = async () => {
-    if (!scanId) return;
-    
-    try {
-      // Close the dialog
-      onOpenChange(false);
-      
-      // Fetch scan details to retry with same parameters
-      const { data: scan, error: scanError } = await supabase
-        .from('scans')
-        .select('*')
-        .eq('id', scanId)
-        .single();
-
-      if (scanError || !scan) {
-        toast.error('Unable to retry - scan details not found');
-        return;
-      }
-
-      toast.info('Retrying scan with same parameters...');
-      
-      // Trigger callback to restart the scan
-      setTimeout(() => {
-        onComplete?.();
-      }, 500);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to retry scan');
-    }
-  };
-
-  const getStatusIcon = (status: ProviderStatus['status']) => {
-    switch (status) {
+  // Render provider icon
+  const renderProviderIcon = (provider: ProviderStatus) => {
+    switch (provider.status) {
       case 'success':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'loading':
-        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
       case 'retrying':
-        return <Loader2 className="h-4 w-4 animate-spin text-yellow-500" />;
+        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
       case 'failed':
         return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'pending':
+      case 'skipped':
         return <AlertCircle className="h-4 w-4 text-muted-foreground" />;
+      default:
+        return <div className="h-4 w-4 rounded-full border-2 border-muted" />;
     }
   };
 
-  const getStatusBadge = (status: ProviderStatus['status'], retryCount?: number, maxRetries?: number) => {
-    switch (status) {
-      case 'success':
-        return <Badge variant="default" className="bg-green-500">Done</Badge>;
-      case 'loading':
-        return <Badge variant="default" className="bg-blue-500">Loading</Badge>;
-      case 'retrying':
-        return (
-          <Badge variant="default" className="bg-yellow-500">
-            Retry {retryCount}/{maxRetries}
-          </Badge>
-        );
-      case 'failed':
-        return <Badge variant="destructive">Failed</Badge>;
-      case 'pending':
-        return <Badge variant="outline">Pending</Badge>;
-    }
+  const formatTimestamp = (ts: number) => {
+    const date = new Date(ts);
+    const time = date.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const ms = String(date.getMilliseconds()).padStart(3, '0');
+    return `${time}.${ms}`;
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle>Scan Progress</DialogTitle>
-              <DialogDescription>
-                Real-time updates from providers
+              <DialogTitle>Scan in Progress</DialogTitle>
+              <DialogDescription className="flex items-center gap-2 mt-1">
+                {stats.completed} of {stats.total} providers completed
+                <Badge variant={connectionMode === 'live' ? 'default' : 'secondary'} className="ml-2">
+                  {connectionMode === 'live' ? (
+                    <><Wifi className="h-3 w-3 mr-1" /> Live</>
+                  ) : (
+                    <><WifiOff className="h-3 w-3 mr-1" /> Fallback</>
+                  )}
+                </Badge>
               </DialogDescription>
             </div>
-            <div className="text-sm text-muted-foreground">
-              {creditsUsed > 0 && (
-                <span className="font-medium">
-                  {creditsUsed} credits used
-                </span>
-              )}
-            </div>
+            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+              <X className="h-4 w-4" />
+            </Button>
           </div>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* Progress Bar */}
+        <div className="flex-1 overflow-auto space-y-4">
           <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">Overall Progress</span>
-              <div className="flex items-center gap-2">
-                {providersTotal > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {providersCompleted} / {providersTotal} providers
-                  </span>
-                )}
-                <span className="text-muted-foreground">{progress}%</span>
-              </div>
+            <div className="flex justify-between text-sm">
+              <span>{status === 'completed' ? 'Complete!' : status === 'failed' ? 'Failed' : 'Scanning...'}</span>
+              <span>{progress}%</span>
             </div>
             <Progress value={progress} className="h-2" />
-            
-            {/* Tool-specific progress indicators for username scans */}
-            {providers.length > 0 && providers.some(p => ['maigret', 'whatsmyname', 'gosearch'].includes(p.name.toLowerCase())) && (
-              <div className="mt-4 space-y-2 animate-fade-in">
-                <div className="text-xs text-muted-foreground font-medium">Tool Progress</div>
-                {providers
-                  .filter(p => ['maigret', 'whatsmyname', 'gosearch'].includes(p.name.toLowerCase()))
-                  .map((provider) => {
-                    const providerProgress = provider.status === 'success' ? 100 : 
-                                            provider.status === 'loading' ? 50 : 
-                                            provider.status === 'retrying' ? 25 : 
-                                            provider.status === 'failed' ? 0 : 0;
-                    
-                    return (
-                      <div key={provider.name} className="flex items-center gap-2 text-xs">
-                        <Badge 
-                          variant={
-                            provider.status === 'success' ? 'default' : 
-                            provider.status === 'loading' ? 'secondary' : 
-                            provider.status === 'failed' ? 'destructive' : 
-                            'outline'
-                          }
-                          className="min-w-[100px] justify-center"
-                        >
-                          {provider.name === 'maigret' ? 'Maigret' :
-                           provider.name === 'whatsmyname' ? 'WhatsMyName' :
-                           provider.name === 'gosearch' ? 'GoSearch' :
-                           provider.name}
-                        </Badge>
-                        <div className="flex-1">
-                          <Progress 
-                            value={providerProgress} 
-                            className="h-1.5"
-                          />
-                        </div>
-                        <span className="text-muted-foreground min-w-[40px] text-right">
-                          {providerProgress}%
-                        </span>
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-            
-            {/* Inactivity hints */}
-            {showInactivityHint && (
-              <div className="flex items-center gap-2 text-xs text-yellow-600 dark:text-yellow-400 animate-fade-in">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                <span>Still working – slow provider responses...</span>
-              </div>
-            )}
-            {showTimeoutWarning && (
-              <div className="flex items-center gap-2 text-xs text-orange-600 dark:text-orange-400 animate-fade-in">
-                <AlertCircle className="h-3 w-3" />
-                <span>Timeout waiting for provider updates. You can retry or cancel below.</span>
-              </div>
-            )}
           </div>
 
-          {/* Provider List */}
-          <div className="space-y-3 max-h-[400px] overflow-y-auto">
-            {providers.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
-                <p>Initializing scan...</p>
-              </div>
-            ) : (
-              providers.map((provider) => (
-                <div
-                  key={provider.name}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card"
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    {getStatusIcon(provider.status)}
-                    <div className="flex-1">
-                      <div className="font-medium">{provider.name}</div>
-                      {provider.message && (
-                        <div className="text-sm text-muted-foreground">
-                          {provider.message}
-                        </div>
-                      )}
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-2xl font-bold">{stats.findingsCount}</div>
+              <div className="text-xs text-muted-foreground">Findings</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{stats.active.length}</div>
+              <div className="text-xs text-muted-foreground">Active</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{stats.completed}</div>
+              <div className="text-xs text-muted-foreground">Completed</div>
+            </div>
+          </div>
+
+          <Separator />
+
+          <ScrollArea className="h-64">
+            <div className="space-y-2">
+              {providers.map(provider => (
+                <div key={provider.name} className="flex items-center justify-between p-2 rounded-lg border">
+                  <div className="flex items-center gap-2">
+                    {renderProviderIcon(provider)}
+                    <div>
+                      <div className="font-medium text-sm">{provider.name}</div>
+                      <div className="text-xs text-muted-foreground">{provider.message || 'Waiting...'}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    {provider.resultCount !== undefined && provider.resultCount > 0 && (
-                      <Badge variant="outline">
-                        {provider.resultCount} results
-                      </Badge>
+                  <div className="text-right text-sm">
+                    {provider.resultCount !== undefined && (
+                      <Badge variant="secondary">{provider.resultCount} results</Badge>
                     )}
-                    {getStatusBadge(provider.status)}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-
-          {/* Results Preview Section */}
-          {showPreview && topFindings.length > 0 && (
-            <div className="space-y-4 p-4 rounded-lg border bg-muted/50 animate-fade-in">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Eye className="h-5 w-5 text-primary" />
-                  <h3 className="font-semibold">Scan Results Preview</h3>
-                </div>
-                <Badge variant="secondary" className="text-sm">
-                  {totalResults} total findings
-                </Badge>
-              </div>
-
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="space-y-1">
-                  <p className="text-muted-foreground">Providers Scanned</p>
-                  <p className="text-2xl font-bold">{providersCompleted}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-muted-foreground">Results Found</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {totalResults}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-muted-foreground">Top Findings:</p>
-                <ScrollArea className="h-[120px] w-full rounded-md border">
-                  <div className="p-2 space-y-2">
-                    {topFindings.map((finding, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-start justify-between gap-2 p-2 rounded bg-card hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{finding.site}</p>
-                          {finding.url && (
-                            <a
-                              href={finding.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-muted-foreground hover:text-primary truncate flex items-center gap-1"
-                            >
-                              <span className="truncate">{finding.url}</span>
-                              <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                            </a>
-                          )}
-                        </div>
-                        <Badge variant="outline" className="flex-shrink-0 text-xs">
-                          {finding.status || 'Found'}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-
-              <p className="text-xs text-muted-foreground text-center">
-                Viewing full results in a moment...
-              </p>
+              ))}
             </div>
+          </ScrollArea>
+
+          <Collapsible open={showDebug} onOpenChange={setShowDebug}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full">
+                {showDebug ? <ChevronUp className="h-4 w-4 mr-2" /> : <ChevronDown className="h-4 w-4 mr-2" />}
+                Debug Details ({debugEvents.length})
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <ScrollArea className="h-48 mt-2 rounded-lg border p-2 bg-muted/50">
+                <div className="space-y-1 font-mono text-xs">
+                  {debugEvents.map((event, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="text-muted-foreground">{formatTimestamp(event.timestamp)}</span>
+                      <Badge variant="outline" className="text-xs">{event.source}</Badge>
+                      {event.provider && <span className="text-primary">{event.provider}</span>}
+                      <span>{event.message}</span>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CollapsibleContent>
+          </Collapsible>
+        </div>
+
+        <div className="flex gap-2 pt-4 border-t">
+          {status === 'running' && (
+            <Button onClick={handleCancel} disabled={isCancelling} variant="destructive" className="flex-1">
+              {isCancelling ? 'Cancelling...' : 'Cancel Scan'}
+            </Button>
           )}
-
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t">
-            <div className="text-sm order-2 sm:order-1">
-              {status === 'completed' && totalResults > 0 && (
-                <span className="text-green-600 dark:text-green-400 font-medium animate-fade-in">
-                  🎉 Found {totalResults} results!
-                </span>
-              )}
-              {status === 'completed' && totalResults === 0 && (
-                <span className="text-yellow-600 dark:text-yellow-400 font-medium">
-                  ⚠️ No results found - partial case saved
-                </span>
-              )}
-              {status === 'failed' && (
-                <span className="text-destructive font-medium">Scan failed - you can retry</span>
-              )}
-              {status === 'cancelled' && (
-                <span className="text-muted-foreground">Scan cancelled - partial results saved</span>
-              )}
-              {status === 'running' && (
-                <span className="text-muted-foreground">
-                  Scan in progress... {providers.filter(p => p.status === 'success').length}/{providers.length} providers complete
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2 order-1 sm:order-2">
-              {status === 'running' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCancel}
-                  disabled={isCancelling || isInitializing || status !== 'running'}
-                  className="flex-1 sm:flex-none"
-                >
-                  {isCancelling ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Cancelling...
-                    </>
-                  ) : isInitializing ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Starting...
-                    </>
-                  ) : (
-                    <>
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel Scan
-                    </>
-                  )}
-                </Button>
-              )}
-              {status === 'failed' && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={handleRetry}
-                  className="flex-1 sm:flex-none"
-                >
-                  <Loader2 className="h-4 w-4 mr-2" />
-                  Retry Scan
-                </Button>
-              )}
-              {(status === 'completed' || status === 'cancelled') && (
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => onOpenChange(false)}
-                  className="flex-1 sm:flex-none"
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Close
-                </Button>
-              )}
-            </div>
-          </div>
+          {status === 'completed' && scanId && (
+            <Button onClick={() => { onOpenChange(false); window.location.href = `/results/${scanId}`; }} className="flex-1">
+              <Eye className="h-4 w-4 mr-2" />
+              View Results
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -369,12 +369,27 @@ serve(async (req) => {
       
       console.log(`[orchestrate] Calling provider: ${provider} for ${type}:${value}`);
       
+      // Broadcast provider start
+      const channel = supabaseService.channel(`scan_progress:${scanId}`);
+      await channel.send({
+        type: 'broadcast',
+        event: 'provider_update',
+        payload: {
+          provider,
+          status: 'loading',
+          message: `Querying ${provider}...`,
+          completedProviders: completedCount,
+          totalProviders: providers.length
+        }
+      });
+      
       // Update provider start
       await updateProgress({
         status: 'processing',
         total_providers: providers.length,
         completed_providers: completedCount,
         current_provider: provider,
+        current_providers: [provider],
         message: `Querying ${provider}...`
       });
       
@@ -439,13 +454,28 @@ serve(async (req) => {
         
         completedCount++;
         
+        // Broadcast provider success
+        await channel.send({
+          type: 'broadcast',
+          event: 'provider_update',
+          payload: {
+            provider,
+            status: 'success',
+            message: `Completed ${provider}`,
+            resultCount: result.length,
+            completedProviders: completedCount,
+            totalProviders: providers.length,
+            findingsCount: allFindings.length + result.length
+          }
+        });
+        
         // Update provider completion
         await updateProgress({
           status: 'processing',
           total_providers: providers.length,
           completed_providers: completedCount,
           current_provider: provider,
-          findings_count: result.length,
+          findings_count: allFindings.length + result.length,
           message: `Completed ${provider} (${completedCount}/${providers.length})`
         });
         
@@ -453,6 +483,21 @@ serve(async (req) => {
       } catch (error) {
         console.error(`[orchestrate] Provider ${provider} failed:`, error);
         completedCount++;
+        
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        
+        // Broadcast provider failure
+        await channel.send({
+          type: 'broadcast',
+          event: 'provider_update',
+          payload: {
+            provider,
+            status: 'failed',
+            message: `Failed: ${errorMessage}`,
+            completedProviders: completedCount,
+            totalProviders: providers.length
+          }
+        });
         
         // Update provider error
         await updateProgress({
@@ -621,6 +666,18 @@ serve(async (req) => {
         console.error('[orchestrate] Failed to update scan status:', updateError);
       } else {
         console.log(`[orchestrate] Scan ${scanId} updated to completed with ${sortedFindings.length} findings`);
+        
+        // Broadcast scan completion
+        const completeChannel = supabaseService.channel(`scan_progress:${scanId}`);
+        await completeChannel.send({
+          type: 'broadcast',
+          event: 'scan_complete',
+          payload: {
+            scanId,
+            findingsCount: sortedFindings.length,
+            status: 'completed'
+          }
+        });
         
         // Trigger webhooks for scan completion
         try {
