@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface ActiveScan {
   scanId: string;
-  type: 'advanced' | 'username' | 'spiderfoot' | 'recon-ng';
+  type: 'advanced' | 'username' | 'recon-ng';
   target: string;
   startedAt: string;
 }

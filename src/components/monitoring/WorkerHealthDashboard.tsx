@@ -30,7 +30,7 @@ export function WorkerHealthDashboard() {
     }
   };
 
-  const workers = [health.maigret, health.reconng, health.spiderfoot];
+  const workers = [health.maigret, health.reconng];
   const onlineCount = workers.filter((w) => w.status === 'online').length;
   const offlineCount = workers.filter((w) => w.status === 'offline').length;
 

@@ -172,7 +172,7 @@ const MaigretSelfTest = lazy(() => import("./pages/MaigretSelfTest"));
 const MaigretMonitoring = lazy(() => import("./pages/MaigretMonitoring"));
 const UsernamesPage = lazy(() => import("./pages/scan/UsernamesPage"));
 const UsernameResultsPage = lazy(() => import("./pages/scan/UsernameResultsPage"));
-const SpiderFootSetup = lazy(() => import("./pages/docs/SpiderFootSetup"));
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -268,7 +268,7 @@ function RouterContent() {
           <Route path="/scan/usernames/:jobId" element={<UsernameResultsPage />} />
           <Route path="/maltego-gallery" element={<MaltegoGallery />} />
           <Route path="/docs/api" element={<ApiDocsOld />} />
-          <Route path="/docs/spiderfoot-setup" element={<SpiderFootSetup />} />
+          
           <Route path="/api" element={<ApiDocs />} />
           <Route path="/developers" element={<DeveloperPortal />} />
           <Route path="/analyst" element={<Analyst />} />

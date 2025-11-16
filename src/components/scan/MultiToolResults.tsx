@@ -147,8 +147,6 @@ export function MultiToolResults({
     switch (tool) {
       case 'maigret':
         return Search;
-      case 'spiderfoot':
-        return Shield;
       case 'reconng':
         return Zap;
       default:

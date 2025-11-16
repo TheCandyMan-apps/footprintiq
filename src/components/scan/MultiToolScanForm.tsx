@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMultiToolScan } from '@/hooks/useMultiToolScan';
 import { useUserPersona } from '@/hooks/useUserPersona';
 import { useNavigate } from 'react-router-dom';
-import { useSpiderFootHealth } from '@/hooks/useSpiderFootHealth';
+
 import { useWorkerStatus } from '@/hooks/useWorkerStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -50,7 +50,7 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
   const [loadingAI, setLoadingAI] = useState(false);
   const { isStandard } = useUserPersona();
   const { isScanning, startMultiToolScan, progress } = useMultiToolScan();
-  const { health: spiderFootHealth } = useSpiderFootHealth();
+  
   const navigate = useNavigate();
   
   const tools: ToolConfig[] = [
@@ -62,16 +62,6 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
       icon: Search,
       supportedTypes: ['username'],
       status: 'available', // Maigret is always available as a core tool
-    },
-    {
-      id: 'spiderfoot',
-      name: 'SpiderFoot',
-      description: '200+ OSINT modules for comprehensive recon',
-      creditCost: 10,
-      icon: Shield,
-      supportedTypes: ['email', 'ip', 'domain', 'username'],
-      premium: true,
-      status: spiderFootHealth?.status === 'ok' ? 'available' : 'unavailable',
     },
     {
       id: 'reconng',
@@ -238,7 +228,7 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
               <Zap className="h-5 w-5 text-primary mt-1" />
               <div>
                 <p className="font-semibold">Parallel Execution</p>
-                <p className="text-sm text-muted-foreground">Run Maigret, SpiderFoot, Recon-ng together</p>
+                <p className="text-sm text-muted-foreground">Run Maigret and Recon-ng together</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -386,7 +376,7 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
                       <p className="text-xs text-muted-foreground">{tool.description}</p>
                       {isUnavailable && (
                         <p className="text-xs text-destructive mt-1">
-                          {tool.id === 'spiderfoot' && 'Configure SPIDERFOOT_API_URL in secrets'}
+                          
                           {tool.id === 'maigret' && 'Service unavailable'}
                           {tool.id === 'reconng' && 'Service unavailable'}
                         </p>

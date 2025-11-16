@@ -69,7 +69,6 @@ serve(async (req) => {
     // Calculate total credit cost
     const creditCosts: Record<string, number> = {
       maigret: 5,
-      spiderfoot: 10,
       reconng: 10,
     };
 
@@ -122,9 +121,6 @@ serve(async (req) => {
         switch (tool) {
           case 'maigret':
             result = await runMaigret(target, targetType, workspaceId, supabaseClient, broadcastProgress);
-            break;
-          case 'spiderfoot':
-            result = await runSpiderFoot(target, targetType, workspaceId, supabaseClient, broadcastProgress);
             break;
           case 'reconng':
             result = await runReconNg(target, targetType, workspaceId, supabaseClient, broadcastProgress);
@@ -271,72 +267,6 @@ async function runMaigret(
     return {
       tool: 'maigret',
       status: 'failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-async function runSpiderFoot(
-  target: string,
-  targetType: string,
-  workspaceId: string,
-  supabase: any,
-  broadcastProgress: (update: any) => Promise<void>
-): Promise<ToolResult> {
-  try {
-    // Check if SpiderFoot is configured
-    const spiderfootUrl = Deno.env.get('SPIDERFOOT_API_URL');
-    const spiderfootKey = Deno.env.get('SPIDERFOOT_API_KEY');
-    
-    if (!spiderfootUrl || !spiderfootKey) {
-      return { tool: 'spiderfoot', status: 'skipped', error: 'Service not configured' };
-    }
-
-    // Map target types
-    const typeMap: Record<string, string> = {
-      username: 'username',
-      email: 'email',
-      ip: 'ip',
-      domain: 'domain',
-    };
-
-    const mappedType = typeMap[targetType];
-    if (!mappedType) {
-      return { tool: 'spiderfoot', status: 'skipped', error: 'Incompatible target type' };
-    }
-
-    await broadcastProgress({
-      toolName: 'spiderfoot',
-      status: 'running',
-      message: 'Running 200+ OSINT modules...',
-    });
-
-    // Create SpiderFoot scan record
-    const { data: scanData, error: scanError } = await supabase
-      .from('spiderfoot_scans')
-      .insert({
-        workspace_id: workspaceId,
-        target,
-        target_type: mappedType,
-        status: 'pending',
-      })
-      .select()
-      .single();
-
-    if (scanError) throw scanError;
-
-    return {
-      tool: 'spiderfoot',
-      status: 'completed',
-      resultCount: 0, // Will be updated when scan completes
-      data: { scanId: scanData?.id },
-    };
-  } catch (error) {
-    console.error('[runSpiderFoot] Error:', error);
-    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
-    return {
-      tool: 'spiderfoot',
-      status: errorMsg?.includes('not configured') ? 'skipped' : 'failed',
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
