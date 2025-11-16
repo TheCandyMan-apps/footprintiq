@@ -19,6 +19,7 @@ import {
 
 const Reports = () => {
   const [scans, setScans] = useState<any[]>([]);
+  const [scanJobs, setScanJobs] = useState<any[]>([]);
   const [selectedScan, setSelectedScan] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const navigate = useNavigate();
@@ -48,6 +49,18 @@ const Reports = () => {
 
       if (error) throw error;
       setScans(data || []);
+
+      // Also load scan_jobs
+      const { data: jobsData, error: jobsError } = await supabase
+        .from("scan_jobs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      if (jobsError) throw jobsError;
+      setScanJobs(jobsData || []);
+
+      // Set first available scan as selected
       if (data && data.length > 0) {
         setSelectedScan(data[0].id);
       }
@@ -170,7 +183,7 @@ const Reports = () => {
             <Card className="p-8">
               <h2 className="text-2xl font-bold mb-6">Recent Scans</h2>
               
-              {scans.length === 0 ? (
+              {scans.length === 0 && scanJobs.length === 0 ? (
                 <div className="text-center py-12">
                   <FileText className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="text-xl font-semibold mb-2">No scans available</h3>
@@ -183,9 +196,39 @@ const Reports = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Render scan jobs first */}
+                  {scanJobs.map((job) => (
+                    <div
+                      key={`job-${job.id}`}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <FileText className="w-8 h-8 text-primary" />
+                        <div>
+                          <h3 className="font-semibold">Username Scan: {job.username}</h3>
+                          <p className="text-sm text-muted-foreground flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            {new Date(job.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => navigate(`/scan/usernames/${job.id}`)}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Then render legacy scans */}
                   {scans.slice(0, 10).map((scan) => (
                     <div
-                      key={scan.id}
+                      key={`scan-${scan.id}`}
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                     >
                       <div className="flex items-center gap-4">
