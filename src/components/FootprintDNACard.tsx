@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { getAIResponse } from "@/lib/aiRouter";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 async function aiScore(data: any) {
   const { content } = await getAIResponse({
@@ -32,6 +33,7 @@ interface FootprintDNACardProps {
 
 export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { workspace } = useWorkspace();
 
   // Get current user ID
   useEffect(() => {
@@ -99,24 +101,27 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
       }
     }
 
-    // Priority 3: Fall back to user-wide findings
-    if (!currentUserId) return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
+    // Priority 3: Fall back to workspace-wide findings
+    if (!workspace?.id) return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
 
     try {
-      const { data, error } = await (supabase as any).from('findings').select('kind, severity, evidence, provider').eq('user_id', currentUserId);
+      const { data, error } = await (supabase as any)
+        .from('findings')
+        .select('kind, severity, evidence, provider')
+        .eq('workspace_id', workspace.id);
       if (error) throw error;
       return calculateMetrics(data || []);
     } catch (err) {
-      console.error('Error fetching user-wide findings:', err);
+      console.error('Error fetching workspace-wide findings:', err);
       return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
     }
   };
 
   const { data: footprintData, refetch, isLoading } = useQuery({
-    queryKey: ["footprint-metrics", currentUserId, jobId],
+    queryKey: ["footprint-metrics", workspace?.id || null, jobId, scanId],
     queryFn: fetchFootprintMetrics,
     initialData: { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 },
-    enabled: !!currentUserId,
+    enabled: !!(workspace?.id || scanId || jobId),
   });
 
   // Set up real-time subscription for updates
@@ -142,17 +147,17 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
       };
     }
 
-    if (!currentUserId) return;
+    if (!workspace?.id) return;
 
     const channel = supabase
-      .channel(`dna-findings-${currentUserId}`)
+      .channel(`dna-findings-${workspace.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'findings',
-          filter: `user_id=eq.${currentUserId}`,
+          filter: `workspace_id=eq.${workspace.id}`,
         },
         () => refetch()
       )
