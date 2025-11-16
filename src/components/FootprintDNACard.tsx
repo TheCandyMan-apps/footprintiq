@@ -124,21 +124,26 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
     enabled: !!(workspace?.id || scanId || jobId),
   });
 
-  // Set up real-time subscription for updates
+  // Set up real-time subscription for updates - subscribe to scan_id if provided, else workspace
   useEffect(() => {
-    // When tracking a specific scan, listen to scan_findings inserts
-    if (jobId) {
+    if (!workspace?.id && !scanId) return;
+
+    // When tracking a specific scan, listen to findings inserts for that scan
+    if (scanId) {
       const channel = supabase
-        .channel(`dna-scan-findings-${jobId}`)
+        .channel(`dna-findings-scan-${scanId}`)
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
-            table: 'scan_findings',
-            filter: `job_id=eq.${jobId}`,
+            table: 'findings',
+            filter: `scan_id=eq.${scanId}`,
           },
-          () => refetch()
+          () => {
+            console.log('[DNA] New finding received, refetching...');
+            refetch();
+          }
         )
         .subscribe();
 
@@ -147,26 +152,28 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
       };
     }
 
-    if (!workspace?.id) return;
-
+    // Fall back to workspace-wide listening
     const channel = supabase
-      .channel(`dna-findings-${workspace.id}`)
+      .channel(`dna-findings-${workspace!.id}`)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'findings',
-          filter: `workspace_id=eq.${workspace.id}`,
+          filter: `workspace_id=eq.${workspace!.id}`,
         },
-        () => refetch()
+        () => {
+          console.log('[DNA] New finding received, refetching...');
+          refetch();
+        }
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [currentUserId, jobId, refetch]);
+  }, [workspace?.id, scanId, refetch]);
 
   // AI-generated risk score
   const [score, setScore] = useState<number | null>(null);
