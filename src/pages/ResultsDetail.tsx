@@ -261,17 +261,17 @@ const ResultsDetail = () => {
       if (profilesError) throw profilesError;
       setSocialProfiles(profiles || []);
 
-      // Fetch findings by scan_id
+      // Fetch findings by scan_id (prefer unified findings; fallback to scan_findings)
       const { data: findingsData, error: findingsError } = await supabase
-        .from("findings" as any)
-        .select("*")
-        .eq("scan_id", scanId);
+        .from('findings' as any)
+        .select('*')
+        .eq('scan_id', scanId);
 
-      if (findingsError) {
-        console.error('[ResultsDetail] Error fetching findings:', findingsError);
-      } else {
-        // Convert findings to Finding format
-        const convertedFindings: Finding[] = ((findingsData as any[]) || []).map((f: any) => ({
+      let convertedFindings: Finding[] = [];
+
+      if (!findingsError && Array.isArray(findingsData) && findingsData.length > 0) {
+        // Convert unified findings
+        convertedFindings = ((findingsData as any[]) || []).map((f: any) => ({
           id: f.id,
           type: 'breach' as const,
           title: `${f.provider}: ${f.kind}`,
@@ -287,9 +287,50 @@ const ResultsDetail = () => {
           observedAt: f.observed_at,
           raw: f
         }));
-        setFindings(convertedFindings);
-        console.log(`[ResultsDetail] Loaded ${convertedFindings.length} findings for scan ${scanId}`);
+      } else {
+        // Fallback: derive findings from scan_findings for this job
+        const { data: sfData, error: sfError } = await (supabase as any)
+          .from('scan_findings')
+          .select('site, status, url, raw')
+          .eq('job_id', scanId);
+
+        if (!sfError && Array.isArray(sfData)) {
+          const lower = (s?: string) => (s || '').toLowerCase();
+          const DARK_WEB_KEYWORDS = ['intelx','paste','dark','onion','leak','breach'];
+          const BROKER_SITES = ['whitepages','spokeo','intelius','beenverified','truthfinder','pipl','radaris','fastpeoplesearch','peoplefinder','ussearch','peekyou','mylife'];
+
+          convertedFindings = (sfData as any[]).map((r: any, idx: number) => {
+            const site = lower(r.site);
+            const isBreach = ['hibp','haveibeenpwned','intelx','leak','breach'].some(k => site.includes(k));
+            const isDark = DARK_WEB_KEYWORDS.some(k => site.includes(k));
+            const isBroker = BROKER_SITES.some(k => site.includes(k));
+            const severity = isBreach ? 'high' : isDark ? 'medium' : 'low';
+            const kind = isBreach ? 'breach' : isDark ? 'darkweb' : isBroker ? 'people_search' : 'exposure';
+
+            return {
+              id: `sf_${scanId}_${idx}`,
+              type: 'breach' as const,
+              title: `${r.site}: ${kind}`,
+              description: r.url || '',
+              severity: severity as any,
+              confidence: 0.7,
+              provider: r.site,
+              providerCategory: kind,
+              evidence: r.url ? [{ key: 'url', value: r.url }] : [],
+              impact: `Finding from ${r.site}`,
+              remediation: [],
+              tags: [r.site, kind],
+              observedAt: new Date().toISOString(),
+              raw: r
+            } as Finding;
+          });
+        } else {
+          console.error('[ResultsDetail] Error fetching findings:', findingsError || sfError);
+        }
       }
+
+      setFindings(convertedFindings);
+      console.log(`[ResultsDetail] Loaded ${convertedFindings.length} findings for scan ${scanId}`);
 
       // Fetch removal requests
       const { data: requests, error: requestsError } = await supabase
