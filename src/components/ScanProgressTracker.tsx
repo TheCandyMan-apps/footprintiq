@@ -38,66 +38,109 @@ export const ScanProgressTracker = ({ scanId, onComplete }: ScanProgressTrackerP
 
     console.log('[ScanProgress] Subscribing to scan progress:', scanId);
 
-    const channel = supabase.channel(`scan_progress:${scanId}`);
+    // Fetch initial progress
+    const fetchInitialProgress = async () => {
+      const { data, error } = await supabase
+        .from('scan_progress')
+        .select('*')
+        .eq('scan_id', scanId)
+        .maybeSingle();
+      
+      if (data && !error) {
+        setProgress({
+          scanId: data.scan_id,
+          status: data.status as any,
+          totalProviders: data.total_providers || 0,
+          completedProviders: data.completed_providers || 0,
+          currentProvider: data.current_provider || undefined,
+          currentProviders: data.current_providers || [],
+          findingsCount: data.findings_count || 0,
+          message: data.message || '',
+          error: data.error || false
+        });
+      }
+    };
+    
+    fetchInitialProgress();
 
-    channel
-      .on('broadcast', { event: 'progress' }, ({ payload }: { payload: ProgressUpdate }) => {
-        console.log('[ScanProgress] Progress update:', payload);
-        setProgress(payload);
-
-        // Track active providers
-        if (payload.currentProvider) {
-          setActiveProviders(prev => new Set([...prev, payload.currentProvider!]));
-        }
-
-        // Track completed providers
-        if (payload.status === 'processing' && payload.currentProvider) {
-          if (payload.error) {
-            setFailedProviders(prev => new Set([...prev, payload.currentProvider!]));
-          } else if (payload.findingsCount !== undefined) {
-            setCompletedProviders(prev => new Set([...prev, payload.currentProvider!]));
-          }
-        }
-
-        // Call onComplete when scan finishes
-        if (payload.status === 'completed' && onComplete) {
-          // Trigger haptic feedback
-          triggerHaptic('success');
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel(`scan_progress_updates_${scanId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'scan_progress',
+          filter: `scan_id=eq.${scanId}`
+        },
+        (payload) => {
+          console.log('[ScanProgress] Progress update:', payload);
+          const progressData = payload.new as any;
           
-          // Fire confetti
-          const duration = 3000;
-          const animationEnd = Date.now() + duration;
-          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+          setProgress({
+            scanId: progressData.scan_id,
+            status: progressData.status,
+            totalProviders: progressData.total_providers || 0,
+            completedProviders: progressData.completed_providers || 0,
+            currentProvider: progressData.current_provider || undefined,
+            currentProviders: progressData.current_providers || [],
+            findingsCount: progressData.findings_count || 0,
+            message: progressData.message || '',
+            error: progressData.error || false
+          });
 
-          function randomInRange(min: number, max: number) {
-            return Math.random() * (max - min) + min;
+          // Track provider states
+          if (progressData.current_provider) {
+            setActiveProviders(prev => new Set([...prev, progressData.current_provider]));
           }
 
-          const interval: any = setInterval(function() {
-            const timeLeft = animationEnd - Date.now();
+          if (progressData.status === 'processing' && progressData.current_provider) {
+            if (progressData.error) {
+              setFailedProviders(prev => new Set([...prev, progressData.current_provider]));
+            } else if (progressData.findings_count !== undefined) {
+              setCompletedProviders(prev => new Set([...prev, progressData.current_provider]));
+            }
+          }
 
-            if (timeLeft <= 0) {
-              return clearInterval(interval);
+          // Call onComplete when scan finishes
+          if (progressData.status === 'completed' && onComplete) {
+            triggerHaptic('success');
+            
+            // Fire confetti
+            const duration = 3000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+            function randomInRange(min: number, max: number) {
+              return Math.random() * (max - min) + min;
             }
 
-            const particleCount = 50 * (timeLeft / duration);
-            
-            // Fire confetti from two sides
-            confetti({
-              ...defaults,
-              particleCount,
-              origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-            });
-            confetti({
-              ...defaults,
-              particleCount,
-              origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-            });
-          }, 250);
+            const interval: any = setInterval(function() {
+              const timeLeft = animationEnd - Date.now();
 
-          setTimeout(() => onComplete(), 1500);
+              if (timeLeft <= 0) {
+                return clearInterval(interval);
+              }
+
+              const particleCount = 50 * (timeLeft / duration);
+              
+              confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+              });
+              confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+              });
+            }, 250);
+
+            setTimeout(() => onComplete(), 1500);
+          }
         }
-      })
+      )
       .subscribe((status) => {
         console.log('[ScanProgress] Channel status:', status);
       });

@@ -620,95 +620,129 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       }
     }, 3000); // Check every 3 seconds
 
-    // Subscribe to orchestrator progress updates
-    const orchestratorChannel = supabase
-      .channel(`scan_progress:${scanId}`)
-      .on('broadcast', { event: 'progress' }, (payload: any) => {
-        console.debug('[ScanProgressDialog] Orchestrator progress:', payload);
-        const update = payload.payload;
+    // Fetch initial progress on mount
+    const fetchInitialProgress = async () => {
+      const { data, error } = await supabase
+        .from('scan_progress')
+        .select('*')
+        .eq('scan_id', scanId)
+        .maybeSingle();
+      
+      if (data && !error) {
+        setProvidersTotal(data.total_providers || 0);
+        setProvidersCompleted(data.completed_providers || 0);
         
-        setLastEventAt(Date.now());
-        
-        // If we receive orchestrator updates, assume advanced pipeline
-        if (!pipelineType) {
-          setPipelineType('advanced');
-        }
-        
-        // Map orchestrator messages to provider updates
-        if (update.message) {
-          const queryMatch = update.message.match(/Querying (.+)\.\.\./);
-          const completedMatch = update.message.match(/Completed (.+)\.\.\./);
-          const retryMatch = update.message.match(/Retry (\d+)\/(\d+) for (.+)\.\.\./);
-          
-          if (retryMatch) {
-            const [, current, max, providerName] = retryMatch;
-            upsertProvider(
-              providerName, 
-              'retrying', 
-              `Retrying (${current}/${max})...`,
-              parseInt(current),
-              parseInt(max)
-            );
-          } else if (queryMatch) {
-            upsertProvider(queryMatch[1], 'loading', 'Querying...');
-          } else if (completedMatch) {
-            const findingsText = update.findingsCount !== undefined 
-              ? ` (${update.findingsCount} findings)` 
-              : '';
-            upsertProvider(completedMatch[1], 'success', `Completed${findingsText}`);
-          } else if (update.error) {
-            const providerName = update.provider || 'Provider';
-            upsertProvider(providerName, 'failed', update.message);
-          }
-        }
-
-        // Update overall progress from orchestrator
-        if (update.completedProviders !== undefined && update.totalProviders !== undefined) {
-          setProvidersCompleted(update.completedProviders);
-          setProvidersTotal(update.totalProviders);
-          const pct = Math.round((update.completedProviders / update.totalProviders) * 100);
+        if (data.total_providers && data.completed_providers) {
+          const pct = Math.round((data.completed_providers / data.total_providers) * 100);
           setProgress(Math.max(5, Math.min(pct, 95)));
         }
-
-        if (update.creditsUsed !== undefined) {
-          setCreditsUsed(update.creditsUsed);
-        }
-
-        // Handle completion
-        if (update.status === 'completed') {
-          console.debug('[ScanProgressDialog] Orchestrator completed');
+        
+        if (data.status === 'completed') {
           setStatus('completed');
           setProgress(100);
+          setTotalResults(data.findings_count || 0);
+        }
+      }
+    };
+
+    fetchInitialProgress();
+
+    // Subscribe to scan_progress table updates
+    const progressChannel = supabase
+      .channel(`scan_progress_updates_${scanId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'scan_progress',
+          filter: `scan_id=eq.${scanId}`
+        },
+        (payload) => {
+          console.debug('[ScanProgressDialog] Database progress update:', payload);
+          const update = payload.new as any;
           
-          const resultsCount = update.resultsCount || update.findingsCount || 0;
-          setTotalResults(resultsCount);
+          setLastEventAt(Date.now());
           
-          if (resultsCount === 0) {
-            // Zero results - save partial case and show helpful toast
-            toast.info('No results found', {
-              description: 'Try a broader query or different identifier',
-              duration: 5000,
-            });
-            void handleZeroResults(); // Fire and forget
-          } else {
-            // Fetch final findings and show preview
-            fetchTopFindings().then(() => {
-              setShowPreview(true);
-            });
-            playSuccessSound();
-            triggerConfetti();
-            toast.success(`Scan completed - ${resultsCount} results found`);
+          // If we receive progress updates, assume advanced pipeline
+          if (!pipelineType) {
+            setPipelineType('advanced');
           }
           
-          setTimeout(() => onComplete?.(), 3000);
-        } else if (update.status === 'failed') {
-          setStatus('failed');
-          toast.error('Scan failed', {
-            description: update.error || 'An error occurred during scanning',
-          });
+          // Map database fields to component state
+          if (update.message) {
+            const queryMatch = update.message.match(/Querying (.+)\.\.\./);
+            const completedMatch = update.message.match(/Completed (.+)/);
+            const retryMatch = update.message.match(/Retry (\d+)\/(\d+) for (.+)\.\.\./);
+            
+            if (retryMatch) {
+              const [, current, max, providerName] = retryMatch;
+              upsertProvider(
+                providerName, 
+                'retrying', 
+                `Retrying (${current}/${max})...`,
+                parseInt(current),
+                parseInt(max)
+              );
+            } else if (queryMatch) {
+              upsertProvider(queryMatch[1], 'loading', 'Querying...');
+            } else if (completedMatch) {
+              const providerName = completedMatch[1].split(' ')[0]; // Extract provider name before count
+              const findingsText = update.findings_count !== undefined 
+                ? ` (${update.findings_count} findings)` 
+                : '';
+              upsertProvider(providerName, 'success', `Completed${findingsText}`);
+            } else if (update.error && update.current_provider) {
+              upsertProvider(update.current_provider, 'failed', update.message);
+            }
+          }
+
+          // Update overall progress
+          if (update.completed_providers !== undefined && update.total_providers !== undefined) {
+            setProvidersCompleted(update.completed_providers);
+            setProvidersTotal(update.total_providers);
+            const pct = Math.round((update.completed_providers / update.total_providers) * 100);
+            setProgress(Math.max(5, Math.min(pct, 95)));
+          }
+
+          // Handle completion
+          if (update.status === 'completed') {
+            console.debug('[ScanProgressDialog] Scan completed');
+            setStatus('completed');
+            setProgress(100);
+            
+            const resultsCount = update.findings_count || 0;
+            setTotalResults(resultsCount);
+            
+            if (resultsCount === 0) {
+              toast.info('No results found', {
+                description: 'Try a broader query or different identifier',
+                duration: 5000,
+              });
+              void handleZeroResults();
+            } else {
+              fetchTopFindings().then(() => {
+                setShowPreview(true);
+              });
+              playSuccessSound();
+              triggerConfetti();
+              toast.success(`Scan completed - ${resultsCount} results found`);
+            }
+          }
+
+          // Handle failure
+          if (update.status === 'failed' || update.error) {
+            setStatus('failed');
+            toast.error('Scan failed', {
+              description: update.message || 'An error occurred during scanning',
+              duration: 5000,
+            });
+          }
         }
-      })
-      .subscribe();
+      )
+      .subscribe((status) => {
+        console.log('[ScanProgressDialog] Progress channel status:', status);
+      });
 
     return () => {
       console.log('[ScanProgressDialog] Cleaning up channels');
@@ -716,7 +750,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       supabase.removeChannel(scanStatusChannel);
       supabase.removeChannel(jobChannel);
       supabase.removeChannel(maigretChannel);
-      supabase.removeChannel(orchestratorChannel);
+      supabase.removeChannel(progressChannel);
       supabase.removeChannel(findingsChannel);
       supabase.removeChannel(maigretResultsChannel);
     };
