@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface ActiveScan {
   scanId: string;
@@ -18,6 +19,8 @@ interface ScanProgress {
 }
 
 const ACTIVE_SCAN_KEY = 'footprintiq_active_scan';
+const HEARTBEAT_INTERVAL = 5000; // 5 seconds
+const POLLING_INTERVAL = 3000; // 3 seconds fallback polling
 
 export function useActiveScan() {
   const [activeScan, setActiveScan] = useState<ActiveScan | null>(() => {
@@ -27,6 +30,12 @@ export function useActiveScan() {
   
   const [progress, setProgress] = useState<ScanProgress | null>(null);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'disconnected' | 'reconnecting'>('disconnected');
+  
+  const channelRef = useRef<any>(null);
+  const heartbeatIntervalRef = useRef<NodeJS.Timeout>();
+  const pollingIntervalRef = useRef<NodeJS.Timeout>();
+  const lastUpdateRef = useRef<number>(Date.now());
 
   // Persist active scan to localStorage
   useEffect(() => {
@@ -37,37 +46,77 @@ export function useActiveScan() {
     }
   }, [activeScan]);
 
-  // Subscribe to progress updates via database
-  useEffect(() => {
-    if (!activeScan?.scanId) return;
+  // Fetch progress from database
+  const fetchProgress = async () => {
+    if (!activeScan?.scanId) return null;
 
-    console.log(`[useActiveScan] Subscribing to progress for scan: ${activeScan.scanId}`);
-
-    // Fetch initial progress (in case scan already started)
-    const fetchInitialProgress = async () => {
+    try {
       const { data, error } = await supabase
         .from('scan_progress')
         .select('*')
         .eq('scan_id', activeScan.scanId)
         .maybeSingle();
       
-      if (data && !error) {
-        setProgress({
+      if (error) throw error;
+      
+      if (data) {
+        const progressData = {
           status: data.status,
           completedProviders: data.completed_providers || 0,
           totalProviders: data.total_providers || 0,
           currentProviders: data.current_providers || [],
           totalFindings: data.findings_count || 0,
           message: data.message || ''
-        });
+        };
+        setProgress(progressData);
+        lastUpdateRef.current = Date.now();
+        return progressData;
       }
-    };
-    
-    fetchInitialProgress();
+      return null;
+    } catch (error) {
+      console.error('[useActiveScan] Error fetching progress:', error);
+      return null;
+    }
+  };
 
-    // Subscribe to real-time updates
+  // Start polling fallback
+  const startPolling = () => {
+    if (pollingIntervalRef.current) return;
+    
+    console.log('[useActiveScan] Starting polling fallback');
+    pollingIntervalRef.current = setInterval(async () => {
+      const progressData = await fetchProgress();
+      
+      if (progressData && (progressData.status === 'completed' || progressData.status === 'error')) {
+        stopPolling();
+        setTimeout(() => {
+          clearActiveScan();
+        }, 5000);
+      }
+    }, POLLING_INTERVAL);
+  };
+
+  const stopPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = undefined;
+      console.log('[useActiveScan] Stopped polling');
+    }
+  };
+
+  // Setup realtime subscription with monitoring
+  const setupRealtimeSubscription = () => {
+    if (!activeScan?.scanId) return;
+
+    console.log(`[useActiveScan] Setting up realtime for scan: ${activeScan.scanId}`);
+    
+    // Clean up existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
     const channel = supabase
-      .channel(`scan_progress_updates_${activeScan.scanId}`)
+      .channel(`scan_progress_${activeScan.scanId}`)
       .on(
         'postgres_changes',
         {
@@ -77,7 +126,7 @@ export function useActiveScan() {
           filter: `scan_id=eq.${activeScan.scanId}`
         },
         (payload) => {
-          console.log('[useActiveScan] Progress update:', payload);
+          console.log('[useActiveScan] Realtime update:', payload);
           const progressData = payload.new as any;
           
           setProgress({
@@ -89,6 +138,12 @@ export function useActiveScan() {
             message: progressData.message || ''
           });
 
+          lastUpdateRef.current = Date.now();
+          setConnectionStatus('connected');
+          
+          // Stop polling if it's running (realtime is working)
+          stopPolling();
+
           // Auto-clear when completed
           if (progressData.status === 'completed' || progressData.status === 'error') {
             setTimeout(() => {
@@ -99,11 +154,58 @@ export function useActiveScan() {
       )
       .subscribe((status) => {
         console.log(`[useActiveScan] Channel status:`, status);
+        
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected');
+          stopPolling(); // Stop polling when realtime connects
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setConnectionStatus('disconnected');
+          toast.error('Connection interrupted - using fallback updates');
+          startPolling(); // Start polling on error
+        } else if (status === 'CLOSED') {
+          setConnectionStatus('disconnected');
+        }
       });
 
+    channelRef.current = channel;
+
+    // Start heartbeat monitoring
+    heartbeatIntervalRef.current = setInterval(() => {
+      const timeSinceLastUpdate = Date.now() - lastUpdateRef.current;
+      
+      // If no update in 15 seconds and scan isn't completed, switch to polling
+      if (timeSinceLastUpdate > 15000 && connectionStatus === 'connected') {
+        console.warn('[useActiveScan] No updates for 15s, starting polling fallback');
+        setConnectionStatus('reconnecting');
+        startPolling();
+      }
+    }, HEARTBEAT_INTERVAL);
+  };
+
+  // Subscribe to progress updates via database
+  useEffect(() => {
+    if (!activeScan?.scanId) {
+      setConnectionStatus('disconnected');
+      stopPolling();
+      return;
+    }
+
+    // Fetch initial progress
+    fetchProgress();
+    
+    // Setup realtime subscription
+    setupRealtimeSubscription();
+
     return () => {
-      console.log(`[useActiveScan] Unsubscribing`);
-      supabase.removeChannel(channel);
+      console.log(`[useActiveScan] Cleaning up`);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+      }
+      stopPolling();
     };
   }, [activeScan?.scanId]);
 
@@ -111,11 +213,13 @@ export function useActiveScan() {
     setActiveScan(scan);
     setProgress(null);
     setIsMinimized(false);
+    lastUpdateRef.current = Date.now();
   };
 
   const clearActiveScan = () => {
     setActiveScan(null);
     setProgress(null);
+    stopPolling();
   };
 
   const toggleMinimize = () => {
@@ -126,6 +230,7 @@ export function useActiveScan() {
     activeScan,
     progress,
     isMinimized,
+    connectionStatus,
     startTracking,
     clearActiveScan,
     toggleMinimize,
