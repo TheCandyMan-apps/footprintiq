@@ -282,7 +282,7 @@ serve(async (req) => {
     // Build provider list with sensible defaults
     const DEFAULT_PROVIDERS: Record<ScanRequest['type'], string[]> = {
       email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
-      username: ['maigret', 'dehashed'], // maigret for profiles + dehashed for breaches
+      username: ['maigret', 'whatsmyname', 'gosearch'], // All username OSINT tools
       domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
       phone: ['fullcontact']
     };
