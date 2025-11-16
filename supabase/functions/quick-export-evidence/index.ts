@@ -62,7 +62,8 @@ serve(async (req) => {
     const deductResult = await deductCredits(
       workspaceId,
       CREDIT_COST,
-      `Quick export evidence package for scan ${scanId}`
+      'export',
+      { scan_id: scanId, export_type: 'evidence_package' }
     );
 
     if (!deductResult.success) {
