@@ -68,11 +68,11 @@ Be specific, actionable, and security-focused.`;
 
     const userPrompt = `Enrich this finding:
 Provider: ${finding.provider}
-Category: ${finding.provider_category}
+Type: ${finding.kind}
 Severity: ${finding.severity}
 Confidence: ${finding.confidence}
 Evidence: ${JSON.stringify(finding.evidence || {})}
-Raw Data: ${JSON.stringify(finding.raw || {})}
+Additional Data: ${JSON.stringify(finding.meta || {})}
 
 Provide a structured analysis with context, links, and remediation steps.`;
 
