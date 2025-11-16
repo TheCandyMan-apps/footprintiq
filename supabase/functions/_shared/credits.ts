@@ -51,7 +51,8 @@ export async function checkCredits(
 export async function deductCredits(
   workspaceId: string,
   amount: number,
-  description: string
+  reason: string,
+  meta: Record<string, any> = {}
 ): Promise<CreditsResult> {
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL') ?? '',
@@ -74,8 +75,8 @@ export async function deductCredits(
     .rpc('spend_credits', {
       _workspace_id: workspaceId,
       _cost: amount,
-      _reason: description,
-      _meta: {}
+      _reason: reason,
+      _meta: meta
     });
 
   if (error) {

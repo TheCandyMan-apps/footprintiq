@@ -144,7 +144,8 @@ Provide a brief 2-3 sentence analysis with immediate next step.`;
     const deductResult = await deductCredits(
       workspaceId,
       ANALYSIS_COST,
-      `Quick analysis for finding ${findingId}`
+      'api_usage',
+      { finding_id: findingId, operation: 'quick_analysis' }
     );
 
     if (!deductResult.success) {

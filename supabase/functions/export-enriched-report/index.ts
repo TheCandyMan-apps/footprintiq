@@ -83,7 +83,8 @@ serve(async (req) => {
     const deductResult = await deductCredits(
       workspaceId,
       EXPORT_COST,
-      `Enriched report export for scan ${scanId}`
+      'export',
+      { scan_id: scanId, export_type: 'enriched_report' }
     );
 
     if (!deductResult.success) {

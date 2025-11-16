@@ -160,7 +160,8 @@ Provide a structured analysis with context, links, and remediation steps.`;
     const deductResult = await deductCredits(
       workspaceId,
       ENRICHMENT_COST,
-      `Deep enrichment for finding ${findingId}`
+      'api_usage',
+      { finding_id: findingId, operation: 'deep_enrichment' }
     );
 
     if (!deductResult.success) {
