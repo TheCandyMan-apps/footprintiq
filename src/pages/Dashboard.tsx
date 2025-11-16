@@ -271,13 +271,39 @@ const Dashboard = () => {
           }
         });
         setScanSocialLinks(socialLinksMap);
-        const breachCount = sources?.filter(s => s.category?.toLowerCase().includes('breach') || s.name?.toLowerCase().includes('breach')).length || 0;
-        const dataBrokersCount = sources?.filter(s => s.category?.toLowerCase().includes('broker') || s.category?.toLowerCase().includes('people')).length || 0;
-        const darkWebCount = sources?.filter(s => s.category?.toLowerCase().includes('dark') || s.name?.toLowerCase().includes('dark')).length || 0;
+        // Compute DNA metrics from findings for the most recent scan
+        const { data: findings } = await (supabase as any)
+          .from('findings')
+          .select('kind, severity, provider')
+          .eq('scan_id', recentScan.id);
+
+        const f = findings || [];
+        const BROKER_KEYWORDS = ['whitepages','spokeo','intelius','beenverified','truthfinder','pipl','radaris','fastpeoplesearch','peoplefinder','ussearch','peekyou','mylife','broker','data broker'];
+        const DARK_WEB_KEYWORDS = ['intelx','paste','dark','onion','breach','leak','darkweb'];
+        const BREACH_KEYWORDS = ['hibp','haveibeenpwned','breach','leak','password'];
+
+        const breachCount = f.filter(x => {
+          const kind = (x.kind || '').toLowerCase();
+          const provider = (x.provider || '').toLowerCase();
+          const severity = (x.severity || '').toLowerCase();
+          return BREACH_KEYWORDS.some(k => kind.includes(k) || provider.includes(k)) || severity === 'critical' || severity === 'high';
+        }).length;
+        const exposuresCount = f.length;
+        const dataBrokersCount = f.filter(x => {
+          const kind = (x.kind || '').toLowerCase();
+          const provider = (x.provider || '').toLowerCase();
+          return BROKER_KEYWORDS.some(k => kind.includes(k) || provider.includes(k));
+        }).length;
+        const darkWebCount = f.filter(x => {
+          const kind = (x.kind || '').toLowerCase();
+          const provider = (x.provider || '').toLowerCase();
+          return DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k));
+        }).length;
+
         setDnaMetrics({
           score: recentScan.privacy_score || 0,
           breaches: breachCount,
-          exposures: (recentScan.high_risk_count || 0) + (recentScan.medium_risk_count || 0),
+          exposures: exposuresCount,
           dataBrokers: dataBrokersCount,
           darkWeb: darkWebCount
         });
