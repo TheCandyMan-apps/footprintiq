@@ -14,40 +14,56 @@ import { SUBSCRIPTION_PLANS } from "@/config/stripe";
 const pricingTiers = [
   {
     name: "Free",
-    price: "$0",
-    period: "forever",
+    icon: "🆓",
+    price: "£0",
+    period: "per month",
     description: "Get started with basic features",
     priceId: null,
     features: [
-      "1 scan per month",
-      "Basic data source detection",
-      "Privacy score analysis",
-      "Email breach checking",
-      "Community support",
+      "5 scans per month",
+      "Basic username scanning",
+      "Limited results view",
+      "No multi-tool results",
+      "No exports",
+      "No team features",
     ],
-    cta: "Get Started Free",
+    cta: "Start Free",
     highlighted: false,
     isFree: true,
   },
   {
-    name: SUBSCRIPTION_PLANS.analyst.name,
-    price: `$${SUBSCRIPTION_PLANS.analyst.price}`,
+    name: SUBSCRIPTION_PLANS.pro.name,
+    icon: "🚀",
+    price: `£${SUBSCRIPTION_PLANS.pro.price}`,
     period: "per month",
-    description: "For security analysts & investigators",
-    priceId: SUBSCRIPTION_PLANS.analyst.priceId,
-    features: SUBSCRIPTION_PLANS.analyst.features,
-    cta: "Start Analyst Plan",
+    description: "For professionals and investigators",
+    priceId: SUBSCRIPTION_PLANS.pro.priceId,
+    features: SUBSCRIPTION_PLANS.pro.features,
+    cta: "Upgrade to Pro",
     highlighted: true,
   },
   {
-    name: SUBSCRIPTION_PLANS.enterprise.name,
-    price: `$${SUBSCRIPTION_PLANS.enterprise.price}`,
+    name: SUBSCRIPTION_PLANS.business.name,
+    icon: "🧑‍💼",
+    price: `£${SUBSCRIPTION_PLANS.business.price}`,
     period: "per month",
-    description: "Advanced enterprise solution",
+    description: "For teams and organizations",
+    priceId: SUBSCRIPTION_PLANS.business.priceId,
+    features: SUBSCRIPTION_PLANS.business.features,
+    cta: "Start Business",
+    highlighted: false,
+  },
+  {
+    name: SUBSCRIPTION_PLANS.enterprise.name,
+    icon: "🏢",
+    price: "Custom",
+    period: "",
+    description: "For large enterprises",
     priceId: SUBSCRIPTION_PLANS.enterprise.priceId,
     features: SUBSCRIPTION_PLANS.enterprise.features,
-    cta: "Start Enterprise Plan",
+    cta: "Contact Sales",
     highlighted: false,
+    isEnterprise: true,
   },
 ];
 
@@ -67,9 +83,15 @@ export const Pricing = () => {
   const currentPrice = calculatePrice(scansPerMonth);
   const { toast } = useToast();
 
-  const handleCTA = async (tierName: string, priceId: string | null, isFree?: boolean) => {
+  const handleCTA = async (tierName: string, priceId: string | null, isFree?: boolean, isEnterprise?: boolean) => {
     if (isFree) {
       navigate('/auth');
+      return;
+    }
+
+    if (isEnterprise) {
+      // Open enterprise contact form in new tab
+      window.open('https://enterprise.footprintiq.app/', '_blank');
       return;
     }
 
@@ -187,10 +209,10 @@ export const Pricing = () => {
             <Button 
               className="w-full" 
               size="lg"
-              onClick={() => handleCTA('Analyst', SUBSCRIPTION_PLANS.analyst.priceId)}
-              disabled={loadingPlan === 'Analyst'}
+              onClick={() => handleCTA('PRO', SUBSCRIPTION_PLANS.pro.priceId)}
+              disabled={loadingPlan === 'PRO'}
             >
-              {loadingPlan === 'Analyst' ? (
+              {loadingPlan === 'PRO' ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Processing...

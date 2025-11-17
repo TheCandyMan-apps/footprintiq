@@ -43,17 +43,16 @@ interface UpcomingInvoice {
 
 // Pricing tiers - using centralized config
 const PRICING_TIERS = {
-  basic: SUBSCRIPTION_PLANS.basic,
   pro: SUBSCRIPTION_PLANS.pro,
   pro_annual: {
     ...SUBSCRIPTION_PLANS.pro,
-    name: 'Pro Annual',
-    price: 150,
+    name: 'PRO Annual',
+    price: 190,
     period: 'year',
     priceId: 'price_1SQwWCPNdM5SAyj7XS394cD9', // Annual price ID
-    savings: 30,
+    savings: 38,
   },
-  analyst: SUBSCRIPTION_PLANS.analyst,
+  business: SUBSCRIPTION_PLANS.business,
   enterprise: SUBSCRIPTION_PLANS.enterprise,
 };
 
@@ -316,17 +315,17 @@ export default function BillingSettings() {
                 <>
                   <div className="flex gap-2 flex-wrap">
                     <Button 
-                      onClick={() => handleUpgrade('basic')}
-                      disabled={loading}
-                      variant="outline"
-                    >
-                      Basic ($5/mo)
-                    </Button>
-                    <Button 
                       onClick={() => handleUpgrade('pro')}
                       disabled={loading}
                     >
-                      Pro ($15/mo)
+                      PRO (£19/mo)
+                    </Button>
+                    <Button 
+                      onClick={() => handleUpgrade('business')}
+                      disabled={loading}
+                      variant="outline"
+                    >
+                      Business (£49/mo)
                     </Button>
                     <Button 
                       onClick={() => handleUpgrade('pro_annual')}
@@ -618,20 +617,20 @@ export default function BillingSettings() {
           {!isPremium && (
             <div className="flex gap-3 mt-6">
               <Button 
-                onClick={() => handleUpgrade('basic')}
-                className="flex-1"
-                variant="outline"
-                size="lg"
-              >
-                Get Basic ($5)
-              </Button>
-              <Button 
                 onClick={() => handleUpgrade('pro')}
                 className="flex-1"
                 size="lg"
               >
-                Get Pro ($15)
+                Get PRO (£19)
                 <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+              <Button 
+                onClick={() => handleUpgrade('business')}
+                className="flex-1"
+                variant="outline"
+                size="lg"
+              >
+                Get Business (£49)
               </Button>
             </div>
           )}

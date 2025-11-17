@@ -1,7 +1,7 @@
-export type SubscriptionTier = 'free' | 'pro' | 'premium' | 'enterprise';
+export type SubscriptionTier = 'free' | 'pro' | 'business' | 'enterprise';
 
-// Legacy tiers that map to pro
-export type LegacySubscriptionTier = SubscriptionTier | 'analyst' | 'family';
+// Legacy tiers that map to their new equivalents
+export type LegacySubscriptionTier = SubscriptionTier | 'premium' | 'analyst' | 'family';
 
 interface PlanQuotas {
   scansPerMonth: number;
@@ -17,12 +17,12 @@ interface PlanQuotas {
 
 export const PLAN_QUOTAS: Record<SubscriptionTier, PlanQuotas> = {
   free: {
-    scansPerMonth: 10,
-    monitorsPerWorkspace: 2,
-    apiCallsPerHour: 100,
+    scansPerMonth: 5,
+    monitorsPerWorkspace: 1,
+    apiCallsPerHour: 0,
     teamMembers: 1,
     retentionDays: 30,
-    aiAnalystQueries: 5,
+    aiAnalystQueries: 0,
     darkWebAccess: false,
     ssoEnabled: false,
     prioritySupport: false,
@@ -31,20 +31,20 @@ export const PLAN_QUOTAS: Record<SubscriptionTier, PlanQuotas> = {
     scansPerMonth: 100,
     monitorsPerWorkspace: 10,
     apiCallsPerHour: 1000,
-    teamMembers: 5,
+    teamMembers: 1,
     retentionDays: 90,
     aiAnalystQueries: 50,
     darkWebAccess: true,
     ssoEnabled: false,
     prioritySupport: false,
   },
-  premium: {
-    scansPerMonth: 100,
-    monitorsPerWorkspace: 10,
-    apiCallsPerHour: 1000,
+  business: {
+    scansPerMonth: 500,
+    monitorsPerWorkspace: 20,
+    apiCallsPerHour: 5000,
     teamMembers: 5,
-    retentionDays: 90,
-    aiAnalystQueries: 50,
+    retentionDays: 180,
+    aiAnalystQueries: 200,
     darkWebAccess: true,
     ssoEnabled: false,
     prioritySupport: false,
@@ -72,10 +72,10 @@ export const SCAN_CREDITS: Record<string, number> = {
 };
 
 export function getQuotas(tier: LegacySubscriptionTier): PlanQuotas {
-  // Map legacy tiers to their equivalents
+  // Map legacy tiers to their new equivalents
   let normalizedTier: SubscriptionTier = tier as SubscriptionTier;
-  if (tier === 'analyst' || tier === 'family') {
-    normalizedTier = 'premium';
+  if (tier === 'premium' || tier === 'analyst' || tier === 'family') {
+    normalizedTier = 'pro';
   }
   return PLAN_QUOTAS[normalizedTier];
 }
@@ -91,13 +91,17 @@ export function hasFeatureAccess(tier: SubscriptionTier, feature: string): boole
     case 'advanced_scan':
       return tier !== 'free';
     case 'batch_scan':
-      return tier === 'enterprise';
+      return tier === 'business' || tier === 'enterprise';
     case 'ai_analyst':
       return quotas.aiAnalystQueries > 0;
     case 'priority_support':
       return quotas.prioritySupport;
     case 'sso':
       return quotas.ssoEnabled;
+    case 'api_access':
+      return tier === 'business' || tier === 'enterprise';
+    case 'team_members':
+      return tier === 'business' || tier === 'enterprise';
     default:
       return true;
   }
