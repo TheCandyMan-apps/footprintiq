@@ -38,7 +38,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceMonthly: 19,
     stripePriceId: 'price_1SIbjiA3ptI9drLWsG0noPeX',
     monthlyScanLimit: 100,
-    allowedProviders: ['maigret', 'sherlock', 'whatsmyname'],
+    allowedProviders: ['maigret', 'sherlock'],
     features: [
       '100 scans per month',
       'Multi-tool OSINT (Maigret + Sherlock/WhatsMyName)',
@@ -55,7 +55,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceMonthly: 49,
     stripePriceId: 'price_1SN3uIA3ptI9drLWMCDo1mAT',
     monthlyScanLimit: null, // unlimited
-    allowedProviders: ['maigret', 'sherlock', 'whatsmyname', 'gosearch'],
+    allowedProviders: ['maigret', 'sherlock', 'gosearch'],
     features: [
       'Unlimited scans',
       'All multi-tool providers (incl. GoSearch)',

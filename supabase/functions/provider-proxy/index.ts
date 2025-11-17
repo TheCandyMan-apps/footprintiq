@@ -37,7 +37,14 @@ serve(async (req) => {
       );
     }
 
-    const { provider, target, type, options = {} } = await req.json();
+    let { provider, target, type, options = {} } = await req.json();
+    
+    // Normalize legacy provider names
+    if (provider === 'whatsmyname') {
+      console.log('[provider-proxy] Normalizing whatsmyname -> sherlock');
+      provider = 'sherlock';
+    }
+    
     console.log(`[provider-proxy] ${provider} request for ${target} (${type}) by user ${user.id}`);
 
     let result: any;
