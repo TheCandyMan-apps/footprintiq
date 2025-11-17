@@ -6529,6 +6529,7 @@ export type Database = {
           total_sources_found: number | null
           user_id: string
           username: string | null
+          workspace_id: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -6549,6 +6550,7 @@ export type Database = {
           total_sources_found?: number | null
           user_id: string
           username?: string | null
+          workspace_id?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -6569,8 +6571,17 @@ export type Database = {
           total_sources_found?: number | null
           user_id?: string
           username?: string | null
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "scans_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scheduled_scan_findings: {
         Row: {
