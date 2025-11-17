@@ -100,25 +100,25 @@ serve(async (req) => {
     const workerData = await workerResponse.json();
     console.log(`✅ Maigret worker returned ${workerData.results?.length || 0} results`);
 
-    // Transform worker results to UFM findings
-    const findings: MaigretFinding[] = [];
+    // Transform worker results to UFM-compliant findings
+    const findings: any[] = [];
     
     if (workerData.results && Array.isArray(workerData.results)) {
       for (const result of workerData.results) {
         if (result.site && result.url) {
           findings.push({
-            type: 'profile_presence',
-            title: `Profile found on ${result.site}`,
-            severity: 'info',
             provider: 'maigret',
-            confidence: result.confidence || 0.7,
-            evidence: {
-              site: result.site,
-              url: result.url,
-              username: result.username || body.usernames[0],
-              status: result.status || 'found',
-            },
-            remediation: result.url ? `Review profile at ${result.url}` : undefined,
+            kind: 'presence.hit',
+            severity: 'info',
+            confidence: result.confidence ?? 0.7,
+            observedAt: new Date().toISOString(),
+            evidence: [
+              { key: 'site', value: result.site },
+              { key: 'url', value: result.url },
+              { key: 'username', value: result.username || body.usernames[0] },
+              { key: 'status', value: result.status || 'found' },
+            ],
+            meta: result,
           });
         }
       }

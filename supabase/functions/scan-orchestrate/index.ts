@@ -491,7 +491,7 @@ serve(async (req) => {
             if (provider === 'maigret') {
               try {
                 const { data, error } = await supabase.functions.invoke('providers-maigret', {
-                  body: { usernames: [value], timeout: 60 }
+                  body: { usernames: [value], timeout: 60, workspaceId, scanId }
                 });
                 
                 if (error) {
