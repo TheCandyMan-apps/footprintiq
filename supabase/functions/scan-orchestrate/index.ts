@@ -8,6 +8,39 @@ import { deduplicateFindings, sortFindings, type UFMFinding } from '../_shared/n
 import { getPlan } from '../_shared/tiers.ts';
 import { filterProvidersForPlan } from '../_shared/quotas.ts';
 
+/**
+ * Normalize confidence values to 0-1 range for database storage.
+ * Handles both 0-100 percentage values and already-normalized 0-1 values.
+ * Provides defensive clamping and sensible defaults.
+ */
+function normalizeConfidence(value: number | undefined | null): number {
+  // Handle missing/invalid values with sensible default
+  if (value == null || Number.isNaN(value)) {
+    console.warn('[orchestrate] Missing/invalid confidence value, defaulting to 0.7');
+    return 0.7;
+  }
+  
+  let normalized = value;
+  
+  // If value is in 0-100 range (percentage), scale to 0-1
+  if (normalized > 1) {
+    console.log(`[orchestrate] Scaling confidence from ${normalized} to ${normalized / 100}`);
+    normalized = normalized / 100;
+  }
+  
+  // Defensive clamping to satisfy database CHECK constraint
+  if (normalized < 0) {
+    console.warn(`[orchestrate] Negative confidence ${value}, clamping to 0`);
+    normalized = 0;
+  }
+  if (normalized > 1) {
+    console.warn(`[orchestrate] Confidence ${value} exceeds 1, clamping to 1`);
+    normalized = 1;
+  }
+  
+  return normalized;
+}
+
 // Validation schema for scan requests
 const ScanRequestSchema = z.object({
   scanId: z.string().uuid('invalid scan ID format').optional(),
@@ -775,7 +808,7 @@ serve(async (req) => {
           provider: f.provider,
           kind: f.kind,
           severity: f.severity,
-          confidence: f.confidence,
+          confidence: normalizeConfidence(f.confidence),
           observed_at: f.observedAt,
           evidence: f.evidence,
           meta: f.meta || {},
