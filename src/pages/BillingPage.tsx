@@ -14,13 +14,13 @@ import { Badge } from '@/components/ui/badge';
 export default function BillingPage() {
   const { data: subscription, isLoading } = useSubscription();
   const planConfig = usePlanConfig();
-  const { currentWorkspace } = useWorkspace();
+  const { workspace } = useWorkspace();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
 
   const handleManageBilling = async () => {
-    if (!currentWorkspace?.id) return;
+    if (!workspace?.id) return;
 
     if (subscription?.plan === 'free' || !subscription?.isActive) {
       navigate('/pricing');
@@ -30,7 +30,7 @@ export default function BillingPage() {
     setIsLoadingPortal(true);
     try {
       const { data, error } = await supabase.functions.invoke('stripe-portal', {
-        body: { workspaceId: currentWorkspace.id },
+        body: { workspaceId: workspace.id },
       });
 
       if (error) throw error;

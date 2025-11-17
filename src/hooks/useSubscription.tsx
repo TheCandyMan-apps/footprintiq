@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
-type SubscriptionTier = 'free' | 'analyst' | 'pro' | 'premium' | 'enterprise' | 'family';
+// Matches new billing tiers + legacy support
+export type SubscriptionTier = 'free' | 'pro' | 'business' | 'analyst' | 'premium' | 'enterprise' | 'family';
 
 interface SubscriptionContextType {
   user: User | null;
@@ -30,46 +31,57 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      /**
-       * UI-ONLY role check for display purposes.
-       * SECURITY: Actual authorization enforced server-side via RLS policies.
-       * DO NOT use this for access control decisions.
-       * This only affects UI display and subscription tier hints.
-       */
+      // First check the new subscriptions table tied to the user's workspace
+      const { data: workspaceMemberships } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', session.user.id)
+        .limit(1)
+        .single();
+
+      if (workspaceMemberships?.workspace_id) {
+        const { data: subscription } = await supabase
+          .from('subscriptions')
+          .select('*')
+          .eq('workspace_id', workspaceMemberships.workspace_id)
+          .single();
+
+        if (subscription && subscription.status === 'active') {
+          // Map database plan to tier (normalize naming)
+          let tier: SubscriptionTier = subscription.plan as SubscriptionTier;
+          setSubscriptionTier(tier);
+          setSubscriptionEnd(subscription.current_period_end || null);
+          return;
+        }
+      }
+
+      // Fallback to user_roles for legacy/manual grants
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role, subscription_tier')
         .eq('user_id', session.user.id)
         .single();
 
-      // Display admin users as enterprise (UI hint only - not a security boundary)
+      // Display admin users as enterprise
       if (roleData?.role === 'admin') {
         setSubscriptionTier('enterprise');
         return;
       }
 
-      // Check actual Stripe subscription
-      const { data } = await supabase.functions.invoke('billing/check-subscription');
-      if (data?.subscribed && data?.tier) {
-        setSubscriptionTier(data.tier as SubscriptionTier);
-        setSubscriptionEnd(data.current_period_end || null);
-      } else {
-        // Fall back to manual tier from user_roles if no active Stripe subscription
-        if (roleData?.subscription_tier) {
-          // Map legacy tiers to current ones
-          const manualTier = roleData.subscription_tier as string;
-          if (manualTier === 'analyst' || manualTier === 'family') {
-            setSubscriptionTier('premium');
-          } else if (manualTier === 'premium' || manualTier === 'enterprise' || manualTier === 'pro') {
-            setSubscriptionTier(manualTier as SubscriptionTier);
-          } else {
-            setSubscriptionTier('free');
-          }
-          setSubscriptionEnd(null);
+      // Map legacy tiers
+      if (roleData?.subscription_tier) {
+        const manualTier = roleData.subscription_tier as string;
+        if (manualTier === 'analyst' || manualTier === 'family') {
+          setSubscriptionTier('pro'); // Map legacy to pro
+        } else if (['premium', 'enterprise', 'pro', 'business'].includes(manualTier)) {
+          setSubscriptionTier(manualTier as SubscriptionTier);
         } else {
           setSubscriptionTier('free');
-          setSubscriptionEnd(null);
         }
+        setSubscriptionEnd(null);
+      } else {
+        setSubscriptionTier('free');
+        setSubscriptionEnd(null);
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
@@ -114,7 +126,7 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const isPremium = subscriptionTier !== 'free';
-  const isProOrHigher = subscriptionTier === 'pro' || subscriptionTier === 'premium' || subscriptionTier === 'enterprise';
+  const isProOrHigher = ['pro', 'business', 'premium', 'enterprise'].includes(subscriptionTier);
 
   return (
     <SubscriptionContext.Provider value={{ 
