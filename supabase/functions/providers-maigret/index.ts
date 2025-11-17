@@ -107,29 +107,52 @@ serve(async (req) => {
     }
 
     const workerData = await workerResponse.json();
-    console.log(`✅ Maigret worker returned ${workerData.results?.length || 0} results`);
+
+    // Support multiple worker response shapes: results[], summary[], or findings[]
+    const rawArray: any[] = Array.isArray(workerData?.results)
+      ? workerData.results
+      : Array.isArray(workerData?.summary)
+      ? workerData.summary
+      : Array.isArray(workerData?.findings)
+      ? workerData.findings
+      : [];
+
+    console.log(`✅ Maigret worker returned ${rawArray.length} item(s)`);
 
     // Transform worker results to UFM-compliant findings
     const findings: any[] = [];
-    
-    if (workerData.results && Array.isArray(workerData.results)) {
-      for (const result of workerData.results) {
-        if (result.site && result.url) {
-          findings.push({
-            provider: 'maigret',
-            kind: 'presence.hit',
-            severity: 'info',
-            confidence: result.confidence ?? 0.7,
-            observedAt: new Date().toISOString(),
-            evidence: [
-              { key: 'site', value: result.site },
-              { key: 'url', value: result.url },
-              { key: 'username', value: result.username || body.usernames[0] },
-              { key: 'status', value: result.status || 'found' },
-            ],
-            meta: result,
-          });
-        }
+
+    for (const item of rawArray) {
+      // If already UFM-like, pass through with sane defaults
+      if (item && Array.isArray(item.evidence)) {
+        findings.push({
+          provider: item.provider ?? 'maigret',
+          kind: item.kind ?? 'presence.hit',
+          severity: item.severity ?? 'info',
+          confidence: item.confidence ?? 0.7,
+          observedAt: item.observedAt ?? new Date().toISOString(),
+          evidence: item.evidence,
+          meta: item.meta ?? item,
+        });
+        continue;
+      }
+
+      // Legacy maigret result shape -> normalize
+      if (item?.site && item?.url) {
+        findings.push({
+          provider: 'maigret',
+          kind: 'presence.hit',
+          severity: 'info',
+          confidence: item.confidence ?? 0.7,
+          observedAt: new Date().toISOString(),
+          evidence: [
+            { key: 'site', value: item.site },
+            { key: 'url', value: item.url },
+            { key: 'username', value: item.username || body.usernames[0] },
+            { key: 'status', value: item.status || 'found' },
+          ],
+          meta: item,
+        });
       }
     }
 
@@ -149,13 +172,17 @@ serve(async (req) => {
             username: body.usernames[0],
             workspaceId: body.workspaceId,
             scanId: body.scanId,
-            findings: findings.map(f => ({
-              site: f.evidence.site,
-              url: f.evidence.url,
-              status: f.evidence.status,
-              confidence: f.confidence,
-              rawData: f,
-            })),
+            findings: findings.map(f => {
+              const ev = Array.isArray(f.evidence) ? f.evidence : [];
+              const get = (k: string) => ev.find((e: any) => e.key === k)?.value;
+              return {
+                site: get('site'),
+                url: get('url'),
+                status: get('status'),
+                confidence: f.confidence,
+                rawData: f,
+              };
+            }),
           }),
         });
         console.log('📸 Snapshot stored for historical tracking');
