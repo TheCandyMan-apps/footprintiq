@@ -206,6 +206,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
           <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
             <li>Monthly scan limit reached</li>
             <li>Insufficient credits</li>
+            <li>Tier restrictions on selected providers</li>
             <li>System error during scan creation</li>
           </ul>
           <div className="flex gap-2 pt-4">
@@ -213,7 +214,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
               Start New Scan
             </Button>
             <Button variant="outline" onClick={() => window.location.href = '/billing'}>
-              Check Quota & Credits
+              Check Quota & Upgrade Plan
             </Button>
           </div>
         </CardContent>

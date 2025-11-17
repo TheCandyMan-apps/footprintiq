@@ -309,4 +309,45 @@ WHERE scans_used_monthly > 0;
 
 ---
 
+## 🎯 Phase 8: Advanced Username Scan Hardening (COMPLETE)
+
+### Tier-Based Provider Gating
+- ✅ Frontend filters providers by tier in `useAdvancedScan.tsx` using `getPlan()`
+- ✅ Backend enforces tier limits in `scan-orchestrate` with `filterProvidersForPlan()`
+- ✅ Blocked providers create informational findings (not errors)
+- ✅ Shared tier logic in `_shared/tiers.ts` and `_shared/quotas.ts`
+
+### Architecture
+- **Frontend**: `AdvancedScan.tsx` → `useAdvancedScan` hook → `scan-orchestrate` edge function
+- **Backend**: `scan-orchestrate` validates tier → filters providers → executes in parallel
+- **Storage**: Results stored in `scans` and `scan_findings` tables
+
+### Tier → Provider Mapping (ENFORCED)
+
+| Tier | Monthly Scans | Allowed Providers | Price |
+|------|---------------|-------------------|-------|
+| **Free** | 10 | Maigret only | £0 |
+| **Pro** | 100 | Maigret + Sherlock (WhatsMyName) | £19/mo |
+| **Business** | Unlimited | Maigret + Sherlock + GoSearch | £49/mo |
+
+### Monitoring & Debugging
+- ✅ `get_stuck_scans(minutes)` database function for admin monitoring
+- ✅ Enhanced UI error messages with upgrade prompts in ScanResults.tsx
+- ✅ Tier-aware error toasts in AdvancedScan.tsx
+- ✅ Clear tier restriction messaging in scan results
+
+**Check stuck scans**:
+```sql
+SELECT * FROM public.get_stuck_scans(5);
+```
+
+**Common failure reasons**:
+1. Monthly quota exceeded: Check `scans_used_monthly` vs `scan_limit_monthly`
+2. Tier restrictions: Provider not in plan's `allowedProviders`
+3. Workspace not found: User not workspace member
+4. Provider unavailable: Worker offline
+
+---
+
 **Deployment completed successfully! 🚀**
+**Production Ready:** ✅ Zero monetization bypass - all tiers enforced

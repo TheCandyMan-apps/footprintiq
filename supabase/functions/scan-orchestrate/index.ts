@@ -5,6 +5,8 @@ import { corsHeaders, ok, bad, allowedOrigin } from '../_shared/secure.ts';
 import { createQueue } from '../_shared/queue.ts';
 import { withCache } from '../_shared/cache.ts';
 import { deduplicateFindings, sortFindings, type UFMFinding } from '../_shared/normalize.ts';
+import { getPlan } from '../_shared/tiers.ts';
+import { filterProvidersForPlan } from '../_shared/quotas.ts';
 
 // Validation schema for scan requests
 const ScanRequestSchema = z.object({
@@ -313,17 +315,20 @@ serve(async (req) => {
       }
     };
 
-    // Build provider list with sensible defaults
-    const DEFAULT_PROVIDERS: Record<ScanRequest['type'], string[]> = {
+    // Build provider list with tier enforcement
+    const plan = getPlan(workspace.plan || workspace.subscription_tier);
+    const DEFAULT_PROVIDERS_BY_TIER: Record<ScanRequest['type'], string[]> = {
       email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
-      username: ['maigret', 'whatsmyname', 'gosearch'], // All username OSINT tools
+      username: plan.allowedProviders.filter(p => 
+        ['maigret', 'sherlock', 'whatsmyname', 'gosearch'].includes(p)
+      ),
       domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
       phone: ['fullcontact']
     };
 
     let providers = options.providers && options.providers.length > 0 
       ? options.providers 
-      : DEFAULT_PROVIDERS[type];
+      : DEFAULT_PROVIDERS_BY_TIER[type];
 
     // If user explicitly selected providers, validate them
     if (options.providers && options.providers.length > 0) {
@@ -377,18 +382,50 @@ serve(async (req) => {
       console.warn('[orchestrate] Failed to update provider_counts:', e);
     }
 
-    // Ensure we always have at least one provider
+    // Ensure we always have at least one provider (will be tier-filtered after allFindings is declared)
     if (providers.length === 0) {
       console.warn('[orchestrate] No compatible providers, using defaults');
-      providers = DEFAULT_PROVIDERS[type];
+      providers = DEFAULT_PROVIDERS_BY_TIER[type];
     }
 
     // Note: Advanced sources (dating/nsfw/darkweb) rely on providers not yet supported directly.
     // We intentionally skip adding them here until proxy support is stable.
 
+    // CRITICAL: Filter requested providers by tier allowance BEFORE creating queue
+    const { allowed: allowedProviders, blocked } = filterProvidersForPlan(
+      workspace.plan || workspace.subscription_tier,
+      providers
+    );
+
     // Create execution queue
     const queue = createQueue({ concurrency: 7, retries: 3 });
     const allFindings: UFMFinding[] = [];
+    
+    if (blocked.length > 0) {
+      console.warn('[orchestrate] Blocked providers for tier:', blocked);
+      // Add informational finding about blocked providers
+      const blockedFinding: UFMFinding = {
+        provider: 'system',
+        kind: 'tier_restriction',
+        severity: 'info',
+        confidence: 1.0,
+        observedAt: new Date().toISOString(),
+        evidence: [
+          { key: 'blocked_providers', value: blocked.join(', ') },
+          { key: 'upgrade_required', value: plan.id === 'free' ? 'Pro or Business' : 'Business' },
+          { key: 'message', value: `${blocked.join(', ')} requires ${plan.id === 'free' ? 'Pro or Business' : 'Business'} plan` }
+        ]
+      };
+      allFindings.push(blockedFinding);
+    }
+
+    providers = allowedProviders;
+
+    // Ensure we have at least one provider after tier filtering
+    if (providers.length === 0) {
+      console.error('[orchestrate] Critical: No providers available after tier filtering!');
+      throw new Error('no_providers_available_for_tier');
+    }
 
     // Update initial progress
     await updateProgress({

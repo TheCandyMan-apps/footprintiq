@@ -8556,6 +8556,18 @@ export type Database = {
       generate_referral_code: { Args: { _user_id: string }; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       get_credits_balance: { Args: { _workspace_id: string }; Returns: number }
+      get_stuck_scans: {
+        Args: { minutes_threshold?: number }
+        Returns: {
+          created_at: string
+          scan_id: string
+          scan_type: string
+          status: string
+          stuck_minutes: number
+          target_value: string
+          workspace_id: string
+        }[]
+      }
       get_system_audit_failure_rate: {
         Args: { _audit_type?: string; _hours_back?: number }
         Returns: number

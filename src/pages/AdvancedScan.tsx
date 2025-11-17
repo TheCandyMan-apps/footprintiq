@@ -458,9 +458,17 @@ export default function AdvancedScan() {
               setProgressOpen(false);
               setCurrentScanId(null);
               setIsScanning(false);
-              toast.error('Scan failed to start', {
-                description: error.message || 'Unable to initiate scan',
-              });
+              
+              const errorMessage = error.message || 'Unknown error';
+              let description = 'Unable to initiate scan';
+              
+              if (errorMessage.includes('requires')) {
+                description = 'Some selected providers require plan upgrade';
+              } else if (errorMessage.includes('limit reached')) {
+                description = 'Monthly scan quota exceeded - consider upgrading';
+              }
+              
+              toast.error('Scan failed to start', { description });
             }
             throw error;
           }
