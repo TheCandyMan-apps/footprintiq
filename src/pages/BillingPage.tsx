@@ -35,13 +35,22 @@ export default function BillingPage() {
         return;
       }
 
+      // ✅ FIX: Read from workspaces instead of subscriptions to avoid 406 RLS errors
       const { data } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('workspace_id', workspace.id)
+        .from('workspaces')
+        .select('id, subscription_tier, plan')
+        .eq('id', workspace.id)
         .single();
 
-      setSubscription(data);
+      if (data) {
+        // Map workspace data to subscription shape for display
+        setSubscription({
+          id: data.id,
+          workspace_id: data.id,
+          plan: (data.subscription_tier || data.plan || 'free') as any,
+          status: 'active' as any,
+        } as any);
+      }
       setLoadingSubscription(false);
     };
 

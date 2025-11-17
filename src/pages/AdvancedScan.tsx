@@ -515,12 +515,9 @@ export default function AdvancedScan() {
     setIsScanning(false);
     setProgressOpen(false);
     if (currentScanId) {
-      // ✅ FIX: Multi-tool scans use unified results, single-tool Maigret uses specific page
-      if (scanType === 'username' && providers.length === 1 && providers[0] === 'maigret') {
+      // ✅ FIX: ALL username scans go to Simple pipeline results page (maigret_results table)
+      if (scanType === 'username') {
         navigate(`/maigret/results/${currentScanId}`);
-      } else if (scanType === 'username') {
-        // Multi-tool username scan - use unified results viewer
-        navigate(`/results/${currentScanId}`);
       } else {
         navigate(`/results/${currentScanId}`);
       }

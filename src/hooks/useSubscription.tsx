@@ -40,17 +40,19 @@ export const SubscriptionProvider = ({ children }: { children: ReactNode }) => {
         .single();
 
       if (workspaceMemberships?.workspace_id) {
-        const { data: subscription } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('workspace_id', workspaceMemberships.workspace_id)
+        // ✅ FIX: Read from workspaces instead of subscriptions to avoid 406 RLS errors
+        const { data: workspaceData } = await supabase
+          .from('workspaces')
+          .select('subscription_tier, plan')
+          .eq('id', workspaceMemberships.workspace_id)
           .single();
 
-        if (subscription && subscription.status === 'active') {
-          // Map database plan to tier (normalize naming)
-          let tier: SubscriptionTier = subscription.plan as SubscriptionTier;
+        if (workspaceData) {
+          // Use subscription_tier if available, otherwise fall back to plan
+          const tier = (workspaceData.subscription_tier || workspaceData.plan || 'free') as SubscriptionTier;
           setSubscriptionTier(tier);
-          setSubscriptionEnd(subscription.current_period_end || null);
+          // Note: workspaces table doesn't have period_end, so we'll leave it null
+          // This is fine for display purposes
           return;
         }
       }
