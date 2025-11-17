@@ -350,7 +350,7 @@ const Dashboard = () => {
         }).length;
 
         setDnaMetrics({
-          score: recentScan.privacy_score || 0,
+          score: (recentScan.privacy_score || 0) * 10, // Normalize 0-10 scale to 0-100
           breaches: breachCount,
           exposures: exposuresCount,
           dataBrokers: dataBrokersCount,
