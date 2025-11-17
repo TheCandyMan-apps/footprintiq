@@ -18,19 +18,26 @@ const PricingPage = () => {
     "offers": [
       {
         "@type": "Offer",
-        "name": "Analyst Plan",
-        "price": "29",
-        "priceCurrency": "USD",
+        "name": "PRO Plan",
+        "price": "19",
+        "priceCurrency": "GBP",
         "priceValidUntil": "2026-12-31",
-        "description": "For security analysts with unlimited scans and dark web monitoring"
+        "description": "For professionals with 100 scans per month and multi-tool OSINT"
+      },
+      {
+        "@type": "Offer",
+        "name": "Business Plan",
+        "price": "49",
+        "priceCurrency": "GBP",
+        "priceValidUntil": "2026-12-31",
+        "description": "For teams with 500 scans per month and shared workspaces"
       },
       {
         "@type": "Offer",
         "name": "Enterprise Plan",
-        "price": "299",
-        "priceCurrency": "USD",
+        "priceCurrency": "GBP",
         "priceValidUntil": "2026-12-31",
-        "description": "Advanced enterprise solution with API access, white-label reports, and SSO"
+        "description": "Custom enterprise solution with unlimited scans and white-label reporting"
       }
     ]
   };

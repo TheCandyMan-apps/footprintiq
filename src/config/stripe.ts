@@ -5,75 +5,55 @@
 
 // Subscription Plans - Monthly Recurring
 export const SUBSCRIPTION_PLANS = {
-  basic: {
-    name: 'Basic',
-    price: 5,
-    priceId: 'price_1SQwVyPNdM5SAyj7gXDm8Mkc',
-    productId: 'prod_TNhv1zVgFKGZcl',
-    tier: 'free', // Maps to 'free' tier in database for basic plan
-    features: [
-      '3 scans per month',
-      'Basic OSINT detection',
-      'Email breach checking',
-      'Community support',
-    ],
-  },
   pro: {
-    name: 'Pro',
-    price: 15,
+    name: 'PRO',
+    price: 19,
     priceId: 'price_1SQwWCPNdM5SAyj7XS394cD8',
     productId: 'prod_TNhwJ5AkeLgQUk',
-    tier: 'premium',
+    tier: 'pro',
+    currency: 'GBP',
     features: [
-      'Unlimited scans',
-      'Advanced OSINT (100+ sources)',
-      'Dark web monitoring',
-      'AI-powered analysis',
-      'PDF exports',
-      'Priority support',
+      '100 scans per month',
+      'Multi-tool OSINT engine (Sherlock + GoSearch)',
+      'Email & domain scanning',
+      'Full results view',
+      'PDF & CSV export',
+      'Priority queue',
+      'Risk scoring',
     ],
   },
-  analyst: {
-    name: 'Analyst',
-    price: 29,
+  business: {
+    name: 'Business',
+    price: 49,
     priceId: 'price_1SQh7LPNdM5SAyj7PMKySuO6',
     productId: 'prod_TNS1YvaaS0c6MZ',
-    tier: 'premium',
+    tier: 'business',
+    currency: 'GBP',
     features: [
-      'Everything in Pro',
-      'Advanced social media analysis',
-      'Automated removal requests',
-      'Continuous monitoring & alerts',
-      'Monthly privacy reports',
-    ],
-  },
-  professional: {
-    name: 'Professional',
-    price: 79,
-    priceId: 'price_1SPXcEPNdM5SAyj7AbannmpP',
-    productId: 'prod_TMG8KI96B257kn',
-    tier: 'premium',
-    features: [
-      'Everything in Analyst',
-      'White-label reports',
-      'Custom integrations',
-      'Advanced admin controls',
-      'Dedicated support',
+      '500 scans per month',
+      'All multi-tool providers',
+      '5 team seats',
+      'Shared workspaces',
+      'Audit logs',
+      'API access',
+      'Case notes & tagging',
+      'Early access to premium providers',
     ],
   },
   enterprise: {
     name: 'Enterprise',
-    price: 299,
+    price: null,
     priceId: 'price_1SQh9JPNdM5SAyj722p376Qh',
     productId: 'prod_TNS31ceFOSPimB',
     tier: 'enterprise',
+    currency: 'GBP',
     features: [
-      'Everything in Professional',
-      'Unlimited team members',
-      'API access (10,000 calls/hour)',
-      'SSO authentication',
-      'Custom SLA & compliance',
-      '24/7 enterprise support',
+      'Unlimited scans',
+      'White-label reporting',
+      'Dedicated support',
+      'Private cloud / on-prem',
+      'SLA & security reviews',
+      'Custom provider integrations',
     ],
   },
 } as const;
@@ -120,14 +100,12 @@ export const CREDIT_PACKS = {
 } as const;
 
 // Price ID to Tier Mapping (for webhook processing)
-export const PRICE_TO_TIER_MAP: Record<string, 'free' | 'premium' | 'enterprise'> = {
-  // Basic
-  'price_1SQwVyPNdM5SAyj7gXDm8Mkc': 'free',
+export const PRICE_TO_TIER_MAP: Record<string, 'free' | 'pro' | 'business' | 'enterprise'> = {
+  // Pro
+  'price_1SQwWCPNdM5SAyj7XS394cD8': 'pro',
   
-  // Pro, Analyst, Professional - all map to 'premium'
-  'price_1SQwWCPNdM5SAyj7XS394cD8': 'premium',
-  'price_1SQh7LPNdM5SAyj7PMKySuO6': 'premium',
-  'price_1SPXcEPNdM5SAyj7AbannmpP': 'premium',
+  // Business
+  'price_1SQh7LPNdM5SAyj7PMKySuO6': 'business',
   
   // Enterprise
   'price_1SQh9JPNdM5SAyj722p376Qh': 'enterprise',
@@ -144,6 +122,6 @@ export function getCreditPackByPriceId(priceId: string) {
 }
 
 // Helper function to get tier by price ID
-export function getTierByPriceId(priceId: string): 'free' | 'premium' | 'enterprise' | null {
+export function getTierByPriceId(priceId: string): 'free' | 'pro' | 'business' | 'enterprise' | null {
   return PRICE_TO_TIER_MAP[priceId] || null;
 }
