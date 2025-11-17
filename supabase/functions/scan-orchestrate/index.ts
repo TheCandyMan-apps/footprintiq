@@ -166,6 +166,7 @@ serve(async (req) => {
       includeDating: options.includeDating,
       includeNsfw: options.includeNsfw
     });
+    console.log('[orchestrate] Providers requested:', options.providers);
 
     // Use service role for workspace operations (initialize BEFORE any usage)
     const supabaseService = createClient(
@@ -355,7 +356,7 @@ serve(async (req) => {
     const DEFAULT_PROVIDERS_BY_TIER: Record<ScanRequest['type'], string[]> = {
       email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
       username: plan.allowedProviders.filter(p => 
-        ['maigret', 'sherlock', 'whatsmyname', 'gosearch'].includes(p)
+        ['maigret', 'sherlock', 'gosearch'].includes(p)
       ),
       domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
       phone: ['fullcontact']
@@ -365,13 +366,18 @@ serve(async (req) => {
       ? options.providers 
       : DEFAULT_PROVIDERS_BY_TIER[type];
 
+    // Normalize legacy provider names (whatsmyname -> sherlock)
+    providers = providers.map(p => p === 'whatsmyname' ? 'sherlock' : p);
+    console.log('[orchestrate] Providers after normalization:', providers);
+
+    // Always filter to allowed providers (regardless of source)
+    providers = providers.filter(p => ALLOWED_PROVIDERS.has(p));
+    
     // If user explicitly selected providers, validate them
     if (options.providers && options.providers.length > 0) {
       const invalidProviders = options.providers.filter(p => !ALLOWED_PROVIDERS.has(p));
       if (invalidProviders.length > 0) {
         console.warn('[orchestrate] Invalid providers ignored:', invalidProviders);
-        // Filter out invalid providers instead of failing
-        providers = options.providers.filter(p => ALLOWED_PROVIDERS.has(p));
       }
     }
 
@@ -389,7 +395,8 @@ serve(async (req) => {
       binaryedge: ['domain'],
       otx: ['domain'],
       maigret: ['username'],
-      whatsmyname: ['username'],
+      sherlock: ['username'],
+      whatsmyname: ['username'], // Legacy alias
       gosearch: ['username'],
       holehe: ['email'],
       'apify-social': ['username'],
@@ -402,6 +409,7 @@ serve(async (req) => {
       console.warn('[orchestrate] Dropping type-incompatible providers:', incompatible);
     }
     providers = providers.filter(p => providerTypeSupport[p]?.includes(type));
+    console.log('[orchestrate] Providers after type compatibility filter:', providers);
 
     // ✅ Now update scan record with provider counts after providers are finalized
     try {
