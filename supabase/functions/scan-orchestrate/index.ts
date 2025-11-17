@@ -807,73 +807,65 @@ serve(async (req) => {
       });
     }
 
-    // Persist findings (linked to scan_id)
-    if (sortedFindings.length > 0 && scanId) {
-      const { error: insertError } = await supabaseService.from('findings').insert(
-        sortedFindings.map(f => ({
-          scan_id: scanId,
-          workspace_id: workspaceId,
-          provider: f.provider,
-          kind: f.kind,
-          severity: f.severity,
-          confidence: normalizeConfidence(f.confidence),
-          observed_at: f.observedAt,
-          evidence: f.evidence,
-          meta: f.meta || {},
-        }))
-      );
-      
-      if (insertError) {
-        console.error(`[orchestrate] CRITICAL: Failed to persist findings:`, insertError);
-        throw new Error(`Failed to persist findings: ${insertError.message}`);
-      }
-      
-      console.log(`[orchestrate] Successfully persisted ${sortedFindings.length} findings for scan ${scanId}`);
-    }
-
-    // Update scan record with results, stats, and completed status
-    if (scanId) {
-      const highRiskCount = sortedFindings.filter(f => f.severity === 'high').length;
-      const mediumRiskCount = sortedFindings.filter(f => f.severity === 'medium').length;
-      const lowRiskCount = sortedFindings.filter(f => f.severity === 'low').length;
-      const privacyScore = Math.max(0, Math.min(100, 100 - (highRiskCount * 10 + mediumRiskCount * 5 + lowRiskCount * 2)));
-      
-      // Calculate provider counts
-      const providerCounts = sortedFindings.reduce((acc, f) => {
-        acc[f.provider] = (acc[f.provider] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-
-      const { error: updateError } = await supabaseService
-        .from('scans')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString(),
-          high_risk_count: highRiskCount,
-          medium_risk_count: mediumRiskCount,
-          low_risk_count: lowRiskCount,
-          privacy_score: privacyScore,
-          total_sources_found: sortedFindings.length,
-          provider_counts: providerCounts
-        } as any)
-        .eq('id', scanId);
-      
-      if (updateError) {
-        console.error('[orchestrate] Failed to update scan status:', updateError);
-      } else {
-        console.log(`[orchestrate] Scan ${scanId} updated to completed with ${sortedFindings.length} findings`);
+    // Wrap finalization in try/catch/finally to ensure scan always completes
+    try {
+      // Persist findings (linked to scan_id)
+      if (sortedFindings.length > 0 && scanId) {
+        const { error: insertError } = await supabaseService.from('findings').insert(
+          sortedFindings.map(f => ({
+            scan_id: scanId,
+            workspace_id: workspaceId,
+            provider: f.provider,
+            kind: f.kind,
+            severity: f.severity,
+            confidence: normalizeConfidence(f.confidence),
+            observed_at: f.observedAt,
+            evidence: f.evidence,
+            meta: f.meta || {},
+          }))
+        );
         
-        // Broadcast scan completion
-        const completeChannel = supabaseService.channel(`scan_progress:${scanId}`);
-        await completeChannel.send({
-          type: 'broadcast',
-          event: 'scan_complete',
-          payload: {
-            scanId,
-            findingsCount: sortedFindings.length,
-            status: 'completed'
-          }
-        });
+        if (insertError) {
+          console.error(`[orchestrate] CRITICAL: Failed to persist findings:`, insertError);
+          throw new Error(`Failed to persist findings: ${insertError.message}`);
+        }
+        
+        console.log(`[orchestrate] Successfully persisted ${sortedFindings.length} findings for scan ${scanId}`);
+      }
+
+      // Update scan record with results, stats, and completed status
+      if (scanId) {
+        const highRiskCount = sortedFindings.filter(f => f.severity === 'high').length;
+        const mediumRiskCount = sortedFindings.filter(f => f.severity === 'medium').length;
+        const lowRiskCount = sortedFindings.filter(f => f.severity === 'low').length;
+        const privacyScore = Math.max(0, Math.min(100, 100 - (highRiskCount * 10 + mediumRiskCount * 5 + lowRiskCount * 2)));
+        
+        // Calculate provider counts
+        const providerCounts = sortedFindings.reduce((acc, f) => {
+          acc[f.provider] = (acc[f.provider] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+
+        const { error: updateError } = await supabaseService
+          .from('scans')
+          .update({
+            status: 'completed',
+            completed_at: new Date().toISOString(),
+            high_risk_count: highRiskCount,
+            medium_risk_count: mediumRiskCount,
+            low_risk_count: lowRiskCount,
+            privacy_score: privacyScore,
+            total_sources_found: sortedFindings.length,
+            provider_counts: providerCounts
+          } as any)
+          .eq('id', scanId);
+        
+        if (updateError) {
+          console.error('[orchestrate] Failed to update scan status:', updateError);
+          throw updateError;
+        }
+        
+        console.log(`[orchestrate] Scan ${scanId} updated to completed with ${sortedFindings.length} findings`);
         
         // Trigger webhooks for scan completion
         try {
@@ -909,6 +901,63 @@ serve(async (req) => {
         } catch (webhookError) {
           console.error('[orchestrate] Failed to trigger webhooks:', webhookError);
           // Don't fail the scan if webhooks fail
+        }
+      }
+    } catch (finalizationError) {
+      console.error('[orchestrate] CRITICAL: Finalization failed:', finalizationError);
+      
+      // Ensure scan is marked as error, not left pending
+      if (scanId) {
+        try {
+          await supabaseService
+            .from('scans')
+            .update({
+              status: 'error',
+              completed_at: new Date().toISOString(),
+              error_message: finalizationError instanceof Error ? finalizationError.message : 'Finalization failed'
+            } as any)
+            .eq('id', scanId);
+          console.log(`[orchestrate] Scan ${scanId} marked as error due to finalization failure`);
+        } catch (updateErr) {
+          console.error('[orchestrate] Could not update scan to error state:', updateErr);
+        }
+      }
+      
+      throw finalizationError;
+    } finally {
+      // Always broadcast terminal event and update progress, regardless of success/failure
+      if (scanId) {
+        const providerCounts = sortedFindings.reduce((acc, f) => {
+          acc[f.provider] = (acc[f.provider] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        try {
+          await updateProgress({
+            status: 'completed',
+            total_providers: providers.length,
+            completed_providers: providers.length,
+            findings_count: sortedFindings.length,
+            message: `Scan complete: ${sortedFindings.length} findings from ${providers.length} providers`
+          });
+          
+          // Broadcast final scan_complete event
+          const completeChannel = supabaseService.channel(`scan_progress:${scanId}`);
+          await completeChannel.send({
+            type: 'broadcast',
+            event: 'scan_complete',
+            payload: {
+              scanId,
+              totalProviders: providers.length,
+              findingsCount: sortedFindings.length,
+              providerCounts,
+              status: 'completed'
+            }
+          });
+          
+          console.log(`[orchestrate] Terminal broadcast sent for scan ${scanId}`);
+        } catch (broadcastErr) {
+          console.error('[orchestrate] Failed to send terminal broadcast:', broadcastErr);
         }
       }
     }

@@ -48,3 +48,6 @@ verify_jwt = true
 
 [functions.generate-comprehensive-report]
 verify_jwt = true
+
+[functions.scan-repair]
+verify_jwt = true

@@ -161,8 +161,21 @@ serve(async (req) => {
           const data = await callOsintWorker('whatsmyname', payload);
           console.log(`[Sherlock] Raw worker response:`, JSON.stringify(data).substring(0, 500));
           
-          const results = (data?.results ?? []) as any[];
-          console.log(`[Sherlock] Extracted ${results.length} results from worker response`);
+          // Robust extraction: support multiple response formats
+          let raw = data?.results || data?.findings || data?.hits;
+          
+          // If still null/undefined, check if data is an object keyed by username
+          if (!raw && data && typeof data === 'object' && !Array.isArray(data)) {
+            const keys = Object.keys(data);
+            console.log(`[Sherlock] No standard results field, checking username-keyed object with keys:`, keys);
+            if (keys.length > 0 && Array.isArray(data[keys[0]])) {
+              raw = data[keys[0]];
+              console.log(`[Sherlock] Extracted from username-keyed object: ${raw.length} items`);
+            }
+          }
+          
+          const results = (raw ?? []) as any[];
+          console.log(`[Sherlock] Extracted ${results.length} results from worker response (format: ${data?.results ? 'results' : data?.findings ? 'findings' : data?.hits ? 'hits' : 'username-keyed'})`);
           
           // Defensive filtering for valid URLs
           const validResults = results.filter(r => {
