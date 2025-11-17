@@ -146,9 +146,14 @@ export function ScanResults({ jobId }: ScanResultsProps) {
       setJob(data);
     } catch (error: any) {
       console.error('Failed to load job:', error);
+      
+      // Provide helpful error message
+      const isNotFound = error?.code === 'PGRST116' || error?.message?.includes('not found');
       toast({
-        title: 'Error',
-        description: 'Failed to load scan job details',
+        title: isNotFound ? 'Scan Not Found' : 'Error',
+        description: isNotFound 
+          ? 'This scan may have failed to start. Check your scan quota and credits, then try again.'
+          : 'Failed to load scan job details',
         variant: 'destructive',
       });
     } finally {
@@ -188,8 +193,29 @@ export function ScanResults({ jobId }: ScanResultsProps) {
   if (!job) {
     return (
       <Card className="rounded-2xl shadow-sm">
-        <CardContent className="py-8 text-center text-muted-foreground">
-          Job not found
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-destructive" />
+            Scan Not Found
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">
+            This scan could not be found. It may have failed to start due to:
+          </p>
+          <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+            <li>Monthly scan limit reached</li>
+            <li>Insufficient credits</li>
+            <li>System error during scan creation</li>
+          </ul>
+          <div className="flex gap-2 pt-4">
+            <Button onClick={() => window.location.href = '/scan/advanced'}>
+              Start New Scan
+            </Button>
+            <Button variant="outline" onClick={() => window.location.href = '/billing'}>
+              Check Quota & Credits
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );

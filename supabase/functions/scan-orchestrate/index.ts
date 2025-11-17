@@ -171,6 +171,27 @@ serve(async (req) => {
       return bad(403, 'not_workspace_member_check_permissions');
     }
 
+    // Get workspace with quota info
+    const { data: workspace, error: workspaceError } = await supabaseService
+      .from('workspaces')
+      .select('id, subscription_tier, settings, plan, scans_used_monthly, scan_limit_monthly')
+      .eq('id', workspaceId)
+      .single();
+
+    if (workspaceError || !workspace) {
+      console.error('[orchestrate] Workspace query error:', workspaceError);
+      return bad(404, 'workspace_not_found');
+    }
+
+    // Check monthly scan quota BEFORE checking credits
+    const scanLimit = workspace.scan_limit_monthly;
+    const scansUsed = workspace.scans_used_monthly || 0;
+    
+    if (scanLimit !== null && scansUsed >= scanLimit) {
+      console.log(`[orchestrate] Monthly scan limit reached: ${scansUsed}/${scanLimit}`);
+      return bad(403, `Monthly scan limit reached (${scansUsed}/${scanLimit}). Upgrade your plan for more scans.`);
+    }
+
     // Check credits before scan
     const creditsRequired = options.includeDarkweb ? 10 : (options.includeDating || options.includeNsfw ? 5 : 1);
     const { data: creditsCheck } = await supabaseService
@@ -179,17 +200,6 @@ serve(async (req) => {
     const currentBalance = creditsCheck || 0;
     if (currentBalance < creditsRequired) {
       return bad(402, `Insufficient credits. Required: ${creditsRequired}, Balance: ${currentBalance}`);
-    }
-
-    const { data: workspace, error: workspaceError } = await supabaseService
-      .from('workspaces')
-      .select('id, subscription_tier, settings')
-      .eq('id', workspaceId)
-      .single();
-
-    if (workspaceError || !workspace) {
-      console.error('[orchestrate] Workspace query error:', workspaceError);
-      return bad(404, 'workspace_not_found');
     }
 
     // Check consent for sensitive sources
@@ -218,35 +228,47 @@ serve(async (req) => {
     const scanId = providedScanId || crypto.randomUUID();
     console.log(`[orchestrate] Using scanId: ${scanId}`);
     
-    // Create or update scan record with pending status
-    try {
-      // Map request type to DB enum with fallback
-      const scanTypeDb =
-        type === 'username' ? 'username'
-        : type === 'domain' ? 'domain'
-        : type === 'phone' ? 'phone'
-        : 'personal_details';
+    // Create scan record - this MUST succeed before proceeding
+    const scanTypeDb =
+      type === 'username' ? 'username'
+      : type === 'domain' ? 'domain'
+      : type === 'phone' ? 'phone'
+      : 'personal_details';
 
-      const { error: scanError } = await supabaseService
-        .from('scans')
-        .upsert({
-          id: scanId,
-          user_id: user.id,
-          scan_type: scanTypeDb as any,
-          email: type === 'email' ? value : null,
-          username: type === 'username' ? value : null,
-          phone: type === 'phone' ? value : null,
-          status: 'pending',
-          provider_counts: {}
-        } as any, {
-          onConflict: 'id'
-        });
-      
-      if (scanError) {
-        console.warn('[orchestrate] Failed to upsert scan record:', scanError);
-      }
-    } catch (e) {
-      console.warn('[orchestrate] Exception upserting scan record:', e);
+    const { error: scanError } = await supabaseService
+      .from('scans')
+      .upsert({
+        id: scanId,
+        user_id: user.id,
+        workspace_id: workspaceId,
+        scan_type: scanTypeDb as any,
+        email: type === 'email' ? value : null,
+        username: type === 'username' ? value : null,
+        phone: type === 'phone' ? value : null,
+        status: 'pending',
+        provider_counts: {}
+      } as any, {
+        onConflict: 'id'
+      });
+    
+    if (scanError) {
+      console.error('[orchestrate] CRITICAL: Failed to create scan record:', scanError);
+      return bad(500, `Failed to create scan record: ${scanError.message}. Please try again or contact support.`);
+    }
+
+    // Increment scans_used_monthly after successful scan creation
+    const { error: updateError } = await supabaseService
+      .from('workspaces')
+      .update({
+        scans_used_monthly: scansUsed + 1
+      })
+      .eq('id', workspaceId);
+
+    if (updateError) {
+      console.error('[orchestrate] Failed to increment scan counter:', updateError);
+      // Don't fail the scan for this, but log it for monitoring
+    } else {
+      console.log(`[orchestrate] Incremented scan counter: ${scansUsed + 1}/${scanLimit || 'unlimited'}`);
     }
 
     // Helper function to update progress in database
