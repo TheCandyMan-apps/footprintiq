@@ -316,7 +316,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       supabase.removeChannel(findingsChannel);
       clearInterval(healthInterval);
     };
-  }, [scanId, open, initialProvidersKey, onComplete, updateProvider, addDebugEvent, isPolling, lastEventAt, status]);
+  }, [scanId, open, initialProvidersKey, onComplete, updateProvider, addDebugEvent]);
 
   // Handle cancel
   const handleCancel = async () => {
