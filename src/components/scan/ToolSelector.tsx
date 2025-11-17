@@ -32,8 +32,8 @@ const TOOLS: Tool[] = [
     scanTypes: ['username'],
   },
   {
-    id: 'whatsmyname',
-    name: 'WhatsMyName',
+    id: 'sherlock',
+    name: 'Sherlock',
     description: 'Username enumeration across 300+ websites with high-accuracy presence detection',
     icon: Search,
     tier: 'pro',

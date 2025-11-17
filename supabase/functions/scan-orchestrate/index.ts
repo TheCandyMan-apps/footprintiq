@@ -44,7 +44,7 @@ const ALLOWED_PROVIDERS = new Set([
   'securitytrails', 'urlscan',
   'apify-social', 'apify-osint', 'apify-darkweb',
   'maigret',
-  'whatsmyname',
+  'sherlock',
   'holehe',
   'gosearch',
 ]);
@@ -768,7 +768,7 @@ serve(async (req) => {
 
     // Persist findings (linked to scan_id)
     if (sortedFindings.length > 0 && scanId) {
-      await supabaseService.from('findings').insert(
+      const { error: insertError } = await supabaseService.from('findings').insert(
         sortedFindings.map(f => ({
           scan_id: scanId,
           workspace_id: workspaceId,
@@ -781,7 +781,13 @@ serve(async (req) => {
           meta: f.meta || {},
         }))
       );
-      console.log(`[orchestrate] Persisted ${sortedFindings.length} findings for scan ${scanId}`);
+      
+      if (insertError) {
+        console.error(`[orchestrate] CRITICAL: Failed to persist findings:`, insertError);
+        throw new Error(`Failed to persist findings: ${insertError.message}`);
+      }
+      
+      console.log(`[orchestrate] Successfully persisted ${sortedFindings.length} findings for scan ${scanId}`);
     }
 
     // Update scan record with results, stats, and completed status

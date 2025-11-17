@@ -83,11 +83,25 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({'error': 'Not found'}).encode())
 
     def _handle_whatsmyname(self, data):
-        username = data.get('username')
+        username = data.get('username', '').strip()
         filters = data.get('filters', '')
         
-        if not username:
-            raise ValueError('Username required for whatsmyname')
+        # Sanitize username - remove special chars that might break Sherlock
+        # Keep alphanumeric, underscore, hyphen only
+        sanitized = ''.join(c for c in username if c.isalnum() or c in ['_', '-'])
+        
+        if sanitized != username:
+            print(f"[Sherlock] Sanitized username from '{username}' to '{sanitized}'")
+        
+        if not sanitized:
+            return self._send_json({
+                'tool': 'whatsmyname',
+                'username': username,
+                'results': [],
+                'error': 'Invalid username format - only alphanumeric, underscore, and hyphen allowed'
+            })
+        
+        username = sanitized
 
         # Use sherlock instead (more reliable, proper CLI)
         import tempfile

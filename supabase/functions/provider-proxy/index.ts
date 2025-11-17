@@ -138,41 +138,41 @@ serve(async (req) => {
       case 'shodan':
         result = await callShodan(target);
         break;
-      case 'whatsmyname': {
+      case 'sherlock': {
         // Only valid for username scans
         if (type !== 'username') {
-          console.log('[WhatsMyName] Skipping - not a username scan');
+          console.log('[Sherlock] Skipping - not a username scan');
           result = { findings: [] };
           break;
         }
-        console.log(`[WhatsMyName] Starting scan for username: ${target}`);
+        console.log(`[Sherlock] Starting scan for username: ${target}`);
         
         try {
           const data = await callOsintWorker('whatsmyname', { username: target });
-          console.log(`[WhatsMyName] Worker returned data:`, JSON.stringify({
+          console.log(`[Sherlock] Worker returned data:`, JSON.stringify({
             hasResults: !!data?.results,
             resultsCount: Array.isArray(data?.results) ? data.results.length : 0,
             rawDataKeys: Object.keys(data || {})
           }, null, 2));
           
           const results = (data?.results ?? []) as any[];
-          console.log(`[WhatsMyName] Extracted ${results.length} results from worker response`);
+          console.log(`[Sherlock] Extracted ${results.length} results from worker response`);
           
           if (results.length > 0) {
-            console.log(`[WhatsMyName] First result:`, JSON.stringify(results[0], null, 2));
+            console.log(`[Sherlock] First result:`, JSON.stringify(results[0], null, 2));
           } else {
-            console.warn(`[WhatsMyName] Worker returned 0 results for username: ${target}`);
-            console.log(`[WhatsMyName] Full worker response:`, JSON.stringify(data, null, 2));
+            console.warn(`[Sherlock] Worker returned 0 results for username: ${target}`);
+            console.log(`[Sherlock] Full worker response:`, JSON.stringify(data, null, 2));
             
             // Create a visible provider_error finding for 0 results
             const now = new Date().toISOString();
             const errorFinding = {
-              provider: 'whatsmyname',
+              provider: 'sherlock',
               kind: 'provider_error',
               severity: 'warn' as const,
               confidence: 0.5,
               observedAt: now,
-              reason: 'WhatsMyName/Sherlock returned no data for this username',
+              reason: 'Sherlock returned no data for this username',
               evidence: [
                 { key: 'status', value: 'no_results' },
                 { key: 'username', value: target },
@@ -187,7 +187,7 @@ serve(async (req) => {
           
           const now = new Date().toISOString();
           const findings = results.map((item) => ({
-            provider: 'whatsmyname',
+            provider: 'sherlock',
             kind: 'presence.hit',
             severity: 'low' as const,
             confidence: 0.85,
