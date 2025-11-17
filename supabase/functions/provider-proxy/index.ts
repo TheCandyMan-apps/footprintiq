@@ -146,39 +146,82 @@ serve(async (req) => {
           break;
         }
         console.log(`[WhatsMyName] Starting scan for username: ${target}`);
-        const data = await callOsintWorker('whatsmyname', { username: target });
-        console.log(`[WhatsMyName] Worker returned data:`, JSON.stringify({
-          hasResults: !!data?.results,
-          resultsCount: Array.isArray(data?.results) ? data.results.length : 0,
-          rawDataKeys: Object.keys(data || {})
-        }, null, 2));
         
-        const results = (data?.results ?? []) as any[];
-        console.log(`[WhatsMyName] Extracted ${results.length} results from worker response`);
-        
-        if (results.length > 0) {
-          console.log(`[WhatsMyName] First result:`, JSON.stringify(results[0], null, 2));
-        } else {
-          console.warn(`[WhatsMyName] Worker returned 0 results for username: ${target}`);
-          console.log(`[WhatsMyName] Full worker response:`, JSON.stringify(data, null, 2));
+        try {
+          const data = await callOsintWorker('whatsmyname', { username: target });
+          console.log(`[WhatsMyName] Worker returned data:`, JSON.stringify({
+            hasResults: !!data?.results,
+            resultsCount: Array.isArray(data?.results) ? data.results.length : 0,
+            rawDataKeys: Object.keys(data || {})
+          }, null, 2));
+          
+          const results = (data?.results ?? []) as any[];
+          console.log(`[WhatsMyName] Extracted ${results.length} results from worker response`);
+          
+          if (results.length > 0) {
+            console.log(`[WhatsMyName] First result:`, JSON.stringify(results[0], null, 2));
+          } else {
+            console.warn(`[WhatsMyName] Worker returned 0 results for username: ${target}`);
+            console.log(`[WhatsMyName] Full worker response:`, JSON.stringify(data, null, 2));
+            
+            // Create a visible provider_error finding for 0 results
+            const now = new Date().toISOString();
+            const errorFinding = {
+              provider: 'whatsmyname',
+              kind: 'provider_error',
+              severity: 'warn' as const,
+              confidence: 0.5,
+              observedAt: now,
+              reason: 'WhatsMyName/Sherlock returned no data for this username',
+              evidence: [
+                { key: 'status', value: 'no_results' },
+                { key: 'username', value: target },
+                { key: 'raw_response', value: JSON.stringify(data).slice(0, 200) },
+              ],
+              meta: data,
+            };
+            
+            result = { findings: [errorFinding] };
+            break;
+          }
+          
+          const now = new Date().toISOString();
+          const findings = results.map((item) => ({
+            provider: 'whatsmyname',
+            kind: 'presence.hit',
+            severity: 'low' as const,
+            confidence: 0.85,
+            observedAt: now,
+            evidence: [
+              { key: 'site', value: item.site || item.name || 'unknown' },
+              { key: 'url', value: item.url || '' },
+              { key: 'username', value: target },
+            ],
+            meta: item,
+          }));
+          console.log(`[WhatsMyName] Mapped to ${findings.length} UFM findings`);
+          result = { findings };
+        } catch (error: any) {
+          console.error(`[WhatsMyName] Worker error:`, error);
+          
+          // Create a visible provider_error finding for worker failures
+          const now = new Date().toISOString();
+          const errorFinding = {
+            provider: 'whatsmyname',
+            kind: 'provider_error',
+            severity: 'warn' as const,
+            confidence: 0.5,
+            observedAt: now,
+            reason: error.message || 'WhatsMyName worker failed',
+            evidence: [
+              { key: 'error', value: error.message || 'unknown error' },
+              { key: 'username', value: target },
+            ],
+            meta: { error: error.message },
+          };
+          
+          result = { findings: [errorFinding] };
         }
-        
-        const now = new Date().toISOString();
-        const findings = results.map((item) => ({
-          provider: 'whatsmyname',
-          kind: 'presence.hit',
-          severity: 'low' as const,
-          confidence: 0.85,
-          observedAt: now,
-          evidence: [
-            { key: 'site', value: item.site || item.name || 'unknown' },
-            { key: 'url', value: item.url || '' },
-            { key: 'username', value: target },
-          ],
-          meta: item,
-        }));
-        console.log(`[WhatsMyName] Mapped to ${findings.length} UFM findings`);
-        result = { findings };
         break;
       }
       case 'holehe': {
@@ -305,7 +348,14 @@ async function callOsintWorker(
   if (!resp.ok) {
     const text = await resp.text();
     console.error(`[OSINT Worker] ${tool} error:`, resp.status, text);
-    throw new Error(`OSINT worker ${tool} failed: ${resp.status}`);
+    
+    // Return structured error instead of throwing
+    return {
+      error: 'provider_unavailable',
+      status: resp.status,
+      body: text,
+      tool,
+    };
   }
 
   const responseText = await resp.text();
