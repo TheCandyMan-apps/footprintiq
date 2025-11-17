@@ -4,8 +4,8 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 
 // Price ID to plan mapping
 const PRICE_TO_PLAN_MAP: Record<string, 'pro' | 'business'> = {
-  [Deno.env.get('STRIPE_PRICE_PRO') || '']: 'pro',
-  [Deno.env.get('STRIPE_PRICE_BUSINESS') || '']: 'business',
+  'price_1SIbjiA3ptI9drLWsG0noPeX': 'pro',
+  'price_1SN3uIA3ptI9drLWMCDo1mAT': 'business',
 };
 
 // Plan to scan limit mapping
