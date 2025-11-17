@@ -71,8 +71,8 @@ export function SimpleResultsViewer({
       
       // Add Sherlock results
       if (sherlockFindings.length > 0) {
-        providerSet.add('whatsmyname');
-        providerCounts['whatsmyname'] = sherlockFindings.length;
+        providerSet.add('sherlock');
+        providerCounts['sherlock'] = sherlockFindings.length;
       }
       
       onProvidersDetected(Array.from(providerSet), providerCounts);

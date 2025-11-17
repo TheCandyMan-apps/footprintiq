@@ -99,7 +99,7 @@ export const useUsernameScan = () => {
       // Default providers if not specified (exclude gosearch for Pro)
       const selectedProviders = options.providers?.length 
         ? options.providers 
-        : ['maigret', 'whatsmyname'];
+        : ['maigret', 'sherlock'];
       
       // Call scan-orchestrate with multi-tool support - CORRECT FIELD NAMES
       const requestBody = {

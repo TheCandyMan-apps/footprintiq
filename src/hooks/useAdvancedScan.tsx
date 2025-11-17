@@ -18,8 +18,8 @@ function buildProvidersList(
   if (type === 'username') {
     // Start with tier-allowed providers only
     if (allowedProviders.includes('maigret')) providers.push('maigret');
-    if (allowedProviders.includes('sherlock') || allowedProviders.includes('whatsmyname')) {
-      providers.push('whatsmyname');
+    if (allowedProviders.includes('sherlock')) {
+      providers.push('sherlock');
     }
     if (allowedProviders.includes('gosearch')) providers.push('gosearch');
   }
