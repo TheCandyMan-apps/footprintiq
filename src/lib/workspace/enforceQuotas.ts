@@ -1,4 +1,4 @@
-import { SubscriptionTier } from '@/hooks/useSubscription';
+import type { SubscriptionTier } from '@/hooks/useSubscription';
 import { PLAN_QUOTAS } from './quotas';
 
 export class QuotaExceededError extends Error {
