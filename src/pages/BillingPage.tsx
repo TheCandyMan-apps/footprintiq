@@ -1,28 +1,57 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useSubscription, usePlanConfig } from '@/hooks/useSubscription';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { getPlanConfig, PlanId } from '@/config/billing';
 
 export default function BillingPage() {
-  const { data: subscription, isLoading } = useSubscription();
-  const planConfig = usePlanConfig();
+  const { subscriptionTier, isLoading } = useSubscription();
   const { workspace } = useWorkspace();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
+
+  // Map tier to plan for config
+  const planId: PlanId = subscriptionTier === 'business' ? 'business' : 
+                         (subscriptionTier === 'pro' || subscriptionTier === 'premium') ? 'pro' : 
+                         'free';
+  const planConfig = getPlanConfig(planId);
+
+  // Load subscription details from database
+  useEffect(() => {
+    const loadSubscription = async () => {
+      if (!workspace?.id) {
+        setLoadingSubscription(false);
+        return;
+      }
+
+      const { data } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('workspace_id', workspace.id)
+        .single();
+
+      setSubscription(data);
+      setLoadingSubscription(false);
+    };
+
+    loadSubscription();
+  }, [workspace?.id]);
 
   const handleManageBilling = async () => {
     if (!workspace?.id) return;
 
-    if (subscription?.plan === 'free' || !subscription?.isActive) {
+    if (subscriptionTier === 'free' || !subscription?.status || subscription.status !== 'active') {
       navigate('/pricing');
       return;
     }
@@ -54,7 +83,7 @@ export default function BillingPage() {
     navigate('/pricing');
   };
 
-  if (isLoading) {
+  if (isLoading || loadingSubscription) {
     return (
       <div className="container mx-auto py-8">
         <div className="max-w-4xl mx-auto">
@@ -68,8 +97,11 @@ export default function BillingPage() {
     );
   }
 
-  const usagePercent = subscription ? (subscription.scansUsed / subscription.scanLimit) * 100 : 0;
+  const usagePercent = subscription ? (subscription.scans_used_monthly / subscription.scan_limit_monthly) * 100 : 0;
   const isHighUsage = usagePercent >= 80;
+  const scansUsed = subscription?.scans_used_monthly || 0;
+  const scanLimit = subscription?.scan_limit_monthly || planConfig.monthlyScanLimit;
+  const isActive = subscription?.status === 'active';
 
   return (
     <div className="container mx-auto py-8">
@@ -81,7 +113,7 @@ export default function BillingPage() {
               Manage your subscription and monitor usage
             </p>
           </div>
-          {subscription?.isActive && subscription.plan !== 'free' && (
+          {isActive && subscriptionTier !== 'free' && (
             <Button onClick={handleManageBilling} disabled={isLoadingPortal}>
               <CreditCard className="mr-2 h-4 w-4" />
               Manage Billing
@@ -96,13 +128,13 @@ export default function BillingPage() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   Current Plan
-                  <Badge variant={subscription?.isActive ? 'default' : 'secondary'}>
+                  <Badge variant={isActive ? 'default' : 'secondary'}>
                     {planConfig.name}
                   </Badge>
                 </CardTitle>
                 <CardDescription>{planConfig.description}</CardDescription>
               </div>
-              {subscription?.plan === 'free' && (
+              {subscriptionTier === 'free' && (
                 <Button onClick={handleUpgrade}>
                   <TrendingUp className="mr-2 h-4 w-4" />
                   Upgrade Plan
@@ -111,9 +143,9 @@ export default function BillingPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {subscription?.currentPeriodEnd && (
+            {subscription?.current_period_end && (
               <div className="text-sm text-muted-foreground">
-                Current period ends: {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                Current period ends: {new Date(subscription.current_period_end).toLocaleDateString()}
               </div>
             )}
 
@@ -154,18 +186,18 @@ export default function BillingPage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">Scans Used</span>
                 <span className="text-muted-foreground">
-                  {subscription?.scansUsed || 0} / {subscription?.scanLimit || 5}
+                  {scansUsed} / {scanLimit}
                 </span>
               </div>
               <Progress value={usagePercent} className="h-2" />
             </div>
 
-            {isHighUsage && subscription?.canScan && (
+            {isHighUsage && scansUsed < scanLimit && (
               <Alert>
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   You've used {Math.round(usagePercent)}% of your monthly scan limit.
-                  {subscription.plan === 'free' && (
+                  {subscriptionTier === 'free' && (
                     <Button
                       variant="link"
                       className="h-auto p-0 ml-1"
@@ -178,12 +210,12 @@ export default function BillingPage() {
               </Alert>
             )}
 
-            {!subscription?.canScan && (
+            {scansUsed >= scanLimit && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
                   You've reached your monthly scan limit.
-                  {subscription.plan === 'free' ? (
+                  {subscriptionTier === 'free' ? (
                     <>
                       {' '}Upgrade to PRO for 100 scans per month.
                       <Button
@@ -216,7 +248,7 @@ export default function BillingPage() {
         </Card>
 
         {/* Upgrade CTA for Free Users */}
-        {subscription?.plan === 'free' && (
+        {subscriptionTier === 'free' && (
           <Card className="border-primary">
             <CardHeader>
               <CardTitle>Unlock More Features</CardTitle>
