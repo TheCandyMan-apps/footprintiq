@@ -86,6 +86,23 @@ serve(async (req) => {
           throw upsertError;
         }
 
+        // Also update workspaces table directly for immediate consistency
+        const { error: workspaceUpdateError } = await supabase
+          .from('workspaces')
+          .update({
+            plan: plan,
+            scan_limit_monthly: scanLimit,
+            scans_used_monthly: 0, // Reset on new subscription/period
+            subscription_tier: plan, // Keep legacy field in sync
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', workspaceId);
+
+        if (workspaceUpdateError) {
+          console.error('[stripe-webhooks] Failed to update workspace:', workspaceUpdateError);
+          // Don't throw - trigger will handle sync as fallback
+        }
+
         // Log audit event
         await supabase.from('billing_audit_logs').insert({
           workspace_id: workspaceId,

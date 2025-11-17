@@ -491,7 +491,18 @@ serve(async (req) => {
 
               if (error) {
                 console.error(`[orchestrate] Provider ${provider} error:`, error);
-                throw error;
+                // Return informational finding instead of throwing to allow scan to continue
+                return [{
+                  type: 'info',
+                  title: `${provider} provider unavailable`,
+                  severity: 'info',
+                  provider: provider,
+                  confidence: 1.0,
+                  evidence: { 
+                    message: 'Service temporarily unavailable',
+                    error: error.message || 'Unknown error'
+                  }
+                }];
               }
               
               findings = data?.findings || [];
@@ -587,7 +598,20 @@ serve(async (req) => {
           message: `Failed ${provider} (${completedCount}/${providers.length})`
         });
         
-        return []; // Continue with other providers
+        // Return informational finding about failure instead of empty array
+        return [{
+          type: 'info',
+          title: `${provider} scan failed`,
+          description: `Provider ${provider} encountered an error and was skipped`,
+          severity: 'info',
+          provider: provider,
+          confidence: 1.0,
+          evidence: [{ 
+            key: 'error', 
+            value: errorMessage 
+          }],
+          observedAt: new Date().toISOString()
+        }];
       }
     });
 
