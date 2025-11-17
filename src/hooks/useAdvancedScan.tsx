@@ -3,24 +3,40 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useWorkspace } from '@/hooks/useWorkspace';
 
-function buildProvidersList(type: 'email' | 'username' | 'domain' | 'phone', customProviders?: string[]): string[] {
-  const providers: string[] = [];
+import { getPlan } from '@/lib/billing/tiers';
+
+function buildProvidersList(
+  type: 'email' | 'username' | 'domain' | 'phone',
+  workspacePlan: string | null | undefined,
+  customProviders?: string[]
+): string[] {
+  const plan = getPlan(workspacePlan);
+  const allowedProviders = plan.allowedProviders;
+  
+  let providers: string[] = [];
   
   if (type === 'username') {
-    providers.push('maigret', 'whatsmyname', 'gosearch');
+    // Start with tier-allowed providers only
+    if (allowedProviders.includes('maigret')) providers.push('maigret');
+    if (allowedProviders.includes('sherlock') || allowedProviders.includes('whatsmyname')) {
+      providers.push('whatsmyname');
+    }
+    if (allowedProviders.includes('gosearch')) providers.push('gosearch');
   }
   
   if (type === 'email') {
     providers.push('holehe');
   }
 
-  // Merge with any custom providers specified
-  const uniqueProviders = Array.from(new Set([
-    ...providers,
-    ...(customProviders || [])
-  ]));
+  // If custom providers specified, filter by tier allowance
+  if (customProviders && customProviders.length > 0) {
+    const filtered = customProviders.filter(p => 
+      allowedProviders.includes(p.toLowerCase())
+    );
+    providers = Array.from(new Set([...providers, ...filtered]));
+  }
 
-  return uniqueProviders;
+  return providers;
 }
 
 export interface AdvancedScanOptions {
@@ -97,7 +113,7 @@ export function useAdvancedScan() {
           workspaceId: workspace.id,
           options: {
             includeDarkweb: !!options.deepWeb,
-            providers: buildProvidersList(type, options.providers),
+            providers: buildProvidersList(type, workspace?.subscription_tier, options.providers),
             premium: {
               socialMediaFinder: !!options.socialMedia,
               osintScraper: !!options.osintScraper,
