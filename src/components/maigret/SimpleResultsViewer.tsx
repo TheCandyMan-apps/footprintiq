@@ -101,7 +101,7 @@ export function SimpleResultsViewer({
             .from('findings')
             .select('*')
             .eq('scan_id', scan.id)
-            .eq('provider', 'whatsmyname');
+            .eq('provider', 'sherlock');
 
           if (error) {
             console.warn('[Sherlock] Error loading findings:', error);
@@ -451,6 +451,7 @@ export function SimpleResultsViewer({
                   // Provider badge colors
                   const providerColors = {
                     maigret: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+                    sherlock: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
                     whatsmyname: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
                     gosearch: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
                   };
@@ -547,7 +548,7 @@ export function SimpleResultsViewer({
                       }
                       
                       // Filter by selected providers
-                      if (selectedProviders.length > 0 && !selectedProviders.includes('whatsmyname')) {
+                      if (selectedProviders.length > 0 && !selectedProviders.includes('sherlock')) {
                         return false;
                       }
                       

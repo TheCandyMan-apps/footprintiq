@@ -199,20 +199,20 @@ serve(async (req) => {
             ],
             meta: item,
           }));
-          console.log(`[WhatsMyName] Mapped to ${findings.length} UFM findings`);
+          console.log(`[Sherlock] Mapped to ${findings.length} UFM findings`);
           result = { findings };
         } catch (error: any) {
-          console.error(`[WhatsMyName] Worker error:`, error);
+          console.error(`[Sherlock] Worker error:`, error);
           
           // Create a visible provider_error finding for worker failures
           const now = new Date().toISOString();
           const errorFinding = {
-            provider: 'whatsmyname',
+            provider: 'sherlock',
             kind: 'provider_error',
             severity: 'warn' as const,
             confidence: 0.5,
             observedAt: now,
-            reason: error.message || 'WhatsMyName worker failed',
+            reason: error.message || 'Sherlock worker failed',
             evidence: [
               { key: 'error', value: error.message || 'unknown error' },
               { key: 'username', value: target },
