@@ -96,10 +96,10 @@ export const useUsernameScan = () => {
       // All validations passed, now set scanning state
       setIsScanning(true);
 
-      // Default providers if not specified
+      // Default providers if not specified (exclude gosearch for Pro)
       const selectedProviders = options.providers?.length 
         ? options.providers 
-        : ['maigret', 'whatsmyname', 'gosearch'];
+        : ['maigret', 'whatsmyname'];
       
       // Call scan-orchestrate with multi-tool support - CORRECT FIELD NAMES
       const requestBody = {
@@ -108,6 +108,7 @@ export const useUsernameScan = () => {
         value: options.username,             // ✅ Correct field name  
         workspaceId: workspaceId,            // ✅ Use ensured workspace ID
         options: {
+          noCache: true,                     // ✅ Force cache bypass for username scans
           providers: selectedProviders,      // ✅ Moved inside options
           platforms: options.tags ? options.tags.split(',').map(t => t.trim()) : undefined,
           all_sites: options.allSites,

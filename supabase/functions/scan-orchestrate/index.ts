@@ -3,7 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders, ok, bad, allowedOrigin } from '../_shared/secure.ts';
 import { createQueue } from '../_shared/queue.ts';
-import { withCache } from '../_shared/cache.ts';
+import { withCache, cacheDelete } from '../_shared/cache.ts';
 import { deduplicateFindings, sortFindings, type UFMFinding } from '../_shared/normalize.ts';
 import { getPlan } from '../_shared/tiers.ts';
 import { filterProvidersForPlan } from '../_shared/quotas.ts';
@@ -20,6 +20,7 @@ const ScanRequestSchema = z.object({
     includeDarkweb: z.boolean().optional(),
     includeDating: z.boolean().optional(),
     includeNsfw: z.boolean().optional(),
+    noCache: z.boolean().optional(),
     providers: z.array(
       z.string().regex(/^[a-z0-9-]+$/, 'invalid provider name format')
     ).max(20, 'too many providers specified').optional(),
@@ -57,6 +58,7 @@ interface ScanRequest {
     includeDarkweb?: boolean;
     includeDating?: boolean;
     includeNsfw?: boolean;
+    noCache?: boolean;
     providers?: string[];
     premium?: {
       socialMediaFinder?: boolean;
@@ -441,6 +443,12 @@ serve(async (req) => {
     // Execute providers in parallel
     const tasks = providers.map((provider, index) => async () => {
       const cacheKey = `scan:${provider}:${type}:${value}`;
+      const noCache = options?.noCache ?? false;
+      
+      if (noCache) {
+        console.log(`[orchestrate] CACHE_BYPASS for ${provider}:${type}:${value}`);
+        await cacheDelete(cacheKey);
+      }
       
       console.log(`[orchestrate] Calling provider: ${provider} for ${type}:${value}`);
       
@@ -482,9 +490,8 @@ serve(async (req) => {
       });
       
       try {
-        const result = await withCache(
-          cacheKey,
-          async () => {
+        // Bypass cache if noCache option is set
+        const executeProvider = async () => {
             let findings = [];
             
             // Maigret provider calls dedicated edge function
@@ -547,9 +554,12 @@ serve(async (req) => {
             }
             
             return findings;
-          },
-          { ttlSeconds: 86400 }
-        );
+        };
+        
+        // Use cache unless noCache is true
+        const result = noCache 
+          ? await executeProvider()
+          : await withCache(cacheKey, executeProvider, { ttlSeconds: 86400 });
         
         completedCount++;
         
