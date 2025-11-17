@@ -10,6 +10,7 @@ import confetti from 'canvas-confetti';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { detectScanPipeline } from '@/utils/scanPipeline';
 
 interface ProviderStatus {
   name: string;
