@@ -159,5 +159,3 @@ export const useSubscription = () => {
   }
   return context;
 };
-
-export type { SubscriptionTier };
