@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle, XCircle, Clock, ExternalLink, Sparkles } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Clock, ExternalLink, Sparkles, Info } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -521,8 +521,12 @@ export function SimpleResultsViewer({
           <CardContent className="p-0">
             {sherlockFindings.length === 0 ? (
               <div className="p-6 text-center">
+                <Info className="w-8 h-8 mx-auto mb-3 text-muted-foreground/60" />
                 <p className="text-sm text-muted-foreground">
-                  No Sherlock hits for this username (or provider unavailable)
+                  Sherlock checked this username across its site database but didn't find confirmed profiles.
+                </p>
+                <p className="text-xs text-muted-foreground/75 mt-2">
+                  (Maigret may still find matches on different platforms)
                 </p>
               </div>
             ) : (

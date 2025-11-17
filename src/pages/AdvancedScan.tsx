@@ -127,18 +127,25 @@ export default function AdvancedScan() {
   // Auto-select default providers when scan type changes
   const DEFAULT_PROVIDERS: Record<string, string[]> = {
     email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
-    username: ['maigret', 'whatsmyname', 'gosearch'],
+    username: ['maigret', 'sherlock', 'gosearch'],
     domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
     phone: ['fullcontact'],
   };
 
   useEffect(() => {
-    setProviders(DEFAULT_PROVIDERS[scanType] || []);
+    if (scanType === 'username' && workspace?.plan) {
+      // Tier-based defaults for username scans
+      const isPro = workspace.plan === 'pro';
+      setProviders(isPro ? ['maigret', 'sherlock'] : ['maigret', 'sherlock', 'gosearch']);
+    } else {
+      setProviders(DEFAULT_PROVIDERS[scanType] || []);
+    }
+    
     if (scanType !== 'email' && scanType !== 'ip') {
       setIsBatchMode(false);
       setBatchItems([]);
     }
-  }, [scanType, maigretEnabled]);
+  }, [scanType, maigretEnabled, workspace?.plan]);
   
   // Guard: Show loading state while workspace initializes
   if (workspaceLoading) {
@@ -185,7 +192,7 @@ export default function AdvancedScan() {
     { id: "virustotal", name: "VirusTotal", icon: Shield, types: ['domain'] },
     { id: "abuseipdb", name: "AbuseIPDB", icon: Shield, types: ['ip'] },
     { id: "maigret", name: "Maigret", icon: Search, types: ['username'], description: "Advanced username reconnaissance across 500+ platforms including social media, forums, and gaming sites" },
-    { id: "whatsmyname", name: "WhatsMyName", icon: Globe, types: ['username'], description: "Username enumeration across 300+ websites with high-accuracy presence detection" },
+    { id: "sherlock", name: "Sherlock", icon: Globe, types: ['username'], description: "Username enumeration across 300+ websites with high-accuracy presence detection" },
     { id: "gosearch", name: "GoSearch", icon: Shield, premium: true, types: ['username'], description: "Digital footprint discovery across 300+ websites with deep OSINT capabilities (Enterprise tier)" },
     { id: "apify-social", name: "Social Media Finder Pro (400+ platforms)", icon: Search, premium: true, types: ['username'], description: "Discover profiles across Facebook, Instagram, Twitter, TikTok, LinkedIn, GitHub, Reddit, and 400+ more" },
     { id: "apify-osint", name: "OSINT Scraper (Paste sites)", icon: Database, premium: true, types: ['email', 'username'], description: "Search Pastebin, GitHub Gist, Codepad, and other paste sites for exposed data" },
@@ -600,7 +607,7 @@ export default function AdvancedScan() {
           {!workspaceLoading && workspace && (
             <>
               {/* Worker Status Banner */}
-              <WorkerStatusBanner showIfAllOnline={true} workerNames={['maigret', 'whatsmyname', 'gosearch']} />
+              <WorkerStatusBanner showIfAllOnline={true} workerNames={['maigret', 'sherlock', 'gosearch']} />
               
               {/* Premium Upgrade CTA for Free Users */}
               {isFree && (
@@ -683,7 +690,7 @@ export default function AdvancedScan() {
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertDescription className="text-sm">
-                      Username scans use multiple OSINT tools (Maigret, WhatsMyName, GoSearch) for comprehensive social media discovery across 400+ platforms
+                      Username scans use multiple OSINT tools (Maigret, Sherlock, GoSearch) for comprehensive social media discovery across 400+ platforms
                     </AlertDescription>
                   </Alert>
                   
@@ -800,7 +807,7 @@ export default function AdvancedScan() {
                     <UpgradeTeaser
                       feature="username-scan"
                       title="Unlock Premium Username Scanning"
-                      description="Search for usernames across 400+ social media platforms using multiple OSINT tools including Maigret, WhatsMyName, and GoSearch."
+                      description="Search for usernames across 400+ social media platforms using multiple OSINT tools including Maigret, Sherlock, and GoSearch."
                       benefits={[
                         "Scan 400+ platforms including Facebook, Instagram, Twitter, LinkedIn, GitHub, and more",
                         "Multiple OSINT tools for comprehensive coverage",
@@ -813,12 +820,12 @@ export default function AdvancedScan() {
                     />
                   )}
                   
-                  {/* WhatsMyName Premium Tab */}
+                  {/* Sherlock Premium Tab */}
                   {!isFree && (
                     <Card className="p-4 bg-primary/5 border-primary/20 mt-4">
                       <h4 className="font-semibold mb-3 flex items-center gap-2">
                         <Zap className="w-4 h-4 text-primary" />
-                        WhatsMyName Enrich (Premium)
+                        Sherlock Enrich (Premium)
                       </h4>
                       <WhatsMyNameTab subscriptionTier={subscriptionTier} />
                     </Card>
