@@ -348,24 +348,32 @@ export default function AdvancedScan() {
         await new Promise(resolve => setTimeout(resolve, 100));
         
         // Start the scan with pre-generated ID
+        console.log('[AdvancedScan] Starting username scan with workspace:', ensuredWorkspaceId, 'providers:', providers);
         const result = await startUsernameScan({
           scanId: preScanId,
           username: target.trim(),
           tags: usernameTags.trim() || undefined,
           allSites: usernameAllSites,
           artifacts: !isFree ? usernameArtifacts : [],
-          debugMode: false,
+          debugMode: true, // Enable debug logging to see quota/auth errors
           providers, // Pass selected providers to scan orchestrator
           workspaceId: ensuredWorkspaceId, // ✅ Override workspace ID
         });
+        console.log('[AdvancedScan] Scan started successfully:', result);
 
         // Progress dialog will handle navigation on completion
         setIsScanning(false);
       } catch (error) {
-        console.error("Username scan error:", error);
-        toast.error(error instanceof Error ? error.message : "Scan failed");
+        console.error("[AdvancedScan] Username scan error:", error);
+        const errorMessage = error instanceof Error ? error.message : "Scan failed";
+        toast.error(errorMessage, {
+          description: "Check console (F12) for details",
+          duration: 5000
+        });
         setIsScanning(false);
         setProgressOpen(false);
+        setModalScanId(null);
+        setCurrentScanId(null);
       }
       return; // Exit early for username scans
     }
