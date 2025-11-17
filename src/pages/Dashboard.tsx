@@ -349,13 +349,25 @@ const Dashboard = () => {
           return DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k));
         }).length;
 
-        setDnaMetrics({
-          score: (recentScan.privacy_score || 0) * 10, // Normalize 0-10 scale to 0-100
+        // Normalize privacy_score to 0-100 scale
+        let normalizedScore: number | undefined;
+        if (recentScan.privacy_score !== null && recentScan.privacy_score !== undefined) {
+          const rawScore = recentScan.privacy_score;
+          // Detect scale: if <=10, treat as 0-10 and multiply by 10; if >10, use as-is
+          if (rawScore <= 10) {
+            normalizedScore = Math.min(100, Math.max(0, rawScore * 10));
+          } else {
+            normalizedScore = Math.min(100, Math.max(0, rawScore));
+          }
+        }
+        
+        setDnaMetrics(prev => ({
+          score: normalizedScore !== undefined ? normalizedScore : prev.score,
           breaches: breachCount,
           exposures: exposuresCount,
           dataBrokers: dataBrokersCount,
           darkWeb: darkWebCount
-        });
+        }));
 
         // Fetch trend data for this user
         const trends = await analyzeTrends(userId, 30);
@@ -647,7 +659,7 @@ const Dashboard = () => {
                     {/* Main Metrics with Glassmorphic Cards */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <GlassCard delay={0} intensity="medium" glowColor="purple" className="p-6 flex items-center justify-center">
-                        <CircularMetric value={dnaMetrics.score / 10} max={10} label="Risk Score" size="md" gradient />
+                        <CircularMetric value={dnaMetrics.score} max={100} label="Risk Score" size="md" gradient />
                       </GlassCard>
                       
                       <GlassCard delay={0.1} intensity="medium" glowColor="pink" className="p-6 flex items-center justify-center">
