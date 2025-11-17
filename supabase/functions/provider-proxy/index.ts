@@ -141,11 +141,28 @@ serve(async (req) => {
       case 'whatsmyname': {
         // Only valid for username scans
         if (type !== 'username') {
+          console.log('[WhatsMyName] Skipping - not a username scan');
           result = { findings: [] };
           break;
         }
+        console.log(`[WhatsMyName] Starting scan for username: ${target}`);
         const data = await callOsintWorker('whatsmyname', { username: target });
+        console.log(`[WhatsMyName] Worker returned data:`, JSON.stringify({
+          hasResults: !!data?.results,
+          resultsCount: Array.isArray(data?.results) ? data.results.length : 0,
+          rawDataKeys: Object.keys(data || {})
+        }, null, 2));
+        
         const results = (data?.results ?? []) as any[];
+        console.log(`[WhatsMyName] Extracted ${results.length} results from worker response`);
+        
+        if (results.length > 0) {
+          console.log(`[WhatsMyName] First result:`, JSON.stringify(results[0], null, 2));
+        } else {
+          console.warn(`[WhatsMyName] Worker returned 0 results for username: ${target}`);
+          console.log(`[WhatsMyName] Full worker response:`, JSON.stringify(data, null, 2));
+        }
+        
         const now = new Date().toISOString();
         const findings = results.map((item) => ({
           provider: 'whatsmyname',
@@ -160,6 +177,7 @@ serve(async (req) => {
           ],
           meta: item,
         }));
+        console.log(`[WhatsMyName] Mapped to ${findings.length} UFM findings`);
         result = { findings };
         break;
       }
@@ -244,10 +262,33 @@ async function callOsintWorker(
   const workerToken = Deno.env.get('OSINT_WORKER_TOKEN');
 
   if (!workerUrl || !workerToken) {
+    console.error('[OSINT Worker] Missing configuration:', { 
+      hasUrl: !!workerUrl, 
+      hasToken: !!workerToken 
+    });
     throw new Error('OSINT worker not configured');
   }
 
-  const resp = await fetch(new URL('/scan', workerUrl).toString(), {
+  const target = payload.username || payload.email || 'unknown';
+  console.log(`[OSINT Worker] Calling ${tool} for target: ${target}`);
+  console.log(`[OSINT Worker] Worker URL:`, workerUrl);
+  console.log(`[OSINT Worker] Request payload:`, JSON.stringify({
+    tool,
+    ...payload,
+    token: '***' // Redacted for security
+  }, null, 2));
+
+  // Check worker health first
+  try {
+    const healthUrl = new URL('/health', workerUrl).toString();
+    const healthResp = await fetch(healthUrl);
+    console.log(`[OSINT Worker] Health check status:`, healthResp.status);
+  } catch (healthError) {
+    console.warn(`[OSINT Worker] Health check failed:`, healthError);
+  }
+
+  const fullUrl = new URL('/scan', workerUrl).toString();
+  const resp = await fetch(fullUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -259,13 +300,30 @@ async function callOsintWorker(
     }),
   });
 
+  console.log(`[OSINT Worker] Response status:`, resp.status);
+
   if (!resp.ok) {
     const text = await resp.text();
-    console.error(`[osint-worker] ${tool} error:`, resp.status, text);
+    console.error(`[OSINT Worker] ${tool} error:`, resp.status, text);
     throw new Error(`OSINT worker ${tool} failed: ${resp.status}`);
   }
 
-  return await resp.json();
+  const responseText = await resp.text();
+  console.log(`[OSINT Worker] Raw response (first 500 chars):`, responseText.substring(0, 500));
+  
+  const data = JSON.parse(responseText);
+  console.log(`[OSINT Worker] Parsed data structure:`, JSON.stringify({
+    hasResults: !!data?.results,
+    resultsType: Array.isArray(data?.results) ? 'array' : typeof data?.results,
+    resultsLength: Array.isArray(data?.results) ? data.results.length : 0,
+    keys: Object.keys(data || {}),
+  }, null, 2));
+
+  if (data?.results && Array.isArray(data.results) && data.results.length > 0) {
+    console.log(`[OSINT Worker] First result sample:`, JSON.stringify(data.results[0], null, 2));
+  }
+
+  return data;
 }
 
 async function callProvider(name: string, body: any) {
