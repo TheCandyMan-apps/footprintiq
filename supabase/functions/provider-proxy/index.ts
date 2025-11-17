@@ -148,23 +148,49 @@ serve(async (req) => {
         console.log(`[Sherlock] Starting scan for username: ${target}`);
         
         try {
-          const data = await callOsintWorker('whatsmyname', { username: target });
-          console.log(`[Sherlock] Worker returned data:`, JSON.stringify({
-            hasResults: !!data?.results,
-            resultsCount: Array.isArray(data?.results) ? data.results.length : 0,
-            rawDataKeys: Object.keys(data || {})
-          }, null, 2));
+          const payload = { username: target };
+          console.log(`[Sherlock] Calling worker with payload:`, payload);
+          
+          const data = await callOsintWorker('whatsmyname', payload);
+          console.log(`[Sherlock] Raw worker response:`, JSON.stringify(data).substring(0, 500));
           
           const results = (data?.results ?? []) as any[];
           console.log(`[Sherlock] Extracted ${results.length} results from worker response`);
           
-          if (results.length > 0) {
-            console.log(`[Sherlock] First result:`, JSON.stringify(results[0], null, 2));
-          } else {
+          // Defensive filtering for valid URLs
+          const validResults = results.filter(r => {
+            const hasUrl = !!(r.url || r.url_user || r.url_main);
+            if (!hasUrl) {
+              console.warn(`[Sherlock] Skipping result without URL:`, JSON.stringify(r).substring(0, 200));
+            }
+            return hasUrl;
+          });
+          
+          console.log(`[Sherlock] ${validResults.length} valid results after URL filtering`);
+          
+          // Create provider_error if no valid results
+          if (validResults.length === 0 && results.length > 0) {
+            const now = new Date().toISOString();
+            const errorFinding = {
+              provider: 'sherlock',
+              kind: 'provider_error',
+              severity: 'warn' as const,
+              confidence: 0.5,
+              observedAt: now,
+              reason: 'Worker returned results but all were missing URLs',
+              evidence: [
+                { key: 'error', value: 'No valid URLs in worker response' },
+                { key: 'username', value: target },
+                { key: 'raw_result_count', value: String(results.length) },
+              ],
+              meta: { rawResults: results.slice(0, 3) },
+            };
+            result = { findings: [errorFinding] };
+            break;
+          }
+          
+          if (validResults.length === 0) {
             console.warn(`[Sherlock] Worker returned 0 results for username: ${target}`);
-            console.log(`[Sherlock] Full worker response:`, JSON.stringify(data, null, 2));
-            
-            // Create a visible provider_error finding for 0 results
             const now = new Date().toISOString();
             const errorFinding = {
               provider: 'sherlock',
@@ -176,35 +202,38 @@ serve(async (req) => {
               evidence: [
                 { key: 'status', value: 'no_results' },
                 { key: 'username', value: target },
-                { key: 'raw_response', value: JSON.stringify(data).slice(0, 200) },
               ],
               meta: data,
             };
-            
             result = { findings: [errorFinding] };
             break;
           }
           
-          const now = new Date().toISOString();
-          const findings = results.map((item) => ({
+          // Map to UFM findings with flexible URL field
+          const findings = validResults.map((item) => ({
             provider: 'sherlock',
             kind: 'presence.hit',
-            severity: 'low' as const,
-            confidence: 0.85,
-            observedAt: now,
+            severity: 'info' as const,
+            confidence: item.confidence ?? 0.7,
+            observedAt: new Date().toISOString(),
             evidence: [
               { key: 'site', value: item.site || item.name || 'unknown' },
-              { key: 'url', value: item.url || '' },
+              { key: 'url', value: item.url || item.url_user || item.url_main || '' },
               { key: 'username', value: target },
+              { key: 'status', value: item.status || 'found' },
             ],
             meta: item,
           }));
+          
           console.log(`[Sherlock] Mapped to ${findings.length} UFM findings`);
+          if (findings.length > 0) {
+            console.log(`[Sherlock] First finding:`, JSON.stringify(findings[0]).substring(0, 500));
+          }
+          
           result = { findings };
         } catch (error: any) {
           console.error(`[Sherlock] Worker error:`, error);
           
-          // Create a visible provider_error finding for worker failures
           const now = new Date().toISOString();
           const errorFinding = {
             provider: 'sherlock',
@@ -217,7 +246,7 @@ serve(async (req) => {
               { key: 'error', value: error.message || 'unknown error' },
               { key: 'username', value: target },
             ],
-            meta: { error: error.message },
+            meta: { error: String(error) },
           };
           
           result = { findings: [errorFinding] };

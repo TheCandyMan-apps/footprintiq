@@ -132,6 +132,10 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
             with open(output_file, 'r') as f:
                 scan_results = json.load(f)
             
+            # Debug logging for raw Sherlock output
+            print(f"[Sherlock] RAW JSON OUTPUT (first 2000 chars):")
+            print(json.dumps(scan_results)[:2000])
+            
             # Transform sherlock format to whatsmyname-like format
             # Sherlock JSON: { "username": { "site": {"url": "...", "status": "Claimed"} } }
             transformed_results = []
@@ -146,6 +150,13 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
                                 'response_time': site_data.get('response_time_s'),
                                 'found': True
                             })
+            
+            # Debug logging for transformed results
+            print(f"[Sherlock] TRANSFORMED {len(transformed_results)} results from raw JSON")
+            if transformed_results:
+                print(f"[Sherlock] FIRST RESULT: {json.dumps(transformed_results[0])}")
+            else:
+                print(f"[Sherlock] WARNING: No results transformed from raw JSON")
             
             return {
                 'tool': 'whatsmyname',  # Keep identifier for compatibility

@@ -12,6 +12,7 @@ import { useMaigretEntitlement } from '@/hooks/useMaigretEntitlement';
 import { Loader2, Info, Bug } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUsernameScan } from '@/hooks/useUsernameScan';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { UsernameScanDebug } from './UsernameScanDebug';
 import { ScanProgressDialog } from './ScanProgressDialog';
 import { checkAndRefreshSession } from '@/lib/auth/sessionRefresh';
@@ -33,7 +34,7 @@ const ARTIFACT_OPTIONS = [
 
 const PROVIDER_OPTIONS = [
   { id: 'maigret', label: 'Maigret', description: 'Social media & websites (300+ platforms)' },
-  { id: 'whatsmyname', label: 'WhatsMyName', description: 'Username presence detection' },
+  { id: 'sherlock', label: 'Sherlock', description: 'Username presence detection (Sherlock)' },
   { id: 'gosearch', label: 'GoSearch', description: 'Extended username search' },
 ];
 
@@ -42,7 +43,6 @@ export function UsernameScanForm() {
   const [tags, setTags] = useState('');
   const [allSites, setAllSites] = useState(false);
   const [artifacts, setArtifacts] = useState<string[]>([]);
-  const [providers, setProviders] = useState<string[]>(['maigret', 'whatsmyname', 'gosearch']); // All tools by default
   const [submitting, setSubmitting] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [currentScanId, setCurrentScanId] = useState<string | null>(null);
@@ -60,7 +60,26 @@ export function UsernameScanForm() {
     clearLogs 
   } = useUsernameScan();
   
+  // Get workspace for plan-based defaults
+  const { workspace } = useWorkspace();
+  
+  // Set default providers based on plan
+  const isPro = workspace?.plan === 'pro';
+  const [providers, setProviders] = useState<string[]>(
+    isPro ? ['maigret', 'sherlock'] : ['maigret', 'sherlock', 'gosearch']
+  );
+  
   const autoTriggeredRef = useRef(false);
+
+  // Update providers when workspace loads
+  useEffect(() => {
+    if (workspace && !autoTriggeredRef.current) {
+      const isPro = workspace.plan === 'pro';
+      setProviders(
+        isPro ? ['maigret', 'sherlock'] : ['maigret', 'sherlock', 'gosearch']
+      );
+    }
+  }, [workspace]);
 
   // Pre-populate form from advanced scan redirect (no auto-trigger)
   useEffect(() => {
@@ -264,7 +283,7 @@ export function UsernameScanForm() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                onClick={() => setProviders(['maigret', 'whatsmyname', 'gosearch'])}
+                onClick={() => setProviders(['maigret', 'sherlock', 'gosearch'])}
                 disabled={submitting}
                 className="h-7 text-xs"
               >

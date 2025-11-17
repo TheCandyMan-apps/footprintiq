@@ -7,6 +7,7 @@ type Workspace = {
   slug: string;
   owner_id: string;
   subscription_tier: 'free' | 'pro' | 'analyst' | 'enterprise';
+  plan: 'free' | 'pro' | 'business'; // Computed property
   subscription_expires_at: string | null;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
@@ -16,6 +17,15 @@ type Workspace = {
 };
 
 type WorkspaceRole = 'owner' | 'admin' | 'analyst' | 'viewer';
+
+// Helper to normalize subscription tier to plan ID
+function normalizePlan(subscription_tier: string | null | undefined): 'free' | 'pro' | 'business' {
+  const tier = (subscription_tier || 'free').toLowerCase();
+  if (tier === 'analyst') return 'pro';
+  if (tier === 'enterprise') return 'business';
+  if (tier === 'pro' || tier === 'business') return tier as 'pro' | 'business';
+  return 'free';
+}
 
 interface WorkspaceContext {
   workspace: Workspace | null;
@@ -77,11 +87,14 @@ export function useWorkspace(): WorkspaceContext {
       }
 
 
-      // Merge and deduplicate
+      // Merge and deduplicate, add computed plan property
       let deduped = Array.from(new Map([
         ...((memberWorkspaces || []) as any[]),
         ...((ownedWorkspaces || []) as any[]),
-      ].map((w: any) => [w.id, w])).values()) as Workspace[];
+      ].map((w: any) => [w.id, w])).values()).map((w: any) => ({
+        ...w,
+        plan: normalizePlan(w.subscription_tier),
+      })) as Workspace[];
 
       // Auto-create a personal workspace if none exists
       if (!deduped.length) {
@@ -101,7 +114,11 @@ export function useWorkspace(): WorkspaceContext {
               user_id: user.id,
               role: 'admin',
             });
-            deduped = [createdWs as unknown as Workspace];
+            const wsWithPlan = {
+              ...createdWs,
+              plan: normalizePlan((createdWs as any).subscription_tier),
+            } as Workspace;
+            deduped = [wsWithPlan];
           } else if (createErr) {
             console.error('Failed to auto-create workspace:', createErr);
           }
