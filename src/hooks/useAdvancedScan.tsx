@@ -30,9 +30,9 @@ function buildProvidersList(
 
   // If custom providers specified, filter by tier allowance
   if (customProviders && customProviders.length > 0) {
-    const filtered = customProviders.filter(p => 
-      allowedProviders.includes(p.toLowerCase())
-    );
+    const filtered = customProviders
+      .filter(Boolean)
+      .filter(p => allowedProviders.includes((p ?? '').toLowerCase()));
     providers = Array.from(new Set([...providers, ...filtered]));
   }
 
