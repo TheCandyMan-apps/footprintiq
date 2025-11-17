@@ -47,6 +47,22 @@ export const useUsernameScan = () => {
     try {
       addLog({ level: 'info', message: 'Starting username scan', data: { username: options.username } });
       
+      // ✅ Check quota BEFORE starting scan
+      const { canRunScan } = await import('@/lib/billing/quotas');
+      const quotaCheck = canRunScan({
+        plan: (workspace as any)?.plan,
+        scans_used_monthly: (workspace as any)?.scans_used_monthly,
+        scan_limit_monthly: (workspace as any)?.scan_limit_monthly,
+      });
+      
+      if (!quotaCheck.allowed) {
+        addLog({ level: 'error', message: 'Quota exceeded', data: quotaCheck });
+        toast.error(quotaCheck.message || 'Monthly scan limit reached. Please upgrade your plan.');
+        throw new Error(quotaCheck.message);
+      }
+      
+      addLog({ level: 'debug', message: 'Quota check passed', data: { scansUsed: quotaCheck.scansUsed, scansLimit: quotaCheck.scansLimit } });
+      
       // Session check
       addLog({ level: 'debug', message: 'Checking authentication session' });
       const { data: { user }, error: authError } = await supabase.auth.getUser();
