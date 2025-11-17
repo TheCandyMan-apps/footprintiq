@@ -23,14 +23,17 @@ const PricingPage = () => {
 
   useEffect(() => {
     if (workspace?.id) {
+      // ✅ FIX: Read from workspaces instead of subscriptions to avoid 406 RLS errors
       supabase
-        .from('subscriptions')
-        .select('plan')
-        .eq('workspace_id', workspace.id)
+        .from('workspaces')
+        .select('subscription_tier, plan')
+        .eq('id', workspace.id)
         .single()
         .then(({ data }) => {
-          if (data?.plan) {
-            setCurrentPlan(data.plan as PlanId);
+          if (data) {
+            // Safe normalization with fallback
+            const plan = (data.subscription_tier || data.plan || 'free') as PlanId;
+            setCurrentPlan(plan);
           }
         });
     }

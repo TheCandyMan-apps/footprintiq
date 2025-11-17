@@ -83,7 +83,8 @@ export function resolvePlanFromStripePrice(priceId: string | null): PlanId {
  */
 export function getPlan(planId: string | null | undefined): PlanDefinition {
   if (!planId) return PLANS.free;
-  const normalizedId = planId.toLowerCase();
+  // ✅ FIX: Safe normalization with fallback
+  const normalizedId = (planId || 'free').toLowerCase();
   
   // Map legacy tier names
   if (normalizedId === 'premium' || normalizedId === 'analyst') {
