@@ -14,14 +14,10 @@ export interface PlanConfig {
   currency: string;
 }
 
-// Get Stripe price IDs from environment variables
-const getStripePriceId = (plan: PlanId): string | undefined => {
-  const priceIds = {
-    free: undefined, // Free plan has no Stripe price
-    pro: import.meta.env.VITE_STRIPE_PRICE_PRO,
-    business: import.meta.env.VITE_STRIPE_PRICE_BUSINESS,
-  };
-  return priceIds[plan];
+// Stripe Price IDs (from Stripe Dashboard)
+const STRIPE_PRICE_IDS = {
+  pro: 'price_1SIbjiA3ptI9drLWsG0noPeX',
+  business: 'price_1SN3uIA3ptI9drLWMCDo1mAT',
 };
 
 // Plan configurations
@@ -45,7 +41,7 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
     description: 'For professionals needing comprehensive OSINT',
     monthlyScanLimit: 100,
     allowedProviders: ['maigret', 'sherlock', 'gosearch', 'holehe'], // Multi-tool OSINT
-    stripePriceId: getStripePriceId('pro'),
+    stripePriceId: STRIPE_PRICE_IDS.pro,
     priceMonthly: 19,
     features: [
       '100 scans per month',
@@ -64,7 +60,7 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
     description: 'For teams requiring advanced features',
     monthlyScanLimit: 500,
     allowedProviders: ['maigret', 'sherlock', 'gosearch', 'holehe', 'spiderfoot'], // All providers
-    stripePriceId: getStripePriceId('business'),
+    stripePriceId: STRIPE_PRICE_IDS.business,
     priceMonthly: 49,
     features: [
       '500 scans per month',
