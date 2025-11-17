@@ -1273,6 +1273,38 @@ export type Database = {
         }
         Relationships: []
       }
+      billing_audit_logs: {
+        Row: {
+          created_at: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_audit_logs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       billing_customers: {
         Row: {
           created_at: string
@@ -7191,6 +7223,59 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan: string
+          scan_limit_monthly: number
+          scans_used_monthly: number
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: string
+          scan_limit_monthly?: number
+          scans_used_monthly?: number
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan?: string
+          scan_limit_monthly?: number
+          scans_used_monthly?: number
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_tickets: {
         Row: {
           attachments: Json | null
@@ -8513,6 +8598,7 @@ export type Database = {
         Returns: boolean
       }
       reset_expired_rate_limits: { Args: never; Returns: undefined }
+      reset_monthly_scans: { Args: never; Returns: undefined }
       spend_credits: {
         Args: {
           _cost: number
