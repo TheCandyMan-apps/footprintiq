@@ -71,6 +71,18 @@ serve(async (req) => {
 
     console.log(`🔍 Calling Maigret worker for ${body.usernames.length} username(s)`);
 
+    // Construct payload matching Cloud Run worker's expected format
+    const workerPayload = {
+      username: body.usernames[0], // Worker expects single username, not array
+      batch_id: body.scanId || crypto.randomUUID(),
+      workspace_id: body.workspaceId || null,
+      platforms: (body.sites && body.sites.length > 0) ? body.sites : undefined,
+      timeout: body.timeout || 60,
+      with_tor: Deno.env.get('TOR_ENABLED') === 'true',
+    };
+
+    console.log(`📤 Sending to worker:`, JSON.stringify(workerPayload, null, 2));
+
     // Call the Maigret worker
     const workerResponse = await fetch(`${WORKER_URL}/scan`, {
       method: 'POST',
@@ -78,20 +90,17 @@ serve(async (req) => {
         'Authorization': `Bearer ${WORKER_TOKEN}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        usernames: body.usernames,
-        sites: body.sites,
-        timeout: body.timeout || 60,
-      }),
+      body: JSON.stringify(workerPayload),
       signal: AbortSignal.timeout(90000), // 90s timeout
     });
 
     if (!workerResponse.ok) {
-      console.error(`❌ Maigret worker returned ${workerResponse.status}`);
+      const errorText = await workerResponse.text().catch(() => 'Unable to read error response');
+      console.error(`❌ Maigret worker returned ${workerResponse.status}:`, errorText);
       return new Response(
         JSON.stringify({ 
           findings: [],
-          error: `Worker returned ${workerResponse.status}`
+          error: `Worker returned ${workerResponse.status}: ${errorText}`
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
