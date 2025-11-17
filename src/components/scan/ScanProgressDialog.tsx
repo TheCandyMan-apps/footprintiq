@@ -14,7 +14,7 @@ import { detectScanPipeline } from '@/utils/scanPipeline';
 
 interface ProviderStatus {
   name: string;
-  status: 'pending' | 'loading' | 'success' | 'failed' | 'skipped' | 'retrying';
+  status: 'pending' | 'loading' | 'success' | 'failed' | 'skipped' | 'retrying' | 'warning';
   message?: string;
   resultCount?: number;
   lastUpdated?: number;
@@ -118,7 +118,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   // Compute stats
   const stats = useMemo(() => {
     const total = providers.length;
-    const completed = providers.filter(p => p.status === 'success' || p.status === 'failed' || p.status === 'skipped').length;
+    const completed = providers.filter(p => p.status === 'success' || p.status === 'failed' || p.status === 'skipped' || p.status === 'warning').length;
     const active = providers.filter(p => p.status === 'loading' || p.status === 'retrying');
     const findingsCount = providers.reduce((sum, p) => sum + (p.resultCount || 0), 0);
     const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -285,13 +285,20 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     const findingsChannel = supabase
       .channel(`findings_${scanId}`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'findings', filter: `scan_id=eq.${scanId}` }, (payload) => {
-        addDebugEvent('database', `New finding from ${payload.new.provider}`, payload.new.provider);
+        const finding = payload.new as any;
+        addDebugEvent('database', `New finding from ${finding.provider}`, finding.provider);
         setTotalResults(prev => prev + 1);
         
-        if (payload.new.provider) {
-          setProviders(prev => prev.map(p =>
-            p.name === payload.new.provider ? { ...p, resultCount: (p.resultCount || 0) + 1 } : p
-          ));
+        if (finding.provider) {
+          // Check if this is a provider_error finding - mark provider with warning status
+          if (finding.kind === 'provider_error') {
+            updateProvider(finding.provider, 'warning', finding.reason || 'Provider error', 0);
+          } else {
+            // Normal finding - increment result count
+            setProviders(prev => prev.map(p =>
+              p.name === finding.provider ? { ...p, resultCount: (p.resultCount || 0) + 1 } : p
+            ));
+          }
         }
       })
       .subscribe();
@@ -347,6 +354,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
       case 'failed':
         return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'warning':
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
       case 'skipped':
         return <AlertCircle className="h-4 w-4 text-muted-foreground" />;
       default:

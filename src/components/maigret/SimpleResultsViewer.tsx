@@ -19,6 +19,20 @@ interface MaigretResult {
   updated_at: string;
 }
 
+interface SherlockFinding {
+  id: string;
+  scan_id: string;
+  provider: string;
+  kind: string;
+  severity: string;
+  confidence: number;
+  evidence: any; // Json type from database
+  observed_at: string;
+  workspace_id: string;
+  meta: any;
+  created_at: string;
+}
+
 interface SimpleResultsViewerProps {
   jobId: string;
   searchQuery?: string;
@@ -33,10 +47,77 @@ export function SimpleResultsViewer({
   onProvidersDetected 
 }: SimpleResultsViewerProps) {
   const [result, setResult] = useState<MaigretResult | null>(null);
+  const [sherlockFindings, setSherlockFindings] = useState<SherlockFinding[]>([]);
+  const [sherlockLoading, setSherlockLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pollCount, setPollCount] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
+
+  // Update provider stats when Sherlock findings load
+  useEffect(() => {
+    if (!sherlockLoading && result && onProvidersDetected) {
+      const providerCounts: Record<string, number> = {};
+      const providerSet = new Set<string>();
+      
+      // Add Maigret results
+      providerSet.add('maigret');
+      if (result.summary && Array.isArray(result.summary)) {
+        result.summary.forEach((item: any) => {
+          const provider = item.provider || 'maigret';
+          providerCounts[provider] = (providerCounts[provider] || 0) + 1;
+        });
+      }
+      
+      // Add Sherlock results
+      if (sherlockFindings.length > 0) {
+        providerSet.add('whatsmyname');
+        providerCounts['whatsmyname'] = sherlockFindings.length;
+      }
+      
+      onProvidersDetected(Array.from(providerSet), providerCounts);
+    }
+  }, [sherlockLoading, sherlockFindings.length, result, onProvidersDetected]);
+
+  // Fetch Sherlock findings from the findings table
+  useEffect(() => {
+    if (!result?.username) return;
+
+    const fetchSherlockFindings = async () => {
+      try {
+        // First, try to find the scan_id from the scans table using username
+        const { data: scan } = await supabase
+          .from('scans')
+          .select('id')
+          .eq('username', result.username)
+          .eq('scan_type', 'username')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (scan) {
+          // Load Sherlock findings from findings table
+          const { data: findings, error } = await supabase
+            .from('findings')
+            .select('*')
+            .eq('scan_id', scan.id)
+            .eq('provider', 'whatsmyname');
+
+          if (error) {
+            console.warn('[Sherlock] Error loading findings:', error);
+          } else if (findings) {
+            setSherlockFindings(findings as SherlockFinding[]);
+          }
+        }
+      } catch (err) {
+        console.warn('[Sherlock] Failed to load findings:', err);
+      } finally {
+        setSherlockLoading(false);
+      }
+    };
+
+    fetchSherlockFindings();
+  }, [result?.username]);
 
   useEffect(() => {
     const fetchResult = async () => {
@@ -56,17 +137,19 @@ export function SimpleResultsViewer({
         setResult(data as MaigretResult);
         setLoading(false);
         
-        // Detect providers and calculate stats
+        // Detect providers and calculate stats - include both Maigret and Sherlock
         if (data.summary && Array.isArray(data.summary) && onProvidersDetected) {
           const providerCounts: Record<string, number> = {};
           const providerSet = new Set<string>();
           
+          // Add Maigret results
+          providerSet.add('maigret');
           data.summary.forEach((item: any) => {
             const provider = item.provider || 'maigret';
-            providerSet.add(provider);
             providerCounts[provider] = (providerCounts[provider] || 0) + 1;
           });
           
+          // We'll update with Sherlock count after it loads
           onProvidersDetected(Array.from(providerSet), providerCounts);
         }
       }
@@ -293,19 +376,36 @@ export function SimpleResultsViewer({
         </CardHeader>
       </Card>
 
-      {/* Results Card */}
+      {/* Provider Breakdown */}
+      {result.status === 'completed' && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-sm font-medium text-muted-foreground">Results by provider:</span>
+          <Badge variant="outline" className="gap-1.5">
+            <span className="font-semibold">Maigret</span>
+            <span className="text-muted-foreground">{result.summary?.length || 0}</span>
+          </Badge>
+          <Badge variant="outline" className="gap-1.5">
+            <span className="font-semibold">Sherlock</span>
+            <span className="text-muted-foreground">
+              {sherlockLoading ? '...' : sherlockFindings.length}
+            </span>
+          </Badge>
+        </div>
+      )}
+
+      {/* Maigret Results Card */}
       {result.summary && Array.isArray(result.summary) && result.summary.length > 0 && (
         <Card className="border-primary/20 bg-gradient-to-br from-card via-card to-primary/5 shadow-lg overflow-hidden animate-scale-in">
           <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent border-b border-primary/20">
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              Discovered Profiles
+              Maigret Results
               <Badge variant="secondary" className="ml-2">
                 {result.summary.length} found
               </Badge>
             </CardTitle>
             <CardDescription>
-              Found username presence across multiple platforms
+              Found username presence across multiple platforms via Maigret
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -402,7 +502,127 @@ export function SimpleResultsViewer({
         </Card>
       )}
 
-      {result.status === 'completed' && (!result.summary || result.summary.length === 0) && (
+      {/* Sherlock (WhatsMyName) Results Card */}
+      {result.status === 'completed' && !sherlockLoading && (
+        <Card className="border-purple-500/20 bg-gradient-to-br from-card via-card to-purple-500/5 shadow-lg overflow-hidden animate-scale-in">
+          <CardHeader className="bg-gradient-to-r from-purple-500/10 to-transparent border-b border-purple-500/20">
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-500" />
+              Sherlock (WhatsMyName) Results
+              <Badge variant="secondary" className="ml-2">
+                {sherlockFindings.length} found
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              Username presence detected via Sherlock OSINT tool
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            {sherlockFindings.length === 0 ? (
+              <div className="p-6 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No Sherlock hits for this username (or provider unavailable)
+                </p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[500px]">
+                <div className="p-6 space-y-3">
+                  {sherlockFindings
+                    .filter((finding) => {
+                      const getEvidenceValue = (evidence: any, key: string) => {
+                        if (!evidence || !Array.isArray(evidence)) return null;
+                        const found = evidence.find((e: any) => e.key === key);
+                        return found?.value;
+                      };
+                      
+                      const site = getEvidenceValue(finding.evidence, 'site');
+                      const url = getEvidenceValue(finding.evidence, 'url');
+                      
+                      // Filter by search query
+                      if (searchQuery) {
+                        const searchLower = searchQuery.toLowerCase();
+                        const matchesSite = site?.toLowerCase().includes(searchLower);
+                        const matchesUrl = url?.toLowerCase().includes(searchLower);
+                        if (!matchesSite && !matchesUrl) return false;
+                      }
+                      
+                      // Filter by selected providers
+                      if (selectedProviders.length > 0 && !selectedProviders.includes('whatsmyname')) {
+                        return false;
+                      }
+                      
+                      return true;
+                    })
+                    .map((finding, idx) => {
+                    const getEvidenceValue = (evidence: any, key: string) => {
+                      if (!evidence || !Array.isArray(evidence)) return null;
+                      const found = evidence.find((e: any) => e.key === key);
+                      return found?.value;
+                    };
+                    
+                    const site = getEvidenceValue(finding.evidence, 'site');
+                    const url = getEvidenceValue(finding.evidence, 'url');
+                    const status = getEvidenceValue(finding.evidence, 'status');
+                    
+                    // Check if this is an error finding
+                    const isError = finding.kind === 'provider_error';
+                    
+                    return (
+                      <div 
+                        key={finding.id}
+                        className={`group p-4 rounded-lg border ${
+                          isError 
+                            ? 'border-yellow-500/50 bg-yellow-50/5'
+                            : 'border-border/50 bg-gradient-to-br from-card to-card/50'
+                        } hover:border-purple-500/50 hover:shadow-md transition-all duration-300 hover:scale-[1.02] animate-fade-in`}
+                        style={{ animationDelay: `${idx * 50}ms` }}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <div className={`h-2 w-2 rounded-full ${isError ? 'bg-yellow-500' : 'bg-purple-500'} animate-pulse`} />
+                            <span className="font-semibold text-base group-hover:text-purple-500 transition-colors">
+                              {site || 'Unknown Site'}
+                            </span>
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
+                            >
+                              whatsmyname
+                            </Badge>
+                          </div>
+                          {status && (
+                            <Badge variant="outline" className="text-xs font-mono">
+                              {status}
+                            </Badge>
+                          )}
+                          {isError && (
+                            <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">
+                              provider error
+                            </Badge>
+                          )}
+                        </div>
+                        {url && (
+                          <a 
+                            href={url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-purple-500 transition-colors group/link"
+                          >
+                            <span className="break-all line-clamp-1">{url}</span>
+                            <ExternalLink className="h-3 w-3 flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity" />
+                          </a>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {result.status === 'completed' && (!result.summary || result.summary.length === 0) && sherlockFindings.length === 0 && (
         <Card className="border-muted bg-gradient-to-br from-muted/50 to-transparent animate-scale-in">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
