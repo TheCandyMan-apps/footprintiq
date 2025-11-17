@@ -179,13 +179,29 @@ serve(async (req) => {
       .single();
 
     if (workspaceError || !workspace) {
-      console.error('[orchestrate] Workspace query error:', workspaceError);
+      console.error('[orchestrate] Workspace query error:', {
+        error: workspaceError,
+        message: workspaceError?.message,
+        details: workspaceError?.details,
+        hint: workspaceError?.hint,
+        code: workspaceError?.code
+      });
       return bad(404, 'workspace_not_found');
     }
 
-    // Check monthly scan quota BEFORE checking credits
-    const scanLimit = workspace.scan_limit_monthly;
-    const scansUsed = workspace.scans_used_monthly || 0;
+    // Helper to get default quota based on tier
+    const getDefaultQuota = (tier: string): number | null => {
+      switch (tier) {
+        case 'free': return 10;
+        case 'pro': return 100;
+        case 'business': return null; // unlimited
+        default: return 10;
+      }
+    };
+
+    // Check monthly scan quota BEFORE checking credits (with fallbacks)
+    const scanLimit = workspace.scan_limit_monthly ?? getDefaultQuota(workspace.subscription_tier || workspace.plan || 'free');
+    const scansUsed = workspace.scans_used_monthly ?? 0;
     
     if (scanLimit !== null && scansUsed >= scanLimit) {
       console.log(`[orchestrate] Monthly scan limit reached: ${scansUsed}/${scanLimit}`);

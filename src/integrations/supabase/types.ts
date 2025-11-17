@@ -8488,6 +8488,9 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          plan: string | null
+          scan_limit_monthly: number | null
+          scans_used_monthly: number | null
           settings: Json | null
           slug: string | null
           stripe_customer_id: string | null
@@ -8502,6 +8505,9 @@ export type Database = {
           id?: string
           name: string
           owner_id: string
+          plan?: string | null
+          scan_limit_monthly?: number | null
+          scans_used_monthly?: number | null
           settings?: Json | null
           slug?: string | null
           stripe_customer_id?: string | null
@@ -8516,6 +8522,9 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+          plan?: string | null
+          scan_limit_monthly?: number | null
+          scans_used_monthly?: number | null
           settings?: Json | null
           slug?: string | null
           stripe_customer_id?: string | null
@@ -8599,6 +8608,7 @@ export type Database = {
       }
       reset_expired_rate_limits: { Args: never; Returns: undefined }
       reset_monthly_scans: { Args: never; Returns: undefined }
+      reset_monthly_workspace_scans: { Args: never; Returns: undefined }
       spend_credits: {
         Args: {
           _cost: number
