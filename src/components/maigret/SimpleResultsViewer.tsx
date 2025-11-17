@@ -523,10 +523,10 @@ export function SimpleResultsViewer({
               <div className="p-6 text-center">
                 <Info className="w-8 h-8 mx-auto mb-3 text-muted-foreground/60" />
                 <p className="text-sm text-muted-foreground">
-                  Sherlock checked this username across its site database but didn't find confirmed profiles.
+                  Sherlock checked its site list for this username but didn't find confirmed profiles.
                 </p>
                 <p className="text-xs text-muted-foreground/75 mt-2">
-                  (Maigret may still find matches on different platforms)
+                  This can be normal, as each provider covers different sites. Maigret may still find matches on different platforms.
                 </p>
               </div>
             ) : (

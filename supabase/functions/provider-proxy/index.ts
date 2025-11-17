@@ -194,7 +194,7 @@ serve(async (req) => {
             const errorFinding = {
               provider: 'sherlock',
               kind: 'provider_error',
-              severity: 'warn' as const,
+              severity: 'info' as const, // Changed from 'warn' to 'info' to satisfy DB constraint
               confidence: 0.5,
               observedAt: now,
               reason: 'Worker returned results but all were missing URLs',

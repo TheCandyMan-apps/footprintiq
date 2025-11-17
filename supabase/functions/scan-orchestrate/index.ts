@@ -811,19 +811,28 @@ serve(async (req) => {
     try {
       // Persist findings (linked to scan_id)
       if (sortedFindings.length > 0 && scanId) {
-        const { error: insertError } = await supabaseService.from('findings').insert(
-          sortedFindings.map(f => ({
+        // Sanitize severity values to ensure DB constraint compliance
+        const VALID_SEVERITIES = ['critical', 'high', 'medium', 'low', 'info'];
+        const sanitizedFindings = sortedFindings.map(f => {
+          let severity = f.severity;
+          if (!VALID_SEVERITIES.includes(severity)) {
+            console.warn(`[orchestrate] Invalid severity '${severity}' for finding, coercing to 'info'`, f);
+            severity = 'info';
+          }
+          return {
             scan_id: scanId,
             workspace_id: workspaceId,
             provider: f.provider,
             kind: f.kind,
-            severity: f.severity,
+            severity: severity,
             confidence: normalizeConfidence(f.confidence),
             observed_at: f.observedAt,
             evidence: f.evidence,
             meta: f.meta || {},
-          }))
-        );
+          };
+        });
+
+        const { error: insertError } = await supabaseService.from('findings').insert(sanitizedFindings);
         
         if (insertError) {
           console.error(`[orchestrate] CRITICAL: Failed to persist findings:`, insertError);
