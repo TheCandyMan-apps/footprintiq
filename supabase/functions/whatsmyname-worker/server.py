@@ -110,7 +110,7 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
         
         try:
             # Build sherlock command
-            cmd = ['sherlock', username, '--json', output_file, '--timeout', '30']
+            cmd = ['sherlock', username, '--json', output_file, '--nsfw', '--timeout', '30']
             
             # Add site filtering if provided
             if filters:
