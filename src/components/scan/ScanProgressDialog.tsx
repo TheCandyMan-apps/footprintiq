@@ -49,6 +49,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   const [connectionMode, setConnectionMode] = useState<'live' | 'fallback'>('live');
   const [lastEventAt, setLastEventAt] = useState(Date.now());
   const [isPolling, setIsPolling] = useState(false);
+  const [hasShownFallbackToast, setHasShownFallbackToast] = useState(false);
   
   // Debug
   const [debugEvents, setDebugEvents] = useState<DebugEvent[]>([]);
@@ -303,18 +304,22 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       })
       .subscribe();
 
-    // Health monitor
+    // Health monitor - increased threshold to 30s for long-running providers like Maigret
     const healthInterval = setInterval(() => {
       const timeSinceLastEvent = Date.now() - lastEventAt;
       if (status !== 'running') return;
       
-      if (timeSinceLastEvent > 12000 && !isPolling) {
+      if (timeSinceLastEvent > 30000 && !isPolling) {
         console.log('[ScanProgress] No realtime events, switching to polling');
         setConnectionMode('fallback');
         setIsPolling(true);
-        toast.info('Connection interrupted - using fallback updates', { duration: 3000 });
+        // Only show toast once per scan
+        if (!hasShownFallbackToast) {
+          toast.info('Using fallback updates mode', { duration: 3000 });
+          setHasShownFallbackToast(true);
+        }
       }
-    }, 3000);
+    }, 5000);
 
     // Cleanup
     return () => {

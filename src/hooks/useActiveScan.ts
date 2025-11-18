@@ -160,7 +160,6 @@ export function useActiveScan() {
           stopPolling(); // Stop polling when realtime connects
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           setConnectionStatus('disconnected');
-          toast.error('Connection interrupted - using fallback updates');
           startPolling(); // Start polling on error
         } else if (status === 'CLOSED') {
           setConnectionStatus('disconnected');
@@ -169,13 +168,13 @@ export function useActiveScan() {
 
     channelRef.current = channel;
 
-    // Start heartbeat monitoring
+    // Start heartbeat monitoring - increased to 30s for long-running providers
     heartbeatIntervalRef.current = setInterval(() => {
       const timeSinceLastUpdate = Date.now() - lastUpdateRef.current;
       
-      // If no update in 15 seconds and scan isn't completed, switch to polling
-      if (timeSinceLastUpdate > 15000 && connectionStatus === 'connected') {
-        console.warn('[useActiveScan] No updates for 15s, starting polling fallback');
+      // If no update in 30 seconds and scan isn't completed, switch to polling
+      if (timeSinceLastUpdate > 30000 && connectionStatus === 'connected') {
+        console.warn('[useActiveScan] No updates for 30s, starting polling fallback');
         setConnectionStatus('reconnecting');
         startPolling();
       }

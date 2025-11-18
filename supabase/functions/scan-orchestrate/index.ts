@@ -968,6 +968,25 @@ serve(async (req) => {
         } catch (broadcastErr) {
           console.error('[orchestrate] Failed to send terminal broadcast:', broadcastErr);
         }
+
+        // Reconcile maigret_results status if needed
+        try {
+          const { data: maigretResult } = await supabaseService
+            .from('maigret_results')
+            .select('status')
+            .eq('scan_id', scanId)
+            .maybeSingle();
+          
+          if (maigretResult && maigretResult.status === 'failed') {
+            console.log(`[orchestrate] Reconciling maigret_results status from 'failed' to 'completed' for scan ${scanId}`);
+            await supabaseService
+              .from('maigret_results')
+              .update({ status: 'completed' })
+              .eq('scan_id', scanId);
+          }
+        } catch (reconcileErr) {
+          console.error('[orchestrate] Failed to reconcile maigret_results status:', reconcileErr);
+        }
       }
     }
 
