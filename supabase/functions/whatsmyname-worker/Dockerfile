@@ -20,6 +20,9 @@ RUN go install github.com/ibnaleem/gosearch@latest
 # Copy the API server
 COPY server.py /app/
 
+# Ensure immediate log output (critical for Cloud Run debugging)
+ENV PYTHONUNBUFFERED=1
+
 # Expose port
 EXPOSE 8080
 
