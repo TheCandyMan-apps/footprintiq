@@ -440,8 +440,8 @@ export function SimpleResultsViewer({
                     // Filter by search query
                     if (searchQuery) {
                       const searchLower = searchQuery.toLowerCase();
-                      const matchesSite = site?.toLowerCase().includes(searchLower);
-                      const matchesUrl = url?.toLowerCase().includes(searchLower);
+                      const matchesSite = site ? site.toLowerCase().includes(searchLower) : false;
+                      const matchesUrl = url ? url.toLowerCase().includes(searchLower) : false;
                       if (!matchesSite && !matchesUrl) return false;
                     }
                     
@@ -561,8 +561,8 @@ export function SimpleResultsViewer({
                       // Filter by search query
                       if (searchQuery) {
                         const searchLower = searchQuery.toLowerCase();
-                        const matchesSite = site?.toLowerCase().includes(searchLower);
-                        const matchesUrl = url?.toLowerCase().includes(searchLower);
+                        const matchesSite = site ? site.toLowerCase().includes(searchLower) : false;
+                        const matchesUrl = url ? url.toLowerCase().includes(searchLower) : false;
                         if (!matchesSite && !matchesUrl) return false;
                       }
                       
