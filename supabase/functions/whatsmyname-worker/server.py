@@ -135,28 +135,58 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
             # Debug logging for raw Sherlock output
             print(f"[Sherlock] RAW JSON OUTPUT (first 2000 chars):")
             print(json.dumps(scan_results)[:2000])
+            print(f"[Sherlock] Top-level keys: {list(scan_results.keys())}")
             
             # Transform sherlock format to whatsmyname-like format
-            # Sherlock JSON: { "username": { "site": {"url": "...", "status": "Claimed"} } }
+            # Sherlock can output in multiple formats:
+            # 1. {"claimed": [{"name": "...", "url": "...", "urlMain": "..."}]}
+            # 2. {"username": {"site": {"url_user": "...", "status": "..."}}}
             transformed_results = []
-            for username_key, sites in scan_results.items():
-                if isinstance(sites, dict):
-                    for site_name, site_data in sites.items():
-                        if isinstance(site_data, dict) and site_data.get('url_user'):
-                            transformed_results.append({
-                                'site': site_name,
-                                'url': site_data.get('url_user'),
-                                'status': site_data.get('http_status'),
-                                'response_time': site_data.get('response_time_s'),
-                                'found': True
-                            })
+            
+            # Try format 1: claimed array (newer Sherlock versions)
+            if 'claimed' in scan_results and isinstance(scan_results['claimed'], list):
+                print(f"[Sherlock] Found 'claimed' array format with {len(scan_results['claimed'])} results")
+                for result in scan_results['claimed']:
+                    if isinstance(result, dict):
+                        transformed_results.append({
+                            'site': result.get('name', 'Unknown'),
+                            'url': result.get('url') or result.get('urlUser') or result.get('url_user'),
+                            'status': result.get('http_status'),
+                            'found': True
+                        })
+            
+            # Try format 2: nested username->sites structure (older format)
+            else:
+                print(f"[Sherlock] Trying nested username->sites format")
+                for username_key, sites in scan_results.items():
+                    if isinstance(sites, dict):
+                        for site_name, site_data in sites.items():
+                            if isinstance(site_data, dict):
+                                # Check multiple possible URL field names
+                                url = (site_data.get('url_user') or 
+                                       site_data.get('url_main') or 
+                                       site_data.get('urlMain') or
+                                       site_data.get('url'))
+                                
+                                # Only include if URL exists and status indicates found
+                                status = str(site_data.get('status', '')).lower()
+                                claimed = 'claim' in status or 'found' in status or site_data.get('exists', False)
+                                
+                                if url and (claimed or site_data.get('url_user')):
+                                    transformed_results.append({
+                                        'site': site_name,
+                                        'url': url,
+                                        'status': site_data.get('http_status'),
+                                        'response_time': site_data.get('response_time_s'),
+                                        'found': True
+                                    })
             
             # Debug logging for transformed results
             print(f"[Sherlock] TRANSFORMED {len(transformed_results)} results from raw JSON")
             if transformed_results:
                 print(f"[Sherlock] FIRST RESULT: {json.dumps(transformed_results[0])}")
             else:
-                print(f"[Sherlock] WARNING: No results transformed from raw JSON")
+                print(f"[Sherlock] WARNING: No results transformed. Raw structure: {json.dumps(scan_results)[:500]}")
             
             return {
                 'tool': 'whatsmyname',  # Keep identifier for compatibility
