@@ -971,18 +971,34 @@ serve(async (req) => {
 
         // Reconcile maigret_results status if needed
         try {
-          const { data: maigretResult } = await supabaseService
+          const { data: maigretResult, error: fetchErr } = await supabaseService
             .from('maigret_results')
             .select('status')
-            .eq('scan_id', scanId)
+            .eq('job_id', scanId)
             .maybeSingle();
           
-          if (maigretResult && maigretResult.status === 'failed') {
-            console.log(`[orchestrate] Reconciling maigret_results status from 'failed' to 'completed' for scan ${scanId}`);
-            await supabaseService
-              .from('maigret_results')
-              .update({ status: 'completed' })
-              .eq('scan_id', scanId);
+          if (fetchErr) {
+            console.error('[orchestrate] Error fetching maigret_results for reconciliation:', fetchErr);
+          } else if (maigretResult) {
+            console.log(`[orchestrate] Found maigret_results row with status: ${maigretResult.status}`);
+            
+            if (maigretResult.status === 'failed') {
+              console.log(`[orchestrate] Reconciling maigret_results status from 'failed' to 'completed' for scan ${scanId}`);
+              const { error: updateErr } = await supabaseService
+                .from('maigret_results')
+                .update({ status: 'completed' })
+                .eq('job_id', scanId);
+              
+              if (updateErr) {
+                console.error('[orchestrate] Failed to update maigret_results status:', updateErr);
+              } else {
+                console.log('[orchestrate] Successfully reconciled maigret_results status to completed');
+              }
+            } else {
+              console.log(`[orchestrate] maigret_results status already '${maigretResult.status}', no reconciliation needed`);
+            }
+          } else {
+            console.warn(`[orchestrate] No maigret_results row found for job_id: ${scanId}`);
           }
         } catch (reconcileErr) {
           console.error('[orchestrate] Failed to reconcile maigret_results status:', reconcileErr);
