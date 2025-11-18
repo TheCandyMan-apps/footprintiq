@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,21 +64,35 @@ export function UsernameScanForm() {
   // Get workspace for plan-based defaults
   const { workspace } = useWorkspace();
   
+  // Determine allowed providers based on plan
+  const getAllowedProviders = () => {
+    const plan = workspace?.plan || 'free';
+    if (plan === 'free') return ['maigret'];
+    if (plan === 'pro') return ['maigret', 'sherlock'];
+    return ['maigret', 'sherlock', 'gosearch'];
+  };
+  
   // Set default providers based on plan
-  const isPro = workspace?.plan === 'pro';
-  const [providers, setProviders] = useState<string[]>(
-    isPro ? ['maigret', 'sherlock'] : ['maigret', 'sherlock', 'gosearch']
-  );
+  const [providers, setProviders] = useState<string[]>(() => {
+    const plan = workspace?.plan || 'free';
+    if (plan === 'free') return ['maigret'];
+    if (plan === 'pro') return ['maigret', 'sherlock'];
+    return ['maigret', 'sherlock', 'gosearch'];
+  });
   
   const autoTriggeredRef = useRef(false);
 
   // Update providers when workspace loads
   useEffect(() => {
     if (workspace && !autoTriggeredRef.current) {
-      const isPro = workspace.plan === 'pro';
-      setProviders(
-        isPro ? ['maigret', 'sherlock'] : ['maigret', 'sherlock', 'gosearch']
-      );
+      const plan = workspace.plan || 'free';
+      if (plan === 'free') {
+        setProviders(['maigret']);
+      } else if (plan === 'pro') {
+        setProviders(['maigret', 'sherlock']);
+      } else {
+        setProviders(['maigret', 'sherlock', 'gosearch']);
+      }
     }
   }, [workspace]);
 
@@ -112,6 +127,22 @@ export function UsernameScanForm() {
         title: 'Username Required',
         description: 'Please enter a username to scan',
         variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Validate that at least one allowed provider is selected
+    const allowedProviders = getAllowedProviders();
+    const hasAllowedProvider = providers.some(p => allowedProviders.includes(p));
+    
+    if (!hasAllowedProvider) {
+      const plan = workspace?.plan || 'free';
+      toast({
+        title: 'No Available Providers Selected',
+        description: plan === 'free' 
+          ? 'Sherlock and GoSearch require a Pro plan. Please select Maigret or upgrade your plan.'
+          : 'The selected providers are not available on your plan. Please select an allowed provider.',
+        variant: 'destructive'
       });
       return;
     }
@@ -291,33 +322,46 @@ export function UsernameScanForm() {
               </Button>
             </div>
             <div className="space-y-2">
-              {PROVIDER_OPTIONS.map((option) => (
-                <div key={option.id} className="flex items-start space-x-2">
-                  <Checkbox
-                    id={`provider-${option.id}`}
-                    checked={providers.includes(option.id)}
-                    onCheckedChange={(checked) => {
-                      setProviders(
-                        checked
-                          ? [...providers, option.id]
-                          : providers.filter((p) => p !== option.id)
-                      );
-                    }}
-                    disabled={submitting}
-                  />
-                  <div className="grid gap-1.5 leading-none">
-                    <label
-                      htmlFor={`provider-${option.id}`}
-                      className="text-sm font-medium leading-none cursor-pointer"
-                    >
-                      {option.label}
-                    </label>
-                    <p className="text-xs text-muted-foreground">
-                      {option.description}
-                    </p>
+              {PROVIDER_OPTIONS.map((option) => {
+                const allowedProviders = getAllowedProviders();
+                const isAllowed = allowedProviders.includes(option.id);
+                const isBlocked = !isAllowed;
+                
+                return (
+                  <div key={option.id} className="flex items-start space-x-2">
+                    <Checkbox
+                      id={`provider-${option.id}`}
+                      checked={providers.includes(option.id)}
+                      disabled={submitting || isBlocked}
+                      onCheckedChange={(checked) => {
+                        setProviders(
+                          checked
+                            ? [...providers, option.id]
+                            : providers.filter((p) => p !== option.id)
+                        );
+                      }}
+                    />
+                    <div className="grid gap-1.5 leading-none flex-1">
+                      <div className="flex items-center gap-2">
+                        <label
+                          htmlFor={`provider-${option.id}`}
+                          className={`text-sm font-medium leading-none cursor-pointer ${isBlocked ? 'opacity-50' : ''}`}
+                        >
+                          {option.label}
+                        </label>
+                        {isBlocked && (
+                          <Badge variant="secondary" className="text-xs">
+                            Pro
+                          </Badge>
+                        )}
+                      </div>
+                      <p className={`text-xs text-muted-foreground ${isBlocked ? 'opacity-50' : ''}`}>
+                        {option.description}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             {providers.length === 0 && (
               <Alert>

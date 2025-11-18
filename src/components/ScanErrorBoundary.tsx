@@ -55,7 +55,12 @@ export class ScanErrorBoundary extends Component<Props, State> {
     });
     
     // Show user-friendly toast based on error type
-    if (error.message?.includes('timeout') || error.message?.includes('timed out')) {
+    if (error.message?.includes('no_providers_available_for_tier')) {
+      toast.error('Provider not available on your plan', {
+        description: 'The selected tool requires a Pro or Business plan. Please select Maigret or upgrade.',
+        duration: 6000,
+      });
+    } else if (error.message?.includes('timeout') || error.message?.includes('timed out')) {
       toast.error('Provider timed out—retrying...', {
         description: 'Some providers are taking longer than expected. We\'ll keep trying.',
         duration: 5000,

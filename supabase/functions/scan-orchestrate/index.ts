@@ -467,7 +467,17 @@ serve(async (req) => {
     // Ensure we have at least one provider after tier filtering
     if (providers.length === 0) {
       console.error('[orchestrate] Critical: No providers available after tier filtering!');
-      throw new Error('no_providers_available_for_tier');
+      const errorData = {
+        error: 'no_providers_available_for_tier',
+        blockedProviders: blocked,
+        allowedProviders: allowedProviders,
+        currentPlan: workspace.plan || workspace.subscription_tier || 'free',
+        message: 'The selected providers are not available on your current plan. Please select an allowed provider or upgrade your plan.'
+      };
+      return new Response(JSON.stringify(errorData), {
+        status: 400,
+        headers: { ...corsHeaders(), "Content-Type": "application/json" }
+      });
     }
 
     // Update initial progress
