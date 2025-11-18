@@ -70,10 +70,11 @@ export function SimpleResultsViewer({
         });
       }
       
-      // Add Sherlock results
-      if (sherlockFindings.length > 0) {
+      // Add Sherlock results (exclude provider errors)
+      const actualSherlockFindings = sherlockFindings.filter(f => f.kind !== 'provider_error');
+      if (actualSherlockFindings.length > 0) {
         providerSet.add('sherlock');
-        providerCounts['sherlock'] = sherlockFindings.length;
+        providerCounts['sherlock'] = actualSherlockFindings.length;
       }
       
       onProvidersDetected(Array.from(providerSet), providerCounts);
@@ -108,6 +109,12 @@ export function SimpleResultsViewer({
             console.warn('[Sherlock] Error loading findings:', error);
           } else if (findings) {
             setSherlockFindings(findings as SherlockFinding[]);
+            
+            // Debug: Log provider errors if any
+            const providerErrors = findings.filter((f: any) => f.kind === 'provider_error');
+            if (providerErrors.length > 0) {
+              console.log('[Sherlock] Provider errors detected:', providerErrors.length, 'out of', findings.length, 'total findings');
+            }
           }
         }
       } catch (err) {
@@ -402,7 +409,7 @@ export function SimpleResultsViewer({
           <Badge variant="outline" className="gap-1.5">
             <span className="font-semibold">Sherlock</span>
             <span className="text-muted-foreground">
-              {sherlockLoading ? '...' : sherlockFindings.length}
+              {sherlockLoading ? '...' : sherlockFindings.filter(f => f.kind !== 'provider_error').length}
             </span>
           </Badge>
         </div>
@@ -526,7 +533,7 @@ export function SimpleResultsViewer({
               <Sparkles className="h-5 w-5 text-purple-500" />
               Sherlock (WhatsMyName) Results
               <Badge variant="secondary" className="ml-2">
-                {sherlockFindings.length} found
+                {sherlockFindings.filter(f => f.kind !== 'provider_error').length} found
               </Badge>
             </CardTitle>
             <CardDescription>
@@ -534,7 +541,7 @@ export function SimpleResultsViewer({
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            {sherlockFindings.length === 0 ? (
+            {sherlockFindings.filter(f => f.kind !== 'provider_error').length === 0 ? (
               <div className="p-6 text-center">
                 <Info className="w-8 h-8 mx-auto mb-3 text-muted-foreground/60" />
                 <p className="text-sm text-muted-foreground">
@@ -549,6 +556,9 @@ export function SimpleResultsViewer({
                 <div className="p-6 space-y-3">
                   {sherlockFindings
                     .filter((finding) => {
+                      // Exclude provider errors from display
+                      if (finding.kind === 'provider_error') return false;
+                      
                       const getEvidenceValue = (evidence: any, key: string) => {
                         if (!evidence || !Array.isArray(evidence)) return null;
                         const found = evidence.find((e: any) => e.key === key);
