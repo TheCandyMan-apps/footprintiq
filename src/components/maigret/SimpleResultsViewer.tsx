@@ -47,6 +47,7 @@ export function SimpleResultsViewer({
   onProvidersDetected 
 }: SimpleResultsViewerProps) {
   const [result, setResult] = useState<MaigretResult | null>(null);
+  const [scanData, setScanData] = useState<{ status: string } | null>(null);
   const [sherlockFindings, setSherlockFindings] = useState<SherlockFinding[]>([]);
   const [sherlockLoading, setSherlockLoading] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -121,6 +122,7 @@ export function SimpleResultsViewer({
 
   useEffect(() => {
     const fetchResult = async () => {
+      // Fetch maigret_results
       const { data, error } = await supabase
         .from('maigret_results')
         .select('*')
@@ -152,6 +154,17 @@ export function SimpleResultsViewer({
           // We'll update with Sherlock count after it loads
           onProvidersDetected(Array.from(providerSet), providerCounts);
         }
+      }
+
+      // Fetch scan status from scans table to prioritize over maigret_results status
+      const { data: scan, error: scanError } = await supabase
+        .from('scans')
+        .select('status')
+        .eq('id', jobId)
+        .maybeSingle();
+
+      if (!scanError && scan) {
+        setScanData(scan);
       }
     };
 
@@ -257,8 +270,10 @@ export function SimpleResultsViewer({
     );
   }
 
-  // Handle failed scans
-  if (result.status === 'failed') {
+  // Handle failed scans - prioritize scan status over maigret_results status
+  const isScanFailed = scanData?.status === 'error' || (scanData?.status !== 'completed' && result.status === 'failed');
+  
+  if (isScanFailed) {
     const errorMessage = result.raw?.error || 'Scan failed due to an unknown error';
     return (
       <Card className="border-destructive/50">
