@@ -7,8 +7,17 @@ Exposes REST API for WhatsMyName, Holehe, and GoSearch
 import json
 import subprocess
 import os
+import sys
+import tempfile
+from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
+
+def log(msg):
+    """Log with timestamp to stderr for immediate Cloud Run visibility"""
+    timestamp = datetime.now().isoformat()
+    sys.stderr.write(f"[{timestamp}] {msg}\n")
+    sys.stderr.flush()
 
 class OsintWorkerHandler(BaseHTTPRequestHandler):
     def _set_headers(self, status=200, content_type='application/json'):
@@ -30,6 +39,26 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
                 'service': 'osint-worker',
                 'tools': ['sherlock', 'holehe', 'gosearch']
             }).encode())
+        elif self.path == '/test-sherlock':
+            # Test endpoint to verify Sherlock installation
+            self._set_headers()
+            try:
+                proc = subprocess.run(
+                    ["sherlock", "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                self.wfile.write(json.dumps({
+                    'sherlock_installed': True,
+                    'version_output': proc.stdout + proc.stderr,
+                    'return_code': proc.returncode
+                }).encode())
+            except Exception as e:
+                self.wfile.write(json.dumps({
+                    'sherlock_installed': False,
+                    'error': str(e)
+                }).encode())
         else:
             self._set_headers(404)
             self.wfile.write(json.dumps({'error': 'Not found'}).encode())
@@ -72,7 +101,7 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
                 self._set_headers(504)
                 self.wfile.write(json.dumps({'error': 'Scan timeout'}).encode())
             except Exception as e:
-                print(f"[OSINT Worker] Exception: {str(e)}")
+                log(f"[OSINT Worker] Exception: {str(e)}")
                 self._set_headers(500)
                 self.wfile.write(json.dumps({
                     'error': 'Internal server error',
@@ -91,7 +120,7 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
         sanitized = ''.join(c for c in username if c.isalnum() or c in ['_', '-'])
         
         if sanitized != username:
-            print(f"[Sherlock] Sanitized username from '{username}' to '{sanitized}'")
+            log(f"[Sherlock] Sanitized username from '{username}' to '{sanitized}'")
         
         if not sanitized:
             return self._send_json({
@@ -104,7 +133,6 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
         username = sanitized
 
         # Use sherlock instead (more reliable, proper CLI)
-        import tempfile
         with tempfile.NamedTemporaryFile(mode='w+', suffix='.json', delete=False) as f:
             output_file = f.name
         
@@ -112,14 +140,11 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
             # Build sherlock command
             cmd = ['sherlock', username, '--json', output_file, '--nsfw', '--timeout', '30']
             
-            # Add site filtering if provided
-            if filters:
-                # Sherlock doesn't have category filters like whatsmyname
-                # Let it search all sites for now
-                pass
+            log(f"[Sherlock] Scanning username: {username}")
+            log(f"[Sherlock] Executing command: {' '.join(cmd)}")
+            log(f"[Sherlock] Output file: {output_file}")
             
             # Execute sherlock
-            print(f"[Sherlock/WhatsMyName] Scanning username: {username}")
             result = subprocess.run(
                 cmd,
                 capture_output=True,
@@ -127,66 +152,130 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
                 timeout=300  # 5 minute timeout
             )
 
-            # Sherlock returns 0 even if username not found on all sites
-            # Read JSON output
-            with open(output_file, 'r') as f:
-                scan_results = json.load(f)
+            # Log subprocess output
+            log(f"[Sherlock] Return code: {result.returncode}")
+            if result.stdout:
+                log(f"[Sherlock] stdout: {result.stdout[:500]}")
+            if result.stderr:
+                log(f"[Sherlock] stderr: {result.stderr[:500]}")
             
-            # Debug logging for raw Sherlock output
-            print(f"[Sherlock] RAW JSON OUTPUT (first 2000 chars):")
-            print(json.dumps(scan_results)[:2000])
-            print(f"[Sherlock] Top-level keys: {list(scan_results.keys())}")
+            # Check file existence and size
+            if os.path.exists(output_file):
+                file_size = os.path.getsize(output_file)
+                log(f"[Sherlock] ✓ Output file exists, size: {file_size} bytes")
+            else:
+                log(f"[Sherlock] ❌ Output file NOT created")
+                return {
+                    'tool': 'whatsmyname',
+                    'username': username,
+                    'results': [],
+                    'error': 'Sherlock did not create output file'
+                }
+
+            # Read and parse JSON output
+            try:
+                with open(output_file, 'r') as f:
+                    raw_content = f.read()
+                    log(f"[Sherlock] RAW JSON OUTPUT ({len(raw_content)} chars):")
+                    log(raw_content[:1000])  # First 1000 chars
+                    scan_results = json.loads(raw_content)
+            except json.JSONDecodeError as e:
+                log(f"[Sherlock] ❌ Failed to parse JSON: {e}")
+                return {
+                    'tool': 'whatsmyname',
+                    'username': username,
+                    'results': [],
+                    'error': f'Failed to parse Sherlock JSON output: {str(e)}'
+                }
+            
+            log(f"[Sherlock] Parsed JSON type: {type(scan_results)}")
+            log(f"[Sherlock] JSON keys: {list(scan_results.keys()) if isinstance(scan_results, dict) else 'not a dict'}")
             
             # Transform sherlock format to whatsmyname-like format
             # Sherlock can output in multiple formats:
             # 1. {"claimed": [{"name": "...", "url": "...", "urlMain": "..."}]}
             # 2. {"username": {"site": {"url_user": "...", "status": "..."}}}
+            # 3. Direct dict of sites (no username wrapper)
             transformed_results = []
             
-            # Try format 1: claimed array (newer Sherlock versions)
+            # Try format 1: claimed array (newest Sherlock versions)
             if 'claimed' in scan_results and isinstance(scan_results['claimed'], list):
-                print(f"[Sherlock] Found 'claimed' array format with {len(scan_results['claimed'])} results")
-                for result in scan_results['claimed']:
-                    if isinstance(result, dict):
-                        transformed_results.append({
-                            'site': result.get('name', 'Unknown'),
-                            'url': result.get('url') or result.get('urlUser') or result.get('url_user'),
-                            'status': result.get('http_status'),
-                            'found': True
-                        })
+                log(f"[Sherlock] Found 'claimed' array format with {len(scan_results['claimed'])} results")
+                for item in scan_results['claimed']:
+                    if isinstance(item, dict):
+                        # Extract URL from various possible fields
+                        url = (
+                            item.get('url') or 
+                            item.get('urlUser') or 
+                            item.get('url_user') or
+                            item.get('urlMain') or
+                            item.get('url_main')
+                        )
+                        
+                        if url:
+                            transformed_results.append({
+                                'site': item.get('name') or item.get('site') or 'Unknown',
+                                'url': url,
+                                'status': item.get('status') or item.get('http_status'),
+                                'found': True
+                            })
             
-            # Try format 2: nested username->sites structure (older format)
+            # Try format 2 & 3: nested username->sites structure OR direct sites dict
             else:
-                print(f"[Sherlock] Trying nested username->sites format")
-                for username_key, sites in scan_results.items():
-                    if isinstance(sites, dict):
-                        for site_name, site_data in sites.items():
-                            if isinstance(site_data, dict):
-                                # Check multiple possible URL field names
-                                url = (site_data.get('url_user') or 
-                                       site_data.get('url_main') or 
-                                       site_data.get('urlMain') or
-                                       site_data.get('url'))
-                                
-                                # Only include if URL exists and status indicates found
-                                status = str(site_data.get('status', '')).lower()
-                                claimed = 'claim' in status or 'found' in status or site_data.get('exists', False)
-                                
-                                if url and (claimed or site_data.get('url_user')):
-                                    transformed_results.append({
-                                        'site': site_name,
-                                        'url': url,
-                                        'status': site_data.get('http_status'),
-                                        'response_time': site_data.get('response_time_s'),
-                                        'found': True
-                                    })
+                log(f"[Sherlock] Trying nested/direct sites format")
+                
+                # If username is a top-level key, go one level deeper
+                sites_dict = scan_results
+                if username in scan_results and isinstance(scan_results[username], dict):
+                    sites_dict = scan_results[username]
+                    log(f"[Sherlock] Found username wrapper, unwrapping to {len(sites_dict)} sites")
+                
+                # Now iterate through sites
+                if isinstance(sites_dict, dict):
+                    for site_name, site_data in sites_dict.items():
+                        if not isinstance(site_data, dict):
+                            continue
+                        
+                        # Extract URL from various possible fields
+                        url = (
+                            site_data.get('url_user') or 
+                            site_data.get('url') or
+                            site_data.get('url_main') or 
+                            site_data.get('urlMain') or
+                            site_data.get('urlUser')
+                        )
+                        
+                        # Check if found (various status indicators)
+                        status_str = str(site_data.get('status', '')).lower()
+                        http_status = site_data.get('http_status')
+                        
+                        # Multiple ways to indicate "found"
+                        found = (
+                            site_data.get('claimed') or
+                            site_data.get('found') or 
+                            site_data.get('exists') or
+                            'claim' in status_str or
+                            'found' in status_str or
+                            http_status in [200, 301, 302] or
+                            url  # If URL exists, assume found
+                        )
+                        
+                        if url and found:
+                            transformed_results.append({
+                                'site': site_name,
+                                'url': url,
+                                'status': http_status,
+                                'response_time': site_data.get('response_time_s'),
+                                'found': True
+                            })
             
             # Debug logging for transformed results
-            print(f"[Sherlock] TRANSFORMED {len(transformed_results)} results from raw JSON")
+            log(f"[Sherlock] TRANSFORMED {len(transformed_results)} results from raw JSON")
             if transformed_results:
-                print(f"[Sherlock] FIRST RESULT: {json.dumps(transformed_results[0])}")
+                log(f"[Sherlock] FIRST RESULT: {json.dumps(transformed_results[0])}")
             else:
-                print(f"[Sherlock] WARNING: No results transformed. Raw structure: {json.dumps(scan_results)[:500]}")
+                log(f"[Sherlock] ⚠️  WARNING: No results transformed. Raw structure sample:")
+                log(json.dumps(scan_results)[:500])
             
             return {
                 'tool': 'whatsmyname',  # Keep identifier for compatibility
@@ -195,11 +284,20 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
                 'raw_output': None
             }
         
+        except Exception as e:
+            log(f"[Sherlock] ❌ Exception in _handle_whatsmyname: {str(e)}")
+            import traceback
+            log(f"[Sherlock] Traceback: {traceback.format_exc()}")
+            raise
+        
         finally:
             # Clean up temp file
-            import os
             if os.path.exists(output_file):
-                os.remove(output_file)
+                try:
+                    os.remove(output_file)
+                    log(f"[Sherlock] Cleaned up temp file: {output_file}")
+                except Exception as e:
+                    log(f"[Sherlock] Failed to cleanup temp file: {e}")
 
     def _handle_holehe(self, data):
         email = data.get('email')
@@ -211,7 +309,7 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
         cmd = ['holehe', email, '--json', '--no-color']
 
         # Execute holehe
-        print(f"[Holehe] Scanning email: {email}")
+        log(f"[Holehe] Scanning email: {email}")
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -220,7 +318,7 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
         )
 
         if result.returncode != 0:
-            print(f"[Holehe] Error: {result.stderr}")
+            log(f"[Holehe] Error: {result.stderr}")
             raise RuntimeError(f'Holehe failed: {result.stderr}')
 
         # Parse JSON output
@@ -247,7 +345,7 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
         cmd = ['gosearch', '-u', username, '--no-false-positives']
 
         # Execute gosearch
-        print(f"[GoSearch] Scanning username: {username}")
+        log(f"[GoSearch] Scanning username: {username}")
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -256,7 +354,7 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
         )
 
         if result.returncode != 0:
-            print(f"[GoSearch] Error: {result.stderr}")
+            log(f"[GoSearch] Error: {result.stderr}")
             # GoSearch might return non-zero even on success, check output
             if not result.stdout:
                 raise RuntimeError(f'GoSearch failed: {result.stderr}')
@@ -290,8 +388,9 @@ class OsintWorkerHandler(BaseHTTPRequestHandler):
 def run_server(port=8080):
     server_address = ('', port)
     httpd = HTTPServer(server_address, OsintWorkerHandler)
-    print(f'[OSINT Worker] Server running on port {port}')
-    print(f'[OSINT Worker] Available tools: WhatsMyName, Holehe, GoSearch')
+    log(f'[OSINT Worker] Server running on port {port}')
+    log(f'[OSINT Worker] Available tools: WhatsMyName (Sherlock), Holehe, GoSearch')
+    log(f'[OSINT Worker] Test endpoint: /test-sherlock')
     httpd.serve_forever()
 
 if __name__ == '__main__':
