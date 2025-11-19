@@ -1,11 +1,19 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@18.5.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { rateLimitMiddleware } from '../_shared/enhanced-rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const CheckoutSchema = z.object({
+  workspaceId: z.string().uuid(),
+  plan: z.enum(['pro', 'business']),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -13,45 +21,68 @@ serve(async (req) => {
   }
 
   if (req.method !== 'POST') {
+    console.warn('[STRIPE-CHECKOUT] Invalid method:', req.method);
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
     });
   }
 
   try {
+    console.log('[STRIPE-CHECKOUT] Starting checkout request');
+    
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
     // Authenticate user
-    const authHeader = req.headers.get('Authorization')!;
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error('[STRIPE-CHECKOUT] Missing authorization header');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
+
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
+      console.error('[STRIPE-CHECKOUT] Authentication failed:', authError);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       });
     }
 
-    // Parse request body
-    const { workspaceId, plan } = await req.json();
+    console.log('[STRIPE-CHECKOUT] User authenticated:', user.id);
 
-    if (!workspaceId || !plan) {
-      return new Response(JSON.stringify({ error: 'Missing workspaceId or plan' }), {
+    // Parse and validate request body
+    const body = await req.json();
+    const validation = CheckoutSchema.safeParse(body);
+    
+    if (!validation.success) {
+      console.error('[STRIPE-CHECKOUT] Invalid request body:', validation.error);
+      return new Response(JSON.stringify({ error: 'Invalid request body', details: validation.error.issues }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       });
     }
 
-    if (!['pro', 'business'].includes(plan)) {
-      return new Response(JSON.stringify({ error: 'Invalid plan' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const { workspaceId, plan } = validation.data;
+
+    // Rate limiting
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      userId: user.id,
+      tier: 'basic',
+      endpoint: 'stripe-checkout',
+    });
+
+    if (!rateLimitResult.allowed) {
+      console.warn('[STRIPE-CHECKOUT] Rate limit exceeded for user:', user.id);
+      return rateLimitResult.response!;
     }
 
     // Verify user is a member of the workspace

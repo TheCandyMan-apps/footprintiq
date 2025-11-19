@@ -15,8 +15,8 @@
 - ✅ **RLS Policies** - Row-level security on all sensitive tables
 - ✅ **Security Definer Functions** - Proper function permissions
 
-### 3. Edge Function Hardening (8%)
-**Hardened Functions (15/180):**
+### 3. Edge Function Hardening (11%)
+**Hardened Functions (20/180):**
 1. ✅ `osint-scan-hardened` - Authentication, rate limiting, input validation, security headers
 2. ✅ `create-support-ticket` - Zod validation, sanitization, security headers
 3. ✅ `admin-list-tickets` - Admin role check, SQL injection prevention, security headers
@@ -32,8 +32,13 @@
 13. ✅ `create-support-ticket` - Full security stack with headers
 14. ✅ `admin-list-tickets` - Full security stack with headers
 15. ✅ `osint-scan-hardened` - Complete security hardening
+16. ✅ `ai-briefing` - Full hardening (auth, rate limiting, validation, headers)
+17. ✅ `create-checkout-session` - Full hardening (auth, rate limiting, validation, headers)
+18. ✅ `send-support-email` - Full hardening (auth, rate limiting, validation, headers)
+19. ✅ `billing-sync` - Full hardening (auth, rate limiting, validation, headers, logging)
+20. ✅ `stripe-checkout` - Full hardening (auth, rate limiting, validation, headers, logging)
 
-**Remaining Functions:** 165 functions need security hardening
+**Remaining Functions:** 160 functions need security hardening
 
 ### 4. Security Testing (100%)
 - ✅ **SQL Injection Tests** - 8 test cases
@@ -63,11 +68,11 @@
 |-----------|----------|--------|
 | Security Infrastructure | 100% | ✅ Complete |
 | Database Security | 100% | ✅ Complete |
-| Edge Function Hardening | 8% | 🟡 In Progress |
+| Edge Function Hardening | 11% | 🟡 In Progress |
 | Security Testing | 100% | ✅ Complete |
 | Monitoring & Docs | 100% | ✅ Complete |
 | Auth Configuration | 100% | ✅ Complete |
-| **Overall Phase 6** | **70%** | 🟡 **In Progress** |
+| **Overall Phase 6** | **72%** | 🟡 **In Progress** |
 
 ---
 
