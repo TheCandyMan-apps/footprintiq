@@ -2,7 +2,10 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-import { validateSubscription } from "../_shared/validateSubscription.ts";
+import { authenticateRequest } from "../_shared/auth-utils.ts";
+import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
+import { validateRequestBody } from "../_shared/security-validation.ts";
+import { secureJsonResponse, addSecurityHeaders } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,27 +22,33 @@ serve(async (req) => {
   }
 
   try {
-    // Validate premium subscription
-    const { userId } = await validateSubscription(req, 'premium');
-    console.log('Premium feature access granted for user:', userId);
+    // Authentication
+    const authResult = await authenticateRequest(req);
+    if (!authResult.success || !authResult.context) {
+      return authResult.response!;
+    }
 
+    // Rate limiting (premium tier)
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      endpoint: "ai-analysis",
+      userId: authResult.context.userId,
+      tier: "premium",
+    });
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
+    }
+
+    // Input validation
     const body = await req.json();
-    const validation = RequestSchema.safeParse(body);
-    
-    if (!validation.success) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Invalid input', 
-          details: validation.error.issues 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
+    const bodyValidation = validateRequestBody(body, RequestSchema);
+    if (!bodyValidation.valid || !bodyValidation.data) {
+      return secureJsonResponse(
+        { error: 'Invalid input', details: bodyValidation.error },
+        400
       );
     }
     
-    const { scanId } = validation.data;
+    const { scanId } = bodyValidation.data;
 
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -135,21 +144,16 @@ Format your response in clear sections with bullet points. Be specific and actio
 
     console.log('AI analysis completed successfully');
 
-    return new Response(
-      JSON.stringify({ 
-        analysis,
-        scanData: {
-          privacyScore: scan.privacy_score,
-          totalSources: scan.total_sources_found,
-          highRisk: scan.high_risk_count,
-          mediumRisk: scan.medium_risk_count,
-          lowRisk: scan.low_risk_count
-        }
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    return secureJsonResponse({
+      analysis,
+      scanData: {
+        privacyScore: scan.privacy_score,
+        totalSources: scan.total_sources_found,
+        highRisk: scan.high_risk_count,
+        mediumRisk: scan.medium_risk_count,
+        lowRisk: scan.low_risk_count
       }
-    );
+    }, 200);
 
   } catch (error) {
     console.error('Error in ai-analysis function:', error);

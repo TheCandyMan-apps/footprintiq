@@ -15,8 +15,8 @@
 - ✅ **RLS Policies** - Row-level security on all sensitive tables
 - ✅ **Security Definer Functions** - Proper function permissions
 
-### 3. Edge Function Hardening (6%)
-**Hardened Functions (9/180):**
+### 3. Edge Function Hardening (7%)
+**Hardened Functions (12/180):**
 1. ✅ `osint-scan-hardened` - Authentication, rate limiting, input validation
 2. ✅ `create-support-ticket` - Zod validation, sanitization
 3. ✅ `admin-list-tickets` - Admin role check, SQL injection prevention
@@ -26,8 +26,11 @@
 7. ✅ `ai-assistant` - Authentication, rate limiting, Zod validation, user verification
 8. ✅ `scan-orchestrate` - Enhanced authentication, rate limiting (existing validation kept)
 9. ✅ `stripe-webhook` - Signature verification, security logging, security headers
+10. ✅ `ai-analysis` - Authentication, rate limiting, input validation, security headers
+11. ✅ `ai-scan-analysis` - Authentication, rate limiting, Zod validation, security headers
+12. ✅ `admin-get-errors` - Admin role check, rate limiting, input validation, security headers
 
-**Remaining Functions:** 171 functions need security hardening
+**Remaining Functions:** 168 functions need security hardening
 
 ### 4. Security Testing (100%)
 - ✅ **SQL Injection Tests** - 8 test cases
@@ -57,11 +60,11 @@
 |-----------|----------|--------|
 | Security Infrastructure | 100% | ✅ Complete |
 | Database Security | 100% | ✅ Complete |
-| Edge Function Hardening | 3% | 🟡 In Progress |
+| Edge Function Hardening | 7% | 🟡 In Progress |
 | Security Testing | 100% | ✅ Complete |
 | Monitoring & Docs | 100% | ✅ Complete |
 | Auth Configuration | 100% | ✅ Complete |
-| **Overall Phase 6** | **68%** | 🟡 **In Progress** |
+| **Overall Phase 6** | **69%** | 🟡 **In Progress** |
 
 ---
 
@@ -78,8 +81,8 @@
 
 ### Security Metrics
 - **Security Test Coverage:** 100% (32 test cases)
-- **Edge Functions Hardened:** 9/180 (5%)
-- **Critical Functions Secured:** 6/20 (30%)
+- **Edge Functions Hardened:** 12/180 (7%)
+- **Critical Functions Secured:** 9/20 (45%)
 - **Security Events Tracked:** 6 types
 - **Auth Configuration:** 3/3 settings enabled
 

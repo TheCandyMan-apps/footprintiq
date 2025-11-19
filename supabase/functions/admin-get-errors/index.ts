@@ -1,6 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { errorResponse, safeError } from '../_shared/errors.ts';
+import { rateLimitMiddleware } from '../_shared/enhanced-rate-limiter.ts';
+import { validateInput } from '../_shared/security-validation.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,15 +41,29 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
-    if (userRole?.role !== 'admin') {
-      return errorResponse(new Error('Admin access required'), 403, 'UNAUTHORIZED', corsHeaders);
+    // Rate limiting for admin endpoints
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      endpoint: "admin-get-errors",
+      userId: user.id,
+      tier: "admin",
+    });
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
     }
 
     const url = new URL(req.url);
     const functionName = url.searchParams.get('function_name');
     const severity = url.searchParams.get('severity');
     const workspaceId = url.searchParams.get('workspace_id');
-    const page = parseInt(url.searchParams.get('page') || '1');
+    const pageParam = url.searchParams.get('page') || '1';
+    
+    // Input validation for page param
+    const pageValidation = validateInput(pageParam);
+    if (!pageValidation.valid) {
+      return errorResponse(new Error('Invalid page parameter'), 400, 'INVALID_INPUT', corsHeaders);
+    }
+    
+    const page = parseInt(pageParam);
     const pageSize = 20;
 
     let query = supabase
@@ -73,7 +91,7 @@ serve(async (req) => {
       totalPages: Math.ceil((count || 0) / pageSize),
     }), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
     });
   } catch (error) {
     const err = safeError(error);
