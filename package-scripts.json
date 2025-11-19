@@ -13,11 +13,15 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:scan": "playwright test tests/e2e/scan-flow.spec.ts --project=chromium",
     "test:e2e:multi-tool": "playwright test tests/e2e/multi-tool-scan.spec.ts --project=chromium",
+    "test:e2e:phase3": "playwright test tests/e2e/support-tickets.spec.ts tests/e2e/intelligence-dashboard.spec.ts tests/e2e/admin-error-viewer.spec.ts --project=chromium",
     "test:unit:scanning": "vitest run tests/scanning.test.ts",
+    "test:unit:phase3": "vitest run tests/unit/edge-functions tests/unit/hooks",
     "test:integration": "vitest run tests/integration/**/*.test.ts",
+    "test:integration:phase3": "vitest run tests/integration/phase3-integration.test.ts",
     "test:ethics": "vitest run tests/ethics/**/*.test.ts",
     "test:security": "bash tests/security/owasp-zap-scan.sh",
     "test:multi-tool": "npm run test:unit:scanning && npm run test:e2e:multi-tool",
+    "test:phase3": "npm run test:unit:phase3 && npm run test:integration:phase3 && npm run test:e2e:phase3",
     "typecheck": "tsc --noEmit",
     "check:build": "vite build --mode production",
     "check:secrets": "bash -c 'if grep -R \"VITE_.*_KEY\" src/providers 2>/dev/null | grep -v registry.meta; then echo \"❌ VITE secret in client code\"; exit 1; else echo \"✅ No client secrets\"; fi'",
@@ -30,11 +34,11 @@
     "audit:watch": "tsx scripts/audit-scans.ts --watch",
     "audit:ci": "tsx scripts/audit-scans.ts --ci",
     "audit:full": "tsx scripts/audit-full.ts",
-  "test:ai-glitches": "vitest run tests/ai-glitch-detection.test.ts",
-  "test:load": "tsx tests/load/run-load-test.ts",
-  "test:stress": "tsx tests/load/stress-test.ts",
-  "test:load:light": "tsx tests/load/run-load-test.ts -- --scenario light",
-  "test:load:medium": "tsx tests/load/run-load-test.ts -- --scenario medium",
-  "test:load:heavy": "tsx tests/load/run-load-test.ts -- --scenario heavy"
+    "test:ai-glitches": "vitest run tests/ai-glitch-detection.test.ts",
+    "test:load": "tsx tests/load/run-load-test.ts",
+    "test:stress": "tsx tests/load/stress-test.ts",
+    "test:load:light": "tsx tests/load/run-load-test.ts -- --scenario light",
+    "test:load:medium": "tsx tests/load/run-load-test.ts -- --scenario medium",
+    "test:load:heavy": "tsx tests/load/run-load-test.ts -- --scenario heavy"
   }
 }
