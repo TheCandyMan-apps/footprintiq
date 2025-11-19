@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { AdminAnalytics } from '@/components/admin/AdminAnalytics';
 import { UserManagementTable } from '@/components/admin/UserManagementTable';
 import { ActivityLogs } from '@/components/admin/ActivityLogs';
+import { SupportTickets } from '@/components/admin/SupportTickets';
+import { SystemHealth } from '@/components/admin/SystemHealth';
+import { ErrorLogs } from '@/components/admin/ErrorLogs';
 import { Shield } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -58,7 +61,10 @@ export default function Admin() {
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="activity">Activity Logs</TabsTrigger>
+            <TabsTrigger value="support">Support</TabsTrigger>
+            <TabsTrigger value="system">System</TabsTrigger>
+            <TabsTrigger value="errors">Errors</TabsTrigger>
+            <TabsTrigger value="activity">Activity</TabsTrigger>
           </TabsList>
           
           <TabsContent value="overview">
@@ -67,6 +73,18 @@ export default function Admin() {
           
           <TabsContent value="users">
             <UserManagementTable />
+          </TabsContent>
+          
+          <TabsContent value="support">
+            <SupportTickets />
+          </TabsContent>
+          
+          <TabsContent value="system">
+            <SystemHealth />
+          </TabsContent>
+          
+          <TabsContent value="errors">
+            <ErrorLogs />
           </TabsContent>
           
           <TabsContent value="activity">

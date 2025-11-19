@@ -13,11 +13,17 @@ interface SupportTicket {
   id: string;
   ticket_number: string;
   subject: string;
-  issue_type: string;
+  category: string;
   priority: string;
   status: string;
   created_at: string;
   updated_at: string;
+  workspace_id: string;
+  user_id: string;
+  created_by: string;
+  description: string;
+  assigned_to?: string;
+  last_reply_at?: string;
 }
 
 const MyTickets = () => {
@@ -161,7 +167,7 @@ const MyTickets = () => {
                     </div>
 
                     <p className="text-sm text-muted-foreground capitalize">
-                      {ticket.issue_type.replace('_', ' ')}
+                      {ticket.category.replace('_', ' ')}
                     </p>
                   </div>
 
