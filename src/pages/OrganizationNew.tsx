@@ -61,15 +61,7 @@ export default function OrganizationNew() {
       if (wsError) throw wsError;
       if (!ws) throw new Error("Failed to create workspace");
 
-      // 2) Add creator as admin member (ensures membership for RLS checks)
-      const { error: memberError } = await supabase.from("workspace_members" as any).insert({
-        workspace_id: (ws as any).id,
-        user_id: user.id,
-        role: "admin",
-      });
-      if (memberError) throw memberError;
-
-      // 3) Make it active for the session
+      // 2) Make it active for the session (owner is auto-added as admin by trigger)
       sessionStorage.setItem('current_workspace_id', (ws as any).id);
 
       return ws as any;
@@ -81,7 +73,11 @@ export default function OrganizationNew() {
       toast.success("Workspace created and activated");
     },
     onError: (error: Error) => {
-      toast.error(`Failed to create workspace: ${error.message}`);
+      console.error('Workspace creation failed:', error);
+      const message = error.message.includes('duplicate key')
+        ? 'Workspace already exists. Please try a different name or slug.'
+        : `Failed to create workspace: ${error.message}`;
+      toast.error(message);
     },
   });
 
