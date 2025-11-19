@@ -11,17 +11,48 @@ import { safeFetch, errorResponse, ERROR_RESPONSES, logSystemError } from '../_s
 
 /**
  * Normalize confidence values to 0-1 range for database storage.
- * Handles both 0-100 percentage values and already-normalized 0-1 values.
+ * Handles both 0-100 percentage values, already-normalized 0-1 values, 
+ * and string confidence levels like "high", "medium", "low".
  * Provides defensive clamping and sensible defaults.
  */
-function normalizeConfidence(value: number | undefined | null): number {
+function normalizeConfidence(value: number | string | undefined | null): number {
   // Handle missing/invalid values with sensible default
-  if (value == null || Number.isNaN(value)) {
-    console.warn('[orchestrate] Missing/invalid confidence value, defaulting to 0.7');
+  if (value == null) {
+    console.warn('[orchestrate] Missing confidence value, defaulting to 0.7');
     return 0.7;
   }
   
-  let normalized = value;
+  // Handle string confidence levels (e.g., from Sherlock)
+  if (typeof value === 'string') {
+    const stringValue = value.toLowerCase();
+    const stringMap: Record<string, number> = {
+      'high': 0.9,
+      'medium': 0.6,
+      'low': 0.3,
+    };
+    
+    if (stringMap[stringValue] !== undefined) {
+      console.log(`[orchestrate] Mapped string confidence "${value}" to ${stringMap[stringValue]}`);
+      return stringMap[stringValue];
+    }
+    
+    // Try to parse as number if not a known string
+    const parsed = parseFloat(value);
+    if (!Number.isNaN(parsed)) {
+      value = parsed;
+    } else {
+      console.warn(`[orchestrate] Unknown string confidence "${value}", defaulting to 0.5`);
+      return 0.5;
+    }
+  }
+  
+  // Handle NaN
+  if (Number.isNaN(value)) {
+    console.warn('[orchestrate] NaN confidence value, defaulting to 0.7');
+    return 0.7;
+  }
+  
+  let normalized = value as number;
   
   // If value is in 0-100 range (percentage), scale to 0-1
   if (normalized > 1) {
