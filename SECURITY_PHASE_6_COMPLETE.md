@@ -15,16 +15,19 @@
 - ✅ **RLS Policies** - Row-level security on all sensitive tables
 - ✅ **Security Definer Functions** - Proper function permissions
 
-### 3. Edge Function Hardening (3%)
-**Hardened Functions (6/180):**
+### 3. Edge Function Hardening (6%)
+**Hardened Functions (9/180):**
 1. ✅ `osint-scan-hardened` - Authentication, rate limiting, input validation
 2. ✅ `create-support-ticket` - Zod validation, sanitization
 3. ✅ `admin-list-tickets` - Admin role check, SQL injection prevention
 4. ✅ `graph-query` - Authentication, rate limiting, workspace access, prompt injection protection
 5. ✅ `export-data` - Authentication, rate limiting, CSRF protection, input validation
-6. ✅ `ai-analyst` - (Requires viewing full file to complete)
+6. ✅ `ai-analyst` - Authentication, rate limiting, Zod validation, security headers
+7. ✅ `ai-assistant` - Authentication, rate limiting, Zod validation, user verification
+8. ✅ `scan-orchestrate` - Enhanced authentication, rate limiting (existing validation kept)
+9. ✅ `stripe-webhook` - Signature verification, security logging, security headers
 
-**Remaining Functions:** 174 functions need security hardening
+**Remaining Functions:** 171 functions need security hardening
 
 ### 4. Security Testing (100%)
 - ✅ **SQL Injection Tests** - 8 test cases
@@ -58,7 +61,7 @@
 | Security Testing | 100% | ✅ Complete |
 | Monitoring & Docs | 100% | ✅ Complete |
 | Auth Configuration | 100% | ✅ Complete |
-| **Overall Phase 6** | **67%** | 🟡 **In Progress** |
+| **Overall Phase 6** | **68%** | 🟡 **In Progress** |
 
 ---
 
@@ -75,7 +78,7 @@
 
 ### Security Metrics
 - **Security Test Coverage:** 100% (32 test cases)
-- **Edge Functions Hardened:** 6/180 (3%)
+- **Edge Functions Hardened:** 9/180 (5%)
 - **Critical Functions Secured:** 6/20 (30%)
 - **Security Events Tracked:** 6 types
 - **Auth Configuration:** 3/3 settings enabled

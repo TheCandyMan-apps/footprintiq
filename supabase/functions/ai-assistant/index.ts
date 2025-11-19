@@ -1,10 +1,21 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { authenticateRequest } from "../_shared/auth-utils.ts";
+import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
+import { validateRequestBody } from "../_shared/security-validation.ts";
+import { secureJsonResponse } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Request validation schema
+const AssistantRequestSchema = z.object({
+  prompt: z.string().min(1).max(5000),
+  userId: z.string().uuid(),
+});
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -12,16 +23,51 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, userId } = await req.json();
-
-    if (!prompt || !userId) {
-      throw new Error("Missing required fields: prompt and userId");
-    }
-
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Authentication
+    const authResult = await authenticateRequest(req);
+    if (!authResult.success || !authResult.context) {
+      return authResult.response!;
+    }
+
+    // Rate limiting
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      endpoint: "ai-assistant",
+      userId: authResult.context.userId,
+      tier: "premium",
+    });
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
+    }
+
+    // Validate and sanitize input
+    const body = await req.json();
+    const validation = validateRequestBody(body, AssistantRequestSchema);
+    
+    if (!validation.valid) {
+      console.error("[ai-assistant] Validation failed:", validation.error);
+      if (validation.threat) {
+        console.warn("[ai-assistant] Security threat detected:", validation.threat);
+      }
+      return secureJsonResponse(
+        { error: "Invalid request", message: validation.error },
+        400
+      );
+    }
+
+    const { prompt, userId } = validation.data!;
+
+    // Verify user matches authenticated user
+    if (userId !== authResult.context.userId) {
+      return secureJsonResponse(
+        { error: "User ID mismatch" },
+        403
+      );
+    }
 
     // Fetch user's recent scans for context
     const { data: scans } = await supabase
@@ -109,25 +155,17 @@ Provide a detailed, executive-level response with actionable insights.`;
     const aiData = await aiResponse.json();
     const analysis = aiData.choices?.[0]?.message?.content || "No analysis generated";
 
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        analysis,
-        contextUsed: contextData,
-      }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      }
-    );
+    return secureJsonResponse({ 
+      success: true, 
+      analysis,
+      contextUsed: contextData,
+    }, 200);
+    
   } catch (error: any) {
-    console.error("AI Assistant error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      }
+    console.error("[ai-assistant] Error:", error);
+    return secureJsonResponse(
+      { error: "Assistant request failed", message: error.message },
+      500
     );
   }
 });

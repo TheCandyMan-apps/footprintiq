@@ -8,6 +8,9 @@ import { deduplicateFindings, sortFindings, type UFMFinding } from '../_shared/n
 import { getPlan } from '../_shared/tiers.ts';
 import { filterProvidersForPlan } from '../_shared/quotas.ts';
 import { safeFetch, errorResponse, ERROR_RESPONSES, logSystemError } from '../_shared/errorHandler.ts';
+import { authenticateRequest } from '../_shared/auth-utils.ts';
+import { rateLimitMiddleware } from '../_shared/enhanced-rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 /**
  * Normalize confidence values to 0-1 range for database storage.

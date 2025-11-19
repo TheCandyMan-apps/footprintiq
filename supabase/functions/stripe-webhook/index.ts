@@ -2,6 +2,8 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { addSecurityHeaders } from "../_shared/security-headers.ts";
+import { logSecurityEvent } from "../_shared/security-validation.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2025-08-27.basil",
@@ -15,19 +17,55 @@ const supabase = createClient(
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 serve(async (req) => {
-  const signature = req.headers.get("stripe-signature");
-  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-
-  if (!signature || !webhookSecret) {
-    console.error("Missing signature or webhook secret");
-    return new Response("Webhook Error: Missing signature", { status: 400 });
-  }
-
   try {
-    const body = await req.text();
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    const signature = req.headers.get("stripe-signature");
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
-    console.log(`Processing event: ${event.type}`);
+    if (!signature || !webhookSecret) {
+      console.error("[stripe-webhook] Missing signature or webhook secret");
+      await logSecurityEvent(supabase, {
+        type: "auth_failure",
+        severity: "high",
+        endpoint: "stripe-webhook",
+        message: "Missing Stripe signature",
+        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        userAgent: req.headers.get("user-agent") || "unknown",
+      });
+      return new Response(
+        JSON.stringify({ error: "Missing signature" }), 
+        { 
+          status: 400,
+          headers: addSecurityHeaders({ "Content-Type": "application/json" })
+        }
+      );
+    }
+
+    const body = await req.text();
+    
+    // Validate webhook signature (Stripe's own security mechanism)
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    } catch (err: any) {
+      console.error("[stripe-webhook] Signature verification failed:", err.message);
+      await logSecurityEvent(supabase, {
+        type: "auth_failure",
+        severity: "critical",
+        endpoint: "stripe-webhook",
+        message: "Invalid Stripe webhook signature",
+        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        userAgent: req.headers.get("user-agent") || "unknown",
+      });
+      return new Response(
+        JSON.stringify({ error: "Invalid signature" }), 
+        { 
+          status: 400,
+          headers: addSecurityHeaders({ "Content-Type": "application/json" })
+        }
+      );
+    }
+
+    console.log(`[stripe-webhook] Processing event: ${event.type}`);
 
     switch (event.type) {
       case "checkout.session.completed": {
