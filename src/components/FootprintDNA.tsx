@@ -85,6 +85,9 @@ export const FootprintDNA = ({
     }
   ];
 
+  // Check if there's no data at all
+  const hasNoData = breaches === 0 && exposures === 0 && dataBrokers === 0 && darkWeb === 0;
+
   return (
     <Card 
       className="relative overflow-hidden bg-gradient-to-br from-background via-background to-primary/5 border-border shadow-lg cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02]"
@@ -99,6 +102,13 @@ export const FootprintDNA = ({
       />
       
       <div className="relative p-6 md:p-8">
+        {hasNoData && (
+          <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border">
+            <p className="text-sm text-muted-foreground text-center">
+              Run a scan to populate your intelligence metrics
+            </p>
+          </div>
+        )}
         <div className="flex flex-col md:flex-row items-center gap-8">
           {/* Circular Progress Ring */}
           <div className="relative flex-shrink-0">
