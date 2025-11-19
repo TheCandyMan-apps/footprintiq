@@ -1,10 +1,19 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { authenticateRequest } from "../_shared/auth-utils.ts";
+import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
+import { validateRequestBody } from "../_shared/security-validation.ts";
+import { secureJsonResponse } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const ScanAnalysisSchema = z.object({
+  scanId: z.string().uuid({ message: "Invalid scan ID format" }),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -12,18 +21,37 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY not configured');
+    // Authentication
+    const authResult = await authenticateRequest(req);
+    if (!authResult.success || !authResult.context) {
+      return authResult.response!;
     }
 
-    const { scanId } = await req.json();
+    // Rate limiting (premium tier)
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      endpoint: "ai-scan-analysis",
+      userId: authResult.context.userId,
+      tier: "premium",
+    });
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
+    }
 
-    if (!scanId) {
-      return new Response(
-        JSON.stringify({ error: 'scanId required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    // Input validation
+    const body = await req.json();
+    const bodyValidation = validateRequestBody(body, ScanAnalysisSchema);
+    if (!bodyValidation.valid || !bodyValidation.data) {
+      return secureJsonResponse(
+        { error: 'Invalid input', details: bodyValidation.error },
+        400
       );
+    }
+
+    const { scanId } = bodyValidation.data;
+
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      return secureJsonResponse({ error: 'Service configuration error' }, 500);
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -38,9 +66,9 @@ serve(async (req) => {
 
     if (findingsError) throw findingsError;
     if (!findings || findings.length === 0) {
-      return new Response(
-        JSON.stringify({ analyzed: 0, message: 'No findings to analyze' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      return secureJsonResponse(
+        { analyzed: 0, message: 'No findings to analyze' },
+        200
       );
     }
 
@@ -94,15 +122,15 @@ Output format (raw JSON array only):
 
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
-        return new Response(
-          JSON.stringify({ error: 'Rate limits exceeded. Please try again later.' }),
-          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        return secureJsonResponse(
+          { error: 'Rate limits exceeded. Please try again later.' },
+          429
         );
       }
       if (aiResponse.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'Payment required. Please add funds to your Lovable AI workspace.' }),
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        return secureJsonResponse(
+          { error: 'Payment required. Please add funds to your Lovable AI workspace.' },
+          402
         );
       }
       throw new Error(`AI API error: ${aiResponse.status}`);
@@ -174,9 +202,9 @@ Output format (raw JSON array only):
     );
   } catch (error: any) {
     console.error('AI analysis error:', error);
-    return new Response(
-      JSON.stringify({ error: error.message || 'Unknown error' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return secureJsonResponse({
+      error: error.message || 'Unknown error',
+      analyzed: 0,
+    }, 500);
   }
 });
