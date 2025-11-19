@@ -212,30 +212,37 @@ const Support = () => {
       // Use workspace from hook
       const workspaceId = workspace?.id || null;
 
-      // Create support ticket
-      const { data: ticket, error: insertError } = await supabase
-        .from('support_tickets')
-        .insert({
-          workspace_id: workspaceId,
-          user_id: user.id,
-          created_by: user.id,
-          category: result.data.issueType,
-          priority: result.data.priority,
+      // Create support ticket using edge function
+      const { data: ticketData, error: ticketError } = await supabase.functions.invoke('create-support-ticket', {
+        body: {
           subject: result.data.subject,
           description: result.data.message,
-          status: 'open'
-        })
-        .select('id, ticket_number')
-        .single();
+          category: result.data.issueType,
+          workspace_id: workspaceId,
+        }
+      });
 
-      if (insertError) {
-        console.error('Ticket creation error:', insertError);
-        throw new Error(insertError.message || 'Failed to create support ticket');
+      if (ticketError) {
+        console.error('Ticket creation error:', ticketError);
+        throw new Error(ticketError.message || 'Failed to create support ticket');
       }
 
+      const ticket = ticketData?.ticket;
       if (!ticket) {
         throw new Error('Ticket created but no data returned');
       }
+
+      // Also send email notification
+      await supabase.functions.invoke('send-support-email', {
+        body: {
+          name: result.data.name,
+          email: result.data.email,
+          issueType: result.data.issueType,
+          priority: result.data.priority,
+          subject: result.data.subject,
+          message: result.data.message,
+        }
+      });
 
       // Clear form and draft
       sessionStorage.removeItem('support_draft');

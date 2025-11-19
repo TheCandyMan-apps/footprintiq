@@ -1,0 +1,285 @@
+import { useState, useEffect } from 'react';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Activity, Database, Users, TrendingUp, AlertCircle, 
+  Clock, Shield, Download, RefreshCw 
+} from 'lucide-react';
+import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+interface DashboardMetrics {
+  totalScans: number;
+  activeUsers: number;
+  scanBreakdown: Record<string, number>;
+  providerSuccessRates: Array<{ provider: string; findingsCount: number; scansWithFindings: number }>;
+  avgCompletionTimeMs: number;
+  topErrors: Array<{ code: string; count: number }>;
+  riskDistribution: Record<string, number>;
+  dateRange: { start: string; end: string; days: number };
+}
+
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--secondary))', 'hsl(var(--accent))', 'hsl(var(--muted))'];
+
+export default function IntelligenceDashboard() {
+  const { isAdmin, loading: adminLoading } = useIsAdmin();
+  const navigate = useNavigate();
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [days, setDays] = useState('30');
+
+  useEffect(() => {
+    if (!adminLoading && !isAdmin) {
+      navigate('/dashboard');
+    }
+  }, [isAdmin, adminLoading, navigate]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadMetrics();
+    }
+  }, [isAdmin, days]);
+
+  const loadMetrics = async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) return;
+
+      const { data, error } = await supabase.functions.invoke('get-dashboard-metrics', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { days: parseInt(days) }
+      });
+
+      if (error) throw error;
+      setMetrics(data);
+    } catch (error) {
+      console.error('Error loading metrics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (adminLoading || !isAdmin) {
+    return null;
+  }
+
+  const scanTypeData = metrics?.scanBreakdown 
+    ? Object.entries(metrics.scanBreakdown).map(([type, count]) => ({
+        name: type,
+        value: count
+      }))
+    : [];
+
+  const riskData = metrics?.riskDistribution
+    ? Object.entries(metrics.riskDistribution).map(([severity, count]) => ({
+        name: severity,
+        value: count
+      }))
+    : [];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="container mx-auto py-8 px-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <Activity className="w-8 h-8 text-primary" />
+              Intelligence Dashboard
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Real-time platform analytics and insights
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Select value={days} onValueChange={setDays}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">Last 7 days</SelectItem>
+                <SelectItem value="30">Last 30 days</SelectItem>
+                <SelectItem value="90">Last 90 days</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={loadMetrics} variant="outline" size="icon">
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+              <Card key={i}>
+                <CardContent className="pt-6">
+                  <div className="h-20 animate-pulse bg-muted rounded" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : metrics ? (
+          <div className="space-y-6">
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Scans</CardTitle>
+                  <Database className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{metrics.totalScans.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">Last {days} days</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{metrics.activeUsers.toLocaleString()}</div>
+                  <p className="text-xs text-muted-foreground">Unique users scanning</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Avg Completion</CardTitle>
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {(metrics.avgCompletionTimeMs / 1000 / 60).toFixed(1)}m
+                  </div>
+                  <p className="text-xs text-muted-foreground">Average scan time</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Top Errors</CardTitle>
+                  <AlertCircle className="w-4 h-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{metrics.topErrors.length}</div>
+                  <p className="text-xs text-muted-foreground">Unique error types</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Charts Row 1 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Scan Type Breakdown */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Scan Type Distribution</CardTitle>
+                  <CardDescription>Breakdown by scan type</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={scanTypeData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="hsl(var(--primary))"
+                        dataKey="value"
+                      >
+                        {scanTypeData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Risk Distribution */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Risk Distribution</CardTitle>
+                  <CardDescription>Findings by severity level</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={riskData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="value" fill="hsl(var(--primary))" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Provider Performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Provider Performance</CardTitle>
+                <CardDescription>Success rates by OSINT provider</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {metrics.providerSuccessRates.map((provider) => (
+                    <div key={provider.provider} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline">{provider.provider}</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {provider.findingsCount.toLocaleString()} findings
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        {provider.scansWithFindings} scans
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Top Errors */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Error Codes</CardTitle>
+                <CardDescription>Most frequent system errors</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {metrics.topErrors.slice(0, 10).map((error) => (
+                    <div key={error.code} className="flex items-center justify-between">
+                      <code className="text-sm">{error.code}</code>
+                      <Badge variant="destructive">{error.count}</Badge>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-muted-foreground">No metrics available</p>
+            </CardContent>
+          </Card>
+        )}
+      </main>
+      <Footer />
+    </div>
+  );
+}

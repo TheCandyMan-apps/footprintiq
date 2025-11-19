@@ -54,12 +54,6 @@ function AdminMenuItem() {
           Support
         </Link>
       </DropdownMenuItem>
-      <DropdownMenuItem asChild>
-        <Link to="/admin" className="cursor-pointer">
-          <Shield className="w-4 h-4 mr-2" />
-          Admin Dashboard
-        </Link>
-      </DropdownMenuItem>
     </>
   );
 }
