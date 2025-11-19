@@ -114,12 +114,7 @@ export function useWorkspace(): WorkspaceContext {
             .single() as any;
 
           if (!createErr && createdWs) {
-            // Ensure membership exists for orchestrator checks
-            await supabase.from('workspace_members' as any).insert({
-              workspace_id: (createdWs as any).id,
-              user_id: user.id,
-              role: 'admin',
-            });
+            // Owner is auto-added as admin by add_owner_as_workspace_member() trigger
             const wsWithPlan = {
               ...createdWs,
               plan: normalizePlan((createdWs as any).subscription_tier),
