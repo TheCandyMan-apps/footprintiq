@@ -38,6 +38,7 @@ const DataSources = lazy(() => import("./pages/DataSources"));
 const Support = lazy(() => import("./pages/Support"));
 const SupportConfirmation = lazy(() => import("./pages/SupportConfirmation"));
 const MyTickets = lazy(() => import("./pages/MyTickets"));
+const IntelligenceDashboard = lazy(() => import("./pages/IntelligenceDashboard"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const UsernamePage = lazy(() => import("./pages/UsernamePage"));
@@ -306,6 +307,7 @@ function RouterContent() {
           <Route path="/partners" element={<PartnersIndex />} />
           <Route path="/partners/dashboard" element={<PartnerDashboard />} />
           <Route path="/global-index" element={<GlobalIndex />} />
+          <Route path="/intelligence" element={<IntelligenceDashboard />} />
           <Route path="/resources" element={<ResourcesIndex />} />
           <Route path="/resources/webinars" element={<WebinarsPage />} />
           <Route path="/organization" element={<Organization />} />

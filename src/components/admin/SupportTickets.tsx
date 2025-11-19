@@ -46,13 +46,21 @@ export function SupportTickets() {
 
   const loadTickets = async () => {
     try {
-      const { data, error } = await supabase
-        .from('support_tickets')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No session');
+      }
+
+      const params = new URLSearchParams();
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (priorityFilter !== 'all') params.set('priority', priorityFilter);
+
+      const { data, error } = await supabase.functions.invoke('admin-list-tickets', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
 
       if (error) throw error;
-      setTickets(data || []);
+      setTickets(data?.tickets || []);
     } catch (error: any) {
       toast({
         title: 'Error',

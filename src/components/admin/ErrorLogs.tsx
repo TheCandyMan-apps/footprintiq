@@ -39,14 +39,21 @@ export function ErrorLogs() {
 
   const loadErrors = async () => {
     try {
-      const { data, error } = await supabase
-        .from('system_errors')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No session');
+      }
+
+      const params = new URLSearchParams();
+      if (severityFilter !== 'all') params.set('severity', severityFilter);
+      if (functionFilter !== 'all') params.set('function_name', functionFilter);
+
+      const { data, error } = await supabase.functions.invoke('admin-get-errors', {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
 
       if (error) throw error;
-      setErrors((data || []) as SystemError[]);
+      setErrors((data?.errors || []) as SystemError[]);
     } catch (error: any) {
       toast({
         title: 'Error',
