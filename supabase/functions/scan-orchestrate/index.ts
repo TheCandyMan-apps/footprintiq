@@ -55,6 +55,7 @@ const ScanRequestSchema = z.object({
     includeDating: z.boolean().optional(),
     includeNsfw: z.boolean().optional(),
     noCache: z.boolean().optional(),
+    artifacts: z.array(z.string()).optional(),
     providers: z.array(
       z.string().regex(/^[a-z0-9-]+$/, 'invalid provider name format')
     ).max(20, 'too many providers specified').optional(),
@@ -93,6 +94,7 @@ interface ScanRequest {
     includeDating?: boolean;
     includeNsfw?: boolean;
     noCache?: boolean;
+    artifacts?: string[];
     providers?: string[];
     premium?: {
       socialMediaFinder?: boolean;
@@ -978,6 +980,20 @@ serve(async (req) => {
           console.log(`[orchestrate] Terminal broadcast sent for scan ${scanId}`);
         } catch (broadcastErr) {
           console.error('[orchestrate] Failed to send terminal broadcast:', broadcastErr);
+        }
+
+        // Auto-generate artifacts if requested
+        if (options?.artifacts && Array.isArray(options.artifacts) && options.artifacts.length > 0) {
+          console.log(`[orchestrate] Triggering artifact generation for scan ${scanId}`);
+          try {
+            supabaseService.functions.invoke('generate-export-artifacts', {
+              body: { scanId, artifacts: options.artifacts }
+            }).catch(artifactErr => {
+              console.error('[orchestrate] Artifact generation failed (non-blocking):', artifactErr);
+            });
+          } catch (artifactErr) {
+            console.error('[orchestrate] Failed to trigger artifact generation:', artifactErr);
+          }
         }
 
         // Reconcile maigret_results status if needed
