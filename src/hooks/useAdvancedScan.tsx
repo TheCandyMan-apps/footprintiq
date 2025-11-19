@@ -128,7 +128,35 @@ export function useAdvancedScan() {
         },
       });
 
-      if (orchestrateError) throw orchestrateError;
+      if (orchestrateError) {
+        console.error('[useAdvancedScan] Orchestrate error:', orchestrateError);
+        
+        // Extract structured error if available
+        const errorData = orchestrateError as any;
+        const errorCode = errorData?.code || '';
+        const errorMessage = errorData?.message || orchestrateError.message || 'Failed to start scan';
+        const errorDetails = errorData?.details;
+        
+        // Handle tier restriction errors with helpful message
+        if (errorCode === 'no_providers_available_for_tier') {
+          const blockedProviders = errorDetails?.blockedProviders || [];
+          const allowedProviders = errorDetails?.allowedProviders || [];
+          
+          const error = new Error(
+            `Cannot start scan: ${blockedProviders.join(', ')} require${blockedProviders.length === 1 ? 's' : ''} a higher plan. ` +
+            `Available providers: ${allowedProviders.join(', ')}`
+          ) as any;
+          error.code = errorCode;
+          error.details = errorDetails;
+          throw error;
+        }
+        
+        // Re-throw with structured error info
+        const error = new Error(errorMessage) as any;
+        error.code = errorCode;
+        error.details = errorDetails;
+        throw error;
+      }
       if (!orchestrateData?.scanId) throw new Error('Scan orchestration failed');
       const scanId = orchestrateData.scanId as string;
 

@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { wrapHandler, sanitizeForLog, ERROR_RESPONSES } from '../_shared/errorHandler.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,11 +20,9 @@ interface WebhookPayload {
 // UUID validation helper
 const isUUID = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
+Deno.serve(wrapHandler(async (req) => {
+  const functionName = 'scan-results';
+  
   try {
     const RESULTS_WEBHOOK_TOKEN = Deno.env.get('RESULTS_WEBHOOK_TOKEN')!;
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -31,26 +30,22 @@ Deno.serve(async (req) => {
 
     const webhookToken = req.headers.get('X-Results-Token');
     if (!webhookToken || webhookToken !== RESULTS_WEBHOOK_TOKEN) {
-      console.warn('[scan-results] Invalid or missing X-Results-Token header');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized: Invalid webhook token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.warn(`[${functionName}] Invalid or missing X-Results-Token header`);
+      throw ERROR_RESPONSES.UNAUTHORIZED('Invalid webhook token');
     }
 
     const payload: WebhookPayload = await req.json();
     
     if (!payload.job_id || !payload.username || !payload.status) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Bad Request: job_id, username, and status are required' 
-        }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      throw ERROR_RESPONSES.VALIDATION_ERROR('job_id, username, and status are required');
     }
 
-    console.log(`[scan-results] Webhook received for job ${payload.job_id}: ${payload.status}`);
-    console.log(`[scan-results] Username: ${payload.username}, User ID: ${payload.user_id || 'none'}`);
+    console.log(`[${functionName}] Webhook received:`, sanitizeForLog({
+      job_id: payload.job_id,
+      status: payload.status,
+      username: payload.username,
+      user_id: payload.user_id
+    }));
 
     // Sanitize UUIDs before database insert - treat zero UUID as reserved
     const zeroUUID = '00000000-0000-0000-0000-000000000000';
@@ -89,17 +84,11 @@ Deno.serve(async (req) => {
       });
 
     if (upsertError) {
-      console.error('[scan-results] Database upsert error:', upsertError);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Database operation failed', 
-          details: upsertError.message 
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      console.error(`[${functionName}] Database upsert error:`, sanitizeForLog(upsertError));
+      throw ERROR_RESPONSES.INTERNAL_ERROR(`Database operation failed: ${upsertError.message}`);
     }
 
-    console.log(`[scan-results] Successfully stored results for job ${payload.job_id}`);
+    console.log(`[${functionName}] Successfully stored results for job ${payload.job_id}`);
 
     return new Response(
       JSON.stringify({ ok: true }),
@@ -107,12 +96,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error('[scan-results] Unexpected error:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message || 'Unknown error' 
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error(`[${functionName}] Error:`, sanitizeForLog(error));
+    throw error;
   }
-});
+}, { timeoutMs: 10000, corsHeaders, functionName: 'scan-results' }));
