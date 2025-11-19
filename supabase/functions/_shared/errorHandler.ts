@@ -1,6 +1,6 @@
 /**
  * Production-grade error handling for Edge Functions
- * Provides structured error responses and safe error logging
+ * Provides structured error responses, safe error logging, and helper utilities
  */
 
 export interface StructuredError {
@@ -31,6 +31,12 @@ export const ERROR_RESPONSES = {
     400,
     details
   ),
+  VALIDATION_ERROR: (details?: string) => new EdgeFunctionError(
+    'validation_error',
+    details || 'Input validation failed',
+    400,
+    details
+  ),
   UNAUTHORIZED: (details?: string) => new EdgeFunctionError(
     'unauthorized',
     details || 'Authentication required',
@@ -52,6 +58,18 @@ export const ERROR_RESPONSES = {
   RATE_LIMITED: (details?: string) => new EdgeFunctionError(
     'rate_limited',
     details || 'Too many requests, please try again later',
+    429,
+    details
+  ),
+  SUBSCRIPTION_REQUIRED: (details?: any) => new EdgeFunctionError(
+    'subscription_required',
+    'This feature requires a higher subscription tier',
+    403,
+    details
+  ),
+  QUOTA_EXCEEDED: (details?: any) => new EdgeFunctionError(
+    'quota_exceeded',
+    'Usage quota exceeded for your plan',
     429,
     details
   ),
@@ -96,6 +114,61 @@ export const ERROR_RESPONSES = {
     { worker, details }
   ),
 };
+
+/**
+ * Sanitize data for logging - redact sensitive information
+ */
+export function sanitizeForLog(data: any): any {
+  if (!data) return data;
+  
+  const sensitiveKeys = [
+    'password', 'token', 'api_key', 'apikey', 'secret', 
+    'authorization', 'auth', 'key', 'credentials'
+  ];
+  
+  const sanitize = (obj: any): any => {
+    if (typeof obj !== 'object' || obj === null) {
+      return obj;
+    }
+    
+    if (Array.isArray(obj)) {
+      return obj.map(sanitize);
+    }
+    
+    const sanitized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      const lowerKey = key.toLowerCase();
+      
+      // Redact sensitive keys
+      if (sensitiveKeys.some(sk => lowerKey.includes(sk))) {
+        sanitized[key] = '[REDACTED]';
+      }
+      // Redact email addresses
+      else if (typeof value === 'string' && value.includes('@') && value.includes('.')) {
+        const parts = value.split('@');
+        if (parts.length === 2) {
+          sanitized[key] = `${parts[0].substring(0, 1)}***@${parts[1]}`;
+        } else {
+          sanitized[key] = value;
+        }
+      }
+      // Redact phone numbers (basic pattern)
+      else if (typeof value === 'string' && /^\+?[\d\s\-()]{10,}$/.test(value)) {
+        sanitized[key] = `***${value.slice(-4)}`;
+      }
+      // Recursively sanitize nested objects
+      else if (typeof value === 'object') {
+        sanitized[key] = sanitize(value);
+      }
+      else {
+        sanitized[key] = value;
+      }
+    }
+    return sanitized;
+  };
+  
+  return sanitize(data);
+}
 
 /**
  * Safe fetch with timeout and retry logic
@@ -144,6 +217,67 @@ export async function safeFetch(
 }
 
 /**
+ * Safe OSINT worker call with validation and error handling
+ */
+export async function safeWorkerCall(
+  workerUrl: string,
+  workerName: string,
+  payload: any,
+  authToken?: string,
+  timeoutMs: number = 20000
+): Promise<any> {
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
+    console.log(`[safeWorkerCall] Calling ${workerName} at ${workerUrl}`);
+    console.log(`[safeWorkerCall] Payload:`, sanitizeForLog(payload));
+    
+    const response = await safeFetch(
+      workerUrl,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      },
+      timeoutMs,
+      1 // One retry
+    );
+    
+    console.log(`[safeWorkerCall] ${workerName} responded with status ${response.status}`);
+    
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'No error details');
+      console.error(`[safeWorkerCall] ${workerName} error response:`, sanitizeForLog(errorText));
+      throw ERROR_RESPONSES.PROVIDER_ERROR(workerName, `HTTP ${response.status}: ${errorText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Basic validation - ensure we got some kind of response
+    if (!data) {
+      throw ERROR_RESPONSES.PROVIDER_ERROR(workerName, 'Empty response from worker');
+    }
+    
+    console.log(`[safeWorkerCall] ${workerName} returned data (keys):`, Object.keys(data));
+    return data;
+    
+  } catch (error: any) {
+    if (error instanceof EdgeFunctionError) {
+      throw error;
+    }
+    
+    console.error(`[safeWorkerCall] ${workerName} error:`, sanitizeForLog(error));
+    throw ERROR_RESPONSES.WORKER_UNREACHABLE(workerName, error.message);
+  }
+}
+
+/**
  * Safe JSON parse that never crashes
  */
 export function safeJsonParse<T = any>(text: string, fallback: T): T {
@@ -175,7 +309,7 @@ export function errorResponse(
     status = error.status;
   } else if (error instanceof Error) {
     // Generic error - don't leak internal details
-    console.error('[EdgeFunctionError]', error.message, error.stack);
+    console.error('[EdgeFunctionError]', sanitizeForLog({ message: error.message, stack: error.stack }));
     structuredError = {
       error: 'internal_error',
       message: 'An internal error occurred',
@@ -183,7 +317,7 @@ export function errorResponse(
     };
     status = 500;
   } else {
-    console.error('[EdgeFunctionError]', error);
+    console.error('[EdgeFunctionError]', sanitizeForLog(error));
     structuredError = {
       error: 'unknown_error',
       message: 'An unknown error occurred',
@@ -202,6 +336,57 @@ export function errorResponse(
       }
     }
   );
+}
+
+/**
+ * Wrap an edge function handler with global error handling and timeout
+ */
+export function wrapHandler(
+  handler: (req: Request) => Promise<Response>,
+  options: {
+    timeoutMs?: number;
+    corsHeaders?: Record<string, string>;
+    functionName?: string;
+  } = {}
+) {
+  const { 
+    timeoutMs = 30000, 
+    corsHeaders = {}, 
+    functionName = 'edge-function' 
+  } = options;
+  
+  return async (req: Request): Promise<Response> => {
+    // Handle OPTIONS for CORS
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
+    }
+    
+    try {
+      // Create abort controller for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.error(`[${functionName}] Function exceeded timeout of ${timeoutMs}ms`);
+        controller.abort();
+      }, timeoutMs);
+      
+      // Execute handler with timeout
+      const handlerPromise = handler(req);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        controller.signal.addEventListener('abort', () => {
+          reject(ERROR_RESPONSES.TIMEOUT(`Function execution exceeded ${timeoutMs}ms`));
+        });
+      });
+      
+      const response = await Promise.race([handlerPromise, timeoutPromise]);
+      clearTimeout(timeoutId);
+      
+      return response;
+      
+    } catch (error: any) {
+      console.error(`[${functionName}] Unhandled error:`, sanitizeForLog(error));
+      return errorResponse(error, corsHeaders);
+    }
+  };
 }
 
 /**
@@ -231,10 +416,10 @@ export async function logSystemError(
       p_scan_id: context.scanId || null,
       p_provider: context.provider || null,
       p_severity: context.severity || 'error',
-      p_metadata: context.metadata || {}
+      p_metadata: sanitizeForLog(context.metadata || {})
     });
   } catch (error) {
     // Don't fail the main request if error logging fails
-    console.error('[logSystemError] Failed to log error:', error);
+    console.error('[logSystemError] Failed to log error:', sanitizeForLog(error));
   }
 }
