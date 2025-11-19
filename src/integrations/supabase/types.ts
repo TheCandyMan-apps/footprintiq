@@ -6799,6 +6799,48 @@ export type Database = {
         }
         Relationships: []
       }
+      security_events: {
+        Row: {
+          created_at: string
+          endpoint: string
+          event_type: string
+          id: string
+          ip_address: unknown
+          message: string
+          payload: Json | null
+          severity: string
+          threat_type: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          event_type: string
+          id?: string
+          ip_address?: unknown
+          message: string
+          payload?: Json | null
+          severity: string
+          threat_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          event_type?: string
+          id?: string
+          ip_address?: unknown
+          message?: string
+          payload?: Json | null
+          severity?: string
+          threat_type?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       sensitive_consents: {
         Row: {
           categories: string[]
