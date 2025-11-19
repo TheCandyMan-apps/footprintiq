@@ -14,19 +14,52 @@ serve(async (req) => {
   }
 
   try {
-    // Internal authentication check
-    const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN');
-    const authHeader = req.headers.get('x-internal-token');
-    
-    if (!authHeader || authHeader !== WORKER_TOKEN) {
-      console.warn('Unauthorized access attempt to cache-manager');
+    // Get JWT from authorization header
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized - Valid internal token required' }),
+        JSON.stringify({ error: "Unauthorized - No authorization header" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
 
-    // Rate limit check (secondary protection)
+    // Create Supabase client with user's JWT
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Verify user is authenticated
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Invalid token" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+      );
+    }
+
+    // Check if user is admin
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (roleData?.role !== "admin") {
+      console.warn(`Non-admin user ${user.id} attempted to access cache-manager`);
+      return new Response(
+        JSON.stringify({ error: "Forbidden - Admin access required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
+    }
+
+    // Rate limit check
     const clientIP = getClientIP(req);
     const allowed = await checkRateLimit(clientIP, {
       endpoint: "cache-manager",
@@ -36,11 +69,6 @@ serve(async (req) => {
     if (!allowed) {
       return rateLimitResponse(3600);
     }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
 
     const url = new URL(req.url);
     const action = url.searchParams.get("action") || "get";

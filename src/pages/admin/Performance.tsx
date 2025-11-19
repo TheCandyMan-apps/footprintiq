@@ -38,7 +38,13 @@ export default function Performance() {
   const { data: cacheStats, isLoading: cacheLoading } = useQuery({
     queryKey: ["cache-stats"],
     queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("No active session");
+      }
+
       const { data, error } = await supabase.functions.invoke("cache-manager", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
         body: { action: "stats" }
       });
       if (error) throw error;
@@ -51,7 +57,13 @@ export default function Performance() {
   const { data: jobStats, isLoading: jobsLoading } = useQuery({
     queryKey: ["job-stats"],
     queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("No active session");
+      }
+
       const { data, error } = await supabase.functions.invoke("job-processor", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
         body: { action: "stats" }
       });
       if (error) throw error;
@@ -91,7 +103,13 @@ export default function Performance() {
   // Clear cache mutation
   const clearCache = useMutation({
     mutationFn: async (type?: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("No active session");
+      }
+
       const { error } = await supabase.functions.invoke("cache-manager", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
         body: { action: "clear", type }
       });
       if (error) throw error;
@@ -105,7 +123,13 @@ export default function Performance() {
   // Cleanup cache mutation
   const cleanupCache = useMutation({
     mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error("No active session");
+      }
+
       const { error } = await supabase.functions.invoke("cache-manager", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
         body: { action: "cleanup" }
       });
       if (error) throw error;
