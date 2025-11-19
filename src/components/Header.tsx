@@ -50,7 +50,12 @@ function AdminMenuItem() {
     <>
       <DropdownMenuSeparator />
       <DropdownMenuItem asChild>
-        <Link to="/admin" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">
+        <Link to="/support" className="cursor-pointer">
+          Support
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <Link to="/admin" className="cursor-pointer">
           <Shield className="w-4 h-4 mr-2" />
           Admin Dashboard
         </Link>
