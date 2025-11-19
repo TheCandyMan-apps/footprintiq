@@ -150,14 +150,14 @@ serve(async (req) => {
 
 // Helper functions
 function generateCSV(findings: any[]): string {
-  const headers = ['Site', 'URL', 'Status', 'Confidence', 'Provider', 'NSFW', 'Timestamp'];
+  const headers = ['site', 'url', 'provider', 'kind', 'confidence', 'nsfw', 'created_at'];
   const rows = findings.map(f => [
-    f.site || 'Unknown',
+    f.site || '',
     f.url || '',
-    f.kind || '',
-    f.confidence || 'unknown',
     f.provider || '',
-    f.nsfw ? 'Yes' : 'No',
+    f.kind || '',
+    f.confidence || '',
+    f.nsfw ? 'true' : 'false',
     f.created_at || ''
   ]);
 

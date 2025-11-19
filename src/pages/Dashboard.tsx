@@ -261,42 +261,55 @@ const Dashboard = () => {
           .select('kind, severity, provider')
           .eq('scan_id', recentScan.id);
 
-        if (dnaFindings) {
-          // More flexible keyword matching for metrics
-          const BROKER_KEYWORDS = ['whitepages', 'spokeo', 'broker', 'people-search', 'background-check', 'data-aggregator', 'peoplesearch'];
-          const DARK_WEB_KEYWORDS = ['intelx', 'paste', 'dark', 'darkweb', 'tor', 'onion', 'dump', 'pastebin'];
+        if (dnaFindings && dnaFindings.length > 0) {
+          // Keyword arrays for categorization
           const BREACH_KEYWORDS = ['hibp', 'breach', 'leak', 'compromised', 'breach.hit', 'pwned'];
-          const EXPOSURE_KEYWORDS = ['profile', 'presence', 'hit', 'found', 'username'];
+          const BROKER_KEYWORDS = ['broker', 'people-search', 'background-check', 'data-aggregator', 'whitepages', 'spokeo', 'peoplesearch'];
+          const DARK_WEB_KEYWORDS = ['dark', 'tor', 'onion', 'paste', 'intelx', 'dump', 'pastebin'];
 
           let breaches = 0, exposures = 0, dataBrokers = 0, darkWeb = 0;
+          
           for (const f of dnaFindings) {
             const kind = (f.kind || '').toLowerCase();
             const provider = (f.provider || '').toLowerCase();
             
-            // Count breaches
+            // Breaches: findings with breach-related keywords
             if (BREACH_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
               breaches++;
             }
             
-            // Count exposures - most findings are exposures unless they're errors
-            if (!kind.includes('error') && !kind.includes('no_result') && 
-                (EXPOSURE_KEYWORDS.some(k => kind.includes(k)) || 
-                 ['maigret', 'sherlock', 'gosearch'].includes(provider))) {
-              exposures++;
+            // Exposures: findings from OSINT providers OR containing exposure keywords
+            if (['maigret', 'sherlock', 'gosearch'].includes(provider) || 
+                ['profile', 'presence', 'hit', 'found'].some(k => kind.includes(k))) {
+              // Exclude error findings
+              if (!kind.includes('error') && !kind.includes('provider_error')) {
+                exposures++;
+              }
             }
             
-            // Count data brokers
+            // Data Brokers: findings matching broker keywords
             if (BROKER_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
               dataBrokers++;
             }
             
-            // Count dark web
+            // Dark Web: findings matching dark web keywords
             if (DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
               darkWeb++;
             }
           }
 
-          setDnaMetrics({ score: Math.max(0, 100 - (breaches * 10 + darkWeb * 5)), breaches, exposures, dataBrokers, darkWeb });
+          // Calculate risk score (ensure it's an integer 0-100)
+          const riskScore = Math.min(100, Math.max(0, Math.round(breaches * 15 + darkWeb * 10 + dataBrokers * 5)));
+          setDnaMetrics({ 
+            score: Math.max(0, 100 - riskScore), 
+            breaches, 
+            exposures, 
+            dataBrokers, 
+            darkWeb 
+          });
+        } else {
+          // No findings - set all to 0
+          setDnaMetrics({ score: 100, breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 });
         }
 
         // Fetch data sources for the recent scan
