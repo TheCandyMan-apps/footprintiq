@@ -239,14 +239,21 @@ const Dashboard = () => {
         data: aggregateData
       } = await supabase.from('scans').select('high_risk_count').eq('user_id', userId).is('archived_at', null);
       const totalHighRisk = aggregateData?.reduce((sum, scan) => sum + (scan.high_risk_count || 0), 0) || 0;
+      
+      // Get active watchlists count
+      const { count: activeWatchlistsCount } = await supabase
+        .from('watchlists')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_active', true);
+      
       setStats({
         totalScans: totalCount || 0,
         highRiskFindings: totalHighRisk,
         recentFindings: recentCount || 0,
         scansThisMonth: monthCount || 0,
         avgScanTime: 2.4,
-        // Mock for now
-        activeMonitoring: 8 // Mock for now
+        activeMonitoring: activeWatchlistsCount || 0
       });
 
       // Calculate DNA metrics from all scans and their data sources
@@ -763,6 +770,7 @@ const Dashboard = () => {
                             <span className="text-lg font-bold text-accent">{stats.totalScans}</span>
                           </div>
                           <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Active Monitoring</span>
                             <span className="text-lg font-bold text-success">{stats.activeMonitoring}</span>
                           </div>
                         </div>
