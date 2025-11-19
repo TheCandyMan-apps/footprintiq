@@ -13,7 +13,7 @@ export default function RoleManagement() {
       const { data, error } = await supabase
         .from("user_roles" as any)
         .select("*")
-        .order("granted_at", { ascending: false });
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       return data;
@@ -61,7 +61,7 @@ export default function RoleManagement() {
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Granted: {format(new Date(userRole.granted_at), "PPp")}
+                      Created: {format(new Date(userRole.created_at), "PPp")}
                       {userRole.expires_at && ` • Expires: ${format(new Date(userRole.expires_at), "PPp")}`}
                     </p>
                   </div>
