@@ -881,7 +881,12 @@ const Dashboard = () => {
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary transition-colors">
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => navigate(`/results/${scan.id}`)}
+                                className="hover:bg-primary/10 hover:text-primary transition-colors"
+                              >
                                 <Eye className="h-4 w-4 mr-2" />
                                 View
                               </Button>
