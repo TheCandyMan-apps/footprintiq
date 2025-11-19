@@ -51,6 +51,17 @@ jobs:
         env:
           CI: true
 
+      - name: Run Phase 3 E2E tests
+        run: npm run test:e2e:phase3
+        env:
+          CI: true
+
+      - name: Run Phase 3 Unit Tests
+        run: npm run test:unit:phase3
+
+      - name: Run Phase 3 Integration Tests
+        run: npm run test:integration:phase3
+
       - name: Calculate test pass rate
         run: |
           echo "📊 Calculating test pass rate..."
