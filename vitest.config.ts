@@ -1,5 +1,5 @@
 import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc';
 import path from 'path';
 
 export default defineConfig({
@@ -10,14 +10,22 @@ export default defineConfig({
     setupFiles: ['./tests/setup.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      reporter: ['text', 'json', 'html', 'lcov'],
       exclude: [
         'node_modules/',
         'tests/',
+        '**/*.test.ts',
+        '**/*.test.tsx',
         '**/*.config.ts',
-        '**/*.config.js',
         '**/types.ts',
+        'dist/',
       ],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 70,
+        statements: 70,
+      },
     },
   },
   resolve: {

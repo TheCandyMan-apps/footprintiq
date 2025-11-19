@@ -142,9 +142,34 @@ jobs:
           path: report_html.html
           retention-days: 30
 
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run security tests
+        run: npm run test:security
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-test-results
+          path: coverage/
+
   summary:
     name: Security Summary
-    needs: [osv-scanner, npm-audit]
+    needs: [osv-scanner, npm-audit, security-tests]
     runs-on: ubuntu-latest
     if: always()
     
@@ -155,3 +180,4 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "✅ OSV Scanner: ${{ needs.osv-scanner.result }}" >> $GITHUB_STEP_SUMMARY
           echo "✅ NPM Audit: ${{ needs.npm-audit.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Security Tests: ${{ needs.security-tests.result }}" >> $GITHUB_STEP_SUMMARY
