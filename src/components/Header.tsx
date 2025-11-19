@@ -24,6 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { CommandPalette } from "@/components/CommandPalette";
 import { WorkspaceSwitcher } from "@/components/workspace/WorkspaceSwitcher";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 // Admin menu item component with role check
 function AdminMenuItem() {
@@ -65,21 +66,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const { user, isPremium } = useSubscription();
   const { toast } = useToast();
-
-  // Get user's workspace and credits
-  const { data: workspace } = useQuery({
-    queryKey: ['user-workspace', user?.id],
-    queryFn: async () => {
-      if (!user) return null;
-      const { data } = await supabase
-        .from('workspaces')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-      return data;
-    },
-    enabled: !!user,
-  });
+  const { workspace } = useWorkspace();
 
   const { data: credits } = useQuery({
     queryKey: ['credits-balance', workspace?.id],

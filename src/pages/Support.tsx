@@ -13,6 +13,7 @@ import { Upload, Mail, MessageSquare, Clock, Ticket, Save } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 const supportSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
@@ -42,6 +43,7 @@ const Support = () => {
   const [autoSaving, setAutoSaving] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { workspace } = useWorkspace();
 
   // Auto-save draft to sessionStorage (cleared when browser closes)
   useEffect(() => {
@@ -207,19 +209,8 @@ const Support = () => {
         }
       }
 
-      // Get or create workspace
-      let workspaceId: string | null = null;
-      const { data: workspaces, error: workspaceError } = await supabase
-        .from('workspaces')
-        .select('id')
-        .eq('owner_id', user.id)
-        .limit(1);
-      
-      if (workspaceError) {
-        console.warn('Workspace lookup error:', workspaceError);
-      } else if (workspaces && workspaces.length > 0) {
-        workspaceId = workspaces[0].id;
-      }
+      // Use workspace from hook
+      const workspaceId = workspace?.id || null;
 
       // Create support ticket
       const { data: ticket, error: insertError } = await supabase

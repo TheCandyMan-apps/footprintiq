@@ -15,6 +15,7 @@ import { PaymentErrorBoundary } from '@/components/billing/PaymentErrorBoundary'
 import { CreditPackCard } from '@/components/CreditPackCard';
 import { useSearchParams } from 'react-router-dom';
 import { SUBSCRIPTION_PLANS, CREDIT_PACKS } from '@/config/stripe';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import {
   Dialog,
   DialogContent,
@@ -66,6 +67,7 @@ export default function BillingSettings() {
   const { subscriptionTier, isPremium, refreshSubscription } = useSubscription();
   const [searchParams] = useSearchParams();
   const [purchasingPack, setPurchasingPack] = useState<string | null>(null);
+  const { workspace } = useWorkspace();
 
   // Handle credit purchase success/cancel
   useEffect(() => {
@@ -395,17 +397,7 @@ export default function BillingSettings() {
               onPurchase={async () => {
                 setPurchasingPack('starter');
                 try {
-                  const { data: { user } } = await supabase.auth.getUser();
-                  if (!user) throw new Error('Not authenticated');
-                  
-                  // Get user's workspace
-                  const { data: workspace } = await supabase
-                    .from('workspaces')
-                    .select('id')
-                    .eq('owner_id', user.id)
-                    .single();
-
-                  if (!workspace) throw new Error('No workspace found');
+                  if (!workspace?.id) throw new Error('No workspace found');
 
                   const { data, error } = await supabase.functions.invoke('purchase-credit-pack', {
                     body: { packType: 'starter', workspaceId: workspace.id },
@@ -437,17 +429,7 @@ export default function BillingSettings() {
               onPurchase={async () => {
                 setPurchasingPack('pro');
                 try {
-                  const { data: { user } } = await supabase.auth.getUser();
-                  if (!user) throw new Error('Not authenticated');
-                  
-                  // Get user's workspace
-                  const { data: workspace } = await supabase
-                    .from('workspaces')
-                    .select('id')
-                    .eq('owner_id', user.id)
-                    .single();
-
-                  if (!workspace) throw new Error('No workspace found');
+                  if (!workspace?.id) throw new Error('No workspace found');
 
                   const { data, error } = await supabase.functions.invoke('purchase-credit-pack', {
                     body: { packType: 'pro', workspaceId: workspace.id },
