@@ -3796,6 +3796,45 @@ export type Database = {
         }
         Relationships: []
       }
+      ip_rate_limits: {
+        Row: {
+          attempt_count: number
+          blocked_until: string | null
+          created_at: string
+          endpoint: string
+          id: string
+          ip_address: unknown
+          max_attempts: number
+          updated_at: string
+          window_size_minutes: number
+          window_start: string
+        }
+        Insert: {
+          attempt_count?: number
+          blocked_until?: string | null
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip_address: unknown
+          max_attempts?: number
+          updated_at?: string
+          window_size_minutes?: number
+          window_start?: string
+        }
+        Update: {
+          attempt_count?: number
+          blocked_until?: string | null
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip_address?: unknown
+          max_attempts?: number
+          updated_at?: string
+          window_size_minutes?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       legal_cases: {
         Row: {
           case_number: string
@@ -8595,6 +8634,50 @@ export type Database = {
           },
         ]
       }
+      workspace_rate_limits: {
+        Row: {
+          created_at: string
+          current_count: number
+          id: string
+          max_allowed: number
+          rate_limit_type: string
+          updated_at: string
+          window_size_seconds: number
+          window_start: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_count?: number
+          id?: string
+          max_allowed?: number
+          rate_limit_type: string
+          updated_at?: string
+          window_size_seconds?: number
+          window_start?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          current_count?: number
+          id?: string
+          max_allowed?: number
+          rate_limit_type?: string
+          updated_at?: string
+          window_size_seconds?: number
+          window_start?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_rate_limits_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_settings: {
         Row: {
           auto_refill_enabled: boolean | null
@@ -8692,6 +8775,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_ip_rate_limit: {
+        Args: {
+          _endpoint: string
+          _ip_address: unknown
+          _max_attempts?: number
+        }
+        Returns: boolean
+      }
+      check_workspace_scan_limit: {
+        Args: { _rate_type?: string; _workspace_id: string }
+        Returns: boolean
+      }
       claim_background_job: {
         Args: { worker_id_param: string }
         Returns: {
@@ -8702,6 +8797,7 @@ export type Database = {
       }
       cleanup_expired_cache: { Args: never; Returns: undefined }
       cleanup_expired_oauth_states: { Args: never; Returns: undefined }
+      cleanup_expired_rate_limits: { Args: never; Returns: undefined }
       cleanup_scan_pii: { Args: never; Returns: undefined }
       generate_case_number: { Args: never; Returns: string }
       generate_incident_number: { Args: never; Returns: string }
