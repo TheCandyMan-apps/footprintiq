@@ -164,8 +164,18 @@ const Support = () => {
     setLoading(true);
 
     try {
-      // Get current user if authenticated
-      const { data: { user } } = await supabase.auth.getUser();
+      // Get current user - REQUIRED for ticket creation
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to submit a support ticket.",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
 
       // Upload attachments if any
       const uploadedFiles: string[] = [];
@@ -180,9 +190,8 @@ const Support = () => {
         };
 
         // Use user-scoped folder path
-        const userId = user?.id || 'anonymous';
         const sanitizedName = sanitizeFilename(file.name);
-        const fileName = `${userId}/support/${Date.now()}-${sanitizedName}`;
+        const fileName = `${user.id}/support/${Date.now()}-${sanitizedName}`;
         
         const { error: uploadError, data } = await supabase.storage
           .from('scan-images')
@@ -193,19 +202,23 @@ const Support = () => {
             .from('scan-images')
             .getPublicUrl(data.path);
           uploadedFiles.push(publicUrl);
+        } else if (uploadError) {
+          console.warn('File upload error:', uploadError);
         }
       }
 
-      // Get workspace
-      const { data: workspaces } = await supabase
+      // Get or create workspace
+      let workspaceId: string | null = null;
+      const { data: workspaces, error: workspaceError } = await supabase
         .from('workspaces')
         .select('id')
-        .eq('owner_id', user!.id)
+        .eq('owner_id', user.id)
         .limit(1);
       
-      const workspaceId = workspaces?.[0]?.id;
-      if (!workspaceId) {
-        throw new Error('No workspace found');
+      if (workspaceError) {
+        console.warn('Workspace lookup error:', workspaceError);
+      } else if (workspaces && workspaces.length > 0) {
+        workspaceId = workspaces[0].id;
       }
 
       // Create support ticket
@@ -213,43 +226,50 @@ const Support = () => {
         .from('support_tickets')
         .insert({
           workspace_id: workspaceId,
-          user_id: user!.id,
-          created_by: user!.id,
+          user_id: user.id,
+          created_by: user.id,
           category: result.data.issueType,
           priority: result.data.priority,
           subject: result.data.subject,
           description: result.data.message,
           status: 'open'
         })
-        .select()
+        .select('id, ticket_number')
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Ticket creation error:', insertError);
+        throw new Error(insertError.message || 'Failed to create support ticket');
+      }
 
-      // Send email notification
-      await supabase.functions.invoke('send-support-email', {
-        body: {
-          name: result.data.name,
-          email: result.data.email,
-          issueType: result.data.issueType,
-          priority: result.data.priority,
-          subject: result.data.subject,
-          message: result.data.message,
-          ticketNumber: ticket.ticket_number,
-          attachments: uploadedFiles,
-        },
+      if (!ticket) {
+        throw new Error('Ticket created but no data returned');
+      }
+
+      // Clear form and draft
+      sessionStorage.removeItem('support_draft');
+      setName('');
+      setEmail('');
+      setIssueType('');
+      setPriority('normal');
+      setSubject('');
+      setMessage('');
+      setAttachments([]);
+      
+      toast({
+        title: "Ticket Submitted Successfully",
+        description: `Your support ticket #${ticket.ticket_number} has been created. Expected response: ${RESPONSE_TIMES[result.data.priority as keyof typeof RESPONSE_TIMES]}.`,
       });
 
-      // Clear draft
-      sessionStorage.removeItem('support_draft');
+      navigate('/support-confirmation', { 
+        state: { ticketNumber: ticket.ticket_number }
+      });
 
-      // Navigate to confirmation
-      navigate(`/support/confirmation?ticket=${ticket.ticket_number}`);
     } catch (error) {
-      console.error('Error submitting support ticket:', error);
+      console.error('Support ticket submission error:', error);
       toast({
-        title: "Error",
-        description: "Failed to submit ticket. Please try again or email us directly at support@footprintiq.app",
+        title: "Submission Failed",
+        description: error instanceof Error ? error.message : "Failed to submit support ticket. Please try again.",
         variant: "destructive",
       });
     } finally {
