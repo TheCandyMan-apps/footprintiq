@@ -43,12 +43,17 @@ export default function Performance() {
         throw new Error("No active session");
       }
 
-      const { data, error } = await supabase.functions.invoke("cache-manager", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: { action: "stats" }
-      });
-      if (error) throw error;
-      return data;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cache-manager?action=stats`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      if (!response.ok) throw new Error('Failed to fetch cache stats');
+      return response.json();
     },
     refetchInterval: 30000
   });
@@ -62,12 +67,17 @@ export default function Performance() {
         throw new Error("No active session");
       }
 
-      const { data, error } = await supabase.functions.invoke("job-processor", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: { action: "stats" }
-      });
-      if (error) throw error;
-      return data;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/job-processor?action=stats`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      if (!response.ok) throw new Error('Failed to fetch job stats');
+      return response.json();
     },
     refetchInterval: 30000
   });
