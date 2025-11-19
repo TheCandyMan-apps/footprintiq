@@ -1,30 +1,76 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { authenticateRequest } from "../_shared/auth-utils.ts";
+import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
+import { validateRequestBody } from "../_shared/security-validation.ts";
+import { secureJsonResponse } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const GraphQuerySchema = z.object({
+  query: z.string().min(1).max(500, { message: "Query too long" }),
+  workspaceId: z.string().uuid({ message: "Invalid workspace ID" }),
+});
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  );
+
   try {
-    const { query, workspaceId } = await req.json();
-    
-    const authHeader = req.headers.get('Authorization')!;
-    const token = authHeader.replace('Bearer ', '');
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } }
+    // 1. Authentication
+    const authResult = await authenticateRequest(req);
+    if (!authResult.success || !authResult.context) {
+      return authResult.response!;
+    }
+
+    const { userId, subscriptionTier = 'free' } = authResult.context;
+
+    // 2. Rate Limiting (graph queries are expensive)
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      endpoint: 'graph-query',
+      userId,
+      tier: subscriptionTier,
     });
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      throw new Error('Unauthorized');
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
+    }
+
+    // 3. Input Validation
+    const body = await req.json();
+    const validation = validateRequestBody(body, GraphQuerySchema);
+    
+    if (!validation.valid) {
+      return secureJsonResponse(
+        { error: validation.error || 'Invalid input' },
+        400
+      );
+    }
+    
+    const { query, workspaceId } = validation.data!;
+    // 4. Verify workspace access
+    const { data: workspaceMember } = await supabase
+      .from('workspace_members')
+      .select('role')
+      .eq('workspace_id', workspaceId)
+      .eq('user_id', userId)
+      .single();
+
+    if (!workspaceMember) {
+      return secureJsonResponse(
+        { error: 'Access denied to workspace' },
+        403
+      );
     }
 
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
@@ -54,7 +100,7 @@ Never expose raw PII - only return aggregated metrics and summaries.`
           },
           {
             role: 'user',
-            content: `Convert to SQL (user_id='${user.id}'): ${query}`
+            content: `Convert to SQL (user_id='${userId}'): ${query}`
           }
         ],
       }),
@@ -67,10 +113,10 @@ Never expose raw PII - only return aggregated metrics and summaries.`
     const aiResult = await aiResponse.json();
     const generatedQuery = aiResult.choices[0].message.content.trim();
 
-    // Execute the generated query
+    // Execute the generated query with safety checks
     const { data: queryResult, error: queryError } = await supabase.rpc('execute_safe_query', {
       query_text: generatedQuery,
-      user_id: user.id
+      user_id: userId
     });
 
     if (queryError) {
@@ -78,13 +124,13 @@ Never expose raw PII - only return aggregated metrics and summaries.`
       const { data: fallbackData } = await supabase
         .from('entity_nodes' as any)
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .limit(10);
       
       const executionTime = Date.now() - startTime;
 
       await supabase.from('graph_queries' as any).insert({
-        user_id: user.id,
+        user_id: userId,
         workspace_id: workspaceId,
         natural_language_query: query,
         generated_query: generatedQuery,
@@ -92,22 +138,19 @@ Never expose raw PII - only return aggregated metrics and summaries.`
         execution_time_ms: executionTime
       });
 
-      return new Response(
-        JSON.stringify({ 
-          result: fallbackData || [], 
-          query: generatedQuery,
-          executionTime,
-          fallback: true
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return secureJsonResponse({ 
+        result: fallbackData || [], 
+        query: generatedQuery,
+        executionTime,
+        fallback: true
+      });
     }
 
     const executionTime = Date.now() - startTime;
 
     // Log the query
     await supabase.from('graph_queries' as any).insert({
-      user_id: user.id,
+      user_id: userId,
       workspace_id: workspaceId,
       natural_language_query: query,
       generated_query: generatedQuery,
@@ -115,23 +158,20 @@ Never expose raw PII - only return aggregated metrics and summaries.`
       execution_time_ms: executionTime
     });
 
-    return new Response(
-      JSON.stringify({ 
-        result: queryResult || [], 
-        query: generatedQuery,
-        executionTime 
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return secureJsonResponse({ 
+      result: queryResult || [], 
+      query: generatedQuery,
+      executionTime 
+    });
 
   } catch (error) {
-    console.error('Error in graph-query:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+    console.error('[graph-query] Error:', error);
+    return secureJsonResponse(
       { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+        error: 'Internal server error',
+        message: 'Failed to process graph query'
+      },
+      500
     );
   }
 });
