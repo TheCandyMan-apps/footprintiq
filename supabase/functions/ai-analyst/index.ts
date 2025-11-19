@@ -1,10 +1,25 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { authenticateRequest } from "../_shared/auth-utils.ts";
+import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
+import { validateRequestBody } from "../_shared/security-validation.ts";
+import { secureJsonResponse } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Request validation schema
+const AnalystRequestSchema = z.object({
+  action: z.enum(['summarize', 'correlate', 'predict', 'explain', 'compare', 'explain_link']),
+  prompt: z.string().min(1).max(5000),
+  entityIds: z.array(z.string().uuid()).optional(),
+  sourceEntityId: z.string().uuid().optional(),
+  targetEntityId: z.string().uuid().optional(),
+  context: z.string().max(50000).optional(),
+});
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -12,12 +27,51 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY not configured");
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Authentication
+    const authResult = await authenticateRequest(req);
+    if (!authResult.success || !authResult.context) {
+      return authResult.response!;
     }
 
-    const { action, prompt, entityIds, sourceEntityId, targetEntityId, context } = await req.json();
+    // Rate limiting - AI endpoints get premium tier limits
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      endpoint: "ai-analyst",
+      userId: authResult.context.userId,
+      tier: "premium",
+    });
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
+    }
+
+    // Validate and sanitize input
+    const body = await req.json();
+    const validation = validateRequestBody(body, AnalystRequestSchema);
+    
+    if (!validation.valid) {
+      console.error("[ai-analyst] Validation failed:", validation.error);
+      if (validation.threat) {
+        console.warn("[ai-analyst] Security threat detected:", validation.threat);
+      }
+      return secureJsonResponse(
+        { error: "Invalid request", message: validation.error },
+        400
+      );
+    }
+
+    const { action, prompt, entityIds, sourceEntityId, targetEntityId, context } = validation.data!;
+
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) {
+      return secureJsonResponse(
+        { error: "AI service not configured" },
+        500
+      );
+    }
 
     // Build system prompt (redaction rules, conservative claims)
     const systemPrompt = `You are an OSINT analyst assistant analyzing REAL scan data. Your role is to:
@@ -109,36 +163,31 @@ Response format:
         evidenceChain: extractEvidenceChain(content),
         confidence: extractConfidence(content),
       };
+    } else {
+      result = { analysis: content };
     }
 
-    // Store report in database
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const authHeader = req.headers.get("Authorization");
-    if (authHeader) {
-      const { data: { user } } = await supabase.auth.getUser(authHeader.split("Bearer ")[1]);
-      
-      if (user && entityIds) {
-        await supabase.from("analyst_reports").insert({
-          user_id: user.id,
-          entity_ids: entityIds,
-          report_data: result,
-          confidence: result.confidence || 0.7,
-        });
-      }
+    // Store report in database if entityIds provided
+    if (authResult.context && entityIds && entityIds.length > 0) {
+      await supabase.from("analyst_reports").insert({
+        user_id: authResult.context.userId,
+        entity_ids: entityIds,
+        report_data: result,
+        confidence: result.confidence || 0.7,
+      });
     }
 
-    return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return secureJsonResponse({ 
+      success: true,
+      action,
+      result,
+      rawContent: content,
+    }, 200);
   } catch (error: any) {
-    console.error("AI analyst error:", error);
-    return new Response(
-      JSON.stringify({ error: error.message || "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    console.error("[ai-analyst] Error:", error);
+    return secureJsonResponse(
+      { error: "Analysis failed", message: error.message },
+      500
     );
   }
 });
