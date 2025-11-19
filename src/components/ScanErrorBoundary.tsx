@@ -54,31 +54,58 @@ export class ScanErrorBoundary extends Component<Props, State> {
       level: 'error',
     });
     
-    // Show user-friendly toast based on error type
-    if (error.message?.includes('no_providers_available_for_tier')) {
+    // Show user-friendly toast based on error type and code
+    const errorMsg = error.message?.toLowerCase() || '';
+    
+    if (errorMsg.includes('no_providers_available_for_tier')) {
       toast.error('Provider not available on your plan', {
         description: 'The selected tool requires a Pro or Business plan. Please select Maigret or upgrade.',
         duration: 6000,
       });
-    } else if (error.message?.includes('timeout') || error.message?.includes('timed out')) {
-      toast.error('Provider timed out—retrying...', {
-        description: 'Some providers are taking longer than expected. We\'ll keep trying.',
+    } else if (errorMsg.includes('provider_error')) {
+      toast.warning('Partial results available', {
+        description: 'Some providers encountered errors. Displaying successful results.',
         duration: 5000,
       });
-    } else if (error.message?.includes('rate limit') || error.message?.includes('429')) {
+    } else if (errorMsg.includes('worker_unreachable')) {
+      toast.error('OSINT tool temporarily unavailable', {
+        description: 'The scanning service is unreachable. Please try again in a moment.',
+        duration: 6000,
+      });
+    } else if (errorMsg.includes('timeout') || errorMsg.includes('timed out') || errorMsg.includes('504')) {
+      toast.error('Request timed out', {
+        description: 'The scan is taking longer than expected. Try again or use fewer providers.',
+        duration: 5000,
+      });
+    } else if (errorMsg.includes('rate limit') || errorMsg.includes('429')) {
       toast.error('Rate limit reached', {
         description: 'Too many requests. Please wait a moment and try again.',
         duration: 5000,
       });
-    } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+    } else if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('502')) {
       toast.error('Connection issue', {
         description: 'Unable to connect to the server. Check your connection and try again.',
         duration: 5000,
       });
-    } else if (error.message?.includes('unauthorized') || error.message?.includes('401')) {
+    } else if (errorMsg.includes('unauthorized') || errorMsg.includes('401')) {
       toast.error('Authentication required', {
         description: 'Please sign in to continue.',
         duration: 5000,
+      });
+    } else if (errorMsg.includes('forbidden') || errorMsg.includes('403')) {
+      toast.error('Access denied', {
+        description: 'You don\'t have permission to perform this action.',
+        duration: 5000,
+      });
+    } else if (errorMsg.includes('not found') || errorMsg.includes('404')) {
+      toast.error('Resource not found', {
+        description: 'The requested resource could not be found.',
+        duration: 5000,
+      });
+    } else if (errorMsg.includes('bad_gateway') || errorMsg.includes('502')) {
+      toast.error('Service unavailable', {
+        description: 'The scanning service is temporarily unavailable. Try again shortly.',
+        duration: 6000,
       });
     } else {
       const context = this.props.context || 'operation';
