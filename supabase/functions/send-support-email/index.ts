@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { maskEmail, maskIP } from "../_shared/maskPII.ts";
+import { validateRequestBody, sanitizeString } from "../_shared/security-validation.ts";
+import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
+import { secureJsonResponse } from "../_shared/security-headers.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -14,6 +18,17 @@ const corsHeaders = {
 // Database-backed rate limiting
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 const MAX_REQUESTS_PER_WINDOW = 5; // 5 submissions per hour
+
+const SupportEmailSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  email: z.string().email().max(255),
+  issueType: z.string().min(1).max(50),
+  priority: z.string().min(1).max(20),
+  subject: z.string().trim().min(1).max(200),
+  message: z.string().trim().min(1).max(5000),
+  ticketNumber: z.string().optional(),
+  attachments: z.array(z.string().url()).max(5).optional(),
+});
 
 /**
  * Check if IP has exceeded rate limit using database

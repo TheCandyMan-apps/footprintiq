@@ -1,10 +1,22 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { authenticateRequest } from "../_shared/auth-utils.ts";
+import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
+import { validateRequestBody } from "../_shared/security-validation.ts";
+import { secureJsonResponse } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const BriefingRequestSchema = z.object({
+  clientId: z.string().uuid({ message: "Invalid client ID" }),
+  caseId: z.string().uuid().optional(),
+  recipientEmails: z.array(z.string().email()).min(1).max(10),
+  schedule: z.string().optional(),
+});
 
 interface BriefingRequest {
   clientId: string;
@@ -23,18 +35,34 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
+    // Authentication
+    const authResult = await authenticateRequest(req);
+    if (!authResult.success || !authResult.context) {
+      return authResult.response!;
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      throw new Error('Unauthorized');
+    const { userId, subscriptionTier } = authResult.context;
+
+    // Rate limiting
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      endpoint: 'ai-briefing',
+      userId,
+      tier: subscriptionTier,
+    });
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
     }
 
-    const { clientId, caseId, recipientEmails, schedule }: BriefingRequest = await req.json();
+    // Input validation
+    const body = await req.json();
+    const validation = validateRequestBody(body, BriefingRequestSchema);
+
+    if (!validation.valid) {
+      return secureJsonResponse({ error: validation.error || 'Invalid input' }, 400);
+    }
+
+    const { clientId, caseId, recipientEmails, schedule } = validation.data!;
 
     console.log('Generating AI briefing for client:', clientId);
 
@@ -68,7 +96,7 @@ serve(async (req) => {
     const { data: recentFindings } = await supabase
       .from('findings')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(10);
 
@@ -161,28 +189,21 @@ Include: Executive Summary, Top Threats, Actionable Recommendations.`
 
     console.log('Briefing generated:', briefing.id);
 
-    // TODO: Send email via Resend API (requires RESEND_API_KEY secret)
-    // For now, just return the briefing
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        briefing,
-        message: 'Briefing generated successfully',
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return secureJsonResponse({
+      success: true,
+      briefing: {
+        id: briefing.id,
+        summary,
+        recipients: recipientEmails,
+      },
+      message: 'Briefing generated successfully',
+    });
 
   } catch (error) {
-    console.error('Error generating briefing:', error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+    console.error('[ai-briefing] Error:', error);
+    return secureJsonResponse(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      500
     );
   }
 });
