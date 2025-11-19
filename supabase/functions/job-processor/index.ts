@@ -12,54 +12,53 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const action = url.searchParams.get("action") || "enqueue";
-    
-    // Dual authentication: internal token OR authenticated user for read-only ops
-    const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN');
-    const internalToken = req.headers.get('x-internal-token');
-    const authHeader = req.headers.get('authorization');
-    
-    const isReadOnly = ['stats', 'status'].includes(action);
-    
-    // For write operations, require internal token
-    if (!isReadOnly && (!internalToken || internalToken !== WORKER_TOKEN)) {
-      console.warn('Unauthorized access attempt to job-processor write operation');
+    // Get JWT from authorization header
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized - Valid internal token required' }),
+        JSON.stringify({ error: "Unauthorized - No authorization header" }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
-    
-    // For read operations, allow authenticated users
-    let supabase;
-    if (isReadOnly && !internalToken && authHeader) {
-      // Verify user authentication using service role client with auth header
-      const supabaseClient = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-        { global: { headers: { Authorization: authHeader } } }
-      );
-      
-      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-      
-      if (authError || !user) {
-        console.warn('Unauthenticated access attempt to job-processor stats');
-        return new Response(
-          JSON.stringify({ error: 'Authentication required' }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Use same client for operations
-      supabase = supabaseClient;
-    } else {
-      // Internal token provided or write operation
-      supabase = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+
+    // Create Supabase client with user's JWT
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    // Verify user is authenticated
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized - Invalid token" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
       );
     }
+
+    // Check if user is admin
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .single();
+
+    if (roleData?.role !== "admin") {
+      console.warn(`Non-admin user ${user.id} attempted to access job-processor`);
+      return new Response(
+        JSON.stringify({ error: "Forbidden - Admin access required" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+      );
+    }
+
+    const url = new URL(req.url);
+    const action = url.searchParams.get("action") || "enqueue";
 
     // Enqueue a new job
     if (action === "enqueue" && req.method === "POST") {
