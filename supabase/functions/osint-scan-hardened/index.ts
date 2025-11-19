@@ -6,6 +6,7 @@ import { authenticateRequest } from "../_shared/auth-utils.ts";
 import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
 import { validateRequestBody, logSecurityEvent } from "../_shared/security-validation.ts";
 import { maskPII } from "../_shared/maskPII.ts";
+import { addSecurityHeaders } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -103,7 +104,7 @@ serve(async (req) => {
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' })
       }
     );
 

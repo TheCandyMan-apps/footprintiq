@@ -4,6 +4,7 @@ import { errorResponse, safeError } from '../_shared/errors.ts';
 import { authenticateRequest } from '../_shared/auth-utils.ts';
 import { rateLimitMiddleware } from '../_shared/enhanced-rate-limiter.ts';
 import { validateInput } from '../_shared/security-validation.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -87,7 +88,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ tickets }), {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
     });
   } catch (error) {
     const err = safeError(error);
