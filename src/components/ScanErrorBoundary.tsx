@@ -99,6 +99,11 @@ export class ScanErrorBoundary extends Component<Props, State> {
         description: 'Too many requests. Please wait a moment and try again.',
         duration: 5000,
       });
+    } else if (errorCode === '406' || errorMsg.includes('not acceptable') || errorMsg.includes('406')) {
+      toast.error('Access restricted', {
+        description: "You don't have permission to access this resource. Try refreshing or contact your workspace admin.",
+        duration: 6000,
+      });
     } else if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorCode === 'bad_gateway' || errorMsg.includes('502')) {
       toast.error('Connection issue', {
         description: 'Unable to connect to the server. Check your connection and try again.',
