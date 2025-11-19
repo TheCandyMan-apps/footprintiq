@@ -196,25 +196,29 @@ const Support = () => {
         }
       }
 
-      // Generate ticket number
-      const { data: ticketData, error: ticketError } = await supabase
-        .rpc('generate_ticket_number');
-
-      if (ticketError) throw ticketError;
+      // Get workspace
+      const { data: workspaces } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('owner_id', user!.id)
+        .limit(1);
+      
+      const workspaceId = workspaces?.[0]?.id;
+      if (!workspaceId) {
+        throw new Error('No workspace found');
+      }
 
       // Create support ticket
       const { data: ticket, error: insertError } = await supabase
         .from('support_tickets')
         .insert({
-          user_id: user?.id || null,
-          ticket_number: ticketData,
-          name: result.data.name,
-          email: result.data.email,
-          issue_type: result.data.issueType,
+          workspace_id: workspaceId,
+          user_id: user!.id,
+          created_by: user!.id,
+          category: result.data.issueType,
           priority: result.data.priority,
           subject: result.data.subject,
-          message: result.data.message,
-          attachments: uploadedFiles,
+          description: result.data.message,
           status: 'open'
         })
         .select()

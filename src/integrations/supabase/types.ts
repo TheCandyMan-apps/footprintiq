@@ -7287,56 +7287,102 @@ export type Database = {
           },
         ]
       }
-      support_tickets: {
+      support_messages: {
         Row: {
           attachments: Json | null
+          author_id: string
+          body: string
           created_at: string
-          email: string
           id: string
-          issue_type: string
-          message: string
-          name: string
-          priority: string
-          resolved_at: string | null
-          status: string
-          subject: string
-          ticket_number: string
-          updated_at: string
-          user_id: string | null
+          is_internal: boolean
+          ticket_id: string
         }
         Insert: {
           attachments?: Json | null
+          author_id: string
+          body: string
           created_at?: string
-          email: string
           id?: string
-          issue_type: string
-          message: string
-          name: string
-          priority?: string
-          resolved_at?: string | null
-          status?: string
-          subject: string
-          ticket_number: string
-          updated_at?: string
-          user_id?: string | null
+          is_internal?: boolean
+          ticket_id: string
         }
         Update: {
           attachments?: Json | null
+          author_id?: string
+          body?: string
           created_at?: string
-          email?: string
           id?: string
-          issue_type?: string
-          message?: string
-          name?: string
+          is_internal?: boolean
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          category: string
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          last_reply_at: string | null
+          priority: string
+          status: string
+          subject: string
+          ticket_number: string | null
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          category: string
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          last_reply_at?: string | null
           priority?: string
-          resolved_at?: string | null
+          status?: string
+          subject: string
+          ticket_number?: string | null
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          last_reply_at?: string | null
+          priority?: string
           status?: string
           subject?: string
-          ticket_number?: string
+          ticket_number?: string | null
           updated_at?: string
-          user_id?: string | null
+          user_id?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       system_audit_logs: {
         Row: {
@@ -7422,6 +7468,51 @@ export type Database = {
           resolved_at?: string | null
           resolved_by?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      system_errors: {
+        Row: {
+          created_at: string
+          error_code: string
+          error_message: string
+          function_name: string | null
+          id: string
+          metadata: Json | null
+          provider: string | null
+          scan_id: string | null
+          severity: string
+          stack_trace: string | null
+          user_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_code: string
+          error_message: string
+          function_name?: string | null
+          id?: string
+          metadata?: Json | null
+          provider?: string | null
+          scan_id?: string | null
+          severity?: string
+          stack_trace?: string | null
+          user_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_code?: string
+          error_message?: string
+          function_name?: string | null
+          id?: string
+          metadata?: Json | null
+          provider?: string | null
+          scan_id?: string | null
+          severity?: string
+          stack_trace?: string | null
+          user_id?: string | null
+          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -8565,6 +8656,7 @@ export type Database = {
       generate_case_number: { Args: never; Returns: string }
       generate_incident_number: { Args: never; Returns: string }
       generate_referral_code: { Args: { _user_id: string }; Returns: string }
+      generate_support_ticket_number: { Args: never; Returns: string }
       generate_ticket_number: { Args: never; Returns: string }
       get_credits_balance: { Args: { _workspace_id: string }; Returns: number }
       get_stuck_scans: {
@@ -8622,6 +8714,20 @@ export type Database = {
           _target?: string
           _user_id: string
           _workspace_id: string
+        }
+        Returns: string
+      }
+      log_system_error: {
+        Args: {
+          p_error_code: string
+          p_error_message: string
+          p_function_name?: string
+          p_metadata?: Json
+          p_provider?: string
+          p_scan_id?: string
+          p_severity?: string
+          p_user_id?: string
+          p_workspace_id?: string
         }
         Returns: string
       }
