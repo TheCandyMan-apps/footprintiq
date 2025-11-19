@@ -1,6 +1,8 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { rateLimitMiddleware } from '../_shared/enhanced-rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -45,6 +47,18 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Rate limiting
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      userId: user.id,
+      tier: 'basic',
+      endpoint: 'customer-portal',
+    });
+
+    if (!rateLimitResult.allowed) {
+      logStep("Rate limit exceeded for user", { userId: user.id });
+      return rateLimitResult.response!;
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     if (customers.data.length === 0) {
@@ -61,14 +75,14 @@ serve(async (req) => {
     logStep("Customer portal session created", { sessionId: portalSession.id, url: portalSession.url });
 
     return new Response(JSON.stringify({ url: portalSession.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
       status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in customer-portal", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
       status: 500,
     });
   }

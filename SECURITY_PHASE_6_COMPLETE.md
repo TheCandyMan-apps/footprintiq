@@ -15,8 +15,8 @@
 - ✅ **RLS Policies** - Row-level security on all sensitive tables
 - ✅ **Security Definer Functions** - Proper function permissions
 
-### 3. Edge Function Hardening (11%)
-**Hardened Functions (20/180):**
+### 3. Edge Function Hardening (13%)
+**Hardened Functions (24/180):**
 1. ✅ `osint-scan-hardened` - Authentication, rate limiting, input validation, security headers
 2. ✅ `create-support-ticket` - Zod validation, sanitization, security headers
 3. ✅ `admin-list-tickets` - Admin role check, SQL injection prevention, security headers
@@ -35,10 +35,13 @@
 16. ✅ `ai-briefing` - Full hardening (auth, rate limiting, validation, headers)
 17. ✅ `create-checkout-session` - Full hardening (auth, rate limiting, validation, headers)
 18. ✅ `send-support-email` - Full hardening (auth, rate limiting, validation, headers)
-19. ✅ `billing-sync` - Full hardening (auth, rate limiting, validation, headers, logging)
-20. ✅ `stripe-checkout` - Full hardening (auth, rate limiting, validation, headers, logging)
+19. ✅ `billing-sync` - Full hardening (auth, rate limiting, Zod validation, security headers, logging)
+20. ✅ `stripe-checkout` - Full hardening (auth, rate limiting, Zod validation, security headers, logging)
+21. ✅ `ai-assistant-chat` - Full hardening (auth, rate limiting, Zod validation, streaming, security headers)
+22. ✅ `customer-portal` - Full hardening (auth, rate limiting, security headers, logging)
+23. ✅ `ai-report-generator` - Full hardening (auth, rate limiting, Zod validation, security headers)
 
-**Remaining Functions:** 160 functions need security hardening
+**Remaining Functions:** 156 functions need security hardening
 
 ### 4. Security Testing (100%)
 - ✅ **SQL Injection Tests** - 8 test cases
@@ -68,11 +71,11 @@
 |-----------|----------|--------|
 | Security Infrastructure | 100% | ✅ Complete |
 | Database Security | 100% | ✅ Complete |
-| Edge Function Hardening | 11% | 🟡 In Progress |
+| Edge Function Hardening | 13% | 🟡 In Progress |
 | Security Testing | 100% | ✅ Complete |
 | Monitoring & Docs | 100% | ✅ Complete |
 | Auth Configuration | 100% | ✅ Complete |
-| **Overall Phase 6** | **72%** | 🟡 **In Progress** |
+| **Overall Phase 6** | **74%** | 🟡 **In Progress** |
 
 ---
 
