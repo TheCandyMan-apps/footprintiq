@@ -1,6 +1,9 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { errorResponse, safeError } from '../_shared/errors.ts';
+import { authenticateRequest } from '../_shared/auth-utils.ts';
+import { rateLimitMiddleware } from '../_shared/enhanced-rate-limiter.ts';
+import { validateInput } from '../_shared/security-validation.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,33 +21,49 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return errorResponse(new Error('Missing authorization'), 401, 'AUTH_FAILED', corsHeaders);
+    // Authentication with admin check
+    const authResult = await authenticateRequest(req, { requireAdmin: true });
+    if (!authResult.success || !authResult.context) {
+      return authResult.response!;
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { userId, subscriptionTier, ipAddress } = authResult.context;
 
-    if (authError || !user) {
-      return errorResponse(authError || new Error('Unauthorized'), 401, 'AUTH_FAILED', corsHeaders);
-    }
+    // Rate limiting
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      endpoint: 'admin-list-tickets',
+      userId,
+      tier: subscriptionTier,
+    });
 
-    // Check admin role
-    const { data: userRole } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
-
-    if (userRole?.role !== 'admin') {
-      return errorResponse(new Error('Admin access required'), 403, 'UNAUTHORIZED', corsHeaders);
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
     }
 
     const url = new URL(req.url);
     const status = url.searchParams.get('status');
     const priority = url.searchParams.get('priority');
     const category = url.searchParams.get('category');
+
+    // Validate query parameters to prevent SQL injection
+    if (status) {
+      const validation = validateInput(status, { maxLength: 50, checkSQLInjection: true });
+      if (!validation.valid) {
+        return errorResponse(new Error('Invalid status parameter'), 400, 'INVALID_INPUT', corsHeaders);
+      }
+    }
+    if (priority) {
+      const validation = validateInput(priority, { maxLength: 50, checkSQLInjection: true });
+      if (!validation.valid) {
+        return errorResponse(new Error('Invalid priority parameter'), 400, 'INVALID_INPUT', corsHeaders);
+      }
+    }
+    if (category) {
+      const validation = validateInput(category, { maxLength: 100, checkSQLInjection: true });
+      if (!validation.valid) {
+        return errorResponse(new Error('Invalid category parameter'), 400, 'INVALID_INPUT', corsHeaders);
+      }
+    }
 
     let query = supabase
       .from('support_tickets')
