@@ -23,7 +23,6 @@ import { TimelineChart } from "@/components/TimelineChart";
 import { ShareReportDialog } from "@/components/ShareReportDialog";
 import { PDFReportButton } from "@/components/PDFReportButton";
 import { ComprehensiveReportExport } from "@/components/ComprehensiveReportExport";
-import { ComprehensivePDFReport } from "@/components/reports/ComprehensivePDFReport";
 import { GraphExplorer } from "@/components/GraphExplorer";
 import { MonitoringToggle } from "@/components/MonitoringToggle";
 import { ScanSummary } from "@/components/ScanSummary";
@@ -59,7 +58,6 @@ import {
 import type { User } from "@supabase/supabase-js";
 import { AddToCaseButton } from "@/components/case/AddToCaseButton";
 import { ExportEnrichedButton } from "@/components/scan/ExportEnrichedButton";
-import { QuickExportButton } from "@/components/scan/QuickExportButton";
 
 interface DataSource {
   id: string;
@@ -623,8 +621,6 @@ const ResultsDetail = () => {
               Back to Dashboard
             </Button>
             <div className="flex gap-2">
-              <QuickExportButton scanId={scanId!} />
-              <ComprehensivePDFReport scanId={scanId!} />
               <ComprehensiveReportExport
                 scanId={scanId!}
                 scan={scan}
