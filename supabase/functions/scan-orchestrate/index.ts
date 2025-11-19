@@ -7,6 +7,7 @@ import { withCache, cacheDelete } from '../_shared/cache.ts';
 import { deduplicateFindings, sortFindings, type UFMFinding } from '../_shared/normalize.ts';
 import { getPlan } from '../_shared/tiers.ts';
 import { filterProvidersForPlan } from '../_shared/quotas.ts';
+import { safeFetch, errorResponse, ERROR_RESPONSES, logSystemError } from '../_shared/errorHandler.ts';
 
 /**
  * Normalize confidence values to 0-1 range for database storage.
