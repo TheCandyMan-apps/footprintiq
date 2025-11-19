@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { authenticateRequest } from "../_shared/auth-utils.ts";
+import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
+import { validateRequestBody } from "../_shared/security-validation.ts";
+import { secureJsonResponse } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,6 +20,11 @@ const CREDIT_PACKAGES: Record<string, { credits: number; priceId: string }> = {
   "500": { credits: 500, priceId: "price_1SQtUCPNdM5SAyj7Zat6OZcB" },
 };
 
+const CheckoutRequestSchema = z.object({
+  credits: z.number().int().positive(),
+  workspaceId: z.string().uuid(),
+});
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -22,50 +32,40 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client for auth
+    // Initialize Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    // Verify authentication
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - No authorization header" }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
+    // Authentication
+    const authResult = await authenticateRequest(req);
+    if (!authResult.success || !authResult.context) {
+      return authResult.response!;
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
+    const { userId, subscriptionTier, email } = authResult.context;
 
-    if (authError || !user) {
-      console.error("Auth error:", authError);
-      return new Response(
-        JSON.stringify({ error: "Unauthorized - Invalid session" }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
+    // Rate limiting
+    const rateLimitResult = await rateLimitMiddleware(req, {
+      endpoint: 'create-checkout-session',
+      userId,
+      tier: subscriptionTier,
+    });
+
+    if (!rateLimitResult.allowed) {
+      return rateLimitResult.response!;
     }
 
-    // Parse request body
-    const { credits, workspaceId } = await req.json();
+    // Input validation
+    const body = await req.json();
+    const validation = validateRequestBody(body, CheckoutRequestSchema);
 
-    if (!credits || !workspaceId) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields: credits, workspaceId" }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
+    if (!validation.valid) {
+      return secureJsonResponse({ error: validation.error || 'Invalid input' }, 400);
     }
+
+    const { credits, workspaceId } = validation.data!;
 
     // Get credit package
     const creditPackage = CREDIT_PACKAGES[credits.toString()];
@@ -86,7 +86,7 @@ serve(async (req) => {
 
     // Check for existing Stripe customer
     const customers = await stripe.customers.list({ 
-      email: user.email, 
+      email: email || '', 
       limit: 1 
     });
 
@@ -100,7 +100,7 @@ serve(async (req) => {
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
+      customer_email: customerId ? undefined : email,
       mode: "payment",
       payment_method_types: ["card"],
       line_items: [
@@ -112,7 +112,7 @@ serve(async (req) => {
       success_url: `${origin}/scan/advanced?success=true&credits=${credits}`,
       cancel_url: `${origin}/scan/advanced?canceled=true`,
       metadata: {
-        user_id: user.id,
+        user_id: userId,
         workspace_id: workspaceId,
         credits: credits.toString(),
         purchase_type: "credits",
@@ -121,28 +121,17 @@ serve(async (req) => {
 
     console.log("Checkout session created:", {
       sessionId: session.id,
-      userId: user.id,
+      userId,
       workspaceId,
       credits,
     });
 
-    return new Response(
-      JSON.stringify({ url: session.url, sessionId: session.id }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return secureJsonResponse({ url: session.url, sessionId: session.id });
   } catch (error) {
     console.error("Checkout session creation error:", error);
-    return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Failed to create checkout session" 
-      }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+    return secureJsonResponse(
+      { error: error instanceof Error ? error.message : "Failed to create checkout session" },
+      500
     );
   }
 });
