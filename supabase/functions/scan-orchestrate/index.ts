@@ -868,7 +868,9 @@ serve(async (req) => {
           return acc;
         }, {} as Record<string, number>);
 
-        const { error: updateError } = await supabaseService
+        console.log(`[orchestrate] UPDATING scans table for ${scanId} to completed with ${sortedFindings.length} findings`);
+        
+        const { data: updateResult, error: updateError } = await supabaseService
           .from('scans')
           .update({
             status: 'completed',
@@ -880,14 +882,45 @@ serve(async (req) => {
             total_sources_found: sortedFindings.length,
             provider_counts: providerCounts
           } as any)
-          .eq('id', scanId);
+          .eq('id', scanId)
+          .select();
         
         if (updateError) {
-          console.error('[orchestrate] Failed to update scan status:', updateError);
+          console.error('[orchestrate] CRITICAL: Failed to update scan status:', updateError);
+          await logSystemError(
+            supabaseService,
+            'SCAN_UPDATE_FAILED',
+            `Failed to update scans table: ${updateError.message}`,
+            {
+              functionName: 'scan-orchestrate',
+              scanId,
+              workspaceId,
+              severity: 'error',
+              metadata: { sortedFindingsCount: sortedFindings.length, providerCounts }
+            }
+          );
           throw updateError;
         }
         
-        console.log(`[orchestrate] Scan ${scanId} updated to completed with ${sortedFindings.length} findings`);
+        if (!updateResult || updateResult.length === 0) {
+          const errorMsg = `Update returned 0 rows for scan ${scanId} - scan may not exist or RLS blocked update`;
+          console.error(`[orchestrate] CRITICAL: ${errorMsg}`);
+          await logSystemError(
+            supabaseService,
+            'SCAN_UPDATE_NO_ROWS',
+            errorMsg,
+            {
+              functionName: 'scan-orchestrate',
+              scanId,
+              workspaceId,
+              severity: 'critical',
+              metadata: { sortedFindingsCount: sortedFindings.length, providerCounts }
+            }
+          );
+          throw new Error(errorMsg);
+        }
+        
+        console.log(`[orchestrate] ✓ Scan ${scanId} successfully updated to completed with ${sortedFindings.length} findings, ${Object.keys(providerCounts).length} providers`);
         
         // Trigger webhooks for scan completion
         try {

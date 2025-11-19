@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -37,6 +37,9 @@ interface ScanProgressDialogProps {
 
 export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, initialProviders }: ScanProgressDialogProps) {
   const initialProvidersKey = useMemo(() => initialProviders?.join(',') || '', [initialProviders]);
+
+  // Track last scanId to prevent progress resets when reopening same scan
+  const lastScanIdRef = useRef<string | null>(null);
 
   // State
   const [progress, setProgress] = useState(0);
