@@ -41,12 +41,15 @@ export function useAdminAnalytics() {
 
       if (scansError) throw scansError;
 
-      // Get active workspaces
+      // Get active workspaces (with graceful RLS error handling for admin queries)
       const { count: activeWorkspaces, error: workspacesError } = await supabase
         .from('workspaces')
         .select('*', { count: 'exact', head: true });
 
-      if (workspacesError) throw workspacesError;
+      if (workspacesError) {
+        // Gracefully handle RLS 406 errors - continue with null/0 instead of throwing
+        console.warn('Admin analytics workspace count failed (RLS 406?):', workspacesError);
+      }
 
       return {
         totalUsers: totalUsers || 0,

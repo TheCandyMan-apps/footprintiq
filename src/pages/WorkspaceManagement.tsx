@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Settings, Trash2, Crown, Shield, Eye, Search } from "lucide-react";
+import { Users, Settings, Trash2, Crown, Shield, Eye, Search, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,6 +18,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { SEO } from "@/components/SEO";
 
 export default function WorkspaceManagement() {
+  const navigate = useNavigate();
   const { workspace, workspaces, switchWorkspace, refreshWorkspace } = useWorkspace();
   const [selectedWorkspace, setSelectedWorkspace] = useState<string | null>(null);
   const [addMemberEmail, setAddMemberEmail] = useState("");
@@ -204,11 +206,20 @@ export default function WorkspaceManagement() {
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">Workspace Management</h1>
-            <p className="text-muted-foreground">
-              Manage your workspaces, members, and permissions
-            </p>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Workspace Management</h1>
+              <p className="text-muted-foreground">
+                Manage your workspaces, members, and permissions
+              </p>
+            </div>
+            <Button 
+              onClick={() => navigate('/workspaces')}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Create New Workspace
+            </Button>
           </div>
 
           <div className="grid lg:grid-cols-3 gap-6">

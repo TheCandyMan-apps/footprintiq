@@ -60,7 +60,13 @@ export function useWorkspace(): WorkspaceContext {
         .eq('user_id', user.id);
 
       if (membershipsError) {
-        console.warn('Failed to fetch workspace memberships, continuing with owned workspaces only:', membershipsError);
+        // Detect RLS 406 errors specifically
+        if (membershipsError.code === '406' || membershipsError.message?.includes('Not Acceptable')) {
+          console.error('RLS policy blocking workspace access:', membershipsError);
+          setError('Unable to load workspaces. Please contact support if this persists.');
+        } else {
+          console.warn('Failed to fetch workspace memberships, continuing with owned workspaces only:', membershipsError);
+        }
       }
 
       const membershipRows = (memberships as any[]) || [];

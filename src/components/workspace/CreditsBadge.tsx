@@ -5,6 +5,7 @@ import { Coins } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useWorkspace } from "@/hooks/useWorkspace";
 
 interface CreditsBadgeProps {
   workspaceId: string;
@@ -12,6 +13,7 @@ interface CreditsBadgeProps {
 
 export function CreditsBadge({ workspaceId }: CreditsBadgeProps) {
   const navigate = useNavigate();
+  const { workspace } = useWorkspace();
 
   const { data: balance, isLoading } = useQuery({
     queryKey: ['credits-balance', workspaceId],
@@ -24,19 +26,7 @@ export function CreditsBadge({ workspaceId }: CreditsBadgeProps) {
     },
   });
 
-  const { data: workspace } = useQuery({
-    queryKey: ['workspace-tier', workspaceId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('workspaces')
-        .select('subscription_tier')
-        .eq('id', workspaceId)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-  });
-
+  // Use workspace from hook instead of direct query (avoids RLS 406 errors)
   const tier = workspace?.subscription_tier || 'free';
   const isPremium = ['pro', 'enterprise'].includes(tier.toLowerCase());
 
