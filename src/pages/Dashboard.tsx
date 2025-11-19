@@ -262,44 +262,53 @@ const Dashboard = () => {
           .eq('scan_id', recentScan.id);
 
         if (dnaFindings && dnaFindings.length > 0) {
-          // Keyword arrays for categorization
-          const BREACH_KEYWORDS = ['hibp', 'breach', 'leak', 'compromised', 'breach.hit', 'pwned'];
-          const BROKER_KEYWORDS = ['broker', 'people-search', 'background-check', 'data-aggregator', 'whitepages', 'spokeo', 'peoplesearch'];
-          const DARK_WEB_KEYWORDS = ['dark', 'tor', 'onion', 'paste', 'intelx', 'dump', 'pastebin'];
+          // Enhanced keyword arrays for accurate categorization
+          const BREACH_KEYWORDS = ['hibp', 'breach', 'leak', 'compromised', 'breach.hit', 'pwned', 'violation', 'exposed'];
+          const BROKER_KEYWORDS = ['broker', 'people-search', 'background-check', 'data-aggregator', 'whitepages', 'spokeo', 'peoplesearch', 'pipl', 'radaris'];
+          const DARK_WEB_KEYWORDS = ['dark', 'tor', 'onion', 'paste', 'intelx', 'dump', 'pastebin', 'leak'];
+          const EXPOSURE_KEYWORDS = ['profile', 'presence', 'hit', 'found', 'account', 'social'];
+          const EXPOSURE_PROVIDERS = ['maigret', 'sherlock', 'gosearch', 'holehe'];
 
           let breaches = 0, exposures = 0, dataBrokers = 0, darkWeb = 0;
           
-          for (const f of dnaFindings) {
+          // Filter out provider_error findings for accurate counts
+          const validFindings = dnaFindings.filter(f => {
+            const kind = (f.kind || '').toLowerCase();
+            return kind !== 'provider_error' && !kind.includes('error');
+          });
+          
+          for (const f of validFindings) {
             const kind = (f.kind || '').toLowerCase();
             const provider = (f.provider || '').toLowerCase();
             
             // Breaches: findings with breach-related keywords
             if (BREACH_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
               breaches++;
-            }
-            
-            // Exposures: findings from OSINT providers OR containing exposure keywords
-            if (['maigret', 'sherlock', 'gosearch'].includes(provider) || 
-                ['profile', 'presence', 'hit', 'found'].some(k => kind.includes(k))) {
-              // Exclude error findings
-              if (!kind.includes('error') && !kind.includes('provider_error')) {
-                exposures++;
-              }
+              continue; // Count as breach, skip other categories
             }
             
             // Data Brokers: findings matching broker keywords
             if (BROKER_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
               dataBrokers++;
+              continue;
             }
             
             // Dark Web: findings matching dark web keywords
             if (DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
               darkWeb++;
+              continue;
+            }
+            
+            // Exposures: findings from OSINT providers OR containing exposure keywords
+            // This should be the largest category for typical OSINT scans
+            if (EXPOSURE_PROVIDERS.includes(provider) || 
+                EXPOSURE_KEYWORDS.some(k => kind.includes(k))) {
+              exposures++;
             }
           }
 
           // Calculate risk score (ensure it's an integer 0-100)
-          const riskScore = Math.min(100, Math.max(0, Math.round(breaches * 15 + darkWeb * 10 + dataBrokers * 5)));
+          const riskScore = Math.min(100, Math.max(0, Math.round(breaches * 15 + darkWeb * 10 + dataBrokers * 5 + exposures * 1)));
           setDnaMetrics({ 
             score: Math.max(0, 100 - riskScore), 
             breaches, 

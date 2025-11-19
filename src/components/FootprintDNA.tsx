@@ -85,8 +85,9 @@ export const FootprintDNA = ({
     }
   ];
 
-  // Check if there's no data at all
+  // Check if there's no meaningful data (only zeros)
   const hasNoData = breaches === 0 && exposures === 0 && dataBrokers === 0 && darkWeb === 0;
+  const totalFindings = breaches + exposures + dataBrokers + darkWeb;
 
   return (
     <Card 
@@ -103,9 +104,12 @@ export const FootprintDNA = ({
       
       <div className="relative p-6 md:p-8">
         {hasNoData && (
-          <div className="mb-4 p-3 bg-muted/50 rounded-lg border border-border">
-            <p className="text-sm text-muted-foreground text-center">
-              Run a scan to populate your intelligence metrics
+          <div className="mb-4 p-4 bg-muted/50 rounded-lg border border-border">
+            <p className="text-sm text-muted-foreground text-center mb-1">
+              <strong>No scan data available yet</strong>
+            </p>
+            <p className="text-xs text-muted-foreground/70 text-center">
+              Run your first scan to generate intelligence metrics and discover your digital footprint
             </p>
           </div>
         )}
