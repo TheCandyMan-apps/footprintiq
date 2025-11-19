@@ -6199,6 +6199,56 @@ export type Database = {
         }
         Relationships: []
       }
+      scan_artifacts: {
+        Row: {
+          artifact_type: string
+          created_at: string
+          downloaded_at: string | null
+          file_size_bytes: number | null
+          file_url: string
+          generated_at: string
+          id: string
+          scan_id: string
+          signed_url: string | null
+          signed_url_expires_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          artifact_type: string
+          created_at?: string
+          downloaded_at?: string | null
+          file_size_bytes?: number | null
+          file_url: string
+          generated_at?: string
+          id?: string
+          scan_id: string
+          signed_url?: string | null
+          signed_url_expires_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          artifact_type?: string
+          created_at?: string
+          downloaded_at?: string | null
+          file_size_bytes?: number | null
+          file_url?: string
+          generated_at?: string
+          id?: string
+          scan_id?: string
+          signed_url?: string | null
+          signed_url_expires_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_artifacts_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scan_comparisons: {
         Row: {
           created_at: string

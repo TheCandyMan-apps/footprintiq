@@ -5,7 +5,7 @@ Disallow: /my-tickets
 Disallow: /results/
 Disallow: /auth
 
-Sitemap: https://footprintiq.app/sitemap.xml
+Sitemap: https://footprintiq.com/sitemap.xml
 
 # Allow common search engine bots
 User-agent: Googlebot

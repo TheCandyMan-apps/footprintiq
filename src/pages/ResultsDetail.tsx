@@ -38,6 +38,8 @@ import { Finding } from "@/lib/ufm";
 import { ExportControls } from "@/components/ExportControls";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { exportAsJSON, exportAsCSV, exportAsPDF } from "@/lib/exports";
+import { ArtifactDownloadCard } from "@/components/scan/ArtifactDownloadCard";
+import { useArtifactGeneration } from "@/hooks/useArtifactGeneration";
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -140,6 +142,9 @@ const ResultsDetail = () => {
   const [findings, setFindings] = useState<Finding[]>([]);
   const pollTriesRef = useRef(0);
   const pollTimeoutRef = useRef<number | null>(null);
+  
+  // Artifact generation hook
+  const { artifacts, isGenerating, generateArtifacts } = useArtifactGeneration(scanId);
 
   useEffect(() => {
     // Reset poll counter when scanId changes
@@ -1007,6 +1012,17 @@ const ResultsDetail = () => {
               </div>
             </div>
           </Card>
+        )}
+
+        {/* Export Artifacts Section */}
+        {scanId && (
+          <div className="mb-8">
+            <ArtifactDownloadCard 
+              artifacts={artifacts}
+              isGenerating={isGenerating}
+              onRegenerate={() => generateArtifacts(['csv', 'json', 'html', 'txt'])}
+            />
+          </div>
         )}
 
         {/* Export Controls */}

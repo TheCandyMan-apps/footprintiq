@@ -262,19 +262,38 @@ const Dashboard = () => {
           .eq('scan_id', recentScan.id);
 
         if (dnaFindings) {
-          const BROKER_KEYWORDS = ['whitepages', 'spokeo', 'broker'];
-          const DARK_WEB_KEYWORDS = ['intelx', 'paste', 'dark', 'darkweb'];
-          const BREACH_KEYWORDS = ['hibp', 'breach', 'leak'];
+          // More flexible keyword matching for metrics
+          const BROKER_KEYWORDS = ['whitepages', 'spokeo', 'broker', 'people-search', 'background-check', 'data-aggregator', 'peoplesearch'];
+          const DARK_WEB_KEYWORDS = ['intelx', 'paste', 'dark', 'darkweb', 'tor', 'onion', 'dump', 'pastebin'];
+          const BREACH_KEYWORDS = ['hibp', 'breach', 'leak', 'compromised', 'breach.hit', 'pwned'];
+          const EXPOSURE_KEYWORDS = ['profile', 'presence', 'hit', 'found', 'username'];
 
           let breaches = 0, exposures = 0, dataBrokers = 0, darkWeb = 0;
           for (const f of dnaFindings) {
             const kind = (f.kind || '').toLowerCase();
             const provider = (f.provider || '').toLowerCase();
             
-            if (BREACH_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) breaches++;
-            exposures++;
-            if (BROKER_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) dataBrokers++;
-            if (DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) darkWeb++;
+            // Count breaches
+            if (BREACH_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
+              breaches++;
+            }
+            
+            // Count exposures - most findings are exposures unless they're errors
+            if (!kind.includes('error') && !kind.includes('no_result') && 
+                (EXPOSURE_KEYWORDS.some(k => kind.includes(k)) || 
+                 ['maigret', 'sherlock', 'gosearch'].includes(provider))) {
+              exposures++;
+            }
+            
+            // Count data brokers
+            if (BROKER_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
+              dataBrokers++;
+            }
+            
+            // Count dark web
+            if (DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
+              darkWeb++;
+            }
           }
 
           setDnaMetrics({ score: Math.max(0, 100 - (breaches * 10 + darkWeb * 5)), breaches, exposures, dataBrokers, darkWeb });
