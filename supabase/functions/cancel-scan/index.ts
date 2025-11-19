@@ -60,14 +60,26 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (scanRecord) {
-      // Check if already in terminal state
-      if (scanRecord.status === 'completed' || scanRecord.status === 'failed' || scanRecord.status === 'cancelled') {
+      // Check if already in terminal state - return friendly response for completed scans
+      if (scanRecord.status === 'completed') {
+        console.log('[cancel-scan] Scan already completed');
+        return new Response(
+          JSON.stringify({ 
+            message: 'Scan already completed',
+            status: 'completed',
+            scanId
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (scanRecord.status === 'failed' || scanRecord.status === 'cancelled') {
         console.log('[cancel-scan] Scan already terminal:', scanRecord.status);
         return new Response(
           JSON.stringify({ 
             error: `Scan already ${scanRecord.status}`,
             status: scanRecord.status,
-            message: 'Cannot cancel a completed or failed scan'
+            message: `Cannot cancel a ${scanRecord.status} scan`
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
@@ -81,22 +93,30 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Cancel the scan
+      // Cancel the scan in both scans and scan_progress tables
       const { error: updateError } = await supabase
         .from('scans')
         .update({
           status: 'cancelled',
-          updated_at: new Date().toISOString()
+          completed_at: new Date().toISOString()
         })
         .eq('id', scanId);
 
       if (updateError) {
-        console.error('[cancel-scan] Failed to cancel scan:', updateError);
+        console.error('[cancel-scan] Failed to cancel scan in scans table:', updateError);
         return new Response(
           JSON.stringify({ error: 'Failed to cancel scan' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
+
+      // Also update scan_progress to keep tables in sync
+      await supabase
+        .from('scan_progress')
+        .update({
+          status: 'cancelled'
+        })
+        .eq('scan_id', scanId);
 
       // Broadcast cancellation
       await supabase.channel(`scan_progress:${scanId}`).send({
@@ -105,7 +125,7 @@ Deno.serve(async (req) => {
         payload: { scanId, cancelledAt: new Date().toISOString() }
       });
 
-      console.log('[cancel-scan] Scan cancelled successfully');
+      console.log('[cancel-scan] Scan cancelled successfully in both tables');
       return new Response(
         JSON.stringify({ 
           message: 'Scan cancelled successfully',
@@ -167,8 +187,7 @@ Deno.serve(async (req) => {
             ...maigretResult.raw,
             cancelled_by_user: true,
             cancelled_at: new Date().toISOString()
-          },
-          updated_at: new Date().toISOString()
+          }
         })
         .eq('job_id', scanId);
 
@@ -268,7 +287,7 @@ Deno.serve(async (req) => {
       .update({
         status: 'canceled',
         error: 'Cancelled by user',
-        finished_at: new Date().toISOString(),
+        finished_at: new Date().toISOString()
       })
       .eq('id', scanId);
     
