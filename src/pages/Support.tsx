@@ -433,8 +433,20 @@ const Support = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Sending..." : "Send Message"}
+            <Button
+              type="submit"
+              className="w-full transition-all hover:scale-105"
+              disabled={loading}
+              aria-label="Submit support ticket"
+            >
+              {loading ? (
+                <>
+                  <span className="animate-spin mr-2" aria-hidden="true">⏳</span>
+                  Sending...
+                </>
+              ) : (
+                "Send Message"
+              )}
             </Button>
           </form>
 

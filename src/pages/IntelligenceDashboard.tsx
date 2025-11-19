@@ -67,7 +67,26 @@ export default function IntelligenceDashboard() {
   };
 
   if (adminLoading || !isAdmin) {
-    return null;
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <main className="container mx-auto py-8 px-4">
+          <div className="animate-pulse space-y-8">
+            <div className="h-12 bg-muted/50 rounded-lg w-1/3" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-32 bg-muted/50 rounded-lg" />
+              ))}
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-64 bg-muted/50 rounded-lg" />
+              ))}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   const scanTypeData = metrics?.scanBreakdown 
@@ -89,29 +108,36 @@ export default function IntelligenceDashboard() {
       <Header />
       <main className="container mx-auto py-8 px-4">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-fade-in">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Activity className="w-8 h-8 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+              <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
               Intelligence Dashboard
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-sm sm:text-base text-muted-foreground mt-2">
               Real-time platform analytics and insights
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Select value={days} onValueChange={setDays}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]" aria-label="Select time period">
                 <SelectValue placeholder="Select period" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50">
                 <SelectItem value="7">Last 7 days</SelectItem>
                 <SelectItem value="30">Last 30 days</SelectItem>
                 <SelectItem value="90">Last 90 days</SelectItem>
               </SelectContent>
             </Select>
-            <Button onClick={loadMetrics} variant="outline" size="icon">
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <Button
+              onClick={loadMetrics}
+              variant="outline"
+              size="icon"
+              disabled={loading}
+              aria-label="Refresh metrics"
+              className="transition-transform hover:scale-105"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
             </Button>
           </div>
         </div>
@@ -130,24 +156,28 @@ export default function IntelligenceDashboard() {
           <div className="space-y-6">
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card>
+              <Card className="transition-all hover:shadow-lg hover:scale-105">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Scans</CardTitle>
-                  <Database className="w-4 h-4 text-muted-foreground" />
+                  <Database className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{metrics.totalScans.toLocaleString()}</div>
+                  <div className="text-2xl font-bold" aria-label={`${metrics.totalScans} total scans`}>
+                    {metrics.totalScans.toLocaleString()}
+                  </div>
                   <p className="text-xs text-muted-foreground">Last {days} days</p>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="transition-all hover:shadow-lg hover:scale-105">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <Users className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{metrics.activeUsers.toLocaleString()}</div>
+                  <div className="text-2xl font-bold" aria-label={`${metrics.activeUsers} active users`}>
+                    {metrics.activeUsers.toLocaleString()}
+                  </div>
                   <p className="text-xs text-muted-foreground">Unique users scanning</p>
                 </CardContent>
               </Card>
