@@ -47,10 +47,10 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email, limit: 1 });
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length === 0) {
-      console.log(`[check-subscription] No customer found for ${email}`);
+      console.log(`[check-subscription] No customer found for ${user.email}`);
       return new Response(JSON.stringify({ subscribed: false }), {
         headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
         status: 200,
