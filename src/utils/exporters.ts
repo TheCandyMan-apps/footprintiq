@@ -1,16 +1,18 @@
 export function exportResultsToJSON(results: any[], jobId: string) {
   const json = JSON.stringify(results, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
-  downloadBlob(blob, `footprintiq_maigret_${jobId}.json`);
+  downloadBlob(blob, `footprintiq_scan_${jobId}.json`);
 }
 
 export function exportResultsToCSV(results: any[], jobId: string) {
-  const headers = ['Line', 'Site', 'Status', 'URL'];
+  const headers = ['ID', 'Site', 'Status', 'URL', 'Provider', 'Severity'];
   const rows = results.map((r) => [
-    r.line_no,
-    r.ndjson?.site || '',
-    r.ndjson?.status || '',
-    r.ndjson?.url || '',
+    r.id?.slice(0, 8) || '',
+    r.site || '',
+    r.status || '',
+    r.url || '',
+    r.provider || '',
+    r.severity || '',
   ]);
 
   const csv = [headers, ...rows]
@@ -18,7 +20,7 @@ export function exportResultsToCSV(results: any[], jobId: string) {
     .join('\n');
 
   const blob = new Blob([csv], { type: 'text/csv' });
-  downloadBlob(blob, `footprintiq_maigret_${jobId}.csv`);
+  downloadBlob(blob, `footprintiq_scan_${jobId}.csv`);
 }
 
 function downloadBlob(blob: Blob, filename: string) {
@@ -41,7 +43,7 @@ export function groupByStatus(rows: any[]) {
   };
 
   for (const r of rows) {
-    const status = (r.ndjson?.status || 'unknown').toLowerCase();
+    const status = (r.status || 'unknown').toLowerCase();
     if (!groups[status]) {
       groups[status] = [];
     }
