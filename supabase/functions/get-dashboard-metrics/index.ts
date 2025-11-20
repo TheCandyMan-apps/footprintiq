@@ -1,11 +1,19 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { errorResponse, safeError } from '../_shared/errors.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const MetricsQuerySchema = z.object({
+  days: z.coerce.number().int().min(1).max(365).optional().default(30),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -18,33 +26,64 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return errorResponse(new Error('Missing authorization'), 401, 'AUTH_FAILED', corsHeaders);
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
     }
+    const userId = authResult.context.userId;
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-    if (authError || !user) {
-      return errorResponse(authError || new Error('Unauthorized'), 401, 'AUTH_FAILED', corsHeaders);
-    }
-
-    // Check admin role
+    // Admin role check
     const { data: userRole } = await supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .single();
 
     if (userRole?.role !== 'admin') {
-      return errorResponse(new Error('Admin access required'), 403, 'UNAUTHORIZED', corsHeaders);
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { status: 403, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
     }
 
+    // Rate limiting (100 requests/hour for admin metrics)
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'get-dashboard-metrics', {
+      maxRequests: 100,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Input validation
     const url = new URL(req.url);
-    const days = parseInt(url.searchParams.get('days') || '30');
+    const queryParams = {
+      days: url.searchParams.get('days') || '30',
+    };
+    
+    const validation = MetricsQuerySchema.safeParse(queryParams);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid query parameters', details: validation.error.issues }),
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    const { days } = validation.data;
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
+
+    console.log(`[get-dashboard-metrics] Admin ${userId} requesting metrics for last ${days} days`);
 
     // Total scans
     const { count: totalScans } = await supabase

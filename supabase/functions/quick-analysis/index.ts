@@ -1,35 +1,81 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders, ok, bad, allowedOrigin } from '../_shared/secure.ts';
 import { checkCredits, deductCredits } from '../_shared/credits.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const ANALYSIS_COST = 2;
 
+const AnalysisRequestSchema = z.object({
+  findingId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+});
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders()) });
   }
 
-  if (req.method !== 'POST') return bad(405, 'method_not_allowed');
-  if (!allowedOrigin(req)) return bad(403, 'forbidden');
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'Method not allowed' }),
+      { status: 405, headers: addSecurityHeaders({ ...corsHeaders(), 'Content-Type': 'application/json' }) }
+    );
+  }
+  
+  if (!allowedOrigin(req)) {
+    return new Response(
+      JSON.stringify({ error: 'Forbidden' }),
+      { status: 403, headers: addSecurityHeaders({ ...corsHeaders(), 'Content-Type': 'application/json' }) }
+    );
+  }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) return bad(401, 'unauthorized');
-
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders(), 'Content-Type': 'application/json' }) }
+      );
+    }
+    const userId = authResult.context.userId;
 
-    if (authError || !user) return bad(401, 'unauthorized');
+    // Rate limiting (10 analyses/hour)
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'quick-analysis', {
+      maxRequests: 10,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders(), 'Content-Type': 'application/json' }) }
+      );
+    }
 
-    const { findingId, workspaceId } = await req.json();
-    if (!findingId || !workspaceId) return bad(400, 'missing_parameters');
+    // Input validation
+    const body = await req.json();
+    const validation = AnalysisRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error.issues }),
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders(), 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    const { findingId, workspaceId } = validation.data;
+    console.log(`[quick-analysis] User ${userId} analyzing finding ${findingId}`);
 
     // Check credits
     const creditCheck = await checkCredits(workspaceId, ANALYSIS_COST);
@@ -51,7 +97,12 @@ serve(async (req) => {
       .eq('id', findingId)
       .single();
 
-    if (findingError || !finding) return bad(404, 'finding_not_found');
+    if (findingError || !finding) {
+      return new Response(
+        JSON.stringify({ error: 'Finding not found' }),
+        { status: 404, headers: addSecurityHeaders({ ...corsHeaders(), 'Content-Type': 'application/json' }) }
+      );
+    }
 
     // Call Lovable AI for quick analysis
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
