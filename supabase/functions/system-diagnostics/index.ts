@@ -2,6 +2,9 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { corsHeaders, ok, bad } from '../_shared/secure.ts';
 import { safeFetch } from '../_shared/errorHandler.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 interface DiagnosticCheck {
   name: string;
@@ -19,10 +22,47 @@ interface SystemDiagnostics {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders()) });
   }
 
   try {
+    // Authentication - admin only
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error || 'Unauthorized' }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders(), 'Content-Type': 'application/json' }) }
+      );
+    }
+    
+    const { userId, role } = authResult.context;
+    
+    // Admin-only check
+    if (role !== 'admin') {
+      console.warn(`[system-diagnostics] Non-admin access attempt by user ${userId}`);
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { status: 403, headers: addSecurityHeaders({ ...corsHeaders(), 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Rate limiting - 10 diagnostics/hour
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'system-diagnostics', {
+      maxRequests: 10,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt 
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders(), 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    console.log(`[system-diagnostics] Admin ${userId} running diagnostics`);
+
     // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -169,10 +209,18 @@ serve(async (req) => {
       version: '1.0.0'
     };
 
-    return ok(diagnostics);
-    
-  } catch (error: any) {
+    return new Response(
+      JSON.stringify(diagnostics),
+      { status: 200, headers: addSecurityHeaders({ ...corsHeaders(), 'Content-Type': 'application/json' }) }
+    );
+  } catch (error) {
     console.error('[system-diagnostics] Error:', error);
-    return bad(500, error.message || 'Diagnostic check failed');
+    return new Response(
+      JSON.stringify({ 
+        error: 'System diagnostics failed',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      { status: 500, headers: addSecurityHeaders({ ...corsHeaders(), 'Content-Type': 'application/json' }) }
+    );
   }
 });

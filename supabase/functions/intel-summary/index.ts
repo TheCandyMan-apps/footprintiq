@@ -1,53 +1,47 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Rate limiting
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_IP = 5; // 5 requests per minute
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(ip);
-
-  if (rateLimitMap.size > 1000) {
-    for (const [key, value] of rateLimitMap.entries()) {
-      if (value.resetAt < now) rateLimitMap.delete(key);
-    }
-  }
-
-  if (!record || record.resetAt < now) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-
-  if (record.count >= MAX_REQUESTS_PER_IP) return false;
-  record.count++;
-  return true;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || 
-             req.headers.get("x-real-ip") || "unknown";
-
-  if (!checkRateLimit(ip)) {
-    console.warn(`[intel-summary] Rate limit exceeded for IP: ${ip.substring(0, 8)}...`);
-    return new Response(
-      JSON.stringify({ error: 'Too many requests. Please try again later.' }),
-      { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Retry-After': '60' } }
-    );
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error || 'Unauthorized' }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+    
+    const userId = authResult.context.userId;
+
+    // Rate limiting - 10 requests/hour
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'intel-summary', {
+      maxRequests: 10,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt 
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    console.log(`[intel-summary] User ${userId} fetching intelligence summary`);
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -68,7 +62,7 @@ serve(async (req) => {
       console.log('Returning cached intelligence summary');
       return new Response(
         JSON.stringify({ success: true, data: cached.data, cached: true }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
       );
     }
 
@@ -144,13 +138,14 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error generating intelligence summary:', error);
+    console.error('[intel-summary] Error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ 
+        success: false, 
+        error: 'Failed to fetch intelligence summary',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      { status: 500, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
     );
   }
 });
