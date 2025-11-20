@@ -171,13 +171,20 @@ export function SimpleResultsViewer({
               job_id: jobId,
               username: scan.username || '',
               status: scan.status === 'completed' ? 'completed' : scan.status === 'error' ? 'failed' : scan.status as any,
-              summary: findings?.map((f: any) => ({
-                site: f.evidence?.site || f.evidence?.platform || f.meta?.site,
-                url: f.evidence?.url || f.meta?.url,
-                status: 'found',
-                provider: f.provider,
-                confidence: f.evidence?.confidence || f.meta?.confidence
-              })) || [],
+              summary: findings?.map((f: any) => {
+                // Extract fields from evidence array (each evidence is {key, value})
+                const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site') : null;
+                const urlEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'url') : null;
+                const confidenceEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'confidence') : null;
+                
+                return {
+                  site: siteEvidence?.value || f.meta?.site || 'Unknown Site',
+                  url: urlEvidence?.value || f.meta?.url,
+                  status: 'found',
+                  provider: f.provider,
+                  confidence: confidenceEvidence?.value || f.confidence || f.meta?.confidence
+                };
+              }) || [],
               raw: findings || [],
               created_at: scan.created_at,
               updated_at: scan.completed_at || scan.created_at
