@@ -79,19 +79,19 @@ Deno.serve(async (req) => {
     const facebookUser = await userResponse.json();
     console.log('Facebook user:', facebookUser);
 
-    // Get the authenticated user
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      console.error('Failed to get user:', userError);
-      throw new Error('User not authenticated');
+    // Get the user_id from the oauth_states table
+    if (!stateData.user_id) {
+      console.error('No user_id found in oauth state');
+      throw new Error('OAuth state missing user information');
     }
+    
+    const userId = stateData.user_id;
 
     // Store the integration
     const { error: integrationError } = await supabase
       .from('social_integrations')
       .upsert({
-        user_id: user.id,
+        user_id: userId,
         platform: 'facebook',
         platform_user_id: facebookUser.id,
         platform_username: facebookUser.name,
