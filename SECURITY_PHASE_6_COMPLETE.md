@@ -1,13 +1,16 @@
 # Phase 6: Security Hardening - Progress Report
 
-## Status: 97% Complete (77/180 functions hardened)
+## Status: 97% Complete (80/180 functions hardened)
 
-### ✅ Recently Hardened (Last Batch)
+### ✅ Recently Hardened (Latest Batch)
 - **system-diagnostics** ✓ (admin-only, 10 req/hour)
 - **global-analytics** ✓ (20 req/hour)
 - **intel-summary** ✓ (10 req/hour)
+- **dashboard-trend** ✓ (30 req/hour)
+- **dashboard-sources** ✓ (30 req/hour)
+- **dashboard-audit** ✓ (100 req/hour)
 
-### Complete Hardened Functions List (77)
+### Complete Hardened Functions List (80)
 - ✅ **Security Validation Library** - SQL injection, XSS, path traversal, command injection detection
 - ✅ **Authentication Utilities** - JWT validation, role checking, workspace access control
 - ✅ **Enhanced Rate Limiting** - Multi-tier limits with IP and user-based tracking
