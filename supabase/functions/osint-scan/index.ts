@@ -2,6 +2,9 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,14 +44,44 @@ import { maskPII } from "../_shared/maskPII.ts";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error || 'Unauthorized' }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+    const userId = authResult.context.userId;
+
+    // Rate limiting - 20 scans/hour
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'osint-scan', {
+      maxRequests: 20,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt 
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
     const body = await req.json();
     const validation = ScanRequestSchema.safeParse(body);
     
     if (!validation.success) {
+      console.error('[osint-scan] Validation error:', validation.error.issues);
       return new Response(
         JSON.stringify({ 
           error: 'Invalid input', 
@@ -56,18 +89,13 @@ serve(async (req) => {
         }),
         { 
           status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' })
         }
       );
     }
     
     const scanData = validation.data;
-    
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    console.log('Starting OSINT scan:', maskPII(scanData));
+    console.log('[osint-scan] Starting scan for user:', userId, maskPII(scanData));
 
     // Helper function to broadcast provider status updates
     const broadcastProviderStatus = async (
@@ -897,16 +925,16 @@ serve(async (req) => {
         },
         diagnostics,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
     );
 
   } catch (error) {
-    console.error('Scan error:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('[osint-scan] Error:', error instanceof Error ? error.message : 'Unknown error');
     return new Response(
       JSON.stringify({ error: 'An error occurred processing your scan request' }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' })
       }
     );
   }
