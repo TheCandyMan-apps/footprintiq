@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { checkRateLimit } from "../_shared/rate-limiter.ts";
 import { addSecurityHeaders } from "../_shared/security-headers.ts";
 import { logSecurityEvent } from "../_shared/security-validation.ts";
 
@@ -18,6 +19,21 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 serve(async (req) => {
   try {
+    // Rate limiting by IP to prevent webhook flooding
+    const ipAddress = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
+    const rateLimitResult = await checkRateLimit(ipAddress, 'ip', 'stripe-webhook', {
+      maxRequests: 100,
+      windowSeconds: 60
+    });
+    
+    if (!rateLimitResult.allowed) {
+      console.warn(`[stripe-webhook] Rate limit exceeded for IP: ${ipAddress}`);
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded', resetAt: rateLimitResult.resetAt }),
+        { status: 429, headers: addSecurityHeaders({ "Content-Type": "application/json" }) }
+      );
+    }
+
     const signature = req.headers.get("stripe-signature");
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
@@ -28,7 +44,7 @@ serve(async (req) => {
         severity: "high",
         endpoint: "stripe-webhook",
         message: "Missing Stripe signature",
-        ipAddress: req.headers.get("x-forwarded-for") || "unknown",
+        ipAddress,
         userAgent: req.headers.get("user-agent") || "unknown",
       });
       return new Response(

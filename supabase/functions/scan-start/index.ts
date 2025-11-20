@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
 import { checkRateLimit } from '../_shared/rate-limiter.ts';
 import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
@@ -44,7 +45,6 @@ Deno.serve(async (req) => {
     
     console.log('[scan-start] Self-test check:', {
       headerValue: selftestKey,
-      envValue: SELFTEST_KEY,
       isSelfTest,
       headerPresent: !!selftestKey
     });
@@ -57,39 +57,27 @@ Deno.serve(async (req) => {
           error: 'Unauthorized: SELFTEST_KEY mismatch',
           hint: 'Run /maigret/self-test validation to diagnose. Backend expects different key than provided.'
         }),
-        { status: 401, headers: corsHeaders }
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
       );
     }
     
-    let user = null;
+    let userId: string;
     let workspaceId: string | null = null;
 
     if (isSelfTest) {
       // Self-test mode - use valid zero UUID
-      user = { id: '00000000-0000-0000-0000-000000000000' } as any;
+      userId = '00000000-0000-0000-0000-000000000000';
       console.log('[scan-start] Self-test mode activated');
     } else {
-      // Optional auth flow - proceed with or without user token
-      const authHeader = req.headers.get('Authorization');
-      
-      if (authHeader) {
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-          global: { headers: { Authorization: authHeader } }
-        });
-
-        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError || !authUser) {
-          console.warn('[scan-start] Auth token invalid, proceeding unauthenticated:', authError);
-          user = { id: 'anonymous' } as any;
-        } else {
-          user = authUser;
-        }
-      } else {
-        // No auth header - proceed as anonymous
-        console.log('[scan-start] No authorization header, proceeding as anonymous');
-        user = { id: 'anonymous' } as any;
+      // Authentication
+      const authResult = await validateAuth(req);
+      if (!authResult.valid || !authResult.context) {
+        return new Response(
+          JSON.stringify({ error: authResult.error || 'Unauthorized' }),
+          { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+        );
       }
+      userId = authResult.context.userId;
     }
 
     const body = await req.json();
@@ -106,8 +94,8 @@ Deno.serve(async (req) => {
     const scanRequest: ScanStartRequest = validation.data;
 
     // Rate limiting for non-selftest scans
-    if (!isSelfTest && user && user.id !== 'anonymous') {
-      const rateLimitResult = await checkRateLimit(user.id, 'user', 'scan-start', {
+    if (!isSelfTest) {
+      const rateLimitResult = await checkRateLimit(userId, 'user', 'scan-start', {
         maxRequests: 20,
         windowSeconds: 3600
       });
@@ -122,13 +110,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!isSelfTest && user && user.id !== 'anonymous') {
+    if (!isSelfTest && userId !== '00000000-0000-0000-0000-000000000000') {
       const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       try {
         const { data: workspaceMember } = await supabase
           .from('workspace_members')
           .select('workspace_id')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .maybeSingle();
         
         if (workspaceMember) {
@@ -140,7 +128,7 @@ Deno.serve(async (req) => {
     }
 
     console.log(`[scan-start] Initiating scan for username: ${scanRequest.username}`);
-    console.log(`[scan-start] User: ${user.id}, Workspace: ${workspaceId || 'none'}`);
+    console.log(`[scan-start] User: ${userId}, Workspace: ${workspaceId || 'none'}`);
     console.log(`[scan-start] Worker URL: ${MAIGRET_WORKER_URL}`);
 
     // Calculate timeout: default 25s, min 10s, max 120s
@@ -159,7 +147,7 @@ Deno.serve(async (req) => {
       ? workerPayloadBase
       : {
           ...workerPayloadBase,
-          ...(user?.id && isUUID(user.id) ? { user_id: user.id } : {}),
+          ...(userId && isUUID(userId) ? { user_id: userId } : {}),
           ...(workspaceId && isUUID(workspaceId) ? { workspace_id: workspaceId } : {}),
         };
 
