@@ -1,15 +1,25 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateAuth } from "../_shared/auth-utils.ts";
+import { checkRateLimit } from "../_shared/rate-limiter.ts";
+import { addSecurityHeaders } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const FusionRequestSchema = z.object({
+  entityId: z.string().uuid(),
+  scanId: z.string().uuid(),
+  modality: z.enum(['text', 'image', 'audio']).optional().default('text'),
+});
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
@@ -21,28 +31,59 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    const authHeader = req.headers.get('Authorization')!;
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } }
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+    const userId = authResult.context.userId;
+
+    // Rate limiting (5 requests/hour - expensive operation)
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'ai-fusion-builder', {
+      maxRequests: 5,
+      windowSeconds: 3600
     });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
+    // Input validation
+    const body = await req.json();
+    const validation = FusionRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error.issues }),
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
 
-    const { entityId, scanId, modality = 'text' } = await req.json();
-    console.log('Building fusion vectors for entity:', entityId);
+    const { entityId, scanId, modality } = validation.data;
+    console.log(`[ai-fusion-builder] User ${userId} building fusion vectors for entity: ${entityId}`);
 
-    // Fetch entity data from various sources
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch entity data from various sources  
     const { data: findings } = await supabase
       .from('findings')
       .select('*')
       .eq('scan_id', scanId)
+      .eq('user_id', userId)
       .eq('entity_type', 'username');
 
     const { data: profiles } = await supabase
       .from('social_profiles')
       .select('*')
-      .eq('scan_id', scanId);
+      .eq('scan_id', scanId)
+      .eq('user_id', userId);
 
     // Extract text features
     const textFeatures: string[] = [];
@@ -62,9 +103,10 @@ serve(async (req) => {
     const combinedText = textFeatures.filter(t => t && t.length > 10).join(' ');
 
     if (!combinedText || combinedText.length < 20) {
+      console.warn(`[ai-fusion-builder] Insufficient text data for entity ${entityId}`);
       return new Response(
         JSON.stringify({ error: 'Insufficient text data for embeddings' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
       );
     }
 
@@ -96,7 +138,7 @@ serve(async (req) => {
       .from('persona_vectors')
       .upsert({
         entity_id: entityId,
-        user_id: user.id,
+        user_id: userId,
         embeddings,
         modality,
         source: scanId,
@@ -119,13 +161,15 @@ serve(async (req) => {
       .from('linguistic_fingerprints')
       .upsert({
         entity_id: entityId,
-        user_id: user.id,
+        user_id: userId,
         features: linguisticFeatures,
         model_version: 'v1.0',
         confidence: 0.8
       }, { onConflict: 'entity_id,user_id' });
 
     if (fingerprintError) throw fingerprintError;
+
+    console.log(`[ai-fusion-builder] Successfully built fusion vectors for entity ${entityId}`);
 
     return new Response(
       JSON.stringify({ 
@@ -134,14 +178,14 @@ serve(async (req) => {
         dimensions: embeddings.length,
         features: linguisticFeatures
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
     );
 
   } catch (error: any) {
-    console.error('Fusion builder error:', error);
+    console.error('[ai-fusion-builder] Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
     );
   }
 });

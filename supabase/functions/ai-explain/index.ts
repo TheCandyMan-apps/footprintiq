@@ -1,30 +1,68 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { crypto } from "https://deno.land/std@0.168.0/crypto/mod.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateAuth } from "../_shared/auth-utils.ts";
+import { checkRateLimit } from "../_shared/rate-limiter.ts";
+import { addSecurityHeaders } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const ExplainRequestSchema = z.object({
+  topic: z.string().min(1).max(500),
+  context: z.any().optional(),
+});
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
+      );
+    }
+    const userId = authResult.context.userId;
+
+    // Rate limiting (15 explanations/hour)
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'ai-explain', {
+      maxRequests: 15,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
+      );
+    }
+
+    // Input validation
+    const body = await req.json();
+    const validation = ExplainRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error.issues }),
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
+      );
+    }
+
+    const { topic, context } = validation.data;
+    console.log(`[ai-explain] User ${userId} requesting explanation for: ${topic}`);
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY not configured");
-    }
-
-    const { topic, context } = await req.json();
-
-    if (!topic) {
-      return new Response(
-        JSON.stringify({ error: "topic required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -47,9 +85,10 @@ serve(async (req) => {
       .maybeSingle();
 
     if (cached) {
+      console.log(`[ai-explain] Cache hit for topic: ${topic}`);
       return new Response(
         JSON.stringify({ explanation: cached.explanation, cached: true }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
       );
     }
 
@@ -107,15 +146,17 @@ Rules:
       explanation,
     });
 
+    console.log(`[ai-explain] Successfully generated explanation for: ${topic}`);
+
     return new Response(
       JSON.stringify({ explanation, cached: false }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
     );
   } catch (error: any) {
-    console.error("AI explain error:", error);
+    console.error("[ai-explain] Error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
     );
   }
 });

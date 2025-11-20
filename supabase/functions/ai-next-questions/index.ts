@@ -1,29 +1,67 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateAuth } from "../_shared/auth-utils.ts";
+import { checkRateLimit } from "../_shared/rate-limiter.ts";
+import { addSecurityHeaders } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const NextQuestionsSchema = z.object({
+  scope: z.array(z.string().min(1)).min(1).max(20),
+  context: z.string().max(2000).optional(),
+});
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
+      );
+    }
+    const userId = authResult.context.userId;
+
+    // Rate limiting (20 requests/hour)
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'ai-next-questions', {
+      maxRequests: 20,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
+      );
+    }
+
+    // Input validation
+    const body = await req.json();
+    const validation = NextQuestionsSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error.issues }),
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
+      );
+    }
+
+    const { scope, context } = validation.data;
+    console.log(`[ai-next-questions] User ${userId} requesting questions for scope: ${scope.join(", ")}`);
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY not configured");
-    }
-
-    const { scope, context } = await req.json();
-
-    if (!scope || !Array.isArray(scope)) {
-      return new Response(
-        JSON.stringify({ error: "scope array required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
     const systemPrompt = `You are an OSINT intelligence analyst suggesting next investigative questions. Given current findings/entities, suggest 3-7 actionable follow-up questions that would advance the investigation.
@@ -103,15 +141,17 @@ What should the analyst investigate next?`;
       .filter((q: any) => typeof q === "string" && q.length > 10)
       .slice(0, 7);
 
+    console.log(`[ai-next-questions] Generated ${validQuestions.length} questions for user ${userId}`);
+
     return new Response(
       JSON.stringify({ questions: validQuestions }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
     );
   } catch (error: any) {
-    console.error("AI next-questions error:", error);
+    console.error("[ai-next-questions] Error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
     );
   }
 });
