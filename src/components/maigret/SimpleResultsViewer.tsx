@@ -520,13 +520,9 @@ export function SimpleResultsViewer({
               <div className="p-6 space-y-3">
                 {result.summary
                   .filter((item: any) => {
-                    const getEvidenceValue = (evidence: any[], key: string) => {
-                      const found = evidence?.find((e: any) => e.key === key);
-                      return found?.value;
-                    };
-                    
-                    const site = getEvidenceValue(item.evidence, 'site');
-                    const url = getEvidenceValue(item.evidence, 'url');
+                    // Use direct properties from transformed data
+                    const site = item.site;
+                    const url = item.url;
                     const provider = item.provider || 'maigret';
                     
                     // Filter by search query
@@ -545,15 +541,11 @@ export function SimpleResultsViewer({
                     return true;
                   })
                   .map((item: any, idx: number) => {
-                  const getEvidenceValue = (evidence: any[], key: string) => {
-                    const found = evidence?.find((e: any) => e.key === key);
-                    return found?.value;
-                  };
-                  
-                  const site = getEvidenceValue(item.evidence, 'site');
-                  const url = getEvidenceValue(item.evidence, 'url');
-                  const status = getEvidenceValue(item.evidence, 'status');
-                  const provider = item.provider || 'maigret'; // Default to maigret for legacy results
+                  // Use direct properties from transformed data
+                  const site = item.site;
+                  const url = item.url;
+                  const status = item.status;
+                  const provider = item.provider || 'maigret';
                   
                   // Provider badge colors
                   const providerColors = {
