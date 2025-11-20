@@ -284,7 +284,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
       <Separator />
       <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
         {/* Footprint DNA Card */}
-        <FootprintDNACard jobId={jobId} userId={job?.requested_by || undefined} />
+        <FootprintDNACard scanId={jobId} userId={job?.requested_by || undefined} />
 
         {/* Progress Indicator */}
         <ScanProgress
