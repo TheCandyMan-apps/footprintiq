@@ -143,30 +143,48 @@ Deno.serve(wrapHandler(async (req) => {
       // Parse the raw data structure to extract findings
       if (Array.isArray(payload.raw)) {
         for (const item of payload.raw) {
+          const siteName = item.site || item.sitename || 'Unknown';
+          // Store evidence as array format for frontend compatibility
+          const evidence = [
+            { key: 'site', value: siteName },
+            { key: 'url', value: item.url },
+            { key: 'status', value: item.status }
+          ];
+          
           findings.push({
             scan_id: payload.job_id,
             provider: 'maigret',
             kind: 'profile',
+            title: `Profile found on ${siteName}`,
             severity: item.status === 'found' ? 'medium' : 'low',
-            site: item.site || item.sitename,
+            site: siteName,
             url: item.url,
             status: item.status,
-            evidence: { raw: item },
+            evidence,
             meta: { username: payload.username, batch_id: payload.batch_id }
           });
         }
       } else if (payload.raw.sites) {
         // Handle object format with sites array
         for (const site of payload.raw.sites || []) {
+          const siteName = site.site || site.sitename || 'Unknown';
+          // Store evidence as array format for frontend compatibility
+          const evidence = [
+            { key: 'site', value: siteName },
+            { key: 'url', value: site.url },
+            { key: 'status', value: site.status }
+          ];
+          
           findings.push({
             scan_id: payload.job_id,
             provider: 'maigret',
             kind: 'profile',
+            title: `Profile found on ${siteName}`,
             severity: site.status === 'found' ? 'medium' : 'low',
-            site: site.site || site.sitename,
+            site: siteName,
             url: site.url,
             status: site.status,
-            evidence: { raw: site },
+            evidence,
             meta: { username: payload.username, batch_id: payload.batch_id }
           });
         }
