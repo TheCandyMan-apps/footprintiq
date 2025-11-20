@@ -8817,6 +8817,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_credits: {
+        Args: {
+          _amount: number
+          _description: string
+          _transaction_type?: string
+          _workspace_id: string
+        }
+        Returns: Json
+      }
       check_ip_rate_limit: {
         Args: {
           _endpoint: string
