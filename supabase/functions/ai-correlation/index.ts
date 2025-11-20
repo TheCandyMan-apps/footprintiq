@@ -1,15 +1,68 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Validation schema
+const CorrelationRequestSchema = z.object({
+  findings: z.array(z.any()).min(1, "At least one finding required")
+});
+
+// Security helpers
+async function validateAuth(req: Request, supabase: any) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    throw new Error('No authorization header');
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    throw new Error('Unauthorized');
+  }
+
+  return user;
+}
+
+async function checkRateLimit(supabase: any, userId: string, endpoint: string) {
+  const { data: rateLimit } = await supabase.rpc('check_rate_limit', {
+    p_identifier: userId,
+    p_identifier_type: 'user',
+    p_endpoint: endpoint,
+    p_max_requests: 30,
+    p_window_seconds: 3600
+  });
+
+  if (!rateLimit?.allowed) {
+    const error = new Error('Rate limit exceeded');
+    (error as any).status = 429;
+    (error as any).resetAt = rateLimit?.reset_at;
+    throw error;
+  }
+}
+
+function addSecurityHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    ...corsHeaders,
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    ...headers,
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const startTime = Date.now();
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -22,48 +75,17 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    // Verify authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
+    // Authentication
+    const user = await validateAuth(req, supabase);
+    const userId = user.id;
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Rate limiting - premium tier (30 req/hour)
+    await checkRateLimit(supabase, userId, 'ai-correlation');
 
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Check subscription tier (premium required)
-    const { data: userRole } = await supabase
-      .from('user_roles')
-      .select('subscription_tier, role')
-      .eq('user_id', user.id)
-      .single();
-
-    const isPremium = userRole?.subscription_tier === 'premium' || 
-                      userRole?.subscription_tier === 'enterprise' ||
-                      userRole?.role === 'admin';
-
-    if (!isPremium) {
-      return new Response(JSON.stringify({ 
-        error: 'Premium subscription required',
-        upgrade_required: true 
-      }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { findings } = await req.json();
-
-    if (!findings || !Array.isArray(findings)) {
-      throw new Error('Invalid findings data');
-    }
+    // Validate request body
+    const body = await req.json();
+    const validatedData = CorrelationRequestSchema.parse(body);
+    const { findings } = validatedData;
 
     console.log('[ai-correlation] Analyzing', findings.length, 'findings');
 
@@ -152,13 +174,26 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
-    console.error('[ai-correlation] Error:', error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  } catch (error: any) {
+    const duration = Date.now() - startTime;
+    console.error('[ai-correlation] Error:', {
+      message: error.message,
+      duration,
+      timestamp: new Date().toISOString()
     });
+
+    const status = error.status || 500;
+    const message = error.message || 'Internal server error';
+
+    return new Response(
+      JSON.stringify({ 
+        error: message,
+        ...(error.resetAt && { retryAfter: error.resetAt })
+      }),
+      { 
+        status,
+        headers: addSecurityHeaders({ 'Content-Type': 'application/json' })
+      }
+    );
   }
 });

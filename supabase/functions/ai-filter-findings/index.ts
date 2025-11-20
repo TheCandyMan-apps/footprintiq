@@ -1,11 +1,63 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Validation schema
+const FilterRequestSchema = z.object({
+  rawFindings: z.array(z.any()).min(1, "At least one finding required"),
+  scanId: z.string().uuid().optional()
+});
+
+// Security helpers
+async function validateAuth(req: Request, supabase: any) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    throw new Error('No authorization header');
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    throw new Error('Unauthorized');
+  }
+
+  return user;
+}
+
+async function checkRateLimit(supabase: any, userId: string, endpoint: string) {
+  const { data: rateLimit } = await supabase.rpc('check_rate_limit', {
+    p_identifier: userId,
+    p_identifier_type: 'user',
+    p_endpoint: endpoint,
+    p_max_requests: 30,
+    p_window_seconds: 3600
+  });
+
+  if (!rateLimit?.allowed) {
+    const error = new Error('Rate limit exceeded');
+    (error as any).status = 429;
+    (error as any).resetAt = rateLimit?.reset_at;
+    throw error;
+  }
+}
+
+function addSecurityHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    ...corsHeaders,
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    ...headers,
+  };
+}
 
 interface Finding {
   id: string;
@@ -30,12 +82,24 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+
   try {
-    const { rawFindings, scanId } = await req.json();
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
     
-    if (!rawFindings || !Array.isArray(rawFindings)) {
-      throw new Error("Invalid findings data");
-    }
+    // Authentication
+    const user = await validateAuth(req, supabase);
+    const userId = user.id;
+
+    // Rate limiting - premium tier (30 req/hour)
+    await checkRateLimit(supabase, userId, 'ai-filter-findings');
+
+    // Validate request body
+    const body = await req.json();
+    const validatedData = FilterRequestSchema.parse(body);
+    const { rawFindings, scanId } = validatedData;
 
     const grokApiKey = Deno.env.get('GROK_API_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -222,15 +286,31 @@ Filter out false positives and return the JSON response.`;
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
-  } catch (error) {
-    console.error('Error in ai-filter-findings:', error);
-    return new Response(JSON.stringify({ 
-      error: error instanceof Error ? error.message : 'Unknown error',
-      validFindings: [], // Return empty array on error
-      removedCount: 0
+  } catch (error: any) {
+    const duration = Date.now() - startTime;
+    console.error('[ai-filter-findings] Error:', {
+      message: error.message,
+      duration,
+      timestamp: new Date().toISOString()
+    });
+
+    const status = error.status || 500;
+    const message = error.message || 'Filter processing failed';
+
+    return new Response(JSON.stringify({
+      error: message,
+      ...(error.resetAt && { retryAfter: error.resetAt }),
+      validFindings: [],
+      removedCount: 0,
+      improvements: {
+        originalCount: 0,
+        filteredCount: 0,
+        falsePositivesRemoved: 0,
+        averageConfidenceImprovement: 0
+      }
     }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      status,
+      headers: addSecurityHeaders({ 'Content-Type': 'application/json' })
     });
   }
 });
