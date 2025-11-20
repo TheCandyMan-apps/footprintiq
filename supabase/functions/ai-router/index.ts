@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,54 +19,9 @@ const AIRequestSchema = z.object({
   preferredModel: z.enum(["gemini", "gpt", "grok"]).optional()
 });
 
-// Security helpers
-async function validateAuth(req: Request, supabase: any) {
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader) {
-    throw new Error('No authorization header');
-  }
-
-  const token = authHeader.replace('Bearer ', '');
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-
-  if (authError || !user) {
-    throw new Error('Unauthorized');
-  }
-
-  return user;
-}
-
-async function checkRateLimit(supabase: any, userId: string, endpoint: string) {
-  const { data: rateLimit } = await supabase.rpc('check_rate_limit', {
-    p_identifier: userId,
-    p_identifier_type: 'user',
-    p_endpoint: endpoint,
-    p_max_requests: 50,
-    p_window_seconds: 3600
-  });
-
-  if (!rateLimit?.allowed) {
-    const error = new Error('Rate limit exceeded');
-    (error as any).status = 429;
-    (error as any).resetAt = rateLimit?.reset_at;
-    throw error;
-  }
-}
-
-function addSecurityHeaders(headers: Record<string, string> = {}): Record<string, string> {
-  return {
-    ...corsHeaders,
-    'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'DENY',
-    'X-XSS-Protection': '1; mode=block',
-    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-    ...headers,
-  };
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   const startTime = Date.now();
@@ -74,11 +32,29 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Authentication
-    const user = await validateAuth(req, supabase);
-    const userId = user.id;
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error || 'Unauthorized' }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+    const userId = authResult.context.userId;
 
-    // Rate limiting - premium tier (50 req/hour)
-    await checkRateLimit(supabase, userId, 'ai-router');
+    // Rate limiting - 50 requests/hour
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'ai-router', {
+      maxRequests: 50,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt 
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
 
     // Validate request body
     const body = await req.json();
@@ -242,7 +218,7 @@ serve(async (req) => {
         content,
         modelUsed: preferredModel,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
     );
 
   } catch (error: any) {
