@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MaigretPDFExport } from './MaigretPDFExport';
+import { detectScanPipeline } from '@/utils/scanPipeline';
 
 interface MaigretResult {
   id: string;
@@ -54,6 +55,7 @@ export function SimpleResultsViewer({
   const [error, setError] = useState<string | null>(null);
   const [pollCount, setPollCount] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
+  const [pipeline, setPipeline] = useState<'simple' | 'advanced' | null>(null);
 
   // Update provider stats when Sherlock findings load
   useEffect(() => {
@@ -129,49 +131,125 @@ export function SimpleResultsViewer({
 
   useEffect(() => {
     const fetchResult = async () => {
-      // Fetch maigret_results
-      const { data, error } = await supabase
-        .from('maigret_results')
-        .select('*')
-        .eq('job_id', jobId)
-        .maybeSingle();
+      try {
+        // Step 1: Detect which pipeline was used for this scan
+        const detectedPipeline = await detectScanPipeline(jobId);
+        console.log(`[SimpleResultsViewer] Detected pipeline for ${jobId}:`, detectedPipeline);
+        setPipeline(detectedPipeline);
 
-      if (error) {
-        setError(error.message);
-        setLoading(false);
-        return;
-      }
+        if (detectedPipeline === 'advanced') {
+          // Advanced pipeline: Query findings table
+          const { data: scan, error: scanError } = await supabase
+            .from('scans')
+            .select('*')
+            .eq('id', jobId)
+            .maybeSingle();
 
-      if (data) {
-        setResult(data as MaigretResult);
-        setLoading(false);
-        
-        // Detect providers and calculate stats - include both Maigret and Sherlock
-        if (data.summary && Array.isArray(data.summary) && onProvidersDetected) {
-          const providerCounts: Record<string, number> = {};
-          const providerSet = new Set<string>();
-          
-          // Add Maigret results
-          providerSet.add('maigret');
-          data.summary.forEach((item: any) => {
-            const provider = item.provider || 'maigret';
-            providerCounts[provider] = (providerCounts[provider] || 0) + 1;
-          });
-          
-          // We'll update with Sherlock count after it loads
-          onProvidersDetected(Array.from(providerSet), providerCounts);
+          if (scanError) {
+            setError(scanError.message);
+            setLoading(false);
+            return;
+          }
+
+          if (scan) {
+            setScanData(scan);
+
+            // Get Maigret findings from findings table
+            const { data: findings, error: findingsError } = await supabase
+              .from('findings')
+              .select('*')
+              .eq('scan_id', jobId)
+              .eq('provider', 'maigret');
+
+            if (findingsError) {
+              console.error('[SimpleResultsViewer] Error loading findings:', findingsError);
+            }
+
+            // Transform findings into MaigretResult format
+            const transformedResult: MaigretResult = {
+              id: jobId,
+              job_id: jobId,
+              username: scan.username || '',
+              status: scan.status === 'completed' ? 'completed' : scan.status === 'error' ? 'failed' : scan.status as any,
+              summary: findings?.map((f: any) => ({
+                site: f.evidence?.site || f.evidence?.platform || f.meta?.site,
+                url: f.evidence?.url || f.meta?.url,
+                status: 'found',
+                provider: f.provider,
+                confidence: f.evidence?.confidence || f.meta?.confidence
+              })) || [],
+              raw: findings || [],
+              created_at: scan.created_at,
+              updated_at: scan.completed_at || scan.created_at
+            };
+
+            setResult(transformedResult);
+            setLoading(false);
+
+            // Detect providers and calculate stats
+            if (findings && findings.length > 0 && onProvidersDetected) {
+              const providerCounts: Record<string, number> = {};
+              const providerSet = new Set<string>();
+              
+              providerSet.add('maigret');
+              findings.forEach((f: any) => {
+                const provider = f.provider || 'maigret';
+                providerCounts[provider] = (providerCounts[provider] || 0) + 1;
+              });
+              
+              onProvidersDetected(Array.from(providerSet), providerCounts);
+            }
+          } else {
+            setLoading(false);
+          }
+        } else {
+          // Simple pipeline: Query maigret_results table
+          const { data, error } = await supabase
+            .from('maigret_results')
+            .select('*')
+            .eq('job_id', jobId)
+            .maybeSingle();
+
+          if (error) {
+            setError(error.message);
+            setLoading(false);
+            return;
+          }
+
+          if (data) {
+            setResult(data as MaigretResult);
+            setLoading(false);
+            
+            // Detect providers and calculate stats
+            if (data.summary && Array.isArray(data.summary) && onProvidersDetected) {
+              const providerCounts: Record<string, number> = {};
+              const providerSet = new Set<string>();
+              
+              providerSet.add('maigret');
+              data.summary.forEach((item: any) => {
+                const provider = item.provider || 'maigret';
+                providerCounts[provider] = (providerCounts[provider] || 0) + 1;
+              });
+              
+              onProvidersDetected(Array.from(providerSet), providerCounts);
+            }
+          }
+
+          // Fetch scan status from scans table
+          const { data: scan, error: scanError } = await supabase
+            .from('scans')
+            .select('status')
+            .eq('id', jobId)
+            .maybeSingle();
+
+          if (!scanError && scan) {
+            setScanData(scan);
+          }
         }
-      }
-
-      // Fetch scan status from scans table to prioritize over maigret_results status
-      const { data: scan, error: scanError } = await supabase
-        .from('scans')
-        .select('status')
-        .eq('id', jobId)
-        .maybeSingle();
-
-      if (!scanError && scan) {
-        setScanData(scan);
+      } catch (err) {
+        console.error('[SimpleResultsViewer] Error fetching results:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load results');
+        setLoading(false);
       }
     };
 
