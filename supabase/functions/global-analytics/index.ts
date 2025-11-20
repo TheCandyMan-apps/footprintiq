@@ -1,76 +1,47 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Rate limiting configuration
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 10; // 10 requests per minute per IP
-
-/**
- * Check if IP has exceeded rate limit using in-memory tracking
- */
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(ip);
-
-  // Clean up expired entries periodically
-  if (rateLimitMap.size > 1000) {
-    for (const [key, value] of rateLimitMap.entries()) {
-      if (value.resetAt < now) {
-        rateLimitMap.delete(key);
-      }
-    }
-  }
-
-  if (!record || record.resetAt < now) {
-    // New window
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-
-  if (record.count >= MAX_REQUESTS_PER_WINDOW) {
-    return false; // Rate limit exceeded
-  }
-
-  // Increment count
-  record.count++;
-  return true;
-}
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
-    // Rate limiting: Extract IP address
-    const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || 
-               req.headers.get("x-real-ip") || 
-               "unknown";
-    
-    const rateLimitOk = checkRateLimit(ip);
-    if (!rateLimitOk) {
-      console.warn(`Rate limit exceeded for IP: ${ip.substring(0, 8)}...`);
+    // Authentication - require user login
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
       return new Response(
-        JSON.stringify({ 
-          error: 'Too many requests. Please try again later.',
-        }),
-        {
-          status: 429,
-          headers: { 
-            "Content-Type": "application/json",
-            "Retry-After": "60",
-            ...corsHeaders 
-          },
-        }
+        JSON.stringify({ error: authResult.error || 'Unauthorized' }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
       );
     }
+    
+    const userId = authResult.context.userId;
+
+    // Rate limiting - 20 requests/hour
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'global-analytics', {
+      maxRequests: 20,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt 
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    console.log(`[global-analytics] User ${userId} fetching analytics`);
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -136,20 +107,17 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify(metrics),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200 
-      }
+      { status: 200, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
     );
 
   } catch (error) {
-    console.error('Error in global-analytics:', error);
+    console.error('[global-analytics] Error:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
-      }
+      JSON.stringify({ 
+        error: 'Failed to fetch analytics',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      { status: 500, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
     );
   }
 });
