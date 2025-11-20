@@ -128,13 +128,24 @@ export const useUsernameScan = () => {
         const status = (error as any).status as number | undefined;
         const isTimeout = /timeout|timed out|AbortSignal/i.test(errorMsg || '') || status === 504 || status === 408;
 
+        // Check for monthly limit reached (403 with specific message)
+        if (status === 403 && errorMsg.includes('Monthly scan limit')) {
+          addLog({
+            level: 'error',
+            message: errorMsg,
+            data: { status, sentBody: requestBody }
+          });
+          toast.error(errorMsg);
+          throw new Error(errorMsg);
+        }
+
         // Validation or bad request
         if (
           errorMsg.includes('type') ||
           errorMsg.includes('value') ||
           errorMsg.includes('workspaceId') ||
           errorMsg.includes('Invalid request') ||
-          status === 400 || status === 403
+          status === 400
         ) {
           addLog({
             level: 'error',
