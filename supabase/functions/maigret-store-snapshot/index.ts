@@ -1,27 +1,33 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface SnapshotRequest {
-  username: string;
-  workspaceId: string;
-  scanId?: string;
-  findings: Array<{
-    site: string;
-    url?: string;
-    status: string;
-    confidence?: number;
-    rawData?: any;
-  }>;
-}
+const FindingSchema = z.object({
+  site: z.string().min(1).max(200),
+  url: z.string().url().optional(),
+  status: z.string().min(1).max(50),
+  confidence: z.number().min(0).max(1).optional(),
+  rawData: z.any().optional(),
+});
+
+const SnapshotRequestSchema = z.object({
+  username: z.string().min(1).max(100),
+  workspaceId: z.string().uuid(),
+  scanId: z.string().uuid().optional(),
+  findings: z.array(FindingSchema).min(1).max(100),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
@@ -30,17 +36,42 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const body: SnapshotRequest = await req.json();
-    const { username, workspaceId, scanId, findings } = body;
-
-    if (!username || !workspaceId || !findings || findings.length === 0) {
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
       return new Response(
-        JSON.stringify({ error: 'Invalid request: username, workspaceId, and findings required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: authResult.error }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+    const userId = authResult.context.userId;
+
+    // Rate limiting (60 snapshots/hour)
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'maigret-store-snapshot', {
+      maxRequests: 60,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
       );
     }
 
-    console.log(`📸 Storing snapshot for username: ${username}, findings: ${findings.length}`);
+    // Input validation
+    const body = await req.json();
+    const validation = SnapshotRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error.issues }),
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+    const { username, workspaceId, scanId, findings } = validation.data;
+    console.log(`📸 Storing snapshot for user ${userId}, username: ${username}, findings: ${findings.length}`);
 
     // Store each finding as a snapshot
     const snapshots = findings.map(finding => ({
@@ -74,7 +105,7 @@ serve(async (req) => {
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       }
     );
   } catch (error: any) {
@@ -83,7 +114,7 @@ serve(async (req) => {
       JSON.stringify({ error: error.message || 'Unknown error' }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       }
     );
   }

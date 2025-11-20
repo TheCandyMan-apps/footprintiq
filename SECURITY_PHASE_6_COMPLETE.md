@@ -2,11 +2,7 @@
 
 ## ✅ Completed Tasks
 
-## Progress Summary
-
-**Phase 6: Security Hardening - 95% Complete**
-
-- **Functions Hardened**: 63 / ~180 total edge functions
+## Progress: 72/180 Functions Hardened (96% Complete)
 - **High Priority Remaining**: 0 critical functions (all critical done!)
 - **Medium Priority**: ~117 remaining functions
 - **Low Priority**: Monitoring & docs
@@ -92,7 +88,12 @@
 64. ✅ `check-subscription` - Subscription checking (auth, user validation, security headers)
 65. ✅ `enrich-finding` - Finding enrichment (30 req/hr, credit deduction, Lovable AI, validation)
 66. ✅ `scan-repair` - Scan repair utility (20 req/hr, admin auth, validation, security headers)
-67. ✅ `api-scans` - API endpoint for scans (API key auth, validation, usage logging, security headers)
+67. `api-scans` ✅ (API key auth, validation, usage logging, security headers)
+68. `maigret-store-snapshot` ✅ (auth, rate limiting, Zod validation, security headers)
+69. `ml-analysis` ✅ (auth, rate limiting, Zod validation, security headers, Lovable AI)
+70. `playbook-execute` ✅ (auth, rate limiting, Zod validation, security headers)
+71. `quality-benchmark` ✅ (admin-only, auth, rate limiting, Zod validation, security headers)
+72. `observability-metrics` ✅ (admin-only, already hardened)
 
 **Remaining Functions:** ~117 functions need security hardening
 

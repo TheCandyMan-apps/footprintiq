@@ -1,30 +1,65 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const ExecuteRequestSchema = z.object({
+  playbookId: z.string().uuid(),
+  triggerData: z.any().optional(),
+});
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
-    const { playbookId, triggerData } = await req.json();
-    
-    const authHeader = req.headers.get('Authorization')!;
-    const token = authHeader.replace('Bearer ', '');
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get user
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
-      throw new Error('Unauthorized');
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
     }
+    const userId = authResult.context.userId;
+
+    // Rate limiting (20 playbook executions/hour)
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'playbook-execute', {
+      maxRequests: 20,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Input validation
+    const body = await req.json();
+    const validation = ExecuteRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error.issues }),
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+    const { playbookId, triggerData } = validation.data;
 
     // Fetch playbook
     const { data: playbook, error: playbookError } = await supabase
@@ -49,7 +84,7 @@ serve(async (req) => {
       .from('playbook_runs')
       .insert({
         playbook_id: playbookId,
-        triggered_by: user.id,
+        triggered_by: userId,
         trigger_data: triggerData || {},
         status: 'running',
         steps_total: steps.length,
@@ -84,10 +119,10 @@ serve(async (req) => {
               stepResult = await executeIntegrationStep(supabase, 'email', triggerData);
               break;
             case 'create_case':
-              stepResult = await executeCreateCase(supabase, triggerData, user.id);
+              stepResult = await executeCreateCase(supabase, triggerData, userId);
               break;
             case 'create_alert':
-              stepResult = await executeCreateAlert(supabase, triggerData, user.id);
+              stepResult = await executeCreateAlert(supabase, triggerData, userId);
               break;
             default:
               throw new Error(`Unknown step action: ${step.run}`);
@@ -140,7 +175,7 @@ serve(async (req) => {
           stepsExecuted,
           executionLog 
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
       );
 
     } catch (executionError) {
@@ -175,7 +210,7 @@ serve(async (req) => {
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' })
       }
     );
   }

@@ -1,14 +1,22 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const AnalysisRequestSchema = z.object({
+  userId: z.string().uuid().optional(), // Make optional since we get from auth
+});
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
@@ -17,12 +25,38 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY not configured");
     }
 
-    const { userId } = await req.json();
-
-    if (!userId) {
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
       return new Response(
-        JSON.stringify({ error: "userId required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: authResult.error }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
+      );
+    }
+    const userId = authResult.context.userId;
+
+    // Rate limiting (10 analyses/hour)
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'ml-analysis', {
+      maxRequests: 10,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
+      );
+    }
+
+    // Input validation
+    const body = await req.json();
+    const validation = AnalysisRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error.issues }),
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
       );
     }
 
@@ -41,7 +75,7 @@ serve(async (req) => {
     if (!scans || scans.length === 0) {
       return new Response(
         JSON.stringify({ patterns: [] }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
       );
     }
 
@@ -107,13 +141,13 @@ Timespan: ${context.timespan.first} to ${context.timespan.last}`;
       if (aiResponse.status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limits exceeded. Please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          { status: 429, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
         );
       }
       if (aiResponse.status === 402) {
         return new Response(
-          JSON.stringify({ error: "Payment required. Please add funds to your Lovable AI workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Insufficient credits. Please add more credits." }),
+          { status: 402, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
         );
       }
       throw new Error(`AI API error: ${aiResponse.status}`);
@@ -153,13 +187,13 @@ Timespan: ${context.timespan.first} to ${context.timespan.last}`;
 
     return new Response(
       JSON.stringify({ patterns }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
     );
   } catch (error: any) {
     console.error("ML analysis error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }) }
     );
   }
 });

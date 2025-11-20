@@ -1,9 +1,18 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const BenchmarkRequestSchema = z.object({
+  provider_ids: z.array(z.string()).min(1).max(10),
+  corpus_version: z.string().min(1).max(50).optional().default('v1.0'),
+});
 
 interface TestCase {
   test_case_id: string;
@@ -31,7 +40,7 @@ interface BenchmarkResult {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
@@ -40,9 +49,56 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { provider_ids, corpus_version } = await req.json();
-    const targetProviders = provider_ids || [];
-    const version = corpus_version || 'v1.0';
+    // Authentication - Admin only
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+    const userId = authResult.context.userId;
+
+    // Verify admin role
+    const { data: userRole } = await supabaseAdmin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    if (!userRole || userRole.role !== 'admin') {
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { status: 403, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Rate limiting (10 benchmarks/hour for admins)
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'quality-benchmark', {
+      maxRequests: 10,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Input validation
+    const body = await req.json();
+    const validation = BenchmarkRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid input', details: validation.error.issues }),
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    const { provider_ids: targetProviders, corpus_version: version } = validation.data;
 
     console.log(`Starting quality benchmark for providers:`, targetProviders);
 
@@ -57,7 +113,7 @@ Deno.serve(async (req) => {
       console.error('Corpus fetch error:', corpusError);
       return new Response(
         JSON.stringify({ error: 'No test cases found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        { headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }), status: 400 }
       );
     }
 
@@ -193,14 +249,14 @@ Deno.serve(async (req) => {
         providers_tested: targetProviders.length,
         test_cases_run: testCases.length,
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      { headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }), status: 200 }
     );
   } catch (error) {
     console.error('Error in quality-benchmark:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: message }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      { headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }), status: 500 }
     );
   }
 });
