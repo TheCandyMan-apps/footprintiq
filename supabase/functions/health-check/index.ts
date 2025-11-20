@@ -5,11 +5,19 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const HealthCheckSchema = z.object({
+  // No body params needed for health check
+});
 
 interface HealthStatus {
   status: 'healthy' | 'degraded' | 'unhealthy';
@@ -36,16 +44,58 @@ interface CheckResult {
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: addSecurityHeaders(corsHeaders) });
   }
 
   const startTime = Date.now();
 
   try {
+    // Authentication - Admin only
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error || 'Unauthorized' }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+    const userId = authResult.context.userId;
+
+    // Verify admin role
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    const { data: userRole } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    if (!userRole || userRole.role !== 'admin') {
+      console.error('[health-check] Non-admin access attempt:', userId);
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { status: 403, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Rate limiting - 30 requests/minute for health checks
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'health-check', {
+      maxRequests: 30,
+      windowSeconds: 60
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt 
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    console.log('[health-check] Admin health check initiated by:', userId);
 
     // 1. Database Health Check
     const dbCheckStart = Date.now();
@@ -210,13 +260,13 @@ Deno.serve(async (req) => {
       JSON.stringify(response),
       {
         status: overallStatus === 'healthy' ? 200 : overallStatus === 'degraded' ? 207 : 503,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       }
     );
 
   } catch (err) {
     const error = err as Error;
-    console.error('Health check failed:', error);
+    console.error('[health-check] Error:', error);
     
     return new Response(
       JSON.stringify({
@@ -226,7 +276,7 @@ Deno.serve(async (req) => {
       }),
       {
         status: 503,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       }
     );
   }

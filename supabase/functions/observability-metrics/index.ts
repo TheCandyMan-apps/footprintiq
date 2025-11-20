@@ -1,16 +1,70 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders } from '../_shared/secure.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const MetricsQuerySchema = z.object({
+  // No body params needed
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
+    // Authentication - Admin only
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error || 'Unauthorized' }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+    const userId = authResult.context.userId;
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify admin role
+    const { data: userRole } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    if (!userRole || userRole.role !== 'admin') {
+      console.error('[observability-metrics] Non-admin access attempt:', userId);
+      return new Response(
+        JSON.stringify({ error: 'Admin access required' }),
+        { status: 403, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Rate limiting - 60 requests/minute for real-time metrics
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'observability-metrics', {
+      maxRequests: 60,
+      windowSeconds: 60
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt 
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    console.log('[observability-metrics] Admin metrics query by:', userId);
 
     // Get real-time metrics from the last 60 minutes
     const now = new Date();
@@ -67,16 +121,16 @@ serve(async (req) => {
         timestamp: new Date().toISOString(),
       }),
       {
-        headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       }
     );
   } catch (error) {
-    console.error('Error fetching observability metrics:', error);
+    console.error('[observability-metrics] Error:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {
         status: 500,
-        headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       }
     );
   }
