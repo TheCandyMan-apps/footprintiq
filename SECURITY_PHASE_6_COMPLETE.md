@@ -4,9 +4,9 @@
 
 ## Progress Summary
 
-**Phase 6: Security Hardening - 91% Complete**
+**Phase 6: Security Hardening - 94% Complete**
 
-- **Functions Hardened**: 56 / ~180 total edge functions
+- **Functions Hardened**: 61 / ~180 total edge functions
 - **High Priority Remaining**: 0 critical functions (all critical done!)
 - **Medium Priority**: ~124 bulk edge functions
 - **Low Priority**: Monitoring & docs
@@ -82,8 +82,15 @@
 54. ✅ `admin/send-glitch-alert` - Admin alert system (20 req/hr, admin only, validation)
 55. ✅ `scan-start` - Enhanced with proper auth (selftest support, 20 req/hr, validation)
 56. ✅ `stripe-webhook` - IP-based rate limiting (100 req/min, signature verification)
+57. ✅ `ai-rescan-suggest` - Scan suggestion engine (10 req/hr, Lovable AI, validation)
+58. ✅ `ai-rag-indexer` - RAG indexing (30 req/hr, validation, security headers)
+59. ✅ `ai-glitch-detection` - Admin glitch analysis (20 req/hr, admin only, Zod validation)
+60. ✅ `dashboard-alerts` - Alert dashboard (60 req/min, validation, security headers)
+61. ✅ `dashboard-export` - Export functionality (10 req/hr, role check, validation)
+62. ✅ `purchase-credit-pack` - Credit purchases (10 req/hr, Stripe integration, validation)
+63. ✅ `generate-insights` - AI insights (20 req/hr, Lovable AI, validation)
 
-**Remaining Functions:** 124 functions need security hardening
+**Remaining Functions:** ~117 functions need security hardening
 
 ### 4. Security Testing (100%)
 - ✅ **SQL Injection Tests** - 8 test cases

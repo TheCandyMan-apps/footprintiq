@@ -1,46 +1,81 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad, allowedOrigin } from '../_shared/secure.ts';
-import { checkCredits, deductCredits } from '../_shared/credits.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const EnrichRequestSchema = z.object({
+  findingId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+});
 
 const ENRICHMENT_COST = 5;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
-  if (req.method !== 'POST') return bad(405, 'method_not_allowed');
-  if (!allowedOrigin(req)) return bad(403, 'forbidden');
-
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) return bad(401, 'unauthorized');
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(JSON.stringify({ error: authResult.error || 'Unauthorized' }), {
+        status: 401,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
+
+    const { userId } = authResult.context;
+
+    // Rate limiting - 30 enrichments per hour
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'enrich-finding', {
+      maxRequests: 30,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded', resetAt: rateLimitResult.resetAt }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Input validation
+    const body = await req.json();
+    const validation = EnrichRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(JSON.stringify({ error: 'Invalid input', details: validation.error.issues }), {
+        status: 400,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
+
+    const { findingId, workspaceId } = validation.data;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (authError || !user) return bad(401, 'unauthorized');
-
-    const { findingId, workspaceId } = await req.json();
-    if (!findingId || !workspaceId) return bad(400, 'missing_parameters');
-
     // Check credits
-    const creditCheck = await checkCredits(workspaceId, ENRICHMENT_COST);
-    if (!creditCheck.success) {
+    const { data: balance } = await supabase.rpc('get_credits_balance', { 
+      _workspace_id: workspaceId 
+    });
+
+    if ((balance || 0) < ENRICHMENT_COST) {
       return new Response(JSON.stringify({
-        error: creditCheck.error,
-        balance: creditCheck.balance,
-        required: creditCheck.required
+        error: 'Insufficient credits',
+        balance: balance || 0,
+        required: ENRICHMENT_COST
       }), {
         status: 402,
-        headers: { ...corsHeaders(), 'Content-Type': 'application/json' }
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' })
       });
     }
 

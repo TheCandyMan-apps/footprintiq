@@ -1,10 +1,33 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const GlitchAnalysisSchema = z.object({
+  logs: z.array(z.object({
+    id: z.string(),
+    test_name: z.string(),
+    status: z.string(),
+    error_message: z.string().optional(),
+    actual_behavior: z.string(),
+    duration_ms: z.number(),
+    created_at: z.string(),
+  })),
+  auditRun: z.object({
+    id: z.string(),
+    success_rate: z.number(),
+    failed: z.number(),
+    total_tests: z.number(),
+    created_at: z.string(),
+  }),
+});
 
 interface LogEntry {
   id: string;
@@ -26,11 +49,52 @@ interface AuditRun {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
-    const { logs, auditRun } = await req.json() as { logs: LogEntry[], auditRun: AuditRun };
+    // Authentication (admin only)
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(JSON.stringify({ error: authResult.error || 'Unauthorized' }), {
+        status: 401,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
+
+    const { userId, role = 'free' } = authResult.context;
+
+    // Admin check
+    if (role !== 'admin') {
+      return new Response(JSON.stringify({ error: 'Admin access required' }), {
+        status: 403,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
+
+    // Rate limiting - 20 analyses per hour
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'ai-glitch-detection', {
+      maxRequests: 20,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded', resetAt: rateLimitResult.resetAt }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Input validation
+    const body = await req.json();
+    const validation = GlitchAnalysisSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(JSON.stringify({ error: 'Invalid input', details: validation.error.issues }), {
+        status: 400,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
+
+    const { logs, auditRun } = validation.data;
     
     const grokApiKey = Deno.env.get('GROK_API_KEY');
     if (!grokApiKey) {
