@@ -18,19 +18,43 @@ Deno.serve(async (req) => {
       throw new Error('Missing required environment variables');
     }
 
+    // Get the authenticated user from the Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Authentication required');
+    }
+
+    const supabase = createClient(
+      supabaseUrl,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      {
+        global: {
+          headers: { Authorization: authHeader }
+        }
+      }
+    );
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      throw new Error('Invalid authentication token');
+    }
+
     // Generate state for CSRF protection
     const state = crypto.randomUUID();
     
-    const supabase = createClient(
+    // Create service role client for inserting oauth state
+    const serviceSupabase = createClient(
       supabaseUrl,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    await supabase
+    await serviceSupabase
       .from('oauth_states')
       .insert({
         state,
         provider: 'linkedin',
+        user_id: user.id,
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       });
 
