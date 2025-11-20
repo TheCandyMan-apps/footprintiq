@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CheckCircle, XCircle, Clock, ExternalLink, Sparkles, Info } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle, Clock, ExternalLink, Sparkles, Info, AlertTriangle } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -56,6 +56,11 @@ export function SimpleResultsViewer({
   const [pollCount, setPollCount] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
   const [pipeline, setPipeline] = useState<'simple' | 'advanced' | null>(null);
+  
+  // Provider status tracking
+  const [maigretStatus, setMaigretStatus] = useState<'has_results' | 'empty_results' | 'error' | 'not_run'>('not_run');
+  const [sherlockStatus, setSherlockStatus] = useState<'has_results' | 'empty_results' | 'error' | 'not_run'>('not_run');
+  const [gosearchStatus, setGosearchStatus] = useState<'has_results' | 'empty_results' | 'error' | 'not_run'>('not_run');
 
   // Update provider stats when Sherlock findings load
   useEffect(() => {
@@ -100,22 +105,42 @@ export function SimpleResultsViewer({
           .maybeSingle();
 
         if (scan) {
-          // Load Sherlock findings from findings table
+          // Load Sherlock and GoSearch findings from findings table
           const { data: findings, error } = await supabase
             .from('findings')
             .select('*')
             .eq('scan_id', scan.id)
-            .eq('provider', 'sherlock');
+            .in('provider', ['sherlock', 'gosearch']);
 
           if (error) {
-            console.warn('[Sherlock] Error loading findings:', error);
+            console.warn('[Sherlock/GoSearch] Error loading findings:', error);
           } else if (findings) {
             setSherlockFindings(findings as SherlockFinding[]);
+            
+            // Detect Sherlock status
+            const sherlockFindingsData = findings.filter(f => f.provider === 'sherlock');
+            if (sherlockFindingsData.some((f: any) => f.kind === 'provider.empty_results')) {
+              setSherlockStatus('empty_results');
+            } else if (sherlockFindingsData.some((f: any) => f.kind === 'provider_error')) {
+              setSherlockStatus('error');
+            } else if (sherlockFindingsData.filter((f: any) => f.kind === 'presence.hit').length > 0) {
+              setSherlockStatus('has_results');
+            }
+            
+            // Detect GoSearch status
+            const gosearchFindingsData = findings.filter(f => f.provider === 'gosearch');
+            if (gosearchFindingsData.some((f: any) => f.kind === 'provider.empty_results')) {
+              setGosearchStatus('empty_results');
+            } else if (gosearchFindingsData.some((f: any) => f.kind === 'provider_error')) {
+              setGosearchStatus('error');
+            } else if (gosearchFindingsData.filter((f: any) => f.kind === 'presence.hit').length > 0) {
+              setGosearchStatus('has_results');
+            }
             
             // Debug: Log provider errors if any
             const providerErrors = findings.filter((f: any) => f.kind === 'provider_error');
             if (providerErrors.length > 0) {
-              console.log('[Sherlock] Provider errors detected:', providerErrors.length, 'out of', findings.length, 'total findings');
+              console.log('[Providers] Provider errors detected:', providerErrors.length, 'out of', findings.length, 'total findings');
             }
           }
         }
@@ -192,6 +217,19 @@ export function SimpleResultsViewer({
 
             setResult(transformedResult);
             setLoading(false);
+            
+            // Detect provider statuses
+            if (findings) {
+              // Detect Maigret status
+              const maigretFindings = findings.filter((f: any) => f.provider === 'maigret');
+              if (maigretFindings.some((f: any) => f.kind === 'provider.empty_results')) {
+                setMaigretStatus('empty_results');
+              } else if (maigretFindings.some((f: any) => f.kind === 'provider_error')) {
+                setMaigretStatus('error');
+              } else if (maigretFindings.length > 0) {
+                setMaigretStatus('has_results');
+              }
+            }
 
             // Detect providers and calculate stats
             if (findings && findings.length > 0 && onProvidersDetected) {
@@ -487,17 +525,242 @@ export function SimpleResultsViewer({
       {result.status === 'completed' && (
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-sm font-medium text-muted-foreground">Results by provider:</span>
-          <Badge variant="outline" className="gap-1.5">
+          
+          {/* Maigret Badge */}
+          <Badge 
+            variant={maigretStatus === 'error' ? 'destructive' : 'outline'} 
+            className={`gap-1.5 ${maigretStatus === 'empty_results' ? 'border-blue-500/50 bg-blue-500/5' : ''}`}
+          >
             <span className="font-semibold">Maigret</span>
             <span className="text-muted-foreground">{result.summary?.length || 0}</span>
+            {maigretStatus === 'error' && <AlertTriangle className="w-3 h-3 ml-1" />}
+            {maigretStatus === 'empty_results' && <Info className="w-3 h-3 ml-1 text-blue-500" />}
           </Badge>
-          <Badge variant="outline" className="gap-1.5">
+          
+          {/* Sherlock Badge */}
+          <Badge 
+            variant={sherlockStatus === 'error' ? 'destructive' : 'outline'} 
+            className={`gap-1.5 ${sherlockStatus === 'empty_results' ? 'border-blue-500/50 bg-blue-500/5' : ''}`}
+          >
             <span className="font-semibold">Sherlock</span>
             <span className="text-muted-foreground">
-              {sherlockLoading ? '...' : sherlockFindings.filter(f => f.kind !== 'provider_error').length}
+              {sherlockLoading ? '...' : sherlockFindings.filter(f => f.kind === 'presence.hit' && f.provider === 'sherlock').length}
             </span>
+            {sherlockStatus === 'error' && <AlertTriangle className="w-3 h-3 ml-1" />}
+            {sherlockStatus === 'empty_results' && <Info className="w-3 h-3 ml-1 text-blue-500" />}
           </Badge>
+          
+          {/* GoSearch Badge (if used) */}
+          {gosearchStatus !== 'not_run' && (
+            <Badge 
+              variant={gosearchStatus === 'error' ? 'destructive' : 'outline'} 
+              className={`gap-1.5 ${gosearchStatus === 'empty_results' ? 'border-blue-500/50 bg-blue-500/5' : ''}`}
+            >
+              <span className="font-semibold">GoSearch</span>
+              <span className="text-muted-foreground">
+                {sherlockLoading ? '...' : sherlockFindings.filter(f => f.kind === 'presence.hit' && f.provider === 'gosearch').length}
+              </span>
+              {gosearchStatus === 'error' && <AlertTriangle className="w-3 h-3 ml-1" />}
+              {gosearchStatus === 'empty_results' && <Info className="w-3 h-3 ml-1 text-blue-500" />}
+            </Badge>
+          )}
         </div>
+      )}
+
+      {/* Maigret Empty Results Info Card */}
+      {result.status === 'completed' && maigretStatus === 'empty_results' && (
+        <Card className="border-blue-500/20 bg-gradient-to-br from-card via-card to-blue-500/5 shadow-lg animate-scale-in">
+          <CardHeader className="bg-gradient-to-r from-blue-500/10 to-transparent border-b border-blue-500/20">
+            <CardTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-blue-500" />
+              Maigret - No Matches Found
+              <Badge variant="secondary" className="ml-2">0 results</Badge>
+            </CardTitle>
+            <CardDescription>
+              Maigret completed successfully but didn't find this username on checked platforms
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6 space-y-3">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div className="space-y-2 text-sm">
+                <p className="text-muted-foreground">
+                  Maigret searched across 300+ platforms but couldn't confirm any matching profiles for this username.
+                </p>
+                <p className="text-muted-foreground">This could mean:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4 text-muted-foreground">
+                  <li>The username doesn't exist on major platforms checked by Maigret</li>
+                  <li>The username uses different variations or spelling</li>
+                  <li>Privacy settings prevent profile detection</li>
+                  <li>Some platforms may require manual verification</li>
+                </ul>
+                <div className="pt-2 mt-3 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground/75">
+                    💡 Tip: Check Sherlock and GoSearch results below for potential matches on different platforms.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Maigret Provider Error Card */}
+      {result.status === 'completed' && maigretStatus === 'error' && (
+        <Card className="border-yellow-500/50 bg-gradient-to-br from-card via-card to-yellow-500/5 shadow-lg animate-scale-in">
+          <CardHeader className="bg-gradient-to-r from-yellow-500/10 to-transparent border-b border-yellow-500/20">
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              Maigret Scan Issue
+              <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-700">Issue Detected</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-3">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+              <div className="space-y-2 text-sm">
+                <p className="text-muted-foreground">
+                  Maigret encountered an issue while scanning for this username. This is usually temporary.
+                </p>
+                <p className="font-medium text-foreground">What you can do:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4 text-muted-foreground">
+                  <li>Try running the scan again in a few minutes</li>
+                  <li>Check if the username contains special characters</li>
+                  <li>Review Sherlock and GoSearch results for alternative findings</li>
+                </ul>
+                <div className="pt-3 flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => window.location.reload()}>
+                    Retry Scan
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sherlock Empty Results Info Card */}
+      {result.status === 'completed' && sherlockStatus === 'empty_results' && (
+        <Card className="border-blue-500/20 bg-gradient-to-br from-card via-card to-blue-500/5 shadow-lg animate-scale-in">
+          <CardHeader className="bg-gradient-to-r from-blue-500/10 to-transparent border-b border-blue-500/20">
+            <CardTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-blue-500" />
+              Sherlock - No Matches Found
+              <Badge variant="secondary" className="ml-2">0 results</Badge>
+            </CardTitle>
+            <CardDescription>
+              Sherlock completed successfully but didn't find this username on checked platforms
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6 space-y-3">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div className="space-y-2 text-sm">
+                <p className="text-muted-foreground">
+                  Sherlock searched across 400+ social networks but couldn't confirm any matching profiles.
+                </p>
+                <p className="text-muted-foreground">This could mean:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4 text-muted-foreground">
+                  <li>The username is not registered on popular social platforms</li>
+                  <li>Profile privacy settings prevent detection</li>
+                  <li>The username uses different formatting or special characters</li>
+                </ul>
+                <div className="pt-2 mt-3 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground/75">
+                    💡 Tip: Check other provider results (Maigret, GoSearch) for potential matches.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sherlock Provider Error Card */}
+      {result.status === 'completed' && sherlockStatus === 'error' && (
+        <Card className="border-yellow-500/50 bg-gradient-to-br from-card via-card to-yellow-500/5 shadow-lg animate-scale-in">
+          <CardHeader className="bg-gradient-to-r from-yellow-500/10 to-transparent border-b border-yellow-500/20">
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              Sherlock Scan Issue
+              <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-700">Issue Detected</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-3">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+              <div className="space-y-2 text-sm">
+                <p className="text-muted-foreground">
+                  Sherlock encountered an issue while scanning. This is usually temporary.
+                </p>
+                <p className="font-medium text-foreground">What you can do:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4 text-muted-foreground">
+                  <li>Try running the scan again in a few minutes</li>
+                  <li>Check other provider results (Maigret, GoSearch)</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* GoSearch Empty Results Info Card */}
+      {result.status === 'completed' && gosearchStatus === 'empty_results' && (
+        <Card className="border-blue-500/20 bg-gradient-to-br from-card via-card to-blue-500/5 shadow-lg animate-scale-in">
+          <CardHeader className="bg-gradient-to-r from-blue-500/10 to-transparent border-b border-blue-500/20">
+            <CardTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-blue-500" />
+              GoSearch - No Matches Found
+              <Badge variant="secondary" className="ml-2">0 results</Badge>
+            </CardTitle>
+            <CardDescription>
+              GoSearch completed successfully but didn't find this username
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-6 space-y-3">
+            <div className="flex items-start gap-3">
+              <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div className="space-y-2 text-sm">
+                <p className="text-muted-foreground">
+                  GoSearch checked its database but didn't find any matches for this username.
+                </p>
+                <div className="pt-2 mt-3 border-t border-border/50">
+                  <p className="text-xs text-muted-foreground/75">
+                    💡 This provider focuses on specific platforms and may have different coverage than Maigret or Sherlock.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* GoSearch Provider Error Card */}
+      {result.status === 'completed' && gosearchStatus === 'error' && (
+        <Card className="border-yellow-500/50 bg-gradient-to-br from-card via-card to-yellow-500/5 shadow-lg animate-scale-in">
+          <CardHeader className="bg-gradient-to-r from-yellow-500/10 to-transparent border-b border-yellow-500/20">
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+              GoSearch Scan Issue
+              <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-700">Issue Detected</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-3">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+              <div className="space-y-2 text-sm">
+                <p className="text-muted-foreground">
+                  GoSearch encountered an issue while scanning. This is usually temporary.
+                </p>
+                <p className="font-medium text-foreground">What you can do:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4 text-muted-foreground">
+                  <li>Try running the scan again in a few minutes</li>
+                  <li>Check other provider results (Maigret, Sherlock)</li>
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Maigret Results Card */}
@@ -729,18 +992,34 @@ export function SimpleResultsViewer({
         </Card>
       )}
 
-      {result.status === 'completed' && (!result.summary || result.summary.length === 0) && sherlockFindings.length === 0 && (
+      {result.status === 'completed' && 
+       (!result.summary || result.summary.length === 0) && 
+       sherlockFindings.filter(f => f.kind === 'presence.hit').length === 0 &&
+       maigretStatus !== 'error' &&
+       sherlockStatus !== 'error' &&
+       gosearchStatus !== 'error' && (
         <Card className="border-muted bg-gradient-to-br from-muted/50 to-transparent animate-scale-in">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-muted-foreground" />
-              No Results Found
+              <CheckCircle className="h-5 w-5 text-muted-foreground" />
+              Comprehensive Scan Complete - Low Digital Footprint
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
             <p className="text-muted-foreground">
-              The scan completed successfully but no profiles were found for this username across the checked platforms.
+              All providers (Maigret, Sherlock, GoSearch) completed their scans successfully, but no public profiles were found for this username.
             </p>
+            <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
+              <p className="text-sm font-medium mb-2">Excellent Privacy Profile! 🎉</p>
+              <p className="text-xs text-muted-foreground">
+                A minimal digital footprint reduces exposure to data breaches, identity theft, and online tracking.
+              </p>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => window.location.href = '/scan/usernames'}>
+                Try Different Username
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}

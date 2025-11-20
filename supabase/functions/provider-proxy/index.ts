@@ -195,7 +195,7 @@ serve(async (req) => {
             const errorFinding = {
               provider: 'sherlock',
               kind: 'provider_error',
-              severity: 'info' as const, // Changed from 'warn' to 'info' to satisfy DB constraint
+              severity: 'info' as const,
               confidence: 0.5,
               observedAt: now,
               reason: 'Worker returned results but all were missing URLs',
@@ -210,23 +210,28 @@ serve(async (req) => {
             break;
           }
           
+          // Handle legitimate empty results with provider.empty_results
           if (validResults.length === 0) {
-            console.warn(`[Sherlock] Worker returned 0 results for username: ${target}`);
+            console.warn(`[Sherlock] Worker returned 0 results for username: "${target}"`);
             const now = new Date().toISOString();
-            const errorFinding = {
+            const emptyResultFinding = {
               provider: 'sherlock',
-              kind: 'provider_error',
-              severity: 'warn' as const,
-              confidence: 0.5,
+              kind: 'provider.empty_results',
+              severity: 'info' as const,
+              confidence: 1.0,
               observedAt: now,
-              reason: 'Sherlock returned no data for this username',
               evidence: [
-                { key: 'status', value: 'no_results' },
+                { key: 'message', value: 'No matching profiles found' },
                 { key: 'username', value: target },
+                { key: 'sites_checked', value: 'all' }
               ],
-              meta: data,
+              meta: {
+                reason: 'legitimate_no_results',
+                checked_at: now
+              }
             };
-            result = { findings: [errorFinding] };
+            result = { findings: [emptyResultFinding] };
+            console.log(`[Sherlock] Created empty_results finding for legitimate no-match scenario`);
             break;
           }
           
@@ -308,7 +313,36 @@ serve(async (req) => {
           break;
         }
         const data = await callOsintWorker('gosearch', { username: target });
+        console.log(`[GoSearch] Raw worker response:`, JSON.stringify(data).substring(0, 500));
+        
         const results = (data?.results ?? []) as any[];
+        console.log(`[GoSearch] Extracted ${results.length} results for username: "${target}"`);
+        
+        // Handle empty results with provider.empty_results
+        if (results.length === 0) {
+          console.warn(`[GoSearch] Worker returned 0 results for username: "${target}"`);
+          const now = new Date().toISOString();
+          const emptyResultFinding = {
+            provider: 'gosearch',
+            kind: 'provider.empty_results',
+            severity: 'info' as const,
+            confidence: 1.0,
+            observedAt: now,
+            evidence: [
+              { key: 'message', value: 'No matching profiles found' },
+              { key: 'username', value: target }
+            ],
+            meta: {
+              reason: 'legitimate_no_results',
+              worker_url: Deno.env.get('OSINT_WORKER_URL'),
+              checked_at: now
+            }
+          };
+          result = { findings: [emptyResultFinding] };
+          console.log(`[GoSearch] Created empty_results finding for legitimate no-match scenario`);
+          break;
+        }
+        
         const now = new Date().toISOString();
         const findings = results.map((item) => ({
           provider: 'gosearch',
