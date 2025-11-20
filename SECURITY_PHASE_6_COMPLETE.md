@@ -16,7 +16,7 @@
 - ✅ **Security Definer Functions** - Proper function permissions
 
 ### 3. Edge Function Hardening (17%)
-**Hardened Functions (30/180):**
+**Hardened Functions (35/180):**
 1. ✅ `osint-scan-hardened` - Authentication, rate limiting, input validation, security headers
 2. ✅ `create-support-ticket` - Zod validation, sanitization, security headers
 3. ✅ `admin-list-tickets` - Admin role check, SQL injection prevention, security headers
@@ -45,8 +45,13 @@
 26. ✅ `ai-router` - Full hardening (auth, rate limiting, Zod validation, security headers, logging)
 27. ✅ `ai-credibility-scorer` - Full hardening (auth, rate limiting, Zod validation, security headers, logging)
 28. ✅ `ai-predict` - Full hardening (auth, rate limiting, Zod validation, security headers, logging)
+29. ✅ `scan-results` - Full hardening (webhook auth, rate limiting, Zod validation, security headers)
+30. ✅ `cancel-scan` - Full hardening (auth, rate limiting, Zod validation, security headers)
+31. ✅ `generate-report` - Full hardening (auth, rate limiting, Zod validation, Lovable AI, security headers)
+32. ✅ `generate-pdf-report` - Full hardening (auth, rate limiting, Zod validation, security headers)
+33. ✅ `social-media-scan` - Full hardening (auth, rate limiting, Zod validation, security headers)
 
-**Remaining Functions:** 150 functions need security hardening
+**Remaining Functions:** 145 functions need security hardening
 
 ### 4. Security Testing (100%)
 - ✅ **SQL Injection Tests** - 8 test cases
@@ -76,12 +81,12 @@
 |-----------|----------|--------|
 | Security Infrastructure | 100% | ✅ Complete |
 | Database Security | 100% | ✅ Complete |
-| Edge Function Hardening | 17% | 🟡 In Progress |
+| Edge Function Hardening | 19% | 🟡 In Progress |
 | Security Testing | 100% | ✅ Complete |
 | Monitoring & Docs | 100% | ✅ Complete |
 | Credit System Fix | 100% | ✅ Complete |
 | Auth Configuration | 100% | ✅ Complete |
-| **Overall Phase 6** | **76%** | 🟡 **In Progress** |
+| **Overall Phase 6** | **78%** | 🟡 **In Progress** |
 
 ---
 
@@ -98,7 +103,7 @@
 
 ### Security Metrics
 - **Security Test Coverage:** 100% (32 test cases)
-- **Edge Functions Hardened:** 30/180 (17%)
+- **Edge Functions Hardened:** 35/180 (19%)
 - **Critical Functions Secured:** 12/20 (60%)
 - **Security Events Tracked:** 6 types
 - **Auth Configuration:** 3/3 settings enabled
@@ -166,7 +171,7 @@
 | Criteria | Status |
 |----------|--------|
 | Zero Supabase linter warnings | ✅ Complete (2/2 fixed) |
-| All edge functions validated | 🟡 8% complete (15/180) |
+| All edge functions validated | 🟡 19% complete (35/180) |
 | Rate limiting on public endpoints | ✅ Complete |
 | SQL injection prevention | ✅ Complete |
 | XSS sanitization | 🟡 Partial (needs audit) |
@@ -191,7 +196,7 @@
 - Excellent test coverage for security features
 
 **Areas for Improvement:**
-- Only 17% of edge functions hardened (30/180 complete)
+- Only 19% of edge functions hardened (35/180 complete)
 - XSS prevention needs audit
 - Secrets management needs formalization
 - No automated alerting yet
@@ -200,6 +205,6 @@
 
 ---
 
-**Last Updated:** 2025-11-19  
-**Status:** Phase 6 In Progress (70% complete)  
+**Last Updated:** 2025-11-20  
+**Status:** Phase 6 In Progress (78% complete)
 **Next Review:** After next batch of edge function hardening

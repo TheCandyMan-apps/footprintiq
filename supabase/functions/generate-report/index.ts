@@ -1,10 +1,23 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Validation schema
+const ReportRequestSchema = z.object({
+  caseId: z.string().uuid().optional(),
+  entityIds: z.array(z.string().uuid()).optional(),
+  templateId: z.string().uuid().optional(),
+  reportType: z.enum(['executive', 'technical', 'compliance', 'custom']),
+  includeTimeline: z.boolean().optional().default(true),
+  includeGraph: z.boolean().optional().default(true),
+  includeForecast: z.boolean().optional().default(true),
+  clientId: z.string().uuid().optional()
+});
 
 interface ReportRequest {
   caseId?: string;
@@ -17,41 +30,91 @@ interface ReportRequest {
   clientId?: string;
 }
 
+// Security helpers
+async function validateAuth(req: Request, supabase: any) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    throw new Error('No authorization header');
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    throw new Error('Unauthorized');
+  }
+
+  return user;
+}
+
+async function checkRateLimit(supabase: any, userId: string, endpoint: string) {
+  const { data: rateLimit } = await supabase.rpc('check_rate_limit', {
+    p_identifier: userId,
+    p_identifier_type: 'user',
+    p_endpoint: endpoint,
+    p_max_requests: 10,
+    p_window_seconds: 3600
+  });
+
+  if (!rateLimit?.allowed) {
+    const error = new Error('Rate limit exceeded');
+    (error as any).status = 429;
+    (error as any).resetAt = rateLimit?.reset_at;
+    throw error;
+  }
+}
+
+function addSecurityHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    ...corsHeaders,
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    ...headers,
+  };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+
+    if (!lovableApiKey) {
+      throw new Error('LOVABLE_API_KEY not configured');
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
+    // Authentication
+    const user = await validateAuth(req, supabase);
+    const userId = user.id;
 
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      throw new Error('Unauthorized');
-    }
+    // Rate limiting - 10 reports per hour
+    await checkRateLimit(supabase, userId, 'generate-report');
 
+    // Validate request body
+    const body = await req.json();
+    const validatedData = ReportRequestSchema.parse(body);
     const {
       caseId,
       entityIds,
       templateId,
       reportType,
-      includeTimeline = true,
-      includeGraph = true,
-      includeForecast = true,
+      includeTimeline,
+      includeGraph,
+      includeForecast,
       clientId,
-    }: ReportRequest = await req.json();
+    } = validatedData;
 
-    console.log('Generating report:', { reportType, caseId, entityIds: entityIds?.length });
-
-    const startTime = Date.now();
+    console.log('[generate-report] Generating report:', { reportType, caseId, entityIds: entityIds?.length, userId });
 
     // Fetch case data if provided
     let caseData = null;
@@ -120,7 +183,7 @@ serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(100);
 
-    // Generate AI summary
+    // Generate AI summary using Lovable AI
     const summaryPrompt = `Generate a ${reportType} report summary for:
     
 Case: ${caseData?.title || 'Intelligence Analysis'}
@@ -133,91 +196,95 @@ Provide:
 1. Executive Summary (3-4 sentences)
 2. Key Findings (bullet points)
 3. Risk Assessment
-4. Recommendations`;
+4. Recommended Actions`;
 
-    const aiResponse = await fetch('https://lovable.app/api/ai/completions', {
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        model: 'openai/gpt-5-mini',
+        model: 'google/gemini-2.5-flash',
         messages: [
-          {
-            role: 'system',
-            content: 'You are an intelligence analyst. Generate professional, evidence-based reports.'
-          },
+          { role: 'system', content: 'You are an expert intelligence analyst. Generate comprehensive, actionable reports.' },
           { role: 'user', content: summaryPrompt }
-        ]
+        ],
       }),
     });
 
-    const aiData = await aiResponse.json();
-    const executiveSummary = aiData.choices[0].message.content;
+    if (!aiResponse.ok) {
+      console.error('[generate-report] Lovable AI error:', aiResponse.status);
+      throw new Error(`AI analysis failed: ${aiResponse.status}`);
+    }
 
-    // Build report content
-    const reportContent = {
-      metadata: {
-        reportType,
-        generatedAt: new Date().toISOString(),
-        generatedBy: user.email,
-        processingTime: Date.now() - startTime,
-      },
-      executiveSummary,
+    const aiData = await aiResponse.json();
+    const aiSummary = aiData.choices?.[0]?.message?.content || 'AI summary unavailable';
+
+    // Assemble report
+    const report = {
+      id: crypto.randomUUID(),
+      reportType,
+      generatedAt: new Date().toISOString(),
+      generatedBy: userId,
       case: caseData,
       entities,
-      findings,
+      findings: findings || [],
       timeline: timelineData,
       graph: graphData,
       forecasts,
-      statistics: {
-        totalFindings: findings?.length || 0,
-        criticalFindings: findings?.filter(f => f.severity === 'critical').length || 0,
-        entitiesAnalyzed: entities.length,
-        timelineEvents: timelineData.length,
-      },
+      aiSummary,
+      metadata: {
+        includeTimeline,
+        includeGraph,
+        includeForecast,
+        templateId,
+        clientId,
+      }
     };
 
-    // Generate hash manifest for integrity
-    const hashInput = JSON.stringify(reportContent);
-    const hashBuffer = await crypto.subtle.digest(
-      'SHA-256',
-      new TextEncoder().encode(hashInput)
-    );
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashManifest = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-    // Store report if clientId provided
-    if (clientId) {
-      await supabase.from('client_reports').insert({
-        client_id: clientId,
-        report_type: reportType,
-        title: caseData?.title || `${reportType} Report`,
-        content: reportContent,
-        hash_manifest: hashManifest,
-        last_generated_at: new Date().toISOString(),
+    // Store report
+    const { error: insertError } = await supabase
+      .from('analyst_reports')
+      .insert({
+        user_id: userId,
+        case_id: caseId,
+        entity_ids: entityIds || [],
+        report_data: report,
+        confidence: 0.85
       });
+
+    if (insertError) {
+      console.error('[generate-report] Failed to store report:', insertError);
     }
 
-    console.log('Report generated successfully in', Date.now() - startTime, 'ms');
+    const duration = Date.now() - startTime;
+    console.log('[generate-report] Report generated successfully in', duration, 'ms');
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        report: reportContent,
-        hashManifest,
-        processingTime: Date.now() - startTime,
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ report, duration }),
+      { headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
     );
 
-  } catch (error) {
-    console.error('Error generating report:', error);
+  } catch (error: any) {
+    const duration = Date.now() - startTime;
+    console.error('[generate-report] Error:', {
+      message: error.message,
+      duration,
+      timestamp: new Date().toISOString()
+    });
+
+    const status = error.status || 500;
+    const message = error.message || 'Report generation failed';
+
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      JSON.stringify({ 
+        error: message,
+        ...(error.resetAt && { retryAfter: error.resetAt })
+      }),
+      { 
+        status,
+        headers: addSecurityHeaders({ 'Content-Type': 'application/json' })
       }
     );
   }

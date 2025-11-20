@@ -1,50 +1,101 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Validation schema
+const SocialScanSchema = z.object({
+  platform: z.enum(['twitter', 'linkedin', 'facebook'], {
+    errorMap: () => ({ message: "Platform must be twitter, linkedin, or facebook" })
+  })
+});
+
+// Security helpers
+async function validateAuth(req: Request, supabase: any) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    throw new Error('No authorization header');
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    throw new Error('Unauthorized');
+  }
+
+  return user;
+}
+
+async function checkRateLimit(supabase: any, userId: string, endpoint: string) {
+  const { data: rateLimit } = await supabase.rpc('check_rate_limit', {
+    p_identifier: userId,
+    p_identifier_type: 'user',
+    p_endpoint: endpoint,
+    p_max_requests: 10,
+    p_window_seconds: 3600
+  });
+
+  if (!rateLimit?.allowed) {
+    const error = new Error('Rate limit exceeded');
+    (error as any).status = 429;
+    (error as any).resetAt = rateLimit?.reset_at;
+    throw error;
+  }
+}
+
+function addSecurityHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    ...corsHeaders,
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    ...headers,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
+  const startTime = Date.now();
 
+  try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabase = createClient(
       supabaseUrl,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Get authenticated user
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError || !user) {
-      throw new Error('User not authenticated');
-    }
+    // Authentication
+    const user = await validateAuth(req, supabase);
+    const userId = user.id;
 
-    const { platform } = await req.json();
+    // Rate limiting - 10 scans per hour
+    await checkRateLimit(supabase, userId, 'social-media-scan');
+
+    // Validate request body
+    const body = await req.json();
+    const { platform } = SocialScanSchema.parse(body);
+
+    console.log(`[social-media-scan] Starting ${platform} scan for user ${userId}`);
 
     // Get the integration for this platform
     const { data: integration, error: integrationError } = await supabase
       .from('social_integrations')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .eq('platform', platform)
       .single();
 
     if (integrationError || !integration) {
-      throw new Error(`No ${platform} integration found`);
+      throw new Error(`No ${platform} integration found. Please connect your account first.`);
     }
-
-    console.log(`Starting ${platform} scan for user ${user.id}`);
 
     const findings = [];
 
@@ -66,7 +117,7 @@ Deno.serve(async (req) => {
         .from('social_media_findings')
         .insert(
           findings.map(finding => ({
-            user_id: user.id,
+            user_id: userId,
             integration_id: integration.id,
             platform,
             ...finding,
@@ -74,28 +125,42 @@ Deno.serve(async (req) => {
         );
 
       if (insertError) {
-        console.error('Error storing findings:', insertError);
+        console.error('[social-media-scan] Error storing findings:', insertError);
       }
     }
 
-    console.log(`Scan complete. Found ${findings.length} findings.`);
+    const duration = Date.now() - startTime;
+    console.log(`[social-media-scan] Scan complete. Found ${findings.length} findings in ${duration}ms`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         findings_count: findings.length,
-        findings 
+        findings,
+        duration
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
     );
 
-  } catch (error) {
-    console.error('Error in social-media-scan:', error);
+  } catch (error: any) {
+    const duration = Date.now() - startTime;
+    console.error('[social-media-scan] Error:', {
+      message: error.message,
+      duration,
+      timestamp: new Date().toISOString()
+    });
+
+    const status = error.status || 500;
+    const message = error.message || 'Social media scan failed';
+
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Scan failed' }),
+      JSON.stringify({ 
+        error: message,
+        ...(error.resetAt && { retryAfter: error.resetAt })
+      }),
       { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        status,
+        headers: addSecurityHeaders({ 'Content-Type': 'application/json' })
       }
     );
   }

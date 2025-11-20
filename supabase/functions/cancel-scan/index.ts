@@ -1,13 +1,60 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { wrapHandler, sanitizeForLog, ERROR_RESPONSES } from '../_shared/errorHandler.ts';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface CancelScanRequest {
-  scanId: string;
+// Validation schema
+const CancelScanSchema = z.object({
+  scanId: z.string().uuid("Invalid scan ID format")
+});
+
+// Security helpers
+async function validateAuth(req: Request, supabase: any) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader) {
+    throw new Error('No authorization header');
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+  if (authError || !user) {
+    throw new Error('Unauthorized');
+  }
+
+  return user;
+}
+
+async function checkRateLimit(supabase: any, userId: string, endpoint: string) {
+  const { data: rateLimit } = await supabase.rpc('check_rate_limit', {
+    p_identifier: userId,
+    p_identifier_type: 'user',
+    p_endpoint: endpoint,
+    p_max_requests: 20,
+    p_window_seconds: 60
+  });
+
+  if (!rateLimit?.allowed) {
+    const error = new Error('Rate limit exceeded');
+    (error as any).status = 429;
+    (error as any).resetAt = rateLimit?.reset_at;
+    throw error;
+  }
+}
+
+function addSecurityHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    ...corsHeaders,
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    ...headers,
+  };
 }
 
 Deno.serve(wrapHandler(async (req) => {
@@ -19,26 +66,16 @@ Deno.serve(wrapHandler(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Authenticate user
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw ERROR_RESPONSES.UNAUTHORIZED('Missing authorization header');
-    }
+    // Authentication
+    const user = await validateAuth(req, supabase);
+    const userId = user.id;
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
+    // Rate limiting
+    await checkRateLimit(supabase, userId, 'cancel-scan');
 
-    if (authError || !user) {
-      console.error(`[${functionName}] Auth error:`, sanitizeForLog(authError));
-      throw ERROR_RESPONSES.UNAUTHORIZED('Invalid or expired token');
-    }
-
-    const { scanId }: CancelScanRequest = await req.json();
-
-    if (!scanId) {
-      throw ERROR_RESPONSES.VALIDATION_ERROR('scanId is required');
-    }
+    // Validate request body
+    const body = await req.json();
+    const { scanId } = CancelScanSchema.parse(body);
 
     console.log(`[${functionName}] Cancelling scan:`, sanitizeForLog({ scanId, userId: user.id }));
 
@@ -59,7 +96,7 @@ Deno.serve(wrapHandler(async (req) => {
             status: 'completed',
             scanId
           }),
-          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
         );
       }
       
@@ -71,7 +108,7 @@ Deno.serve(wrapHandler(async (req) => {
             status: scanRecord.status,
             message: `Cannot cancel a ${scanRecord.status} scan`
           }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 400, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
         );
       }
 
@@ -116,7 +153,7 @@ Deno.serve(wrapHandler(async (req) => {
           scanId,
           status: 'cancelled'
         }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
       );
     }
 
@@ -152,7 +189,7 @@ Deno.serve(wrapHandler(async (req) => {
               status: maigretResult.status,
               scanId
             }),
-            { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            { status: 200, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
           );
         }
 
@@ -184,7 +221,7 @@ Deno.serve(wrapHandler(async (req) => {
           message: 'Username scan cancelled',
           pipeline: 'simple'
         }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
       );
     }
 
@@ -215,7 +252,7 @@ Deno.serve(wrapHandler(async (req) => {
           error: `Scan already ${scan.status}`,
           status: scan.status 
         }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 400, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
       );
     }
 
@@ -344,7 +381,7 @@ Deno.serve(wrapHandler(async (req) => {
       }),
       { 
         status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: addSecurityHeaders({ 'Content-Type': 'application/json' })
       }
     );
   } catch (error: any) {
