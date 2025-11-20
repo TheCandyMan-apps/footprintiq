@@ -1,18 +1,66 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const InsightsRequestSchema = z.object({
+  jobId: z.string().uuid().optional(),
+  userId: z.string().uuid().optional(),
+  footprintData: z.object({
+    breaches: z.number(),
+    exposures: z.number(),
+    dataBrokers: z.number(),
+    darkWeb: z.number(),
+  }),
+});
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
-    const { jobId, userId, footprintData } = await req.json();
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(JSON.stringify({ error: authResult.error || 'Unauthorized' }), {
+        status: 401,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
+
+    const { userId: authUserId } = authResult.context;
+
+    // Rate limiting - 20 insights per hour
+    const rateLimitResult = await checkRateLimit(authUserId, 'user', 'generate-insights', {
+      maxRequests: 20,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded', resetAt: rateLimitResult.resetAt }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Input validation
+    const body = await req.json();
+    const validation = InsightsRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(JSON.stringify({ error: 'Invalid input', details: validation.error.issues }), {
+        status: 400,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
+
+    const { jobId, userId = authUserId, footprintData } = validation.data;
     
     console.log("Generating insights for:", { jobId, userId, footprintData });
 

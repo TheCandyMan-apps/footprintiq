@@ -1,11 +1,20 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const PurchaseRequestSchema = z.object({
+  packType: z.enum(['starter', 'pro']),
+  workspaceId: z.string().uuid(),
+});
 
 // Credit pack mappings
 const CREDIT_PACKS = {
@@ -26,39 +35,48 @@ const CREDIT_PACKS = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
-  // Create Supabase client using the anon key for user authentication
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-  );
-
   try {
-    // Retrieve authenticated user
-    const authHeader = req.headers.get("Authorization")!;
-    const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-
-    console.log(`[purchase-credit-pack] User ${user.id} initiating purchase`);
-
-    // Parse request body
-    const { packType, workspaceId } = await req.json();
-
-    if (!packType || !CREDIT_PACKS[packType as keyof typeof CREDIT_PACKS]) {
-      throw new Error("Invalid pack type");
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(JSON.stringify({ error: authResult.error || 'Unauthorized' }), {
+        status: 401,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
     }
 
-    if (!workspaceId) {
-      throw new Error("Workspace ID required");
+    const { userId, email } = authResult.context;
+
+    // Rate limiting - 10 purchases per hour
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'purchase-credit-pack', {
+      maxRequests: 10,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded', resetAt: rateLimitResult.resetAt }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
     }
 
-    const pack = CREDIT_PACKS[packType as keyof typeof CREDIT_PACKS];
+    // Input validation
+    const body = await req.json();
+    const validation = PurchaseRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(JSON.stringify({ error: 'Invalid input', details: validation.error.issues }), {
+        status: 400,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
 
-    console.log(`[purchase-credit-pack] Creating checkout for ${pack.name} (${pack.credits} credits)`);
+    const { packType, workspaceId } = validation.data;
+
+    const pack = CREDIT_PACKS[packType];
+
+    console.log(`[purchase-credit-pack] User ${userId} purchasing ${pack.name} (${pack.credits} credits)`);
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -66,7 +84,7 @@ serve(async (req) => {
     });
 
     // Check if a Stripe customer record exists for this user
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await stripe.customers.list({ email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
@@ -75,7 +93,7 @@ serve(async (req) => {
     // Create a one-time payment session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
+      customer_email: customerId ? undefined : email,
       line_items: [
         {
           price: pack.priceId,
@@ -86,7 +104,7 @@ serve(async (req) => {
       success_url: `${req.headers.get("origin")}/settings/billing?credits_success=true&pack=${packType}`,
       cancel_url: `${req.headers.get("origin")}/settings/billing?credits_canceled=true`,
       metadata: {
-        user_id: user.id,
+        user_id: userId,
         workspace_id: workspaceId,
         pack_type: packType,
         credits: pack.credits.toString(),
@@ -96,14 +114,14 @@ serve(async (req) => {
     console.log(`[purchase-credit-pack] Checkout session created: ${session.id}`);
 
     return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
       status: 200,
     });
   } catch (error) {
     console.error('[purchase-credit-pack] Error:', error);
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return new Response(JSON.stringify({ error: errorMsg }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
       status: 500,
     });
   }

@@ -1,9 +1,19 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+const RescanRequestSchema = z.object({
+  username: z.string().trim().min(1).max(100),
+  targetType: z.enum(['username', 'email', 'domain']).optional(),
+  previousError: z.string().max(500).optional(),
+});
 
 interface RescanRequest {
   username: string;
@@ -13,42 +23,50 @@ interface RescanRequest {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-    const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    const authHeader = req.headers.get('Authorization') ?? '';
-    const supabaseUser = createClient(SUPABASE_URL, ANON_KEY, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    // Get authenticated user
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
-
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(JSON.stringify({ error: authResult.error || 'Unauthorized' }), {
         status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       });
     }
 
-    const body: RescanRequest = await req.json();
-    const { username, targetType = 'username', previousError } = body;
+    const { userId } = authResult.context;
 
-    if (!username || username.trim().length === 0) {
-      return new Response(JSON.stringify({ error: 'Username is required' }), {
+    // Rate limiting - 10 suggestions per hour
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'ai-rescan-suggest', {
+      maxRequests: 10,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded', resetAt: rateLimitResult.resetAt }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Input validation
+    const body = await req.json();
+    const validation = RescanRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(JSON.stringify({ error: 'Invalid input', details: validation.error.issues }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       });
     }
+
+    const { username, targetType = 'username', previousError } = validation.data;
 
     console.log(`Generating rescan suggestions for: ${username}`);
 

@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,18 +47,18 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    const customers = await stripe.customers.list({ email, limit: 1 });
     
     if (customers.data.length === 0) {
-      logStep("No customer found, updating unsubscribed state");
+      console.log(`[check-subscription] No customer found for ${email}`);
       return new Response(JSON.stringify({ subscribed: false }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
         status: 200,
       });
     }
 
     const customerId = customers.data[0].id;
-    logStep("Found Stripe customer", { customerId });
+    console.log(`[check-subscription] Found customer ${customerId}`);
 
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
@@ -68,11 +72,8 @@ serve(async (req) => {
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
+      console.log(`[check-subscription] Active subscription found, ends: ${subscriptionEnd}`);
       productId = subscription.items.data[0].price.product;
-      logStep("Determined subscription tier", { productId });
-    } else {
-      logStep("No active subscription found");
     }
 
     return new Response(JSON.stringify({
@@ -80,14 +81,14 @@ serve(async (req) => {
       product_id: productId,
       subscription_end: subscriptionEnd
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
       status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logStep("ERROR in check-subscription", { message: errorMessage });
+    console.error(`[check-subscription] Error: ${errorMessage}`);
     return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
       status: 500,
     });
   }

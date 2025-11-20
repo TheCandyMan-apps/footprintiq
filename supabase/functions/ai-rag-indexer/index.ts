@@ -1,14 +1,59 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders } from '../_shared/secure.ts';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+const IndexRequestSchema = z.object({
+  scanId: z.string().uuid(),
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
-    const { scanId, userId } = await req.json();
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(JSON.stringify({ error: authResult.error || 'Unauthorized' }), {
+        status: 401,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
+
+    const { userId } = authResult.context;
+
+    // Rate limiting - 30 indexes per hour
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'ai-rag-indexer', {
+      maxRequests: 30,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded', resetAt: rateLimitResult.resetAt }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Input validation
+    const body = await req.json();
+    const validation = IndexRequestSchema.safeParse(body);
+    if (!validation.success) {
+      return new Response(JSON.stringify({ error: 'Invalid input', details: validation.error.issues }), {
+        status: 400,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
+
+    const { scanId } = validation.data;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -90,7 +135,7 @@ serve(async (req) => {
         message: 'Scan data indexed successfully for RAG',
       }),
       {
-        headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
         status: 200,
       }
     );
@@ -100,7 +145,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {
-        headers: { ...corsHeaders(), 'Content-Type': 'application/json' },
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
         status: 500,
       }
     );
