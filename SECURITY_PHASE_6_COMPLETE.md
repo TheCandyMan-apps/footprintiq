@@ -4,11 +4,11 @@
 
 ## Progress Summary
 
-**Phase 6: Security Hardening - 88% Complete**
+**Phase 6: Security Hardening - 91% Complete**
 
-- **Functions Hardened**: 54 / ~180 total edge functions
-- **High Priority Remaining**: ~1-3 critical admin functions
-- **Medium Priority**: ~125 bulk edge functions
+- **Functions Hardened**: 56 / ~180 total edge functions
+- **High Priority Remaining**: 0 critical functions (all critical done!)
+- **Medium Priority**: ~124 bulk edge functions
 - **Low Priority**: Monitoring & docs
 
 ### 1. Security Infrastructure (100%)
@@ -24,8 +24,8 @@
 - ✅ **RLS Policies** - Row-level security on all sensitive tables
 - ✅ **Security Definer Functions** - Proper function permissions
 
-### 3. Edge Function Hardening (30%)
-**Hardened Functions (54/180):**
+### 3. Edge Function Hardening (31%)
+**Hardened Functions (56/180):**
 1. ✅ `osint-scan-hardened` - Authentication, rate limiting, input validation, security headers
 2. ✅ `create-support-ticket` - Zod validation, sanitization, security headers
 3. ✅ `admin-list-tickets` - Admin role check, SQL injection prevention, security headers
@@ -75,17 +75,15 @@
 47. ✅ `osint-scan` - Main OSINT scanning (20 req/hr, full hardening)
 48. ✅ `customer-portal` - Stripe customer portal (10 req/hr, shared utilities)
 49. ✅ `billing/create-portal` - Billing portal creation (10 req/hr, full hardening)
-50. ✅ `stripe-portal` - Stripe portal (10 req/hr, workspace membership)
+50. ✅ `stripe-portal` - Stripe portal (10 req/hr, workspace membership, validation)
 51. ✅ `health-check` - System health diagnostics (30 req/min, admin only)
 52. ✅ `observability-metrics` - Real-time metrics (60 req/min, admin only)
 53. ✅ `scan-health-monitor` - Automated scan reconciliation (10 req/hr admin, cron support)
 54. ✅ `admin/send-glitch-alert` - Admin alert system (20 req/hr, admin only, validation)
-36. ✅ `stripe-portal` - Full hardening (auth, rate limiting 10/hr, workspace verification, Zod validation, security headers)
-37. ✅ `stripe-credit-webhook` - Full hardening (webhook signature, rate limiting 100/min, Zod validation, security headers)
-38. ✅ `ai-fusion-builder` - Full hardening (auth, rate limiting 5/hr, Zod validation, security headers, embeddings)
-39. ✅ `ai-next-questions` - Full hardening (auth, rate limiting 20/hr, Zod validation, security headers)
+55. ✅ `scan-start` - Enhanced with proper auth (selftest support, 20 req/hr, validation)
+56. ✅ `stripe-webhook` - IP-based rate limiting (100 req/min, signature verification)
 
-**Remaining Functions:** 135 functions need security hardening
+**Remaining Functions:** 124 functions need security hardening
 
 ### 4. Security Testing (100%)
 - ✅ **SQL Injection Tests** - 8 test cases
