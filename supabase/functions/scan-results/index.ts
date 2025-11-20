@@ -1,10 +1,52 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { wrapHandler, sanitizeForLog, ERROR_RESPONSES } from '../_shared/errorHandler.ts';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-results-token',
 };
+
+// Validation schema
+const WebhookPayloadSchema = z.object({
+  job_id: z.string().min(1, "job_id required"),
+  batch_id: z.string().optional(),
+  username: z.string().min(1, "username required"),
+  status: z.enum(['completed', 'failed', 'queued', 'running']),
+  summary: z.any().optional(),
+  raw: z.any().optional(),
+  user_id: z.string().optional(),
+  workspace_id: z.string().optional()
+});
+
+// Security helpers
+async function checkRateLimit(supabase: any, identifier: string, endpoint: string) {
+  const { data: rateLimit } = await supabase.rpc('check_rate_limit', {
+    p_identifier: identifier,
+    p_identifier_type: 'ip',
+    p_endpoint: endpoint,
+    p_max_requests: 100,
+    p_window_seconds: 3600
+  });
+
+  if (!rateLimit?.allowed) {
+    const error = new Error('Rate limit exceeded');
+    (error as any).status = 429;
+    (error as any).resetAt = rateLimit?.reset_at;
+    throw error;
+  }
+}
+
+function addSecurityHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    ...corsHeaders,
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    ...headers,
+  };
+}
 
 interface WebhookPayload {
   job_id: string;
@@ -27,6 +69,12 @@ Deno.serve(wrapHandler(async (req) => {
     const RESULTS_WEBHOOK_TOKEN = Deno.env.get('RESULTS_WEBHOOK_TOKEN')!;
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    // Rate limiting (IP-based for webhooks)
+    const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    await checkRateLimit(supabase, clientIp, 'scan-results');
 
     const webhookToken = req.headers.get('X-Results-Token');
     if (!webhookToken || webhookToken !== RESULTS_WEBHOOK_TOKEN) {
@@ -34,7 +82,9 @@ Deno.serve(wrapHandler(async (req) => {
       throw ERROR_RESPONSES.UNAUTHORIZED('Invalid webhook token');
     }
 
-    const payload: WebhookPayload = await req.json();
+    // Validate request body
+    const body = await req.json();
+    const payload = WebhookPayloadSchema.parse(body);
     
     if (!payload.job_id || !payload.username || !payload.status) {
       throw ERROR_RESPONSES.VALIDATION_ERROR('job_id, username, and status are required');
@@ -65,8 +115,6 @@ Deno.serve(wrapHandler(async (req) => {
       console.warn('[scan-results] Invalid workspace_id format in payload; storing as null');
     }
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
     const { error: upsertError } = await supabase
       .from('maigret_results')
       .upsert({
@@ -92,7 +140,7 @@ Deno.serve(wrapHandler(async (req) => {
 
     return new Response(
       JSON.stringify({ ok: true }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
     );
 
   } catch (error: any) {
