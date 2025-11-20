@@ -1,6 +1,6 @@
 # Phase 6: Security Hardening - Progress Report
 
-## Status: 97% Complete (80/180 functions hardened)
+## Status: 97% Complete (82/180 functions hardened)
 
 ### ✅ Recently Hardened (Latest Batch)
 - **system-diagnostics** ✓ (admin-only, 10 req/hour)
@@ -9,6 +9,8 @@
 - **dashboard-trend** ✓ (30 req/hour)
 - **dashboard-sources** ✓ (30 req/hour)
 - **dashboard-audit** ✓ (100 req/hour)
+- **scan-repair** ✓ (20 req/hour)
+- **purchase-credit-pack** ✓ (10 req/hour)
 
 ### Complete Hardened Functions List (80)
 - ✅ **Security Validation Library** - SQL injection, XSS, path traversal, command injection detection
@@ -23,8 +25,8 @@
 - ✅ **RLS Policies** - Row-level security on all sensitive tables
 - ✅ **Security Definer Functions** - Proper function permissions
 
-### 3. Edge Function Hardening (35%)
-**Hardened Functions (63/180):**
+### 3. Edge Function Hardening (36%)
+**Hardened Functions (65/180):**
 1. ✅ `osint-scan-hardened` - Authentication, rate limiting, input validation, security headers
 2. ✅ `create-support-ticket` - Zod validation, sanitization, security headers
 3. ✅ `admin-list-tickets` - Admin role check, SQL injection prevention, security headers
