@@ -597,9 +597,15 @@ serve(async (req) => {
             // Maigret provider calls dedicated edge function
             if (provider === 'maigret') {
               try {
+                const startTime = Date.now();
+                console.log(`[orchestrate] Calling Maigret for username: "${value}"`);
+                
                 const { data, error } = await supabase.functions.invoke('providers-maigret', {
                   body: { usernames: [value], timeout: 60, workspaceId, scanId }
                 });
+                
+                const elapsed = Date.now() - startTime;
+                console.log(`[orchestrate] Maigret responded in ${elapsed}ms`);
                 
                 if (error) {
                   console.error(`[orchestrate] Maigret provider error:`, error);
@@ -615,7 +621,13 @@ serve(async (req) => {
                 }
                 
                 findings = data?.findings || [];
-                console.log(`[orchestrate] Maigret returned ${findings.length} findings`);
+                console.log(`[orchestrate] Maigret returned ${findings.length} findings for "${value}"`);
+                
+                // Log warning if 0 results
+                if (findings.length === 0) {
+                  console.warn(`[orchestrate] ⚠️ Maigret returned 0 findings for username: "${value}" (took ${elapsed}ms)`);
+                  console.log(`[orchestrate] Raw Maigret response:`, JSON.stringify(data));
+                }
               } catch (maigretError) {
                 console.error(`[orchestrate] Maigret exception:`, maigretError);
                 return [{
