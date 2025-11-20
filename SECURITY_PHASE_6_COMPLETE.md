@@ -4,11 +4,11 @@
 
 ## Progress Summary
 
-**Phase 6: Security Hardening - 85% Complete**
+**Phase 6: Security Hardening - 88% Complete**
 
-- **Functions Hardened**: 50 / ~180 total edge functions
-- **High Priority Remaining**: ~5-8 critical functions (admin functions)
-- **Medium Priority**: ~130 bulk edge functions
+- **Functions Hardened**: 54 / ~180 total edge functions
+- **High Priority Remaining**: ~1-3 critical admin functions
+- **Medium Priority**: ~125 bulk edge functions
 - **Low Priority**: Monitoring & docs
 
 ### 1. Security Infrastructure (100%)
@@ -24,8 +24,8 @@
 - ✅ **RLS Policies** - Row-level security on all sensitive tables
 - ✅ **Security Definer Functions** - Proper function permissions
 
-### 3. Edge Function Hardening (28%)
-**Hardened Functions (50/180):**
+### 3. Edge Function Hardening (30%)
+**Hardened Functions (54/180):**
 1. ✅ `osint-scan-hardened` - Authentication, rate limiting, input validation, security headers
 2. ✅ `create-support-ticket` - Zod validation, sanitization, security headers
 3. ✅ `admin-list-tickets` - Admin role check, SQL injection prevention, security headers
@@ -76,6 +76,10 @@
 48. ✅ `customer-portal` - Stripe customer portal (10 req/hr, shared utilities)
 49. ✅ `billing/create-portal` - Billing portal creation (10 req/hr, full hardening)
 50. ✅ `stripe-portal` - Stripe portal (10 req/hr, workspace membership)
+51. ✅ `health-check` - System health diagnostics (30 req/min, admin only)
+52. ✅ `observability-metrics` - Real-time metrics (60 req/min, admin only)
+53. ✅ `scan-health-monitor` - Automated scan reconciliation (10 req/hr admin, cron support)
+54. ✅ `admin/send-glitch-alert` - Admin alert system (20 req/hr, admin only, validation)
 36. ✅ `stripe-portal` - Full hardening (auth, rate limiting 10/hr, workspace verification, Zod validation, security headers)
 37. ✅ `stripe-credit-webhook` - Full hardening (webhook signature, rate limiting 100/min, Zod validation, security headers)
 38. ✅ `ai-fusion-builder` - Full hardening (auth, rate limiting 5/hr, Zod validation, security headers, embeddings)
