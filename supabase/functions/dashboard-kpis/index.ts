@@ -1,14 +1,24 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { validateAuth } from '../_shared/auth-utils.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const KPIQuerySchema = z.object({
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+  workspace: z.string().uuid().optional(),
+});
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
@@ -16,29 +26,60 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get auth user
-    const authHeader = req.headers.get('Authorization')!;
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    // Authentication
+    const authResult = await validateAuth(req);
+    if (!authResult.valid || !authResult.context) {
+      return new Response(
+        JSON.stringify({ error: authResult.error }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+    const userId = authResult.context.userId;
 
-    if (authError || !user) {
-      throw new Error('Unauthorized');
+    // Rate limiting (60 requests/hour)
+    const rateLimitResult = await checkRateLimit(userId, 'user', 'dashboard-kpis', {
+      maxRequests: 60,
+      windowSeconds: 3600
+    });
+    if (!rateLimitResult.allowed) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          resetAt: rateLimitResult.resetAt
+        }),
+        { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
     }
 
+    // Input validation
     const url = new URL(req.url);
-    const from = url.searchParams.get('from') || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const to = url.searchParams.get('to') || new Date().toISOString();
-    const workspace = url.searchParams.get('workspace') || user.id;
+    const queryParams = {
+      from: url.searchParams.get('from') || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      to: url.searchParams.get('to') || new Date().toISOString(),
+      workspace: url.searchParams.get('workspace') || userId,
+    };
 
-    console.log('Fetching KPIs', { from, to, workspace });
+    const validation = KPIQuerySchema.safeParse(queryParams);
+    if (!validation.success) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid query parameters', details: validation.error.issues }),
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    const { from, to, workspace } = validation.data;
+    // Ensure from and to are defined (they should be after validation)
+    const fromDate = from!;
+    const toDate = to!;
+    console.log(`[dashboard-kpis] User ${userId} fetching KPIs`, { from: fromDate, to: toDate, workspace });
 
     // Calculate current period metrics
     const { data: currentScans, error: scansError } = await supabase
       .from('scans')
       .select('*')
       .eq('user_id', workspace)
-      .gte('created_at', from)
-      .lte('created_at', to);
+      .gte('created_at', fromDate)
+      .lte('created_at', toDate);
 
     if (scansError) throw scansError;
 
@@ -51,8 +92,8 @@ serve(async (req) => {
       .from('darkweb_findings')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', workspace)
-      .gte('created_at', from)
-      .lte('created_at', to);
+      .gte('created_at', fromDate)
+      .lte('created_at', toDate);
 
     // Success rate (scans completed successfully)
     const successRate = scans > 0 
@@ -63,9 +104,9 @@ serve(async (req) => {
     const spend = findings * 0.02; // $0.02 per finding
 
     // Calculate previous period for deltas
-    const periodLength = new Date(to).getTime() - new Date(from).getTime();
-    const prevFrom = new Date(new Date(from).getTime() - periodLength).toISOString();
-    const prevTo = from;
+    const periodLength = new Date(toDate).getTime() - new Date(fromDate).getTime();
+    const prevFrom = new Date(new Date(fromDate).getTime() - periodLength).toISOString();
+    const prevTo = fromDate;
 
     const { data: prevScans } = await supabase
       .from('scans')
@@ -108,17 +149,17 @@ serve(async (req) => {
       },
     };
 
-    console.log('KPIs computed', kpis);
+    console.log(`[dashboard-kpis] Successfully computed KPIs for workspace ${workspace}`);
 
     return new Response(JSON.stringify(kpis), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
     });
   } catch (error) {
-    console.error('Error computing KPIs:', error);
+    console.error('[dashboard-kpis] Error computing KPIs:', error);
     const message = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 500, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
     );
   }
 });

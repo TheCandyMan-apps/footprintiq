@@ -1,9 +1,19 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
+import { checkRateLimit } from '../_shared/rate-limiter.ts';
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-selftest-key',
 };
+
+const ScanStartSchema = z.object({
+  username: z.string().trim().min(1).max(100),
+  platforms: z.array(z.string()).optional(),
+  batch_id: z.string().uuid().optional(),
+  timeout: z.number().int().min(1).max(300).optional(),
+});
 
 interface ScanStartRequest {
   username: string;
@@ -17,7 +27,7 @@ const isUUID = (v: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
   try {
@@ -82,13 +92,34 @@ Deno.serve(async (req) => {
       }
     }
 
-    const body: ScanStartRequest = await req.json();
+    const body = await req.json();
     
-    if (!body.username?.trim()) {
+    // Input validation
+    const validation = ScanStartSchema.safeParse(body);
+    if (!validation.success) {
       return new Response(
-        JSON.stringify({ error: 'Bad Request: username is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ error: 'Invalid input', details: validation.error.issues }),
+        { status: 400, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
       );
+    }
+
+    const scanRequest: ScanStartRequest = validation.data;
+
+    // Rate limiting for non-selftest scans
+    if (!isSelfTest && user && user.id !== 'anonymous') {
+      const rateLimitResult = await checkRateLimit(user.id, 'user', 'scan-start', {
+        maxRequests: 20,
+        windowSeconds: 3600
+      });
+      if (!rateLimitResult.allowed) {
+        return new Response(
+          JSON.stringify({ 
+            error: 'Rate limit exceeded',
+            resetAt: rateLimitResult.resetAt
+          }),
+          { status: 429, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+        );
+      }
     }
 
     if (!isSelfTest && user && user.id !== 'anonymous') {
@@ -108,7 +139,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`[scan-start] Initiating scan for username: ${body.username}`);
+    console.log(`[scan-start] Initiating scan for username: ${scanRequest.username}`);
     console.log(`[scan-start] User: ${user.id}, Workspace: ${workspaceId || 'none'}`);
     console.log(`[scan-start] Worker URL: ${MAIGRET_WORKER_URL}`);
 
