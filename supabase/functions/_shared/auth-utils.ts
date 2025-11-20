@@ -41,7 +41,7 @@ export async function validateAuth(req: Request): Promise<{
   context?: AuthContext;
   error?: string;
 }> {
-  const supabase = createClient(
+  const supabaseAnon = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",
     Deno.env.get("SUPABASE_ANON_KEY") ?? ""
   );
@@ -59,14 +59,20 @@ export async function validateAuth(req: Request): Promise<{
     const {
       data: { user },
       error: userError,
-    } = await supabase.auth.getUser(token);
+    } = await supabaseAnon.auth.getUser(token);
 
     if (userError || !user) {
       return { valid: false, error: "Invalid or expired token" };
     }
 
+    // Use service role to query user_roles (RLS protected)
+    const supabaseService = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
     // Get user role and subscription info
-    const { data: userRole } = await supabase
+    const { data: userRole } = await supabaseService
       .from("user_roles")
       .select("role, subscription_tier")
       .eq("user_id", user.id)
