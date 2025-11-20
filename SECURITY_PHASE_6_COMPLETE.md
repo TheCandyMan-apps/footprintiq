@@ -15,8 +15,8 @@
 - ✅ **RLS Policies** - Row-level security on all sensitive tables
 - ✅ **Security Definer Functions** - Proper function permissions
 
-### 3. Edge Function Hardening (13%)
-**Hardened Functions (24/180):**
+### 3. Edge Function Hardening (14%)
+**Hardened Functions (25/180):**
 1. ✅ `osint-scan-hardened` - Authentication, rate limiting, input validation, security headers
 2. ✅ `create-support-ticket` - Zod validation, sanitization, security headers
 3. ✅ `admin-list-tickets` - Admin role check, SQL injection prevention, security headers
@@ -24,7 +24,7 @@
 5. ✅ `export-data` - Authentication, rate limiting, CSRF protection, input validation
 6. ✅ `ai-analyst` - Authentication, rate limiting, Zod validation, security headers
 7. ✅ `ai-assistant` - Authentication, rate limiting, Zod validation, user verification
-8. ✅ `scan-orchestrate` - Enhanced authentication, rate limiting (existing validation kept)
+8. ✅ `scan-orchestrate` - Enhanced authentication, rate limiting, premium bypass, credit system fix
 9. ✅ `stripe-webhook` - Signature verification, security logging, security headers
 10. ✅ `ai-analysis` - Authentication, rate limiting, input validation, security headers
 11. ✅ `ai-scan-analysis` - Authentication, rate limiting, Zod validation, security headers
@@ -41,7 +41,7 @@
 22. ✅ `customer-portal` - Full hardening (auth, rate limiting, security headers, logging)
 23. ✅ `ai-report-generator` - Full hardening (auth, rate limiting, Zod validation, security headers)
 
-**Remaining Functions:** 156 functions need security hardening
+**Remaining Functions:** 155 functions need security hardening
 
 ### 4. Security Testing (100%)
 - ✅ **SQL Injection Tests** - 8 test cases
@@ -71,9 +71,10 @@
 |-----------|----------|--------|
 | Security Infrastructure | 100% | ✅ Complete |
 | Database Security | 100% | ✅ Complete |
-| Edge Function Hardening | 13% | 🟡 In Progress |
+| Edge Function Hardening | 14% | 🟡 In Progress |
 | Security Testing | 100% | ✅ Complete |
 | Monitoring & Docs | 100% | ✅ Complete |
+| Credit System Fix | 100% | ✅ Complete |
 | Auth Configuration | 100% | ✅ Complete |
 | **Overall Phase 6** | **74%** | 🟡 **In Progress** |
 

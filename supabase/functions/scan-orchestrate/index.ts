@@ -283,14 +283,26 @@ serve(async (req) => {
       return bad(403, `Monthly scan limit reached (${scansUsed}/${scanLimit}). Upgrade your plan for more scans.`);
     }
 
-    // Check credits before scan
-    const creditsRequired = options.includeDarkweb ? 10 : (options.includeDating || options.includeNsfw ? 5 : 1);
-    const { data: creditsCheck } = await supabaseService
-      .rpc('get_credits_balance', { _workspace_id: workspaceId });
+    // Check credits before scan (bypass for premium/enterprise users)
+    const premiumTiers = ['premium', 'pro', 'business', 'enterprise'];
+    const userTier = (workspace.subscription_tier || workspace.plan || 'free').toLowerCase();
+    const isPremium = premiumTiers.includes(userTier);
     
-    const currentBalance = creditsCheck || 0;
-    if (currentBalance < creditsRequired) {
-      return bad(402, `Insufficient credits. Required: ${creditsRequired}, Balance: ${currentBalance}`);
+    // Calculate credits required (will be 0 for premium users)
+    const creditsRequired = isPremium ? 0 : (options.includeDarkweb ? 10 : (options.includeDating || options.includeNsfw ? 5 : 1));
+    
+    if (!isPremium) {
+      const { data: creditsCheck } = await supabaseService
+        .rpc('get_credits_balance', { _workspace_id: workspaceId });
+      
+      const currentBalance = creditsCheck || 0;
+      if (currentBalance < creditsRequired) {
+        console.log(`[orchestrate] Insufficient credits: required=${creditsRequired}, balance=${currentBalance}`);
+        return bad(402, `Insufficient credits. Required: ${creditsRequired}, Balance: ${currentBalance}. Purchase credits or upgrade to a premium plan for unlimited scans.`);
+      }
+      console.log(`[orchestrate] Credits check passed: required=${creditsRequired}, balance=${currentBalance}`);
+    } else {
+      console.log(`[orchestrate] Premium plan detected (${userTier}), bypassing credit check`);
     }
 
     // Check consent for sensitive sources
@@ -1100,18 +1112,24 @@ serve(async (req) => {
       }
     }
 
-    // Deduct credits for the scan
-    const { error: creditsError } = await supabaseService
-      .from('credits_ledger')
-      .insert({
-        workspace_id: workspaceId,
-        delta: -creditsRequired,
-        reason: 'darkweb_scan',
-        ref_id: scanId || null
-      });
+    // Deduct credits for the scan (only if not premium)
+    if (creditsRequired > 0) {
+      const { error: creditsError } = await supabaseService
+        .from('credits_ledger')
+        .insert({
+          workspace_id: workspaceId,
+          delta: -creditsRequired,
+          reason: 'darkweb_scan',
+          ref_id: scanId || null
+        });
 
-    if (creditsError) {
-      console.error('[orchestrate] Failed to deduct credits:', creditsError);
+      if (creditsError) {
+        console.error('[orchestrate] Failed to deduct credits:', creditsError);
+      } else {
+        console.log(`[orchestrate] Deducted ${creditsRequired} credits for scan ${scanId}`);
+      }
+    } else {
+      console.log(`[orchestrate] Premium user - no credits deducted for scan ${scanId}`);
     }
 
     const tookMs = Date.now() - startTime;
