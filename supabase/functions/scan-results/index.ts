@@ -19,23 +19,7 @@ const WebhookPayloadSchema = z.object({
   workspace_id: z.string().optional()
 });
 
-// Security helpers
-async function checkRateLimit(supabase: any, identifier: string, endpoint: string) {
-  const { data: rateLimit } = await supabase.rpc('check_rate_limit', {
-    p_identifier: identifier,
-    p_identifier_type: 'ip',
-    p_endpoint: endpoint,
-    p_max_requests: 100,
-    p_window_seconds: 3600
-  });
-
-  if (!rateLimit?.allowed) {
-    const error = new Error('Rate limit exceeded');
-    (error as any).status = 429;
-    (error as any).resetAt = rateLimit?.reset_at;
-    throw error;
-  }
-}
+// Note: Rate limiting now inline with custom limits per endpoint
 
 function addSecurityHeaders(headers: Record<string, string> = {}): Record<string, string> {
   return {
@@ -72,9 +56,23 @@ Deno.serve(wrapHandler(async (req) => {
     
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Rate limiting (IP-based for webhooks)
+    // Rate limiting (IP-based for webhooks) - increased for high-volume scan results
     const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    await checkRateLimit(supabase, clientIp, 'scan-results');
+    // Increased to 500 req/hour to handle large scan result sets
+    const { data: rateLimit } = await supabase.rpc('check_rate_limit', {
+      p_identifier: clientIp,
+      p_identifier_type: 'ip',
+      p_endpoint: 'scan-results',
+      p_max_requests: 500,
+      p_window_seconds: 3600
+    });
+
+    if (!rateLimit?.allowed) {
+      const error = new Error('Rate limit exceeded');
+      (error as any).status = 429;
+      (error as any).resetAt = rateLimit?.reset_at;
+      throw error;
+    }
 
     const webhookToken = req.headers.get('X-Results-Token');
     if (!webhookToken || webhookToken !== RESULTS_WEBHOOK_TOKEN) {
@@ -115,6 +113,7 @@ Deno.serve(wrapHandler(async (req) => {
       console.warn('[scan-results] Invalid workspace_id format in payload; storing as null');
     }
 
+    // Store in legacy maigret_results table
     const { error: upsertError } = await supabase
       .from('maigret_results')
       .upsert({
@@ -132,8 +131,58 @@ Deno.serve(wrapHandler(async (req) => {
       });
 
     if (upsertError) {
-      console.error(`[${functionName}] Database upsert error:`, sanitizeForLog(upsertError));
+      console.error(`[${functionName}] Legacy table upsert error:`, sanitizeForLog(upsertError));
       throw ERROR_RESPONSES.INTERNAL_ERROR(`Database operation failed: ${upsertError.message}`);
+    }
+
+    // Also store in new findings table for advanced pipeline compatibility
+    // Extract individual findings from the raw data if available
+    if (payload.raw && typeof payload.raw === 'object') {
+      const findings = [];
+      
+      // Parse the raw data structure to extract findings
+      if (Array.isArray(payload.raw)) {
+        for (const item of payload.raw) {
+          findings.push({
+            scan_id: payload.job_id,
+            provider: 'maigret',
+            kind: 'profile',
+            severity: item.status === 'found' ? 'medium' : 'low',
+            site: item.site || item.sitename,
+            url: item.url,
+            status: item.status,
+            evidence: { raw: item },
+            meta: { username: payload.username, batch_id: payload.batch_id }
+          });
+        }
+      } else if (payload.raw.sites) {
+        // Handle object format with sites array
+        for (const site of payload.raw.sites || []) {
+          findings.push({
+            scan_id: payload.job_id,
+            provider: 'maigret',
+            kind: 'profile',
+            severity: site.status === 'found' ? 'medium' : 'low',
+            site: site.site || site.sitename,
+            url: site.url,
+            status: site.status,
+            evidence: { raw: site },
+            meta: { username: payload.username, batch_id: payload.batch_id }
+          });
+        }
+      }
+
+      if (findings.length > 0) {
+        const { error: findingsError } = await supabase
+          .from('findings')
+          .insert(findings);
+
+        if (findingsError) {
+          console.warn(`[${functionName}] Failed to insert findings (non-fatal):`, sanitizeForLog(findingsError));
+        } else {
+          console.log(`[${functionName}] Successfully stored ${findings.length} findings for job ${payload.job_id}`);
+        }
+      }
     }
 
     console.log(`[${functionName}] Successfully stored results for job ${payload.job_id}`);
@@ -147,4 +196,4 @@ Deno.serve(wrapHandler(async (req) => {
     console.error(`[${functionName}] Error:`, sanitizeForLog(error));
     throw error;
   }
-}, { timeoutMs: 10000, corsHeaders, functionName: 'scan-results' }));
+}, { timeoutMs: 30000, corsHeaders, functionName: 'scan-results' }));

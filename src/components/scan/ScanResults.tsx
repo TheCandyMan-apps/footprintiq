@@ -334,7 +334,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-8 sm:w-12 text-xs sm:text-sm">#</TableHead>
+                    <TableHead className="w-8 sm:w-12 text-xs sm:text-sm">ID</TableHead>
                     <TableHead className="text-xs sm:text-sm">Site</TableHead>
                     <TableHead className="text-xs sm:text-sm">Status</TableHead>
                     <TableHead className="hidden md:table-cell text-xs sm:text-sm">URL</TableHead>
@@ -343,25 +343,25 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                 </TableHeader>
                 <TableBody>
                   {results.map((result) => (
-                    <TableRow key={result.line_no}>
+                    <TableRow key={result.id}>
                       <TableCell className="text-muted-foreground text-xs sm:text-sm">
-                        {result.line_no}
+                        {result.id.slice(0, 8)}
                       </TableCell>
                       <TableCell className="font-medium">
                         <Badge variant="outline" className="font-mono text-[10px] sm:text-xs">
-                          {result.ndjson?.site || 'Unknown'}
+                          {result.site || 'Unknown'}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={getStatusVariant(result.ndjson?.status)} className="text-[10px] sm:text-xs">
-                          {result.ndjson?.status || 'unknown'}
+                        <Badge variant={getStatusVariant(result.status)} className="text-[10px] sm:text-xs">
+                          {result.status || 'unknown'}
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden md:table-cell max-w-md truncate text-xs sm:text-sm text-muted-foreground">
-                        {result.ndjson?.url || '-'}
+                        {result.url || '-'}
                       </TableCell>
                       <TableCell>
-                        {result.ndjson?.url && (
+                        {result.url && (
                           <Button
                             variant="ghost"
                             size="sm"
@@ -369,7 +369,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                             className="h-8 w-8 p-0"
                           >
                             <a
-                              href={result.ndjson.url}
+                              href={result.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label="Open profile"
