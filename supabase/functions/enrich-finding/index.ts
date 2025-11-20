@@ -86,7 +86,12 @@ serve(async (req) => {
       .eq('id', findingId)
       .single();
 
-    if (findingError || !finding) return bad(404, 'finding_not_found');
+    if (findingError || !finding) {
+      return new Response(JSON.stringify({ error: 'Finding not found' }), {
+        status: 404,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
 
     // Call Lovable AI for enrichment
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -175,7 +180,7 @@ Provide a structured analysis with context, links, and remediation steps.`;
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ error: 'rate_limit_exceeded' }), {
           status: 429,
-          headers: { ...corsHeaders(), 'Content-Type': 'application/json' }
+          headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' })
         });
       }
       
@@ -192,20 +197,20 @@ Provide a structured analysis with context, links, and remediation steps.`;
     const enrichment = JSON.parse(toolCall.function.arguments);
 
     // Deduct credits
-    const deductResult = await deductCredits(
-      workspaceId,
-      ENRICHMENT_COST,
-      'api_usage',
-      { finding_id: findingId, operation: 'deep_enrichment' }
-    );
+    const { data: creditResult, error: creditError } = await supabase.rpc('spend_credits', {
+      _workspace_id: workspaceId,
+      _cost: ENRICHMENT_COST,
+      _reason: 'api_usage',
+      _meta: { finding_id: findingId, operation: 'deep_enrichment' }
+    });
 
-    if (!deductResult.success) {
+    if (creditError || !creditResult) {
       return new Response(JSON.stringify({
         error: 'credit_deduction_failed',
-        balance: deductResult.balance
+        message: creditError?.message
       }), {
         status: 402,
-        headers: { ...corsHeaders(), 'Content-Type': 'application/json' }
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' })
       });
     }
 
@@ -215,7 +220,7 @@ Provide a structured analysis with context, links, and remediation steps.`;
       .insert({
         finding_id: findingId,
         workspace_id: workspaceId,
-        enriched_by: user.id,
+        enriched_by: userId,
         context: enrichment.context,
         links: enrichment.links,
         remediation_steps: enrichment.remediation_steps,
@@ -227,14 +232,26 @@ Provide a structured analysis with context, links, and remediation steps.`;
       console.error('[enrich-finding] Insert error:', insertError);
     }
 
-    return ok({
+    // Get updated balance
+    const { data: newBalance } = await supabase.rpc('get_credits_balance', { 
+      _workspace_id: workspaceId 
+    });
+
+    return new Response(JSON.stringify({
       enrichment,
       credits_spent: ENRICHMENT_COST,
-      new_balance: deductResult.balance
+      new_balance: newBalance || 0
+    }), {
+      headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' })
     });
 
   } catch (error) {
     console.error('[enrich-finding] Error:', error);
-    return bad(500, error instanceof Error ? error.message : 'unknown_error');
+    return new Response(JSON.stringify({ 
+      error: error instanceof Error ? error.message : 'unknown_error' 
+    }), {
+      status: 500,
+      headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' })
+    });
   }
 });

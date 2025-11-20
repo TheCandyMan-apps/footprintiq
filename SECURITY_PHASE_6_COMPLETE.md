@@ -4,11 +4,11 @@
 
 ## Progress Summary
 
-**Phase 6: Security Hardening - 94% Complete**
+**Phase 6: Security Hardening - 95% Complete**
 
-- **Functions Hardened**: 61 / ~180 total edge functions
+- **Functions Hardened**: 63 / ~180 total edge functions
 - **High Priority Remaining**: 0 critical functions (all critical done!)
-- **Medium Priority**: ~124 bulk edge functions
+- **Medium Priority**: ~117 remaining functions
 - **Low Priority**: Monitoring & docs
 
 ### 1. Security Infrastructure (100%)
@@ -24,8 +24,8 @@
 - ✅ **RLS Policies** - Row-level security on all sensitive tables
 - ✅ **Security Definer Functions** - Proper function permissions
 
-### 3. Edge Function Hardening (31%)
-**Hardened Functions (56/180):**
+### 3. Edge Function Hardening (35%)
+**Hardened Functions (63/180):**
 1. ✅ `osint-scan-hardened` - Authentication, rate limiting, input validation, security headers
 2. ✅ `create-support-ticket` - Zod validation, sanitization, security headers
 3. ✅ `admin-list-tickets` - Admin role check, SQL injection prevention, security headers
@@ -89,6 +89,10 @@
 61. ✅ `dashboard-export` - Export functionality (10 req/hr, role check, validation)
 62. ✅ `purchase-credit-pack` - Credit purchases (10 req/hr, Stripe integration, validation)
 63. ✅ `generate-insights` - AI insights (20 req/hr, Lovable AI, validation)
+64. ✅ `check-subscription` - Subscription checking (auth, user validation, security headers)
+65. ✅ `enrich-finding` - Finding enrichment (30 req/hr, credit deduction, Lovable AI, validation)
+66. ✅ `scan-repair` - Scan repair utility (20 req/hr, admin auth, validation, security headers)
+67. ✅ `api-scans` - API endpoint for scans (API key auth, validation, usage logging, security headers)
 
 **Remaining Functions:** ~117 functions need security hardening
 

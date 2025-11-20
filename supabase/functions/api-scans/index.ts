@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { addSecurityHeaders } from '../_shared/security-headers.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,15 +16,18 @@ const ScanQuerySchema = z.object({
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
   }
 
+  const startTime = Date.now();
+
   try {
+    // API Key authentication
     const apiKey = req.headers.get("x-api-key");
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "API key required" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
       });
     }
 
@@ -49,7 +53,7 @@ serve(async (req) => {
     if (keyError || !apiKeyData) {
       return new Response(JSON.stringify({ error: "Invalid API key" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
       });
     }
 
@@ -57,7 +61,7 @@ serve(async (req) => {
     if (apiKeyData.expires_at && new Date(apiKeyData.expires_at) < new Date()) {
       return new Response(JSON.stringify({ error: "API key expired" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
       });
     }
 
@@ -142,13 +146,13 @@ serve(async (req) => {
 
     return new Response(JSON.stringify(responseData), {
       status: statusCode,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
     });
   } catch (error: any) {
     console.error("API error:", error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: addSecurityHeaders({ ...corsHeaders, "Content-Type": "application/json" }),
     });
   }
 });
