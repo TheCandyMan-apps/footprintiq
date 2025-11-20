@@ -53,6 +53,14 @@ export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) =>
       if (error) throw error;
 
       if (!requests || requests.length === 0) {
+        setBrokerStats([]);
+        setOverallStats({
+          totalRequests: 0,
+          completedRequests: 0,
+          failedRequests: 0,
+          pendingRequests: 0,
+          overallSuccessRate: 0,
+        });
         setLoading(false);
         return;
       }
