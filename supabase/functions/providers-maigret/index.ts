@@ -107,6 +107,7 @@ serve(async (req) => {
     }
 
     const workerData = await workerResponse.json();
+    console.log(`📦 Raw worker response:`, JSON.stringify(workerData).substring(0, 500));
 
     // Support multiple worker response shapes: results[], summary[], or findings[]
     const rawArray: any[] = Array.isArray(workerData?.results)
@@ -117,7 +118,7 @@ serve(async (req) => {
       ? workerData.findings
       : [];
 
-    console.log(`✅ Maigret worker returned ${rawArray.length} item(s)`);
+    console.log(`✅ Maigret worker returned ${rawArray.length} item(s) for username: "${body.usernames[0]}"`);
 
     // Transform worker results to UFM-compliant findings
     const findings: any[] = [];
@@ -157,6 +158,29 @@ serve(async (req) => {
     }
 
     console.log(`📊 Transformed ${findings.length} findings`);
+    
+    // If 0 findings, add a diagnostic finding to distinguish from errors
+    if (findings.length === 0) {
+      console.warn(`⚠️ Maigret returned 0 findings for username: "${body.usernames[0]}"`);
+      findings.push({
+        provider: 'maigret',
+        kind: 'provider.empty_results',
+        severity: 'info',
+        confidence: 1.0,
+        observedAt: new Date().toISOString(),
+        evidence: [
+          { key: 'message', value: 'No matching profiles found' },
+          { key: 'username', value: body.usernames[0] },
+          { key: 'sites_checked', value: body.sites?.length || 'all' },
+          { key: 'timeout', value: body.timeout || 60 }
+        ],
+        meta: {
+          reason: 'legitimate_no_results',
+          worker_url: WORKER_URL,
+          checked_at: new Date().toISOString()
+        }
+      });
+    }
 
     // If workspaceId and scanId provided, store snapshot for historical tracking
     if (body.workspaceId && body.scanId) {
