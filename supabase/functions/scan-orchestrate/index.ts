@@ -641,9 +641,15 @@ serve(async (req) => {
               }
             } else {
               // Call other providers through the unified proxy
+              const startTime = Date.now();
+              console.log(`[orchestrate] Calling ${provider} for ${type}: "${value}"`);
+              
               const { data, error } = await supabase.functions.invoke('provider-proxy', {
                 body: { provider, target: value, type }
               });
+              
+              const elapsed = Date.now() - startTime;
+              console.log(`[orchestrate] ${provider} responded in ${elapsed}ms`);
 
               if (error) {
                 console.error(`[orchestrate] Provider ${provider} error:`, error);
@@ -662,7 +668,13 @@ serve(async (req) => {
               }
               
               findings = data?.findings || [];
-              console.log(`[orchestrate] Provider ${provider} returned ${findings.length} findings`);
+              console.log(`[orchestrate] ${provider} returned ${findings.length} findings for "${value}"`);
+              
+              // Log warning if 0 results
+              if (findings.length === 0) {
+                console.warn(`[orchestrate] ⚠️ ${provider} returned 0 findings for ${type}: "${value}" (took ${elapsed}ms)`);
+                console.log(`[orchestrate] Raw ${provider} response:`, JSON.stringify(data));
+              }
             }
             
             return findings;
