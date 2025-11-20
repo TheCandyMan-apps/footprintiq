@@ -7,6 +7,7 @@ import { ActivityLogs } from '@/components/admin/ActivityLogs';
 import { SupportTickets } from '@/components/admin/SupportTickets';
 import { SystemHealth } from '@/components/admin/SystemHealth';
 import { ErrorLogs } from '@/components/admin/ErrorLogs';
+import { DataVerificationPanel } from '@/components/admin/DataVerificationPanel';
 import { Shield } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
@@ -80,7 +81,10 @@ export default function Admin() {
           </TabsContent>
           
           <TabsContent value="system">
-            <SystemHealth />
+            <div className="space-y-6">
+              <SystemHealth />
+              <DataVerificationPanel />
+            </div>
           </TabsContent>
           
           <TabsContent value="errors">

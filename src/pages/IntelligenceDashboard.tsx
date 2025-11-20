@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useNavigate } from 'react-router-dom';
+import { DataVerificationPanel } from '@/components/admin/DataVerificationPanel';
 import { 
   Activity, Database, Users, TrendingUp, AlertCircle, 
   Clock, Shield, Download, RefreshCw 
@@ -307,6 +308,13 @@ export default function IntelligenceDashboard() {
               <p className="text-center text-muted-foreground">No metrics available</p>
             </CardContent>
           </Card>
+        )}
+
+        {/* Data Verification Panel - Always visible for admin */}
+        {!loading && (
+          <div className="mt-6">
+            <DataVerificationPanel />
+          </div>
         )}
       </main>
       <Footer />
