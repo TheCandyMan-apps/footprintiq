@@ -7,6 +7,12 @@ import { DarkWebMonitorSettings } from '@/components/settings/DarkWebMonitorSett
 import { InitializeDarkWebDemo } from '@/components/settings/InitializeDarkWebDemo';
 import { StreakBadges } from '@/components/StreakBadges';
 import { analyzeTrends } from '@/lib/trends';
+import { BreachTrendChart } from '@/components/dashboard/BreachTrendChart';
+import { ProviderHealthMap } from '@/components/dashboard/ProviderHealthMap';
+import { IdentityRiskCard } from '@/components/dashboard/IdentityRiskCard';
+import { RecentFindings } from '@/components/dashboard/RecentFindings';
+import { CreditUsageMeter } from '@/components/dashboard/CreditUsageMeter';
+import { RecommendedScans } from '@/components/dashboard/RecommendedScans';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -780,6 +786,37 @@ const Dashboard = () => {
                     {/* Social Integrations */}
                     <div className="mt-8">
                       <SocialIntegrations />
+                    </div>
+
+                    {/* Dashboard v2 Enhancements */}
+                    <div className="mt-8 space-y-6">
+                      <h2 className="text-2xl font-bold flex items-center gap-2">
+                        <Activity className="w-6 h-6 text-primary" />
+                        Intelligence Analytics
+                      </h2>
+
+                      {/* Top Row: Breach Trend + Provider Health */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <BreachTrendChart workspaceId={workspace?.id} />
+                        <ProviderHealthMap />
+                      </div>
+
+                      {/* Middle Row: Identity Risk + Credit Usage */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <IdentityRiskCard
+                          riskScore={dnaMetrics.score}
+                          breaches={dnaMetrics.breaches}
+                          darkWeb={dnaMetrics.darkWeb}
+                          dataBrokers={dnaMetrics.dataBrokers}
+                        />
+                        <CreditUsageMeter />
+                      </div>
+
+                      {/* Bottom Row: Recent Findings + Recommended Scans */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <RecentFindings />
+                        <RecommendedScans />
+                      </div>
                     </div>
                   </div>
 
