@@ -353,6 +353,19 @@ serve(async (req) => {
       return bad(500, `Failed to create scan record: ${scanError.message}. Please try again or contact support.`);
     }
 
+    // Log scan lifecycle event: creation
+    try {
+      await supabaseService.from('scan_events').insert({
+        scan_id: scanId,
+        provider: 'system',
+        stage: 'created',
+        status: 'success',
+        metadata: { type, value_length: value.length, workspaceId }
+      });
+    } catch (err) {
+      console.error('[orchestrate] Failed to log lifecycle event (created):', err);
+    }
+
     // Increment scans_used_monthly after successful scan creation
     const { error: updateError } = await supabaseService
       .from('workspaces')
@@ -531,6 +544,22 @@ serve(async (req) => {
       current_providers: providers.slice(0, 7),
       message: 'Starting scan...'
     });
+
+    // Log scan lifecycle event: orchestration started
+    try {
+      await supabaseService.from('scan_events').insert({
+        scan_id: scanId,
+        provider: 'orchestrator',
+        stage: 'started',
+        status: 'running',
+        metadata: { 
+          total_providers: providers.length,
+          providers: providers.join(',')
+        }
+      });
+    } catch (err) {
+      console.error('[orchestrate] Failed to log lifecycle event (started):', err);
+    }
 
     let completedCount = 0;
     const PROVIDER_TIMEOUT_MS = 45000; // 45 second safety cap per provider

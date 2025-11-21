@@ -218,6 +218,21 @@ const ResultsDetail = () => {
         .maybeSingle();
 
       if (!scanData) {
+        // Detect scan stuck in pending for > 2 minutes
+        const now = Date.now();
+        const pollStartTime = pollTriesRef.current === 1 ? now : now - (pollTriesRef.current * 5000);
+        const stuckDuration = (now - pollStartTime) / 60000; // in minutes
+        
+        if (stuckDuration > 2) {
+          toast({
+            title: "Scan Appears Stuck",
+            description: "This scan may have failed to start. Please refresh or try a new scan.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+        
         // Poll less frequently until the background task populates the scan (max 20 tries)
         if (pollTriesRef.current < 20) {
           pollTriesRef.current++;
@@ -232,8 +247,22 @@ const ResultsDetail = () => {
       if (scanError) throw scanError;
       setScan(scanData);
 
-      // Stop polling if scan is completed
-      if (scanData.status === 'completed') {
+      // Check if scan is stuck in pending for > 2 minutes
+      if (scanData.status === 'pending') {
+        const createdAt = new Date(scanData.created_at).getTime();
+        const stuckDuration = (Date.now() - createdAt) / 60000;
+        
+        if (stuckDuration > 2) {
+          toast({
+            title: "Scan Processing Error",
+            description: "This scan appears to be stuck. It will be automatically cleaned up soon, or you can start a new scan.",
+            variant: "destructive",
+          });
+        }
+      }
+
+      // Stop polling if scan is completed or failed/timeout
+      if (scanData.status === 'completed' || scanData.status === 'failed' || scanData.status === 'timeout') {
         if (pollTimeoutRef.current !== null) {
           clearTimeout(pollTimeoutRef.current);
           pollTimeoutRef.current = null;

@@ -48,7 +48,7 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
     getCurrentUser();
   }, [userId]);
 
-// Fetch real data from Supabase with realtime support
+  // Fetch real data from Supabase with realtime support
   const fetchFootprintMetrics = async () => {
     // Helper to calculate metrics from findings
     const calculateMetrics = (findings: any[]) => {
@@ -78,6 +78,21 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
       try {
         const { data, error } = await (supabase as any).from('findings').select('kind, severity, evidence, provider').eq('scan_id', scanId);
         if (error) throw error;
+        
+        // If no findings, check if scan exists and has legacy data
+        if (!data || data.length === 0) {
+          const { data: scanData } = await supabase.from('scans').select('total_sources_found, high_risk_count, medium_risk_count, low_risk_count').eq('id', scanId).single();
+          if (scanData && scanData.total_sources_found > 0) {
+            // Return approximate metrics from scan summary
+            return {
+              breaches: scanData.high_risk_count || 0,
+              exposures: scanData.total_sources_found || 0,
+              dataBrokers: scanData.medium_risk_count || 0,
+              darkWeb: scanData.low_risk_count || 0
+            };
+          }
+        }
+        
         return calculateMetrics(data || []);
       } catch (err) {
         console.error('Error fetching scan metrics from findings:', err);
