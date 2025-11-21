@@ -37,6 +37,7 @@ import {
   Cell
 } from "recharts";
 import { CreditUsageBreakdown } from "@/components/admin/CreditUsageBreakdown";
+import { ScanMonitoringWidget } from "@/components/admin/ScanMonitoringWidget";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--muted))"];
 
@@ -302,7 +303,10 @@ export default function AdminDashboard() {
             </div>
 
             {/* Credit Usage Breakdown */}
-            <CreditUsageBreakdown />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <CreditUsageBreakdown />
+              <ScanMonitoringWidget />
+            </div>
 
             {/* Quick Actions */}
             <Card>
@@ -312,6 +316,14 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => navigate("/admin/errors")}>
+                    <AlertTriangle className="h-5 w-5" />
+                    <span className="text-sm">Error Logs</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => navigate("/admin/system-health")}>
+                    <Activity className="h-5 w-5" />
+                    <span className="text-sm">System Health</span>
+                  </Button>
                   <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => navigate("/admin/providers")}>
                     <Database className="h-5 w-5" />
                     <span className="text-sm">Providers</span>
@@ -327,6 +339,14 @@ export default function AdminDashboard() {
                   <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => navigate("/admin/cost-tracking")}>
                     <DollarSign className="h-5 w-5" />
                     <span className="text-sm">Costs</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => navigate("/admin/users")}>
+                    <Users className="h-5 w-5" />
+                    <span className="text-sm">Users</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => navigate("/admin/workspace-audit")}>
+                    <Settings className="h-5 w-5" />
+                    <span className="text-sm">Workspaces</span>
                   </Button>
                 </div>
               </CardContent>
