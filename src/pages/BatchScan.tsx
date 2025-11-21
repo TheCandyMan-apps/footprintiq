@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { invokeWithRetry } from '@/lib/supabaseRetry';
 import { Header } from '@/components/Header';
 import { SEO } from '@/components/SEO';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -128,9 +129,11 @@ export default function BatchScan() {
         // Set the target based on type
         scanPayload[target.type] = target.value;
 
-        const { data, error } = await supabase.functions.invoke('scan-orchestrate', {
-          body: scanPayload,
-        });
+        const { data, error } = await invokeWithRetry(() =>
+          supabase.functions.invoke('scan-orchestrate', {
+            body: scanPayload,
+          })
+        );
 
         if (error) throw error;
 

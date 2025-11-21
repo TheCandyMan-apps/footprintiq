@@ -6336,6 +6336,42 @@ export type Database = {
           },
         ]
       }
+      scan_events: {
+        Row: {
+          created_at: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          provider: string
+          scan_id: string
+          stage: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          provider: string
+          scan_id: string
+          stage: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          provider?: string
+          scan_id?: string
+          stage?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
       scan_findings: {
         Row: {
           job_id: string
