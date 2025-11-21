@@ -334,6 +334,10 @@ function RouterContent() {
           <Route path="/admin/rls-check" element={<RlsCheck />} />
           <Route path="/admin/security-report" element={<SecurityReport />} />
           <Route path="/admin/scan-management" element={<ScanManagement />} />
+          <Route path="/admin/scans" element={<ScanManagement />} />
+          <Route path="/admin/provider-health" element={<ProviderHealth />} />
+          <Route path="/scan/:scanId/timeline" element={<ScanTimeline />} />
+          <Route path="/api-keys" element={<ApiKeys />} />
           <Route path="/admin/providers" element={<Providers />} />
           <Route path="/admin/health" element={<Health />} />
           <Route path="/admin/observability" element={<Observability />} />
