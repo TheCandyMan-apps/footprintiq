@@ -49,6 +49,6 @@ export function useActivityLogs() {
 
   return {
     logs,
-    isLoading,
+    loading: isLoading,
   };
 }
