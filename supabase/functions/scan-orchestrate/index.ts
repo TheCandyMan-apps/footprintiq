@@ -242,6 +242,18 @@ serve(async (req) => {
       return bad(403, 'not_workspace_member_check_permissions');
     }
 
+    // Check if user is admin (admins bypass ALL restrictions)
+    const { data: userRole } = await supabaseService
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .single();
+
+    const isAdmin = userRole?.role === 'admin';
+    if (isAdmin) {
+      console.log(`[orchestrate] 🔓 Admin user ${user.id} detected - bypassing all restrictions`);
+    }
+
     // Get workspace with quota info
     const { data: workspace, error: workspaceError } = await supabaseService
       .from('workspaces')
@@ -272,24 +284,28 @@ serve(async (req) => {
       }
     };
 
-    // Check monthly scan quota BEFORE checking credits (with fallbacks)
+    // Check monthly scan quota BEFORE checking credits (admins bypass this)
     const scanLimit = workspace.scan_limit_monthly ?? getDefaultQuota(workspace.subscription_tier || workspace.plan || 'free');
     const scansUsed = workspace.scans_used_monthly ?? 0;
     
-    if (scanLimit !== null && scansUsed >= scanLimit) {
-      console.log(`[orchestrate] Monthly scan limit reached: ${scansUsed}/${scanLimit}`);
-      return bad(403, `Monthly scan limit reached (${scansUsed}/${scanLimit}). Upgrade your plan for more scans.`);
+    if (!isAdmin) {
+      if (scanLimit !== null && scansUsed >= scanLimit) {
+        console.log(`[orchestrate] Monthly scan limit reached: ${scansUsed}/${scanLimit}`);
+        return bad(403, `Monthly scan limit reached (${scansUsed}/${scanLimit}). Upgrade your plan for more scans.`);
+      }
+    } else {
+      console.log(`[orchestrate] Admin bypassing scan quota checks`);
     }
 
-    // Check credits before scan (bypass for premium/enterprise users)
+    // Check credits before scan (bypass for premium/enterprise users AND admins)
     const premiumTiers = ['premium', 'pro', 'business', 'enterprise'];
     const userTier = (workspace.subscription_tier || workspace.plan || 'free').toLowerCase();
     const isPremium = premiumTiers.includes(userTier);
     
-    // Calculate credits required (will be 0 for premium users)
-    const creditsRequired = isPremium ? 0 : (options.includeDarkweb ? 10 : (options.includeDating || options.includeNsfw ? 5 : 1));
+    // Calculate credits required (will be 0 for premium users and admins)
+    const creditsRequired = (isPremium || isAdmin) ? 0 : (options.includeDarkweb ? 10 : (options.includeDating || options.includeNsfw ? 5 : 1));
     
-    if (!isPremium) {
+    if (!isPremium && !isAdmin) {
       const { data: creditsCheck } = await supabaseService
         .rpc('get_credits_balance', { _workspace_id: workspaceId });
       
@@ -300,7 +316,7 @@ serve(async (req) => {
       }
       console.log(`[orchestrate] Credits check passed: required=${creditsRequired}, balance=${currentBalance}`);
     } else {
-      console.log(`[orchestrate] Premium plan detected (${userTier}), bypassing credit check`);
+      console.log(`[orchestrate] ${isAdmin ? 'Admin' : 'Premium'} plan detected, bypassing credit check`);
     }
 
     // Check consent for sensitive sources
@@ -494,11 +510,13 @@ serve(async (req) => {
     // Note: Advanced sources (dating/nsfw/darkweb) rely on providers not yet supported directly.
     // We intentionally skip adding them here until proxy support is stable.
 
-    // CRITICAL: Filter requested providers by tier allowance BEFORE creating queue
-    const { allowed: allowedProviders, blocked } = filterProvidersForPlan(
-      workspace.plan || workspace.subscription_tier,
-      providers
-    );
+    // CRITICAL: Filter requested providers by tier allowance UNLESS user is admin
+    const { allowed: allowedProviders, blocked } = isAdmin 
+      ? { allowed: providers, blocked: [] } // Admins get ALL providers
+      : filterProvidersForPlan(
+          workspace.plan || workspace.subscription_tier,
+          providers
+        );
 
     // Create execution queue
     const queue = createQueue({ concurrency: 7, retries: 3 });

@@ -56,11 +56,20 @@ export function canRunScan(workspace: {
  */
 export function filterProvidersForPlan(
   planId: string | null | undefined,
-  requestedProviders: string[]
+  requestedProviders: string[],
+  isAdmin: boolean = false
 ): {
   allowed: string[];
   blocked: string[];
 } {
+  // Admins bypass all restrictions
+  if (isAdmin) {
+    return { 
+      allowed: requestedProviders, 
+      blocked: [] 
+    };
+  }
+
   const plan = getPlan(planId);
   const allowedSet = new Set(plan.allowedProviders);
   
