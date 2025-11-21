@@ -729,7 +729,7 @@ const ResultsDetail = () => {
                   {(scan.status === 'failed' || scan.status === 'timeout') && (
                     <div className="flex gap-3">
                       <Button 
-                        onClick={() => navigate('/advanced-scan')}
+                        onClick={() => navigate('/scan/advanced')}
                         className="gap-2"
                       >
                         <Zap className="h-4 w-4" />
