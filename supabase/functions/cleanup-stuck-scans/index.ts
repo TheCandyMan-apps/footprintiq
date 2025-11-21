@@ -11,13 +11,13 @@ const corsHeaders = {
 };
 
 const CleanupSchema = z.object({
-  timeoutMinutes: z.number().min(1).max(60).optional().default(5),
+  timeoutMinutes: z.number().min(1).max(60).optional().default(2),
 });
 
 /**
  * Cleanup Stuck Scans - Automated timeout service
- * Marks scans as 'timeout' if they've been pending for > timeoutMinutes
- * Runs every 5 minutes via pg_cron
+ * Marks scans as 'timeout' or 'failed' if they've been pending for > timeoutMinutes
+ * Runs every minute via pg_cron (default timeout: 2 minutes)
  */
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -79,7 +79,7 @@ serve(async (req) => {
     }
 
     // Parse request body for timeout parameter
-    let timeoutMinutes = 5;
+    let timeoutMinutes = 2;
     if (req.method === 'POST') {
       try {
         const body = await req.json();
@@ -132,14 +132,13 @@ serve(async (req) => {
       try {
         const stuckDuration = Math.floor((Date.now() - new Date(scan.created_at).getTime()) / 60000);
         
-        // Mark as timeout
+        // Mark as timeout or failed
+        const status = stuckDuration > 10 ? 'failed' : 'timeout';
         const { error: updateError } = await supabase
           .from('scans')
           .update({
-            status: 'timeout',
-            completed_at: new Date().toISOString(),
-            error_message: `Scan timed out after ${stuckDuration} minutes`,
-            updated_at: new Date().toISOString()
+            status,
+            completed_at: new Date().toISOString()
           })
           .eq('id', scan.id);
 
@@ -147,13 +146,23 @@ serve(async (req) => {
           console.error(`[cleanup-stuck-scans] Failed to mark scan ${scan.id}:`, updateError);
           errors.push(`${scan.id}: ${updateError.message}`);
         } else {
-          console.log(`[cleanup-stuck-scans] Marked scan ${scan.id} as timeout (${stuckDuration}m)`);
+          console.log(`[cleanup-stuck-scans] Marked scan ${scan.id} as ${status} (${stuckDuration}m)`);
           timeoutCount++;
+
+          // Log to scan_events for tracking
+          await supabase.from('scan_events').insert({
+            scan_id: scan.id,
+            provider: 'system',
+            stage: 'cleanup',
+            status: status,
+            error_message: `Scan automatically marked as ${status} after ${stuckDuration} minutes`,
+            metadata: { stuckDuration, timeoutMinutes, scanType: scan.scan_type }
+          });
 
           // Log to system_errors for tracking
           await supabase.from('system_errors').insert({
-            error_code: 'SCAN_TIMEOUT_AUTO',
-            error_message: `Scan automatically timed out after ${stuckDuration} minutes`,
+            error_code: status === 'timeout' ? 'SCAN_TIMEOUT_AUTO' : 'SCAN_FAILED_AUTO',
+            error_message: `Scan automatically marked as ${status} after ${stuckDuration} minutes`,
             function_name: 'cleanup-stuck-scans',
             scan_id: scan.id,
             workspace_id: scan.workspace_id,
