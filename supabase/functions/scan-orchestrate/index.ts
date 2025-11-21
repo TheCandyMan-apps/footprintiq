@@ -158,6 +158,7 @@ serve(async (req) => {
   }
 
   const startTime = Date.now();
+  const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
   try {
     // Use anon key for RLS-protected operations
@@ -1157,6 +1158,34 @@ serve(async (req) => {
     }
 
     const tookMs = Date.now() - startTime;
+
+    // Check for timeout (> 5 minutes)
+    if (tookMs > TIMEOUT_MS) {
+      console.warn(`[orchestrate] ⚠️ Scan exceeded timeout: ${tookMs}ms > ${TIMEOUT_MS}ms`);
+      
+      // Mark scan as timeout
+      await supabaseService
+        .from('scans')
+        .update({
+          status: 'timeout',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', scanId);
+      
+      // Log timeout to system_errors
+      await supabaseService.from('system_errors').insert({
+        error_code: 'SCAN_TIMEOUT',
+        error_message: `Scan exceeded ${TIMEOUT_MS / 60000} minute timeout`,
+        function_name: 'scan-orchestrate',
+        scan_id: scanId,
+        workspace_id: workspaceId,
+        user_id: user.id,
+        severity: 'warn',
+        metadata: { durationMs: tookMs, timeoutMs: TIMEOUT_MS }
+      });
+      
+      return bad(408, `Scan timed out after ${Math.floor(tookMs / 60000)} minutes`);
+    }
 
     console.log(`[orchestrate] Completed in ${tookMs}ms: ${sortedFindings.length} findings`);
 
