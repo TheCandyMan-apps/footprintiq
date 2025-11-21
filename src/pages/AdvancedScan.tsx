@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/supabaseRetry";
 import { Header } from "@/components/Header";
 import { SEO } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
@@ -451,21 +452,23 @@ export default function AdvancedScan() {
             await new Promise(resolve => setTimeout(resolve, 100));
           }
           
-          const { data, error } = await supabase.functions.invoke("scan-orchestrate", {
-            body: {
-              scanId: preScanId,
-              type: scanType,
-              value: targetValue,
-              workspaceId: workspace.id,
-              options: {
-                providers,
-                includeDating: sensitiveSources.includes('dating'),
-                includeNsfw: sensitiveSources.includes('nsfw'),
-                includeDarkweb: sensitiveSources.includes('darkweb') || darkwebEnabled,
-                premium: premiumOptions,
+          const { data, error } = await invokeWithRetry(() =>
+            supabase.functions.invoke("scan-orchestrate", {
+              body: {
+                scanId: preScanId,
+                type: scanType,
+                value: targetValue,
+                workspaceId: workspace.id,
+                options: {
+                  providers,
+                  includeDating: sensitiveSources.includes('dating'),
+                  includeNsfw: sensitiveSources.includes('nsfw'),
+                  includeDarkweb: sensitiveSources.includes('darkweb') || darkwebEnabled,
+                  premium: premiumOptions,
+                },
               },
-            },
-          });
+            })
+          );
 
           if (error) {
             // For first target failure, close dialog and reset state

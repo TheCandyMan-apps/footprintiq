@@ -12,6 +12,8 @@ import { authenticateRequest } from '../_shared/auth-utils.ts';
 import { rateLimitMiddleware } from '../_shared/enhanced-rate-limiter.ts';
 import { addSecurityHeaders } from '../_shared/security-headers.ts';
 import { IMPLEMENTED_PROVIDERS } from '../_shared/providerRegistry.ts';
+import { sanitizeProviderData, sanitizeError } from '../_shared/sanitizeProviderResult.ts';
+import { isProviderDisabled } from '../_shared/providerKillSwitch.ts';
 
 /**
  * Normalize confidence values to 0-1 range for database storage.
@@ -531,9 +533,72 @@ serve(async (req) => {
     });
 
     let completedCount = 0;
+    const PROVIDER_TIMEOUT_MS = 45000; // 45 second safety cap per provider
+
+    // Helper to log scan events for observability
+    const logEvent = async (event: {
+      provider: string;
+      stage: string;
+      status?: string;
+      duration_ms?: number;
+      error_message?: string;
+      metadata?: any;
+    }) => {
+      try {
+        await supabaseService.from('scan_events').insert({
+          scan_id: scanId,
+          ...event,
+          metadata: event.metadata || {}
+        });
+      } catch (err) {
+        console.warn('[orchestrate] Failed to log event:', err);
+      }
+    };
+
+    // Helper for provider timeout wrapper
+    const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error(`timeout_${timeoutMs}ms`)), timeoutMs)
+        )
+      ]);
+    };
+
+    // Helper for retry-once wrapper for flaky providers
+    const attemptWithRetry = async <T>(fn: () => Promise<T>, label: string): Promise<T> => {
+      try {
+        return await fn();
+      } catch (err) {
+        console.warn(`[orchestrate] ${label} failed, retrying once:`, err);
+        return await fn();
+      }
+    };
 
     // Execute providers in parallel
     const tasks = providers.map((provider, index) => async () => {
+      const providerStartTime = Date.now();
+      
+      // Check kill-switch first
+      if (isProviderDisabled(provider)) {
+        console.warn(`[orchestrate] Provider ${provider} is disabled via kill-switch`);
+        await logEvent({
+          provider,
+          stage: 'skipped',
+          status: 'disabled',
+          duration_ms: 0,
+          error_message: 'Provider disabled via DISABLED_PROVIDERS environment variable'
+        });
+        return [{
+          provider,
+          kind: 'provider.disabled',
+          severity: 'info',
+          confidence: 1.0,
+          observedAt: new Date().toISOString(),
+          evidence: [{ key: 'message', value: 'Provider temporarily disabled' }]
+        }];
+      }
+      
       const cacheKey = `scan:${provider}:${type}:${value}`;
       const noCache = options?.noCache ?? false;
       
@@ -543,6 +608,13 @@ serve(async (req) => {
       }
       
       console.log(`[orchestrate] Calling provider: ${provider} for ${type}:${value}`);
+      
+      // Log provider requested event
+      await logEvent({
+        provider,
+        stage: 'requested',
+        status: 'pending'
+      });
       
       // Broadcast provider start
       const channel = supabaseService.channel(`scan_progress:${scanId}`);
@@ -558,7 +630,7 @@ serve(async (req) => {
         }
       });
 
-      // Log provider start event
+      // Log provider start event (legacy)
       try {
         await supabaseService.from('scan_provider_events').insert({
           scan_id: scanId,
@@ -579,6 +651,13 @@ serve(async (req) => {
         current_provider: provider,
         current_providers: [provider],
         message: `Querying ${provider}...`
+      });
+      
+      // Log provider started event
+      await logEvent({
+        provider,
+        stage: 'started',
+        status: 'running'
       });
       
       try {
@@ -672,12 +751,40 @@ serve(async (req) => {
             return findings;
         };
         
-        // Use cache unless noCache is true
-        const result = noCache 
-          ? await executeProvider()
-          : await withCache(cacheKey, executeProvider, { ttlSeconds: 86400 });
+        // Wrap with timeout and retry logic
+        const executeWithSafety = async () => {
+          const cachedOrFreshExecution = noCache 
+            ? executeProvider
+            : () => withCache(cacheKey, executeProvider, { ttlSeconds: 86400 });
+          
+          // Apply retry wrapper first, then timeout wrapper
+          return await withTimeout(
+            attemptWithRetry(cachedOrFreshExecution, `${provider}`),
+            PROVIDER_TIMEOUT_MS,
+            `${provider}`
+          );
+        };
         
+        const result = await executeWithSafety();
+        
+        // Sanitize results before storing
+        const sanitizedResult = result.map((finding: any) => ({
+          ...finding,
+          evidence: sanitizeProviderData(finding.evidence),
+          meta: sanitizeProviderData(finding.meta)
+        }));
+        
+        const providerDuration = Date.now() - providerStartTime;
         completedCount++;
+        
+        // Log provider completed event
+        await logEvent({
+          provider,
+          stage: 'completed',
+          status: 'success',
+          duration_ms: providerDuration,
+          metadata: { result_count: sanitizedResult.length }
+        });
         
         // Broadcast provider success
         await channel.send({
@@ -687,21 +794,21 @@ serve(async (req) => {
             provider,
             status: 'success',
             message: `Completed ${provider}`,
-            resultCount: result.length,
+            resultCount: sanitizedResult.length,
             completedProviders: completedCount,
             totalProviders: providers.length,
-            findingsCount: allFindings.length + result.length
+            findingsCount: allFindings.length + sanitizedResult.length
           }
         });
 
-        // Log provider success event
+        // Log provider success event (legacy)
         try {
           await supabaseService.from('scan_provider_events').insert({
             scan_id: scanId,
             provider,
             event: 'success',
-            message: `Completed with ${result.length} results`,
-            result_count: result.length
+            message: `Completed with ${sanitizedResult.length} results`,
+            result_count: sanitizedResult.length
           });
         } catch (e) {
           console.warn('[orchestrate] Failed to log success event:', e);
@@ -713,16 +820,30 @@ serve(async (req) => {
           total_providers: providers.length,
           completed_providers: completedCount,
           current_provider: provider,
-          findings_count: allFindings.length + result.length,
+          findings_count: allFindings.length + sanitizedResult.length,
           message: `Completed ${provider} (${completedCount}/${providers.length})`
         });
         
-        return result;
+        return sanitizedResult;
       } catch (error) {
+        const providerDuration = Date.now() - providerStartTime;
         console.error(`[orchestrate] Provider ${provider} failed:`, error);
         completedCount++;
         
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const isTimeout = errorMessage.includes('timeout');
+        const stage = isTimeout ? 'timeout' : 'failed';
+        const status = isTimeout ? 'timeout' : 'failed';
+        
+        // Log provider failure/timeout event
+        await logEvent({
+          provider,
+          stage,
+          status,
+          duration_ms: providerDuration,
+          error_message: sanitizeError(error).message,
+          metadata: { code: sanitizeError(error).code }
+        });
         
         // Broadcast provider failure
         await channel.send({
@@ -731,13 +852,13 @@ serve(async (req) => {
           payload: {
             provider,
             status: 'failed',
-            message: `Failed: ${errorMessage}`,
+            message: isTimeout ? `Timed out after ${PROVIDER_TIMEOUT_MS}ms` : `Failed: ${errorMessage}`,
             completedProviders: completedCount,
             totalProviders: providers.length
           }
         });
 
-        // Log provider failed event
+        // Log provider failed event (legacy)
         try {
           await supabaseService.from('scan_provider_events').insert({
             scan_id: scanId,
@@ -758,20 +879,25 @@ serve(async (req) => {
           completed_providers: completedCount,
           current_provider: provider,
           error: true,
-          message: `Failed ${provider} (${completedCount}/${providers.length})`
+          message: isTimeout 
+            ? `Timed out ${provider} (${completedCount}/${providers.length})`
+            : `Failed ${provider} (${completedCount}/${providers.length})`
         });
         
-        // Return informational finding about failure instead of empty array
+        // Return informational finding about failure (provider-level fault isolation)
         return [{
           type: 'info',
-          title: `${provider} scan failed`,
-          description: `Provider ${provider} encountered an error and was skipped`,
+          title: isTimeout ? `${provider} scan timed out` : `${provider} scan failed`,
+          description: isTimeout 
+            ? `Provider ${provider} exceeded ${PROVIDER_TIMEOUT_MS / 1000}s timeout`
+            : `Provider ${provider} encountered an error and was skipped`,
           severity: 'info',
           provider: provider,
+          kind: isTimeout ? 'provider.timeout' : 'provider.failed',
           confidence: 1.0,
           evidence: [{ 
-            key: 'error', 
-            value: errorMessage 
+            key: 'reason', 
+            value: sanitizeError(error).message 
           }],
           observedAt: new Date().toISOString()
         }];
