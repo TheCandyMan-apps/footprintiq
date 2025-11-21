@@ -13,8 +13,9 @@ import { BatchScanUploader } from '@/components/scan/BatchScanUploader';
 import { toast } from 'sonner';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { CreditsBadge } from '@/components/workspace/CreditsBadge';
+import { UpgradeModal } from '@/components/UpgradeModal';
 import { 
-  FileStack, 
+  FileStack,
   Play, 
   CheckCircle2, 
   XCircle, 
@@ -66,6 +67,8 @@ export default function BatchScan() {
   const [isScanning, setIsScanning] = useState(false);
   const [results, setResults] = useState<ScanResult[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<'provider_blocked' | 'insufficient_credits' | 'batch_blocked'>('batch_blocked');
 
   // Initialize default providers for each type
   useEffect(() => {
@@ -150,6 +153,31 @@ export default function BatchScan() {
         }
       } catch (error: any) {
         console.error(`Scan failed for ${target.value}:`, error);
+        
+        const errorMessage = error.message || 'Unknown error';
+        
+        // Check for specific monetization/plan errors
+        if (errorMessage.includes('insufficient') || errorMessage.includes('credits')) {
+          setUpgradeReason('insufficient_credits');
+          setShowUpgradeModal(true);
+          setIsScanning(false);
+          toast.error('Insufficient credits for batch scan');
+          break; // Stop batch scan
+        } else if (errorMessage.includes('no_providers_available_for_tier') || 
+                   errorMessage.includes('requires') || 
+                   errorMessage.includes('blocked')) {
+          setUpgradeReason('provider_blocked');
+          setShowUpgradeModal(true);
+          setIsScanning(false);
+          toast.error('Provider access restricted');
+          break; // Stop batch scan
+        } else if (errorMessage.includes('batch') || errorMessage.includes('quota')) {
+          setUpgradeReason('batch_blocked');
+          setShowUpgradeModal(true);
+          setIsScanning(false);
+          toast.error('Batch scanning requires upgrade');
+          break; // Stop batch scan
+        }
         
         setResults(prev => prev.map((r, idx) => 
           idx === i ? { ...r, status: 'failed', error: error.message } : r
@@ -383,6 +411,18 @@ export default function BatchScan() {
           </div>
         </main>
       </div>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        reason={upgradeReason}
+        blockedFeature={
+          upgradeReason === 'provider_blocked' ? 'Advanced OSINT providers' :
+          upgradeReason === 'batch_blocked' ? 'Batch scanning' :
+          'Credits for scanning'
+        }
+      />
     </>
   );
 }

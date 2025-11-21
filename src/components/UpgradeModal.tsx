@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Check, Zap, Crown, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { useState } from 'react';
 
 interface UpgradeModalProps {
@@ -15,13 +16,23 @@ interface UpgradeModalProps {
 
 export function UpgradeModal({ open, onOpenChange, reason, blockedFeature }: UpgradeModalProps) {
   const { toast } = useToast();
+  const { workspace } = useWorkspace();
   const [loading, setLoading] = useState(false);
 
   const handleUpgrade = async (plan: 'pro' | 'unlimited') => {
+    if (!workspace?.id) {
+      toast({
+        title: 'Error',
+        description: 'No workspace selected',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('stripe-checkout', {
-        body: { plan },
+        body: { plan, workspaceId: workspace.id },
       });
       if (error) throw error;
       if (data?.url) window.location.href = data.url;

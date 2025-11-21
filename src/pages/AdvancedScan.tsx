@@ -53,6 +53,7 @@ import { MaigretToggle } from "@/components/scan/MaigretToggle";
 import { WorkerStatus } from "@/components/maigret/WorkerStatus";
 import { useUsernameScan } from "@/hooks/useUsernameScan";
 import { Switch } from "@/components/ui/switch";
+import { UpgradeModal } from "@/components/UpgradeModal";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -103,6 +104,8 @@ export default function AdvancedScan() {
   const [usernameTags, setUsernameTags] = useState('');
   const [usernameAllSites, setUsernameAllSites] = useState(false);
   const [usernameArtifacts, setUsernameArtifacts] = useState<string[]>([]);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<'provider_blocked' | 'insufficient_credits' | 'batch_blocked' | 'darkweb_blocked'>('insufficient_credits');
   
   const { saveTemplate } = useScanTemplates();
   const { startScan: startUsernameScan } = useUsernameScan();
@@ -480,13 +483,24 @@ export default function AdvancedScan() {
               const errorMessage = error.message || 'Unknown error';
               let description = 'Unable to initiate scan';
               
-              if (errorMessage.includes('requires')) {
+              // Check for specific monetization/plan errors
+              if (errorMessage.includes('insufficient') || errorMessage.includes('credits')) {
+                setUpgradeReason('insufficient_credits');
+                setShowUpgradeModal(true);
+                description = 'Insufficient credits to start scan';
+              } else if (errorMessage.includes('no_providers_available_for_tier') || 
+                         errorMessage.includes('requires') || 
+                         errorMessage.includes('blocked')) {
+                setUpgradeReason('provider_blocked');
+                setShowUpgradeModal(true);
                 description = 'Some selected providers require plan upgrade';
-              } else if (errorMessage.includes('limit reached')) {
+              } else if (errorMessage.includes('limit reached') || errorMessage.includes('quota')) {
+                setUpgradeReason('insufficient_credits');
+                setShowUpgradeModal(true);
                 description = 'Monthly scan quota exceeded - consider upgrading';
+              } else {
+                toast.error('Scan failed to start', { description });
               }
-              
-              toast.error('Scan failed to start', { description });
             }
             throw error;
           }
@@ -1188,6 +1202,19 @@ export default function AdvancedScan() {
           initialProviders={scanType === 'username' ? providers : undefined}
         />
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        reason={upgradeReason}
+        blockedFeature={
+          upgradeReason === 'provider_blocked' ? 'Advanced OSINT providers' :
+          upgradeReason === 'darkweb_blocked' ? 'Dark web scanning' :
+          upgradeReason === 'batch_blocked' ? 'Batch scanning' :
+          'Credits for scanning'
+        }
+      />
 
       {/* Save Template Dialog */}
       <SaveTemplateDialog
