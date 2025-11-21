@@ -197,14 +197,20 @@ serve(async (req) => {
       .filter(c => c.name === 'database')
       .some(c => c.status === 'error');
     
-    const hasError = checks.some(c => c.status === 'error');
     const hasDegraded = checks.some(c => c.status === 'degraded');
     
     const overall: 'ok' | 'degraded' | 'error' = hasCriticalError 
       ? 'error' 
-      : (hasError || hasDegraded)
+      : hasDegraded
         ? 'degraded' 
         : 'ok';
+
+    console.log(`[system-diagnostics] Status calculation:`, {
+      hasCriticalError,
+      hasDegraded,
+      overall,
+      checks: checks.map(c => ({ name: c.name, status: c.status }))
+    });
 
     const diagnostics: SystemDiagnostics = {
       overall,
