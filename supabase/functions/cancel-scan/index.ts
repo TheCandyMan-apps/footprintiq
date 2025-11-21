@@ -9,7 +9,10 @@ const corsHeaders = {
 
 // Validation schema
 const CancelScanSchema = z.object({
-  scanId: z.string().uuid("Invalid scan ID format")
+  scanId: z.string().uuid("Invalid scan ID format").optional(),
+  scanIds: z.array(z.string().uuid("Invalid scan ID format")).optional(),
+}).refine(data => data.scanId || (data.scanIds && data.scanIds.length > 0), {
+  message: "Either scanId or scanIds must be provided"
 });
 
 // Security helpers
@@ -27,6 +30,16 @@ async function validateAuth(req: Request, supabase: any) {
   }
 
   return user;
+}
+
+async function isAdmin(supabase: any, userId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', userId)
+    .single();
+  
+  return data?.role === 'admin';
 }
 
 async function checkRateLimit(supabase: any, userId: string, endpoint: string) {
@@ -75,7 +88,58 @@ Deno.serve(wrapHandler(async (req) => {
 
     // Validate request body
     const body = await req.json();
-    const { scanId } = CancelScanSchema.parse(body);
+    const { scanId, scanIds } = CancelScanSchema.parse(body);
+
+    const userIsAdmin = await isAdmin(supabase, user.id);
+    
+    // Handle bulk cancellation
+    if (scanIds && scanIds.length > 0) {
+      if (!userIsAdmin) {
+        throw ERROR_RESPONSES.FORBIDDEN('Bulk cancellation requires admin access');
+      }
+
+      console.log(`[${functionName}] Bulk cancelling ${scanIds.length} scans`);
+      
+      const results = await Promise.allSettled(
+        scanIds.map(async (id) => {
+          const { error } = await supabase
+            .from('scans')
+            .update({
+              status: 'cancelled',
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', id);
+          
+          if (!error) {
+            await supabase.from('scan_progress')
+              .update({ status: 'cancelled' })
+              .eq('scan_id', id);
+          }
+          
+          return { scanId: id, success: !error, error };
+        })
+      );
+
+      const successful = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Cancelled ${successful} scans. ${failed} failed.`,
+          results: results.map((r, i) => ({
+            scanId: scanIds[i],
+            success: r.status === 'fulfilled'
+          }))
+        }),
+        { status: 200, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Single scan cancellation
+    if (!scanId) {
+      throw ERROR_RESPONSES.INVALID_REQUEST('scanId is required for single cancellation');
+    }
 
     console.log(`[${functionName}] Cancelling scan:`, sanitizeForLog({ scanId, userId: user.id }));
 
@@ -112,8 +176,8 @@ Deno.serve(wrapHandler(async (req) => {
         );
       }
 
-      // Verify user owns the scan
-      if (scanRecord.user_id !== user.id) {
+      // Verify user owns the scan (unless admin)
+      if (!userIsAdmin && scanRecord.user_id !== user.id) {
         throw ERROR_RESPONSES.FORBIDDEN('Unauthorized to cancel this scan');
       }
 
