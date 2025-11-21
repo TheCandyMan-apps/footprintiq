@@ -196,20 +196,22 @@ export function SimpleResultsViewer({
               job_id: jobId,
               username: scan.username || '',
               status: scan.status === 'completed' ? 'completed' : scan.status === 'error' ? 'failed' : scan.status as any,
-              summary: findings?.map((f: any) => {
-                // Extract fields from evidence array (each evidence is {key, value})
-                const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site') : null;
-                const urlEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'url') : null;
-                const confidenceEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'confidence') : null;
-                
-                return {
-                  site: siteEvidence?.value || f.meta?.site || 'Unknown Site',
-                  url: urlEvidence?.value || f.meta?.url,
-                  status: 'found',
-                  provider: f.provider,
-                  confidence: confidenceEvidence?.value || f.confidence || f.meta?.confidence
-                };
-              }) || [],
+              summary: findings
+                ?.filter((f: any) => f.provider === 'maigret' && f.kind === 'profile_presence')
+                .map((f: any) => {
+                  // Extract fields from evidence array (each evidence is {key, value})
+                  const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site') : null;
+                  const urlEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'url') : null;
+                  const confidenceEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'confidence') : null;
+                  
+                  return {
+                    site: siteEvidence?.value || f.meta?.site || 'Unknown Site',
+                    url: urlEvidence?.value || f.meta?.url,
+                    status: 'found',
+                    provider: f.provider,
+                    confidence: confidenceEvidence?.value || f.confidence || f.meta?.confidence
+                  };
+                }) || [],
               raw: findings || [],
               created_at: scan.created_at,
               updated_at: scan.completed_at || scan.created_at
@@ -735,27 +737,34 @@ export function SimpleResultsViewer({
         </Card>
       )}
 
-      {/* GoSearch Provider Error Card */}
+      {/* GoSearch Timeout/Error Card */}
       {result.status === 'completed' && gosearchStatus === 'error' && (
-        <Card className="border-yellow-500/50 bg-gradient-to-br from-card via-card to-yellow-500/5 shadow-lg animate-scale-in">
-          <CardHeader className="bg-gradient-to-r from-yellow-500/10 to-transparent border-b border-yellow-500/20">
+        <Card className="border-orange-500/50 bg-gradient-to-br from-card via-card to-orange-500/5 shadow-lg animate-scale-in">
+          <CardHeader className="bg-gradient-to-r from-orange-500/10 to-transparent border-b border-orange-500/20">
             <CardTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500" />
-              GoSearch Scan Issue
-              <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-700">Issue Detected</Badge>
+              <Clock className="h-5 w-5 text-orange-500" />
+              GoSearch Timeout
+              <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-700">Scan Incomplete</Badge>
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 space-y-3">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+              <Clock className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
               <div className="space-y-2 text-sm">
                 <p className="text-muted-foreground">
-                  GoSearch encountered an issue while scanning. This is usually temporary.
+                  GoSearch exceeded the time limit while performing a deep search across 300+ platforms.
                 </p>
-                <p className="font-medium text-foreground">What you can do:</p>
+                <p className="font-medium text-foreground">Why this happens:</p>
                 <ul className="list-disc list-inside space-y-1 ml-4 text-muted-foreground">
-                  <li>Try running the scan again in a few minutes</li>
-                  <li>Check other provider results (Maigret, Sherlock)</li>
+                  <li>GoSearch performs comprehensive searches that can take 1-2 minutes</li>
+                  <li>High server load or rate limiting can slow down requests</li>
+                  <li>Popular usernames trigger more verification steps</li>
+                </ul>
+                <p className="font-medium text-foreground mt-3">What to do:</p>
+                <ul className="list-disc list-inside space-y-1 ml-4 text-muted-foreground">
+                  <li>Try running the scan again - it may complete faster</li>
+                  <li>Check Maigret and Sherlock results for coverage</li>
+                  <li>Consider using advanced filters to narrow the search</li>
                 </ul>
               </div>
             </div>

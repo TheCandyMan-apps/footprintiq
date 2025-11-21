@@ -11,7 +11,7 @@ export const PROVIDER_TIMEOUTS: Record<string, number> = {
   'maigret': 90000,       // 90 seconds - scans 3000+ sites
   'sherlock': 90000,      // 90 seconds - scans 400+ sites  
   'whatsmyname': 90000,   // 90 seconds - legacy alias for sherlock
-  'gosearch': 60000,      // 60 seconds - Google Search API
+  'gosearch': 120000,     // 120 seconds - deep search across 300+ platforms (INCREASED)
   
   // Breach & identity providers - API calls, faster
   'hibp': 30000,          // 30 seconds - Have I Been Pwned API
