@@ -11,6 +11,7 @@ import { safeFetch, errorResponse, ERROR_RESPONSES, logSystemError } from '../_s
 import { authenticateRequest } from '../_shared/auth-utils.ts';
 import { rateLimitMiddleware } from '../_shared/enhanced-rate-limiter.ts';
 import { addSecurityHeaders } from '../_shared/security-headers.ts';
+import { IMPLEMENTED_PROVIDERS } from '../_shared/providerRegistry.ts';
 
 /**
  * Normalize confidence values to 0-1 range for database storage.
@@ -106,17 +107,7 @@ const ScanRequestSchema = z.object({
   }).optional()
 });
 
-// Whitelist of allowed provider names (only implemented ones in provider-proxy)
-const ALLOWED_PROVIDERS = new Set([
-  'hibp', 'dehashed', 'clearbit', 'fullcontact',
-  'censys', 'binaryedge', 'otx', 'shodan', 'virustotal',
-  'securitytrails', 'urlscan',
-  'apify-social', 'apify-osint', 'apify-darkweb',
-  'maigret',
-  'sherlock',
-  'holehe',
-  'gosearch',
-]);
+// Provider validation now uses the centralized registry
 
 interface ScanRequest {
   scanId?: string;
@@ -420,16 +411,16 @@ serve(async (req) => {
     providers = providers.map(p => p === 'whatsmyname' ? 'sherlock' : p);
     console.log('[orchestrate] Providers after normalization:', providers);
 
-    // Always filter to allowed providers (regardless of source)
-    providers = providers.filter(p => ALLOWED_PROVIDERS.has(p));
+    // Split into known and unknown providers using the registry
+    const knownProviders = providers.filter(p => IMPLEMENTED_PROVIDERS.has(p));
+    const unknownProviders = providers.filter(p => !IMPLEMENTED_PROVIDERS.has(p));
     
-    // If user explicitly selected providers, validate them
-    if (options.providers && options.providers.length > 0) {
-      const invalidProviders = options.providers.filter(p => !ALLOWED_PROVIDERS.has(p));
-      if (invalidProviders.length > 0) {
-        console.warn('[orchestrate] Invalid providers ignored:', invalidProviders);
-      }
+    if (unknownProviders.length > 0) {
+      console.warn('[orchestrate] Unknown providers skipped:', unknownProviders);
     }
+    
+    // Use only known providers for execution
+    providers = knownProviders;
 
     // Enforce provider compatibility with scan type
     const providerTypeSupport: Record<string, Array<ScanRequest['type']>> = {

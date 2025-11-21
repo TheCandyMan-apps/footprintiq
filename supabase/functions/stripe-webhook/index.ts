@@ -83,6 +83,22 @@ serve(async (req) => {
 
     console.log(`[stripe-webhook] Processing event: ${event.type}`);
 
+    // Check for duplicate events (idempotency)
+    const eventId = event.id;
+    const { data: existing } = await supabase
+      .from('stripe_events_processed')
+      .select('event_id')
+      .eq('event_id', eventId)
+      .maybeSingle();
+
+    if (existing) {
+      console.log('[stripe-webhook] Duplicate event ignored', eventId);
+      return new Response(JSON.stringify({ ok: true, duplicate: true }), { 
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
@@ -283,6 +299,9 @@ serve(async (req) => {
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }
+
+    // Mark event as processed
+    await supabase.from('stripe_events_processed').insert({ event_id: eventId });
 
     return new Response(JSON.stringify({ received: true }), {
       status: 200,
