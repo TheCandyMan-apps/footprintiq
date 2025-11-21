@@ -15,7 +15,7 @@ const corsHeaders = {
 const TicketSchema = z.object({
   subject: z.string().trim().min(1).max(200),
   description: z.string().trim().min(1).max(5000),
-  category: z.enum(['technical', 'billing', 'feature_request', 'bug_report', 'other']).default('technical'),
+  category: z.enum(['technical', 'billing', 'feature_request', 'bug_report', 'scan', 'other']).default('technical'),
   workspace_id: z.string().uuid().optional(),
 });
 
