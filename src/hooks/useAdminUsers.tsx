@@ -46,6 +46,18 @@ export function useAdminUsers() {
         .eq('user_id', userId);
 
       if (error) throw error;
+
+      // Log activity
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('activity_logs').insert({
+          user_id: user.id,
+          action: 'user.role_updated',
+          entity_type: 'user',
+          entity_id: userId,
+          metadata: { new_role: role }
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
@@ -63,7 +75,7 @@ export function useAdminUsers() {
       expiresAt 
     }: { 
       userId: string; 
-      tier: 'free' | 'premium' | 'family'; 
+      tier: 'free' | 'premium' | 'family' | 'basic' | 'enterprise'; 
       expiresAt?: string;
     }) => {
       const { error } = await supabase
@@ -75,6 +87,18 @@ export function useAdminUsers() {
         .eq('user_id', userId);
 
       if (error) throw error;
+
+      // Log activity
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('activity_logs').insert({
+          user_id: user.id,
+          action: 'user.subscription_updated',
+          entity_type: 'user',
+          entity_id: userId,
+          metadata: { new_tier: tier, expires_at: expiresAt }
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });

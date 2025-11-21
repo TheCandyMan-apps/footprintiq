@@ -9067,7 +9067,7 @@ export type Database = {
       removal_status: "pending" | "in_progress" | "completed" | "failed"
       risk_level: "low" | "medium" | "high"
       scan_type: "username" | "personal_details" | "both"
-      subscription_tier: "free" | "premium" | "family"
+      subscription_tier: "free" | "premium" | "family" | "basic" | "enterprise"
       workspace_role: "viewer" | "analyst" | "admin"
     }
     CompositeTypes: {
@@ -9211,7 +9211,7 @@ export const Constants = {
       removal_status: ["pending", "in_progress", "completed", "failed"],
       risk_level: ["low", "medium", "high"],
       scan_type: ["username", "personal_details", "both"],
-      subscription_tier: ["free", "premium", "family"],
+      subscription_tier: ["free", "premium", "family", "basic", "enterprise"],
       workspace_role: ["viewer", "analyst", "admin"],
     },
   },

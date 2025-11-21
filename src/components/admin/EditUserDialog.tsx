@@ -83,13 +83,14 @@ export function EditUserDialog({ user, open, onClose }: EditUserDialogProps) {
             <Select value={subscriptionTier} onValueChange={setSubscriptionTier}>
               <SelectTrigger id="subscription">
                 <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="basic">Basic</SelectItem>
-                <SelectItem value="premium">Premium</SelectItem>
-                <SelectItem value="enterprise">Enterprise</SelectItem>
-              </SelectContent>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="free">Free</SelectItem>
+              <SelectItem value="basic">Basic</SelectItem>
+              <SelectItem value="premium">Premium</SelectItem>
+              <SelectItem value="enterprise">Enterprise</SelectItem>
+              <SelectItem value="family">Family</SelectItem>
+            </SelectContent>
             </Select>
           </div>
 

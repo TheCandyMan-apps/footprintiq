@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminAnalytics } from '@/components/admin/AdminAnalytics';
@@ -8,12 +8,15 @@ import { SupportTickets } from '@/components/admin/SupportTickets';
 import { SystemHealth } from '@/components/admin/SystemHealth';
 import { ErrorLogs } from '@/components/admin/ErrorLogs';
 import { DataVerificationPanel } from '@/components/admin/DataVerificationPanel';
-import { Shield } from 'lucide-react';
+import { Shield, Crown } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
 
 export default function Admin() {
   const navigate = useNavigate();
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
     checkAdminAccess();
@@ -28,6 +31,8 @@ export default function Admin() {
       return;
     }
 
+    setUserEmail(user.email || '');
+
     // Check if user has admin role
     const { data: userRole, error } = await supabase
       .from('user_roles')
@@ -40,6 +45,8 @@ export default function Admin() {
       navigate('/dashboard');
       return;
     }
+
+    setIsAdmin(true);
   };
 
   return (
@@ -50,13 +57,25 @@ export default function Admin() {
           <div className="p-3 rounded-lg bg-red-500/10">
             <Shield className="w-6 h-6 text-red-500" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
             <p className="text-muted-foreground">
               Manage users, monitor system activity, and configure settings
             </p>
           </div>
         </div>
+
+        {/* Admin Status Badge */}
+        {isAdmin && (
+          <Alert className="mb-6 border-purple-500 bg-purple-500/5">
+            <Crown className="h-4 w-4 text-purple-500" />
+            <AlertTitle className="text-purple-500">Admin Mode Active</AlertTitle>
+            <AlertDescription>
+              Logged in as <span className="font-mono font-semibold">{userEmail}</span>. 
+              Full system access granted - all providers, unlimited scans, no credit restrictions.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Tabs defaultValue="overview" className="space-y-8">
           <TabsList>
