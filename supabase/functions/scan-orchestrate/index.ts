@@ -14,6 +14,7 @@ import { addSecurityHeaders } from '../_shared/security-headers.ts';
 import { IMPLEMENTED_PROVIDERS } from '../_shared/providerRegistry.ts';
 import { sanitizeProviderData, sanitizeError } from '../_shared/sanitizeProviderResult.ts';
 import { isProviderDisabled } from '../_shared/providerKillSwitch.ts';
+import { getProviderCost } from '../_shared/providerCosts.ts';
 
 /**
  * Normalize confidence values to 0-1 range for database storage.
@@ -690,6 +691,77 @@ serve(async (req) => {
         stage: 'started',
         status: 'running'
       });
+      
+      // 🔥 CHARGE CREDITS BEFORE PROVIDER EXECUTION
+      const providerCost = getProviderCost(provider);
+      try {
+        // Get current balance
+        const { data: balanceData } = await supabaseService.rpc('get_credits_balance', {
+          _workspace_id: workspaceId
+        });
+        const currentBalance = balanceData || 0;
+        
+        // Check if plan allows overage or if balance is sufficient
+        const allowsOverage = ['premium', 'enterprise', 'unlimited', 'business'].includes(
+          workspace.plan || workspace.subscription_tier || 'free'
+        );
+        
+        if (currentBalance - providerCost < 0 && !allowsOverage) {
+          console.warn(`[orchestrate] Insufficient credits for ${provider}: balance=${currentBalance}, cost=${providerCost}`);
+          await logEvent({
+            provider,
+            stage: 'skipped',
+            status: 'insufficient_credits',
+            error_message: `Insufficient credits (${currentBalance} available, ${providerCost} required)`
+          });
+          return [{
+            provider,
+            kind: 'credits.insufficient',
+            severity: 'info',
+            confidence: 1.0,
+            observedAt: new Date().toISOString(),
+            evidence: [
+              { key: 'message', value: 'Insufficient credits' },
+              { key: 'balance', value: currentBalance.toString() },
+              { key: 'cost', value: providerCost.toString() }
+            ]
+          }];
+        }
+        
+        // Deduct credits
+        const { error: chargeError } = await supabaseService
+          .from('credits_ledger')
+          .insert({
+            workspace_id: workspaceId,
+            delta: -providerCost,
+            reason: 'scan',
+            meta: {
+              provider,
+              scan_id: scanId,
+              plan: workspace.plan || workspace.subscription_tier,
+              cost: providerCost,
+              scan_type: type
+            }
+          });
+        
+        if (chargeError) {
+          console.error(`[orchestrate] Failed to charge credits for ${provider}:`, chargeError);
+        } else {
+          console.log(`[orchestrate] Charged ${providerCost} credits for ${provider}`);
+        }
+        
+        // Check for low balance and trigger notification
+        const newBalance = currentBalance - providerCost;
+        if (newBalance <= 20 && newBalance > 0) {
+          // Trigger low-credit notification (fire and forget)
+          supabase.functions.invoke('notify-low-credits', {
+            body: { workspaceId, balance: newBalance }
+          }).catch(err => console.warn('[orchestrate] Low-credit notification failed:', err));
+        }
+      } catch (creditErr) {
+        console.error(`[orchestrate] Credit charging error for ${provider}:`, creditErr);
+        // Continue with scan even if credit charging fails
+      }
       
       try {
         // Bypass cache if noCache option is set
