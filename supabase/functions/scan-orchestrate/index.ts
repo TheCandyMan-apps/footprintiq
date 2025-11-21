@@ -15,6 +15,7 @@ import { IMPLEMENTED_PROVIDERS } from '../_shared/providerRegistry.ts';
 import { sanitizeProviderData, sanitizeError } from '../_shared/sanitizeProviderResult.ts';
 import { isProviderDisabled } from '../_shared/providerKillSwitch.ts';
 import { getProviderCost } from '../_shared/providerCosts.ts';
+import { getProviderTimeout, formatProviderTimeout } from '../_shared/providerTimeouts.ts';
 
 /**
  * Normalize confidence values to 0-1 range for database storage.
@@ -565,7 +566,6 @@ serve(async (req) => {
     }
 
     let completedCount = 0;
-    const PROVIDER_TIMEOUT_MS = 45000; // 45 second safety cap per provider
 
     // Helper to log scan events for observability
     const logEvent = async (event: {
@@ -587,12 +587,25 @@ serve(async (req) => {
       }
     };
 
-    // Helper for provider timeout wrapper
-    const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
+    // Helper for provider timeout wrapper with progress logging
+    const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, label: string, provider: string): Promise<T> => {
+      // Log warning at 80% of timeout
+      const warningTimeMs = timeoutMs * 0.8;
+      const warningTimer = setTimeout(() => {
+        const remainingSec = Math.round((timeoutMs - warningTimeMs) / 1000);
+        console.warn(`[orchestrate] ⚠️ ${label} still running, ${remainingSec}s remaining before timeout...`);
+      }, warningTimeMs);
+
       return Promise.race([
-        promise,
+        promise.then(result => {
+          clearTimeout(warningTimer);
+          return result;
+        }),
         new Promise<T>((_, reject) =>
-          setTimeout(() => reject(new Error(`timeout_${timeoutMs}ms`)), timeoutMs)
+          setTimeout(() => {
+            clearTimeout(warningTimer);
+            reject(new Error(`timeout_${timeoutMs}ms`));
+          }, timeoutMs)
         )
       ]);
     };
@@ -639,13 +652,16 @@ serve(async (req) => {
         await cacheDelete(cacheKey);
       }
       
-      console.log(`[orchestrate] Calling provider: ${provider} for ${type}:${value}`);
+      // Get provider-specific timeout
+      const providerTimeoutMs = getProviderTimeout(provider);
+      console.log(`[orchestrate] Calling provider: ${provider} for ${type}:${value} (timeout: ${formatProviderTimeout(provider)})`);
       
       // Log provider requested event
       await logEvent({
         provider,
         stage: 'requested',
-        status: 'pending'
+        status: 'pending',
+        metadata: { timeout_ms: providerTimeoutMs }
       });
       
       // Broadcast provider start
@@ -863,8 +879,9 @@ serve(async (req) => {
           // Apply retry wrapper first, then timeout wrapper
           return await withTimeout(
             attemptWithRetry(cachedOrFreshExecution, `${provider}`),
-            PROVIDER_TIMEOUT_MS,
-            `${provider}`
+            providerTimeoutMs,
+            `${provider}`,
+            provider
           );
         };
         
@@ -955,7 +972,7 @@ serve(async (req) => {
           payload: {
             provider,
             status: 'failed',
-            message: isTimeout ? `Timed out after ${PROVIDER_TIMEOUT_MS}ms` : `Failed: ${errorMessage}`,
+            message: isTimeout ? `Timed out after ${providerTimeoutMs}ms` : `Failed: ${errorMessage}`,
             completedProviders: completedCount,
             totalProviders: providers.length
           }
@@ -992,7 +1009,7 @@ serve(async (req) => {
           type: 'info',
           title: isTimeout ? `${provider} scan timed out` : `${provider} scan failed`,
           description: isTimeout 
-            ? `Provider ${provider} exceeded ${PROVIDER_TIMEOUT_MS / 1000}s timeout`
+            ? `Provider ${provider} exceeded ${providerTimeoutMs / 1000}s timeout`
             : `Provider ${provider} encountered an error and was skipped`,
           severity: 'info',
           provider: provider,

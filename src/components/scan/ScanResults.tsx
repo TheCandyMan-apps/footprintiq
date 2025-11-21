@@ -286,6 +286,17 @@ export function ScanResults({ jobId }: ScanResultsProps) {
         {/* Footprint DNA Card */}
         <FootprintDNACard scanId={jobId} userId={job?.requested_by || undefined} />
 
+        {job.status === 'pending' && job.started_at && Date.now() - new Date(job.started_at).getTime() > 120000 && (
+          <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 animate-pulse">
+            <p className="text-sm text-amber-600 dark:text-amber-400 font-medium">
+              ⚠️ Scan taking longer than usual - workers still processing results
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Large scans (Maigret/Sherlock) can take up to 2 minutes. Results will appear as providers complete.
+            </p>
+          </div>
+        )}
+
         {/* Progress Indicator */}
         <ScanProgress
           startedAt={job.started_at}
