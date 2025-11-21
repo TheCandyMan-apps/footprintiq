@@ -51,3 +51,9 @@ verify_jwt = true
 
 [functions.scan-repair]
 verify_jwt = false
+
+[functions.cleanup-stuck-scans]
+verify_jwt = false
+
+[functions.admin-get-errors]
+verify_jwt = true
