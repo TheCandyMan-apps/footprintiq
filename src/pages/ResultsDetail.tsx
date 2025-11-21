@@ -40,6 +40,7 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { exportAsJSON, exportAsCSV, exportAsPDF } from "@/lib/exports";
 import { ArtifactDownloadCard } from "@/components/scan/ArtifactDownloadCard";
 import { useArtifactGeneration } from "@/hooks/useArtifactGeneration";
+import { cn } from "@/lib/utils";
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -698,6 +699,55 @@ const ResultsDetail = () => {
             <TrustBadges variant="compact" />
           </div>
         </div>
+
+        {/* Scan Status Banner */}
+        {scan.status !== 'completed' && (
+          <Card className={cn(
+            "mb-6 border-2",
+            scan.status === 'failed' ? "border-destructive bg-destructive/5" :
+            scan.status === 'timeout' ? "border-warning bg-warning/5" :
+            "border-primary bg-primary/5"
+          )}>
+            <div className="p-6">
+              <div className="flex items-start gap-4">
+                {scan.status === 'failed' || scan.status === 'timeout' ? (
+                  <AlertTriangle className="h-6 w-6 text-destructive mt-1 flex-shrink-0" />
+                ) : (
+                  <Info className="h-6 w-6 text-primary mt-1 flex-shrink-0 animate-pulse" />
+                )}
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg mb-2">
+                    {scan.status === 'failed' && "Scan Failed"}
+                    {scan.status === 'timeout' && "Scan Timed Out"}
+                    {scan.status === 'pending' && "Scan Processing"}
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    {scan.status === 'failed' && "This scan encountered an error and could not complete. The scan was not picked up by our orchestrator."}
+                    {scan.status === 'timeout' && "This scan exceeded the maximum processing time (2 minutes) and was automatically stopped."}
+                    {scan.status === 'pending' && "Your scan is being processed. This typically takes 30-60 seconds."}
+                  </p>
+                  {(scan.status === 'failed' || scan.status === 'timeout') && (
+                    <div className="flex gap-3">
+                      <Button 
+                        onClick={() => navigate('/advanced-scan')}
+                        className="gap-2"
+                      >
+                        <Zap className="h-4 w-4" />
+                        Start New Scan
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => navigate('/dashboard')}
+                      >
+                        Back to Dashboard
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* Search Criteria Headline */}
         <Card className="mb-8 p-6 bg-gradient-to-br from-primary/5 to-accent/5 border-primary/20">
