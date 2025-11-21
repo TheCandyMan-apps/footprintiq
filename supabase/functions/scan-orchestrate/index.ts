@@ -263,7 +263,9 @@ serve(async (req) => {
       switch (tier) {
         case 'free': return 10;
         case 'pro': return 100;
+        case 'premium': return null; // unlimited
         case 'business': return null; // unlimited
+        case 'enterprise': return null; // unlimited
         default: return 10;
       }
     };
