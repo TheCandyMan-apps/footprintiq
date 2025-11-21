@@ -1,3 +1,46 @@
+/**
+ * Single source of truth for provider credit costs
+ */
+export const PROVIDER_COSTS: Record<string, number> = {
+  hibp: 1,
+  dehashed: 3,
+  intelx: 3,
+  pipl: 4,
+  hunter: 2,
+  fullhunt: 2,
+  clearbit: 2,
+  fullcontact: 2,
+  censys: 2,
+  binaryedge: 2,
+  shodan: 2,
+  securitytrails: 2,
+  otx: 1,
+  virustotal: 2,
+  abuseipdb: 1,
+  urlscan: 1,
+  googlecse: 1,
+  darksearch: 2,
+  gosearch: 2,
+  apify: 5,
+  "apify-social": 4,
+  "apify-osint": 5,
+  "apify-darkweb": 7,
+  maigret: 2,
+  sherlock: 1,
+  holehe: 1,
+  abstract_ipgeo: 1,
+  abstract_company: 1,
+};
+
+/**
+ * Get credit cost for a provider (default 1 if not in map)
+ */
+export function getProviderCost(provider: string): number {
+  return PROVIDER_COSTS[provider] ?? 1;
+}
+
+// ========== Spend tracking (existing functionality) ==========
+
 interface SpendRecord {
   calls: number;
   success: number;
