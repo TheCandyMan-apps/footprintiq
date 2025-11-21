@@ -16,6 +16,7 @@ import { sanitizeProviderData, sanitizeError } from '../_shared/sanitizeProvider
 import { isProviderDisabled } from '../_shared/providerKillSwitch.ts';
 import { getProviderCost } from '../_shared/providerCosts.ts';
 import { getProviderTimeout, formatProviderTimeout } from '../_shared/providerTimeouts.ts';
+import { logActivity } from '../_shared/activityLogger.ts';
 
 /**
  * Normalize confidence values to 0-1 range for database storage.
@@ -351,6 +352,17 @@ serve(async (req) => {
       : type === 'domain' ? 'domain'
       : type === 'phone' ? 'phone'
       : 'personal_details';
+
+    // Log admin scan activity if admin
+    if (isAdmin) {
+      await logActivity({
+        userId: user.id,
+        action: 'scan.admin_initiated',
+        entityType: 'scan',
+        entityId: scanId,
+        metadata: { workspace_id: workspaceId, scan_type: scanTypeDb }
+      });
+    }
 
     const { error: scanError } = await supabaseService
       .from('scans')

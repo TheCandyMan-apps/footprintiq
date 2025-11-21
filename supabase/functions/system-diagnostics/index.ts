@@ -131,7 +131,7 @@ serve(async (req) => {
       } catch (error: any) {
         checks.push({
           name: 'maigret_worker',
-          status: 'error',
+          status: 'degraded',
           responseTime: Date.now() - workerStart,
           message: `Worker unreachable: ${error.message}`
         });
@@ -139,7 +139,7 @@ serve(async (req) => {
     } else {
       checks.push({
         name: 'maigret_worker',
-        status: 'error',
+        status: 'degraded',
         message: 'Worker URL not configured'
       });
     }
@@ -179,7 +179,7 @@ serve(async (req) => {
       } catch (error: any) {
         checks.push({
           name: 'sherlock_worker',
-          status: 'error',
+          status: 'degraded',
           responseTime: Date.now() - workerStart,
           message: `Worker unreachable: ${error.message}`
         });
@@ -187,18 +187,22 @@ serve(async (req) => {
     } else {
       checks.push({
         name: 'sherlock_worker',
-        status: 'error',
+        status: 'degraded',
         message: 'Worker URL not configured'
       });
     }
 
-    // Determine overall status
+    // Determine overall status - only critical services (database) cause 'error' status
+    const hasCriticalError = checks
+      .filter(c => c.name === 'database')
+      .some(c => c.status === 'error');
+    
     const hasError = checks.some(c => c.status === 'error');
     const hasDegraded = checks.some(c => c.status === 'degraded');
     
-    const overall: 'ok' | 'degraded' | 'error' = hasError 
+    const overall: 'ok' | 'degraded' | 'error' = hasCriticalError 
       ? 'error' 
-      : hasDegraded 
+      : (hasError || hasDegraded)
         ? 'degraded' 
         : 'ok';
 
