@@ -87,8 +87,7 @@ Deno.serve(wrapHandler(async (req) => {
         completed_at,
         workspace_id,
         user_id,
-        workspaces!inner(name),
-        profiles!inner(email, full_name)
+        workspaces!inner(name)
       `, { count: 'exact' });
 
     if (status) {
@@ -115,7 +114,7 @@ Deno.serve(wrapHandler(async (req) => {
       throw ERROR_RESPONSES.INTERNAL_ERROR('Failed to list scans');
     }
 
-    // Get findings count for each scan
+    // Get findings count and user info for each scan
     const enrichedScans = await Promise.all(
       (scans || []).map(async (scan: any) => {
         const { count: findingsCount } = await supabase
@@ -123,12 +122,21 @@ Deno.serve(wrapHandler(async (req) => {
           .select('*', { count: 'exact', head: true })
           .eq('scan_id', scan.id);
 
+        // Fetch user details using auth admin API
+        let userEmail = null;
+        let userName = null;
+        if (scan.user_id) {
+          const { data: userData } = await supabase.auth.admin.getUserById(scan.user_id);
+          userEmail = userData.user?.email || null;
+          userName = userData.user?.user_metadata?.full_name || null;
+        }
+
         return {
           ...scan,
           findingsCount: findingsCount || 0,
           workspaceName: scan.workspaces?.name,
-          userEmail: scan.profiles?.email,
-          userName: scan.profiles?.full_name
+          userEmail,
+          userName
         };
       })
     );
