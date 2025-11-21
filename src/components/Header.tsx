@@ -56,6 +56,11 @@ function AdminMenuItem() {
         </Link>
       </DropdownMenuItem>
       <DropdownMenuItem asChild>
+        <Link to="/admin/scan-management" className="cursor-pointer">
+          Scan Management
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
         <Link to="/support" className="cursor-pointer">
           Support
         </Link>

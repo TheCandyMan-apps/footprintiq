@@ -137,6 +137,7 @@ const CostTracking = lazy(() => import("./pages/admin/CostTracking"));
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const ErrorViewer = lazy(() => import("./pages/admin/ErrorViewer"));
 const SystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
+const ScanManagement = lazy(() => import("./pages/admin/ScanManagement"));
 const Admin = lazy(() => import("./pages/Admin"));
 const OrganizationNew = lazy(() => import("./pages/OrganizationNew"));
 const Performance = lazy(() => import("./pages/admin/Performance"));
@@ -329,6 +330,7 @@ function RouterContent() {
           <Route path="/admin/roles" element={<RoleManagement />} />
           <Route path="/admin/rls-check" element={<RlsCheck />} />
           <Route path="/admin/security-report" element={<SecurityReport />} />
+          <Route path="/admin/scan-management" element={<ScanManagement />} />
           <Route path="/admin/providers" element={<Providers />} />
           <Route path="/admin/health" element={<Health />} />
           <Route path="/admin/observability" element={<Observability />} />

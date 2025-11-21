@@ -68,13 +68,13 @@ export default function WorkspaceManagement() {
         throw new Error("Only workspace owners can delete workspaces");
       }
 
-      const client: any = supabase;
-      const { error } = await client
-        .from("workspaces")
-        .delete()
-        .eq("id", workspaceId);
+      // Call edge function for cascade deletion
+      const { data, error } = await supabase.functions.invoke('delete-workspace', {
+        body: { workspaceId }
+      });
 
       if (error) throw error;
+      if (!data?.success) throw new Error(data?.message || 'Failed to delete workspace');
     },
     onSuccess: () => {
       toast.success("Workspace deleted successfully");
