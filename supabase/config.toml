@@ -55,5 +55,11 @@ verify_jwt = false
 [functions.cleanup-stuck-scans]
 verify_jwt = false
 
+[functions.scan-reconcile]
+verify_jwt = false
+
+[functions.reconcile-entitlements]
+verify_jwt = false
+
 [functions.admin-get-errors]
 verify_jwt = true
