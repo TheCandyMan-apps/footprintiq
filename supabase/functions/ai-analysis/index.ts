@@ -144,16 +144,27 @@ Format your response in clear sections with bullet points. Be specific and actio
 
     console.log('AI analysis completed successfully');
 
-    return secureJsonResponse({
-      analysis,
-      scanData: {
-        privacyScore: scan.privacy_score,
-        totalSources: scan.total_sources_found,
-        highRisk: scan.high_risk_count,
-        mediumRisk: scan.medium_risk_count,
-        lowRisk: scan.low_risk_count
+    return new Response(
+      JSON.stringify({
+        analysis,
+        scanData: {
+          privacyScore: scan.privacy_score,
+          totalSources: scan.total_sources_found,
+          highRisk: scan.high_risk_count,
+          mediumRisk: scan.medium_risk_count,
+          lowRisk: scan.low_risk_count
+        }
+      }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+          'X-Content-Type-Options': 'nosniff',
+          'X-Frame-Options': 'DENY',
+        }
       }
-    }, 200);
+    );
 
   } catch (error) {
     console.error('Error in ai-analysis function:', error);
