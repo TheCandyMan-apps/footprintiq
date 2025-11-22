@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MaigretPDFExport } from './MaigretPDFExport';
 import { detectScanPipeline } from '@/utils/scanPipeline';
+import { UnifiedResultsDisplay } from './UnifiedResultsDisplay';
 
 interface MaigretResult {
   id: string;
@@ -41,6 +42,13 @@ interface SimpleResultsViewerProps {
   onProvidersDetected?: (providers: string[], stats: Record<string, number>) => void;
 }
 
+interface SummaryResult {
+  platform: string;
+  url: string;
+  confidence: string;
+  status: string;
+}
+
 export function SimpleResultsViewer({ 
   jobId, 
   searchQuery = '', 
@@ -56,6 +64,11 @@ export function SimpleResultsViewer({
   const [pollCount, setPollCount] = useState(0);
   const [timedOut, setTimedOut] = useState(false);
   const [pipeline, setPipeline] = useState<'simple' | 'advanced' | null>(null);
+  const [providerResults, setProviderResults] = useState<{
+    maigret: SummaryResult[];
+    sherlock: SummaryResult[];
+    gosearch: SummaryResult[];
+  }>({ maigret: [], sherlock: [], gosearch: [] });
   
   // Provider status tracking
   const [maigretStatus, setMaigretStatus] = useState<'has_results' | 'empty_results' | 'error' | 'not_run'>('not_run');
@@ -117,23 +130,54 @@ export function SimpleResultsViewer({
           } else if (findings) {
             setSherlockFindings(findings as SherlockFinding[]);
             
+            // Transform Sherlock findings into summary format
+            const sherlockFindingsData = findings.filter(f => f.provider === 'sherlock' && f.kind === 'presence.hit');
+            const sherlockSummary: SummaryResult[] = sherlockFindingsData.map((f: any) => {
+              const urlEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'url') : null;
+              const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site') : null;
+              return {
+                platform: siteEvidence?.value || f.meta?.site || 'Unknown',
+                url: urlEvidence?.value || f.meta?.url || '',
+                confidence: f.confidence?.toString() || 'Unknown',
+                status: 'found',
+              };
+            });
+            
+            // Transform GoSearch findings into summary format
+            const gosearchFindingsData = findings.filter(f => f.provider === 'gosearch' && f.kind === 'presence.hit');
+            const gosearchSummary: SummaryResult[] = gosearchFindingsData.map((f: any) => {
+              const urlEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'url') : null;
+              const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site') : null;
+              return {
+                platform: siteEvidence?.value || f.meta?.site || 'Unknown',
+                url: urlEvidence?.value || f.meta?.url || '',
+                confidence: f.confidence?.toString() || 'Unknown',
+                status: 'found',
+              };
+            });
+            
+            // Update provider results state
+            setProviderResults(prev => ({
+              ...prev,
+              sherlock: sherlockSummary,
+              gosearch: gosearchSummary,
+            }));
+            
             // Detect Sherlock status
-            const sherlockFindingsData = findings.filter(f => f.provider === 'sherlock');
-            if (sherlockFindingsData.some((f: any) => f.kind === 'provider.empty_results')) {
+            if (sherlockFindingsData.length === 0 && findings.some((f: any) => f.provider === 'sherlock' && f.kind === 'provider.empty_results')) {
               setSherlockStatus('empty_results');
-            } else if (sherlockFindingsData.some((f: any) => f.kind === 'provider_error')) {
+            } else if (findings.some((f: any) => f.provider === 'sherlock' && f.kind === 'provider_error')) {
               setSherlockStatus('error');
-            } else if (sherlockFindingsData.filter((f: any) => f.kind === 'presence.hit').length > 0) {
+            } else if (sherlockFindingsData.length > 0) {
               setSherlockStatus('has_results');
             }
             
             // Detect GoSearch status
-            const gosearchFindingsData = findings.filter(f => f.provider === 'gosearch');
-            if (gosearchFindingsData.some((f: any) => f.kind === 'provider.empty_results')) {
+            if (gosearchFindingsData.length === 0 && findings.some((f: any) => f.provider === 'gosearch' && f.kind === 'provider.empty_results')) {
               setGosearchStatus('empty_results');
-            } else if (gosearchFindingsData.some((f: any) => f.kind === 'provider_error')) {
+            } else if (findings.some((f: any) => f.provider === 'gosearch' && f.kind === 'provider_error')) {
               setGosearchStatus('error');
-            } else if (gosearchFindingsData.filter((f: any) => f.kind === 'presence.hit').length > 0) {
+            } else if (gosearchFindingsData.length > 0) {
               setGosearchStatus('has_results');
             }
             
@@ -191,31 +235,50 @@ export function SimpleResultsViewer({
             }
 
             // Transform findings into MaigretResult format
+            const maigretFindings = findings?.filter((f: any) => f.provider === 'maigret' && f.kind === 'profile_presence') || [];
+            
             const transformedResult: MaigretResult = {
               id: jobId,
               job_id: jobId,
               username: scan.username || '',
               status: scan.status === 'completed' ? 'completed' : scan.status === 'error' ? 'failed' : scan.status as any,
-              summary: findings
-                ?.filter((f: any) => f.provider === 'maigret' && f.kind === 'profile_presence')
-                .map((f: any) => {
-                  // Extract fields from evidence array (each evidence is {key, value})
-                  const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site') : null;
-                  const urlEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'url') : null;
-                  const confidenceEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'confidence') : null;
-                  
-                  return {
-                    site: siteEvidence?.value || f.meta?.site || 'Unknown Site',
-                    url: urlEvidence?.value || f.meta?.url,
-                    status: 'found',
-                    provider: f.provider,
-                    confidence: confidenceEvidence?.value || f.confidence || f.meta?.confidence
-                  };
-                }) || [],
+              summary: maigretFindings.map((f: any) => {
+                // Extract fields from evidence array (each evidence is {key, value})
+                const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site') : null;
+                const urlEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'url') : null;
+                const confidenceEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'confidence') : null;
+                
+                return {
+                  site: siteEvidence?.value || f.meta?.site || 'Unknown Site',
+                  url: urlEvidence?.value || f.meta?.url,
+                  status: 'found',
+                  provider: f.provider,
+                  confidence: confidenceEvidence?.value || f.confidence || f.meta?.confidence
+                };
+              }),
               raw: findings || [],
               created_at: scan.created_at,
               updated_at: scan.completed_at || scan.created_at
             };
+
+            // Transform Maigret findings into summary format for provider-specific display
+            const maigretSummary: SummaryResult[] = maigretFindings.map((f: any) => {
+              const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site') : null;
+              const urlEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'url') : null;
+              const confidenceEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'confidence') : null;
+              
+              return {
+                platform: siteEvidence?.value || f.meta?.site || 'Unknown',
+                url: urlEvidence?.value || f.meta?.url || '',
+                confidence: confidenceEvidence?.value?.toString() || f.confidence?.toString() || 'Unknown',
+                status: 'found',
+              };
+            });
+
+            setProviderResults(prev => ({
+              ...prev,
+              maigret: maigretSummary,
+            }));
 
             setResult(transformedResult);
             setLoading(false);
@@ -772,236 +835,16 @@ export function SimpleResultsViewer({
         </Card>
       )}
 
-      {/* Maigret Results Card */}
-      {result.summary && Array.isArray(result.summary) && result.summary.length > 0 && (
-        <Card className="border-primary/20 bg-gradient-to-br from-card via-card to-primary/5 shadow-lg overflow-hidden animate-scale-in">
-          <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent border-b border-primary/20">
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Maigret Results
-              <Badge variant="secondary" className="ml-2">
-                {result.summary.length} found
-              </Badge>
-            </CardTitle>
-            <CardDescription>
-              Found username presence across multiple platforms via Maigret
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <ScrollArea className="h-[500px]">
-              <div className="p-6 space-y-3">
-                {result.summary
-                  .filter((item: any) => {
-                    // Use direct properties from transformed data
-                    const site = item.site;
-                    const url = item.url;
-                    const provider = item.provider || 'maigret';
-                    
-                    // Filter by search query
-                    if (searchQuery) {
-                      const searchLower = searchQuery.toLowerCase();
-                      const matchesSite = site ? site.toLowerCase().includes(searchLower) : false;
-                      const matchesUrl = url ? url.toLowerCase().includes(searchLower) : false;
-                      if (!matchesSite && !matchesUrl) return false;
-                    }
-                    
-                    // Filter by selected providers
-                    if (selectedProviders.length > 0 && !selectedProviders.includes(provider)) {
-                      return false;
-                    }
-                    
-                    return true;
-                  })
-                  .map((item: any, idx: number) => {
-                  // Use direct properties from transformed data
-                  const site = item.site;
-                  const url = item.url;
-                  const status = item.status;
-                  const provider = item.provider || 'maigret';
-                  
-                  // Provider badge colors
-                  const providerColors = {
-                    maigret: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-                    sherlock: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-                    whatsmyname: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
-                    gosearch: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
-                  };
-                  
-                  return (
-                    <div 
-                      key={idx}
-                      className="group p-4 rounded-lg border border-border/50 bg-gradient-to-br from-card to-card/50 hover:border-primary/50 hover:shadow-md transition-all duration-300 hover:scale-[1.02] animate-fade-in"
-                      style={{ animationDelay: `${idx * 50}ms` }}
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                          <span className="font-semibold text-base group-hover:text-primary transition-colors">
-                            {site || 'Unknown Site'}
-                          </span>
-                          {provider && (
-                            <Badge 
-                              variant="outline" 
-                              className={`text-xs ${providerColors[provider as keyof typeof providerColors] || 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'}`}
-                            >
-                              {provider}
-                            </Badge>
-                          )}
-                        </div>
-                        {status && (
-                          <Badge variant="outline" className="text-xs font-mono">
-                            {status}
-                          </Badge>
-                        )}
-                      </div>
-                      {url && (
-                        <a 
-                          href={url} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group/link"
-                        >
-                          <span className="break-all line-clamp-1">{url}</span>
-                          <ExternalLink className="h-3 w-3 flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity" />
-                        </a>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+      {/* Unified Results Display */}
+      {result.status === 'completed' && (providerResults.maigret.length > 0 || providerResults.sherlock.length > 0 || providerResults.gosearch.length > 0) && (
+        <UnifiedResultsDisplay
+          providerResults={providerResults}
+          searchQuery={searchQuery}
+          selectedProviders={selectedProviders}
+          pdfExportButton={<MaigretPDFExport username={result.username} summary={result.summary} jobId={result.job_id} />}
+        />
       )}
-
-      {/* Sherlock (WhatsMyName) Results Card */}
-      {result.status === 'completed' && !sherlockLoading && (
-        <Card className="border-purple-500/20 bg-gradient-to-br from-card via-card to-purple-500/5 shadow-lg overflow-hidden animate-scale-in">
-          <CardHeader className="bg-gradient-to-r from-purple-500/10 to-transparent border-b border-purple-500/20">
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-purple-500" />
-              Sherlock (WhatsMyName) Results
-              <Badge variant="secondary" className="ml-2">
-                {sherlockFindings.filter(f => f.kind !== 'provider_error').length} found
-              </Badge>
-            </CardTitle>
-            <CardDescription>
-              Username presence detected via Sherlock OSINT tool
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            {sherlockFindings.filter(f => f.kind !== 'provider_error').length === 0 ? (
-              <div className="p-6 text-center">
-                <Info className="w-8 h-8 mx-auto mb-3 text-muted-foreground/60" />
-                <p className="text-sm text-muted-foreground">
-                  Sherlock checked its site list for this username but didn't find confirmed profiles.
-                </p>
-                <p className="text-xs text-muted-foreground/75 mt-2">
-                  This can be normal, as each provider covers different sites. Maigret may still find matches on different platforms.
-                </p>
-              </div>
-            ) : (
-              <ScrollArea className="h-[500px]">
-                <div className="p-6 space-y-3">
-                  {sherlockFindings
-                    .filter((finding) => {
-                      // Exclude provider errors from display
-                      if (finding.kind === 'provider_error') return false;
-                      
-                      const getEvidenceValue = (evidence: any, key: string) => {
-                        if (!evidence || !Array.isArray(evidence)) return null;
-                        const found = evidence.find((e: any) => e.key === key);
-                        return found?.value;
-                      };
-                      
-                      const site = getEvidenceValue(finding.evidence, 'site');
-                      const url = getEvidenceValue(finding.evidence, 'url');
-                      
-                      // Filter by search query
-                      if (searchQuery) {
-                        const searchLower = searchQuery.toLowerCase();
-                        const matchesSite = site ? site.toLowerCase().includes(searchLower) : false;
-                        const matchesUrl = url ? url.toLowerCase().includes(searchLower) : false;
-                        if (!matchesSite && !matchesUrl) return false;
-                      }
-                      
-                      // Filter by selected providers
-                      if (selectedProviders.length > 0 && !selectedProviders.includes('sherlock')) {
-                        return false;
-                      }
-                      
-                      return true;
-                    })
-                    .map((finding, idx) => {
-                    const getEvidenceValue = (evidence: any, key: string) => {
-                      if (!evidence || !Array.isArray(evidence)) return null;
-                      const found = evidence.find((e: any) => e.key === key);
-                      return found?.value;
-                    };
-                    
-                    const site = getEvidenceValue(finding.evidence, 'site');
-                    const url = getEvidenceValue(finding.evidence, 'url');
-                    const status = getEvidenceValue(finding.evidence, 'status');
-                    
-                    // Check if this is an error finding
-                    const isError = finding.kind === 'provider_error';
-                    
-                    return (
-                      <div 
-                        key={finding.id}
-                        className={`group p-4 rounded-lg border ${
-                          isError 
-                            ? 'border-yellow-500/50 bg-yellow-50/5'
-                            : 'border-border/50 bg-gradient-to-br from-card to-card/50'
-                        } hover:border-purple-500/50 hover:shadow-md transition-all duration-300 hover:scale-[1.02] animate-fade-in`}
-                        style={{ animationDelay: `${idx * 50}ms` }}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className={`h-2 w-2 rounded-full ${isError ? 'bg-yellow-500' : 'bg-purple-500'} animate-pulse`} />
-                            <span className="font-semibold text-base group-hover:text-purple-500 transition-colors">
-                              {site || 'Unknown Site'}
-                            </span>
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300"
-                            >
-                              whatsmyname
-                            </Badge>
-                          </div>
-                          {status && (
-                            <Badge variant="outline" className="text-xs font-mono">
-                              {status}
-                            </Badge>
-                          )}
-                          {isError && (
-                            <Badge variant="outline" className="text-xs bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300">
-                              provider error
-                            </Badge>
-                          )}
-                        </div>
-                        {url && (
-                          <a 
-                            href={url} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-purple-500 transition-colors group/link"
-                          >
-                            <span className="break-all line-clamp-1">{url}</span>
-                            <ExternalLink className="h-3 w-3 flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity" />
-                          </a>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </ScrollArea>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {result.status === 'completed' && 
+      {result.status === 'completed' &&
        (!result.summary || result.summary.length === 0) && 
        sherlockFindings.filter(f => f.kind === 'presence.hit').length === 0 &&
        maigretStatus !== 'error' &&
