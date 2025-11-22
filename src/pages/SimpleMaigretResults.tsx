@@ -68,7 +68,7 @@ export default function SimpleMaigretResults() {
           <div className="space-y-4 animate-fade-in">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/scan/advanced')}
+              onClick={() => navigate('/maigret/simple')}
               className="hover:bg-primary/10 transition-all hover:scale-105"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
