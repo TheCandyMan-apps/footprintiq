@@ -31,7 +31,7 @@ function normalizeSocialFinder(raw: any) {
     const accs = Array.isArray(r?.accounts_found) ? r.accounts_found : [];
     for (const a of accs) {
       out.push({
-        provider: 'apify:social-media-finder-pro',
+        provider: 'apify-social',
         kind: 'profile.presence',
         severity: 'info',
         confidence: 0.7,
@@ -41,7 +41,7 @@ function normalizeSocialFinder(raw: any) {
           { key: 'username', value: a?.username ?? r?.username },
           { key: 'url', value: a?.url },
         ].filter(e => e.value),
-        meta: { site: a?.site, url: a?.url },
+        meta: { actor: 'social-media-finder-pro', site: a?.site, url: a?.url },
       });
     }
   }
@@ -51,7 +51,7 @@ function normalizeSocialFinder(raw: any) {
 function normalizeOsintScraper(raw: any) {
   const items = Array.isArray(raw) ? raw : [raw];
   return items.map((i) => ({
-    provider: 'apify:osint-scraper',
+    provider: 'apify-osint',
     kind: 'paste.leak',
     severity: 'medium',
     confidence: 0.65,
@@ -60,14 +60,14 @@ function normalizeOsintScraper(raw: any) {
       { key: 'keyword', value: i?.keyword },
       { key: 'url', value: i?.url },
     ].filter(e => e.value),
-    meta: { url: i?.url, keyword: i?.keyword },
+    meta: { actor: 'osint-scraper', url: i?.url, keyword: i?.keyword },
   }));
 }
 
 function normalizeDarkWeb(raw: any) {
   const items = Array.isArray(raw) ? raw : [raw];
   return items.map((i) => ({
-    provider: 'apify:darkweb-scraper',
+    provider: 'apify-darkweb',
     kind: 'darkweb.reference',
     severity: 'high',
     confidence: 0.6,
@@ -75,7 +75,7 @@ function normalizeDarkWeb(raw: any) {
     evidence: [
       { key: 'url', value: i?.url },
     ].filter(e => e.value),
-    meta: { url: i?.url, links: i?.links ?? [] },
+    meta: { actor: 'darkweb-scraper', url: i?.url, links: i?.links ?? [] },
   }));
 }
 

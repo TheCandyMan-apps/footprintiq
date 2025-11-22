@@ -79,6 +79,7 @@ export function SystemHealth() {
         return <Database className="w-5 h-5" />;
       case 'maigret_worker':
       case 'sherlock_worker':
+      case 'osint_worker':
         return <Server className="w-5 h-5" />;
       default:
         return <Activity className="w-5 h-5" />;
