@@ -651,9 +651,9 @@ const ResultsDetail = () => {
         {/* Header */}
         <div className="flex flex-col gap-4 mb-8">
           <div className="flex items-center justify-between">
-            <Button variant="outline" onClick={() => navigate("/dashboard")}>
+            <Button variant="outline" onClick={() => navigate("/scan/advanced")}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              Back to Scanner
             </Button>
             <div className="flex gap-2">
               <ComprehensiveReportExport

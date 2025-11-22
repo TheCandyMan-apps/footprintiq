@@ -533,6 +533,136 @@ export function SimpleResultsViewer({
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Provider Status Panel */}
+      <Collapsible defaultOpen={true}>
+        <Card className="border-border/50 bg-muted/30">
+          <CardHeader className="pb-3">
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between p-0 h-auto hover:bg-transparent">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Info className="h-4 w-4" />
+                  Provider Status
+                </CardTitle>
+                <span className="text-xs text-muted-foreground">Click to expand</span>
+              </Button>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="pt-0 space-y-2">
+              {/* Maigret Status */}
+              <div className="flex items-center justify-between p-2 rounded-md bg-background/50">
+                <span className="text-sm font-medium">Maigret</span>
+                {maigretStatus === 'has_results' && (
+                  <Badge variant="default" className="gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    {providerResults.maigret.length} profiles found
+                  </Badge>
+                )}
+                {maigretStatus === 'empty_results' && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Info className="h-3 w-3" />
+                    No profiles found
+                  </Badge>
+                )}
+                {maigretStatus === 'error' && (
+                  <Badge variant="destructive" className="gap-1">
+                    <XCircle className="h-3 w-3" />
+                    Failed
+                  </Badge>
+                )}
+                {maigretStatus === 'not_run' && (
+                  <Badge variant="outline" className="gap-1">
+                    <Clock className="h-3 w-3" />
+                    Not run
+                  </Badge>
+                )}
+              </div>
+
+              {/* Sherlock Status */}
+              <div className="flex items-center justify-between p-2 rounded-md bg-background/50">
+                <span className="text-sm font-medium">Sherlock</span>
+                {sherlockStatus === 'has_results' && (
+                  <Badge variant="default" className="gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    {providerResults.sherlock.length} profiles found
+                  </Badge>
+                )}
+                {sherlockStatus === 'empty_results' && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Info className="h-3 w-3" />
+                    No profiles found
+                  </Badge>
+                )}
+                {sherlockStatus === 'error' && (
+                  <Badge variant="destructive" className="gap-1">
+                    <XCircle className="h-3 w-3" />
+                    Failed
+                  </Badge>
+                )}
+                {sherlockStatus === 'not_run' && (
+                  <Badge variant="outline" className="gap-1">
+                    <Clock className="h-3 w-3" />
+                    Not run
+                  </Badge>
+                )}
+              </div>
+
+              {/* GoSearch Status */}
+              <div className="flex items-center justify-between p-2 rounded-md bg-background/50">
+                <span className="text-sm font-medium">GoSearch</span>
+                {gosearchStatus === 'has_results' && (
+                  <Badge variant="default" className="gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    {providerResults.gosearch.length} profiles found
+                  </Badge>
+                )}
+                {gosearchStatus === 'empty_results' && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Info className="h-3 w-3" />
+                    No profiles found
+                  </Badge>
+                )}
+                {gosearchStatus === 'error' && (
+                  <Badge variant="destructive" className="gap-1">
+                    <Clock className="h-3 w-3" />
+                    Timed out (120s)
+                  </Badge>
+                )}
+                {gosearchStatus === 'not_run' && (
+                  <Badge variant="outline" className="gap-1">
+                    <Clock className="h-3 w-3" />
+                    Not run
+                  </Badge>
+                )}
+              </div>
+
+              {/* Apify Social Media Finder Status */}
+              <div className="flex items-center justify-between p-2 rounded-md bg-background/50">
+                <span className="text-sm font-medium">Apify Social Media Finder</span>
+                {providerResults.apify.length > 0 && (
+                  <Badge variant="default" className="gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    {providerResults.apify.length} profiles found
+                  </Badge>
+                )}
+                {providerResults.apify.length === 0 && sherlockFindings.some(f => f.provider === 'apify-social') && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Info className="h-3 w-3" />
+                    Completed - No profiles found on 300+ platforms
+                  </Badge>
+                )}
+                {providerResults.apify.length === 0 && !sherlockFindings.some(f => f.provider === 'apify-social') && (
+                  <Badge variant="outline" className="gap-1">
+                    <Clock className="h-3 w-3" />
+                    Not run
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+
       {/* Progress Indicator for In-Progress Scans */}
       {(result.status === 'queued' || result.status === 'running') && (
         <Card className="border-primary/50 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent backdrop-blur-sm animate-scale-in">

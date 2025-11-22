@@ -157,13 +157,14 @@ export function MaigretPDFExport({ username, summary, jobId }: MaigretPDFExportP
         yPosition += 5;
 
         const tableData = summary.map(item => {
-          const site = getEvidenceValue(item.evidence, 'site');
-          const url = getEvidenceValue(item.evidence, 'url');
-          const status = getEvidenceValue(item.evidence, 'status');
+          // Handle both formats: direct properties OR evidence array
+          const site = item.site || item.platform || getEvidenceValue(item.evidence, 'site') || 'Unknown';
+          const url = item.url || getEvidenceValue(item.evidence, 'url') || '';
+          const status = item.status || getEvidenceValue(item.evidence, 'status') || 'found';
           
           return [
             site,
-            url.length > 50 ? url.substring(0, 47) + '...' : url,
+            url && url.length > 50 ? url.substring(0, 47) + '...' : url || 'N/A',
             status
           ];
         });
