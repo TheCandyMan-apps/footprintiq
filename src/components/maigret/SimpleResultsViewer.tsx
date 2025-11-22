@@ -68,7 +68,8 @@ export function SimpleResultsViewer({
     maigret: SummaryResult[];
     sherlock: SummaryResult[];
     gosearch: SummaryResult[];
-  }>({ maigret: [], sherlock: [], gosearch: [] });
+    apify: SummaryResult[];
+  }>({ maigret: [], sherlock: [], gosearch: [], apify: [] });
   
   // Provider status tracking
   const [maigretStatus, setMaigretStatus] = useState<'has_results' | 'empty_results' | 'error' | 'not_run'>('not_run');
@@ -118,12 +119,12 @@ export function SimpleResultsViewer({
           .maybeSingle();
 
         if (scan) {
-          // Load Sherlock and GoSearch findings from findings table
+          // Load Sherlock, GoSearch, and Apify Social findings from findings table
           const { data: findings, error } = await supabase
             .from('findings')
             .select('*')
             .eq('scan_id', scan.id)
-            .in('provider', ['sherlock', 'gosearch']);
+            .in('provider', ['sherlock', 'gosearch', 'apify-social']);
 
           if (error) {
             console.warn('[Sherlock/GoSearch] Error loading findings:', error);
@@ -156,11 +157,25 @@ export function SimpleResultsViewer({
               };
             });
             
+            // Transform Apify Social Media Finder findings into summary format
+            const apifyFindingsData = findings.filter(f => f.provider === 'apify-social' && f.kind === 'presence.hit');
+            const apifySummary: SummaryResult[] = apifyFindingsData.map((f: any) => {
+              const urlEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'url') : null;
+              const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site' || e.key === 'platform') : null;
+              return {
+                platform: siteEvidence?.value || f.meta?.platform || f.meta?.site || 'Unknown',
+                url: urlEvidence?.value || f.meta?.url || '',
+                confidence: f.confidence?.toString() || 'Unknown',
+                status: 'found',
+              };
+            });
+            
             // Update provider results state
             setProviderResults(prev => ({
               ...prev,
               sherlock: sherlockSummary,
               gosearch: gosearchSummary,
+              apify: apifySummary,
             }));
             
             // Detect Sherlock status
