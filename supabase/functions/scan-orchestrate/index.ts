@@ -1164,7 +1164,7 @@ serve(async (req) => {
           }
           
           if (data?.findings?.length) {
-            allFindings.push(...data.findings);
+            allFindings.push(...(data.findings || []));
             console.log(`[orchestrate] ${label}: ${data.findings.length} findings`);
           }
           
