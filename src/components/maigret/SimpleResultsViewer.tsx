@@ -158,7 +158,7 @@ export function SimpleResultsViewer({
             });
             
             // Transform Apify Social Media Finder findings into summary format
-            const apifyFindingsData = findings.filter(f => f.provider === 'apify-social' && f.kind === 'presence.hit');
+            const apifyFindingsData = findings.filter((f: any) => f.provider === 'apify-social' && f.kind !== 'provider_error');
             const apifySummary: SummaryResult[] = apifyFindingsData.map((f: any) => {
               const urlEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'url') : null;
               const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site' || e.key === 'platform') : null;
