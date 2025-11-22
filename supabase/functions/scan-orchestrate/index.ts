@@ -298,6 +298,64 @@ serve(async (req) => {
       console.log(`[orchestrate] Admin bypassing scan quota checks`);
     }
 
+    // =====================================================
+    // P1: COST / ABUSE GUARDRAILS
+    // =====================================================
+    // Enforce max providers per scan and daily scan limits per tier
+    const GUARDRAILS = {
+      MAX_PROVIDERS_PER_SCAN: {
+        free: parseInt(Deno.env.get('MAX_PROVIDERS_PER_SCAN_FREE') || '5'),
+        pro: parseInt(Deno.env.get('MAX_PROVIDERS_PER_SCAN_PRO') || '20'),
+        premium: parseInt(Deno.env.get('MAX_PROVIDERS_PER_SCAN_PREMIUM') || '50'),
+        business: parseInt(Deno.env.get('MAX_PROVIDERS_PER_SCAN_BUSINESS') || '50'),
+        enterprise: parseInt(Deno.env.get('MAX_PROVIDERS_PER_SCAN_ENTERPRISE') || '100'),
+      },
+      MAX_SCANS_PER_DAY: {
+        free: parseInt(Deno.env.get('MAX_SCANS_PER_DAY_FREE') || '3'),
+        pro: parseInt(Deno.env.get('MAX_SCANS_PER_DAY_PRO') || '20'),
+        premium: parseInt(Deno.env.get('MAX_SCANS_PER_DAY_PREMIUM') || '100'),
+        business: parseInt(Deno.env.get('MAX_SCANS_PER_DAY_BUSINESS') || '100'),
+        enterprise: parseInt(Deno.env.get('MAX_SCANS_PER_DAY_ENTERPRISE') || '500'),
+      },
+      GLOBAL_MAX_CONCURRENT_SCANS: parseInt(Deno.env.get('GLOBAL_MAX_CONCURRENT_SCANS') || '100'),
+    };
+
+    const tierKey = (workspace.subscription_tier || workspace.plan || 'free') as keyof typeof GUARDRAILS.MAX_PROVIDERS_PER_SCAN;
+    
+    if (!isAdmin) {
+      // Check daily scan limit
+      const today = new Date().toISOString().split('T')[0];
+      const { data: todayScans, error: scanCountError } = await supabaseService
+        .from('scans')
+        .select('id')
+        .eq('workspace_id', workspaceId)
+        .gte('created_at', today + 'T00:00:00Z')
+        .lt('created_at', today + 'T23:59:59Z');
+      
+      const dailyScansUsed = todayScans?.length || 0;
+      const dailyLimit = GUARDRAILS.MAX_SCANS_PER_DAY[tierKey] || GUARDRAILS.MAX_SCANS_PER_DAY.free;
+      
+      if (dailyScansUsed >= dailyLimit) {
+        console.log(`[orchestrate] Daily scan limit reached: ${dailyScansUsed}/${dailyLimit}`);
+        return bad(429, `Daily scan limit reached (${dailyScansUsed}/${dailyLimit}). Upgrade your plan or try again tomorrow.`);
+      }
+
+      // Check global concurrent scans
+      const { data: runningScans, error: runningError } = await supabaseService
+        .from('scans')
+        .select('id')
+        .in('status', ['pending', 'running']);
+      
+      const concurrentCount = runningScans?.length || 0;
+      if (concurrentCount >= GUARDRAILS.GLOBAL_MAX_CONCURRENT_SCANS) {
+        console.log(`[orchestrate] Global concurrent scan limit reached: ${concurrentCount}/${GUARDRAILS.GLOBAL_MAX_CONCURRENT_SCANS}`);
+        return bad(429, 'System at capacity. Please try again in a few minutes.');
+      }
+      
+      console.log(`[orchestrate] Guardrails passed: daily=${dailyScansUsed}/${dailyLimit}, concurrent=${concurrentCount}/${GUARDRAILS.GLOBAL_MAX_CONCURRENT_SCANS}`);
+    }
+
+
     // Check credits before scan (bypass for premium/enterprise users AND admins)
     const premiumTiers = ['premium', 'pro', 'business', 'enterprise'];
     const userTier = (workspace.subscription_tier || workspace.plan || 'free').toLowerCase();
@@ -453,6 +511,15 @@ serve(async (req) => {
     let providers = options.providers && options.providers.length > 0 
       ? options.providers 
       : DEFAULT_PROVIDERS_BY_TIER[type];
+
+    // Enforce max providers per scan guardrail (unless admin)
+    if (!isAdmin) {
+      const maxProvidersForTier = GUARDRAILS.MAX_PROVIDERS_PER_SCAN[tierKey] || GUARDRAILS.MAX_PROVIDERS_PER_SCAN.free;
+      if (providers.length > maxProvidersForTier) {
+        console.log(`[orchestrate] Provider count exceeds tier limit: ${providers.length} > ${maxProvidersForTier}`);
+        return bad(429, `Too many providers selected (${providers.length}). Your plan allows up to ${maxProvidersForTier} providers per scan.`);
+      }
+    }
 
     // Normalize legacy provider names (whatsmyname -> sherlock)
     providers = providers.map(p => p === 'whatsmyname' ? 'sherlock' : p);

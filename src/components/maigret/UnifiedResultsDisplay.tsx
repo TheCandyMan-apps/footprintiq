@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, ExternalLink } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ProviderStatusPanel } from './ProviderStatusPanel';
 
 interface SummaryResult {
   platform: string;
@@ -20,6 +21,7 @@ interface UnifiedResultsDisplayProps {
   searchQuery?: string;
   selectedProviders?: string[];
   pdfExportButton?: React.ReactNode;
+  scanId?: string;
 }
 
 export function UnifiedResultsDisplay({
@@ -27,6 +29,7 @@ export function UnifiedResultsDisplay({
   searchQuery = '',
   selectedProviders = [],
   pdfExportButton,
+  scanId,
 }: UnifiedResultsDisplayProps) {
   const totalResults =
     providerResults.maigret.length +
@@ -54,7 +57,15 @@ export function UnifiedResultsDisplay({
   };
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-card via-card to-primary/5 shadow-lg overflow-hidden animate-scale-in">
+    <>
+      {/* Provider Status Panel */}
+      {scanId && (
+        <div className="mb-4">
+          <ProviderStatusPanel scanId={scanId} />
+        </div>
+      )}
+
+      <Card className="border-primary/20 bg-gradient-to-br from-card via-card to-primary/5 shadow-lg overflow-hidden animate-scale-in">
       <CardHeader className="bg-gradient-to-r from-primary/10 to-transparent border-b border-primary/20">
         <div className="flex items-center justify-between">
           <div>
@@ -296,5 +307,6 @@ export function UnifiedResultsDisplay({
         </ScrollArea>
       </CardContent>
     </Card>
+    </>
   );
 }
