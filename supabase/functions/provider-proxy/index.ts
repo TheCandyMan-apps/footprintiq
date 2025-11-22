@@ -38,7 +38,7 @@ serve(async (req) => {
       );
     }
 
-    let { provider, target, type, options = {} } = await req.json();
+    let { provider, target, type, options = {}, workspaceId } = await req.json();
     
     // Normalize legacy provider names
     if (provider === 'whatsmyname') {
@@ -90,20 +90,20 @@ serve(async (req) => {
         result = await callApify(target, options.platform);
         break;
       case 'apify-social': {
-        const apifyResp = await callApifyRunner('xtech/social-media-finder-pro', target, { searchTerm: target });
-        const findings = apifyResp?.result?.findings || apifyResp?.findings || [];
+        const apifyResp = await callApifyRunner('xtech/social-media-finder-pro', target, { searchTerm: target }, workspaceId);
+        const findings = apifyResp?.findings || [];
         result = { findings };
         break;
       }
       case 'apify-osint': {
-        const apifyResp = await callApifyRunner('epctex/osint-scraper', target, { keywords: [target], modules: ['pastebin', 'github_gist', 'codepad'] });
-        const findings = apifyResp?.result?.findings || apifyResp?.findings || [];
+        const apifyResp = await callApifyRunner('epctex/osint-scraper', target, { keywords: [target], modules: ['pastebin', 'github_gist', 'codepad'] }, workspaceId);
+        const findings = apifyResp?.findings || [];
         result = { findings };
         break;
       }
       case 'apify-darkweb': {
-        const apifyResp = await callApifyRunner('epctex/darkweb-scraper', target, { keywords: [target], maxDepth: options.darkwebDepth || 2 });
-        const findings = apifyResp?.result?.findings || apifyResp?.findings || [];
+        const apifyResp = await callApifyRunner('epctex/darkweb-scraper', target, { keywords: [target], maxDepth: options.darkwebDepth || 2 }, workspaceId);
+        const findings = apifyResp?.findings || [];
         result = { findings };
         break;
       }
@@ -1130,7 +1130,7 @@ async function callAbuseIPDB(ip: string) {
   return await response.json();
 }
 
-async function callApifyRunner(actorId: string, target: string, input: Record<string, any>) {
+async function callApifyRunner(actorId: string, target: string, input: Record<string, any>, workspaceId?: string) {
   const API_TOKEN = Deno.env.get('APIFY_API_TOKEN');
   if (!API_TOKEN) {
     console.log('[callApifyRunner] No APIFY_API_TOKEN configured, skipping');
@@ -1147,7 +1147,7 @@ async function callApifyRunner(actorId: string, target: string, input: Record<st
           'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
         },
         body: JSON.stringify({
-          workspaceId: 'system', // Use system workspace for provider-proxy calls
+          workspaceId: workspaceId || 'system',
           actorSlug: actorId,
           payload: { ...input, searchTerm: target },
         }),

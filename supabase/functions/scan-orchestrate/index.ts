@@ -932,7 +932,7 @@ serve(async (req) => {
               console.log(`[orchestrate] Calling ${provider} for ${type}: "${value}"`);
               
               const { data, error } = await supabase.functions.invoke('provider-proxy', {
-                body: { provider, target: value, type }
+                body: { provider, target: value, type, workspaceId }
               });
               
               const elapsed = Date.now() - startTime;
