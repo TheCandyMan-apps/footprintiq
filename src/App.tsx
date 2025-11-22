@@ -178,6 +178,9 @@ const MaigretSelfTest = lazy(() => import("./pages/MaigretSelfTest"));
 const MaigretMonitoring = lazy(() => import("./pages/MaigretMonitoring"));
 const UsernamesPage = lazy(() => import("./pages/scan/UsernamesPage"));
 const UsernameResultsPage = lazy(() => import("./pages/scan/UsernameResultsPage"));
+const OpsConsole = lazy(() => import("./pages/admin/OpsConsole"));
+const AuditViewer = lazy(() => import("./pages/admin/AuditViewer"));
+const Referrals = lazy(() => import("./pages/Referrals"));
 
 
 const queryClient = new QueryClient({
@@ -378,6 +381,9 @@ function RouterContent() {
           <Route path="/admin/workspace-audit" element={<WorkspaceAudit />} />
           <Route path="/admin/performance" element={<Performance />} />
           <Route path="/admin/errors" element={<ErrorViewer />} />
+          <Route path="/admin/ops" element={<OpsConsole />} />
+          <Route path="/admin/audit-viewer" element={<AuditViewer />} />
+          <Route path="/referrals" element={<Referrals />} />
           <Route path="/admin/system-health" element={<SystemHealth />} />
           <Route path="/admin/users" element={<Admin />} />
           <Route path="/admin/roles" element={<Admin />} />
