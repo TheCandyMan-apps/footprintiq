@@ -145,8 +145,9 @@ export function SimpleResultsViewer({
             });
             
             // Transform GoSearch findings into summary format
-            const gosearchFindingsData = findings.filter(f => f.provider === 'gosearch' && f.kind === 'presence.hit');
-            const gosearchSummary: SummaryResult[] = gosearchFindingsData.map((f: any) => {
+            const gosearchAll = findings.filter((f: any) => f.provider === 'gosearch');
+            const gosearchHits = gosearchAll.filter((f: any) => f.kind === 'presence.hit');
+            const gosearchSummary: SummaryResult[] = gosearchHits.map((f: any) => {
               const urlEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'url') : null;
               const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site') : null;
               return {
@@ -188,12 +189,18 @@ export function SimpleResultsViewer({
             }
             
             // Detect GoSearch status
-            if (gosearchFindingsData.length === 0 && findings.some((f: any) => f.provider === 'gosearch' && f.kind === 'provider.empty_results')) {
+            if (gosearchAll.some((f: any) => f.kind === 'provider.timeout')) {
+              setGosearchStatus('error'); // UI already labels error as "Timed out (120s)"
+            } else if (gosearchAll.some((f: any) => f.kind === 'provider.empty_results')) {
               setGosearchStatus('empty_results');
-            } else if (findings.some((f: any) => f.provider === 'gosearch' && f.kind === 'provider_error')) {
+            } else if (gosearchAll.some((f: any) => f.kind === 'provider_error')) {
               setGosearchStatus('error');
-            } else if (gosearchFindingsData.length > 0) {
+            } else if (gosearchHits.length > 0) {
               setGosearchStatus('has_results');
+            } else if (gosearchAll.length > 0) {
+              setGosearchStatus('empty_results'); // ran but no hits
+            } else {
+              setGosearchStatus('not_run');
             }
             
             // Debug: Log provider errors if any

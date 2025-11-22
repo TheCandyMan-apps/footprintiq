@@ -89,21 +89,24 @@ serve(async (req) => {
       case 'apify':
         result = await callApify(target, options.platform);
         break;
-      case 'apify-social':
-        result = await callApifyRunner('xtech/social-media-finder-pro', target, { searchTerm: target });
-        // Map to UFM
-        result = { findings: normalizeApifyResults(result, 'apify-social', 'presence.hit') };
+      case 'apify-social': {
+        const apifyResp = await callApifyRunner('xtech/social-media-finder-pro', target, { searchTerm: target });
+        const findings = apifyResp?.result?.findings || apifyResp?.findings || [];
+        result = { findings };
         break;
-      case 'apify-osint':
-        result = await callApifyRunner('epctex/osint-scraper', target, { keywords: [target], modules: ['pastebin', 'github_gist', 'codepad'] });
-        // Map to UFM
-        result = { findings: normalizeApifyResults(result, 'apify-osint', 'leak.paste') };
+      }
+      case 'apify-osint': {
+        const apifyResp = await callApifyRunner('epctex/osint-scraper', target, { keywords: [target], modules: ['pastebin', 'github_gist', 'codepad'] });
+        const findings = apifyResp?.result?.findings || apifyResp?.findings || [];
+        result = { findings };
         break;
-      case 'apify-darkweb':
-        result = await callApifyRunner('epctex/darkweb-scraper', target, { keywords: [target], maxDepth: options.darkwebDepth || 2 });
-        // Map to UFM
-        result = { findings: normalizeApifyResults(result, 'apify-darkweb', 'darkweb.hit') };
+      }
+      case 'apify-darkweb': {
+        const apifyResp = await callApifyRunner('epctex/darkweb-scraper', target, { keywords: [target], maxDepth: options.darkwebDepth || 2 });
+        const findings = apifyResp?.result?.findings || apifyResp?.findings || [];
+        result = { findings };
         break;
+      }
       case 'googlecse':
         result = await callGoogleCSE(target);
         break;
