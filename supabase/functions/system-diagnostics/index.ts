@@ -192,6 +192,54 @@ serve(async (req) => {
       });
     }
 
+    // Check 4: OSINT Worker (GoSearch)
+    const osintWorkerUrl = Deno.env.get('OSINT_WORKER_URL');
+    if (osintWorkerUrl) {
+      const workerStart = Date.now();
+      try {
+        const response = await safeFetch(
+          `${osintWorkerUrl}/health`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${Deno.env.get('OSINT_WORKER_TOKEN') || ''}`
+            }
+          },
+          5000,
+          0
+        );
+
+        if (response.ok) {
+          checks.push({
+            name: 'osint_worker',
+            status: 'ok',
+            responseTime: Date.now() - workerStart,
+            message: 'OSINT worker responding'
+          });
+        } else {
+          checks.push({
+            name: 'osint_worker',
+            status: 'degraded',
+            responseTime: Date.now() - workerStart,
+            message: `Worker returned status ${response.status}`
+          });
+        }
+      } catch (error: any) {
+        checks.push({
+          name: 'osint_worker',
+          status: 'degraded',
+          responseTime: Date.now() - workerStart,
+          message: `Worker unreachable: ${error.message}`
+        });
+      }
+    } else {
+      checks.push({
+        name: 'osint_worker',
+        status: 'degraded',
+        message: 'Worker URL not configured'
+      });
+    }
+
     // Determine overall status - only critical services (database) cause 'error' status
     const hasCriticalError = checks
       .filter(c => c.name === 'database')
