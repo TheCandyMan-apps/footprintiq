@@ -34,7 +34,7 @@ async function checkRateLimit(supabase: any, userId: string, endpoint: string) {
     p_identifier: userId,
     p_identifier_type: 'user',
     p_endpoint: endpoint,
-    p_max_requests: 30,
+    p_max_requests: 100,  // 100 per hour (more reasonable for scan insights)
     p_window_seconds: 3600
   });
 

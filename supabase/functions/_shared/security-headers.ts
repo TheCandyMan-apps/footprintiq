@@ -59,13 +59,22 @@ export function addSecurityHeaders(headers: HeadersInit = {}): HeadersInit {
 export function secureJsonResponse(
   data: unknown,
   status: number = 200,
-  additionalHeaders: HeadersInit = {}
+  additionalHeaders: HeadersInit = {},
+  corsEnabled: boolean = true  // Default to true for most use cases
 ): Response {
+  const corsHeaders: Record<string, string> = corsEnabled ? {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  } : {};
+  
   return new Response(JSON.stringify(data), {
     status,
-    headers: addSecurityHeaders({
-      'Content-Type': 'application/json',
-      ...additionalHeaders,
-    }),
+    headers: {
+      ...corsHeaders,
+      ...addSecurityHeaders({
+        'Content-Type': 'application/json',
+        ...additionalHeaders,
+      }),
+    },
   });
 }
