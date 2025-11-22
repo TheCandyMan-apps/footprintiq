@@ -76,21 +76,6 @@ const TOOLS: Tool[] = [
     ],
     scanTypes: ['email'],
   },
-  {
-    id: 'recon-ng',
-    name: 'Recon-ng',
-    description: 'Enterprise-grade reconnaissance framework with advanced correlation and relationship mapping',
-    icon: Shield,
-    tier: 'enterprise',
-    features: [
-      'Advanced correlation',
-      'Relationship mapping',
-      'Custom modules',
-      'API integrations',
-      'Export capabilities',
-    ],
-    scanTypes: ['email', 'domain', 'username', 'phone'],
-  },
 ];
 
 interface ToolSelectorProps {

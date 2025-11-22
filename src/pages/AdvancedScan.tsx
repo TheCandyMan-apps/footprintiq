@@ -62,7 +62,7 @@ export default function AdvancedScan() {
   const { anonModeEnabled, toggleAnonMode, isLoading: anonLoading } = useAnonMode();
   const { startTracking } = useActiveScanContext();
   const { isWorkerOffline, getWorkerByName } = useWorkerStatus();
-  const { isFree, checkFeatureAccess } = useTierGating();
+  const { isFree, checkFeatureAccess, subscriptionTier: actualSubscriptionTier } = useTierGating();
   
   // ✅ ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   useLowCreditToast();
@@ -97,7 +97,6 @@ export default function AdvancedScan() {
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
   const [progressOpen, setProgressOpen] = useState(false);
   const [modalScanId, setModalScanId] = useState<string | null>(null);
-  const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [selectedTool, setSelectedTool] = useState<string>("maigret");
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [maigretEnabled, setMaigretEnabled] = useState(true);
@@ -681,7 +680,7 @@ export default function AdvancedScan() {
               selectedTool={selectedTool}
               onToolChange={setSelectedTool}
               scanType={scanType}
-              userTier={isFree ? 'free' : subscriptionTier === 'enterprise' ? 'enterprise' : 'pro'}
+              userTier={(actualSubscriptionTier || 'free') as 'free' | 'pro' | 'enterprise'}
               disabled={isScanning}
             />
 
@@ -844,7 +843,7 @@ export default function AdvancedScan() {
                         <Zap className="w-4 h-4 text-primary" />
                         Sherlock Enrich (Premium)
                       </h4>
-                      <WhatsMyNameTab subscriptionTier={subscriptionTier} />
+                      <WhatsMyNameTab subscriptionTier={actualSubscriptionTier || 'free'} />
                     </Card>
                   )}
                 </>
