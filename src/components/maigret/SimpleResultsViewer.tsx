@@ -857,6 +857,7 @@ export function SimpleResultsViewer({
           searchQuery={searchQuery}
           selectedProviders={selectedProviders}
           pdfExportButton={<MaigretPDFExport username={result.username} summary={result.summary} jobId={result.job_id} />}
+          scanId={jobId}
         />
       )}
       {result.status === 'completed' &&
