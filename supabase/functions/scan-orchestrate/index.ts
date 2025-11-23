@@ -1309,11 +1309,15 @@ serve(async (req) => {
 
       // Social Media Finder
       if (premium.socialMediaFinder && value) {
+        console.log('[orchestrate] Adding apify-social provider for socialMediaFinder toggle');
+        providers = [...providers, 'apify-social'];
         await callApify('xtech/social-media-finder-pro', { username: value }, 'apify:social-media-finder-pro');
       }
       
       // OSINT Scraper
       if (premium.osintScraper && premium.osintKeywords?.length) {
+        console.log('[orchestrate] Adding apify-osint provider for osintScraper toggle');
+        providers = [...providers, 'apify-osint'];
         await callApify('epctex/osint-scraper', {
           searchKeywords: premium.osintKeywords,
           codepad: true,
@@ -1328,6 +1332,8 @@ serve(async (req) => {
       
       // Dark Web Scraper
       if (premium.darkwebScraper && (premium.darkwebUrls?.length || premium.darkwebSearch)) {
+        console.log('[orchestrate] Adding apify-darkweb provider for darkwebScraper toggle');
+        providers = [...providers, 'apify-darkweb'];
         await callApify('epctex/darkweb-scraper', {
           startUrls: premium.darkwebUrls ?? [],
           search: premium.darkwebSearch ?? '',

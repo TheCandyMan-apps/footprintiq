@@ -14,24 +14,44 @@ interface ProviderStats {
   successRate: number;
 }
 
-export function ProviderHealthMap() {
+export function ProviderHealthMap({ workspaceId }: { workspaceId?: string }) {
   const { data: providers = [], isLoading, refetch } = useQuery({
-    queryKey: ['provider-health'],
+    queryKey: ['provider-health', workspaceId],
     queryFn: async () => {
       const sevenDaysAgo = subDays(new Date(), 7);
-      const { data: events, error } = await supabase
+      
+      let eventsQuery = supabase
         .from('scan_events')
-        .select('provider, status')
+        .select('provider, status, scan_id')
         .gte('created_at', sevenDaysAgo.toISOString())
         .in('status', ['success', 'failed', 'timeout']);
+      
+      const { data: events, error } = await eventsQuery;
 
       if (error) throw error;
       if (!events || events.length === 0) return [];
+      
+      // If workspace filter needed, get scan_ids for that workspace
+      let workspaceScanIds: Set<string> | null = null;
+      if (workspaceId) {
+        const { data: scans } = await supabase
+          .from('scans')
+          .select('id')
+          .eq('workspace_id', workspaceId)
+          .gte('created_at', sevenDaysAgo.toISOString());
+        
+        workspaceScanIds = new Set(scans?.map(s => s.id) || []);
+      }
+      
+      // Filter events by workspace scans if needed
+      const filteredEvents = workspaceScanIds 
+        ? events.filter(e => e.scan_id && workspaceScanIds.has(e.scan_id))
+        : events;
 
       // Aggregate by provider
       const statsMap = new Map<string, { success: number; failed: number }>();
       
-      events.forEach(event => {
+      filteredEvents.forEach(event => {
         if (!event.provider) return;
         const stats = statsMap.get(event.provider) || { success: 0, failed: 0 };
         if (event.status === 'success') stats.success++;
@@ -82,6 +102,7 @@ export function ProviderHealthMap() {
             onClick={() => refetch()}
             disabled={isLoading}
             className="h-8 w-8"
+            aria-label="Refresh provider health data"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>

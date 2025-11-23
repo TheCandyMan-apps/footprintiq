@@ -88,14 +88,15 @@ export function CreditUsageMeter() {
                 </p>
               </div>
               {!isPremium && balance < 20 && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => navigate('/buy-credits')}
-                >
-                  Buy Credits
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => navigate('/buy-credits')}
+                    aria-label="Navigate to buy credits page"
+                  >
+                    Buy Credits
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
               )}
             </div>
 

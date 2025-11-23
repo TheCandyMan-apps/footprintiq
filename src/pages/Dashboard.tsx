@@ -246,10 +246,13 @@ const Dashboard = () => {
         head: true
       }).eq('user_id', userId).is('archived_at', null).gte('created_at', dayAgo.toISOString());
 
-      // Get aggregate high risk count from all scans
-      const {
-        data: aggregateData
-      } = await supabase.from('scans').select('high_risk_count').eq('user_id', userId).is('archived_at', null);
+      // Get aggregate high risk count from all scans with workspace filter
+      const currentWorkspaceId = workspace?.id;
+      const scanFilter = currentWorkspaceId 
+        ? supabase.from('scans').select('high_risk_count').eq('workspace_id', currentWorkspaceId).is('archived_at', null)
+        : supabase.from('scans').select('high_risk_count').eq('user_id', userId).is('archived_at', null);
+      
+      const { data: aggregateData } = await scanFilter;
       const totalHighRisk = aggregateData?.reduce((sum, scan) => sum + (scan.high_risk_count || 0), 0) || 0;
       
       // Get active watchlists count
@@ -274,11 +277,12 @@ const Dashboard = () => {
         const recentScan = scansData[0];
         setLatestScanId(recentScan.id);
 
-        // Fetch findings for DNA metrics
-        const { data: dnaFindings } = await supabase
-          .from('findings')
-          .select('kind, severity, provider')
-          .eq('scan_id', recentScan.id);
+        // Fetch findings for DNA metrics with workspace filter
+        const findingsQuery = currentWorkspaceId
+          ? supabase.from('findings').select('kind, severity, provider').eq('scan_id', recentScan.id).eq('workspace_id', currentWorkspaceId)
+          : supabase.from('findings').select('kind, severity, provider').eq('scan_id', recentScan.id);
+        
+        const { data: dnaFindings } = await findingsQuery;
 
         if (dnaFindings && dnaFindings.length > 0) {
           // Enhanced keyword arrays for accurate categorization
@@ -763,7 +767,7 @@ const Dashboard = () => {
                       {/* Top Row: Breach Trend + Provider Health */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <BreachTrendChart workspaceId={workspace?.id} />
-                        <ProviderHealthMap />
+                        <ProviderHealthMap workspaceId={workspace?.id} />
                       </div>
 
                       {/* Middle Row: Identity Risk + Credit Usage */}
@@ -779,7 +783,7 @@ const Dashboard = () => {
 
                       {/* Bottom Row: Recent Findings + Recommended Scans */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <RecentFindings />
+                        <RecentFindings workspaceId={workspace?.id} />
                         <RecommendedScans />
                       </div>
                     </div>

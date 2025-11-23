@@ -86,11 +86,12 @@ export function SimpleResultsViewer({
       const providerCounts: Record<string, number> = {};
       const providerSet = new Set<string>();
       
-      // Add Maigret results
+            // Add Maigret results
       providerSet.add('maigret');
       if (result.summary && Array.isArray(result.summary)) {
         result.summary.forEach((item: any) => {
           const provider = item.provider || 'maigret';
+          providerSet.add(provider); // ✅ FIX: Add provider to set
           providerCounts[provider] = (providerCounts[provider] || 0) + 1;
         });
       }
@@ -356,6 +357,7 @@ export function SimpleResultsViewer({
               providerSet.add('maigret');
               findings.forEach((f: any) => {
                 const provider = f.provider || 'maigret';
+                providerSet.add(provider); // ✅ FIX: Add provider to set
                 providerCounts[provider] = (providerCounts[provider] || 0) + 1;
               });
               
@@ -390,6 +392,7 @@ export function SimpleResultsViewer({
               providerSet.add('maigret');
               data.summary.forEach((item: any) => {
                 const provider = item.provider || 'maigret';
+                providerSet.add(provider); // ✅ FIX: Add provider to set
                 providerCounts[provider] = (providerCounts[provider] || 0) + 1;
               });
               

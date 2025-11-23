@@ -32,6 +32,9 @@ export const flags = {
   
   /** Performance monitoring and bundle optimization */
   perfMonitoring: import.meta.env.VITE_FLAG_PERF_MONITORING === "true",
+  
+  /** Pipl person search provider (requires PIPL_API_KEY) */
+  piplProvider: import.meta.env.VITE_FLAG_PIPL_PROVIDER === "true",
 } as const;
 
 /**

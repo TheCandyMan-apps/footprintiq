@@ -22,5 +22,8 @@ export const IMPLEMENTED_PROVIDERS = new Set([
   'maigret', 'sherlock', 'holehe',
 
   // Abstract / enrichment
-  'abstract_ipgeo', 'abstract_company'
+  'abstract_ipgeo', 'abstract_company',
+  
+  // Person search (feature-flagged)
+  'pipl'
 ]);

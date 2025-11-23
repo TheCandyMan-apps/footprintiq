@@ -137,8 +137,9 @@ export default function SimpleMaigretResults() {
           <div className="space-y-4 animate-fade-in">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/maigret/simple')}
+              onClick={() => navigate('/scan/advanced')}
               className="hover:bg-primary/10 transition-all hover:scale-105"
+              aria-label="Return to advanced scanner"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Scanner
@@ -173,11 +174,14 @@ export default function SimpleMaigretResults() {
           
           {/* GoSearch Pending Notice */}
           {gosearchPending && (
-            <Alert className="border-blue-500/20 bg-blue-500/5">
+            <Alert className="border-blue-500/20 bg-blue-500/5 animate-pulse">
               <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
-              <AlertDescription className="text-sm">
-                GoSearch is still running in the background... 
-                Results will appear automatically when ready (usually 1-3 minutes).
+              <AlertDescription className="text-sm font-medium">
+                <span className="text-blue-600 dark:text-blue-400">GoSearch is still running in the background</span>
+                <br />
+                <span className="text-muted-foreground text-xs">
+                  Results will appear automatically when ready (usually 1-3 minutes). No need to refresh the page.
+                </span>
               </AlertDescription>
             </Alert>
           )}
