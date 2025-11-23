@@ -20,6 +20,7 @@ export default function SimpleMaigretResults() {
   const [providerStats, setProviderStats] = useState<Record<string, number>>({});
   const [scanUserId, setScanUserId] = useState<string | undefined>(undefined);
   const [totalFindings, setTotalFindings] = useState(0);
+  const [providerStatuses, setProviderStatuses] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -140,16 +141,25 @@ export default function SimpleMaigretResults() {
               const total = Object.values(stats).reduce((sum, count) => sum + count, 0);
               setTotalFindings(total);
             }}
+            onProviderStatusesDetected={(statuses) => {
+              setProviderStatuses(statuses);
+            }}
           />
 
           {/* AI Insights Panel */}
           <AIInsightsPanel 
             scanData={{
               jobId: jobId,
-              breaches: providerStats.maigret || 0,
+              scanType: 'username',
               exposures: totalFindings,
-              dataBrokers: providerStats.sherlock || 0,
-              darkWeb: providerStats.gosearch || 0,
+              presence: (providerStats.maigret || 0) + (providerStats.sherlock || 0) + (providerStats.gosearch || 0) + (providerStats['apify-social'] || 0),
+              providers: {
+                maigret: providerStats.maigret || 0,
+                sherlock: providerStats.sherlock || 0,
+                gosearch: providerStats.gosearch || 0,
+                apifySocial: providerStats['apify-social'] || 0
+              },
+              statuses: providerStatuses
             }}
           />
         </div>
