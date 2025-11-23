@@ -221,6 +221,39 @@ export const HELP_ENTRIES: Record<string, HelpEntry> = {
     content: "Interactive walkthroughs for first-time users. Access via Help menu or press ⌘K and search for 'tour'.",
     category: "Search",
     tags: ["onboarding", "tutorial", "help", "learning"]
+  },
+  
+  // Removal Tracking Help Entries
+  removal_tracker: {
+    key: "removal_tracker",
+    title: "Removal Success Tracker",
+    content: "Shows your progress removing personal data from data brokers and people search sites like Whitepages, Spokeo, Intelius, and BeenVerified. Does not track social media platforms.",
+    category: "Results",
+    tags: ["removal", "privacy", "data-brokers"]
+  },
+  
+  removal_status: {
+    key: "removal_status",
+    title: "Removal Request Status",
+    content: "Pending = awaiting processing, In Progress = removal initiated, Completed = successfully removed, Failed = removal unsuccessful. Only applies to data brokers, not social platforms.",
+    category: "Results",
+    tags: ["removal", "status"]
+  },
+  
+  broker_success_rate: {
+    key: "broker_success_rate",
+    title: "Broker Success Rate",
+    content: "Percentage of completed removal requests for each data broker. Calculated as: (Completed / (Completed + Failed)) × 100. Higher percentages indicate more successful removals.",
+    category: "Results",
+    tags: ["removal", "metrics"]
+  },
+  
+  broker_performance: {
+    key: "broker_performance",
+    title: "Broker Performance Details",
+    content: "Detailed breakdown of removal attempts per data broker, showing completed, failed, and pending requests. Only legitimate data brokers are shown here.",
+    category: "Results",
+    tags: ["removal", "details"]
   }
 };
 
