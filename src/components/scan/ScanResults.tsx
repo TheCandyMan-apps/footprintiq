@@ -65,7 +65,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
           setJob(updatedJob);
           
           // Unsubscribe when job reaches any terminal status
-          const terminalStatuses = ['finished', 'error', 'cancelled', 'partial'];
+          const terminalStatuses = ['finished', 'error', 'cancelled', 'partial', 'completed', 'completed_partial', 'failed', 'failed_timeout'];
           if (terminalStatuses.includes(updatedJob.status) && jobChannelRef.current) {
             console.debug('[ScanResults] Job terminal, unsubscribing from job channel');
             supabase.removeChannel(jobChannelRef.current);
@@ -123,7 +123,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
           status: scanData.status,
           created_at: scanData.created_at,
           started_at: scanData.created_at,
-          finished_at: scanData.status === 'completed' || scanData.status === 'failed' ? scanData.created_at : null,
+          finished_at: ['completed', 'completed_partial', 'failed', 'failed_timeout'].includes(scanData.status) ? scanData.created_at : null,
           error: null,
           all_sites: false,
           requested_by: scanData.user_id
@@ -234,8 +234,8 @@ export function ScanResults({ jobId }: ScanResultsProps) {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mb-2">
-              <Badge variant={job.status === 'finished' ? 'default' : 'secondary'}>
-                {job.status}
+              <Badge variant={['finished', 'completed', 'completed_partial'].includes(job.status) ? 'default' : 'secondary'}>
+                {job.status === 'completed_partial' ? 'Completed (Partial)' : job.status}
               </Badge>
               {job.started_at && (
                 <span>Started: {new Date(job.started_at).toLocaleString()}</span>
