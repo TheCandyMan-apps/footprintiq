@@ -318,11 +318,14 @@ serve(async (req) => {
         const data = await callOsintWorker('gosearch', { username: target });
         console.log(`[GoSearch] Raw worker response:`, JSON.stringify(data).substring(0, 500));
         
-        const results = (data?.results ?? []) as any[];
-        console.log(`[GoSearch] Extracted ${results.length} results for username: "${target}"`);
+        // Safe extraction with defensive checks
+        const safeResults = Array.isArray(data?.results) ? data.results : [];
+        const safeMeta = typeof data?.meta === 'object' && data?.meta !== null ? data.meta : {};
+        
+        console.log(`[GoSearch] Extracted ${safeResults.length} results for username: "${target}"`);
         
         // Handle empty results with provider.empty_results
-        if (results.length === 0) {
+        if (safeResults.length === 0) {
           console.warn(`[GoSearch] Worker returned 0 results for username: "${target}"`);
           const now = new Date().toISOString();
           const emptyResultFinding = {
@@ -338,7 +341,8 @@ serve(async (req) => {
             meta: {
               reason: 'legitimate_no_results',
               worker_url: Deno.env.get('OSINT_WORKER_URL'),
-              checked_at: now
+              checked_at: now,
+              ...safeMeta
             }
           };
           result = { findings: [emptyResultFinding] };
@@ -347,7 +351,7 @@ serve(async (req) => {
         }
         
         const now = new Date().toISOString();
-        const findings = results.map((item) => ({
+        const findings = safeResults.map((item: any) => ({
           provider: 'gosearch',
           kind: 'presence.hit',
           severity: 'low' as const,
@@ -417,7 +421,16 @@ async function callOsintWorker(
     console.warn(`[OSINT Worker] Health check failed:`, healthError);
   }
 
-  const fullUrl = new URL('/scan', workerUrl).toString();
+  // Build scan URL with optimization params for GoSearch
+  const scanUrl = new URL('/scan', workerUrl);
+  if (tool === 'gosearch') {
+    scanUrl.searchParams.set('fast', 'true');
+    scanUrl.searchParams.set('workers', '25');
+    scanUrl.searchParams.set('screenshot', 'false');
+    console.log(`[OSINT Worker] 🚀 GoSearch optimizations applied: ${scanUrl.toString()}`);
+  }
+  
+  const fullUrl = scanUrl.toString();
   const resp = await fetch(fullUrl, {
     method: 'POST',
     headers: {
