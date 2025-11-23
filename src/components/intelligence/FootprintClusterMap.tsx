@@ -1,15 +1,47 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Network } from 'lucide-react';
+import { Network, Loader2 } from 'lucide-react';
 import { getPlatformCategory, getCategoryColor, type PlatformCategory } from '@/lib/categoryMapping';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface FootprintClusterMapProps {
-  platforms: Array<{ name: string }>;
+  scanId: string;
 }
 
-export function FootprintClusterMap({ platforms }: FootprintClusterMapProps) {
+export function FootprintClusterMap({ scanId }: FootprintClusterMapProps) {
+  const { data: platforms, isLoading } = useQuery({
+    queryKey: ['footprint-clusters', scanId],
+    queryFn: async () => {
+      const { data: findings } = await supabase
+        .from('findings')
+        .select('kind, evidence')
+        .eq('scan_id', scanId)
+        .neq('kind', 'provider.error')
+        .neq('kind', 'provider.timeout');
+
+      if (!findings || findings.length === 0) return [];
+
+      return findings.map(f => {
+        const evidence = Array.isArray(f.evidence) ? f.evidence : [];
+        const siteEvidence = evidence.find((e: any) => e.key === 'site' || e.key === 'platform');
+        return { name: (siteEvidence as any)?.value || f.kind };
+      });
+    },
+    enabled: !!scanId
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="pt-6 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
   // Group platforms by category
-  const clusters = platforms.reduce((acc, { name }) => {
+  const clusters = (platforms || []).reduce((acc, { name }) => {
     const category = getPlatformCategory(name);
     if (!acc[category]) acc[category] = [];
     acc[category].push(name);

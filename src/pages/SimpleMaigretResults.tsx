@@ -10,6 +10,11 @@ import { ResultsFilters } from '@/components/maigret/ResultsFilters';
 import { FootprintDNACard } from '@/components/FootprintDNACard';
 import AIInsightsPanel from '@/components/AIInsightsPanel';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { IdentityStrengthScore } from '@/components/intelligence/IdentityStrengthScore';
+import { UsernameUniquenessScore } from '@/components/intelligence/UsernameUniquenessScore';
+import { FootprintClusterMap } from '@/components/intelligence/FootprintClusterMap';
+import { RequestStatusDistribution } from '@/components/scan/RequestStatusDistribution';
+import { ProviderStatusPanel } from '@/components/maigret/ProviderStatusPanel';
 
 export default function SimpleMaigretResults() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -188,6 +193,19 @@ export default function SimpleMaigretResults() {
 
           {/* Footprint DNA Card */}
           <FootprintDNACard scanId={jobId} userId={scanUserId} />
+
+          {/* Intelligence Layer - Username Scan Tiles */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <IdentityStrengthScore scanId={jobId} />
+            <UsernameUniquenessScore scanId={jobId} />
+            <FootprintClusterMap scanId={jobId} />
+          </div>
+
+          {/* Request Status Distribution */}
+          <RequestStatusDistribution scanId={jobId} />
+
+          {/* Provider Status Panel */}
+          <ProviderStatusPanel scanId={jobId} />
 
           {/* Filters */}
           <ResultsFilters

@@ -1,8 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileJson, FileSpreadsheet, FileText, FileCode, Loader2 } from 'lucide-react';
+import { Download, FileJson, FileSpreadsheet, FileText, FileCode, Loader2, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { HelpIcon } from '@/components/ui/help-icon';
+import { useState } from 'react';
 
 interface Artifact {
   id: string;
@@ -30,6 +32,17 @@ const ARTIFACT_CONFIG = {
 };
 
 export function ArtifactDownloadCard({ artifacts, isGenerating, onRegenerate }: ArtifactDownloadCardProps) {
+  const [regenerating, setRegenerating] = useState(false);
+  
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      await onRegenerate?.();
+    } finally {
+      setRegenerating(false);
+    }
+  };
+  
   const formatFileSize = (bytes: number | null) => {
     if (!bytes) return 'Unknown size';
     const kb = bytes / 1024;
@@ -48,34 +61,64 @@ export function ArtifactDownloadCard({ artifacts, isGenerating, onRegenerate }: 
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div>
+          <div className="flex items-center gap-2">
             <CardTitle className="flex items-center gap-2">
-              <Download className="h-5 w-5" />
               Export Artifacts
+              <HelpIcon helpKey="artifacts" />
+              {isGenerating && <Loader2 className="h-4 w-4 animate-spin" />}
             </CardTitle>
-            <CardDescription>
-              Download scan results in various formats
-            </CardDescription>
           </div>
-          {onRegenerate && !isGenerating && artifacts.length > 0 && (
-            <Button variant="outline" size="sm" onClick={onRegenerate}>
+          {artifacts.length > 0 && onRegenerate && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRegenerate}
+              disabled={isGenerating || regenerating}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${regenerating ? 'animate-spin' : ''}`} />
               Regenerate
             </Button>
           )}
         </div>
+        <CardDescription>
+          Download scan results in various formats
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {isGenerating ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-            <span className="text-muted-foreground">Generating artifacts...</span>
+        {isGenerating && (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-sm font-medium mb-1">Generating artifacts...</p>
+            <p className="text-xs text-muted-foreground">
+              This usually takes 10-30 seconds
+            </p>
           </div>
-        ) : artifacts.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>No artifacts available for this scan.</p>
-            <p className="text-sm mt-2">Select export formats when starting a scan to generate artifacts.</p>
+        )}
+        
+        {!isGenerating && artifacts.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <p className="text-sm font-medium mb-1 text-muted-foreground">
+              No artifacts available for this scan
+            </p>
+            <p className="text-xs text-muted-foreground mb-4">
+              Artifacts can be generated after the scan completes
+            </p>
+            {onRegenerate && (
+              <Button 
+                onClick={handleRegenerate} 
+                disabled={regenerating}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${regenerating ? 'animate-spin' : ''}`} />
+                Generate Artifacts Now
+              </Button>
+            )}
           </div>
-        ) : (
+        )}
+        
+        {!isGenerating && artifacts.length > 0 && (
           <div className="grid gap-3">
             {artifacts.map((artifact) => {
               const config = ARTIFACT_CONFIG[artifact.artifact_type as keyof typeof ARTIFACT_CONFIG];

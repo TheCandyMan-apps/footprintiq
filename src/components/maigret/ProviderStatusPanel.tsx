@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown, CheckCircle, Clock, XCircle, Ban, Lock, CreditCard, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 interface ScanEvent {
   id: string;
@@ -145,6 +146,7 @@ export function ProviderStatusPanel({ scanId }: ProviderStatusPanelProps) {
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <span>Provider Status</span>
+                <HelpIcon helpKey="provider_status" />
                 <Badge variant="secondary" className="text-xs">
                   {providerStatuses.length} providers
                 </Badge>
