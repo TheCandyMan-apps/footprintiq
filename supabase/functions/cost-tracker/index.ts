@@ -21,25 +21,73 @@ serve(async (req) => {
   }
 
   try {
-    // Internal authentication check
-    const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN');
-    const authHeader = req.headers.get('x-internal-token');
+    const url = new URL(req.url);
+    const action = url.searchParams.get("action") || "record";
     
-    if (!authHeader || authHeader !== WORKER_TOKEN) {
-      console.warn('Unauthorized access attempt to cost-tracker');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Valid internal token required' }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+    // For write operations (record), require internal token
+    if (action === "record") {
+      const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN');
+      const authHeader = req.headers.get('x-internal-token');
+      
+      if (!authHeader || authHeader !== WORKER_TOKEN) {
+        console.warn('Unauthorized access attempt to cost-tracker (record)');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Valid internal token required' }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+        );
+      }
+    }
+
+    // For read operations (summary, recommend), require admin JWT
+    if (action === "summary" || action === "recommend") {
+      const authHeader = req.headers.get('authorization');
+      if (!authHeader) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Authentication required' }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+        );
+      }
+
+      // Create client with user JWT to verify authentication
+      const token = authHeader.replace('Bearer ', '');
+      const supabaseClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+        { global: { headers: { Authorization: authHeader } } }
       );
+
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
+      if (userError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid authentication' }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
+        );
+      }
+
+      // Check if user is admin
+      const adminClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+
+      const { data: roleData } = await adminClient
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .single();
+
+      if (!roleData || roleData.role !== 'admin') {
+        return new Response(
+          JSON.stringify({ error: 'Admin access required' }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
+        );
+      }
     }
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
-
-    const url = new URL(req.url);
-    const action = url.searchParams.get("action") || "record";
 
     // Record a cost event
     if (action === "record" && req.method === "POST") {

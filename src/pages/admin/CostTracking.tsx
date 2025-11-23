@@ -45,8 +45,8 @@ export default function CostTracking() {
   const { data: costs, isLoading: costsLoading } = useQuery({
     queryKey: ["provider-costs"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("cost-tracker", {
-        body: { action: "summary", period: "daily" }
+      const { data, error } = await supabase.functions.invoke("cost-tracker?action=summary&period=daily", {
+        method: "GET"
       });
       if (error) throw error;
       return data.costs;

@@ -105,8 +105,8 @@ export default function AdminDashboard() {
   const { data: costs } = useQuery({
     queryKey: ["cost-summary"],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("cost-tracker", {
-        body: { action: "summary", period: "daily" }
+      const { data, error } = await supabase.functions.invoke("cost-tracker?action=summary&period=daily", {
+        method: "GET"
       });
       if (error) throw error;
       return data;
