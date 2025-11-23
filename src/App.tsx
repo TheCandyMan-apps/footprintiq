@@ -219,6 +219,12 @@ function RouterContent() {
       action: () => navigate("/dashboard"),
       description: "Go to Dashboard",
     },
+    {
+      key: ",",
+      ctrl: true,
+      action: () => navigate("/settings"),
+      description: "Open Settings",
+    },
   ]);
   
   return (

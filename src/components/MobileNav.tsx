@@ -23,7 +23,7 @@ const navItems = [
   { label: "Trends", href: "/trends", icon: TrendingUp },
   { label: "Teams", href: "/teams", icon: Users },
   { label: "Security", href: "/security", icon: Shield },
-  { label: "Settings", href: "/preferences", icon: Settings },
+  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function MobileNav() {
