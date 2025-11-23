@@ -96,6 +96,7 @@ export async function exportAsPDF(findings: Finding[], redactPII: boolean = true
  */
 export async function exportAsPDFLegacy(findings: Finding[], redactPII: boolean = true): Promise<void> {
   try {
+    console.log(`[Export] Starting PDF generation for ${findings.length} findings`);
     const { jsPDF } = await import('jspdf');
     const autoTable = (await import('jspdf-autotable')).default;
     
@@ -442,9 +443,11 @@ export async function exportAsPDFLegacy(findings: Finding[], redactPII: boolean 
 
     // Save the PDF
     doc.save(`footprintiq-scan-${Date.now()}.pdf`);
+    console.log('[Export] PDF generated successfully');
   } catch (error) {
     console.error('Failed to generate PDF:', error);
-    throw new Error('Failed to generate PDF report');
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error occurred';
+    throw new Error(`Failed to generate PDF report: ${errorMsg}. Please try CSV export instead.`);
   }
 }
 

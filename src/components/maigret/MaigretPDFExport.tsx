@@ -64,7 +64,14 @@ export function MaigretPDFExport({ username, summary, jobId }: MaigretPDFExportP
 
   const generatePDF = async () => {
     setLoading(true);
+    
+    toast({
+      title: "Preparing Export...",
+      description: "Generating your username scan report",
+    });
+
     try {
+      console.log(`[Export] Generating Maigret PDF for ${username}`);
       const branding = await loadBrandingSettings();
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -79,20 +86,27 @@ export function MaigretPDFExport({ username, summary, jobId }: MaigretPDFExportP
       
       let yPosition = 20;
 
-      // Logo
+      // Logo with timeout
       if (branding.logo_url) {
         try {
           const img = new Image();
           img.crossOrigin = 'anonymous';
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
+          
+          const timeoutPromise = new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error('Logo timeout')), 5000)
+          );
+          
+          const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('Logo load failed'));
             img.src = branding.logo_url!;
           });
-          doc.addImage(img, 'PNG', 14, yPosition, 30, 30);
+          
+          const loadedImg = await Promise.race([loadPromise, timeoutPromise]);
+          doc.addImage(loadedImg, 'PNG', 14, yPosition, 30, 30);
           yPosition += 35;
         } catch (error) {
-          console.error('Error loading logo:', error);
+          console.warn('Logo failed to load, continuing without it:', error);
         }
       }
 
@@ -212,15 +226,17 @@ export function MaigretPDFExport({ username, summary, jobId }: MaigretPDFExportP
       // Save
       doc.save(`username-osint-${username}-${new Date().toISOString().split('T')[0]}.pdf`);
       
+      console.log('[Export] Maigret PDF generated successfully');
       toast({
-        title: "PDF Generated",
+        title: "✅ PDF Generated",
         description: "Your username scan report has been downloaded.",
       });
     } catch (error: any) {
       console.error('Error generating PDF:', error);
+      const errorMsg = error?.message || 'Unknown error occurred';
       toast({
         title: "Export Failed",
-        description: error.message || "Could not generate PDF report",
+        description: `Could not generate PDF: ${errorMsg}`,
         variant: "destructive",
       });
     } finally {
