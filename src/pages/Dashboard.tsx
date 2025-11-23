@@ -13,6 +13,7 @@ import { IdentityRiskCard } from '@/components/dashboard/IdentityRiskCard';
 import { RecentFindings } from '@/components/dashboard/RecentFindings';
 import { CreditUsageMeter } from '@/components/dashboard/CreditUsageMeter';
 import { RecommendedScans } from '@/components/dashboard/RecommendedScans';
+import { PowerFeaturesCard } from '@/components/dashboard/PowerFeaturesCard';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -786,6 +787,11 @@ const Dashboard = () => {
                     {/* Social Integrations */}
                     <div className="mt-8">
                       <SocialIntegrations />
+                    </div>
+
+                    {/* Power Features Discovery */}
+                    <div className="mt-8">
+                      <PowerFeaturesCard />
                     </div>
 
                     {/* Dashboard v2 Enhancements */}
