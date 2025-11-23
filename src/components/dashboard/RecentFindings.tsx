@@ -109,6 +109,15 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
               <div
                 key={finding.id}
                 onClick={() => navigate(`/results/${finding.scan_id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/results/${finding.scan_id}`);
+                  }
+                }}
+                aria-label={`View details for ${finding.kind} finding from ${finding.provider}`}
                 className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer group"
               >
                 <div className="flex-1 min-w-0">
