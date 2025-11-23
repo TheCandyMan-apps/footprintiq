@@ -96,6 +96,17 @@ export const Footer = () => {
             </ul>
           </div>
 
+          {/* Account */}
+          <div>
+            <h3 className="font-semibold mb-4">Account</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link to="/settings" className="hover:text-primary transition-colors">Settings</Link></li>
+              <li><Link to="/preferences" className="hover:text-primary transition-colors">Preferences</Link></li>
+              <li><Link to="/api-keys" className="hover:text-primary transition-colors">API Keys</Link></li>
+              <li><Link to="/referrals" className="hover:text-primary transition-colors">Referrals</Link></li>
+            </ul>
+          </div>
+
           {/* Legal & Trust */}
           <div>
             <h3 className="font-semibold mb-4">Legal & Trust</h3>

@@ -1,4 +1,4 @@
-import { Shield, Menu, X, User, CreditCard, ChevronDown, Search, UserCircle, Coins } from "lucide-react";
+import { Shield, Menu, X, User, CreditCard, ChevronDown, Search, UserCircle, Coins, Settings } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -332,6 +332,12 @@ export const Header = () => {
                   <DropdownMenuItem asChild>
                     <Link to="/workspace-management" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">
                       Manage Workspaces
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/settings" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
                     </Link>
                   </DropdownMenuItem>
                   <AdminMenuItem />
