@@ -145,6 +145,17 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
                 aria-label={`View details for ${finding.kind} finding from ${finding.provider}`}
                 className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer group"
               >
+                {/* Platform Favicon */}
+                <div className="flex-shrink-0 mt-1">
+                  <img 
+                    src={`https://www.google.com/s2/favicons?domain=${finding.provider}&sz=32`}
+                    alt={`${finding.provider} icon`}
+                    className="w-6 h-6 rounded"
+                    onError={(e) => {
+                      e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"%3E%3Ccircle cx="12" cy="12" r="10"%3E%3C/circle%3E%3Cpath d="M12 16v-4M12 8h.01"%3E%3C/path%3E%3C/svg%3E';
+                    }}
+                  />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <Badge variant={getSeverityColor(finding.severity)} className="text-xs">
