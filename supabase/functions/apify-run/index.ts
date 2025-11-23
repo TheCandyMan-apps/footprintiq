@@ -23,9 +23,10 @@ function adminClient() {
   return createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 }
 
-// Normalizers for 3 actors
+// Normalizers for 3 actors with safe array handling
 function normalizeSocialFinder(raw: any) {
-  const items = Array.isArray(raw) ? raw : [raw];
+  // Safe array wrapping to prevent undefined.length errors
+  const items = Array.isArray(raw) ? raw : (raw ? [raw] : []);
   const out: any[] = [];
   for (const r of items) {
     const accs = Array.isArray(r?.accounts_found) ? r.accounts_found : [];
@@ -49,7 +50,8 @@ function normalizeSocialFinder(raw: any) {
 }
 
 function normalizeOsintScraper(raw: any) {
-  const items = Array.isArray(raw) ? raw : [raw];
+  // Safe array wrapping
+  const items = Array.isArray(raw) ? raw : (raw ? [raw] : []);
   return items.map((i) => ({
     provider: 'apify-osint',
     kind: 'paste.leak',
@@ -65,7 +67,8 @@ function normalizeOsintScraper(raw: any) {
 }
 
 function normalizeDarkWeb(raw: any) {
-  const items = Array.isArray(raw) ? raw : [raw];
+  // Safe array wrapping
+  const items = Array.isArray(raw) ? raw : (raw ? [raw] : []);
   return items.map((i) => ({
     provider: 'apify-darkweb',
     kind: 'darkweb.reference',
@@ -75,7 +78,7 @@ function normalizeDarkWeb(raw: any) {
     evidence: [
       { key: 'url', value: i?.url },
     ].filter(e => e.value),
-    meta: { actor: 'darkweb-scraper', url: i?.url, links: i?.links ?? [] },
+    meta: { actor: 'darkweb-scraper', url: i?.url, links: Array.isArray(i?.links) ? i.links : [] },
   }));
 }
 
@@ -237,18 +240,38 @@ serve(async (req) => {
       return jsonResponse(200, { findings: [], notice: `DATASET_${ds.status}`, taskId, debited });
     }
 
+    // Safe wrapping of dataset items to prevent undefined.length errors
+    const safeItems = Array.isArray(ds.items) ? ds.items : [];
+    console.log(`[apify-run] Retrieved ${safeItems.length} items from dataset ${datasetId}`);
+
     const normalize = normalizerFor(actorSlug);
-    const findings = normalize(ds.items ?? []);
+    const findings = normalize(safeItems);
     
     await admin.from('apify_results').insert({
       task_id: taskId,
-      result: { actorSlug, rawCount: (ds.items ?? []).length, findings },
+      result: { 
+        actorSlug, 
+        rawCount: safeItems.length, 
+        findings,
+        datasetId,
+        runId 
+      },
     });
     
     await admin.from('apify_tasks').update({ status: 'succeeded', finished_at: new Date() }).eq('id', taskId);
 
-    console.log(`[apify-run] Success: ${findings.length} findings`);
-    return jsonResponse(200, { findings, taskId, debited });
+    console.log(`[apify-run] Success: ${findings.length} findings from ${safeItems.length} raw items`);
+    return jsonResponse(200, { 
+      findings, 
+      taskId, 
+      debited,
+      meta: {
+        actor: actorSlug,
+        runId,
+        datasetId,
+        itemCount: safeItems.length
+      }
+    });
   } catch (e) {
     console.error('[apify-run] Error:', e);
     const errorMessage = e instanceof Error ? e.message : String(e);

@@ -749,8 +749,17 @@ serve(async (req) => {
         await cacheDelete(cacheKey);
       }
       
-      // Get provider-specific timeout
-      const providerTimeoutMs = getProviderTimeout(provider);
+      // Get provider-specific timeout with GoSearch override
+      let providerTimeoutMs = getProviderTimeout(provider);
+      let concurrency = 10; // Default concurrency
+      
+      // GoSearch override: longer timeout, lower concurrency to avoid worker overload
+      if (provider === 'gosearch') {
+        providerTimeoutMs = 90000; // 90 seconds
+        concurrency = 1; // Sequential to prevent worker saturation
+        console.log(`[orchestrate] 🎯 GoSearch override: timeout=${providerTimeoutMs}ms, concurrency=${concurrency}`);
+      }
+      
       console.log(`[orchestrate] Calling provider: ${provider} for ${type}:${value} (timeout: ${formatProviderTimeout(provider)})`);
       
       // Log provider requested event
@@ -758,7 +767,7 @@ serve(async (req) => {
         provider,
         stage: 'requested',
         status: 'pending',
-        metadata: { timeout_ms: providerTimeoutMs }
+        metadata: { timeout_ms: providerTimeoutMs, concurrency }
       });
       
       // Broadcast provider start
