@@ -46,8 +46,10 @@ Focus on breach response, data broker opt-outs, and security hardening.`;
         preferredModel: "gemini", // Using secure Lovable AI (gemini or gpt available)
       });
       setInsights(content);
-    } catch (e) {
-      setInsights("AI unavailable – please try again later.");
+    } catch (e: any) {
+      const errorMessage = e?.message || "AI unavailable – please try again later.";
+      setInsights(`⚠️ ${errorMessage}`);
+      console.error('AI Insights error:', e);
     } finally {
       setLoading(false);
     }
