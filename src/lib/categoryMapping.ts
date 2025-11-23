@@ -68,6 +68,12 @@ export const PLATFORM_CATEGORIES: Record<string, PlatformCategory> = {
 };
 
 export function getPlatformCategory(platform: string): PlatformCategory {
+  // Defensive check for undefined/null/empty input
+  if (!platform || typeof platform !== 'string' || platform.trim() === '') {
+    console.warn('[getPlatformCategory] Invalid platform value:', platform);
+    return 'Other';
+  }
+  
   const normalized = platform.toLowerCase().replace(/\s+/g, '').replace(/\.com$/, '');
   return PLATFORM_CATEGORIES[normalized] || 'Other';
 }
