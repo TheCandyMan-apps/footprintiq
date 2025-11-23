@@ -22,7 +22,7 @@ const actionColors: Record<string, string> = {
 };
 
 export function ActivityLogs() {
-  const { logs, loading } = useActivityLogs();
+  const { logs, loading, error } = useActivityLogs();
 
   if (loading) {
     return (
@@ -33,6 +33,38 @@ export function ActivityLogs() {
             Activity Logs
           </CardTitle>
           <CardDescription>Loading activity logs...</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Activity Logs
+          </CardTitle>
+          <CardDescription className="text-destructive">
+            Error loading logs: {error.message}
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (!logs || logs.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Activity Logs
+          </CardTitle>
+          <CardDescription>
+            No activity logs found. Activity will be tracked as users interact with the platform.
+          </CardDescription>
         </CardHeader>
       </Card>
     );

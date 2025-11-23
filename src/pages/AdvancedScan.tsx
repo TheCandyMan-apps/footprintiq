@@ -54,6 +54,7 @@ import { WorkerStatus } from "@/components/maigret/WorkerStatus";
 import { useUsernameScan } from "@/hooks/useUsernameScan";
 import { Switch } from "@/components/ui/switch";
 import { UpgradeModal } from "@/components/UpgradeModal";
+import { ActivityLogger } from "@/lib/activityLogger";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -473,6 +474,14 @@ export default function AdvancedScan() {
           );
 
           if (error) {
+            // Log failed scan attempt
+            ActivityLogger.scanFailed(preScanId, {
+              scan_type: scanType,
+              target: targetValue,
+              error: error.message,
+              workspace_id: workspace.id,
+            }).catch(console.error);
+            
             // For first target failure, close dialog and reset state
             if (index === 0) {
               setProgressOpen(false);
@@ -503,6 +512,16 @@ export default function AdvancedScan() {
             }
             throw error;
           }
+          
+          // Log successful scan start
+          ActivityLogger.scanStarted(preScanId, {
+            scan_type: scanType,
+            target: targetValue,
+            providers: providers.join(', '),
+            workspace_id: workspace.id,
+            batch_mode: targets.length > 1,
+          }).catch(console.error);
+          
           return { success: true, scanId: preScanId, target: targetValue };
         } catch (err) {
           console.error(`Scan failed for ${targetValue}:`, err);
