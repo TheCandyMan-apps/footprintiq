@@ -60,10 +60,21 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
     return `${mins}m ${secs}s`;
   };
 
+  const [lastProgress, setLastProgress] = useState(0);
+
   const calculateProgress = (): number => {
     if (status === 'finished') return 100;
-    if (resultCount === 0 || estimatedTotal === 0) return 0;
-    return Math.min(Math.round((resultCount / estimatedTotal) * 100), 99);
+    if (resultCount === 0 || estimatedTotal === 0) return Math.max(5, lastProgress);
+    
+    // Ensure progress is monotonically increasing
+    const newProgress = Math.min(Math.round((resultCount / estimatedTotal) * 100), 99);
+    const clampedProgress = Math.max(newProgress, lastProgress);
+    
+    if (clampedProgress > lastProgress) {
+      setLastProgress(clampedProgress);
+    }
+    
+    return clampedProgress;
   };
 
   const calculateEstimatedRemaining = (): string => {

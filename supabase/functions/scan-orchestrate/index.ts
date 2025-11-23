@@ -1613,7 +1613,7 @@ serve(async (req) => {
             supabaseService.functions.invoke('generate-export-artifacts', {
               body: { 
                 scanId, 
-                artifactTypes: options.artifacts 
+                artifacts: options.artifacts // ✅ FIXED: match parameter name expected by generate-export-artifacts
               }
             }).then(result => {
               console.log('[orchestrate] Artifact generation triggered:', result);
