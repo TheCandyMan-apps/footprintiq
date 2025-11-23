@@ -1,19 +1,23 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Fingerprint } from 'lucide-react';
+import { Fingerprint, Loader2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UsernameUniquenessScoreProps {
-  username: string;
-  platformCount: number;
-  providerDensity: number; // How many providers found it (0-1)
+  scanId: string;
 }
 
 function calculateUniqueness({
   username,
   platformCount,
   providerDensity,
-}: UsernameUniquenessScoreProps): number {
+}: {
+  username: string;
+  platformCount: number;
+  providerDensity: number;
+}): number {
   // Base score on username characteristics
   const length = username.length;
   const hasNumbers = /\d/.test(username);
@@ -37,7 +41,52 @@ function calculateUniqueness({
   return Math.max(0, Math.min(100, total));
 }
 
-export function UsernameUniquenessScore(props: UsernameUniquenessScoreProps) {
+export function UsernameUniquenessScore({ scanId }: UsernameUniquenessScoreProps) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['username-uniqueness', scanId],
+    queryFn: async () => {
+      const { data: scan } = await supabase
+        .from('scans')
+        .select('username')
+        .eq('id', scanId)
+        .single();
+
+      if (!scan || !scan.username) {
+        return { username: '', platformCount: 0, providerDensity: 0 };
+      }
+
+      const { data: findings } = await supabase
+        .from('findings')
+        .select('provider')
+        .eq('scan_id', scanId)
+        .neq('kind', 'provider.error')
+        .neq('kind', 'provider.timeout');
+
+      const platformCount = findings?.length || 0;
+      const uniqueProviders = new Set(findings?.map(f => f.provider) || []).size;
+      const totalProviders = 4; // maigret, sherlock, gosearch, apify-social
+      const providerDensity = uniqueProviders / totalProviders;
+
+      return {
+        username: scan.username,
+        platformCount,
+        providerDensity
+      };
+    },
+    enabled: !!scanId
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="pt-6 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const props = data || { username: '', platformCount: 0, providerDensity: 0 };
   const score = calculateUniqueness(props);
   
   const getScoreLabel = (score: number) => {

@@ -1,7 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { CircularProgress } from "@/components/CircularProgress";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
-import { AlertTriangle, Eye, Database, Shield } from "lucide-react";
+import { AlertTriangle, Eye, Database, Shield, RefreshCw } from "lucide-react";
+import { HelpIcon } from "@/components/ui/help-icon";
+import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -277,9 +279,23 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
       
       <div className="relative p-6 md:p-8">
         {/* Header */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold mb-1">Digital Footprint DNA</h2>
-          <p className="text-sm text-muted-foreground">Real-time security risk analysis</p>
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold mb-1">Digital Footprint DNA</h2>
+              <HelpIcon helpKey="digital_dna" />
+            </div>
+            <p className="text-sm text-muted-foreground">Real-time security risk analysis</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="h-8 w-8 p-0"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
 
         {/* Circular Progress */}

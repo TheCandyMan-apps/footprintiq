@@ -1607,16 +1607,24 @@ serve(async (req) => {
 
         // Auto-generate artifacts if requested
         if (options?.artifacts && Array.isArray(options.artifacts) && options.artifacts.length > 0) {
-          console.log(`[orchestrate] Triggering artifact generation for scan ${scanId}`);
+          console.log(`[orchestrate] Triggering artifact generation for scan ${scanId}, types:`, options.artifacts);
           try {
+            // Fire and forget - don't block scan completion
             supabaseService.functions.invoke('generate-export-artifacts', {
-              body: { scanId, artifacts: options.artifacts }
+              body: { 
+                scanId, 
+                artifactTypes: options.artifacts 
+              }
+            }).then(result => {
+              console.log('[orchestrate] Artifact generation triggered:', result);
             }).catch(artifactErr => {
               console.error('[orchestrate] Artifact generation failed (non-blocking):', artifactErr);
             });
           } catch (artifactErr) {
             console.error('[orchestrate] Failed to trigger artifact generation:', artifactErr);
           }
+        } else {
+          console.log(`[orchestrate] No artifacts requested for scan ${scanId}`);
         }
 
         // Reconcile maigret_results status if needed

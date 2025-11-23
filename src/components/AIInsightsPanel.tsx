@@ -2,7 +2,9 @@ import { getAIResponse } from "@/lib/aiRouter";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Loader2, Sparkles } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Loader2, Sparkles, AlertCircle, XCircle } from "lucide-react";
+import { getAIErrorMessage } from "@/lib/aiErrorHandler";
 
 interface AIInsightsPanelProps {
   scanData: {
@@ -21,9 +23,12 @@ interface AIInsightsPanelProps {
 export default function AIInsightsPanel({ scanData }: AIInsightsPanelProps) {
   const [insights, setInsights] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<ReturnType<typeof getAIErrorMessage> | null>(null);
 
   const generate = async () => {
     setLoading(true);
+    setError(null);
+    setInsights("");
     try {
       // Build context-aware prompt based on scan type
       const scanType = scanData.scanType || 'email';
@@ -47,9 +52,9 @@ Focus on breach response, data broker opt-outs, and security hardening.`;
       });
       setInsights(content);
     } catch (e: any) {
-      const errorMessage = e?.message || "AI unavailable – please try again later.";
-      setInsights(`⚠️ ${errorMessage}`);
       console.error('AI Insights error:', e);
+      const errorInfo = getAIErrorMessage(e);
+      setError(errorInfo);
     } finally {
       setLoading(false);
     }
@@ -65,7 +70,7 @@ Focus on breach response, data broker opt-outs, and security hardening.`;
         {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Thinking…
+            Analyzing breach patterns and security risks...
           </>
         ) : (
           <>
@@ -74,6 +79,29 @@ Focus on breach response, data broker opt-outs, and security hardening.`;
           </>
         )}
       </Button>
+
+      {error && (
+        <Alert variant="destructive" className="mb-3">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            <p className="font-semibold mb-1">{error.title}</p>
+            <p className="text-sm mb-2">{error.description}</p>
+            {error.action && (
+              <div className="flex gap-2 mt-3">
+                {error.canRetry && (
+                  <Button size="sm" variant="outline" onClick={generate}>
+                    Try Again
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground self-center">
+                  {error.action}
+                </p>
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {insights && (
         <div className="prose prose-sm dark:prose-invert whitespace-pre-wrap">
           {insights}

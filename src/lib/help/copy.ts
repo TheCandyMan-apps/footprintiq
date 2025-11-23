@@ -12,6 +12,62 @@ export interface HelpEntry {
 
 // Centralized help registry
 export const HELP_ENTRIES: Record<string, HelpEntry> = {
+  // Results View Help Entries
+  digital_dna: {
+    key: "digital_dna",
+    title: "Digital Footprint DNA",
+    content: "AI-powered privacy risk score (0-100) calculated from breaches, exposures, data broker listings, and dark web mentions. Higher scores indicate greater privacy risk.",
+    category: "Results",
+    tags: ["results", "privacy", "risk"]
+  },
+  
+  request_status: {
+    key: "request_status",
+    title: "Request Status Distribution",
+    content: "Shows the current status of removal requests across all providers: Pending (awaiting processing), In Progress (removal initiated), Completed (successfully removed), Failed (could not remove).",
+    category: "Results",
+    tags: ["removal", "status"]
+  },
+  
+  breach_count: {
+    key: "breach_count",
+    title: "Breach Exposures",
+    content: "Number of confirmed data breaches where your information was found. High severity findings indicate passwords or sensitive data exposed.",
+    category: "Results",
+    tags: ["breach", "security"]
+  },
+  
+  data_brokers: {
+    key: "data_brokers",
+    title: "Data Broker Listings",
+    content: "People search sites and data brokers selling your personal information. Common sources: Whitepages, Spokeo, Intelius, BeenVerified.",
+    category: "Results",
+    tags: ["privacy", "brokers"]
+  },
+  
+  darkweb_mentions: {
+    key: "darkweb_mentions",
+    title: "Dark Web Mentions",
+    content: "Instances where your data was found in dark web paste sites, underground forums, or breach dumps. Does not display raw credentials for security.",
+    category: "Security",
+    tags: ["darkweb", "security"]
+  },
+  
+  provider_status: {
+    key: "provider_status",
+    title: "Provider Status",
+    content: "Execution status for each OSINT provider: ✅ Completed, ⏱ Timeout, 🚫 Disabled, 🔒 Plan Locked, 💳 Credits Blocked, ❌ Failed.",
+    category: "Results",
+    tags: ["providers", "status"]
+  },
+  
+  artifacts: {
+    key: "artifacts",
+    title: "Export Artifacts",
+    content: "Downloadable files generated from your scan: CSV (spreadsheet), JSON (raw data), HTML (formatted report), PDF (printable document), XMind (mindmap).",
+    category: "Reports",
+    tags: ["export", "reports"]
+  },
   search_bar: {
     key: "search_bar",
     title: "Search Bar",
