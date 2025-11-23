@@ -40,6 +40,9 @@ interface SimpleResultsViewerProps {
   searchQuery?: string;
   selectedProviders?: string[];
   onProvidersDetected?: (providers: string[], stats: Record<string, number>) => void;
+  onProviderStatusesDetected?: (
+    statuses: Record<string, 'completed' | 'timeout' | 'failed' | 'not_run' | 'empty_results' | 'disabled'>
+  ) => void;
 }
 
 interface SummaryResult {
@@ -53,7 +56,8 @@ export function SimpleResultsViewer({
   jobId, 
   searchQuery = '', 
   selectedProviders = [],
-  onProvidersDetected 
+  onProvidersDetected,
+  onProviderStatusesDetected
 }: SimpleResultsViewerProps) {
   const [result, setResult] = useState<MaigretResult | null>(null);
   const [scanData, setScanData] = useState<{ status: string } | null>(null);
@@ -208,6 +212,32 @@ export function SimpleResultsViewer({
             if (providerErrors.length > 0) {
               console.log('[Providers] Provider errors detected:', providerErrors.length, 'out of', findings.length, 'total findings');
             }
+            
+            // Compute provider statuses and emit them
+            if (onProviderStatusesDetected) {
+              const providers = ['maigret', 'sherlock', 'gosearch', 'apify-social', 'apify-osint', 'apify-darkweb'];
+              const statuses: Record<string, 'completed' | 'timeout' | 'failed' | 'not_run' | 'empty_results' | 'disabled'> = {};
+              
+              for (const p of providers) {
+                const all = findings.filter((f: any) => f.provider === p);
+                
+                if (all.some((f: any) => f.kind === 'provider.disabled')) {
+                  statuses[p] = 'disabled';
+                } else if (all.some((f: any) => f.kind === 'provider.timeout')) {
+                  statuses[p] = 'timeout';
+                } else if (all.some((f: any) => f.kind === 'provider.failed' || f.kind === 'provider_error')) {
+                  statuses[p] = 'failed';
+                } else if (all.some((f: any) => f.kind === 'provider.empty_results')) {
+                  statuses[p] = 'empty_results';
+                } else if (all.length > 0) {
+                  statuses[p] = 'completed';
+                } else {
+                  statuses[p] = 'not_run';
+                }
+              }
+              
+              onProviderStatusesDetected(statuses);
+            }
           }
         }
       } catch (err) {
@@ -218,7 +248,7 @@ export function SimpleResultsViewer({
     };
 
     fetchSherlockFindings();
-  }, [result?.username]);
+  }, [result?.username, onProviderStatusesDetected]);
 
   useEffect(() => {
     const fetchResult = async () => {
