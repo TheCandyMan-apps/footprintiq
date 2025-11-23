@@ -44,11 +44,19 @@ const getProviderStatus = (events: ScanEvent[]): ProviderStatus[] => {
     let badgeVariant: 'default' | 'secondary' | 'destructive' | 'outline' = 'secondary';
     let badgeColor = 'text-muted-foreground';
 
+    // Special handling for async providers (GoSearch)
+    const isAsync = event.metadata?.async === true;
+    
     // Determine icon and badge based on status and stage
     if (event.status === 'success' || event.stage === 'completed') {
       icon = <CheckCircle className="h-4 w-4 text-green-500" />;
       badgeVariant = 'default';
       badgeColor = 'text-green-700 dark:text-green-300';
+    } else if (event.stage === 'requested' && isAsync) {
+      // Async provider running
+      icon = <Clock className="h-4 w-4 text-blue-500 animate-spin" />;
+      badgeVariant = 'outline';
+      badgeColor = 'text-blue-700 dark:text-blue-300';
     } else if (event.stage === 'timeout' || event.error_message?.includes('timeout')) {
       icon = <Clock className="h-4 w-4 text-amber-500" />;
       badgeVariant = 'outline';
@@ -81,7 +89,7 @@ const getProviderStatus = (events: ScanEvent[]): ProviderStatus[] => {
 
     providerMap.set(event.provider, {
       provider: event.provider,
-      stage: event.stage,
+      stage: isAsync && event.stage === 'requested' ? 'running (async)' : event.stage,
       status: event.status,
       duration_ms: event.duration_ms,
       error_message: event.error_message,

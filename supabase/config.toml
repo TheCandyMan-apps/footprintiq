@@ -63,3 +63,6 @@ verify_jwt = false
 
 [functions.admin-get-errors]
 verify_jwt = true
+
+[functions.gosearch-results]
+verify_jwt = false

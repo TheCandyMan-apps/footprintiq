@@ -6681,6 +6681,7 @@ export type Database = {
           created_at: string
           email: string | null
           first_name: string | null
+          gosearch_pending: boolean
           high_risk_count: number | null
           id: string
           last_name: string | null
@@ -6704,6 +6705,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_name?: string | null
+          gosearch_pending?: boolean
           high_risk_count?: number | null
           id?: string
           last_name?: string | null
@@ -6727,6 +6729,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           first_name?: string | null
+          gosearch_pending?: boolean
           high_risk_count?: number | null
           id?: string
           last_name?: string | null
