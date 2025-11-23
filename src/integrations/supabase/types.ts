@@ -6675,6 +6675,8 @@ export type Database = {
       scans: {
         Row: {
           archived_at: string | null
+          cache_key: string | null
+          cached_from_scan_id: string | null
           completed_at: string | null
           created_at: string
           email: string | null
@@ -6696,6 +6698,8 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          cache_key?: string | null
+          cached_from_scan_id?: string | null
           completed_at?: string | null
           created_at?: string
           email?: string | null
@@ -6717,6 +6721,8 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          cache_key?: string | null
+          cached_from_scan_id?: string | null
           completed_at?: string | null
           created_at?: string
           email?: string | null
@@ -6737,6 +6743,13 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "scans_cached_from_scan_id_fkey"
+            columns: ["cached_from_scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "scans_workspace_id_fkey"
             columns: ["workspace_id"]
