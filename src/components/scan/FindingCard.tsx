@@ -145,23 +145,72 @@ export function FindingCard({ finding }: FindingCardProps) {
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
 
-  const extractPlatformName = (evidence: Evidence[]) => {
-    const siteEvidence = evidence.find(e => e.key === 'site');
-    if (!siteEvidence) return null;
+  const extractPlatformName = (evidence: Evidence[], meta?: Record<string, any>) => {
+    // Try evidence first
+    const siteEvidence = evidence.find(e => e.key === 'site' || e.key === 'platform');
+    if (siteEvidence) {
+      const siteValue = String(siteEvidence.value);
+      // Strip ANSI color codes and prefixes like [+] or [-]
+      const cleaned = siteValue
+        .replace(/\[\d+m|\[0m/g, '')
+        .replace(/^\[[\+\-]\]\s*/, '')
+        .trim();
+      if (cleaned) return cleaned;
+    }
     
-    const siteValue = String(siteEvidence.value);
-    // Strip ANSI color codes and prefixes like [+] or [-]
-    return siteValue
-      .replace(/\[\d+m|\[0m/g, '')
-      .replace(/^\[[\+\-]\]\s*/, '')
-      .trim();
+    // Try meta fields
+    if (meta?.site) return meta.site;
+    if (meta?.platform) return meta.platform;
+    
+    // Last resort: extract from URL hostname
+    const urlEvidence = evidence.find(e => e.key === 'url');
+    if (urlEvidence) {
+      try {
+        const url = new URL(String(urlEvidence.value));
+        return url.hostname.replace(/^www\./, '');
+      } catch {
+        // Invalid URL, skip
+      }
+    }
+    
+    return null;
   };
 
-  const getSmartTitle = (kind: string, evidence: Evidence[]) => {
-    // For presence hits, try to extract the platform name
-    if (kind === 'presence.hit') {
-      const platformName = extractPlatformName(evidence);
+  const isSystemFinding = (kind: string, severity: string) => {
+    // System findings: provider errors, timeouts, not_run, disabled
+    return (
+      kind.startsWith('provider.') || 
+      kind === 'provider_error' ||
+      (severity === 'info' && !finding.evidence.find(e => e.key === 'url'))
+    );
+  };
+
+  const getSmartTitle = (kind: string, evidence: Evidence[], meta?: Record<string, any>) => {
+    // For username hits (profile_presence, presence.hit), show platform name
+    if (kind === 'profile_presence' || kind === 'presence.hit') {
+      const platformName = extractPlatformName(evidence, meta);
       if (platformName) return platformName;
+    }
+    
+    // For system findings, show human-readable provider status
+    if (kind.startsWith('provider.')) {
+      const status = kind.split('.')[1];
+      const providerName = finding.provider.charAt(0).toUpperCase() + finding.provider.slice(1);
+      
+      switch (status) {
+        case 'timeout':
+          return `${providerName} timed out`;
+        case 'failed':
+          return `${providerName} failed`;
+        case 'not_run':
+          return `${providerName} not run`;
+        case 'disabled':
+          return `${providerName} disabled`;
+        case 'empty_results':
+          return `${providerName} - no results`;
+        default:
+          return `${providerName} - ${status.replace(/_/g, ' ')}`;
+      }
     }
     
     // Fallback to formatting the kind
@@ -170,6 +219,8 @@ export function FindingCard({ finding }: FindingCardProps) {
 
   const remediationSteps = getRemediationSteps(finding.kind, finding.severity);
   const severityColor = getSeverityColor(finding.severity);
+  const isSystemError = isSystemFinding(finding.kind, finding.severity);
+  const shouldShowEnrichment = !isSystemError && (finding.kind === 'profile_presence' || finding.kind === 'presence.hit');
 
   const handleQuickAnalysis = async () => {
     if (!workspace?.id) {
@@ -286,8 +337,11 @@ export function FindingCard({ finding }: FindingCardProps) {
               </span>
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">
-              {getSmartTitle(finding.kind, finding.evidence)}
+              {getSmartTitle(finding.kind, finding.evidence, finding.meta)}
             </h3>
+            {(finding.kind === 'profile_presence' || finding.kind === 'presence.hit') && (
+              <p className="text-sm text-muted-foreground">Username profile found</p>
+            )}
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
@@ -302,29 +356,41 @@ export function FindingCard({ finding }: FindingCardProps) {
         </div>
       </div>
 
-      {/* AI Action Buttons */}
-      <div className="flex gap-2 mb-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleQuickAnalysis}
-          disabled={isAnalyzing}
-          className="gap-2"
-        >
-          <Zap className="h-4 w-4" />
-          {isAnalyzing ? "Analyzing..." : "Quick Analysis (2 credits)"}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDeepEnrichment}
-          disabled={isEnriching}
-          className="gap-2"
-        >
-          <Sparkles className="h-4 w-4" />
-          {isEnriching ? "Enriching..." : "Deep Enrichment (5 credits)"}
-        </Button>
-      </div>
+      {/* AI Action Buttons - Only show for actual findings, not system errors */}
+      {shouldShowEnrichment && (
+        <div className="flex gap-2 mb-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleQuickAnalysis}
+            disabled={isAnalyzing}
+            className="gap-2"
+          >
+            <Zap className="h-4 w-4" />
+            {isAnalyzing ? "Analyzing..." : "Quick Analysis (2 credits)"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDeepEnrichment}
+            disabled={isEnriching}
+            className="gap-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            {isEnriching ? "Enriching..." : "Deep Enrichment (5 credits)"}
+          </Button>
+        </div>
+      )}
+      
+      {/* System Error Badge */}
+      {isSystemError && (
+        <div className="mb-3 p-3 rounded-lg bg-muted/50 border border-border">
+          <p className="text-sm text-muted-foreground flex items-center gap-2">
+            <Info className="h-4 w-4" />
+            System status - no enrichment available
+          </p>
+        </div>
+      )}
 
       {/* Evidence Section */}
       {finding.evidence && finding.evidence.length > 0 && (
