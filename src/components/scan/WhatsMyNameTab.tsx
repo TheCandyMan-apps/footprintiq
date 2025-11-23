@@ -74,14 +74,29 @@ export const WhatsMyNameTab = ({ subscriptionTier }: WhatsMyNameTabProps) => {
       });
 
       if (error) {
+        // Handle 402 Payment Required - insufficient credits
+        if (error.message?.includes('Insufficient credits') || error.message?.includes('402')) {
+          const creditData = data as any;
+          toast({
+            title: "Insufficient Credits",
+            description: `You need ${creditData?.required || 10} credits but only have ${creditData?.current || 0}. Purchase more credits to continue.`,
+            variant: "destructive",
+          });
+          setProgressOpen(false);
+          return;
+        }
+        
+        // Handle premium tier requirement
         if (error.message?.includes('Premium') || error.message?.includes('upgrade')) {
           toast({
             title: "Premium Required",
             description: "WhatsMyName scans require a Premium subscription",
             variant: "destructive",
           });
+          setProgressOpen(false);
           return;
         }
+        
         throw error;
       }
 
