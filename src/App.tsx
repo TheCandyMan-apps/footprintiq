@@ -49,6 +49,7 @@ const AdvancedAnalytics = lazy(() => import("./pages/AdvancedAnalytics"));
 const Teams = lazy(() => import("./pages/Teams"));
 const TeamDetail = lazy(() => import("./pages/TeamDetail"));
 const Workflows = lazy(() => import("./pages/Workflows"));
+const WorkflowNew = lazy(() => import("./pages/WorkflowNew"));
 const Security = lazy(() => import("./pages/Security"));
 const PluginMarketplace = lazy(() => import("./pages/PluginMarketplace"));
 const PredictiveAnalytics = lazy(() => import("./pages/PredictiveAnalytics"));
@@ -336,6 +337,7 @@ function RouterContent() {
             <Route path="/teams" element={<Teams />} />
             <Route path="/teams/:teamId" element={<TeamDetail />} />
             <Route path="/workflows" element={<Workflows />} />
+            <Route path="/workflows/new" element={<WorkflowNew />} />
             <Route path="/security" element={<Security />} />
             <Route path="/plugins" element={<PluginMarketplace />} />
             <Route path="/predictive-analytics" element={<PredictiveAnalytics />} />
