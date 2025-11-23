@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ResultsFilters } from '@/components/maigret/ResultsFilters';
+import { FootprintDNACard } from '@/components/FootprintDNACard';
+import AIInsightsPanel from '@/components/AIInsightsPanel';
 
 export default function SimpleMaigretResults() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -16,6 +18,8 @@ export default function SimpleMaigretResults() {
   const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
   const [availableProviders, setAvailableProviders] = useState<string[]>([]);
   const [providerStats, setProviderStats] = useState<Record<string, number>>({});
+  const [scanUserId, setScanUserId] = useState<string | undefined>(undefined);
+  const [totalFindings, setTotalFindings] = useState(0);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -32,6 +36,25 @@ export default function SimpleMaigretResults() {
 
     checkAuth();
   }, [jobId, navigate]);
+
+  // Load scan metadata for FootprintDNA and AI Insights
+  useEffect(() => {
+    const loadScanMetadata = async () => {
+      if (!jobId) return;
+      
+      const { data: scan } = await supabase
+        .from('scans')
+        .select('user_id')
+        .eq('id', jobId)
+        .maybeSingle();
+      
+      if (scan) {
+        setScanUserId(scan.user_id);
+      }
+    };
+
+    loadScanMetadata();
+  }, [jobId]);
 
   if (isCheckingAuth) {
     return (
@@ -86,6 +109,9 @@ export default function SimpleMaigretResults() {
             </div>
           </div>
 
+          {/* Footprint DNA Card */}
+          <FootprintDNACard scanId={jobId} userId={scanUserId} />
+
           {/* Filters */}
           <ResultsFilters
             searchQuery={searchQuery}
@@ -109,6 +135,21 @@ export default function SimpleMaigretResults() {
             onProvidersDetected={(providers, stats) => {
               setAvailableProviders(providers);
               setProviderStats(stats);
+              
+              // Calculate total findings for AI Insights
+              const total = Object.values(stats).reduce((sum, count) => sum + count, 0);
+              setTotalFindings(total);
+            }}
+          />
+
+          {/* AI Insights Panel */}
+          <AIInsightsPanel 
+            scanData={{
+              jobId: jobId,
+              breaches: providerStats.maigret || 0,
+              exposures: totalFindings,
+              dataBrokers: providerStats.sherlock || 0,
+              darkWeb: providerStats.gosearch || 0,
             }}
           />
         </div>
