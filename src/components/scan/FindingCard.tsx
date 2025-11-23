@@ -18,12 +18,15 @@ import {
   ExternalLink,
   Sparkles,
   Zap,
+  Copy,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { toast } from 'sonner';
 import { EnrichmentDialog } from './EnrichmentDialog';
 import { QuickAnalysisDialog } from './QuickAnalysisDialog';
+import { getPlatformCategory, getCategoryColor } from '@/lib/categoryMapping';
+import { getProviderIcon } from '@/lib/providerIcons';
 
 interface Evidence {
   key?: string;
@@ -221,6 +224,31 @@ export function FindingCard({ finding }: FindingCardProps) {
   const severityColor = getSeverityColor(finding.severity);
   const isSystemError = isSystemFinding(finding.kind, finding.severity);
   const shouldShowEnrichment = !isSystemError && (finding.kind === 'profile_presence' || finding.kind === 'presence.hit');
+  
+  // Extract URL and platform for UI enhancements
+  const urlEvidence = finding.evidence.find(e => e.key === 'url');
+  const profileUrl = urlEvidence?.value ? String(urlEvidence.value) : finding.meta?.url;
+  const platformName = extractPlatformName(finding.evidence, finding.meta);
+  const category = platformName ? getPlatformCategory(platformName) : null;
+  
+  // Get favicon URL
+  const getFaviconUrl = (url: string) => {
+    try {
+      const domain = new URL(url).hostname;
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    } catch {
+      return null;
+    }
+  };
+  
+  const faviconUrl = profileUrl ? getFaviconUrl(profileUrl) : null;
+  
+  const handleCopyUrl = () => {
+    if (profileUrl) {
+      navigator.clipboard.writeText(profileUrl);
+      toast.success('URL copied to clipboard');
+    }
+  };
 
   const handleQuickAnalysis = async () => {
     if (!workspace?.id) {
@@ -313,9 +341,20 @@ export function FindingCard({ finding }: FindingCardProps) {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex items-start gap-3 flex-1">
-          <div className={`mt-1 ${severityColor}`}>
-            {getSeverityIcon(finding.severity)}
-          </div>
+          {faviconUrl ? (
+            <img 
+              src={faviconUrl} 
+              alt={platformName || 'Platform'}
+              className="w-8 h-8 rounded mt-1"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className={`mt-1 ${severityColor}`}>
+              {getSeverityIcon(finding.severity)}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-2">
               <Badge 
@@ -332,15 +371,28 @@ export function FindingCard({ finding }: FindingCardProps) {
               <span className="text-sm font-semibold text-foreground">
                 {finding.provider}
               </span>
-              <span className="text-xs text-muted-foreground">
-                • {finding.kind}
-              </span>
+              {category && (
+                <Badge 
+                  variant="outline" 
+                  className={getCategoryColor(category)}
+                >
+                  {category}
+                </Badge>
+              )}
+              {finding.meta?.nsfw && (
+                <Badge variant="destructive" className="text-xs">
+                  NSFW
+                </Badge>
+              )}
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">
               {getSmartTitle(finding.kind, finding.evidence, finding.meta)}
             </h3>
             {(finding.kind === 'profile_presence' || finding.kind === 'presence.hit') && (
               <p className="text-sm text-muted-foreground">Username profile found</p>
+            )}
+            {profileUrl && (
+              <p className="text-xs text-muted-foreground truncate mb-2">{profileUrl}</p>
             )}
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
@@ -354,6 +406,35 @@ export function FindingCard({ finding }: FindingCardProps) {
             </div>
           </div>
         </div>
+        
+        {/* Action buttons for profile hits */}
+        {profileUrl && !isSystemError && (
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCopyUrl}
+              className="h-8 w-8 p-0"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              asChild
+              className="gap-2"
+            >
+              <a
+                href={profileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="h-4 w-4" />
+                <span className="hidden sm:inline">Open</span>
+              </a>
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* AI Action Buttons - Only show for actual findings, not system errors */}
