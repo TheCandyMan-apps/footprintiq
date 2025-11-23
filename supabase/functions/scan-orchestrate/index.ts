@@ -201,6 +201,14 @@ serve(async (req) => {
       includeNsfw: options.includeNsfw
     });
     console.log('[orchestrate] Providers requested:', options.providers);
+    
+    // Separate sync and async providers (GoSearch runs async)
+    const syncProviders = requestedProviders.filter(p => p !== 'gosearch');
+    const asyncProviders = requestedProviders.filter(p => p === 'gosearch');
+    const gosearchRequested = asyncProviders.includes('gosearch');
+    
+    console.log('[orchestrate] Sync providers:', syncProviders);
+    console.log('[orchestrate] Async providers:', asyncProviders);
 
     // Use service role for workspace operations (initialize BEFORE any usage)
     const supabaseService = createClient(
@@ -1395,12 +1403,15 @@ serve(async (req) => {
           return acc;
         }, {} as Record<string, number>);
 
-        console.log(`[orchestrate] UPDATING scans table for ${scanId} to completed with ${sortedFindings.length} findings`);
+        // Determine scan completion status based on GoSearch async status
+        const scanStatus = gosearchRequested ? 'completed_partial' : 'completed';
+        console.log(`[orchestrate] UPDATING scans table for ${scanId} to ${scanStatus} with ${sortedFindings.length} findings ${gosearchRequested ? '(GoSearch pending)' : ''}`);
         
         const { data: updateResult, error: updateError } = await supabaseService
           .from('scans')
           .update({
-            status: 'completed',
+            status: scanStatus,
+            gosearch_pending: gosearchRequested,
             completed_at: new Date().toISOString(),
             high_risk_count: highRiskCount,
             medium_risk_count: mediumRiskCount,
@@ -1447,7 +1458,52 @@ serve(async (req) => {
           throw new Error(errorMsg);
         }
         
-        console.log(`[orchestrate] ✓ Scan ${scanId} successfully updated to completed with ${sortedFindings.length} findings, ${Object.keys(providerCounts).length} providers`);
+        console.log(`[orchestrate] ✓ Scan ${scanId} successfully updated to ${scanStatus} with ${sortedFindings.length} findings, ${Object.keys(providerCounts).length} providers`);
+        
+        // If GoSearch was requested, trigger async job in OSINT worker
+        if (gosearchRequested) {
+          console.log(`[orchestrate] 🚀 Triggering async GoSearch job for scan ${scanId}`);
+          
+          // Log requested event for GoSearch
+          await logEvent({
+            provider: 'gosearch',
+            stage: 'requested',
+            status: 'success',
+            metadata: { async: true }
+          });
+          
+          // Fire-and-forget async request to OSINT worker
+          const OSINT_WORKER_URL = Deno.env.get('OSINT_WORKER_URL');
+          const OSINT_WORKER_TOKEN = Deno.env.get('OSINT_WORKER_TOKEN');
+          const RESULTS_WEBHOOK_TOKEN = Deno.env.get('RESULTS_WEBHOOK_TOKEN');
+          const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+          
+          if (OSINT_WORKER_URL && OSINT_WORKER_TOKEN && RESULTS_WEBHOOK_TOKEN) {
+            fetch(`${OSINT_WORKER_URL}/scan`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                token: OSINT_WORKER_TOKEN,
+                tool: 'gosearch',
+                username: value,
+                scan_id: scanId,
+                workspace_id: workspaceId,
+                results_webhook: `${SUPABASE_URL}/functions/v1/gosearch-results`,
+                results_webhook_token: RESULTS_WEBHOOK_TOKEN
+              })
+            }).catch(err => {
+              console.error('[orchestrate] Failed to trigger async GoSearch (non-blocking):', err);
+            });
+            
+            console.log('[orchestrate] ✓ Async GoSearch job triggered');
+          } else {
+            console.error('[orchestrate] Missing env vars for async GoSearch:', {
+              hasWorkerUrl: !!OSINT_WORKER_URL,
+              hasWorkerToken: !!OSINT_WORKER_TOKEN,
+              hasWebhookToken: !!RESULTS_WEBHOOK_TOKEN
+            });
+          }
+        }
         
         // Trigger webhooks for scan completion
         try {

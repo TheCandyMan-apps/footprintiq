@@ -24,6 +24,7 @@ export default function SimpleMaigretResults() {
   const [providerStatuses, setProviderStatuses] = useState<Record<string, string>>({});
   const [isCached, setIsCached] = useState(false);
   const [cachedFromScanId, setCachedFromScanId] = useState<string | null>(null);
+  const [gosearchPending, setGosearchPending] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -48,7 +49,7 @@ export default function SimpleMaigretResults() {
       
       const { data: scan } = await supabase
         .from('scans')
-        .select('user_id, cached_from_scan_id')
+        .select('user_id, cached_from_scan_id, gosearch_pending')
         .eq('id', jobId)
         .maybeSingle();
       
@@ -61,11 +62,45 @@ export default function SimpleMaigretResults() {
           setCachedFromScanId(scan.cached_from_scan_id);
           console.log('[SimpleMaigretResults] Scan served from cache:', scan.cached_from_scan_id);
         }
+        
+        // Check if GoSearch is pending
+        if (scan.gosearch_pending) {
+          setGosearchPending(true);
+          console.log('[SimpleMaigretResults] GoSearch running asynchronously');
+        }
       }
     };
 
     loadScanMetadata();
-  }, [jobId]);
+    
+    // Poll for gosearch_pending status if it's true
+    let pollInterval: NodeJS.Timeout | null = null;
+    
+    const startPolling = async () => {
+      const { data: scan } = await supabase
+        .from('scans')
+        .select('gosearch_pending')
+        .eq('id', jobId)
+        .maybeSingle();
+      
+      if (scan && !scan.gosearch_pending) {
+        setGosearchPending(false);
+        if (pollInterval) {
+          clearInterval(pollInterval);
+        }
+      }
+    };
+    
+    if (gosearchPending) {
+      pollInterval = setInterval(startPolling, 5000); // Poll every 5 seconds
+    }
+    
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
+  }, [jobId, gosearchPending]);
 
   if (isCheckingAuth) {
     return (
@@ -132,6 +167,17 @@ export default function SimpleMaigretResults() {
                     Original scan ID: {cachedFromScanId.slice(0, 8)}...
                   </span>
                 )}
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {/* GoSearch Pending Notice */}
+          {gosearchPending && (
+            <Alert className="border-blue-500/20 bg-blue-500/5">
+              <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />
+              <AlertDescription className="text-sm">
+                GoSearch is still running in the background... 
+                Results will appear automatically when ready (usually 1-3 minutes).
               </AlertDescription>
             </Alert>
           )}
