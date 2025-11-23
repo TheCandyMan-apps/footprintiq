@@ -2,13 +2,18 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { TrendingUp, TrendingDown, CheckCircle2, XCircle, Clock, Database, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, CheckCircle2, XCircle, Clock, Database, BarChart3, AlertTriangle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { HelpIcon } from '@/components/ui/help-icon';
+import { useNavigate } from 'react-router-dom';
 
 interface BrokerStats {
   sourceName: string;
+  sourceType: string;
   total: number;
   completed: number;
   failed: number;
@@ -24,8 +29,10 @@ interface RemovalSuccessTrackerProps {
 
 export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [brokerStats, setBrokerStats] = useState<BrokerStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasInvalidData, setHasInvalidData] = useState(false);
   const [overallStats, setOverallStats] = useState({
     totalRequests: 0,
     completedRequests: 0,
@@ -52,6 +59,34 @@ export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) =>
 
       if (error) throw error;
 
+      // Debug logging
+      console.log('[RemovalTracker] Fetched requests:', {
+        total: requests?.length || 0,
+        byType: requests?.reduce((acc, r) => {
+          acc[r.source_type] = (acc[r.source_type] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+        byStatus: requests?.reduce((acc, r) => {
+          acc[r.status] = (acc[r.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      });
+
+      // Check for invalid data (social media platforms treated as data brokers)
+      const socialMediaRequests = requests?.filter(r => r.source_type === 'social_media') || [];
+      if (socialMediaRequests.length > 0) {
+        console.warn('[RemovalTracker] Invalid data detected:', {
+          count: socialMediaRequests.length,
+          sources: socialMediaRequests.map(r => r.source_name)
+        });
+        setHasInvalidData(true);
+        toast({
+          title: 'Data Issue Detected',
+          description: `Found ${socialMediaRequests.length} removal requests for social media platforms. These should be data brokers only.`,
+          variant: 'destructive',
+        });
+      }
+
       if (!requests || requests.length === 0) {
         setBrokerStats([]);
         setOverallStats({
@@ -70,10 +105,12 @@ export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) =>
 
       requests.forEach((request) => {
         const sourceName = request.source_name;
+        const sourceType = request.source_type || 'unknown';
         
         if (!statsMap.has(sourceName)) {
           statsMap.set(sourceName, {
             sourceName,
+            sourceType,
             total: 0,
             completed: 0,
             failed: 0,
@@ -126,7 +163,7 @@ export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) =>
       });
 
     } catch (error) {
-      console.error('Error fetching removal stats:', error);
+      console.error('[RemovalTracker] Error fetching stats:', error);
       toast({
         title: 'Error loading statistics',
         description: 'Failed to fetch removal success rates',
@@ -184,14 +221,22 @@ export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) =>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />
             Removal Success Tracker
+            <HelpIcon helpKey="removal_tracker" />
           </CardTitle>
-          <CardDescription>Track your data removal success rates by broker</CardDescription>
+          <CardDescription>
+            Track removal success across data brokers like Whitepages, Spokeo, and Intelius
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <Database className="w-12 h-12 mx-auto mb-2 opacity-50" />
-            <p>No removal requests yet</p>
-            <p className="text-sm">Submit removal requests to see statistics</p>
+          <div className="text-center py-8">
+            <Database className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p className="font-medium mb-2">No data broker exposures found</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Run a comprehensive scan to check for your data on people search sites
+            </p>
+            <Button onClick={() => navigate('/scan/advanced')} variant="default">
+              Start Comprehensive Scan
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -204,12 +249,23 @@ export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) =>
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-primary" />
           Removal Success Tracker
+          <HelpIcon helpKey="removal_tracker" />
         </CardTitle>
         <CardDescription>
           Track your data removal success rates across {brokerStats.length} data brokers
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Warning for invalid data */}
+        {hasInvalidData && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Data integrity issue detected:</strong> Some removal requests are for social media platforms 
+              instead of data brokers. This tracker is designed for data brokers like Whitepages and Spokeo only.
+            </AlertDescription>
+          </Alert>
+        )}
         {/* Overall Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="bg-secondary/50">
@@ -260,7 +316,10 @@ export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) =>
           {/* Pie Chart */}
           <Card className="bg-gradient-to-br from-background via-background to-primary/5">
             <CardHeader>
-              <CardTitle className="text-lg">Request Status Distribution</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Request Status Distribution
+                <HelpIcon helpKey="removal_status" />
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={200}>
@@ -295,7 +354,10 @@ export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) =>
           {/* Bar Chart - Top Brokers */}
           <Card className="bg-gradient-to-br from-background via-background to-primary/5">
             <CardHeader>
-              <CardTitle className="text-lg">Top Brokers by Success Rate</CardTitle>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Top Brokers by Success Rate
+                <HelpIcon helpKey="broker_success_rate" />
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={200}>
@@ -325,7 +387,10 @@ export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) =>
 
         {/* Detailed Broker List */}
         <div className="space-y-3">
-          <h3 className="text-lg font-semibold">Broker Performance Details</h3>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            Broker Performance Details
+            <HelpIcon helpKey="broker_performance" />
+          </h3>
           {brokerStats.map((broker, index) => (
             <Card key={index} className="bg-secondary/30 hover:bg-secondary/50 transition-colors">
               <CardContent className="pt-4">
@@ -336,6 +401,11 @@ export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) =>
                     <Badge variant="outline" className="text-xs">
                       {broker.total} requests
                     </Badge>
+                    {broker.sourceType === 'social_media' && (
+                      <Badge variant="outline" className="text-xs text-amber-500 border-amber-500">
+                        ⚠️ Not a data broker
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`text-lg font-bold ${getSuccessRateColor(broker.successRate)}`}>
@@ -372,6 +442,15 @@ export const RemovalSuccessTracker = ({ userId }: RemovalSuccessTrackerProps) =>
                     </span>
                   </div>
                 </div>
+                
+                {broker.sourceType === 'social_media' && (
+                  <Alert className="mt-2" variant="default">
+                    <AlertDescription className="text-xs">
+                      {broker.sourceName} is a social platform, not a data broker. 
+                      Removal requests should only be for data broker sites like Whitepages or Spokeo.
+                    </AlertDescription>
+                  </Alert>
+                )}
               </CardContent>
             </Card>
           ))}
