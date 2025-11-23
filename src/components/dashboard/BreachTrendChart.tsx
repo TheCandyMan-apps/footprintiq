@@ -14,13 +14,15 @@ export function BreachTrendChart({ workspaceId }: BreachTrendChartProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchBreachTrends();
+    fetchFindingsTrends();
   }, [workspaceId]);
 
-  const fetchBreachTrends = async () => {
+  const fetchFindingsTrends = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+
+      console.log('[BreachTrendChart] Fetching findings for last 7 days, workspaceId:', workspaceId);
 
       // Get findings from last 7 days with workspace filter
       const sevenDaysAgo = subDays(new Date(), 7);
@@ -36,40 +38,46 @@ export function BreachTrendChart({ workspaceId }: BreachTrendChartProps) {
       
       const { data: findings } = await findingsQuery.order('created_at', { ascending: true });
 
+      console.log('[BreachTrendChart] Raw findings count:', findings?.length || 0);
+
       if (!findings) {
         setLoading(false);
         return;
       }
 
-      // Group by day and count breaches
-      const breachKeywords = ['hibp', 'breach', 'leak', 'compromised', 'pwned'];
-      const dailyBreaches = new Map<string, number>();
+      // Group by day and count ALL findings except errors
+      const dailyFindings = new Map<string, number>();
 
       // Initialize all 7 days
       for (let i = 6; i >= 0; i--) {
         const day = format(subDays(new Date(), i), 'MMM dd');
-        dailyBreaches.set(day, 0);
+        dailyFindings.set(day, 0);
       }
 
       findings.forEach(finding => {
-        const isBreach = breachKeywords.some(k => 
-          (finding.kind || '').toLowerCase().includes(k)
-        ) || finding.severity === 'critical' || finding.severity === 'high' || finding.severity === 'medium';
+        const kind = (finding.kind || '').toLowerCase();
+        
+        // Exclude provider errors and tier restriction findings
+        const isError = kind.includes('provider_error') || 
+                       kind.includes('error') || 
+                       kind.includes('tier_restricted') ||
+                       kind.includes('plan_blocked');
 
-        if (isBreach) {
+        if (!isError) {
           const day = format(new Date(finding.created_at), 'MMM dd');
-          dailyBreaches.set(day, (dailyBreaches.get(day) || 0) + 1);
+          dailyFindings.set(day, (dailyFindings.get(day) || 0) + 1);
         }
       });
 
-      const chartData = Array.from(dailyBreaches.entries()).map(([date, breaches]) => ({
+      const chartData = Array.from(dailyFindings.entries()).map(([date, breaches]) => ({
         date,
         breaches,
       }));
 
+      console.log('[BreachTrendChart] Chart data:', chartData);
       setTrendData(chartData);
     } catch (error) {
-      console.error('Error fetching breach trends:', error);
+      console.error('[BreachTrendChart] Error fetching findings trends:', error);
     } finally {
       setLoading(false);
     }
@@ -79,10 +87,10 @@ export function BreachTrendChart({ workspaceId }: BreachTrendChartProps) {
     <Card className="shadow-card hover:shadow-glow transition-shadow">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-destructive" />
-          Breach Trend (7d)
+          <TrendingUp className="h-5 w-5 text-primary" />
+          Findings Activity (7d)
         </CardTitle>
-        <CardDescription>Daily breach detection over the past week</CardDescription>
+        <CardDescription>Daily OSINT findings over the past week</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -111,9 +119,9 @@ export function BreachTrendChart({ workspaceId }: BreachTrendChartProps) {
               <Line 
                 type="monotone" 
                 dataKey="breaches" 
-                stroke="hsl(var(--destructive))" 
+                stroke="hsl(var(--primary))" 
                 strokeWidth={2}
-                dot={{ fill: 'hsl(var(--destructive))' }}
+                dot={{ fill: 'hsl(var(--primary))' }}
               />
             </LineChart>
           </ResponsiveContainer>

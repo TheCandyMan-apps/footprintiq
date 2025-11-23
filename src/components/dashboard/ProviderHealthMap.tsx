@@ -18,6 +18,7 @@ export function ProviderHealthMap({ workspaceId }: { workspaceId?: string }) {
   const { data: providers = [], isLoading, refetch } = useQuery({
     queryKey: ['provider-health', workspaceId],
     queryFn: async () => {
+      console.log('[ProviderHealthMap] Fetching provider health, workspaceId:', workspaceId);
       const sevenDaysAgo = subDays(new Date(), 7);
       
       let eventsQuery = supabase
@@ -29,7 +30,12 @@ export function ProviderHealthMap({ workspaceId }: { workspaceId?: string }) {
       const { data: events, error } = await eventsQuery;
 
       if (error) throw error;
-      if (!events || events.length === 0) return [];
+      
+      console.log('[ProviderHealthMap] Raw events count:', events?.length || 0);
+      if (!events || events.length === 0) {
+        console.log('[ProviderHealthMap] No scan_events found in last 7 days');
+        return [];
+      }
       
       // If workspace filter needed, get scan_ids for that workspace
       let workspaceScanIds: Set<string> | null = null;
@@ -73,6 +79,7 @@ export function ProviderHealthMap({ workspaceId }: { workspaceId?: string }) {
         .sort((a, b) => b.total - a.total)
         .slice(0, 8); // Top 8 providers
 
+      console.log('[ProviderHealthMap] Provider stats:', providerStats);
       return providerStats;
     },
     refetchInterval: 30000, // Auto-refresh every 30 seconds
@@ -114,8 +121,10 @@ export function ProviderHealthMap({ workspaceId }: { workspaceId?: string }) {
             Loading...
           </div>
         ) : providers.length === 0 ? (
-          <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-            No provider data available
+          <div className="h-[200px] flex flex-col items-center justify-center text-muted-foreground gap-2">
+            <Activity className="h-8 w-8 opacity-50" />
+            <p className="text-center">No provider data yet</p>
+            <p className="text-xs text-center">Run scans to see provider performance</p>
           </div>
         ) : (
           <div className="grid grid-cols-4 gap-2">
