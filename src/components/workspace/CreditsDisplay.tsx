@@ -81,8 +81,9 @@ export function CreditsDisplay({ workspaceId }: CreditsDisplayProps) {
           console.log('[Credits] Realtime INSERT event:', payload);
           const newRecord = payload.new as any;
           
-          if (newRecord.transaction_type === 'purchase' && newRecord.amount > 0) {
-            toast.success(`${newRecord.amount} credits added! 🎉`, {
+          // Credits added (positive delta)
+          if (newRecord.delta > 0) {
+            toast.success(`${newRecord.delta} credits added! 🎉`, {
               description: "Your credits are ready to use",
               duration: 5000,
             });
