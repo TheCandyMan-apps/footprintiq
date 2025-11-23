@@ -15,6 +15,8 @@ import { UsernameUniquenessScore } from '@/components/intelligence/UsernameUniqu
 import { FootprintClusterMap } from '@/components/intelligence/FootprintClusterMap';
 import { RequestStatusDistribution } from '@/components/scan/RequestStatusDistribution';
 import { ProviderStatusPanel } from '@/components/maigret/ProviderStatusPanel';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SimpleMaigretResults() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -192,20 +194,32 @@ export default function SimpleMaigretResults() {
           )}
 
           {/* Footprint DNA Card */}
-          <FootprintDNACard scanId={jobId} userId={scanUserId} />
+          <ErrorBoundary fallback={<Skeleton className="h-48 w-full" />}>
+            <FootprintDNACard scanId={jobId} userId={scanUserId} />
+          </ErrorBoundary>
 
           {/* Intelligence Layer - Username Scan Tiles */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <IdentityStrengthScore scanId={jobId} />
-            <UsernameUniquenessScore scanId={jobId} />
-            <FootprintClusterMap scanId={jobId} />
+            <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+              <IdentityStrengthScore scanId={jobId} />
+            </ErrorBoundary>
+            <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+              <UsernameUniquenessScore scanId={jobId} />
+            </ErrorBoundary>
+            <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+              <FootprintClusterMap scanId={jobId} />
+            </ErrorBoundary>
           </div>
 
           {/* Request Status Distribution */}
-          <RequestStatusDistribution scanId={jobId} />
+          <ErrorBoundary fallback={<Skeleton className="h-48 w-full" />}>
+            <RequestStatusDistribution scanId={jobId} />
+          </ErrorBoundary>
 
           {/* Provider Status Panel */}
-          <ProviderStatusPanel scanId={jobId} />
+          <ErrorBoundary fallback={<Skeleton className="h-48 w-full" />}>
+            <ProviderStatusPanel scanId={jobId} />
+          </ErrorBoundary>
 
           {/* Filters */}
           <ResultsFilters
@@ -223,39 +237,43 @@ export default function SimpleMaigretResults() {
             providerStats={providerStats}
           />
 
-          <SimpleResultsViewer 
-            jobId={jobId}
-            searchQuery={searchQuery}
-            selectedProviders={selectedProviders}
-            onProvidersDetected={(providers, stats) => {
-              setAvailableProviders(providers);
-              setProviderStats(stats);
-              
-              // Calculate total findings for AI Insights
-              const total = Object.values(stats).reduce((sum, count) => sum + count, 0);
-              setTotalFindings(total);
-            }}
-            onProviderStatusesDetected={(statuses) => {
-              setProviderStatuses(statuses);
-            }}
-          />
+          <ErrorBoundary fallback={<Skeleton className="h-96 w-full" />}>
+            <SimpleResultsViewer 
+              jobId={jobId}
+              searchQuery={searchQuery}
+              selectedProviders={selectedProviders}
+              onProvidersDetected={(providers, stats) => {
+                setAvailableProviders(providers);
+                setProviderStats(stats);
+                
+                // Calculate total findings for AI Insights
+                const total = Object.values(stats).reduce((sum, count) => sum + count, 0);
+                setTotalFindings(total);
+              }}
+              onProviderStatusesDetected={(statuses) => {
+                setProviderStatuses(statuses);
+              }}
+            />
+          </ErrorBoundary>
 
           {/* AI Insights Panel */}
-          <AIInsightsPanel 
-            scanData={{
-              jobId: jobId,
-              scanType: 'username',
-              exposures: totalFindings,
-              presence: (providerStats.maigret || 0) + (providerStats.sherlock || 0) + (providerStats.gosearch || 0) + (providerStats['apify-social'] || 0),
-              providers: {
-                maigret: providerStats.maigret || 0,
-                sherlock: providerStats.sherlock || 0,
-                gosearch: providerStats.gosearch || 0,
-                apifySocial: providerStats['apify-social'] || 0
-              },
-              statuses: providerStatuses
-            }}
-          />
+          <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+            <AIInsightsPanel 
+              scanData={{
+                jobId: jobId,
+                scanType: 'username',
+                exposures: totalFindings,
+                presence: (providerStats.maigret || 0) + (providerStats.sherlock || 0) + (providerStats.gosearch || 0) + (providerStats['apify-social'] || 0),
+                providers: {
+                  maigret: providerStats.maigret || 0,
+                  sherlock: providerStats.sherlock || 0,
+                  gosearch: providerStats.gosearch || 0,
+                  apifySocial: providerStats['apify-social'] || 0
+                },
+                statuses: providerStatuses
+              }}
+            />
+          </ErrorBoundary>
         </div>
       </main>
       <Footer />

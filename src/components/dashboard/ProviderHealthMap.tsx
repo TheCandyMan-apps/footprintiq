@@ -15,7 +15,7 @@ interface ProviderStats {
 }
 
 export function ProviderHealthMap({ workspaceId }: { workspaceId?: string }) {
-  const { data: providers = [], isLoading, refetch } = useQuery({
+  const { data: providers = [], isLoading, error, refetch } = useQuery({
     queryKey: ['provider-health', workspaceId],
     queryFn: async () => {
       console.log('[ProviderHealthMap] Fetching provider health, workspaceId:', workspaceId);
@@ -29,7 +29,10 @@ export function ProviderHealthMap({ workspaceId }: { workspaceId?: string }) {
       
       const { data: events, error } = await eventsQuery;
 
-      if (error) throw error;
+      if (error) {
+        console.error('[ProviderHealthMap] Error fetching events:', error);
+        throw error;
+      }
       
       console.log('[ProviderHealthMap] Raw events count:', events?.length || 0);
       if (!events || events.length === 0) {
@@ -118,7 +121,21 @@ export function ProviderHealthMap({ workspaceId }: { workspaceId?: string }) {
       <CardContent>
         {isLoading ? (
           <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-            Loading...
+            <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+            Loading provider health...
+          </div>
+        ) : error ? (
+          <div className="h-[200px] flex flex-col items-center justify-center text-destructive gap-2">
+            <Activity className="h-8 w-8 opacity-50" />
+            <p className="text-center">Failed to load provider health</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => refetch()}
+              className="mt-2"
+            >
+              Retry
+            </Button>
           </div>
         ) : providers.length === 0 ? (
           <div className="h-[200px] flex flex-col items-center justify-center text-muted-foreground gap-2">

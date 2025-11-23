@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Eye, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Eye, AlertTriangle, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,6 +23,7 @@ interface RecentFindingsProps {
 export function RecentFindings({ workspaceId }: RecentFindingsProps) {
   const [findings, setFindings] = useState<Finding[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,6 +31,8 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
   }, [workspaceId]);
 
   const fetchRecentFindings = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -44,9 +48,15 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
         findingsQuery = findingsQuery.eq('workspace_id', workspaceId);
       }
       
-      const { data } = await findingsQuery
+      const { data, error: fetchError } = await findingsQuery
         .order('created_at', { ascending: false })
         .limit(20); // Fetch 20 to filter and display 10
+
+      if (fetchError) {
+        console.error('[RecentFindings] Error fetching findings:', fetchError);
+        setError('Failed to load recent findings');
+        return;
+      }
 
       console.log('[RecentFindings] Raw findings count:', data?.length || 0);
 
@@ -63,6 +73,7 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
       setFindings(validFindings);
     } catch (error) {
       console.error('[RecentFindings] Error fetching findings:', error);
+      setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -95,7 +106,21 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
       <CardContent>
         {loading ? (
           <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-            Loading...
+            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            Loading recent findings...
+          </div>
+        ) : error ? (
+          <div className="h-[300px] flex flex-col items-center justify-center text-destructive gap-2">
+            <AlertTriangle className="h-8 w-8 opacity-50" />
+            <p className="text-center">{error}</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchRecentFindings}
+              className="mt-2"
+            >
+              Retry
+            </Button>
           </div>
         ) : findings.length === 0 ? (
           <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground gap-2">
