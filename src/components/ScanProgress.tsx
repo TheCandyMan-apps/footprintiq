@@ -173,37 +173,6 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         if (!isMounted) return;
         setProgress(60);
 
-        // Handle image upload if provided
-        if (scanData.imageFile) {
-          const fileExt = scanData.imageFile.name.split('.').pop();
-          const fileName = `${scan.id}_${Date.now()}.${fileExt}`;
-          const filePath = `${userId}/${fileName}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('scan-images')
-            .upload(filePath, scanData.imageFile);
-
-          if (!uploadError) {
-            const { data: signed, error: signedError } = await supabase.storage
-              .from('scan-images')
-              .createSignedUrl(filePath, 60 * 60);
-
-            if (!signedError && signed?.signedUrl) {
-              try {
-                await withTimeout(
-                  supabase.functions.invoke('reverse-image-search', {
-                    body: { imageUrl: signed.signedUrl, scanId: scan.id }
-                  }),
-                  20000,
-                  'Reverse image search'
-                );
-              } catch (e) {
-                console.warn('Reverse image search skipped:', (e as any)?.message || e);
-              }
-            }
-          }
-        }
-
         if (!isMounted) return;
         setProgress(90);
 
