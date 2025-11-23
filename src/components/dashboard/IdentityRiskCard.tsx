@@ -7,9 +7,10 @@ interface IdentityRiskCardProps {
   breaches: number;
   darkWeb: number;
   dataBrokers: number;
+  exposures: number;
 }
 
-export function IdentityRiskCard({ riskScore, breaches, darkWeb, dataBrokers }: IdentityRiskCardProps) {
+export function IdentityRiskCard({ riskScore, breaches, darkWeb, dataBrokers, exposures }: IdentityRiskCardProps) {
   const getRiskLevel = (score: number) => {
     if (score >= 80) return { label: 'Low Risk', color: 'text-green-500', icon: CheckCircle };
     if (score >= 50) return { label: 'Medium Risk', color: 'text-yellow-500', icon: AlertTriangle };
@@ -19,7 +20,7 @@ export function IdentityRiskCard({ riskScore, breaches, darkWeb, dataBrokers }: 
   const risk = getRiskLevel(riskScore);
   const RiskIcon = risk.icon;
 
-  const totalThreats = breaches + darkWeb + dataBrokers;
+  const totalThreats = breaches + darkWeb + dataBrokers + exposures;
 
   return (
     <Card className="shadow-card hover:shadow-glow transition-shadow">
@@ -53,6 +54,10 @@ export function IdentityRiskCard({ riskScore, breaches, darkWeb, dataBrokers }: 
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Data Brokers</span>
             <span className="font-semibold text-yellow-500">{dataBrokers}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Online Exposures</span>
+            <span className="font-semibold text-blue-500">{exposures}</span>
           </div>
           <div className="flex items-center justify-between text-sm pt-2 border-t border-border">
             <span className="text-muted-foreground font-medium">Total Threats</span>
