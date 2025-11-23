@@ -457,6 +457,7 @@ serve(async (req) => {
             status: 'completed',
             cache_key: cacheKey,
             cached_from_scan_id: cachedScan.id,
+            gosearch_pending: false,
             completed_at: new Date().toISOString(),
             provider_counts: {}
           } as any);
