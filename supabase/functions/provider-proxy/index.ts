@@ -140,9 +140,53 @@ serve(async (req) => {
       case 'fullcontact':
         result = await callFullContact(target, type);
         break;
-      case 'pipl':
+      case 'pipl': {
+        const apiKey = Deno.env.get('PIPL_API_KEY');
+        const flagEnabled = Deno.env.get('VITE_FLAG_PIPL_PROVIDER') === 'true';
+        
+        if (!flagEnabled) {
+          console.log('[pipl] Provider disabled via feature flag');
+          const now = new Date().toISOString();
+          result = {
+            findings: [{
+              provider: 'pipl',
+              kind: 'provider.disabled',
+              severity: 'info' as const,
+              confidence: 1.0,
+              observedAt: now,
+              evidence: [
+                { key: 'message', value: 'Pipl provider is currently disabled' },
+                { key: 'reason', value: 'Feature flag not enabled' }
+              ],
+              meta: { flagged: true }
+            }]
+          };
+          break;
+        }
+        
+        if (!apiKey) {
+          console.log('[pipl] API key not configured');
+          const now = new Date().toISOString();
+          result = {
+            findings: [{
+              provider: 'pipl',
+              kind: 'provider.unconfigured',
+              severity: 'info' as const,
+              confidence: 1.0,
+              observedAt: now,
+              evidence: [
+                { key: 'message', value: 'Pipl API key not configured' },
+                { key: 'config_required', value: 'PIPL_API_KEY' }
+              ],
+              meta: { unconfigured: true }
+            }]
+          };
+          break;
+        }
+        
         result = await callPipl(target, type);
         break;
+      }
       case 'clearbit':
         result = await callClearbit(target, type);
         break;

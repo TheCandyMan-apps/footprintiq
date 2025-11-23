@@ -247,12 +247,15 @@ serve(async (req) => {
     const normalize = normalizerFor(actorSlug);
     const findings = normalize(safeItems);
     
+    // Ensure findings is always an array
+    const safeFindings = Array.isArray(findings) ? findings : [];
+    
     await admin.from('apify_results').insert({
       task_id: taskId,
       result: { 
         actorSlug, 
         rawCount: safeItems.length, 
-        findings,
+        findings: safeFindings,
         datasetId,
         runId 
       },
@@ -260,9 +263,9 @@ serve(async (req) => {
     
     await admin.from('apify_tasks').update({ status: 'succeeded', finished_at: new Date() }).eq('id', taskId);
 
-    console.log(`[apify-run] Success: ${findings.length} findings from ${safeItems.length} raw items`);
+    console.log(`[apify-run] Success: ${safeFindings.length} findings from ${safeItems.length} raw items`);
     return jsonResponse(200, { 
-      findings, 
+      findings: safeFindings, 
       taskId, 
       debited,
       meta: {

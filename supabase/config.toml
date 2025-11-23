@@ -66,3 +66,6 @@ verify_jwt = true
 
 [functions.gosearch-results]
 verify_jwt = false
+
+[functions.providers-pipl]
+verify_jwt = true

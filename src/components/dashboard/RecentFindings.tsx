@@ -15,24 +15,34 @@ interface Finding {
   created_at: string;
 }
 
-export function RecentFindings() {
+interface RecentFindingsProps {
+  workspaceId?: string;
+}
+
+export function RecentFindings({ workspaceId }: RecentFindingsProps) {
   const [findings, setFindings] = useState<Finding[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchRecentFindings();
-  }, []);
+  }, [workspaceId]);
 
   const fetchRecentFindings = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get recent findings (limit 10)
-      const { data } = await supabase
+      // Get recent findings (limit 10) with workspace filter
+      let findingsQuery = supabase
         .from('findings')
-        .select('id, scan_id, kind, severity, provider, created_at')
+        .select('id, scan_id, kind, severity, provider, created_at');
+      
+      if (workspaceId) {
+        findingsQuery = findingsQuery.eq('workspace_id', workspaceId);
+      }
+      
+      const { data } = await findingsQuery
         .order('created_at', { ascending: false })
         .limit(10);
 

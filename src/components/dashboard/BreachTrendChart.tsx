@@ -22,13 +22,19 @@ export function BreachTrendChart({ workspaceId }: BreachTrendChartProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Get findings from last 7 days
+      // Get findings from last 7 days with workspace filter
       const sevenDaysAgo = subDays(new Date(), 7);
-      const { data: findings } = await supabase
+      
+      let findingsQuery = supabase
         .from('findings')
         .select('created_at, kind, severity')
-        .gte('created_at', sevenDaysAgo.toISOString())
-        .order('created_at', { ascending: true });
+        .gte('created_at', sevenDaysAgo.toISOString());
+      
+      if (workspaceId) {
+        findingsQuery = findingsQuery.eq('workspace_id', workspaceId);
+      }
+      
+      const { data: findings } = await findingsQuery.order('created_at', { ascending: true });
 
       if (!findings) {
         setLoading(false);

@@ -79,8 +79,9 @@ export function SystemHealth() {
         return <Database className="w-5 h-5" />;
       case 'maigret_worker':
       case 'sherlock_worker':
-      case 'osint_worker':
         return <Server className="w-5 h-5" />;
+      case 'osint_worker':
+        return <Server className="w-5 h-5 text-primary" />;
       default:
         return <Activity className="w-5 h-5" />;
     }
@@ -108,6 +109,7 @@ export function SystemHealth() {
             size="sm"
             onClick={runDiagnostics}
             disabled={loading}
+            aria-label="Refresh system diagnostics"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh

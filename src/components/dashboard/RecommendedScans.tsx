@@ -141,6 +141,7 @@ export function RecommendedScans() {
                     size="sm"
                     onClick={() => handleScanClick(rec.type)}
                     className="flex-shrink-0"
+                    aria-label={`Start ${rec.type} scan`}
                   >
                     <Play className="h-3 w-3 mr-1" />
                     Start
