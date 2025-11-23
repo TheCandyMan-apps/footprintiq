@@ -263,11 +263,12 @@ const ResultsDetail = () => {
       }
 
       // Stop polling if scan is completed or failed/timeout
-      if (scanData.status === 'completed' || scanData.status === 'failed' || scanData.status === 'timeout') {
+      if (scanData.status === 'completed' || scanData.status === 'failed' || scanData.status === 'timeout' || scanData.status === 'complete_partial') {
         if (pollTimeoutRef.current !== null) {
           clearTimeout(pollTimeoutRef.current);
           pollTimeoutRef.current = null;
         }
+        setLoading(false); // Stop loading state
       }
 
       // Fetch trend data for this user
@@ -451,20 +452,23 @@ const ResultsDetail = () => {
       }
 
       // If background job is still populating AND scan not completed, poll less frequently (max 30 tries)
-      const hasData = (sources?.length ?? 0) > 0 || (profiles?.length ?? 0) > 0;
-      if (!hasData && scanData.status !== 'completed' && pollTriesRef.current < 30) {
+      const hasData = (sources?.length ?? 0) > 0 || (profiles?.length ?? 0) > 0 || convertedFindings.length > 0;
+      const isTerminalState = scanData.status === 'completed' || scanData.status === 'failed' || scanData.status === 'timeout' || scanData.status === 'complete_partial';
+      
+      if (!hasData && !isTerminalState && pollTriesRef.current < 30) {
         pollTriesRef.current++;
         if (pollTimeoutRef.current !== null) {
           clearTimeout(pollTimeoutRef.current);
         }
         pollTimeoutRef.current = window.setTimeout(fetchScanData, 5000);
-      } else if (scanData.status === 'completed' && !hasData) {
-        // Stop polling if scan is completed but no data
-        console.log('[ResultsDetail] Scan completed with no data_sources/social_profiles');
+      } else {
+        // Stop polling if scan is in terminal state or has data
+        console.log('[ResultsDetail] Stopping poll - terminal state or has data');
         if (pollTimeoutRef.current !== null) {
           clearTimeout(pollTimeoutRef.current);
           pollTimeoutRef.current = null;
         }
+        setLoading(false);
       }
     } catch (error: any) {
       console.error("Error fetching scan data:", error);
