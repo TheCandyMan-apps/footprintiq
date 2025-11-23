@@ -48,7 +48,8 @@ export const exportDNAasPDF = async (
   branding?: BrandingSettings,
   template: PDFTemplate = 'technical'
 ) => {
-  const doc = new jsPDF();
+  try {
+    const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
   // Helper to convert hex to RGB
@@ -71,20 +72,31 @@ export const exportDNAasPDF = async (
   
   let yPosition = 20;
   
-  // Logo (if provided)
+  // Logo (if provided) - with timeout and fallback
   if (branding?.logo_url) {
     try {
       const img = new Image();
       img.crossOrigin = 'anonymous';
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
+      
+      // Create timeout promise (5 seconds)
+      const timeoutPromise = new Promise<never>((_, reject) => 
+        setTimeout(() => reject(new Error('Logo load timeout after 5s')), 5000)
+      );
+      
+      // Create load promise
+      const loadPromise = new Promise<HTMLImageElement>((resolve, reject) => {
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Failed to load logo'));
         img.src = branding.logo_url!;
       });
-      doc.addImage(img, 'PNG', 14, yPosition, 30, 30);
+      
+      // Race between load and timeout
+      const loadedImg = await Promise.race([loadPromise, timeoutPromise]);
+      doc.addImage(loadedImg, 'PNG', 14, yPosition, 30, 30);
       yPosition += 35;
     } catch (error) {
-      console.error('Error loading logo:', error);
+      console.warn('Logo failed to load, continuing without it:', error);
+      // Continue PDF generation without logo - no re-throw
     }
   }
   
@@ -297,6 +309,11 @@ export const exportDNAasPDF = async (
     );
   }
   
-  // Save
-  doc.save(`digital-dna-report-${new Date().toISOString().split('T')[0]}.pdf`);
+    // Save
+    doc.save(`digital-dna-report-${new Date().toISOString().split('T')[0]}.pdf`);
+  } catch (error) {
+    console.error('PDF generation failed:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+    throw new Error(`Failed to generate ${template} PDF report: ${errorMsg}`);
+  }
 };

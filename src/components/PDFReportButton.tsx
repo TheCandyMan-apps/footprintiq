@@ -16,7 +16,14 @@ export function PDFReportButton({ scanId }: PDFReportButtonProps) {
 
   const generatePDF = async () => {
     setLoading(true);
+    
+    toast({ 
+      title: "Preparing Report...", 
+      description: "Generating your privacy report" 
+    });
+
     try {
+      console.log(`[Export] Generating privacy report for scan ${scanId}`);
       const { data, error } = await supabase.functions.invoke("generate-pdf-report", {
         body: { scanId },
       });
@@ -67,9 +74,19 @@ export function PDFReportButton({ scanId }: PDFReportButtonProps) {
       // Save PDF
       doc.save(`footprintiq-report-${scanId}.pdf`);
       
-      toast({ title: "Success", description: "PDF report generated" });
+      console.log('[Export] Privacy report PDF generated successfully');
+      toast({ 
+        title: "✅ Success", 
+        description: "PDF report generated and downloaded" 
+      });
     } catch (error: any) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      console.error('Error generating PDF:', error);
+      const errorMsg = error?.message || 'Unknown error occurred';
+      toast({ 
+        title: "Export Failed", 
+        description: `Could not generate PDF: ${errorMsg}`, 
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }

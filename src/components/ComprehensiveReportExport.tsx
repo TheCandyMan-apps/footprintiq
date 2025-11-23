@@ -52,7 +52,15 @@ export const ComprehensiveReportExport = ({
 
   const generatePDF = async () => {
     setIsExporting(true);
+    
+    // Show loading toast
+    const loadingToast = toast({
+      title: 'Generating Report...',
+      description: 'Please wait while we create your comprehensive PDF report',
+    });
+
     try {
+      console.log(`[Export] Generating comprehensive report for scan ${scanId}`);
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
@@ -259,15 +267,17 @@ export const ComprehensiveReportExport = ({
         colors: ['#6366f1', '#8b5cf6', '#ec4899'],
       });
 
+      console.log('[Export] Comprehensive PDF generated successfully');
       toast({
         title: '🎉 Report Generated!',
         description: 'Your comprehensive report has been downloaded.',
       });
     } catch (error) {
       console.error('Error generating PDF:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       toast({
         title: 'Export Failed',
-        description: 'Unable to generate report. Please try again.',
+        description: `Unable to generate report: ${errorMsg}. Try CSV export instead.`,
         variant: 'destructive',
       });
     } finally {
