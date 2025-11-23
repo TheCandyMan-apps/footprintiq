@@ -48,9 +48,16 @@ export async function getAIResponse({
       content: data.content,
       modelUsed: data.modelUsed,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('AI Router Error:', error);
-    throw new Error('Failed to get AI response. Please try again.');
+    
+    // Extract meaningful error messages from the backend response
+    const errorMessage = error?.message || 
+      error?.error?.message || 
+      error?.error || 
+      'Failed to get AI response. Please try again.';
+    
+    throw new Error(errorMessage);
   }
 }
 

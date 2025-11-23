@@ -380,54 +380,8 @@ const Dashboard = () => {
           }
         });
         setScanSocialLinks(socialLinksMap);
-        // Compute DNA metrics from findings for the most recent scan
-        const { data: findings } = await (supabase as any)
-          .from('findings')
-          .select('kind, severity, provider')
-          .eq('scan_id', recentScan.id);
-
-        const f = findings || [];
-        const BROKER_KEYWORDS = ['whitepages','spokeo','intelius','beenverified','truthfinder','pipl','radaris','fastpeoplesearch','peoplefinder','ussearch','peekyou','mylife','broker','data broker'];
-        const DARK_WEB_KEYWORDS = ['intelx','paste','dark','onion','breach','leak','darkweb'];
-        const BREACH_KEYWORDS = ['hibp','haveibeenpwned','breach','leak','password'];
-
-        const breachCount = f.filter(x => {
-          const kind = (x.kind || '').toLowerCase();
-          const provider = (x.provider || '').toLowerCase();
-          const severity = (x.severity || '').toLowerCase();
-          return BREACH_KEYWORDS.some(k => kind.includes(k) || provider.includes(k)) || severity === 'critical' || severity === 'high';
-        }).length;
-        const exposuresCount = f.length;
-        const dataBrokersCount = f.filter(x => {
-          const kind = (x.kind || '').toLowerCase();
-          const provider = (x.provider || '').toLowerCase();
-          return BROKER_KEYWORDS.some(k => kind.includes(k) || provider.includes(k));
-        }).length;
-        const darkWebCount = f.filter(x => {
-          const kind = (x.kind || '').toLowerCase();
-          const provider = (x.provider || '').toLowerCase();
-          return DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k));
-        }).length;
-
-        // Normalize privacy_score to 0-100 scale
-        let normalizedScore: number | undefined;
-        if (recentScan.privacy_score !== null && recentScan.privacy_score !== undefined) {
-          const rawScore = recentScan.privacy_score;
-          // Detect scale: if <=10, treat as 0-10 and multiply by 10; if >10, use as-is
-          if (rawScore <= 10) {
-            normalizedScore = Math.min(100, Math.max(0, rawScore * 10));
-          } else {
-            normalizedScore = Math.min(100, Math.max(0, rawScore));
-          }
-        }
-        
-        setDnaMetrics(prev => ({
-          score: normalizedScore !== undefined ? normalizedScore : prev.score,
-          breaches: breachCount,
-          exposures: exposuresCount,
-          dataBrokers: dataBrokersCount,
-          darkWeb: darkWebCount
-        }));
+        // DNA metrics already calculated above (lines 277-341)
+        // This duplicate calculation has been removed to prevent overwriting correct values
 
         // Fetch trend data for this user
         const trends = await analyzeTrends(userId, 30);
