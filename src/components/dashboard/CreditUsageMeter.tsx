@@ -22,12 +22,24 @@ export function CreditUsageMeter() {
 
   const fetchCreditData = async () => {
     try {
-      if (!workspace?.id) return;
+      if (!workspace?.id) {
+        console.log('[CreditUsageMeter] No workspace ID');
+        return;
+      }
+
+      console.log('[CreditUsageMeter] Fetching credit data for workspace:', workspace.id);
 
       // Get current balance
-      const { data: balanceData } = await supabase.rpc('get_credits_balance', {
+      const { data: balanceData, error: balanceError } = await supabase.rpc('get_credits_balance', {
         _workspace_id: workspace.id,
       });
+      
+      if (balanceError) {
+        console.error('[CreditUsageMeter] Error fetching balance:', balanceError);
+        throw balanceError;
+      }
+      
+      console.log('[CreditUsageMeter] Current balance:', balanceData);
       setBalance(balanceData || 0);
 
       // Get monthly spend
@@ -35,19 +47,24 @@ export function CreditUsageMeter() {
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
 
-      const { data: ledgerData } = await supabase
+      const { data: ledgerData, error: ledgerError } = await supabase
         .from('credits_ledger')
         .select('delta')
         .eq('workspace_id', workspace.id)
         .gte('created_at', monthStart.toISOString())
         .lt('delta', 0); // Only negative deltas (spending)
 
+      if (ledgerError) {
+        console.error('[CreditUsageMeter] Error fetching ledger:', ledgerError);
+      }
+
       const totalSpend = Math.abs(
         ledgerData?.reduce((sum, entry) => sum + entry.delta, 0) || 0
       );
+      console.log('[CreditUsageMeter] Monthly spend:', totalSpend);
       setMonthlySpend(totalSpend);
     } catch (error) {
-      console.error('Error fetching credit data:', error);
+      console.error('[CreditUsageMeter] Error fetching credit data:', error);
     } finally {
       setLoading(false);
     }

@@ -25,6 +25,8 @@ export function RecommendedScans() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log('[RecommendedScans] Generating recommendations');
+
       // Get recent scans
       const { data: scans } = await supabase
         .from('scans')
@@ -32,6 +34,7 @@ export function RecommendedScans() {
         .order('created_at', { ascending: false })
         .limit(10);
 
+      console.log('[RecommendedScans] Recent scans count:', scans?.length || 0);
       const recs: Recommendation[] = [];
 
       if (scans && scans.length > 0) {
@@ -87,9 +90,10 @@ export function RecommendedScans() {
         });
       }
 
+      console.log('[RecommendedScans] Generated recommendations:', recs);
       setRecommendations(recs.slice(0, 3));
     } catch (error) {
-      console.error('Error generating recommendations:', error);
+      console.error('[RecommendedScans] Error generating recommendations:', error);
     } finally {
       setLoading(false);
     }
@@ -118,8 +122,10 @@ export function RecommendedScans() {
             Loading...
           </div>
         ) : recommendations.length === 0 ? (
-          <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-            No recommendations at this time
+          <div className="h-[200px] flex flex-col items-center justify-center text-muted-foreground gap-2">
+            <Target className="h-8 w-8 opacity-50" />
+            <p className="text-center">All scan types completed!</p>
+            <p className="text-xs text-center">Great job on comprehensive coverage</p>
           </div>
         ) : (
           <div className="space-y-3">

@@ -11,6 +11,8 @@ interface IdentityRiskCardProps {
 }
 
 export function IdentityRiskCard({ riskScore, breaches, darkWeb, dataBrokers, exposures }: IdentityRiskCardProps) {
+  console.log('[IdentityRiskCard] Rendering with:', { riskScore, breaches, darkWeb, dataBrokers, exposures });
+  
   const getRiskLevel = (score: number) => {
     if (score >= 80) return { label: 'Low Risk', color: 'text-green-500', icon: CheckCircle };
     if (score >= 50) return { label: 'Medium Risk', color: 'text-yellow-500', icon: AlertTriangle };

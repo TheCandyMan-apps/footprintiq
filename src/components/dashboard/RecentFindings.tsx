@@ -33,6 +33,8 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log('[RecentFindings] Fetching findings, workspaceId:', workspaceId);
+
       // Get recent findings (limit 10) with workspace filter
       let findingsQuery = supabase
         .from('findings')
@@ -44,11 +46,23 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
       
       const { data } = await findingsQuery
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(20); // Fetch 20 to filter and display 10
 
-      setFindings(data || []);
+      console.log('[RecentFindings] Raw findings count:', data?.length || 0);
+
+      // Filter out provider errors and tier restrictions
+      const validFindings = (data || []).filter(f => {
+        const kind = (f.kind || '').toLowerCase();
+        return !kind.includes('provider_error') && 
+               !kind.includes('error') &&
+               !kind.includes('tier_restricted') &&
+               !kind.includes('plan_blocked');
+      }).slice(0, 10);
+
+      console.log('[RecentFindings] Valid findings after filtering:', validFindings.length);
+      setFindings(validFindings);
     } catch (error) {
-      console.error('Error fetching recent findings:', error);
+      console.error('[RecentFindings] Error fetching findings:', error);
     } finally {
       setLoading(false);
     }
@@ -86,7 +100,8 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
         ) : findings.length === 0 ? (
           <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground gap-2">
             <AlertTriangle className="h-8 w-8 opacity-50" />
-            <p>No findings yet</p>
+            <p className="text-center">No findings yet</p>
+            <p className="text-xs text-center">Run your first scan to see results here</p>
           </div>
         ) : (
           <div className="space-y-3 max-h-[300px] overflow-y-auto">
