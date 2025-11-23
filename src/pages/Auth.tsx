@@ -13,6 +13,7 @@ import { z } from "zod";
 import { useTwitterAuth } from "@/hooks/useTwitterAuth";
 import { GDPRConsentModal } from "@/components/auth/GDPRConsentModal";
 import { PersonaSelectorModal, type Persona } from "@/components/auth/PersonaSelectorModal";
+import { logActivity } from "@/lib/activityLogger";
 const authSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
   password: z.string().min(6, "Password must be at least 6 characters").max(72, "Password must be less than 72 characters")
@@ -186,18 +187,24 @@ const Auth = () => {
       return;
     }
     setLoading(true);
-    const {
-      error
-    } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email: result.data.email,
-      password: result.data.password
+      password: result.data.password,
     });
     setLoading(false);
+    
     if (error) {
       toast({
         title: "Sign in failed",
         description: error.message,
-        variant: "destructive"
+        variant: "destructive",
+      });
+    } else {
+      // Log successful login
+      await logActivity({
+        action: "user.login",
+        entityType: "user",
+        metadata: { method: "password" },
       });
     }
   };
