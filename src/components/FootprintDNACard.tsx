@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { CircularProgress } from "@/components/CircularProgress";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
-import { AlertTriangle, Eye, Database, Shield, RefreshCw } from "lucide-react";
+import { AlertTriangle, Eye, Database, Shield, RefreshCw, Users, Gamepad, Briefcase, Globe } from "lucide-react";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -10,13 +10,22 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { getAIResponse } from "@/lib/aiRouter";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { getPlatformCategory } from "@/lib/categoryMapping";
 
-async function aiScore(data: any) {
-  const { content } = await getAIResponse({
-    systemPrompt: "Return ONLY a number 0-100 representing overall privacy risk.",
-    userPrompt: `breaches:${data.breaches} exposures:${data.exposures} darkWeb:${data.darkWeb}`,
-  });
-  return parseInt(content.trim(), 10) || 50;
+async function aiScore(data: any, isUsernameScan: boolean) {
+  if (isUsernameScan) {
+    const { content } = await getAIResponse({
+      systemPrompt: "Return ONLY a number 0-100 representing privacy exposure risk based on username presence.",
+      userPrompt: `social:${data.social} gaming:${data.gaming} professional:${data.professional} other:${data.other}`,
+    });
+    return parseInt(content.trim(), 10) || 50;
+  } else {
+    const { content } = await getAIResponse({
+      systemPrompt: "Return ONLY a number 0-100 representing overall privacy risk.",
+      userPrompt: `breaches:${data.breaches} exposures:${data.exposures} darkWeb:${data.darkWeb}`,
+    });
+    return parseInt(content.trim(), 10) || 50;
+  }
 }
 
 interface MetricData {
@@ -52,8 +61,54 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
 
   // Fetch real data from Supabase with realtime support
   const fetchFootprintMetrics = async () => {
-    // Helper to calculate metrics from findings
-    const calculateMetrics = (findings: any[]) => {
+    // Detect if this is a username scan based on finding kinds
+    const detectScanType = (findings: any[]) => {
+      const usernameKinds = ['profile_presence', 'presence.hit', 'username.found'];
+      return findings.some(f => {
+        const kind = (f.kind || '').toLowerCase();
+        return usernameKinds.some(uk => kind.includes(uk));
+      });
+    };
+
+    // Helper to calculate username scan metrics
+    const calculateUsernameScanMetrics = (findings: any[]) => {
+      let social = 0, gaming = 0, professional = 0, other = 0;
+
+      for (const finding of findings) {
+        // Extract platform name from evidence or kind
+        const evidence = finding.evidence || {};
+        const platform = evidence.platform || evidence.site || evidence.url || finding.provider || '';
+        
+        if (!platform) {
+          other++;
+          continue;
+        }
+
+        const category = getPlatformCategory(platform);
+        
+        switch (category) {
+          case 'Social':
+            social++;
+            break;
+          case 'Games':
+            gaming++;
+            break;
+          case 'Developer':
+            professional++;
+            break;
+          case 'Forums':
+            professional++;
+            break;
+          default:
+            other++;
+        }
+      }
+
+      return { social, gaming, professional, other, isUsernameScan: true };
+    };
+
+    // Helper to calculate breach scan metrics
+    const calculateBreachMetrics = (findings: any[]) => {
       const BROKER_KEYWORDS = ['whitepages', 'spokeo', 'intelius', 'beenverified', 'truthfinder',
         'pipl', 'radaris', 'fastpeoplesearch', 'peoplefinder', 'ussearch', 'peekyou', 'mylife', 'broker', 'data broker'];
       const DARK_WEB_KEYWORDS = ['intelx', 'paste', 'dark', 'onion', 'breach', 'leak', 'darkweb'];
@@ -72,7 +127,13 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
         if (DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) darkWeb++;
       }
 
-      return { breaches, exposures, dataBrokers, darkWeb };
+      return { breaches, exposures, dataBrokers, darkWeb, isUsernameScan: false };
+    };
+
+    // Main calculation logic
+    const calculateMetrics = (findings: any[]) => {
+      const isUsernameScan = detectScanType(findings);
+      return isUsernameScan ? calculateUsernameScanMetrics(findings) : calculateBreachMetrics(findings);
     };
 
     // Priority 1: Use scanId if provided (most direct)
@@ -85,12 +146,13 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
         if (!data || data.length === 0) {
           const { data: scanData } = await supabase.from('scans').select('total_sources_found, high_risk_count, medium_risk_count, low_risk_count').eq('id', scanId).single();
           if (scanData && scanData.total_sources_found > 0) {
-            // Return approximate metrics from scan summary
+            // Return approximate metrics from scan summary (assume breach scan)
             return {
               breaches: scanData.high_risk_count || 0,
               exposures: scanData.total_sources_found || 0,
               dataBrokers: scanData.medium_risk_count || 0,
-              darkWeb: scanData.low_risk_count || 0
+              darkWeb: scanData.low_risk_count || 0,
+              isUsernameScan: false
             };
           }
         }
@@ -98,7 +160,7 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
         return calculateMetrics(data || []);
       } catch (err) {
         console.error('Error fetching scan metrics from findings:', err);
-        return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
+        return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0, isUsernameScan: false };
       }
     }
 
@@ -119,7 +181,7 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
     }
 
     // Priority 3: Fall back to workspace-wide findings
-    if (!workspace?.id) return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
+    if (!workspace?.id) return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0, isUsernameScan: false };
 
     try {
       const { data, error } = await (supabase as any)
@@ -130,14 +192,14 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
       return calculateMetrics(data || []);
     } catch (err) {
       console.error('Error fetching workspace-wide findings:', err);
-      return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 };
+      return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0, isUsernameScan: false };
     }
   };
 
   const { data: footprintData, refetch, isLoading } = useQuery({
     queryKey: ["footprint-metrics", workspace?.id || null, jobId, scanId],
     queryFn: fetchFootprintMetrics,
-    initialData: { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 },
+    initialData: { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0, isUsernameScan: false },
     enabled: !!(workspace?.id || scanId || jobId),
   });
 
@@ -196,7 +258,7 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
   const [score, setScore] = useState<number | null>(null);
   
   useEffect(() => {
-    aiScore(footprintData).then(setScore);
+    aiScore(footprintData, footprintData.isUsernameScan).then(setScore);
   }, [footprintData]);
 
   const riskScore = score ?? 0;
@@ -232,36 +294,68 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
     }));
   };
 
-  const metrics: MetricData[] = [
-    {
-      label: "Breaches",
-      value: footprintData.breaches,
-      icon: AlertTriangle,
-      sparklineData: generateSparkline(footprintData.breaches).map(d => d.value),
-      color: "text-red-500",
-    },
-    {
-      label: "Exposures",
-      value: footprintData.exposures,
-      icon: Eye,
-      sparklineData: generateSparkline(footprintData.exposures).map(d => d.value),
-      color: "text-orange-500",
-    },
-    {
-      label: "Data Brokers",
-      value: footprintData.dataBrokers,
-      icon: Database,
-      sparklineData: generateSparkline(footprintData.dataBrokers).map(d => d.value),
-      color: "text-blue-500",
-    },
-    {
-      label: "Dark Web",
-      value: footprintData.darkWeb,
-      icon: Shield,
-      sparklineData: generateSparkline(footprintData.darkWeb).map(d => d.value),
-      color: "text-purple-500",
-    },
-  ];
+  // Dynamic metrics based on scan type
+  const metrics: MetricData[] = footprintData.isUsernameScan
+    ? [
+        {
+          label: "Social",
+          value: ('social' in footprintData ? footprintData.social : 0),
+          icon: Users,
+          sparklineData: generateSparkline('social' in footprintData ? footprintData.social : 0).map(d => d.value),
+          color: "text-blue-500",
+        },
+        {
+          label: "Gaming",
+          value: ('gaming' in footprintData ? footprintData.gaming : 0),
+          icon: Gamepad,
+          sparklineData: generateSparkline('gaming' in footprintData ? footprintData.gaming : 0).map(d => d.value),
+          color: "text-purple-500",
+        },
+        {
+          label: "Professional",
+          value: ('professional' in footprintData ? footprintData.professional : 0),
+          icon: Briefcase,
+          sparklineData: generateSparkline('professional' in footprintData ? footprintData.professional : 0).map(d => d.value),
+          color: "text-green-500",
+        },
+        {
+          label: "Other",
+          value: ('other' in footprintData ? footprintData.other : 0),
+          icon: Globe,
+          sparklineData: generateSparkline('other' in footprintData ? footprintData.other : 0).map(d => d.value),
+          color: "text-gray-500",
+        },
+      ]
+    : [
+        {
+          label: "Breaches",
+          value: ('breaches' in footprintData ? footprintData.breaches : 0),
+          icon: AlertTriangle,
+          sparklineData: generateSparkline('breaches' in footprintData ? footprintData.breaches : 0).map(d => d.value),
+          color: "text-red-500",
+        },
+        {
+          label: "Exposures",
+          value: ('exposures' in footprintData ? footprintData.exposures : 0),
+          icon: Eye,
+          sparklineData: generateSparkline('exposures' in footprintData ? footprintData.exposures : 0).map(d => d.value),
+          color: "text-orange-500",
+        },
+        {
+          label: "Data Brokers",
+          value: ('dataBrokers' in footprintData ? footprintData.dataBrokers : 0),
+          icon: Database,
+          sparklineData: generateSparkline('dataBrokers' in footprintData ? footprintData.dataBrokers : 0).map(d => d.value),
+          color: "text-blue-500",
+        },
+        {
+          label: "Dark Web",
+          value: ('darkWeb' in footprintData ? footprintData.darkWeb : 0),
+          icon: Shield,
+          sparklineData: generateSparkline('darkWeb' in footprintData ? footprintData.darkWeb : 0).map(d => d.value),
+          color: "text-purple-500",
+        },
+      ];
 
   return (
     <Card 
