@@ -6,11 +6,14 @@ import { Coins, TrendingDown, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { subDays, format } from 'date-fns';
 
 export function CreditUsageMeter() {
   const [balance, setBalance] = useState<number>(0);
   const [monthlySpend, setMonthlySpend] = useState<number>(0);
   const [loading, setLoading] = useState(true);
+  const [trendData, setTrendData] = useState<Array<{ date: string; balance: number }>>([]);
   const navigate = useNavigate();
   const { workspace } = useWorkspace();
 
@@ -63,6 +66,29 @@ export function CreditUsageMeter() {
       );
       console.log('[CreditUsageMeter] Monthly spend:', totalSpend);
       setMonthlySpend(totalSpend);
+
+      // Fetch historical trend (last 30 days)
+      const thirtyDaysAgo = subDays(new Date(), 30);
+      const { data: historicalData } = await supabase
+        .from('credits_ledger')
+        .select('created_at, delta')
+        .eq('workspace_id', workspace.id)
+        .gte('created_at', thirtyDaysAgo.toISOString())
+        .order('created_at', { ascending: true });
+
+      // Calculate cumulative balance over time
+      if (historicalData) {
+        let runningBalance = balanceData || 0;
+        const trend = historicalData.map(entry => {
+          runningBalance -= entry.delta;
+          return {
+            date: format(new Date(entry.created_at), 'MM/dd'),
+            balance: runningBalance,
+          };
+        }).reverse();
+        
+        setTrendData(trend.slice(-7)); // Last 7 days
+      }
     } catch (error) {
       console.error('[CreditUsageMeter] Error fetching credit data:', error);
     } finally {
@@ -130,13 +156,47 @@ export function CreditUsageMeter() {
             )}
 
             <div className="pt-4 border-t border-border">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <TrendingDown className="h-4 w-4" />
                   <span>Monthly Spend</span>
                 </div>
                 <span className="text-lg font-bold text-foreground">{monthlySpend}</span>
               </div>
+              
+              {/* Historical Trend Chart */}
+              {trendData.length > 0 && (
+                <div className="mt-4 h-[80px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trendData}>
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fontSize: 10 }}
+                        stroke="hsl(var(--muted-foreground))"
+                      />
+                      <YAxis 
+                        tick={{ fontSize: 10 }}
+                        stroke="hsl(var(--muted-foreground))"
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="balance" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={2}
+                        dot={{ fill: 'hsl(var(--primary))', r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
 
             {isPremium && (

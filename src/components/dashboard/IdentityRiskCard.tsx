@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface IdentityRiskCardProps {
   riskScore: number;
@@ -24,6 +25,14 @@ export function IdentityRiskCard({ riskScore, breaches, darkWeb, dataBrokers, ex
 
   const totalThreats = breaches + darkWeb + dataBrokers + exposures;
 
+  // Prepare data for pie chart
+  const chartData = [
+    { name: 'Breaches', value: breaches, color: 'hsl(var(--destructive))' },
+    { name: 'Dark Web', value: darkWeb, color: 'hsl(20, 90%, 50%)' },
+    { name: 'Data Brokers', value: dataBrokers, color: 'hsl(45, 90%, 50%)' },
+    { name: 'Exposures', value: exposures, color: 'hsl(200, 80%, 50%)' },
+  ].filter(item => item.value > 0);
+
   return (
     <Card className="shadow-card hover:shadow-glow transition-shadow">
       <CardHeader>
@@ -43,6 +52,63 @@ export function IdentityRiskCard({ riskScore, breaches, darkWeb, dataBrokers, ex
         </div>
 
         <Progress value={riskScore} className="h-2" />
+
+        {/* Risk Category Breakdown with Pie Chart */}
+        {chartData.length > 0 && totalThreats > 0 && (
+          <div className="pt-2 border-t border-border">
+            <div className="flex items-center gap-2 mb-3">
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-muted-foreground">Risk Breakdown</span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {/* Pie Chart */}
+              <div className="w-24 h-24">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={chartData}
+                      dataKey="value"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={20}
+                      outerRadius={40}
+                      paddingAngle={2}
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '6px',
+                        fontSize: '12px'
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* Legend */}
+              <div className="flex-1 space-y-1">
+                {chartData.map((item) => (
+                  <div key={item.name} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-2 h-2 rounded-full" 
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-muted-foreground">{item.name}</span>
+                    </div>
+                    <span className="font-semibold">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-2 pt-2 border-t border-border">
           <div className="flex items-center justify-between text-sm">
