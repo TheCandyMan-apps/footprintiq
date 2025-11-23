@@ -14,6 +14,7 @@ import { RecentFindings } from '@/components/dashboard/RecentFindings';
 import { CreditUsageMeter } from '@/components/dashboard/CreditUsageMeter';
 import { RecommendedScans } from '@/components/dashboard/RecommendedScans';
 import { PowerFeaturesCard } from '@/components/dashboard/PowerFeaturesCard';
+import { SectionErrorBoundary } from '@/components/SectionErrorBoundary';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -766,26 +767,38 @@ const Dashboard = () => {
 
                       {/* Top Row: Breach Trend + Provider Health */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <BreachTrendChart workspaceId={workspace?.id} />
-                        <ProviderHealthMap workspaceId={workspace?.id} />
+                        <SectionErrorBoundary section="Findings Activity Chart">
+                          <BreachTrendChart workspaceId={workspace?.id} />
+                        </SectionErrorBoundary>
+                        <SectionErrorBoundary section="Provider Health Map">
+                          <ProviderHealthMap workspaceId={workspace?.id} />
+                        </SectionErrorBoundary>
                       </div>
 
                       {/* Middle Row: Identity Risk + Credit Usage */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <IdentityRiskCard
-                          riskScore={dnaMetrics.score}
-                          breaches={dnaMetrics.breaches}
-                          darkWeb={dnaMetrics.darkWeb}
-                          dataBrokers={dnaMetrics.dataBrokers}
-                          exposures={dnaMetrics.exposures}
-                        />
-                        <CreditUsageMeter />
+                        <SectionErrorBoundary section="Identity Risk Score">
+                          <IdentityRiskCard
+                            riskScore={dnaMetrics.score}
+                            breaches={dnaMetrics.breaches}
+                            darkWeb={dnaMetrics.darkWeb}
+                            dataBrokers={dnaMetrics.dataBrokers}
+                            exposures={dnaMetrics.exposures}
+                          />
+                        </SectionErrorBoundary>
+                        <SectionErrorBoundary section="Credit Usage Meter">
+                          <CreditUsageMeter />
+                        </SectionErrorBoundary>
                       </div>
 
                       {/* Bottom Row: Recent Findings + Recommended Scans */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <RecentFindings workspaceId={workspace?.id} />
-                        <RecommendedScans />
+                        <SectionErrorBoundary section="Recent Findings">
+                          <RecentFindings workspaceId={workspace?.id} />
+                        </SectionErrorBoundary>
+                        <SectionErrorBoundary section="Recommended Scans">
+                          <RecommendedScans />
+                        </SectionErrorBoundary>
                       </div>
                     </div>
                   </div>
@@ -830,25 +843,37 @@ const Dashboard = () => {
                   <div className="grid md:grid-cols-3 gap-6">
                     {/* Streak & Badges Sidebar */}
                     <div className="md:col-span-1">
-                      <StreakBadges userId={user?.id} />
+                      <SectionErrorBoundary section="Streak & Badges">
+                        <StreakBadges userId={user?.id} />
+                      </SectionErrorBoundary>
                     </div>
 
                     {/* Removal Queue & Success Tracker */}
                     <div className="md:col-span-2 space-y-6">
-                      <RemovalQueue userId={user.id} />
-                      <RemovalSuccessTracker userId={user.id} />
+                      <SectionErrorBoundary section="Removal Queue">
+                        <RemovalQueue userId={user.id} />
+                      </SectionErrorBoundary>
+                      <SectionErrorBoundary section="Removal Success Tracker">
+                        <RemovalSuccessTracker userId={user.id} />
+                      </SectionErrorBoundary>
                     </div>
                   </div>
 
                   {/* Dark Web Monitor Settings */}
-                  <DarkWebMonitorSettings />
+                  <SectionErrorBoundary section="Dark Web Monitor">
+                    <DarkWebMonitorSettings />
+                  </SectionErrorBoundary>
                 </TabsContent>
 
                 {/* Analytics Tab */}
                 <TabsContent value="analytics" className="space-y-6">
 
                   {/* Threat Analytics */}
-                  {loading ? <SkeletonThreatAnalytics /> : <ThreatAnalyticsPanel />}
+                  {loading ? <SkeletonThreatAnalytics /> : (
+                    <SectionErrorBoundary section="Threat Analytics">
+                      <ThreatAnalyticsPanel />
+                    </SectionErrorBoundary>
+                  )}
                 </TabsContent>
 
                 {/* Scans Tab */}
