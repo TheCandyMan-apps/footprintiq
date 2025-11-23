@@ -27,6 +27,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ActivityLogs } from '@/components/admin/ActivityLogs';
 
 interface User {
   id: string;
@@ -384,9 +385,10 @@ export default function AdminDashboard() {
 
           {/* Main Content Tabs */}
           <Tabs defaultValue="users" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsList className="grid w-full grid-cols-3 max-w-2xl">
               <TabsTrigger value="users">User Management</TabsTrigger>
               <TabsTrigger value="credits">Credit Allocation</TabsTrigger>
+              <TabsTrigger value="activity">Activity Logs</TabsTrigger>
             </TabsList>
 
             {/* User Management Tab */}
@@ -595,6 +597,11 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               </Card>
+            </TabsContent>
+
+            {/* Activity Logs Tab */}
+            <TabsContent value="activity" className="space-y-4">
+              <ActivityLogs />
             </TabsContent>
           </Tabs>
         </div>
