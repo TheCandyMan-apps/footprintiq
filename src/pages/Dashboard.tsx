@@ -777,6 +777,7 @@ const Dashboard = () => {
                           breaches={dnaMetrics.breaches}
                           darkWeb={dnaMetrics.darkWeb}
                           dataBrokers={dnaMetrics.dataBrokers}
+                          exposures={dnaMetrics.exposures}
                         />
                         <CreditUsageMeter />
                       </div>
