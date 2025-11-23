@@ -46,6 +46,7 @@ import { GridOverlay } from '@/components/dashboard/GridOverlay';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useLowCreditToast } from '@/hooks/useLowCreditToast';
+import { useFeatureSuggestions } from '@/hooks/useFeatureSuggestions';
 import { shouldAutoStartTour, getTourAutoStartDelay, markTourTriggered, markOnboardingShown } from '@/lib/tour/firstTime';
 import { useTour } from '@/hooks/useTour';
 import { TourHighlight } from '@/components/tour/TourHighlight';
@@ -105,6 +106,10 @@ const Dashboard = () => {
   const [trendData, setTrendData] = useState<any[]>([]);
   const [isRescanning, setIsRescanning] = useState(false);
   const [scanSocialLinks, setScanSocialLinks] = useState<Record<string, any[]>>({});
+  
+  // Feature suggestions based on user behavior (will check after user is set)
+  useFeatureSuggestions(user?.id);
+  
   useEffect(() => {
     const checkAuth = async () => {
       const {
