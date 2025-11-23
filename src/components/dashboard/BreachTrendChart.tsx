@@ -54,7 +54,7 @@ export function BreachTrendChart({ workspaceId }: BreachTrendChartProps) {
       findings.forEach(finding => {
         const isBreach = breachKeywords.some(k => 
           (finding.kind || '').toLowerCase().includes(k)
-        ) || finding.severity === 'critical' || finding.severity === 'high';
+        ) || finding.severity === 'critical' || finding.severity === 'high' || finding.severity === 'medium';
 
         if (isBreach) {
           const day = format(new Date(finding.created_at), 'MMM dd');
