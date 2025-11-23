@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Activity, RefreshCw } from 'lucide-react';
 import { subDays } from 'date-fns';
+import { useQuery } from '@tanstack/react-query';
 
 interface ProviderStats {
   provider: string;
@@ -13,26 +15,18 @@ interface ProviderStats {
 }
 
 export function ProviderHealthMap() {
-  const [providers, setProviders] = useState<ProviderStats[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchProviderHealth();
-  }, []);
-
-  const fetchProviderHealth = async () => {
-    try {
+  const { data: providers = [], isLoading, refetch } = useQuery({
+    queryKey: ['provider-health'],
+    queryFn: async () => {
       const sevenDaysAgo = subDays(new Date(), 7);
-      const { data: events } = await supabase
+      const { data: events, error } = await supabase
         .from('scan_events')
         .select('provider, status')
         .gte('created_at', sevenDaysAgo.toISOString())
-        .in('status', ['success', 'failed']);
+        .in('status', ['success', 'failed', 'timeout']);
 
-      if (!events || events.length === 0) {
-        setLoading(false);
-        return;
-      }
+      if (error) throw error;
+      if (!events || events.length === 0) return [];
 
       // Aggregate by provider
       const statsMap = new Map<string, { success: number; failed: number }>();
@@ -41,7 +35,7 @@ export function ProviderHealthMap() {
         if (!event.provider) return;
         const stats = statsMap.get(event.provider) || { success: 0, failed: 0 };
         if (event.status === 'success') stats.success++;
-        if (event.status === 'failed') stats.failed++;
+        if (event.status === 'failed' || event.status === 'timeout') stats.failed++;
         statsMap.set(event.provider, stats);
       });
 
@@ -59,13 +53,11 @@ export function ProviderHealthMap() {
         .sort((a, b) => b.total - a.total)
         .slice(0, 8); // Top 8 providers
 
-      setProviders(providerStats);
-    } catch (error) {
-      console.error('Error fetching provider health:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      return providerStats;
+    },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+    staleTime: 20000, // Consider data stale after 20 seconds
+  });
 
   const getHealthColor = (rate: number) => {
     if (rate >= 90) return 'bg-green-500/80';
@@ -76,14 +68,27 @@ export function ProviderHealthMap() {
   return (
     <Card className="shadow-card hover:shadow-glow transition-shadow">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Activity className="h-5 w-5 text-primary" />
-          Provider Health
-        </CardTitle>
-        <CardDescription>Success rates across providers (7d)</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Provider Health
+            </CardTitle>
+            <CardDescription>Success rates across providers (7d)</CardDescription>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => refetch()}
+            disabled={isLoading}
+            className="h-8 w-8"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
-        {loading ? (
+        {isLoading ? (
           <div className="h-[200px] flex items-center justify-center text-muted-foreground">
             Loading...
           </div>
