@@ -411,6 +411,118 @@ serve(async (req) => {
       : type === 'phone' ? 'phone'
       : 'personal_details';
 
+    // =====================================================
+    // CACHE LOGIC (username scans only, 7-day TTL)
+    // =====================================================
+    const normalizedTarget = value.toLowerCase().trim();
+    const cacheKey = type === 'username' && !options.noCache 
+      ? `${workspaceId}:username:${normalizedTarget}`
+      : null;
+
+    // Check for cached results (username scans only, last 7 days)
+    if (cacheKey) {
+      console.log(`[orchestrate] Checking cache for key: ${cacheKey}`);
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: cachedScan } = await supabaseService
+        .from('scans')
+        .select('id, created_at')
+        .eq('cache_key', cacheKey)
+        .eq('status', 'completed')
+        .gte('created_at', sevenDaysAgo)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (cachedScan?.id) {
+        console.log(`[orchestrate] ✅ Cache HIT! Using scan ${cachedScan.id} from ${cachedScan.created_at}`);
+
+        // Create new scan record marked as cached
+        const { error: scanError } = await supabaseService
+          .from('scans')
+          .insert({
+            id: scanId,
+            user_id: user.id,
+            workspace_id: workspaceId,
+            scan_type: scanTypeDb as any,
+            username: normalizedTarget,
+            status: 'completed',
+            cache_key: cacheKey,
+            cached_from_scan_id: cachedScan.id,
+            completed_at: new Date().toISOString(),
+            provider_counts: {}
+          } as any);
+
+        if (scanError) {
+          console.error('[orchestrate] Failed to create cached scan record:', scanError);
+          // Fall through to normal scan if cache marking fails
+        } else {
+          // Clone findings from cached scan
+          const { data: cachedFindings } = await supabaseService
+            .from('findings')
+            .select('*')
+            .eq('scan_id', cachedScan.id);
+
+          if (Array.isArray(cachedFindings) && cachedFindings.length > 0) {
+            const clonedFindings = cachedFindings.map((f: any) => {
+              const { id, scan_id, created_at, ...rest } = f;
+              return {
+                ...rest,
+                id: crypto.randomUUID(),
+                scan_id: scanId,
+                created_at: new Date().toISOString()
+              };
+            });
+
+            const { error: findingsError } = await supabaseService
+              .from('findings')
+              .insert(clonedFindings);
+
+            if (findingsError) {
+              console.error('[orchestrate] Failed to clone findings:', findingsError);
+            } else {
+              console.log(`[orchestrate] Cloned ${clonedFindings.length} findings from cache`);
+            }
+          }
+
+          // Log cache hit event
+          await supabaseService.from('scan_events').insert({
+            scan_id: scanId,
+            provider: 'cache',
+            stage: 'completed',
+            status: 'success',
+            duration_ms: 0,
+            metadata: {
+              cached_from_scan_id: cachedScan.id,
+              original_scan_date: cachedScan.created_at,
+              findings_cloned: cachedFindings?.length || 0
+            }
+          });
+
+          // NO CREDIT CHARGE for cached scans - instant return
+          console.log(`[orchestrate] Cache served, no credits charged`);
+
+          return new Response(
+            JSON.stringify({
+              ok: true,
+              cached: true,
+              cached_from_scan_id: cachedScan.id,
+              scan_id: scanId,
+              findings_count: cachedFindings?.length || 0
+            }),
+            { 
+              headers: { 
+                ...corsHeaders(), 
+                'Content-Type': 'application/json' 
+              } 
+            }
+          );
+        }
+      } else {
+        console.log(`[orchestrate] Cache MISS - running fresh scan`);
+      }
+    }
+
     // Log admin scan activity if admin
     if (isAdmin) {
       await logActivity({
@@ -433,6 +545,7 @@ serve(async (req) => {
         username: type === 'username' ? value : null,
         phone: type === 'phone' ? value : null,
         status: 'pending',
+        cache_key: cacheKey || undefined,
         provider_counts: {}
       } as any, {
         onConflict: 'id'

@@ -4,11 +4,12 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SimpleResultsViewer } from '@/components/maigret/SimpleResultsViewer';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { ResultsFilters } from '@/components/maigret/ResultsFilters';
 import { FootprintDNACard } from '@/components/FootprintDNACard';
 import AIInsightsPanel from '@/components/AIInsightsPanel';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function SimpleMaigretResults() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -21,6 +22,8 @@ export default function SimpleMaigretResults() {
   const [scanUserId, setScanUserId] = useState<string | undefined>(undefined);
   const [totalFindings, setTotalFindings] = useState(0);
   const [providerStatuses, setProviderStatuses] = useState<Record<string, string>>({});
+  const [isCached, setIsCached] = useState(false);
+  const [cachedFromScanId, setCachedFromScanId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -45,12 +48,19 @@ export default function SimpleMaigretResults() {
       
       const { data: scan } = await supabase
         .from('scans')
-        .select('user_id')
+        .select('user_id, cached_from_scan_id')
         .eq('id', jobId)
         .maybeSingle();
       
       if (scan) {
         setScanUserId(scan.user_id);
+        
+        // Check if scan was served from cache
+        if (scan.cached_from_scan_id) {
+          setIsCached(true);
+          setCachedFromScanId(scan.cached_from_scan_id);
+          console.log('[SimpleMaigretResults] Scan served from cache:', scan.cached_from_scan_id);
+        }
       }
     };
 
@@ -109,6 +119,22 @@ export default function SimpleMaigretResults() {
               </p>
             </div>
           </div>
+
+          {/* Cache Notice */}
+          {isCached && (
+            <Alert className="border-primary/20 bg-primary/5">
+              <Clock className="h-4 w-4 text-primary" />
+              <AlertDescription className="text-sm">
+                These results were returned from cache (last scan within 7 days). 
+                Results are still valid for footprint presence analysis. 
+                {cachedFromScanId && (
+                  <span className="text-xs text-muted-foreground ml-2">
+                    Original scan ID: {cachedFromScanId.slice(0, 8)}...
+                  </span>
+                )}
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Footprint DNA Card */}
           <FootprintDNACard scanId={jobId} userId={scanUserId} />
