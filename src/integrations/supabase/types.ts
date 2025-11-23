@@ -8999,6 +8999,10 @@ export type Database = {
         Returns: boolean
       }
       increment_tag_usage: { Args: { tag_names: string[] }; Returns: undefined }
+      is_organization_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_workspace_member: {
         Args: { _user: string; _workspace: string }
         Returns: boolean
