@@ -29,9 +29,12 @@ export function CircularMetric({
   const { dimension, stroke, fontSize } = sizeMap[size];
   const radius = (dimension - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
-  // Ensure minimum 15% visibility for small values
-  const percentage = Math.max(15, (animatedValue / max) * 100);
+  // Ensure minimum 20% visibility for small values
+  const percentage = Math.max(20, (animatedValue / max) * 100);
   const offset = circumference - (percentage / 100) * circumference;
+  
+  // Sanitize label for valid SVG ID
+  const sanitizedLabel = label.replace(/\s+/g, '-').toLowerCase();
 
   useEffect(() => {
     let startTime: number;
@@ -84,7 +87,7 @@ export function CircularMetric({
           {gradient ? (
             <>
               <defs>
-                <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                <linearGradient id={`gradient-${sanitizedLabel}`} x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="hsl(280 90% 60%)" />
                   <stop offset="50%" stopColor="hsl(320 90% 60%)" />
                   <stop offset="100%" stopColor="hsl(263 90% 65%)" />
@@ -94,7 +97,7 @@ export function CircularMetric({
                 cx={dimension / 2}
                 cy={dimension / 2}
                 r={radius}
-                stroke={`url(#gradient-${label})`}
+                stroke={`url(#gradient-${sanitizedLabel})`}
                 strokeWidth={stroke + 2}
                 fill="none"
                 strokeDasharray={circumference}
