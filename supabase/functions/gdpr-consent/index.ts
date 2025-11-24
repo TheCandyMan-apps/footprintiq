@@ -34,7 +34,9 @@ serve(async (req) => {
     if (!consents) throw new Error('Missing consents data');
 
     // Get client IP and user agent
-    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip');
+    // x-forwarded-for can contain multiple IPs (client, proxy chain), extract first one
+    const forwardedFor = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
+    const ipAddress = forwardedFor.split(',')[0].trim() || null;
     const userAgent = req.headers.get('user-agent');
 
     // Process each consent type with upsert to avoid conflicts
