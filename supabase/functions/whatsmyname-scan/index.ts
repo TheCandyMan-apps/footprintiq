@@ -86,8 +86,14 @@ serve(async (req) => {
     const { error: creditError } = await supabase.rpc('spend_credits', {
       _workspace_id: workspaceId,
       _cost: CREDIT_COST,
-      _reason: `WhatsMyName scan: ${username}`,
-      _meta: { username, filters }
+      _reason: 'scan',
+      _meta: { 
+        username, 
+        filters,
+        scan_type: 'whatsmyname',
+        provider: 'whatsmyname',
+        description: `WhatsMyName scan: ${username}`
+      }
     });
 
     if (creditError) {

@@ -69,3 +69,6 @@ verify_jwt = false
 
 [functions.providers-pipl]
 verify_jwt = true
+
+[functions.fusion-compare]
+verify_jwt = true
