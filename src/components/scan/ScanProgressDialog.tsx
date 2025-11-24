@@ -547,7 +547,25 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
             </Button>
           )}
           {status === 'completed' && scanId && (
-            <Button onClick={() => { onOpenChange(false); window.location.href = `/results/${scanId}`; }} className="flex-1">
+            <Button 
+              onClick={async () => { 
+                onOpenChange(false);
+                // Detect scan type from database to route correctly
+                const { data: scanData } = await supabase
+                  .from('scans')
+                  .select('scan_type')
+                  .eq('id', scanId)
+                  .maybeSingle();
+                
+                const scanType = scanData?.scan_type;
+                if (scanType === 'username') {
+                  window.location.href = `/maigret/results/${scanId}`;
+                } else {
+                  window.location.href = `/results/${scanId}`;
+                }
+              }} 
+              className="flex-1"
+            >
               <Eye className="h-4 w-4 mr-2" />
               View Results
             </Button>

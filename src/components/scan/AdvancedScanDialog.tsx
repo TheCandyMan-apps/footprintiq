@@ -236,7 +236,7 @@ export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogPro
         onComplete={() => {
           setProgressOpen(false);
           if (currentScanId) {
-            navigate(`/results/${currentScanId}`);
+            navigate(`/maigret/results/${currentScanId}`);
           }
         }}
       />

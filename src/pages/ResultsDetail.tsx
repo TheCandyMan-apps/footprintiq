@@ -1,5 +1,9 @@
-import { FootprintDNA } from '@/components/FootprintDNA';
+import { FootprintDNACard } from '@/components/FootprintDNACard';
 import { FootprintDNAModal } from '@/components/FootprintDNAModal';
+import { IdentityStrengthScore } from '@/components/intelligence/IdentityStrengthScore';
+import { UsernameUniquenessScore } from '@/components/intelligence/UsernameUniquenessScore';
+import { FootprintClusterMap } from '@/components/intelligence/FootprintClusterMap';
+import { ProviderStatusPanel } from '@/components/maigret/ProviderStatusPanel';
 import { RemovalQueue } from '@/components/RemovalQueue';
 import { RemovalSuccessTracker } from '@/components/RemovalSuccessTracker';
 import { TrustBadges } from '@/components/TrustBadges';
@@ -819,37 +823,36 @@ const ResultsDetail = () => {
 
         {/* Footprint DNA Card */}
         <div className="mb-8">
-          <FootprintDNA
-            score={scan.privacy_score || 0}
-            breaches={findings.filter(f => 
-              f.raw?.kind?.includes('breach') || 
-              f.severity === 'critical' ||
-              f.severity === 'high'
-            ).length}
-            exposures={findings.filter(f => 
-              f.evidence && f.evidence.length > 0 &&
-              (f.raw?.kind?.includes('exposure') || f.severity === 'medium')
-            ).length}
-            dataBrokers={findings.filter(f => 
-              f.provider?.toLowerCase().includes('broker') ||
-              f.provider?.toLowerCase().includes('people') ||
-              f.raw?.kind?.includes('people_search')
-            ).length}
-            darkWeb={findings.filter(f => 
-              f.provider?.toLowerCase().includes('dark') ||
-              f.raw?.kind?.includes('darkweb') ||
-              f.raw?.kind?.includes('paste')
-            ).length}
-            trendData={trendData}
-            onOpenDetails={() => setIsDNAModalOpen(true)}
-          />
-
+          <FootprintDNACard scanId={scanId!} />
+          
           <FootprintDNAModal
             open={isDNAModalOpen}
             onOpenChange={setIsDNAModalOpen}
             trendData={trendData}
             currentScore={scan.privacy_score || 0}
           />
+        </div>
+
+        {/* Intelligence Tiles for Username Scans */}
+        {scan?.scan_type === 'username' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <ScanErrorBoundary context="results">
+              <IdentityStrengthScore scanId={scanId!} />
+            </ScanErrorBoundary>
+            <ScanErrorBoundary context="results">
+              <UsernameUniquenessScore scanId={scanId!} />
+            </ScanErrorBoundary>
+            <ScanErrorBoundary context="results">
+              <FootprintClusterMap scanId={scanId!} />
+            </ScanErrorBoundary>
+          </div>
+        )}
+
+        {/* Provider Status Panel */}
+        <div className="mb-8">
+          <ScanErrorBoundary context="results">
+            <ProviderStatusPanel scanId={scanId!} />
+          </ScanErrorBoundary>
         </div>
 
         {/* Catfish Detection */}

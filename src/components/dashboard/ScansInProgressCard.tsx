@@ -192,7 +192,7 @@ export function ScansInProgressCard() {
 
   const handleViewScan = (scan: ActiveScan) => {
     if (scan.type === 'username') {
-      navigate(`/scan/usernames/${scan.id}`);
+      navigate(`/maigret/results/${scan.id}`);
     } else {
       navigate(`/results/${scan.id}`);
     }
