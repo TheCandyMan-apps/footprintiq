@@ -51,7 +51,7 @@ export function FootprintClusterMap({ scanId }: FootprintClusterMapProps) {
   const sortedClusters = Object.entries(clusters).sort(([, a], [, b]) => b.length - a.length);
   
   return (
-    <Card>
+    <Card className="min-h-[420px]">
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <Network className="h-5 w-5 text-primary" />

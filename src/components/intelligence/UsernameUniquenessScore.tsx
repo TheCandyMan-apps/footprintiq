@@ -100,7 +100,7 @@ export function UsernameUniquenessScore({ scanId }: UsernameUniquenessScoreProps
   const scoreInfo = getScoreLabel(score);
   
   return (
-    <Card>
+    <Card className="min-h-[420px]">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -117,7 +117,7 @@ export function UsernameUniquenessScore({ scanId }: UsernameUniquenessScoreProps
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-baseline gap-2">
-          <span className="text-4xl font-bold text-primary">{score}</span>
+          <span className="text-4xl font-bold text-primary truncate">{score.toFixed(1)}</span>
           <span className="text-muted-foreground">/100</span>
         </div>
         <Progress value={score} className="h-2" />

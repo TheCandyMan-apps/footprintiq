@@ -33,6 +33,15 @@ export function IdentityRiskCard({ riskScore, breaches, darkWeb, dataBrokers, ex
     { name: 'Exposures', value: exposures, color: 'hsl(200, 80%, 50%)' },
   ].filter(item => item.value > 0);
 
+  // If only one category has data, add a tiny placeholder for proper pie rendering
+  if (chartData.length === 1 && totalThreats > 0) {
+    chartData.push({
+      name: 'No Other Threats',
+      value: 0.1,
+      color: 'hsl(var(--muted))'
+    });
+  }
+
   return (
     <Card className="shadow-card hover:shadow-glow transition-shadow">
       <CardHeader>
@@ -71,9 +80,11 @@ export function IdentityRiskCard({ riskScore, breaches, darkWeb, dataBrokers, ex
                       dataKey="value"
                       cx="50%"
                       cy="50%"
-                      innerRadius={20}
-                      outerRadius={40}
-                      paddingAngle={2}
+                      innerRadius={25}
+                      outerRadius={48}
+                      paddingAngle={4}
+                      stroke="white"
+                      strokeWidth={2}
                     >
                       {chartData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
