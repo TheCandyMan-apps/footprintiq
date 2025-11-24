@@ -149,11 +149,38 @@ Deno.serve(async (req) => {
 
     console.log(`[scan-reconcile] Reconciled ${reconciledScans.length}/${stuckScans.length} scans`);
 
+    // Clear stuck gosearch_pending flags (scans older than 10 minutes)
+    const goSearchThreshold = new Date();
+    goSearchThreshold.setMinutes(goSearchThreshold.getMinutes() - 10);
+
+    const { data: stuckGoSearch, error: goSearchError } = await supabase
+      .from('scans')
+      .select('id')
+      .eq('gosearch_pending', true)
+      .lt('created_at', goSearchThreshold.toISOString())
+      .limit(50);
+
+    let clearedGoSearch = 0;
+    if (!goSearchError && stuckGoSearch && stuckGoSearch.length > 0) {
+      const { error: clearError } = await supabase
+        .from('scans')
+        .update({ gosearch_pending: false })
+        .in('id', stuckGoSearch.map(s => s.id));
+
+      if (clearError) {
+        console.error('[scan-reconcile] Error clearing stuck gosearch_pending:', clearError);
+      } else {
+        clearedGoSearch = stuckGoSearch.length;
+        console.log(`[scan-reconcile] ✅ Cleared gosearch_pending for ${clearedGoSearch} stuck scans`);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
         reconciled: reconciledScans.length,
         total_stuck: stuckScans.length,
+        cleared_gosearch: clearedGoSearch,
         scans: reconciledScans,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
