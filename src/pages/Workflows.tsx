@@ -9,16 +9,37 @@ import { useNavigate } from "react-router-dom";
 export default function Workflows() {
   const navigate = useNavigate();
 
-  const { data: workflows } = useQuery({
-    queryKey: ["workflows"],
+  const { data: userWorkspace } = useQuery({
+    queryKey: ["user-workspace"],
     queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+      
       const { data, error } = await supabase
-        .from("workflows" as any)
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: workflows } = useQuery({
+    queryKey: ["workflows", userWorkspace?.workspace_id],
+    queryFn: async () => {
+      if (!userWorkspace?.workspace_id) return [];
+      
+      const { data, error } = await supabase
+        .from("workflows")
         .select("*")
+        .eq("workspace_id", userWorkspace.workspace_id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as any[];
+      return data;
     },
+    enabled: !!userWorkspace?.workspace_id,
   });
 
   return (

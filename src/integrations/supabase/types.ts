@@ -8714,6 +8714,53 @@ export type Database = {
         }
         Relationships: []
       }
+      workflows: {
+        Row: {
+          config: Json
+          created_at: string
+          description: string | null
+          enabled: boolean
+          id: string
+          name: string
+          trigger_type: string
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name: string
+          trigger_type: string
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name?: string
+          trigger_type?: string
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflows_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_features: {
         Row: {
           created_at: string
