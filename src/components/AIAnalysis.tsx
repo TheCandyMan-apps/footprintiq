@@ -26,11 +26,36 @@ export const AIAnalysis = ({ scanId }: AIAnalysisProps) => {
 
     setLoading(true);
     try {
+      console.log('[AIAnalysis] Invoking ai-analysis for scan:', scanId);
+      
       const { data, error } = await supabase.functions.invoke('ai-analysis', {
         body: { scanId }
       });
 
-      if (error) throw error;
+      console.log('[AIAnalysis] Response:', { data, error });
+
+      if (error) {
+        // Detect specific error types and provide actionable messages
+        const errorMsg = error.message || String(error);
+        
+        if (errorMsg.includes('rate limit') || errorMsg.includes('429')) {
+          throw new Error('🚦 Rate limit exceeded. Please wait a few minutes and try again.');
+        }
+        
+        if (errorMsg.includes('No data') || errorMsg.includes('no findings') || errorMsg.includes('no profile')) {
+          throw new Error('📊 No scan data available for analysis. Please wait for the scan to complete or try running the scan again.');
+        }
+        
+        if (errorMsg.includes('credits') || errorMsg.includes('payment') || errorMsg.includes('402')) {
+          throw new Error('💳 Insufficient credits. Please add credits to continue using AI analysis.');
+        }
+        
+        throw new Error(errorMsg);
+      }
+
+      if (!data?.analysis || typeof data.analysis !== 'string' || data.analysis.trim().length === 0) {
+        throw new Error('⚠️ AI analysis returned no content. Please try regenerating the analysis.');
+      }
 
       setAnalysis(data.analysis);
       toast({
@@ -38,10 +63,12 @@ export const AIAnalysis = ({ scanId }: AIAnalysisProps) => {
         description: "AI has analyzed your privacy scan results",
       });
     } catch (error) {
-      console.error('Error generating analysis:', error);
+      console.error('[AIAnalysis] Error:', error);
+      const errorMessage = error instanceof Error ? error.message : "Could not generate AI analysis. Please try again.";
+      
       toast({
         title: "Analysis Failed",
-        description: error instanceof Error ? error.message : "Could not generate AI analysis",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

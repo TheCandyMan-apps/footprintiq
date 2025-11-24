@@ -148,22 +148,23 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
         const { data, error } = await (supabase as any).from('findings').select('kind, severity, evidence, provider, meta').eq('scan_id', scanId);
         if (error) throw error;
         
-        // If no findings, check if scan exists and has legacy data
+        console.log('[FootprintDNA] Scan findings:', { scanId, count: data?.length, sample: data?.[0] });
+        
+        // If no findings, return proper empty state
         if (!data || data.length === 0) {
-          const { data: scanData } = await supabase.from('scans').select('total_sources_found, high_risk_count, medium_risk_count, low_risk_count').eq('id', scanId).single();
-          if (scanData && scanData.total_sources_found > 0) {
-            // Return approximate metrics from scan summary (assume breach scan)
-            return {
-              breaches: scanData.high_risk_count || 0,
-              exposures: scanData.total_sources_found || 0,
-              dataBrokers: scanData.medium_risk_count || 0,
-              darkWeb: scanData.low_risk_count || 0,
-              isUsernameScan: false
-            };
-          }
+          console.log('[FootprintDNA] No findings for scan, returning empty state');
+          // Check if this is username scan by looking at scan record
+          const { data: scanData } = await supabase.from('scans').select('username, scan_type').eq('id', scanId).single();
+          const isUsernameScan = !!(scanData?.username || scanData?.scan_type === 'username');
+          
+          return isUsernameScan 
+            ? { social: 0, gaming: 0, professional: 0, other: 0, isUsernameScan: true }
+            : { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0, isUsernameScan: false };
         }
         
-        return calculateMetrics(data || []);
+        const metrics = calculateMetrics(data);
+        console.log('[FootprintDNA] Calculated metrics:', metrics);
+        return metrics;
       } catch (err) {
         console.error('Error fetching scan metrics from findings:', err);
         return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0, isUsernameScan: false };

@@ -69,44 +69,106 @@ serve(async (req) => {
 
     if (scanError) throw scanError;
 
-    // Fetch data sources
-    const { data: sources, error: sourcesError } = await supabaseClient
-      .from('data_sources')
-      .select('*')
+    console.log('[ai-analysis] Scan data:', { 
+      scanId, 
+      username: scan.username, 
+      email: scan.email,
+      scanType: scan.scan_type 
+    });
+
+    // Fetch all findings from unified findings table
+    const { data: findings, error: findingsError } = await supabaseClient
+      .from('findings')
+      .select('kind, provider, evidence, meta, confidence, severity')
       .eq('scan_id', scanId);
 
-    if (sourcesError) throw sourcesError;
+    if (findingsError) throw findingsError;
 
-    // Fetch social profiles
-    const { data: profiles, error: profilesError } = await supabaseClient
-      .from('social_profiles')
-      .select('*')
-      .eq('scan_id', scanId);
+    console.log('[ai-analysis] Findings fetched:', { count: findings?.length, sample: findings?.[0] });
 
-    if (profilesError) throw profilesError;
+    // Detect scan type based on findings and scan record
+    const isUsernameScan = findings?.some(f => 
+      ['profile_presence', 'presence.hit', 'username.found'].some(k => 
+        (f.kind || '').toLowerCase().includes(k)
+      )
+    ) || !!scan.username;
 
-    // Prepare analysis prompt
-    const analysisPrompt = `You are a privacy and data security expert. Analyze the following privacy scan results and provide actionable insights:
+    console.log('[ai-analysis] Detected scan type:', { isUsernameScan, username: scan.username });
 
-**Scan Overview:**
-- Privacy Score: ${scan.privacy_score}/100
-- Total Sources Found: ${scan.total_sources_found}
-- Risk Levels: ${scan.high_risk_count} high, ${scan.medium_risk_count} medium, ${scan.low_risk_count} low
+    let analysisPrompt: string;
 
-**Data Sources Found (${sources?.length || 0}):**
-${sources?.map(s => `- ${s.name} (${s.category}): Risk Level ${s.risk_level}, Data: ${s.data_found.join(', ')}`).join('\n')}
+    if (isUsernameScan) {
+      // USERNAME SCAN: Extract platform data
+      const platforms = (findings || []).map(f => {
+        const evidence = Array.isArray(f.evidence) 
+          ? f.evidence.reduce((acc: any, item: any) => ({...acc, [item.key]: item.value}), {})
+          : f.evidence || {};
+        
+        return {
+          platform: evidence.site || evidence.platform || f.meta?.site || f.provider || 'Unknown',
+          url: evidence.url || f.meta?.url,
+          confidence: f.confidence || 'medium',
+          provider: f.provider
+        };
+      }).filter(p => p.platform !== 'Unknown');
 
-**Social Media Profiles (${profiles?.length || 0}):**
-${profiles?.map(p => `- ${p.platform}: @${p.username}`).join('\n')}
+      console.log('[ai-analysis] Username scan platforms:', { count: platforms.length, platforms });
 
-Please provide:
-1. **Risk Prioritization**: Which sources pose the biggest threat and why?
-2. **Action Plan**: Step-by-step removal recommendations, prioritized by impact
-3. **Pattern Analysis**: How is the data connected across sources?
-4. **Privacy Insights**: What's affecting the privacy score most?
+      if (platforms.length === 0) {
+        throw new Error('No data to analyze. This username scan returned no profile findings.');
+      }
+
+      analysisPrompt = `You are a digital privacy expert analyzing a USERNAME scan for: ${scan.username}
+
+**Platforms Found (${platforms.length}):**
+${platforms.map(p => `- ${p.platform}${p.url ? ` (${p.url})` : ''} [${p.confidence} confidence, found by ${p.provider}]`).join('\n')}
+
+**Analysis Required:**
+1. **Username Exposure Risk**: How widely is this username distributed across platforms?
+2. **Platform Categories**: What categories of sites (social, gaming, forums, etc.) are most represented?
+3. **Privacy Recommendations**: Which platforms pose the highest privacy risk and should be prioritized for account review or deletion?
+4. **Correlation Patterns**: Are there any concerning patterns in where this username appears?
+5. **Actionable Steps**: Top 3 immediate actions to reduce digital footprint
+
+Format your response in clear sections with bullet points. Be specific and actionable. Focus on username reuse risk, platform exposure, and privacy implications.`;
+
+    } else {
+      // BREACH/EMAIL SCAN: Extract breach/exposure data
+      const breaches = (findings || []).filter(f => 
+        (f.kind || '').toLowerCase().includes('breach') ||
+        (f.kind || '').toLowerCase().includes('leak') ||
+        f.severity === 'critical' || f.severity === 'high'
+      );
+
+      console.log('[ai-analysis] Breach scan findings:', { 
+        totalFindings: findings?.length, 
+        breaches: breaches.length 
+      });
+
+      if (findings?.length === 0) {
+        throw new Error('No data to analyze. This scan returned no findings.');
+      }
+
+      analysisPrompt = `You are a privacy and data security expert analyzing a BREACH/EMAIL scan.
+
+**Scan Target:** ${scan.email || scan.phone || 'Unknown'}
+**Total Findings:** ${findings?.length || 0}
+**High Risk Findings:** ${breaches.length}
+
+**Findings Summary:**
+${findings?.slice(0, 20).map(f => `- ${f.kind || 'Unknown'} (Provider: ${f.provider}, Severity: ${f.severity || 'unknown'})`).join('\n')}
+
+**Analysis Required:**
+1. **Risk Prioritization**: Which findings pose the biggest threat and why?
+2. **Action Plan**: Step-by-step remediation recommendations, prioritized by impact
+3. **Pattern Analysis**: What patterns emerge across the findings?
+4. **Privacy Insights**: What's the overall risk level?
 5. **Key Recommendations**: Top 3 actions to take immediately
 
 Format your response in clear sections with bullet points. Be specific and actionable.`;
+    }
+
+    console.log('[ai-analysis] Generated prompt length:', analysisPrompt.length);
 
     console.log('Calling Lovable AI for analysis...');
 
