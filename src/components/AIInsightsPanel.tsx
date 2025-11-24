@@ -52,7 +52,13 @@ Focus on breach response, data broker opt-outs, and security hardening.`;
       });
       setInsights(content);
     } catch (e: any) {
-      console.error('AI Insights error:', e);
+      console.error('[AIInsightsPanel] Full error details:', {
+        message: e.message,
+        error: e,
+        stack: e.stack,
+        response: e.response,
+        scanData
+      });
       const errorInfo = getAIErrorMessage(e);
       setError(errorInfo);
     } finally {
@@ -62,11 +68,12 @@ Focus on breach response, data broker opt-outs, and security hardening.`;
 
   return (
     <Card className="rounded-lg bg-card p-4 shadow-card">
-      <Button
-        onClick={generate}
-        disabled={loading}
-        className="mb-3 w-full rounded bg-gradient-to-r from-primary to-accent py-2 text-sm font-medium text-primary-foreground transition-all duration-200 hover:scale-105"
-      >
+      <div className="flex gap-2 mb-3">
+        <Button
+          onClick={generate}
+          disabled={loading}
+          className="flex-1 rounded bg-gradient-to-r from-primary to-accent py-2 text-sm font-medium text-primary-foreground transition-all duration-200 hover:scale-105"
+        >
         {loading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -78,7 +85,18 @@ Focus on breach response, data broker opt-outs, and security hardening.`;
             Generate AI Insights
           </>
         )}
-      </Button>
+        </Button>
+        {process.env.NODE_ENV === 'development' && (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => console.log('[AIInsightsPanel] Debug:', scanData)}
+            className="shrink-0"
+          >
+            Debug
+          </Button>
+        )}
+      </div>
 
       {error && (
         <Alert variant="destructive" className="mb-3">

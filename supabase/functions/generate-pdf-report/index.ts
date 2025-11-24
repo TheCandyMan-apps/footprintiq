@@ -83,10 +83,28 @@ serve(async (req) => {
 
     console.log('[generate-pdf-report] Generating PDF for scan:', { scanId, userId });
 
-    // Fetch scan data with ownership check
+    // Fetch scan data with findings
     const { data: scan, error } = await supabaseClient
       .from("scans")
-      .select("*, data_sources(*), social_profiles(*)")
+      .select(`
+        id,
+        user_id,
+        username,
+        email,
+        phone,
+        scan_type,
+        status,
+        created_at,
+        privacy_score,
+        findings(
+          id,
+          provider,
+          kind,
+          title,
+          confidence,
+          evidence
+        )
+      `)
       .eq("id", scanId)
       .eq("user_id", userId)
       .single();
@@ -132,56 +150,105 @@ serve(async (req) => {
 });
 
 function generateHTMLReport(scan: any): string {
+  const findings = scan.findings || [];
+  const target = scan.username || scan.email || scan.phone || 'Unknown';
+  
+  // Group findings by provider
+  const groupedFindings = findings.reduce((acc: any, f: any) => {
+    if (!acc[f.provider]) acc[f.provider] = [];
+    acc[f.provider].push(f);
+    return acc;
+  }, {});
+  
+  // Calculate risk metrics
+  const highRisk = findings.filter((f: any) => f.confidence && f.confidence < 0.3).length;
+  const mediumRisk = findings.filter((f: any) => f.confidence && f.confidence >= 0.3 && f.confidence < 0.7).length;
+  const lowRisk = findings.filter((f: any) => f.confidence && f.confidence >= 0.7).length;
+  
   return `
     <!DOCTYPE html>
     <html>
     <head>
-      <title>FootprintIQ Report - ${scan.id}</title>
+      <title>FootprintIQ Report - ${target}</title>
       <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; }
-        .score { font-size: 48px; font-weight: bold; }
-        .section { margin: 30px 0; }
-        .finding { background: #f5f5f5; padding: 15px; margin: 10px 0; border-radius: 5px; }
-        .risk-high { border-left: 4px solid #ef4444; }
-        .risk-medium { border-left: 4px solid #f59e0b; }
-        .risk-low { border-left: 4px solid #10b981; }
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; }
+        .score { font-size: 48px; font-weight: bold; margin: 20px 0; }
+        .section { margin: 30px 0; page-break-inside: avoid; }
+        .section h2 { color: #667eea; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .finding { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid #667eea; }
+        .finding h3 { margin: 0 0 10px 0; color: #333; }
+        .evidence { font-size: 14px; color: #666; margin: 5px 0; }
+        .provider-section { margin: 20px 0; }
+        .stats { display: flex; justify-content: space-around; margin: 20px 0; }
+        .stat-box { text-align: center; padding: 15px; background: white; border-radius: 8px; }
+        .stat-number { font-size: 36px; font-weight: bold; }
       </style>
     </head>
     <body>
       <div class="header">
-        <h1>FootprintIQ Privacy Report</h1>
+        <h1>🔍 FootprintIQ Privacy Report</h1>
         <div class="score">Privacy Score: ${scan.privacy_score || "N/A"}</div>
-        <p>Generated: ${new Date().toLocaleDateString()}</p>
+        <p><strong>Target:</strong> ${target}</p>
+        <p><strong>Scan Type:</strong> ${scan.scan_type || 'Unknown'}</p>
+        <p><strong>Generated:</strong> ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
       </div>
       
       <div class="section">
-        <h2>Summary</h2>
-        <p>Total Sources Found: ${scan.total_sources_found}</p>
-        <p>High Risk: ${scan.high_risk_count} | Medium Risk: ${scan.medium_risk_count} | Low Risk: ${scan.low_risk_count}</p>
-      </div>
-      
-      <div class="section">
-        <h2>Data Sources</h2>
-        ${scan.data_sources?.map((source: any) => `
-          <div class="finding risk-${source.risk_level}">
-            <h3>${source.name}</h3>
-            <p><strong>Category:</strong> ${source.category}</p>
-            <p><strong>Risk Level:</strong> ${source.risk_level}</p>
-            <p><strong>Data Found:</strong> ${source.data_found?.join(", ")}</p>
+        <h2>📊 Summary</h2>
+        <div class="stats">
+          <div class="stat-box">
+            <div class="stat-number">${findings.length}</div>
+            <div>Total Findings</div>
           </div>
-        `).join("") || "No data sources found"}
+          <div class="stat-box">
+            <div class="stat-number">${highRisk}</div>
+            <div>High Risk</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${mediumRisk}</div>
+            <div>Medium Risk</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${lowRisk}</div>
+            <div>Low Risk</div>
+          </div>
+        </div>
       </div>
       
+      ${Object.entries(groupedFindings).map(([provider, providerFindings]: [string, any]) => `
+        <div class="section provider-section">
+          <h2>🔎 ${provider.charAt(0).toUpperCase() + provider.slice(1)} Results</h2>
+          <p><strong>${providerFindings.length}</strong> findings from this provider</p>
+          
+          ${providerFindings.slice(0, 20).map((finding: any) => {
+            const evidence = Array.isArray(finding.evidence) ? finding.evidence : [];
+            const platformEvidence = evidence.find((e: any) => e.key === 'site' || e.key === 'platform');
+            const urlEvidence = evidence.find((e: any) => e.key === 'url');
+            
+            return `
+              <div class="finding">
+                <h3>${finding.title || platformEvidence?.value || finding.kind}</h3>
+                <div class="evidence">
+                  ${finding.confidence ? `<p><strong>Confidence:</strong> ${Math.round(finding.confidence * 100)}%</p>` : ''}
+                  ${urlEvidence ? `<p><strong>URL:</strong> <a href="${urlEvidence.value}">${urlEvidence.value}</a></p>` : ''}
+                  <p><strong>Type:</strong> ${finding.kind}</p>
+                </div>
+              </div>
+            `;
+          }).join('')}
+          
+          ${providerFindings.length > 20 ? `<p><em>...and ${providerFindings.length - 20} more findings</em></p>` : ''}
+        </div>
+      `).join('')}
+      
+      ${findings.length === 0 ? '<div class="section"><p>No findings available for this scan.</p></div>' : ''}
+      
       <div class="section">
-        <h2>Social Profiles</h2>
-        ${scan.social_profiles?.map((profile: any) => `
-          <div class="finding">
-            <h3>${profile.platform}</h3>
-            <p><strong>Username:</strong> ${profile.username}</p>
-            <p><strong>Profile URL:</strong> <a href="${profile.profile_url}">${profile.profile_url}</a></p>
-          </div>
-        `).join("") || "No social profiles found"}
+        <h2>ℹ️ About This Report</h2>
+        <p>This report was generated by FootprintIQ, an OSINT and digital footprint investigation platform.</p>
+        <p><strong>Report ID:</strong> ${scan.id}</p>
+        <p><strong>Scan Status:</strong> ${scan.status}</p>
       </div>
     </body>
     </html>
