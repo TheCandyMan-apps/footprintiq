@@ -122,19 +122,78 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   // Compute stats
   const stats = useMemo(() => {
     const total = providers.length;
-    const completed = providers.filter(p => p.status === 'success' || p.status === 'failed' || p.status === 'skipped' || p.status === 'warning').length;
+
+    const TERMINAL = new Set<ProviderStatus['status']>([
+      'success',
+      'failed',     // ✅ COUNT THIS
+      'skipped',
+      'warning',
+    ]);
+
+    const completed = providers.filter(p => TERMINAL.has(p.status)).length;
     const active = providers.filter(p => p.status === 'loading' || p.status === 'retrying');
     const findingsCount = providers.reduce((sum, p) => sum + (p.resultCount || 0), 0);
+
     const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { total, completed, active, findingsCount, progressPct };
   }, [providers]);
 
-  // Update progress based on stats
+  // Update progress based on stats (monotonic - never decrease)
   useEffect(() => {
-    if (status === 'running' && stats.total > 0) {
-      setProgress(Math.max(5, Math.min(stats.progressPct, 95)));
-    }
+    if (status !== 'running' || stats.total === 0) return;
+
+    const next = Math.max(5, Math.min(stats.progressPct, 95));
+
+    setProgress(prev => {
+      // ✅ never go backwards
+      if (next < prev) return prev;
+      return next;
+    });
   }, [stats, status]);
+
+  // Set progress to 100% on completion
+  useEffect(() => {
+    if (['completed', 'failed', 'timeout', 'completed_partial'].includes(status)) {
+      setProgress(100);
+    }
+  }, [status]);
+
+  // Calculate realistic ETA based on providers
+  const eta = useMemo(() => {
+    // rough, conservative defaults (ms)
+    const PROVIDER_ETA: Record<string, number> = {
+      hibp: 8000,
+      dehashed: 12000,
+      intelx: 15000,
+      pipl: 12000,
+      hunter: 10000,
+
+      maigret: 60000,
+      sherlock: 45000,
+
+      'apify-social': 90000,
+      'apify-osint': 120000,
+      'apify-darkweb': 150000,
+
+      gosearch: 180000, // async, but still show expectation
+    };
+
+    const totalMs = providers.reduce((sum, p) => {
+      const key = p.name.toLowerCase();
+      return sum + (PROVIDER_ETA[key] ?? 20000);
+    }, 0);
+
+    // display as range (min..max)
+    const minMs = Math.max(60000, totalMs * 0.6);
+    const maxMs = Math.max(120000, totalMs * 1.2);
+
+    const fmt = (ms: number) => {
+      const m = Math.ceil(ms / 60000);
+      return `${m} min`;
+    };
+
+    return { min: fmt(minMs), max: fmt(maxMs) };
+  }, [providers]);
 
   // Fallback polling
   useEffect(() => {
@@ -385,15 +444,23 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           <div className="flex items-center justify-between">
             <div>
               <DialogTitle>Scan in Progress</DialogTitle>
-              <DialogDescription className="flex items-center gap-2 mt-1">
-                {stats.completed} of {stats.total} providers completed
-                <Badge variant={connectionMode === 'live' ? 'default' : 'secondary'} className="ml-2">
-                  {connectionMode === 'live' ? (
-                    <><Wifi className="h-3 w-3 mr-1" /> Live</>
-                  ) : (
-                    <><WifiOff className="h-3 w-3 mr-1" /> Fallback</>
-                  )}
-                </Badge>
+              <DialogDescription className="space-y-1 mt-1">
+                <div className="flex items-center gap-2">
+                  {stats.completed} of {stats.total} providers completed
+                  <Badge variant={connectionMode === 'live' ? 'default' : 'secondary'} className="ml-2">
+                    {connectionMode === 'live' ? (
+                      <><Wifi className="h-3 w-3 mr-1" /> Live</>
+                    ) : (
+                      <><WifiOff className="h-3 w-3 mr-1" /> Fallback</>
+                    )}
+                  </Badge>
+                </div>
+                {status === 'running' && providers.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Estimated time: <span className="font-medium text-foreground">{eta.min} – {eta.max}</span>.
+                    Deep tools (GoSearch / Apify) may take 1–5 minutes depending on rate limits.
+                  </p>
+                )}
               </DialogDescription>
             </div>
             <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
