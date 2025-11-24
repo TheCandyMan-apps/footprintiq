@@ -678,7 +678,7 @@ const Dashboard = () => {
                     {/* Main Metrics with Glassmorphic Cards */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <GlassCard delay={0} intensity="medium" glowColor="purple" className="p-6 flex items-center justify-center">
-                        <CircularMetric value={dnaMetrics.score} max={100} label="Risk Score" size="md" gradient />
+                        <CircularMetric value={dnaMetrics.score} max={100} label="Privacy Score" size="md" gradient />
                       </GlassCard>
                       
                       <GlassCard delay={0.1} intensity="medium" glowColor="pink" className="p-6 flex items-center justify-center">
