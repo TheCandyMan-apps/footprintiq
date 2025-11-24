@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
+import { SettingsNav } from '@/components/settings/SettingsNav';
 import { useUserPersona, type Persona } from '@/hooks/useUserPersona';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Zap, Building2, Check, Loader2 } from 'lucide-react';
@@ -86,20 +87,36 @@ export default function ProfileSettings() {
 
   if (loading || loadingProfile) {
     return (
-      <div className="container mx-auto py-8 px-4 max-w-5xl">
-        <SettingsBreadcrumb currentPage="Profile" />
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="container mx-auto py-8 px-4 max-w-7xl">
+        <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <SettingsNav />
+            </div>
+          </aside>
+          <div className="min-w-0">
+            <SettingsBreadcrumb currentPage="Profile" />
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-5xl">
-      <SettingsBreadcrumb currentPage="Profile" />
+    <div className="container mx-auto py-8 px-4 max-w-7xl">
+      <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            <SettingsNav />
+          </div>
+        </aside>
+        <div className="min-w-0">
+          <SettingsBreadcrumb currentPage="Profile" />
 
-      <div className="space-y-6">
+          <div className="space-y-6">
         {/* Profile Info */}
         <Card>
           <CardHeader>
@@ -186,6 +203,8 @@ export default function ProfileSettings() {
             </div>
           </CardContent>
         </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

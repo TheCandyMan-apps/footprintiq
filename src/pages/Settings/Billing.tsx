@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { CreditCard, Calendar, Download, CheckCircle2, Loader2, ArrowRight, Zap } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
+import { SettingsNav } from '@/components/settings/SettingsNav';
 import { Separator } from '@/components/ui/separator';
 import { useSubscription } from '@/hooks/useSubscription';
 import { StripePaymentForm } from '@/components/billing/StripePaymentForm';
@@ -241,10 +242,16 @@ export default function BillingSettings() {
   return (
     <PaymentErrorBoundary>
       <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <SettingsBreadcrumb currentPage="Billing" />
-      
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <SettingsNav />
+            </div>
+          </aside>
+          <div className="min-w-0">
+            <SettingsBreadcrumb currentPage="Billing" />
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Billing Dashboard</h1>
             <p className="text-muted-foreground">
@@ -652,7 +659,9 @@ export default function BillingSettings() {
             )}
           </DialogContent>
         </Dialog>
-      </div>
+            </div>
+          </div>
+        </div>
       </div>
     </PaymentErrorBoundary>
   );

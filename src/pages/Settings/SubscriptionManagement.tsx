@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
+import { SettingsNav } from '@/components/settings/SettingsNav';
 
 interface Invoice {
   id: string;
@@ -148,9 +149,16 @@ export default function SubscriptionManagement() {
   ].sort((a, b) => b.created - a.created);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <SettingsBreadcrumb currentPage="Subscription Management" />
-      <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            <SettingsNav />
+          </div>
+        </aside>
+        <div className="min-w-0">
+          <SettingsBreadcrumb currentPage="Subscription Management" />
+          <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold">Subscription Management</h2>
           <p className="text-muted-foreground">Manage your subscription, billing, and payment methods</p>
@@ -320,8 +328,10 @@ export default function SubscriptionManagement() {
               </div>
             ))}
           </div>
-        )}
-      </Card>
+          )}
+        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
