@@ -855,16 +855,6 @@ export default function AdvancedScan() {
                     />
                   )}
                   
-                  {/* Sherlock Premium Tab */}
-                  {!isFree && (
-                    <Card className="p-4 bg-primary/5 border-primary/20 mt-4">
-                      <h4 className="font-semibold mb-3 flex items-center gap-2">
-                        <Zap className="w-4 h-4 text-primary" />
-                        Sherlock Enrich (Premium)
-                      </h4>
-                      <WhatsMyNameTab subscriptionTier={actualSubscriptionTier || 'free'} />
-                    </Card>
-                  )}
                 </>
               )}
             </div>
