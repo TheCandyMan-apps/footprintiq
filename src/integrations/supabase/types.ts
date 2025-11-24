@@ -456,6 +456,7 @@ export type Database = {
           response_length: number | null
           success: boolean | null
           user_id: string | null
+          workspace_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -466,6 +467,7 @@ export type Database = {
           response_length?: number | null
           success?: boolean | null
           user_id?: string | null
+          workspace_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -476,8 +478,17 @@ export type Database = {
           response_length?: number | null
           success?: boolean | null
           user_id?: string | null
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ai_logs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       alert_events: {
         Row: {

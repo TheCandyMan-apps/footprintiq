@@ -98,11 +98,22 @@ export default function IntelligenceDashboard() {
     : [];
 
   const riskData = metrics?.riskDistribution
-    ? Object.entries(metrics.riskDistribution).map(([severity, count]) => ({
-        name: severity,
-        value: count
-      }))
+    ? Object.entries(metrics.riskDistribution)
+        .map(([severity, count]) => ({
+          name: severity,
+          value: count,
+          color: severity === 'critical' ? 'hsl(var(--destructive))' :
+                 severity === 'high' ? 'hsl(20, 90%, 50%)' :
+                 severity === 'medium' ? 'hsl(45, 90%, 50%)' :
+                 'hsl(200, 80%, 50%)'
+        }))
+        .filter(item => item.value > 0)
     : [];
+  
+  // If only one category has data, add a tiny placeholder for proper pie rendering
+  const riskChartData = riskData.length === 1 && riskData[0].value > 0
+    ? [...riskData, { name: 'No Other Risks', value: 0.1, color: 'hsl(var(--muted))' }]
+    : riskData;
 
   return (
     <div className="min-h-screen bg-background">
@@ -247,13 +258,32 @@ export default function IntelligenceDashboard() {
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={riskData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="hsl(var(--primary))" />
-                    </BarChart>
+                    <PieChart>
+                      <Pie
+                        data={riskChartData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => name !== 'No Other Risks' ? `${name}: ${(percent * 100).toFixed(0)}%` : ''}
+                        innerRadius={25}
+                        outerRadius={80}
+                        paddingAngle={4}
+                        stroke="white"
+                        strokeWidth={2}
+                        dataKey="value"
+                      >
+                        {riskChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--card))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '6px'
+                        }}
+                      />
+                    </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
