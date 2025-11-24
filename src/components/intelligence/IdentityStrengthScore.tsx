@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getPlatformCategory } from '@/lib/categoryMapping';
+import { parseEvidence, extractPlatform, isNSFW } from '@/lib/evidenceParser';
 
 interface IdentityStrengthScoreProps {
   scanId: string;
@@ -48,7 +49,7 @@ export function IdentityStrengthScore({ scanId }: IdentityStrengthScoreProps) {
     queryFn: async () => {
       const { data: findings } = await supabase
         .from('findings')
-        .select('provider, kind, confidence, evidence')
+        .select('provider, kind, confidence, evidence, meta')
         .eq('scan_id', scanId)
         .neq('kind', 'provider.error')
         .neq('kind', 'provider.timeout');
@@ -58,11 +59,7 @@ export function IdentityStrengthScore({ scanId }: IdentityStrengthScoreProps) {
       }
 
       // Calculate metrics
-      const platformNames = new Set(findings.map(f => {
-        const evidence = Array.isArray(f.evidence) ? f.evidence : [];
-        const siteEvidence = evidence.find((e: any) => e.key === 'site' || e.key === 'platform');
-        return (siteEvidence as any)?.value || f.kind;
-      }));
+      const platformNames = new Set(findings.map(f => extractPlatform(f)));
 
       const categories = new Set(
         Array.from(platformNames).map(name => getPlatformCategory(name))
@@ -75,19 +72,12 @@ export function IdentityStrengthScore({ scanId }: IdentityStrengthScoreProps) {
         ? confidences.reduce((sum, c) => sum + c, 0) / confidences.length
         : 0;
 
-      const nsfwCount = findings.filter(f => 
-        f.kind?.toLowerCase().includes('nsfw') || 
-        (Array.isArray(f.evidence) && f.evidence.some((e: any) => 
-          e.key === 'category' && (e as any).value?.toLowerCase().includes('nsfw')
-        ))
-      ).length;
+      const nsfwCount = findings.filter(f => isNSFW(f)).length;
 
       // Provider consistency: check how many unique providers found similar platforms
       const providersByPlatform = new Map<string, Set<string>>();
       findings.forEach(f => {
-        const evidence = Array.isArray(f.evidence) ? f.evidence : [];
-        const siteEvidence = evidence.find((e: any) => e.key === 'site' || e.key === 'platform');
-        const platform = (siteEvidence as any)?.value || f.kind;
+        const platform = extractPlatform(f);
         
         if (!providersByPlatform.has(platform)) {
           providersByPlatform.set(platform, new Set());

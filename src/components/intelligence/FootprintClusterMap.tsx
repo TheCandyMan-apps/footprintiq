@@ -4,6 +4,7 @@ import { Network, Loader2 } from 'lucide-react';
 import { getPlatformCategory, getCategoryColor, type PlatformCategory } from '@/lib/categoryMapping';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { extractPlatform } from '@/lib/evidenceParser';
 
 interface FootprintClusterMapProps {
   scanId: string;
@@ -15,18 +16,16 @@ export function FootprintClusterMap({ scanId }: FootprintClusterMapProps) {
     queryFn: async () => {
       const { data: findings } = await supabase
         .from('findings')
-        .select('kind, evidence')
+        .select('kind, evidence, meta, provider')
         .eq('scan_id', scanId)
         .neq('kind', 'provider.error')
         .neq('kind', 'provider.timeout');
 
       if (!findings || findings.length === 0) return [];
 
-      return findings.map(f => {
-        const evidence = Array.isArray(f.evidence) ? f.evidence : [];
-        const siteEvidence = evidence.find((e: any) => e.key === 'site' || e.key === 'platform');
-        return { name: (siteEvidence as any)?.value || f.kind };
-      });
+      return findings.map(f => ({
+        name: extractPlatform(f)
+      }));
     },
     enabled: !!scanId
   });

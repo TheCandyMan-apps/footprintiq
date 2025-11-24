@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,13 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const { toast } = useToast();
   const { isPremium } = useSubscription();
+
+  // Auto-run detection if premium and not already run
+  useEffect(() => {
+    if (isPremium && scanId && !result && !loading) {
+      runDetection();
+    }
+  }, [scanId, isPremium]);
 
   const runDetection = async () => {
     if (!isPremium) {
