@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { getAIResponse } from "@/lib/aiRouter";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { getPlatformCategory } from "@/lib/categoryMapping";
+import { parseEvidence, extractPlatform } from "@/lib/evidenceParser";
 
 async function aiScore(data: any, isUsernameScan: boolean) {
   if (isUsernameScan) {
@@ -74,10 +75,15 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
     const calculateUsernameScanMetrics = (findings: any[]) => {
       let social = 0, gaming = 0, professional = 0, other = 0;
 
+      console.log('[FootprintDNA] Processing findings:', {
+        count: findings.length,
+        sample: findings[0],
+        parsedEvidence: findings[0] ? parseEvidence(findings[0].evidence) : null
+      });
+
       for (const finding of findings) {
-        // Extract platform name from evidence or kind
-        const evidence = finding.evidence || {};
-        const platform = evidence.platform || evidence.site || evidence.url || finding.provider || '';
+        // Extract platform name using utility
+        const platform = extractPlatform(finding);
         
         if (!platform) {
           other++;
@@ -139,7 +145,7 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
     // Priority 1: Use scanId if provided (most direct)
     if (scanId) {
       try {
-        const { data, error } = await (supabase as any).from('findings').select('kind, severity, evidence, provider').eq('scan_id', scanId);
+        const { data, error } = await (supabase as any).from('findings').select('kind, severity, evidence, provider, meta').eq('scan_id', scanId);
         if (error) throw error;
         
         // If no findings, check if scan exists and has legacy data
@@ -171,7 +177,7 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
         if (jobData?.username) {
           const { data: scanData } = await (supabase as any).from('scans').select('id').eq('username', jobData.username).eq('user_id', jobData.requested_by).order('created_at', { ascending: false }).limit(1).single();
           if (scanData?.id) {
-            const { data: findings } = await (supabase as any).from('findings').select('kind, severity, evidence, provider').eq('scan_id', scanData.id);
+            const { data: findings } = await (supabase as any).from('findings').select('kind, severity, evidence, provider, meta').eq('scan_id', scanData.id);
             if (findings && findings.length > 0) return calculateMetrics(findings);
           }
         }
@@ -186,7 +192,7 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
     try {
       const { data, error } = await (supabase as any)
         .from('findings')
-        .select('kind, severity, evidence, provider')
+        .select('kind, severity, evidence, provider, meta')
         .eq('workspace_id', workspace.id);
       if (error) throw error;
       return calculateMetrics(data || []);
