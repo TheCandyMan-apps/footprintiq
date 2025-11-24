@@ -366,11 +366,23 @@ serve(async (req) => {
         const safeResults = Array.isArray(data?.results) ? data.results : [];
         const safeMeta = typeof data?.meta === 'object' && data?.meta !== null ? data.meta : {};
         
-        console.log(`[GoSearch] Extracted ${safeResults.length} results for username: "${target}"`);
+        // Site coverage logging
+        const sitesChecked = safeMeta.sites_checked || safeMeta.total_sites || 'unknown';
+        const sitesList = safeMeta.sites_list || safeMeta.platforms_checked || [];
+        const optimizationMode = safeMeta.fast_mode ? 'fast' : 'thorough';
+        
+        console.log(`[GoSearch] Site Coverage Report:`, {
+          sites_checked: sitesChecked,
+          optimization_mode: optimizationMode,
+          results_found: safeResults.length,
+          sample_sites: Array.isArray(sitesList) ? sitesList.slice(0, 10) : []
+        });
+        
+        console.log(`[GoSearch] Extracted ${safeResults.length} results for username: "${target}" from ${sitesChecked} sites checked`);
         
         // Handle empty results with provider.empty_results
         if (safeResults.length === 0) {
-          console.warn(`[GoSearch] Worker returned 0 results for username: "${target}"`);
+          console.warn(`[GoSearch] Worker returned 0 results for username: "${target}" after checking ${sitesChecked} sites (${optimizationMode} mode)`);
           const now = new Date().toISOString();
           const emptyResultFinding = {
             provider: 'gosearch',
@@ -379,18 +391,22 @@ serve(async (req) => {
             confidence: 1.0,
             observedAt: now,
             evidence: [
-              { key: 'message', value: 'No matching profiles found' },
-              { key: 'username', value: target }
+              { key: 'message', value: `No matching profiles found across ${sitesChecked} sites` },
+              { key: 'username', value: target },
+              { key: 'sites_checked', value: String(sitesChecked) },
+              { key: 'optimization_mode', value: optimizationMode }
             ],
             meta: {
               reason: 'legitimate_no_results',
               worker_url: Deno.env.get('OSINT_WORKER_URL'),
               checked_at: now,
+              sites_checked: sitesChecked,
+              optimization_mode: optimizationMode,
               ...safeMeta
             }
           };
           result = { findings: [emptyResultFinding] };
-          console.log(`[GoSearch] Created empty_results finding for legitimate no-match scenario`);
+          console.log(`[GoSearch] Created empty_results finding for legitimate no-match scenario (${sitesChecked} sites checked)`);
           break;
         }
         
@@ -468,10 +484,10 @@ async function callOsintWorker(
   // Build scan URL with optimization params for GoSearch
   const scanUrl = new URL('/scan', workerUrl);
   if (tool === 'gosearch') {
-    scanUrl.searchParams.set('fast', 'true');
+    scanUrl.searchParams.set('fast', 'false'); // Thorough mode for better coverage
     scanUrl.searchParams.set('workers', '25');
     scanUrl.searchParams.set('screenshot', 'false');
-    console.log(`[OSINT Worker] 🚀 GoSearch optimizations applied: ${scanUrl.toString()}`);
+    console.log(`[OSINT Worker] 🔍 GoSearch thorough mode enabled: ${scanUrl.toString()}`);
   }
   
   const fullUrl = scanUrl.toString();
