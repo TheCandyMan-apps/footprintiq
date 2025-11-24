@@ -29,7 +29,8 @@ export function CircularMetric({
   const { dimension, stroke, fontSize } = sizeMap[size];
   const radius = (dimension - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
-  const percentage = (animatedValue / max) * 100;
+  // Ensure minimum 15% visibility for small values
+  const percentage = Math.max(15, (animatedValue / max) * 100);
   const offset = circumference - (percentage / 100) * circumference;
 
   useEffect(() => {
@@ -84,9 +85,9 @@ export function CircularMetric({
             <>
               <defs>
                 <linearGradient id={`gradient-${label}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="hsl(280 70% 50%)" />
-                  <stop offset="50%" stopColor="hsl(320 70% 50%)" />
-                  <stop offset="100%" stopColor="hsl(263 70% 60%)" />
+                  <stop offset="0%" stopColor="hsl(280 90% 60%)" />
+                  <stop offset="50%" stopColor="hsl(320 90% 60%)" />
+                  <stop offset="100%" stopColor="hsl(263 90% 65%)" />
                 </linearGradient>
               </defs>
               <circle
@@ -94,14 +95,14 @@ export function CircularMetric({
                 cy={dimension / 2}
                 r={radius}
                 stroke={`url(#gradient-${label})`}
-                strokeWidth={stroke}
+                strokeWidth={stroke + 2}
                 fill="none"
                 strokeDasharray={circumference}
                 strokeDashoffset={offset}
                 strokeLinecap="round"
                 className="transition-all duration-1000 ease-out"
                 style={{
-                  filter: 'drop-shadow(0 0 8px hsl(280 70% 60% / 0.6))',
+                  filter: 'drop-shadow(0 0 8px hsl(280 90% 60% / 0.6))',
                 }}
               />
             </>
