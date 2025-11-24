@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { CreditCard, Package, Zap, Loader2, BarChart3 } from "lucide-react";
 import { SettingsBreadcrumb } from "@/components/settings/SettingsBreadcrumb";
+import { SettingsNav } from "@/components/settings/SettingsNav";
 import { trackPaymentError } from "@/lib/sentry";
 import { paymentMonitor } from "@/lib/monitoring/payment-monitor";
 
@@ -87,9 +88,16 @@ export default function CreditsSettings() {
   ];
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <SettingsBreadcrumb currentPage="Credits" />
-      <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            <SettingsNav />
+          </div>
+        </aside>
+        <div className="min-w-0">
+          <SettingsBreadcrumb currentPage="Credits" />
+          <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Credits & Billing</h1>
           <p className="text-muted-foreground mt-2">
@@ -318,8 +326,10 @@ export default function CreditsSettings() {
 
         <TabsContent value="analytics" className="mt-6">
           <CreditsAnalyticsDashboard />
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+          </div>
+        </div>
       </div>
     </div>
   );

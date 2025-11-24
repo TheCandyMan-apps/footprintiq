@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Shield, Cookie, History, Download, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
+import { SettingsNav } from '@/components/settings/SettingsNav';
 
 interface ConsentPreferences {
   necessary: boolean;
@@ -146,9 +147,16 @@ export default function PrivacySettings() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <SettingsBreadcrumb currentPage="Privacy" />
-      <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            <SettingsNav />
+          </div>
+        </aside>
+        <div className="min-w-0">
+          <SettingsBreadcrumb currentPage="Privacy" />
+          <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold">Privacy & Consent</h2>
           <p className="text-muted-foreground">Manage your privacy preferences and data</p>
@@ -274,9 +282,11 @@ export default function PrivacySettings() {
           >
             <Trash2 className="w-4 h-4" />
             Delete My Account
-          </Button>
+        </Button>
+          </div>
+        </Card>
+          </div>
         </div>
-      </Card>
       </div>
     </div>
   );

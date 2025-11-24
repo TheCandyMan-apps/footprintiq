@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Brain, Sparkles, Zap, ArrowLeft } from 'lucide-react';
 import { updatePreferredModel, getPreferredModel } from '@/lib/aiRouter';
+import { SettingsNav } from '@/components/settings/SettingsNav';
 
 type Model = "gemini" | "gpt" | "grok";
 
@@ -124,17 +125,16 @@ export default function AISettings() {
   }
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 px-4">
-      <Button
-        variant="ghost"
-        onClick={() => navigate('/settings')}
-        className="mb-6"
-      >
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back to Settings
-      </Button>
-
-      <Card>
+    <div className="container max-w-7xl mx-auto py-8 px-4">
+      <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            <SettingsNav />
+          </div>
+        </aside>
+        
+        <div className="min-w-0">
+          <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Brain className="w-5 h-5" />
@@ -228,7 +228,9 @@ export default function AISettings() {
             alert summaries, threat analysis, and chat assistance.
           </p>
         </CardContent>
-      </Card>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

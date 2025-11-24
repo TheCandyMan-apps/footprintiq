@@ -8,6 +8,7 @@ import { Loader2, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { PLAN_QUOTAS } from '@/lib/workspace/quotas';
 import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
+import { SettingsNav } from '@/components/settings/SettingsNav';
 
 export default function SubscriptionSettings() {
   const { subscriptionTier, subscriptionEnd, isLoading } = useSubscription();
@@ -36,8 +37,19 @@ export default function SubscriptionSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+          <aside className="hidden lg:block">
+            <div className="sticky top-24">
+              <SettingsNav />
+            </div>
+          </aside>
+          <div className="min-w-0">
+            <div className="flex items-center justify-center p-8">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -45,9 +57,16 @@ export default function SubscriptionSettings() {
   const quotas = PLAN_QUOTAS[subscriptionTier];
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <SettingsBreadcrumb currentPage="Subscription" />
-      <div className="space-y-6">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="grid lg:grid-cols-[280px_1fr] gap-6">
+        <aside className="hidden lg:block">
+          <div className="sticky top-24">
+            <SettingsNav />
+          </div>
+        </aside>
+        <div className="min-w-0">
+          <SettingsBreadcrumb currentPage="Subscription" />
+          <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-bold">Subscription</h2>
           <p className="text-muted-foreground">Manage your subscription and billing</p>
@@ -125,6 +144,8 @@ export default function SubscriptionSettings() {
           />
         </div>
       </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
