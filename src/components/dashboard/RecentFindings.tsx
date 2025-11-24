@@ -133,13 +133,13 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
             {findings.map((finding) => (
               <div
                 key={finding.id}
-                onClick={() => navigate(`/results/${finding.scan_id}`)}
+                onClick={() => navigate(`/maigret/results/${finding.scan_id}`)}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    navigate(`/results/${finding.scan_id}`);
+                    navigate(`/maigret/results/${finding.scan_id}`);
                   }
                 }}
                 aria-label={`View details for ${finding.kind} finding from ${finding.provider}`}
