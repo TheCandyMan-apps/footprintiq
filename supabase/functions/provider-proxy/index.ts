@@ -481,26 +481,30 @@ async function callOsintWorker(
     console.warn(`[OSINT Worker] Health check failed:`, healthError);
   }
 
-  // Build scan URL with optimization params for GoSearch
+  // Build scan URL (no query params - worker uses env vars)
   const scanUrl = new URL('/scan', workerUrl);
-  if (tool === 'gosearch') {
-    scanUrl.searchParams.set('fast', 'false'); // Thorough mode for better coverage
-    scanUrl.searchParams.set('workers', '25');
-    scanUrl.searchParams.set('screenshot', 'false');
-    console.log(`[OSINT Worker] 🔍 GoSearch thorough mode enabled: ${scanUrl.toString()}`);
-  }
   
   const fullUrl = scanUrl.toString();
+  
+  // Prepare request body with strict mode control
+  const requestBody: any = {
+    tool,
+    ...payload,
+    token: workerToken,
+  };
+  
+  // GoSearch supports strict mode for false-positive suppression
+  if (tool === 'gosearch') {
+    requestBody.strict = false; // Allow broader matches for better coverage
+    console.log(`[OSINT Worker] 🔍 GoSearch non-strict mode enabled for broader coverage`);
+  }
+  
   const resp = await fetch(fullUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      tool,
-      ...payload,
-      token: workerToken,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   console.log(`[OSINT Worker] Response status:`, resp.status);
@@ -531,6 +535,20 @@ async function callOsintWorker(
 
   if (data?.results && Array.isArray(data.results) && data.results.length > 0) {
     console.log(`[OSINT Worker] First result sample:`, JSON.stringify(data.results[0], null, 2));
+  }
+
+  // Log GoSearch worker execution meta for debugging
+  if (tool === 'gosearch' && data?.meta) {
+    const safeMeta = typeof data.meta === 'object' && data.meta !== null ? data.meta : {};
+    console.log(`[GoSearch] Worker Execution Report:`, {
+      fast_mode: safeMeta.fast_mode,
+      workers: safeMeta.workers,
+      strict_mode: safeMeta.strict_mode,
+      return_code: safeMeta.return_code,
+      stdout_lines: safeMeta.stdout_lines,
+      parsed_count: safeMeta.parsed_count,
+      sample_output: safeMeta.sample_output,
+    });
   }
 
   return data;
