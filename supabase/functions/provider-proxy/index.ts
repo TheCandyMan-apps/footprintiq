@@ -354,78 +354,200 @@ serve(async (req) => {
         break;
       }
       case 'gosearch': {
-        // Username focused
+        // Only valid for username scans
         if (type !== 'username') {
+          console.log('[GoSearch] Skipping - not a username scan');
           result = { findings: [] };
           break;
         }
-        const data = await callOsintWorker('gosearch', { username: target });
-        console.log(`[GoSearch] Raw worker response:`, JSON.stringify(data).substring(0, 500));
+
+        const username = target;
+        const now = new Date().toISOString();
         
-        // Safe extraction with defensive checks
-        const safeResults = Array.isArray(data?.results) ? data.results : [];
-        const safeMeta = typeof data?.meta === 'object' && data?.meta !== null ? data.meta : {};
+        // Check configuration
+        const workerUrl = Deno.env.get('OSINT_WORKER_URL');
+        const workerToken = Deno.env.get('OSINT_WORKER_TOKEN');
         
-        // Site coverage logging
-        const sitesChecked = safeMeta.sites_checked || safeMeta.total_sites || 'unknown';
-        const sitesList = safeMeta.sites_list || safeMeta.platforms_checked || [];
-        const optimizationMode = safeMeta.fast_mode ? 'fast' : 'thorough';
-        
-        console.log(`[GoSearch] Site Coverage Report:`, {
-          sites_checked: sitesChecked,
-          optimization_mode: optimizationMode,
-          results_found: safeResults.length,
-          sample_sites: Array.isArray(sitesList) ? sitesList.slice(0, 10) : []
-        });
-        
-        console.log(`[GoSearch] Extracted ${safeResults.length} results for username: "${target}" from ${sitesChecked} sites checked`);
-        
-        // Handle empty results with provider.empty_results
-        if (safeResults.length === 0) {
-          console.warn(`[GoSearch] Worker returned 0 results for username: "${target}" after checking ${sitesChecked} sites (${optimizationMode} mode)`);
-          const now = new Date().toISOString();
-          const emptyResultFinding = {
-            provider: 'gosearch',
-            kind: 'provider.empty_results',
-            severity: 'info' as const,
-            confidence: 1.0,
-            observedAt: now,
-            evidence: [
-              { key: 'message', value: `No matching profiles found across ${sitesChecked} sites` },
-              { key: 'username', value: target },
-              { key: 'sites_checked', value: String(sitesChecked) },
-              { key: 'optimization_mode', value: optimizationMode }
-            ],
-            meta: {
-              reason: 'legitimate_no_results',
-              worker_url: Deno.env.get('OSINT_WORKER_URL'),
-              checked_at: now,
-              sites_checked: sitesChecked,
-              optimization_mode: optimizationMode,
-              ...safeMeta
-            }
+        if (!workerUrl || !workerToken) {
+          console.warn('[GoSearch] OSINT worker not configured:', { hasUrl: !!workerUrl, hasToken: !!workerToken });
+          result = {
+            findings: [{
+              provider: 'gosearch',
+              kind: 'provider.unconfigured',
+              severity: 'info' as const,
+              confidence: 1.0,
+              observedAt: now,
+              evidence: [
+                { key: 'message', value: 'GoSearch not configured' },
+                { key: 'description', value: 'The GoSearch OSINT worker URL or token is not configured. Contact support to enable GoSearch.' },
+                { key: 'missing', value: !workerUrl ? 'OSINT_WORKER_URL' : 'OSINT_WORKER_TOKEN' }
+              ],
+              meta: { provider: 'gosearch', unconfigured: true }
+            }]
           };
-          result = { findings: [emptyResultFinding] };
-          console.log(`[GoSearch] Created empty_results finding for legitimate no-match scenario (${sitesChecked} sites checked)`);
           break;
         }
+
+        console.log(`[GoSearch] Calling OSINT worker for username: ${username}`);
+
+        try {
+          // Call the worker
+          const scanUrl = new URL('/scan', workerUrl).toString();
+          const resp = await fetch(scanUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tool: 'gosearch',
+              username,
+              token: workerToken,
+              strict: false, // Allow broader matches for better coverage
+            }),
+          });
+
+          // Parse response safely
+          const bodyText = await resp.text();
+          let data: any;
+          
+          try {
+            data = JSON.parse(bodyText);
+          } catch (parseError) {
+            console.error('[GoSearch] Failed to parse worker response as JSON:', parseError);
+            result = {
+              findings: [{
+                provider: 'gosearch',
+                kind: 'provider_error',
+                severity: 'warning' as const,
+                confidence: 0.5,
+                observedAt: now,
+                evidence: [
+                  { key: 'error', value: 'Invalid JSON response from worker' },
+                  { key: 'worker_status', value: String(resp.status) },
+                  { key: 'worker_body', value: bodyText.slice(0, 2000) }
+                ],
+                meta: { provider: 'gosearch', tool: 'gosearch' }
+              }]
+            };
+            break;
+          }
+
+          // Log execution report
+          if (data?.meta) {
+            const safeMeta = typeof data.meta === 'object' && data.meta !== null ? data.meta : {};
+            console.log(`[GoSearch] Worker Execution Report:`, {
+              fast_mode: safeMeta.fast_mode,
+              workers: safeMeta.workers,
+              strict_mode: safeMeta.strict_mode,
+              return_code: safeMeta.return_code,
+              stdout_lines: safeMeta.stdout_lines,
+              parsed_count: safeMeta.parsed_count,
+              sample_output: safeMeta.sample_output,
+            });
+          }
+
+          // Handle errors
+          if (!resp.ok || data?.error) {
+            const errorMsg = data?.error ?? `GoSearch worker returned HTTP ${resp.status}. See admin logs for details.`;
+            console.error('[GoSearch] Worker error:', { status: resp.status, error: data?.error, body: bodyText.slice(0, 500) });
+            
+            result = {
+              findings: [{
+                provider: 'gosearch',
+                kind: 'provider_error',
+                severity: 'warning' as const,
+                confidence: 0.5,
+                observedAt: now,
+                evidence: [
+                  { key: 'error', value: 'GoSearch provider error' },
+                  { key: 'description', value: errorMsg },
+                  { key: 'worker_status', value: String(resp.status) },
+                  { key: 'worker_body', value: bodyText.slice(0, 2000) }
+                ],
+                meta: { 
+                  provider: 'gosearch', 
+                  tool: data?.tool ?? 'gosearch',
+                  meta: data?.meta ?? null
+                }
+              }]
+            };
+            break;
+          }
+
+          // Handle missing or empty results array
+          if (!data.results || !Array.isArray(data.results) || data.results.length === 0) {
+            const checkedSites = data?.meta?.stdout_lines ?? null;
+            console.log(`[GoSearch] No matching profiles found for username: ${username}`);
+            
+            result = {
+              findings: [{
+                provider: 'gosearch',
+                kind: 'provider.empty_results',
+                severity: 'info' as const,
+                confidence: 1.0,
+                observedAt: now,
+                evidence: [
+                  { key: 'message', value: 'GoSearch – no matching profiles' },
+                  { key: 'description', value: 'GoSearch did not find any profiles for this username across its supported platforms.' },
+                  { key: 'username', value: username },
+                  ...(checkedSites ? [{ key: 'checked_sites', value: String(checkedSites) }] : [])
+                ],
+                meta: { 
+                  provider: 'gosearch', 
+                  tool: data?.tool ?? 'gosearch',
+                  meta: data?.meta ?? null
+                }
+              }]
+            };
+            break;
+          }
+
+          // Map results to findings
+          const rawResults = data.results;
+          console.log(`[GoSearch] Worker returned ${rawResults.length} results`);
+          if (data?.meta?.return_code !== undefined) {
+            console.log(`[GoSearch] Worker exit code: ${data.meta.return_code}, parsed count: ${data.meta.parsed_count}`);
+          }
+
+          const findings = rawResults.map((hit: any) => ({
+            provider: 'gosearch',
+            kind: 'profile_presence',
+            severity: 'info' as const,
+            confidence: 0.8,
+            observedAt: now,
+            evidence: [
+              { key: 'site', value: hit.site ?? 'Profile found via GoSearch' },
+              { key: 'primary_url', value: hit.url || '' },
+              { key: 'username', value: hit.username || username },
+              { key: 'source', value: 'gosearch' }
+            ],
+            meta: { 
+              provider: 'gosearch', 
+              tool: data?.tool ?? 'gosearch',
+              site: hit.site
+            }
+          }));
+
+          result = { findings };
+          console.log(`[GoSearch] Successfully mapped ${findings.length} findings`);
+          
+        } catch (error: any) {
+          console.error('[GoSearch] Exception during worker call:', error);
+          result = {
+            findings: [{
+              provider: 'gosearch',
+              kind: 'provider_error',
+              severity: 'warning' as const,
+              confidence: 0.5,
+              observedAt: now,
+              evidence: [
+                { key: 'error', value: 'GoSearch worker exception' },
+                { key: 'description', value: error.message || 'Unknown error occurred while calling GoSearch worker' },
+                { key: 'exception', value: String(error) }
+              ],
+              meta: { provider: 'gosearch', tool: 'gosearch' }
+            }]
+          };
+        }
         
-        const now = new Date().toISOString();
-        const findings = safeResults.map((item: any) => ({
-          provider: 'gosearch',
-          kind: 'presence.hit',
-          severity: 'low' as const,
-          confidence: 0.8,
-          observedAt: now,
-          evidence: [
-            { key: 'site', value: item.site || 'unknown' },
-            { key: 'url', value: item.url || '' },
-            { key: 'username', value: target },
-            ...(item.category ? [{ key: 'category', value: String(item.category) }] : []),
-          ],
-          meta: item,
-        }));
-        result = { findings };
         break;
       }
       default:
