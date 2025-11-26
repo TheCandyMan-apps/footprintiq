@@ -5,6 +5,7 @@ import { authenticateRequest } from "../_shared/auth-utils.ts";
 import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
 import { validateRequestBody } from "../_shared/security-validation.ts";
 import { secureJsonResponse } from "../_shared/security-headers.ts";
+import { logAIUsage } from "../_shared/aiLogger.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -154,6 +155,15 @@ Provide a detailed, executive-level response with actionable insights.`;
 
     const aiData = await aiResponse.json();
     const analysis = aiData.choices?.[0]?.message?.content || "No analysis generated";
+
+    // Log AI usage
+    await logAIUsage(supabase, {
+      userId: userId,
+      model: 'google/gemini-2.5-flash',
+      promptLength: systemPrompt.length + userPrompt.length,
+      responseLength: analysis?.length || 0,
+      success: true,
+    });
 
     return secureJsonResponse({ 
       success: true, 

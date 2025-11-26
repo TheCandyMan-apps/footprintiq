@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { logAIUsage } from "../_shared/aiLogger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -164,6 +165,16 @@ serve(async (req) => {
     }
 
     console.log('[ai-correlation] Analysis complete with', actions.length, 'actions');
+
+    // Log AI usage
+    const promptContent = `Analyze these findings and provide insights with specific actions:\n\n${JSON.stringify(findings, null, 2)}`;
+    await logAIUsage(supabase, {
+      userId: userId,
+      model: 'google/gemini-2.5-flash',
+      promptLength: promptContent.length,
+      responseLength: rawContent?.length || 0,
+      success: true,
+    });
 
     return new Response(JSON.stringify({
       analysis,

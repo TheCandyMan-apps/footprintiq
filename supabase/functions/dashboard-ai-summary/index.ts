@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { logAIUsage } from "../_shared/aiLogger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -89,6 +90,15 @@ Focus on actionable insights and notable trends.`;
       }
       throw new Error(`AI gateway error: ${aiResponse.status}`);
     }
+
+    // Log AI usage (best effort for streaming response)
+    await logAIUsage(supabase, {
+      userId: user.id,
+      workspaceId: filters.workspace || user.id,
+      model: 'google/gemini-2.5-flash',
+      promptLength: prompt.length,
+      success: true,
+    });
 
     // Stream the response
     return new Response(aiResponse.body, {

@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { logAIUsage } from "../_shared/aiLogger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -149,6 +150,16 @@ Be concise, accurate, and security-focused. Provide actionable recommendations. 
         tokens_used: result.usage?.total_tokens || 0,
         latency_ms: latency,
       });
+
+    // Log AI usage to analytics
+    await logAIUsage(supabase, {
+      userId: user.id,
+      workspaceId: workspaceId,
+      model: 'google/gemini-2.5-flash',
+      promptLength: systemPrompt.length + query.length,
+      responseLength: response?.length || 0,
+      success: true,
+    });
 
     return new Response(
       JSON.stringify({ response, latency }),
