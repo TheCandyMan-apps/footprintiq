@@ -875,7 +875,7 @@ serve(async (req) => {
       
       // GoSearch override: longer timeout, lower concurrency to avoid worker overload
       if (provider === 'gosearch') {
-        providerTimeoutMs = 90000; // 90 seconds
+        providerTimeoutMs = getProviderTimeout('gosearch'); // Use config (180s)
         concurrency = 1; // Sequential to prevent worker saturation
         console.log(`[orchestrate] 🎯 GoSearch override: timeout=${providerTimeoutMs}ms, concurrency=${concurrency}`);
       }
@@ -1193,6 +1193,19 @@ serve(async (req) => {
           error_message: sanitizeError(error).message,
           metadata: { code: sanitizeError(error).code }
         });
+        
+        // Clear gosearch_pending flag on timeout
+        if (provider === 'gosearch' && isTimeout) {
+          try {
+            await supabaseService
+              .from('scans')
+              .update({ gosearch_pending: false })
+              .eq('id', scanId);
+            console.log(`[orchestrate] 🔓 Cleared gosearch_pending flag for scan ${scanId} after timeout`);
+          } catch (e) {
+            console.warn(`[orchestrate] Failed to clear gosearch_pending:`, e);
+          }
+        }
         
         // Broadcast provider failure
         await channel.send({
