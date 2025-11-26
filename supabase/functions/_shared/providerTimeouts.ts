@@ -7,11 +7,11 @@
  */
 
 export const PROVIDER_TIMEOUTS: Record<string, number> = {
-  // Username scanners - reduced to fit edge function timeout limits
-  'maigret': 45000,       // 45 seconds - scans 3000+ sites (reduced for edge function stability)
-  'sherlock': 45000,      // 45 seconds - scans 400+ sites (reduced for edge function stability)
-  'whatsmyname': 45000,   // 45 seconds - legacy alias for sherlock (reduced)
-  'gosearch': 45000,      // 45 seconds - deep search across 300+ platforms (reduced for edge function stability)
+  // Username scanners - Maigret/Sherlock need more time for comprehensive scans
+  'maigret': 90000,       // 90 seconds - scans 3000+ sites
+  'sherlock': 90000,      // 90 seconds - scans 400+ sites  
+  'whatsmyname': 45000,   // 45 seconds - legacy alias for sherlock
+  'gosearch': 120000,     // 120 seconds - deep search across 300+ platforms (async)
   
   // Breach & identity providers - API calls, faster
   'hibp': 30000,          // 30 seconds - Have I Been Pwned API
@@ -38,7 +38,7 @@ export const PROVIDER_TIMEOUTS: Record<string, number> = {
   'apify-darkweb': 180000,// 180 seconds - dark web scraping
   
   // Default timeout for unlisted providers
-  'default': 45000        // 45 seconds default
+  'default': 60000        // 60 seconds default (increased from 45s)
 };
 
 /**
