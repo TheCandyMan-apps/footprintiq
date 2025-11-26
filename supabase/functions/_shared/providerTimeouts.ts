@@ -9,8 +9,8 @@
 export const PROVIDER_TIMEOUTS: Record<string, number> = {
   // Username scanners - hit many sites, need longer timeouts
   'maigret': 90000,       // 90 seconds - scans 3000+ sites
-  'sherlock': 90000,      // 90 seconds - scans 400+ sites  
-  'whatsmyname': 90000,   // 90 seconds - legacy alias for sherlock
+  'sherlock': 150000,     // 150 seconds - scans 400+ sites (increased for worker stability)
+  'whatsmyname': 150000,  // 150 seconds - legacy alias for sherlock (increased)
   'gosearch': 120000,     // 120 seconds - deep search across 300+ platforms (INCREASED)
   
   // Breach & identity providers - API calls, faster
