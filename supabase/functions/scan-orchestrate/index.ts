@@ -154,7 +154,14 @@ serve(async (req) => {
   }
 
   const startTime = Date.now();
-  const TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+  const TIMEOUT_MS = 50 * 1000; // 50 seconds - Supabase edge function hard limit
+  
+  // Global abort controller to enforce function timeout
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => {
+    console.error('[orchestrate] ⏱️ FUNCTION TIMEOUT at 50s - aborting all operations');
+    abortController.abort();
+  }, TIMEOUT_MS);
 
   try {
     // Use anon key for RLS-protected operations
@@ -1252,7 +1259,34 @@ serve(async (req) => {
       }
     });
 
-    const results = await queue.addAll(tasks);
+    // Wrap queue execution with abort signal check
+    let results: any[] = [];
+    try {
+      if (abortController.signal.aborted) {
+        throw new Error('Function timeout - scan aborted');
+      }
+      results = await queue.addAll(tasks);
+      clearTimeout(timeoutId); // Clear timeout on successful completion
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (abortController.signal.aborted) {
+        console.error('[orchestrate] Function aborted due to timeout');
+        // Mark scan as partial completion
+        await supabaseService.from('scans').update({
+          status: 'completed_partial',
+          completed_at: new Date().toISOString(),
+          error_message: 'Scan exceeded time limit - partial results saved'
+        }).eq('id', scanId);
+        
+        return ok({
+          scanId,
+          status: 'completed_partial',
+          message: 'Scan exceeded time limit but partial results were saved',
+          findingsCount: allFindings.length
+        });
+      }
+      throw error;
+    }
     
     // Collect successful results
     for (const result of results) {
