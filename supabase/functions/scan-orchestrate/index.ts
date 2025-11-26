@@ -1122,8 +1122,11 @@ serve(async (req) => {
         
         const result = await executeWithSafety();
         
+        // Defensive: ensure result is always an array to prevent .map() errors
+        const safeResult = Array.isArray(result) ? result : [];
+        
         // Sanitize results before storing
-        const sanitizedResult = result.map((finding: any) => ({
+        const sanitizedResult = safeResult.map((finding: any) => ({
           ...finding,
           evidence: sanitizeProviderData(finding.evidence),
           meta: sanitizeProviderData(finding.meta)
