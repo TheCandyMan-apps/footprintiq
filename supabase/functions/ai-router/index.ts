@@ -4,6 +4,7 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { validateAuth } from '../_shared/auth-utils.ts';
 import { checkRateLimit } from '../_shared/rate-limiter.ts';
 import { addSecurityHeaders } from '../_shared/security-headers.ts';
+import { logAIUsage } from '../_shared/aiLogger.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -120,6 +121,15 @@ serve(async (req) => {
 
       console.log(`Grok request completed - Response length: ${content.length}`);
 
+      // Log AI usage
+      await logAIUsage(supabase, {
+        userId: userId,
+        model: 'grok-beta',
+        promptLength: systemPrompt.length + userPrompt.length,
+        responseLength: content.length,
+        success: true,
+      });
+
       return new Response(
         JSON.stringify({
           content,
@@ -201,17 +211,13 @@ serve(async (req) => {
     }
 
     // Log usage to ai_logs table
-    try {
-      const { data: { user } } = await req.headers.get('authorization') 
-        ? { data: { user: null } } // Simplified - would need proper JWT parsing
-        : { data: { user: null } };
-      
-      // Note: Actual implementation would extract user from JWT token
-      console.log(`AI request completed - Model: ${selectedModel}, Prompt length: ${userPrompt.length}, Response length: ${content.length}`);
-    } catch (logError) {
-      console.error('Failed to log AI usage:', logError);
-      // Don't fail the request if logging fails
-    }
+    await logAIUsage(supabase, {
+      userId: userId,
+      model: selectedModel,
+      promptLength: systemPrompt.length + userPrompt.length,
+      responseLength: content.length,
+      success: true,
+    });
 
     return new Response(
       JSON.stringify({

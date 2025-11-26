@@ -6,6 +6,7 @@ import { authenticateRequest } from "../_shared/auth-utils.ts";
 import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
 import { validateRequestBody } from "../_shared/security-validation.ts";
 import { secureJsonResponse, addSecurityHeaders } from "../_shared/security-headers.ts";
+import { logAIUsage } from "../_shared/aiLogger.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -205,6 +206,16 @@ Format your response in clear sections with bullet points. Be specific and actio
     const analysis = aiData.choices[0].message.content;
 
     console.log('AI analysis completed successfully');
+
+    // Log AI usage
+    await logAIUsage(supabaseClient, {
+      userId: authResult.context.userId,
+      workspaceId: scan.workspace_id,
+      model: 'google/gemini-2.5-flash',
+      promptLength: analysisPrompt.length,
+      responseLength: analysis?.length || 0,
+      success: true,
+    });
 
     return new Response(
       JSON.stringify({
