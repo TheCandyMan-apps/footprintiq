@@ -294,7 +294,7 @@ export function SimpleResultsViewer({
               id: jobId,
               job_id: jobId,
               username: scan.username || '',
-              status: scan.status === 'completed' ? 'completed' : scan.status === 'error' ? 'failed' : scan.status as any,
+              status: ['completed', 'timeout', 'completed_partial'].includes(scan.status) ? 'completed' : scan.status === 'error' ? 'failed' : scan.status as any,
               summary: maigretFindings.map((f: any) => {
                 // Extract fields from evidence array (each evidence is {key, value})
                 const siteEvidence = Array.isArray(f.evidence) ? f.evidence.find((e: any) => e.key === 'site') : null;
@@ -741,7 +741,7 @@ export function SimpleResultsViewer({
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              {result.status === 'completed' && result.summary && result.summary.length > 0 && (
+              {['completed', 'timeout', 'completed_partial'].includes(result.status) && result.summary && result.summary.length > 0 && (
                 <MaigretPDFExport 
                   username={result.username}
                   summary={result.summary}
