@@ -560,7 +560,7 @@ serve(async (req) => {
         email: type === 'email' ? value : null,
         username: type === 'username' ? value : null,
         phone: type === 'phone' ? value : null,
-        status: 'pending',
+        status: 'running',
         cache_key: cacheKey || undefined,
         provider_counts: {}
       } as any, {
@@ -600,33 +600,11 @@ serve(async (req) => {
       console.log(`[orchestrate] Incremented scan counter: ${scansUsed + 1}/${scanLimit || 'unlimited'}`);
     }
 
-    // Helper function to update progress in database
-    const updateProgress = async (payload: {
-      status: string;
-      total_providers?: number;
-      completed_providers?: number;
-      current_provider?: string;
-      current_providers?: string[];
-      findings_count?: number;
-      message: string;
-      error?: boolean;
-    }) => {
-      try {
-        await supabaseService
-          .from('scan_progress')
-          .upsert({
-            scan_id: scanId,
-            ...payload,
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'scan_id'
-          });
-      } catch (err) {
-        console.error('[orchestrate] Failed to update progress:', err);
-      }
-    };
-
-    // Build provider list with tier enforcement
+    // ============================================================================
+    // 🚀 ASYNC-FIRST ARCHITECTURE: Build provider list, then execute in background
+    // ============================================================================
+    
+    // Build provider list with tier enforcement (do this BEFORE background execution)
     const plan = getPlan(workspace.plan || workspace.subscription_tier);
     const DEFAULT_PROVIDERS_BY_TIER: Record<ScanRequest['type'], string[]> = {
       email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
@@ -695,29 +673,6 @@ serve(async (req) => {
     providers = providers.filter(p => providerTypeSupport[p]?.includes(type));
     console.log('[orchestrate] Providers after type compatibility filter:', providers);
 
-    // ✅ Now update scan record with provider counts after providers are finalized
-    try {
-      const initialProviderCounts = providers.reduce((acc, p) => ({ ...acc, [p]: 0 }), {});
-      
-      await supabaseService
-        .from('scans')
-        .update({ provider_counts: initialProviderCounts })
-        .eq('id', scanId);
-        
-      console.log('[orchestrate] Updated scan with provider_counts:', initialProviderCounts);
-    } catch (e) {
-      console.warn('[orchestrate] Failed to update provider_counts:', e);
-    }
-
-    // Ensure we always have at least one provider (will be tier-filtered after allFindings is declared)
-    if (providers.length === 0) {
-      console.warn('[orchestrate] No compatible providers, using defaults');
-      providers = DEFAULT_PROVIDERS_BY_TIER[type];
-    }
-
-    // Note: Advanced sources (dating/nsfw/darkweb) rely on providers not yet supported directly.
-    // We intentionally skip adding them here until proxy support is stable.
-
     // CRITICAL: Filter requested providers by tier allowance UNLESS user is admin
     const { allowed: allowedProviders, blocked } = isAdmin 
       ? { allowed: providers, blocked: [] } // Admins get ALL providers
@@ -725,28 +680,6 @@ serve(async (req) => {
           workspace.plan || workspace.subscription_tier,
           providers
         );
-
-    // Create execution queue
-    const queue = createQueue({ concurrency: 7, retries: 3 });
-    const allFindings: UFMFinding[] = [];
-    
-    if (blocked.length > 0) {
-      console.warn('[orchestrate] Blocked providers for tier:', blocked);
-      // Add informational finding about blocked providers
-      const blockedFinding: UFMFinding = {
-        provider: 'system',
-        kind: 'tier_restriction',
-        severity: 'info',
-        confidence: 1.0,
-        observedAt: new Date().toISOString(),
-        evidence: [
-          { key: 'blocked_providers', value: blocked.join(', ') },
-          { key: 'upgrade_required', value: plan.id === 'free' ? 'Pro or Business' : 'Business' },
-          { key: 'message', value: `${blocked.join(', ')} requires ${plan.id === 'free' ? 'Pro or Business' : 'Business'} plan` }
-        ]
-      };
-      allFindings.push(blockedFinding);
-    }
 
     providers = allowedProviders;
 
@@ -765,6 +698,64 @@ serve(async (req) => {
         headers: { ...corsHeaders(), "Content-Type": "application/json" }
       });
     }
+
+    console.log(`[orchestrate] ✅ Scan ${scanId} created with ${providers.length} providers - returning immediately to client`);
+    
+    // Define background execution function
+    const executeProvidersInBackground = async () => {
+      console.log(`[orchestrate] 🔄 Starting background execution for scan ${scanId}`);
+      
+      // Clear the old timeout since we're in background now
+      clearTimeout(timeoutId);
+
+      // Helper function to update progress in database
+      const updateProgress = async (payload: {
+        status: string;
+        total_providers?: number;
+        completed_providers?: number;
+        current_provider?: string;
+        current_providers?: string[];
+        findings_count?: number;
+        message: string;
+        error?: boolean;
+      }) => {
+        try {
+          await supabaseService
+            .from('scan_progress')
+            .upsert({
+              scan_id: scanId,
+              ...payload,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'scan_id'
+            });
+        } catch (err) {
+          console.error('[orchestrate] Failed to update progress:', err);
+        }
+      };
+
+      // Create execution queue
+      const queue = createQueue({ concurrency: 7, retries: 3 });
+      const allFindings: UFMFinding[] = [];
+
+      
+      if (blocked.length > 0) {
+        console.warn('[orchestrate] Blocked providers for tier:', blocked);
+        // Add informational finding about blocked providers
+        const blockedFinding: UFMFinding = {
+          provider: 'system',
+          kind: 'tier_restriction',
+          severity: 'info',
+          confidence: 1.0,
+          observedAt: new Date().toISOString(),
+          evidence: [
+            { key: 'blocked_providers', value: blocked.join(', ') },
+            { key: 'upgrade_required', value: plan.id === 'free' ? 'Pro or Business' : 'Business' },
+            { key: 'message', value: `${blocked.join(', ')} requires ${plan.id === 'free' ? 'Pro or Business' : 'Business'} plan` }
+          ]
+        };
+        allFindings.push(blockedFinding);
+      }
 
     // Update initial progress
     await updateProgress({
@@ -1763,21 +1754,27 @@ serve(async (req) => {
       current_providers: []
     });
 
+      // Background execution complete
+      console.log(`[orchestrate] ✅ Background execution complete for scan ${scanId}`);
+    };
+    
+    // Schedule background execution using EdgeRuntime.waitUntil()
+    // This allows the response to return immediately while providers run in background
+    try {
+      (globalThis as any).EdgeRuntime?.waitUntil(executeProvidersInBackground());
+    } catch (err) {
+      console.error('[orchestrate] Failed to schedule background execution:', err);
+      // Fallback: run synchronously if waitUntil fails
+      await executeProvidersInBackground();
+    }
+    
+    // Return immediately - scan is running in background
     return ok({
       scanId,
-      counts: {
-        total: sortedFindings.length,
-        bySeverity: sortedFindings.reduce((acc, f) => {
-          acc[f.severity] = (acc[f.severity] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
-        byProvider: sortedFindings.reduce((acc, f) => {
-          acc[f.provider] = (acc[f.provider] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
-      },
-      tookMs,
-      findings: sortedFindings,
+      status: 'running',
+      message: 'Scan started successfully. Results will be available shortly.',
+      providers: providers.length,
+      gosearch_async: gosearchRequested
     });
 
   } catch (error) {
