@@ -7,11 +7,11 @@
  */
 
 export const PROVIDER_TIMEOUTS: Record<string, number> = {
-  // Username scanners - Maigret/Sherlock need more time for comprehensive scans
-  'maigret': 90000,       // 90 seconds - scans 3000+ sites
-  'sherlock': 90000,      // 90 seconds - scans 400+ sites  
-  'whatsmyname': 45000,   // 45 seconds - legacy alias for sherlock
-  'gosearch': 120000,     // 120 seconds - deep search across 300+ platforms (async)
+  // Username scanners - comprehensive scans with generous timeouts (background execution)
+  'maigret': 120000,      // 120 seconds - scans 3000+ sites thoroughly
+  'sherlock': 120000,     // 120 seconds - scans 400+ sites thoroughly
+  'whatsmyname': 60000,   // 60 seconds - legacy alias for sherlock
+  'gosearch': 180000,     // 180 seconds - deep search across 300+ platforms (fully async)
   
   // Breach & identity providers - API calls, faster
   'hibp': 30000,          // 30 seconds - Have I Been Pwned API
