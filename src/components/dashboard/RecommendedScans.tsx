@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Target, Play, Mail, Phone, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 interface Recommendation {
   type: 'email' | 'phone' | 'username';
@@ -113,6 +114,7 @@ export function RecommendedScans() {
         <CardTitle className="flex items-center gap-2">
           <Target className="h-5 w-5 text-primary" />
           Recommended Scans
+          <HelpIcon helpKey="recommended_scans" />
         </CardTitle>
         <CardDescription>Suggested next steps for comprehensive coverage</CardDescription>
       </CardHeader>

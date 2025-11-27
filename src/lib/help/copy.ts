@@ -254,6 +254,103 @@ export const HELP_ENTRIES: Record<string, HelpEntry> = {
     content: "Detailed breakdown of removal attempts per data broker, showing completed, failed, and pending requests. Only legitimate data brokers are shown here.",
     category: "Results",
     tags: ["removal", "details"]
+  },
+  
+  // Intelligence & Analysis Help Entries
+  anomaly_detection: {
+    key: "anomaly_detection",
+    title: "Anomaly Detection",
+    content: "AI-powered detection of unusual patterns in your digital footprint including suspicious activity spikes, coordinated fake profile indicators, and timeline anomalies that may signal identity theft or impersonation attempts.",
+    category: "AI",
+    tags: ["anomaly", "detection", "ai", "security"]
+  },
+  
+  ai_insights: {
+    key: "ai_insights",
+    title: "AI Insights & Correlation",
+    content: "AI-generated analysis correlating findings across providers to identify patterns, hidden connections, and actionable recommendations. Uses advanced ML models to synthesize raw OSINT data into strategic intelligence.",
+    category: "AI",
+    tags: ["ai", "insights", "correlation", "intelligence"]
+  },
+  
+  catfish_detection: {
+    key: "catfish_detection",
+    title: "Catfish Detection",
+    content: "Identity consistency analysis that detects fake profiles, impersonation attempts, and coordinated identity fraud by cross-referencing behavioral patterns, profile metadata, and activity timelines across platforms.",
+    category: "AI",
+    tags: ["catfish", "fraud", "impersonation", "identity"]
+  },
+  
+  identity_strength: {
+    key: "identity_strength",
+    title: "Identity Strength Score",
+    content: "Measures the robustness of your digital identity based on cross-platform verification, account age, activity patterns, and corroboration strength. Higher scores (70-100) indicate stronger identity verification across platforms.",
+    category: "Results",
+    tags: ["identity", "verification", "score"]
+  },
+  
+  username_uniqueness: {
+    key: "username_uniqueness",
+    title: "Username Uniqueness Score",
+    content: "Calculated from global usage patterns and cross-provider density. Lower scores (0-30) indicate common usernames found on many platforms. Higher scores (70-100) suggest rare, distinctive usernames with limited exposure.",
+    category: "Results",
+    tags: ["username", "uniqueness", "rarity"]
+  },
+  
+  footprint_cluster: {
+    key: "footprint_cluster",
+    title: "Footprint Cluster Map",
+    content: "Visual grouping of platforms by category (Social, Developer, Games, Forums, NSFW) to show where your digital presence is concentrated. Helps identify over-exposure in specific platform types.",
+    category: "Results",
+    tags: ["clustering", "visualization", "platforms"]
+  },
+  
+  provider_health: {
+    key: "provider_health",
+    title: "Provider Health Map",
+    content: "Real-time status and performance metrics for all OSINT providers. Shows success rates, average response times (duration), and 95th percentile latency (p95) to help diagnose scan quality issues.",
+    category: "Monitoring",
+    tags: ["providers", "health", "performance"]
+  },
+  
+  findings_activity: {
+    key: "findings_activity",
+    title: "Findings Activity",
+    content: "7-day trend of all OSINT findings (excluding provider errors and tier restrictions). Tracks overall discovery activity across all scans to show investigation momentum and coverage expansion.",
+    category: "Results",
+    tags: ["activity", "trends", "findings"]
+  },
+  
+  identity_risk: {
+    key: "identity_risk",
+    title: "Identity Risk Breakdown",
+    content: "Visual breakdown of threat categories: Breaches (credential exposures), Dark Web (underground mentions), Data Brokers (people search sites), and Exposures (leaked personal data). Higher percentages indicate concentrated risk areas.",
+    category: "Results",
+    tags: ["risk", "threats", "breakdown"]
+  },
+  
+  credit_usage: {
+    key: "credit_usage",
+    title: "Credit Usage Meter",
+    content: "Tracks workspace credit consumption against monthly allocation. Shows current balance, monthly limit, and usage percentage. Credits are consumed per provider during scans and enrichment operations.",
+    category: "Admin",
+    tags: ["credits", "billing", "usage"]
+  },
+  
+  recommended_scans: {
+    key: "recommended_scans",
+    title: "Recommended Next Scans",
+    content: "AI-suggested scan targets based on your investigation history, findings patterns, and common OSINT workflows. Helps guide next steps in threat intelligence gathering.",
+    category: "Search",
+    tags: ["recommendations", "scans", "ai"]
+  },
+  
+  scan_timeout: {
+    key: "scan_timeout",
+    title: "Scan Timeout & Partial Results",
+    content: "Some providers exceeded their timeout limits but other providers succeeded. Results shown are valid but incomplete. Try re-running individual providers or increasing provider timeouts in advanced settings.",
+    category: "Results",
+    tags: ["timeout", "partial", "errors"]
   }
 };
 
