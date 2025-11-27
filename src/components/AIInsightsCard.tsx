@@ -62,10 +62,17 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
       });
 
       if (functionError) {
-        if (functionError.message?.includes('Premium') || functionError.message?.includes('upgrade')) {
+        // Check for specific error types
+        const errorMsg = functionError.message || '';
+        
+        if (errorMsg.includes('Premium') || errorMsg.includes('upgrade')) {
           setError('Premium subscription required for AI insights');
+        } else if (errorMsg.includes('Rate limit') || errorMsg.includes('429')) {
+          setError('Rate limit exceeded. Please wait a few minutes and try again.');
+        } else if (errorMsg.includes('Payment required') || errorMsg.includes('402') || errorMsg.includes('credits')) {
+          setError('Insufficient credits. Please add credits to your workspace to use AI features.');
         } else {
-          throw functionError;
+          setError(errorMsg || 'Unable to generate insights');
         }
         return;
       }

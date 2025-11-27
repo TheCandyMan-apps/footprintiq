@@ -75,6 +75,12 @@ serve(async (req) => {
             contentType = 'text/html';
             break;
 
+          case 'pdf':
+            content = generatePDF(scan, findings || []);
+            fileName = `scan-${scanId}-report.pdf`;
+            contentType = 'application/pdf';
+            break;
+
           default:
             console.log(`Skipping unsupported artifact type: ${artifactType}`);
             continue;
@@ -301,4 +307,125 @@ function escapeHtml(text: string): string {
     "'": '&#039;'
   };
   return String(text).replace(/[&<>"']/g, (m) => map[m]);
+}
+
+function generatePDF(scan: any, findings: any[]): string {
+  // Generate a simple text-based PDF using PDF 1.4 specification
+  // This creates a minimal but valid PDF with proper structure
+  
+  const title = `FootprintIQ Scan Report - ${scan.id}`;
+  const timestamp = new Date().toLocaleString();
+  const target = scan.username || scan.email || scan.phone || 'N/A';
+  
+  // PDF Header
+  let pdf = '%PDF-1.4\n';
+  pdf += '%âãÏÓ\n'; // PDF binary marker
+  
+  // Content stream with report data
+  const content = [
+    'FootprintIQ OSINT Scan Report',
+    '=' .repeat(60),
+    '',
+    `Scan ID: ${scan.id}`,
+    `Target: ${target}`,
+    `Status: ${scan.status}`,
+    `Created: ${new Date(scan.created_at).toLocaleString()}`,
+    `Completed: ${scan.completed_at ? new Date(scan.completed_at).toLocaleString() : 'N/A'}`,
+    '',
+    `Total Findings: ${findings.length}`,
+    '',
+    '=' .repeat(60),
+    'FINDINGS BY PROVIDER',
+    '=' .repeat(60),
+    ''
+  ];
+  
+  // Group findings by provider
+  const byProvider: Record<string, any[]> = {};
+  findings.forEach(f => {
+    const provider = f.provider || 'unknown';
+    if (!byProvider[provider]) byProvider[provider] = [];
+    byProvider[provider].push(f);
+  });
+  
+  // Add provider sections
+  Object.entries(byProvider).forEach(([provider, providerFindings]) => {
+    content.push(`\n${provider.toUpperCase()} (${providerFindings.length} findings):`);
+    content.push('-'.repeat(40));
+    
+    providerFindings.slice(0, 20).forEach((f, i) => {
+      content.push(`  [${i + 1}] ${f.site || 'Unknown Site'}`);
+      if (f.url) content.push(`      URL: ${f.url}`);
+      content.push(`      Confidence: ${f.confidence || 'unknown'}`);
+      if (f.nsfw) content.push(`      NSFW: Yes`);
+      content.push('');
+    });
+    
+    if (providerFindings.length > 20) {
+      content.push(`  ... and ${providerFindings.length - 20} more findings`);
+    }
+  });
+  
+  content.push('');
+  content.push('=' .repeat(60));
+  content.push(`Generated: ${timestamp}`);
+  content.push('FootprintIQ - https://footprintiq.com');
+  content.push('This report is confidential and intended for authorized use only.');
+  
+  const contentText = content.join('\n');
+  const contentLength = contentText.length;
+  
+  // Object 1: Catalog
+  const obj1Offset = pdf.length;
+  pdf += '1 0 obj\n';
+  pdf += '<< /Type /Catalog /Pages 2 0 R >>\n';
+  pdf += 'endobj\n';
+  
+  // Object 2: Pages
+  const obj2Offset = pdf.length;
+  pdf += '2 0 obj\n';
+  pdf += '<< /Type /Pages /Kids [3 0 R] /Count 1 >>\n';
+  pdf += 'endobj\n';
+  
+  // Object 3: Page
+  const obj3Offset = pdf.length;
+  pdf += '3 0 obj\n';
+  pdf += '<< /Type /Page /Parent 2 0 R /Resources 4 0 R /MediaBox [0 0 612 792] /Contents 5 0 R >>\n';
+  pdf += 'endobj\n';
+  
+  // Object 4: Resources (Font)
+  const obj4Offset = pdf.length;
+  pdf += '4 0 obj\n';
+  pdf += '<< /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Courier >> >> >>\n';
+  pdf += 'endobj\n';
+  
+  // Object 5: Content Stream
+  const obj5Offset = pdf.length;
+  const streamContent = `BT /F1 10 Tf 50 742 Td 12 TL\n${contentText.split('\n').map(line => `(${line.replace(/[()\\]/g, '\\$&')}) Tj T*`).join('\n')}\nET`;
+  pdf += '5 0 obj\n';
+  pdf += `<< /Length ${streamContent.length} >>\n`;
+  pdf += 'stream\n';
+  pdf += streamContent;
+  pdf += '\nendstream\n';
+  pdf += 'endobj\n';
+  
+  // Cross-reference table
+  const xrefOffset = pdf.length;
+  pdf += 'xref\n';
+  pdf += '0 6\n';
+  pdf += '0000000000 65535 f \n';
+  pdf += `${obj1Offset.toString().padStart(10, '0')} 00000 n \n`;
+  pdf += `${obj2Offset.toString().padStart(10, '0')} 00000 n \n`;
+  pdf += `${obj3Offset.toString().padStart(10, '0')} 00000 n \n`;
+  pdf += `${obj4Offset.toString().padStart(10, '0')} 00000 n \n`;
+  pdf += `${obj5Offset.toString().padStart(10, '0')} 00000 n \n`;
+  
+  // Trailer
+  pdf += 'trailer\n';
+  pdf += '<< /Size 6 /Root 1 0 R >>\n';
+  pdf += 'startxref\n';
+  pdf += `${xrefOffset}\n`;
+  pdf += '%%EOF\n';
+  
+  return pdf;
 }
