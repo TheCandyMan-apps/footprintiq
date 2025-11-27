@@ -9,7 +9,7 @@
 export const PROVIDER_TIMEOUTS: Record<string, number> = {
   // Username scanners - comprehensive scans with generous timeouts (background execution)
   'maigret': 120000,      // 120 seconds - scans 3000+ sites thoroughly
-  'sherlock': 120000,     // 120 seconds - scans 400+ sites thoroughly
+  'sherlock': 180000,     // 180 seconds - scans 400+ sites thoroughly (can take up to 150s)
   'whatsmyname': 60000,   // 60 seconds - legacy alias for sherlock
   'gosearch': 180000,     // 180 seconds - deep search across 300+ platforms (fully async)
   
