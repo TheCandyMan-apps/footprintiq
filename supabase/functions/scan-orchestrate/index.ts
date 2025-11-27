@@ -1126,6 +1126,19 @@ serve(async (req) => {
         const providerDuration = Date.now() - providerStartTime;
         completedCount++;
         
+        // Clear gosearch_pending flag on successful completion
+        if (provider === 'gosearch') {
+          try {
+            await supabaseService
+              .from('scans')
+              .update({ gosearch_pending: false })
+              .eq('id', scanId);
+            console.log(`[orchestrate] 🔓 Cleared gosearch_pending flag for scan ${scanId} after successful completion`);
+          } catch (e) {
+            console.warn(`[orchestrate] Failed to clear gosearch_pending:`, e);
+          }
+        }
+        
         // Log provider completed event
         await logEvent({
           provider,
@@ -1194,14 +1207,14 @@ serve(async (req) => {
           metadata: { code: sanitizeError(error).code }
         });
         
-        // Clear gosearch_pending flag on timeout
-        if (provider === 'gosearch' && isTimeout) {
+        // Clear gosearch_pending flag on timeout or failure
+        if (provider === 'gosearch') {
           try {
             await supabaseService
               .from('scans')
               .update({ gosearch_pending: false })
               .eq('id', scanId);
-            console.log(`[orchestrate] 🔓 Cleared gosearch_pending flag for scan ${scanId} after timeout`);
+            console.log(`[orchestrate] 🔓 Cleared gosearch_pending flag for scan ${scanId} after ${isTimeout ? 'timeout' : 'failure'}`);
           } catch (e) {
             console.warn(`[orchestrate] Failed to clear gosearch_pending:`, e);
           }
@@ -1451,9 +1464,28 @@ serve(async (req) => {
           return acc;
         }, {} as Record<string, number>);
 
-        // Determine scan completion status based on GoSearch async status
-        const scanStatus = gosearchRequested ? 'completed_partial' : 'completed';
-        console.log(`[orchestrate] UPDATING scans table for ${scanId} to ${scanStatus} with ${sortedFindings.length} findings ${gosearchRequested ? '(GoSearch pending)' : ''}`);
+        // Determine scan completion status based on provider outcomes
+        const timedOutFindings = sortedFindings.filter(f => f.kind === 'provider.timeout');
+        const failedFindings = sortedFindings.filter(f => f.kind === 'provider.failed' || f.kind === 'provider_error');
+        const successfulFindings = sortedFindings.filter(f => 
+          !f.kind?.startsWith('provider.') && 
+          f.kind !== 'provider_error' && 
+          f.kind !== 'info.no_hits'
+        );
+        
+        let scanStatus = 'completed';
+        if (gosearchRequested) {
+          // GoSearch is running async, mark as partial
+          scanStatus = 'completed_partial';
+        } else if (successfulFindings.length > 0 && (timedOutFindings.length > 0 || failedFindings.length > 0)) {
+          // Some providers succeeded with findings, others timed out/failed
+          scanStatus = 'completed_partial';
+        } else if (successfulFindings.length === 0 && (timedOutFindings.length > 0 || failedFindings.length > 0)) {
+          // All providers failed/timed out with no successful findings
+          scanStatus = 'failed';
+        }
+        
+        console.log(`[orchestrate] UPDATING scans table for ${scanId} to ${scanStatus} with ${sortedFindings.length} findings (${successfulFindings.length} successful, ${timedOutFindings.length} timed out, ${failedFindings.length} failed) ${gosearchRequested ? '(GoSearch pending)' : ''}`);
         
         const { data: updateResult, error: updateError } = await supabaseService
           .from('scans')
