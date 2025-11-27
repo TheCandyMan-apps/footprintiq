@@ -61,21 +61,19 @@ serve(async (req) => {
 
     if (scanError) throw scanError;
 
-    // Fetch social profiles
-    const { data: socialProfiles, error: profilesError } = await supabaseClient
-      .from('social_profiles')
+    // Fetch findings for username scans
+    const { data: findings, error: findingsError } = await supabaseClient
+      .from('findings')
       .select('*')
-      .eq('scan_id', scanId);
+      .eq('scan_id', scanId)
+      .in('kind', ['profile_presence', 'presence.hit']);
 
-    if (profilesError) throw profilesError;
+    if (findingsError) {
+      console.error('Error fetching findings:', findingsError);
+      throw findingsError;
+    }
 
-    // Fetch data sources
-    const { data: dataSources, error: sourcesError } = await supabaseClient
-      .from('data_sources')
-      .select('*')
-      .eq('scan_id', scanId);
-
-    if (sourcesError) throw sourcesError;
+    console.log(`Found ${findings?.length || 0} profile presence findings for analysis`);
 
     // Fetch correlation data
     const { data: correlationData, error: correlationError } = await supabaseClient.functions.invoke(
@@ -97,11 +95,15 @@ USER DATA:
 - Phone: ${scan.phone || 'N/A'}
 - Username: ${scan.username || 'N/A'}
 
-SOCIAL PROFILES FOUND (${socialProfiles?.length || 0}):
-${socialProfiles?.map(p => `- ${p.platform}: ${p.username} (${p.profile_url})`).join('\n')}
-
-DATA SOURCES (${dataSources?.length || 0}):
-${dataSources?.map(d => `- ${d.name} (${d.category}): ${d.risk_level} risk`).join('\n')}
+PLATFORM PRESENCES FOUND (${findings?.length || 0}):
+${findings?.map(f => {
+  const evidence = Array.isArray(f.evidence) 
+    ? f.evidence.reduce((acc: any, curr: any) => ({ ...acc, [curr.key]: curr.value }), {})
+    : f.evidence || {};
+  const platform = evidence.site || evidence.platform || f.site || 'Unknown';
+  const url = evidence.primary_url || evidence.url || f.url || 'N/A';
+  return `- ${platform}: ${url}`;
+}).join('\n')}
 
 CORRELATION DATA:
 ${JSON.stringify(correlationData, null, 2)}
@@ -174,8 +176,7 @@ Provide structured analysis with specific evidence for each point.`;
         },
         correlationData,
         scanData: {
-          socialProfilesCount: socialProfiles?.length || 0,
-          dataSourcesCount: dataSources?.length || 0,
+          platformPresencesCount: findings?.length || 0,
           identityGraph: correlationData?.identityGraph,
         },
       }),

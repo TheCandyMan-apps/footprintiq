@@ -96,7 +96,9 @@ export function AnomalyDetector({ scanId, findings = [] }: AnomalyDetectorProps)
           Anomaly Detection
         </CardTitle>
         <CardDescription>
-          AI-powered behavioral analysis and anomaly detection
+          Detect unusual patterns in your digital footprint including suspicious activity spikes, 
+          coordinated fake profile indicators, and timeline anomalies that may signal identity theft 
+          or impersonation attempts. Powered by AI behavioral analysis.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

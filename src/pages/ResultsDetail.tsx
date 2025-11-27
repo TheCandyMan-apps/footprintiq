@@ -713,28 +713,35 @@ const ResultsDetail = () => {
           <Card className={cn(
             "mb-6 border-2",
             scan.status === 'failed' ? "border-destructive bg-destructive/5" :
-            scan.status === 'timeout' ? "border-warning bg-warning/5" :
+            scan.status === 'timeout' && findings.length === 0 ? "border-warning bg-warning/5" :
+            scan.status === 'timeout' && findings.length > 0 ? "border-blue-500 bg-blue-500/5" :
             "border-primary bg-primary/5"
           )}>
             <div className="p-6">
               <div className="flex items-start gap-4">
-                {scan.status === 'failed' || scan.status === 'timeout' ? (
+                {scan.status === 'failed' ? (
                   <AlertTriangle className="h-6 w-6 text-destructive mt-1 flex-shrink-0" />
+                ) : scan.status === 'timeout' && findings.length === 0 ? (
+                  <AlertTriangle className="h-6 w-6 text-warning mt-1 flex-shrink-0" />
+                ) : scan.status === 'timeout' && findings.length > 0 ? (
+                  <Info className="h-6 w-6 text-blue-500 mt-1 flex-shrink-0" />
                 ) : (
                   <Info className="h-6 w-6 text-primary mt-1 flex-shrink-0 animate-pulse" />
                 )}
                 <div className="flex-1">
                   <h3 className="font-semibold text-lg mb-2">
                     {scan.status === 'failed' && "Scan Failed"}
-                    {scan.status === 'timeout' && "Scan Timed Out"}
+                    {scan.status === 'timeout' && findings.length === 0 && "Scan Timed Out"}
+                    {scan.status === 'timeout' && findings.length > 0 && "Partial Results Available"}
                     {scan.status === 'pending' && "Scan Processing"}
                   </h3>
                   <p className="text-muted-foreground mb-4">
                     {scan.status === 'failed' && "This scan encountered an error and could not complete. The scan was not picked up by our orchestrator."}
-                    {scan.status === 'timeout' && "This scan exceeded the maximum processing time (2 minutes) and was automatically stopped."}
+                    {scan.status === 'timeout' && findings.length === 0 && "This scan exceeded the maximum processing time and was automatically stopped. No results were found."}
+                    {scan.status === 'timeout' && findings.length > 0 && "Some providers timed out during this scan, but results are available below. The scan may not be 100% complete."}
                     {scan.status === 'pending' && "Your scan is being processed. This typically takes 30-60 seconds."}
                   </p>
-                  {(scan.status === 'failed' || scan.status === 'timeout') && (
+                  {(scan.status === 'failed' || (scan.status === 'timeout' && findings.length === 0)) && (
                     <div className="flex gap-3">
                       <Button 
                         onClick={() => navigate('/scan/advanced')}
@@ -878,15 +885,15 @@ const ResultsDetail = () => {
           </div>
         )}
 
-        {/* Removal Queue */}
-        <div className="mb-8">
+        {/* Removal Queue - Hidden for now */}
+        {/* <div className="mb-8">
           <RemovalQueue scanId={scanId} userId={user?.id} />
-        </div>
+        </div> */}
 
-        {/* Removal Success Tracker */}
-        <div className="mb-8">
+        {/* Removal Success Tracker - Hidden for now */}
+        {/* <div className="mb-8">
           <RemovalSuccessTracker userId={user?.id} />
-        </div>
+        </div> */}
 
         {/* Visualizations Section */}
         {(dataSources.length > 0 || socialProfiles.length > 0) && (
