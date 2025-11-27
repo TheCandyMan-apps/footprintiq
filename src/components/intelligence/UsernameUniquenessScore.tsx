@@ -4,6 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 interface UsernameUniquenessScoreProps {
   scanId: string;
@@ -105,7 +106,10 @@ export function UsernameUniquenessScore({ scanId }: UsernameUniquenessScoreProps
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Fingerprint className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Username Uniqueness</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Username Uniqueness
+              <HelpIcon helpKey="username_uniqueness" />
+            </CardTitle>
           </div>
           <Badge variant="outline" className={scoreInfo.color}>
             {scoreInfo.label}

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, AlertTriangle, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 interface Finding {
   id: string;
@@ -100,6 +101,7 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
         <CardTitle className="flex items-center gap-2">
           <Eye className="h-5 w-5 text-primary" />
           Recent Findings
+          <HelpIcon helpKey="findings_activity" />
         </CardTitle>
         <CardDescription>Latest discoveries across all scans</CardDescription>
       </CardHeader>

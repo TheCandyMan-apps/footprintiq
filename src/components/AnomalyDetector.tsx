@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, CheckCircle, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { HelpIcon } from "@/components/ui/help-icon";
 
 interface Anomaly {
   anomaly_type: string;
@@ -94,6 +95,7 @@ export function AnomalyDetector({ scanId, findings = [] }: AnomalyDetectorProps)
         <CardTitle className="flex items-center gap-2">
           <Zap className="h-5 w-5" />
           Anomaly Detection
+          <HelpIcon helpKey="anomaly_detection" />
         </CardTitle>
         <CardDescription>
           Detect unusual patterns in your digital footprint including suspicious activity spikes, 

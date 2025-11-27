@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 import { format, subDays } from 'date-fns';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 interface BreachTrendChartProps {
   workspaceId?: string;
@@ -89,6 +90,7 @@ export function BreachTrendChart({ workspaceId }: BreachTrendChartProps) {
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-primary" />
           Findings Activity (7d)
+          <HelpIcon helpKey="findings_activity" />
         </CardTitle>
         <CardDescription>Daily OSINT findings over the past week</CardDescription>
       </CardHeader>

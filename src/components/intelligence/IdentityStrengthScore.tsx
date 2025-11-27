@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { getPlatformCategory } from '@/lib/categoryMapping';
 import { parseEvidence, extractPlatform, isNSFW } from '@/lib/evidenceParser';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 interface IdentityStrengthScoreProps {
   scanId: string;
@@ -131,7 +132,10 @@ export function IdentityStrengthScore({ scanId }: IdentityStrengthScoreProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Identity Strength</CardTitle>
+            <CardTitle className="text-lg flex items-center gap-2">
+              Identity Strength
+              <HelpIcon helpKey="identity_strength" />
+            </CardTitle>
           </div>
           <Badge variant="outline" className={scoreInfo.color}>
             {scoreInfo.label}

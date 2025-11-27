@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Activity, RefreshCw } from 'lucide-react';
 import { subDays } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 interface ProviderStats {
   provider: string;
@@ -103,6 +104,7 @@ export function ProviderHealthMap({ workspaceId }: { workspaceId?: string }) {
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" />
               Provider Health
+              <HelpIcon helpKey="provider_health" />
             </CardTitle>
             <CardDescription>Success rates across providers (7d)</CardDescription>
           </div>

@@ -5,6 +5,7 @@ import { getPlatformCategory, getCategoryColor, type PlatformCategory } from '@/
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { extractPlatform } from '@/lib/evidenceParser';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 interface FootprintClusterMapProps {
   scanId: string;
@@ -54,7 +55,10 @@ export function FootprintClusterMap({ scanId }: FootprintClusterMapProps) {
       <CardHeader className="pb-3">
         <div className="flex items-center gap-2">
           <Network className="h-5 w-5 text-primary" />
-          <CardTitle className="text-lg">Footprint Clusters</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            Footprint Clusters
+            <HelpIcon helpKey="footprint_cluster" />
+          </CardTitle>
         </div>
         <CardDescription>
           Platform groupings by category

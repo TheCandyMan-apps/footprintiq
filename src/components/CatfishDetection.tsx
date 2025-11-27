@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeDialog } from './UpgradeDialog';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 interface CatfishDetectionProps {
   scanId: string;
@@ -157,7 +158,10 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
         <div className="flex items-center gap-2">
           <UserCheck className="h-6 w-6 text-primary" />
           <div>
-            <CardTitle>AI-Powered Catfish Detection</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              AI-Powered Catfish Detection
+              <HelpIcon helpKey="catfish_detection" />
+            </CardTitle>
             <CardDescription>
               Identity correlation, behavioral analysis, and authenticity verification
             </CardDescription>

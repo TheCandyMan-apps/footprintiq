@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { subDays, format } from 'date-fns';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 export function CreditUsageMeter() {
   const [balance, setBalance] = useState<number>(0);
@@ -113,6 +114,7 @@ export function CreditUsageMeter() {
         <CardTitle className="flex items-center gap-2">
           <Coins className="h-5 w-5 text-primary" />
           Credit Usage
+          <HelpIcon helpKey="credit_usage" />
         </CardTitle>
         <CardDescription>Current balance and monthly spend</CardDescription>
       </CardHeader>

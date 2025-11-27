@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Finding } from "@/lib/ufm";
 import { AIActionButton } from "@/components/AIActionButton";
 import { enableMonitoring } from "@/lib/monitoring";
+import { HelpIcon } from "@/components/ui/help-icon";
 
 interface AIAction {
   title: string;
@@ -194,6 +195,7 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">AI Insights</h3>
+          <HelpIcon helpKey="ai_insights" />
           {!isPremium && <Badge variant="secondary"><Crown className="h-3 w-3 mr-1" />Premium</Badge>}
         </div>
         {!insights && (

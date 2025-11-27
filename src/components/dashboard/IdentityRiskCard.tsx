@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Shield, AlertTriangle, CheckCircle, TrendingUp } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { HelpIcon } from '@/components/ui/help-icon';
 
 interface IdentityRiskCardProps {
   riskScore: number;
@@ -48,6 +49,7 @@ export function IdentityRiskCard({ riskScore, breaches, darkWeb, dataBrokers, ex
         <CardTitle className="flex items-center gap-2">
           <Shield className="h-5 w-5 text-primary" />
           Identity Risk Score
+          <HelpIcon helpKey="identity_risk" />
         </CardTitle>
         <CardDescription>Overall security posture assessment</CardDescription>
       </CardHeader>
