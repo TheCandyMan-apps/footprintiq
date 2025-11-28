@@ -15,7 +15,8 @@ import {
   CircuitBoard,
   DollarSign,
   Search,
-  Bug
+  Bug,
+  ClipboardCheck
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -101,6 +102,12 @@ export function AdminNav() {
       title: 'Performance',
       path: '/admin/performance',
       icon: TrendingUp,
+    },
+    {
+      title: 'System Audit',
+      path: '/admin/system-audit',
+      icon: ClipboardCheck,
+      badge: 'PRE-PROD',
     },
   ];
 
