@@ -1502,6 +1502,62 @@ export type Database = {
           },
         ]
       }
+      budget_alerts: {
+        Row: {
+          acknowledged: boolean | null
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          alert_type: string
+          created_at: string | null
+          current_usage: number | null
+          id: string
+          limit_value: number | null
+          message: string | null
+          metadata: Json | null
+          provider_id: string
+          threshold_pct: number | null
+          workspace_id: string | null
+        }
+        Insert: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type: string
+          created_at?: string | null
+          current_usage?: number | null
+          id?: string
+          limit_value?: number | null
+          message?: string | null
+          metadata?: Json | null
+          provider_id: string
+          threshold_pct?: number | null
+          workspace_id?: string | null
+        }
+        Update: {
+          acknowledged?: boolean | null
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          alert_type?: string
+          created_at?: string | null
+          current_usage?: number | null
+          id?: string
+          limit_value?: number | null
+          message?: string | null
+          metadata?: Json | null
+          provider_id?: string
+          threshold_pct?: number | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_alerts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bugs: {
         Row: {
           created_at: string | null
@@ -2445,6 +2501,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      cost_recommendations: {
+        Row: {
+          applied_at: string | null
+          applied_by: string | null
+          created_at: string | null
+          description: string | null
+          estimated_savings_gbp: number | null
+          id: string
+          is_applied: boolean | null
+          priority: string | null
+          provider_id: string
+          recommendation_type: string
+          title: string
+          workspace_id: string | null
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          estimated_savings_gbp?: number | null
+          id?: string
+          is_applied?: boolean | null
+          priority?: string | null
+          provider_id: string
+          recommendation_type: string
+          title: string
+          workspace_id?: string | null
+        }
+        Update: {
+          applied_at?: string | null
+          applied_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          estimated_savings_gbp?: number | null
+          id?: string
+          is_applied?: boolean | null
+          priority?: string | null
+          provider_id?: string
+          recommendation_type?: string
+          title?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cost_recommendations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       credit_alert_settings: {
         Row: {
@@ -5252,6 +5361,121 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      provider_budgets: {
+        Row: {
+          block_on_budget_exceeded: boolean | null
+          block_on_quota_exceeded: boolean | null
+          created_at: string | null
+          critical_threshold_pct: number | null
+          daily_quota: number | null
+          id: string
+          is_active: boolean | null
+          monthly_budget_gbp: number | null
+          provider_id: string
+          updated_at: string | null
+          warn_threshold_pct: number | null
+          workspace_id: string | null
+        }
+        Insert: {
+          block_on_budget_exceeded?: boolean | null
+          block_on_quota_exceeded?: boolean | null
+          created_at?: string | null
+          critical_threshold_pct?: number | null
+          daily_quota?: number | null
+          id?: string
+          is_active?: boolean | null
+          monthly_budget_gbp?: number | null
+          provider_id: string
+          updated_at?: string | null
+          warn_threshold_pct?: number | null
+          workspace_id?: string | null
+        }
+        Update: {
+          block_on_budget_exceeded?: boolean | null
+          block_on_quota_exceeded?: boolean | null
+          created_at?: string | null
+          critical_threshold_pct?: number | null
+          daily_quota?: number | null
+          id?: string
+          is_active?: boolean | null
+          monthly_budget_gbp?: number | null
+          provider_id?: string
+          updated_at?: string | null
+          warn_threshold_pct?: number | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_budgets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_costs: {
+        Row: {
+          api_cost_gbp: number | null
+          avg_latency_ms: number | null
+          created_at: string | null
+          failed_calls: number | null
+          id: string
+          period_end: string
+          period_start: string
+          period_type: string
+          provider_id: string
+          success_calls: number | null
+          total_calls: number | null
+          total_cost_gbp: number | null
+          total_data_mb: number | null
+          updated_at: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          api_cost_gbp?: number | null
+          avg_latency_ms?: number | null
+          created_at?: string | null
+          failed_calls?: number | null
+          id?: string
+          period_end: string
+          period_start: string
+          period_type: string
+          provider_id: string
+          success_calls?: number | null
+          total_calls?: number | null
+          total_cost_gbp?: number | null
+          total_data_mb?: number | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          api_cost_gbp?: number | null
+          avg_latency_ms?: number | null
+          created_at?: string | null
+          failed_calls?: number | null
+          id?: string
+          period_end?: string
+          period_start?: string
+          period_type?: string
+          provider_id?: string
+          success_calls?: number | null
+          total_calls?: number | null
+          total_cost_gbp?: number | null
+          total_data_mb?: number | null
+          updated_at?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_costs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       provider_health: {
         Row: {
