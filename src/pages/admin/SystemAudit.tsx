@@ -20,8 +20,10 @@ import {
   Rocket,
   Check,
   Circle,
-  Wrench
+  Wrench,
+  ArrowLeft
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { SEO } from '@/components/SEO';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AdminNav } from '@/components/admin/AdminNav';
@@ -92,6 +94,7 @@ const PRODUCTION_CHECKLIST: ChecklistItem[] = [
 ];
 
 export default function SystemAudit() {
+  const navigate = useNavigate();
   const [isRunning, setIsRunning] = useState(false);
   const [auditResults, setAuditResults] = useState<AuditResult[]>([]);
   const [latestAudit, setLatestAudit] = useState<{
@@ -380,11 +383,21 @@ export default function SystemAudit() {
           <div className="flex-1 space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold mb-1">System Audit</h1>
-                <p className="text-muted-foreground">
-                  Pre-production health checks and deployment readiness
-                </p>
+              <div className="flex items-center gap-4">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => navigate('/admin/dashboard')}
+                  className="shrink-0"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div>
+                  <h1 className="text-3xl font-bold mb-1">System Audit</h1>
+                  <p className="text-muted-foreground">
+                    Pre-production health checks and deployment readiness
+                  </p>
+                </div>
               </div>
               <Badge variant={readinessPercent >= 80 ? 'default' : 'secondary'} className="text-lg px-4 py-1">
                 {readinessPercent}% Ready

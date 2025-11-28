@@ -19,7 +19,8 @@ import {
   Settings,
   BarChart3,
   Clock,
-  Shield
+  Shield,
+  ClipboardCheck
 } from "lucide-react";
 import {
   LineChart,
@@ -347,6 +348,10 @@ export default function AdminDashboard() {
                   <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => navigate("/admin/workspace-audit")}>
                     <Settings className="h-5 w-5" />
                     <span className="text-sm">Workspaces</span>
+                  </Button>
+                  <Button variant="outline" className="h-20 flex flex-col gap-2 border-primary/50" onClick={() => navigate("/admin/system-audit")}>
+                    <ClipboardCheck className="h-5 w-5 text-primary" />
+                    <span className="text-sm">System Audit</span>
                   </Button>
                 </div>
               </CardContent>
