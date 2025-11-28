@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Play, TrendingUp, Award, Zap, AlertTriangle } from "lucide-react";
 import { SEO } from "@/components/SEO";
+import { AdminNav } from "@/components/admin/AdminNav";
 import {
   Table,
   TableBody,
@@ -98,7 +99,6 @@ export default function QualityLab() {
 
   const handleRunBenchmark = async () => {
     setIsRunning(true);
-    // Get top providers to test
     const testProviders = ["hibp", "hunter", "dehashed", "shodan", "virustotal"];
     runBenchmark.mutate(testProviders);
   };
@@ -126,234 +126,242 @@ export default function QualityLab() {
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Provider Quality Lab</h1>
-            <p className="text-muted-foreground">
-              Continuous benchmarking and quality monitoring
-            </p>
-          </div>
-          
-          <Button
-            onClick={handleRunBenchmark}
-            disabled={isRunning}
-          >
-            <Play className="w-4 h-4 mr-2" />
-            {isRunning ? "Running..." : "Run Benchmark"}
-          </Button>
-        </div>
+        <div className="flex gap-6">
+          <aside className="hidden lg:block w-64 shrink-0">
+            <AdminNav />
+          </aside>
 
-        <Tabs defaultValue="leaderboard" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="leaderboard">
-              <Award className="w-4 h-4 mr-2" />
-              Leaderboard
-            </TabsTrigger>
-            <TabsTrigger value="results">
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Recent Results
-            </TabsTrigger>
-            <TabsTrigger value="corpus">
-              <Zap className="w-4 h-4 mr-2" />
-              Test Corpus
-            </TabsTrigger>
-          </TabsList>
+          <div className="flex-1 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-1">Provider Quality Lab</h1>
+                <p className="text-muted-foreground">
+                  Continuous benchmarking and quality monitoring
+                </p>
+              </div>
+              
+              <Button
+                onClick={handleRunBenchmark}
+                disabled={isRunning}
+              >
+                <Play className="w-4 h-4 mr-2" />
+                {isRunning ? "Running..." : "Run Benchmark"}
+              </Button>
+            </div>
 
-          <TabsContent value="leaderboard">
-            <Card>
-              <CardHeader>
-                <CardTitle>Provider Rankings</CardTitle>
-                <CardDescription>
-                  Ranked by F1 score, latency, and reliability
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {scoresLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Loading scores...
-                  </div>
-                ) : qualityScores && qualityScores.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Provider</TableHead>
-                        <TableHead>F1 Score (7d)</TableHead>
-                        <TableHead>P95 Latency (7d)</TableHead>
-                        <TableHead>Error Rate (7d)</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Last Tested</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {qualityScores.map((score, index) => (
-                        <TableRow key={score.id}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                              <Badge variant={getRankColor(index + 1)}>
-                                #{index + 1}
-                              </Badge>
-                              {score.provider_id}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className={getF1Color(score.avg_f1_score_7d)}>
-                              {score.avg_f1_score_7d?.toFixed(1) || "—"}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            {score.avg_p95_latency_7d ? `${score.avg_p95_latency_7d}ms` : "—"}
-                          </TableCell>
-                          <TableCell>
-                            {score.avg_error_rate_7d ? `${score.avg_error_rate_7d.toFixed(1)}%` : "—"}
-                          </TableCell>
-                          <TableCell>
-                            {score.is_degraded ? (
-                              <Badge variant="destructive">
-                                <AlertTriangle className="w-3 h-3 mr-1" />
-                                Degraded
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline">Healthy</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {score.last_tested_at
-                              ? new Date(score.last_tested_at).toLocaleDateString()
-                              : "Never"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No quality scores available. Run a benchmark to get started.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+            <Tabs defaultValue="leaderboard" className="space-y-6">
+              <TabsList>
+                <TabsTrigger value="leaderboard">
+                  <Award className="w-4 h-4 mr-2" />
+                  Leaderboard
+                </TabsTrigger>
+                <TabsTrigger value="results">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Recent Results
+                </TabsTrigger>
+                <TabsTrigger value="corpus">
+                  <Zap className="w-4 h-4 mr-2" />
+                  Test Corpus
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="results">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Test Runs</CardTitle>
-                <CardDescription>
-                  Last 50 benchmark executions
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {recentResults && recentResults.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Provider</TableHead>
-                        <TableHead>Run Time</TableHead>
-                        <TableHead>F1 Score</TableHead>
-                        <TableHead>P95 Latency</TableHead>
-                        <TableHead>Tests</TableHead>
-                        <TableHead>Errors</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recentResults.map((result) => (
-                        <TableRow key={result.id}>
-                          <TableCell className="font-medium">
-                            {result.provider_id}
-                          </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {new Date(result.run_at).toLocaleString()}
-                          </TableCell>
-                          <TableCell className={getF1Color(result.f1_score)}>
-                            {result.f1_score?.toFixed(1) || "—"}
-                          </TableCell>
-                          <TableCell>
-                            {result.p95_latency_ms ? `${result.p95_latency_ms}ms` : "—"}
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-green-600">{result.test_cases_passed}</span>
-                            {" / "}
-                            <span className="text-red-600">{result.test_cases_failed}</span>
-                          </TableCell>
-                          <TableCell>
-                            {result.error_rate_pct ? `${result.error_rate_pct.toFixed(1)}%` : "0%"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No test results yet
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+              <TabsContent value="leaderboard">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Provider Rankings</CardTitle>
+                    <CardDescription>
+                      Ranked by F1 score, latency, and reliability
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {scoresLoading ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        Loading scores...
+                      </div>
+                    ) : qualityScores && qualityScores.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Provider</TableHead>
+                            <TableHead>F1 Score (7d)</TableHead>
+                            <TableHead>P95 Latency (7d)</TableHead>
+                            <TableHead>Error Rate (7d)</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Last Tested</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {qualityScores.map((score, index) => (
+                            <TableRow key={score.id}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={getRankColor(index + 1)}>
+                                    #{index + 1}
+                                  </Badge>
+                                  {score.provider_id}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <span className={getF1Color(score.avg_f1_score_7d)}>
+                                  {score.avg_f1_score_7d?.toFixed(1) || "—"}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                {score.avg_p95_latency_7d ? `${score.avg_p95_latency_7d}ms` : "—"}
+                              </TableCell>
+                              <TableCell>
+                                {score.avg_error_rate_7d ? `${score.avg_error_rate_7d.toFixed(1)}%` : "—"}
+                              </TableCell>
+                              <TableCell>
+                                {score.is_degraded ? (
+                                  <Badge variant="destructive">
+                                    <AlertTriangle className="w-3 h-3 mr-1" />
+                                    Degraded
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline">Healthy</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {score.last_tested_at
+                                  ? new Date(score.last_tested_at).toLocaleDateString()
+                                  : "Never"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No quality scores available. Run a benchmark to get started.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-          <TabsContent value="corpus">
-            <Card>
-              <CardHeader>
-                <CardTitle>Golden Test Corpus</CardTitle>
-                <CardDescription>
-                  {corpus?.length || 0} active test cases
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {corpus && corpus.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Test ID</TableHead>
-                        <TableHead>Artifact Type</TableHead>
-                        <TableHead>Difficulty</TableHead>
-                        <TableHead>Tags</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {corpus.slice(0, 20).map((test) => (
-                        <TableRow key={test.id}>
-                          <TableCell className="font-mono text-sm">
-                            {test.test_case_id}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{test.artifact_type}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                test.difficulty === "hard"
-                                  ? "destructive"
-                                  : test.difficulty === "medium"
-                                  ? "secondary"
-                                  : "outline"
-                              }
-                            >
-                              {test.difficulty}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex gap-1 flex-wrap">
-                              {test.tags?.slice(0, 3).map((tag: string) => (
-                                <Badge key={tag} variant="outline" className="text-xs">
-                                  {tag}
+              <TabsContent value="results">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Test Runs</CardTitle>
+                    <CardDescription>
+                      Last 50 benchmark executions
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {recentResults && recentResults.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Provider</TableHead>
+                            <TableHead>Run Time</TableHead>
+                            <TableHead>F1 Score</TableHead>
+                            <TableHead>P95 Latency</TableHead>
+                            <TableHead>Tests</TableHead>
+                            <TableHead>Errors</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {recentResults.map((result) => (
+                            <TableRow key={result.id}>
+                              <TableCell className="font-medium">
+                                {result.provider_id}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {new Date(result.run_at).toLocaleString()}
+                              </TableCell>
+                              <TableCell className={getF1Color(result.f1_score)}>
+                                {result.f1_score?.toFixed(1) || "—"}
+                              </TableCell>
+                              <TableCell>
+                                {result.p95_latency_ms ? `${result.p95_latency_ms}ms` : "—"}
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-green-600">{result.test_cases_passed}</span>
+                                {" / "}
+                                <span className="text-red-600">{result.test_cases_failed}</span>
+                              </TableCell>
+                              <TableCell>
+                                {result.error_rate_pct ? `${result.error_rate_pct.toFixed(1)}%` : "0%"}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No test results yet
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="corpus">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Golden Test Corpus</CardTitle>
+                    <CardDescription>
+                      {corpus?.length || 0} active test cases
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {corpus && corpus.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Test ID</TableHead>
+                            <TableHead>Artifact Type</TableHead>
+                            <TableHead>Difficulty</TableHead>
+                            <TableHead>Tags</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {corpus.slice(0, 20).map((test) => (
+                            <TableRow key={test.id}>
+                              <TableCell className="font-mono text-sm">
+                                {test.test_case_id}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{test.artifact_type}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={
+                                    test.difficulty === "hard"
+                                      ? "destructive"
+                                      : test.difficulty === "medium"
+                                      ? "secondary"
+                                      : "outline"
+                                  }
+                                >
+                                  {test.difficulty}
                                 </Badge>
-                              ))}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No test cases in corpus. Add test cases to begin benchmarking.
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1 flex-wrap">
+                                  {test.tags?.slice(0, 3).map((tag: string) => (
+                                    <Badge key={tag} variant="outline" className="text-xs">
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No test cases in corpus. Add test cases to begin benchmarking.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </main>
     </div>
   );
