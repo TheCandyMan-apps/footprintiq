@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
+import { AdminNav } from "@/components/admin/AdminNav";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -182,18 +183,25 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
-            <p className="text-muted-foreground">System-wide monitoring and management</p>
+      <div className="flex w-full">
+        {/* Sidebar Navigation */}
+        <aside className="hidden lg:block w-64 shrink-0 border-r border-border min-h-[calc(100vh-4rem)]">
+          <AdminNav />
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 py-8 px-4 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Admin Dashboard</h1>
+              <p className="text-muted-foreground">System-wide monitoring and management</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setTimeRange("24h")}>24h</Button>
+              <Button variant="outline" onClick={() => setTimeRange("7d")}>7d</Button>
+              <Button variant="outline" onClick={() => setTimeRange("30d")}>30d</Button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setTimeRange("24h")}>24h</Button>
-            <Button variant="outline" onClick={() => setTimeRange("7d")}>7d</Button>
-            <Button variant="outline" onClick={() => setTimeRange("30d")}>30d</Button>
-          </div>
-        </div>
 
         {/* System Health Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -450,8 +458,9 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
-        </Tabs>
-      </main>
+          </Tabs>
+        </main>
+      </div>
     </div>
   );
 }
