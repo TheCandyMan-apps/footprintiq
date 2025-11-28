@@ -10,30 +10,29 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+interface AuditCheck {
+  component: string;
+  status: 'success' | 'failure' | 'warning';
+  message: string;
+  details?: Record<string, any>;
+}
+
 interface AuditResult {
   success: boolean;
-  summary: {
-    total_issues: number;
-    fixed: number;
-    severity_breakdown: {
-      critical: number;
-      high: number;
-      medium: number;
-      low: number;
-    };
-    duration_ms: number;
-  };
-  ai_summary: string;
-  prioritized_issues: any[];
-  all_issues: any[];
+  status: 'success' | 'failure' | 'warning';
+  checks: AuditCheck[];
+  failureRate: number;
+  aiSummary: string;
+  aiPriority: string;
+  recommendations: string[];
 }
 
 async function runFullAudit() {
-  console.log('🔍 Starting full codebase audit...\n');
+  console.log('🔍 Starting full system audit...\n');
   
   try {
-    const { data, error } = await supabase.functions.invoke('audit-full', {
-      body: {},
+    const { data, error } = await supabase.functions.invoke('system-audit/run', {
+      body: { auditType: 'full_system' },
     });
 
     if (error) {
@@ -43,47 +42,88 @@ async function runFullAudit() {
 
     const result = data as AuditResult;
 
-    console.log('📊 Audit Summary:');
-    console.log(`   Total Issues: ${result.summary.total_issues}`);
-    console.log(`   Auto-Fixed: ${result.summary.fixed}`);
-    console.log(`   Duration: ${result.summary.duration_ms}ms\n`);
-
-    console.log('🎯 Severity Breakdown:');
-    console.log(`   Critical: ${result.summary.severity_breakdown.critical}`);
-    console.log(`   High: ${result.summary.severity_breakdown.high}`);
-    console.log(`   Medium: ${result.summary.severity_breakdown.medium}`);
-    console.log(`   Low: ${result.summary.severity_breakdown.low}\n`);
-
-    if (result.ai_summary && result.ai_summary !== 'AI analysis unavailable') {
-      console.log('🤖 AI Analysis:');
-      console.log(result.ai_summary);
-      console.log('\n');
-    }
-
-    if (result.prioritized_issues.length > 0) {
-      console.log('⚡ Priority Issues:');
-      result.prioritized_issues.forEach((issue, idx) => {
-        console.log(`${idx + 1}. [${issue.severity.toUpperCase()}] ${issue.title}`);
-        console.log(`   ${issue.description}`);
-        if (issue.auto_fixable) {
-          console.log(`   ✅ Auto-fixable${issue.fix_applied ? ' (FIXED)' : ''}`);
-        }
-        console.log('');
-      });
-    }
-
-    // Exit with error code if critical or high severity issues found
-    const criticalCount = result.summary.severity_breakdown.critical;
-    const highCount = result.summary.severity_breakdown.high;
+    // Summary
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('                    SYSTEM AUDIT REPORT');
+    console.log('═══════════════════════════════════════════════════════════\n');
     
-    if (criticalCount > 0) {
-      console.error(`❌ Found ${criticalCount} critical issue(s). Please fix immediately.`);
+    const statusIcon = result.status === 'success' ? '✅' : result.status === 'warning' ? '⚠️' : '❌';
+    console.log(`📊 Overall Status: ${statusIcon} ${result.status.toUpperCase()}`);
+    console.log(`📈 Failure Rate: ${result.failureRate.toFixed(1)}%\n`);
+
+    // Check breakdown
+    console.log('───────────────────────────────────────────────────────────');
+    console.log('                    CHECK RESULTS');
+    console.log('───────────────────────────────────────────────────────────\n');
+
+    const successChecks = result.checks.filter(c => c.status === 'success');
+    const warningChecks = result.checks.filter(c => c.status === 'warning');
+    const failureChecks = result.checks.filter(c => c.status === 'failure');
+
+    console.log(`   ✅ Passed:   ${successChecks.length}`);
+    console.log(`   ⚠️  Warnings: ${warningChecks.length}`);
+    console.log(`   ❌ Failed:   ${failureChecks.length}`);
+    console.log(`   📋 Total:    ${result.checks.length}\n`);
+
+    // Detailed results
+    if (failureChecks.length > 0) {
+      console.log('❌ FAILURES:');
+      failureChecks.forEach((check, idx) => {
+        console.log(`   ${idx + 1}. [${check.component}] ${check.message}`);
+        if (check.details) {
+          console.log(`      Details: ${JSON.stringify(check.details)}`);
+        }
+      });
+      console.log('');
+    }
+
+    if (warningChecks.length > 0) {
+      console.log('⚠️  WARNINGS:');
+      warningChecks.forEach((check, idx) => {
+        console.log(`   ${idx + 1}. [${check.component}] ${check.message}`);
+        if (check.details) {
+          console.log(`      Details: ${JSON.stringify(check.details)}`);
+        }
+      });
+      console.log('');
+    }
+
+    if (successChecks.length > 0) {
+      console.log('✅ PASSED:');
+      successChecks.forEach((check) => {
+        console.log(`   • [${check.component}] ${check.message}`);
+      });
+      console.log('');
+    }
+
+    // AI Analysis
+    if (result.aiSummary) {
+      console.log('───────────────────────────────────────────────────────────');
+      console.log('                    AI ANALYSIS');
+      console.log('───────────────────────────────────────────────────────────\n');
+      console.log(`🤖 Priority: ${result.aiPriority.toUpperCase()}`);
+      console.log(`\n📝 Summary:\n   ${result.aiSummary}\n`);
+      
+      if (result.recommendations && result.recommendations.length > 0) {
+        console.log('💡 Recommendations:');
+        result.recommendations.forEach((rec, idx) => {
+          console.log(`   ${idx + 1}. ${rec}`);
+        });
+        console.log('');
+      }
+    }
+
+    console.log('═══════════════════════════════════════════════════════════\n');
+
+    // Exit with appropriate code
+    if (result.status === 'failure') {
+      console.error('❌ Audit FAILED. Fix critical issues before production deployment.');
       process.exit(1);
-    } else if (highCount > 0) {
-      console.warn(`⚠️  Found ${highCount} high severity issue(s). Consider fixing soon.`);
+    } else if (result.status === 'warning') {
+      console.warn('⚠️  Audit passed with WARNINGS. Review before production deployment.');
       process.exit(0);
     } else {
-      console.log('✅ Audit passed! No critical or high severity issues found.');
+      console.log('✅ Audit PASSED! System is ready for production.');
       process.exit(0);
     }
   } catch (error) {
