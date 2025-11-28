@@ -19,12 +19,20 @@ import {
   Loader2,
   Rocket,
   Check,
-  Circle
+  Circle,
+  Wrench
 } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AdminNav } from '@/components/admin/AdminNav';
 import { Progress } from '@/components/ui/progress';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface AuditResult {
   id: string;
@@ -46,6 +54,20 @@ interface AuditStats {
   failed: number;
   warnings: number;
   failureRate: number;
+}
+
+interface FixResult {
+  success: boolean;
+  component: string;
+  fixed: boolean;
+  message: string;
+  details?: {
+    itemsFixed?: number;
+    itemsRemaining?: number;
+    affectedResources?: string[];
+  };
+  manualSteps?: string[];
+  rerunAudit?: boolean;
 }
 
 interface ChecklistItem {
@@ -89,6 +111,9 @@ export default function SystemAudit() {
     failureRate: 0
   });
   const [loading, setLoading] = useState(true);
+  const [fixingComponent, setFixingComponent] = useState<string | null>(null);
+  const [fixResult, setFixResult] = useState<FixResult | null>(null);
+  const [showFixDialog, setShowFixDialog] = useState(false);
 
   useEffect(() => {
     loadAuditResults();
@@ -255,8 +280,53 @@ export default function SystemAudit() {
 
       toast.warning(`Admin alert sent (${failureRate.toFixed(1)}% failure rate)`);
     } catch (error) {
-      console.error('Failed to send alert:', error);
+    console.error('Failed to send alert:', error);
     }
+  };
+
+  const tryToFix = async (component: string, details?: Record<string, any>) => {
+    setFixingComponent(component);
+    toast.info(`Attempting to fix ${component}...`);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('system-audit/fix', {
+        body: { component, details }
+      });
+
+      if (error) throw error;
+
+      setFixResult(data as FixResult);
+      setShowFixDialog(true);
+
+      if (data.fixed) {
+        toast.success(data.message);
+        if (data.rerunAudit) {
+          await loadAuditResults();
+        }
+      } else if (data.manualSteps) {
+        toast.warning('Manual intervention required');
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error('Fix failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Fix failed');
+      setFixResult({
+        success: false,
+        component,
+        fixed: false,
+        message: error instanceof Error ? error.message : 'Fix failed',
+        manualSteps: ['Check console logs for details', 'Try running the fix manually'],
+      });
+      setShowFixDialog(true);
+    } finally {
+      setFixingComponent(null);
+    }
+  };
+
+  const canAutoFix = (component: string): boolean => {
+    const autoFixable = ['scan_flow', 'scan_success_rate', 'tier_sync', 'maigret', 'gosearch'];
+    return autoFixable.includes(component);
   };
 
   const getStatusIcon = (status: string) => {
@@ -531,11 +601,34 @@ export default function SystemAudit() {
                   {latestAudit.checks && (
                     <div>
                       <h4 className="font-medium mb-2">Check Results:</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                      <div className="space-y-2">
                         {latestAudit.checks.map((check, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-sm">
-                            {getStatusIcon(check.status)}
-                            <span className="truncate">{check.component}</span>
+                          <div key={idx} className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50">
+                            <div className="flex items-center gap-2 text-sm">
+                              {getStatusIcon(check.status)}
+                              <span>{check.component}</span>
+                              {check.message && (
+                                <span className="text-muted-foreground text-xs hidden md:inline">
+                                  - {check.message}
+                                </span>
+                              )}
+                            </div>
+                            {check.status !== 'success' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => tryToFix(check.component, check)}
+                                disabled={fixingComponent === check.component}
+                                className="shrink-0"
+                              >
+                                {fixingComponent === check.component ? (
+                                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                                ) : (
+                                  <Wrench className="w-3 h-3 mr-1" />
+                                )}
+                                {canAutoFix(check.component) ? 'Try to fix' : 'View steps'}
+                              </Button>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -629,6 +722,86 @@ export default function SystemAudit() {
           </div>
         </div>
       </main>
+
+      {/* Fix Result Dialog */}
+      <Dialog open={showFixDialog} onOpenChange={setShowFixDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {fixResult?.fixed ? (
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              ) : (
+                <AlertTriangle className="w-5 h-5 text-yellow-500" />
+              )}
+              {fixResult?.fixed ? 'Fix Applied' : 'Manual Steps Required'}
+            </DialogTitle>
+            <DialogDescription>
+              {fixResult?.component && `Component: ${fixResult.component}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <p className="text-sm">{fixResult?.message}</p>
+
+            {fixResult?.details && (
+              <div className="bg-muted/50 rounded-lg p-3 text-sm space-y-1">
+                {fixResult.details.itemsFixed !== undefined && (
+                  <p>Items fixed: <span className="font-medium">{fixResult.details.itemsFixed}</span></p>
+                )}
+                {fixResult.details.itemsRemaining !== undefined && fixResult.details.itemsRemaining > 0 && (
+                  <p>Items remaining: <span className="font-medium">{fixResult.details.itemsRemaining}</span></p>
+                )}
+                {fixResult.details.affectedResources && fixResult.details.affectedResources.length > 0 && (
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-muted-foreground">
+                      View affected resources ({fixResult.details.affectedResources.length})
+                    </summary>
+                    <ul className="mt-1 space-y-1 text-xs font-mono">
+                      {fixResult.details.affectedResources.slice(0, 10).map((id, idx) => (
+                        <li key={idx} className="truncate">{id}</li>
+                      ))}
+                      {fixResult.details.affectedResources.length > 10 && (
+                        <li className="text-muted-foreground">
+                          ...and {fixResult.details.affectedResources.length - 10} more
+                        </li>
+                      )}
+                    </ul>
+                  </details>
+                )}
+              </div>
+            )}
+
+            {fixResult?.manualSteps && fixResult.manualSteps.length > 0 && (
+              <div>
+                <h4 className="font-medium text-sm mb-2">Manual Steps:</h4>
+                <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
+                  {fixResult.manualSteps.map((step, idx) => (
+                    <li key={idx}>{step}</li>
+                  ))}
+                </ol>
+              </div>
+            )}
+
+            <div className="flex gap-2 justify-end pt-2">
+              {fixResult?.rerunAudit && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowFixDialog(false);
+                    runFullAudit();
+                  }}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Re-run Audit
+                </Button>
+              )}
+              <Button onClick={() => setShowFixDialog(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
