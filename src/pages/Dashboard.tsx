@@ -272,18 +272,26 @@ const Dashboard = () => {
         activeMonitoring: activeWatchlistsCount || 0
       });
 
-      // Calculate DNA metrics from all scans and their data sources
+      // Calculate DNA metrics from MULTIPLE recent scans (not just one)
       if (scansData && scansData.length > 0) {
-        // Get the most recent scan for DNA calculation
-        const recentScan = scansData[0];
-        setLatestScanId(recentScan.id);
-
-        // Fetch findings for DNA metrics with workspace filter
-        const findingsQuery = currentWorkspaceId
-          ? supabase.from('findings').select('kind, severity, provider').eq('scan_id', recentScan.id).eq('workspace_id', currentWorkspaceId)
-          : supabase.from('findings').select('kind, severity, provider').eq('scan_id', recentScan.id);
+        // Get recent completed scans for aggregated DNA calculation
+        const completedScans = scansData.filter(s => s.status === 'completed' || s.status === 'completed_partial');
+        const scansForMetrics = completedScans.slice(0, 5); // Aggregate from up to 5 recent scans
         
-        const { data: dnaFindings } = await findingsQuery;
+        setLatestScanId(scansData[0].id);
+
+        // Fetch findings for DNA metrics from multiple scans with workspace filter
+        const scanIds = scansForMetrics.map(s => s.id);
+        
+        let dnaFindings: any[] = [];
+        if (scanIds.length > 0) {
+          const findingsQuery = currentWorkspaceId
+            ? supabase.from('findings').select('kind, severity, provider').in('scan_id', scanIds).eq('workspace_id', currentWorkspaceId)
+            : supabase.from('findings').select('kind, severity, provider').in('scan_id', scanIds);
+          
+          const { data } = await findingsQuery;
+          dnaFindings = data || [];
+        }
 
         if (dnaFindings && dnaFindings.length > 0) {
           // Enhanced keyword arrays for accurate categorization
@@ -345,17 +353,18 @@ const Dashboard = () => {
           setDnaMetrics({ score: 100, breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 });
         }
 
-        // Fetch data sources for the recent scan
+        // Fetch data sources for the most recent scan
+        const recentScanForSources = scansData[0];
         const {
           data: sources
-        } = await supabase.from('data_sources').select('*').eq('scan_id', recentScan.id);
+        } = await supabase.from('data_sources').select('*').eq('scan_id', recentScanForSources.id);
         
         // Fetch social media links for recent scans
-        const scanIds = scansData.slice(0, 3).map(s => s.id);
+        const socialScanIds = scansData.slice(0, 3).map(s => s.id);
         const { data: allSources } = await supabase
           .from('data_sources')
           .select('scan_id, name, url, category')
-          .in('scan_id', scanIds);
+          .in('scan_id', socialScanIds);
         
         // Group social links by scan_id
         const socialLinksMap: Record<string, any[]> = {};
