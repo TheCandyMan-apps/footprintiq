@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Shield, UserPlus } from "lucide-react";
 import { format } from "date-fns";
+import { Header } from "@/components/Header";
+import { AdminNav } from "@/components/admin/AdminNav";
 
 export default function RoleManagement() {
   const { data: userRoles, isLoading } = useQuery({
@@ -23,57 +25,68 @@ export default function RoleManagement() {
   const getRoleColor = (role: string) => {
     switch (role) {
       case "admin": return "destructive";
-      case "moderator": return "warning";
-      case "analyst": return "primary";
+      case "moderator": return "secondary";
+      case "analyst": return "default";
       default: return "secondary";
     }
   };
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Role Management</h1>
-          <p className="text-muted-foreground">Manage user roles and permissions</p>
-        </div>
-        <Button>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Grant Role
-        </Button>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex gap-6">
+          <aside className="hidden lg:block w-64 shrink-0">
+            <AdminNav />
+          </aside>
 
-      {isLoading ? (
-        <div>Loading roles...</div>
-      ) : (
-        <div className="space-y-4">
-          {userRoles?.map((userRole: any) => (
-            <Card key={userRole.id} className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Shield className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">User ID: {userRole.user_id.slice(0, 8)}...</span>
-                      <Badge variant={getRoleColor(userRole.role) as any}>
-                        {userRole.role}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Created: {format(new Date(userRole.created_at), "PPp")}
-                      {userRole.expires_at && ` • Expires: ${format(new Date(userRole.expires_at), "PPp")}`}
-                    </p>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm">
-                  Revoke
-                </Button>
+          <div className="flex-1 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold">Role Management</h1>
+                <p className="text-muted-foreground">Manage user roles and permissions</p>
               </div>
-            </Card>
-          ))}
+              <Button>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Grant Role
+              </Button>
+            </div>
+
+            {isLoading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading roles...</div>
+            ) : (
+              <div className="space-y-4">
+                {userRoles?.map((userRole: any) => (
+                  <Card key={userRole.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Shield className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">User ID: {userRole.user_id.slice(0, 8)}...</span>
+                            <Badge variant={getRoleColor(userRole.role) as any}>
+                              {userRole.role}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Created: {format(new Date(userRole.created_at), "PPp")}
+                            {userRole.expires_at && ` • Expires: ${format(new Date(userRole.expires_at), "PPp")}`}
+                          </p>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm">
+                        Revoke
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+      </main>
     </div>
   );
 }

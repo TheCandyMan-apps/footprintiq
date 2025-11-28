@@ -6,9 +6,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Header } from '@/components/Header';
+import { AdminNav } from '@/components/admin/AdminNav';
 import { AlertCircle, TrendingUp, TrendingDown, RefreshCw, Mail, ExternalLink } from 'lucide-react';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import * as Sentry from '@sentry/react';
 
 interface Bug {
   id: string;
@@ -39,7 +40,6 @@ export default function Glitches() {
     fetchBugs();
     fetchErrorMetrics();
     
-    // Refresh every 30 seconds
     const interval = setInterval(() => {
       fetchBugs();
       fetchErrorMetrics();
@@ -75,8 +75,6 @@ export default function Glitches() {
   };
 
   const fetchErrorMetrics = async () => {
-    // Simulate Sentry metrics for demo
-    // In production, integrate with Sentry API
     const mockData: ErrorMetric[] = [];
     const now = Date.now();
     
@@ -164,223 +162,234 @@ export default function Glitches() {
   };
 
   const totalErrors = errorMetrics.reduce((sum, metric) => sum + metric.count, 0);
-  const avgErrorRate = totalErrors / errorMetrics.length;
-  const recentErrors = errorMetrics.slice(-6).reduce((sum, metric) => sum + metric.count, 0) / 6;
+  const avgErrorRate = totalErrors / errorMetrics.length || 1;
+  const recentErrors = errorMetrics.slice(-6).reduce((sum, metric) => sum + metric.count, 0) / 6 || 0;
   const trend = recentErrors > avgErrorRate ? 'up' : 'down';
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Glitch Monitor</h1>
-          <p className="text-muted-foreground">
-            Platform-wide error tracking and bug reports
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => { fetchBugs(); fetchErrorMetrics(); }}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button variant="outline" onClick={sendAlertEmail}>
-            <Mail className="h-4 w-4 mr-2" />
-            Alert Admin
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex gap-6">
+          <aside className="hidden lg:block w-64 shrink-0">
+            <AdminNav />
+          </aside>
 
-      {/* Metrics Overview */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Errors (24h)</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalErrors}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all error boundaries
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Error Rate</CardTitle>
-            {trend === 'up' ? (
-              <TrendingUp className="h-4 w-4 text-destructive" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-green-500" />
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{recentErrors.toFixed(1)}/hr</div>
-            <p className="text-xs text-muted-foreground">
-              {trend === 'up' ? '+' : '-'}
-              {Math.abs(((recentErrors - avgErrorRate) / avgErrorRate) * 100).toFixed(1)}% from average
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Open Bug Reports</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {bugs.filter(b => b.status === 'open').length}
+          <div className="flex-1 space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold">Glitch Monitor</h1>
+                <p className="text-muted-foreground">
+                  Platform-wide error tracking and bug reports
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => { fetchBugs(); fetchErrorMetrics(); }}>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+                <Button variant="outline" onClick={sendAlertEmail}>
+                  <Mail className="h-4 w-4 mr-2" />
+                  Alert Admin
+                </Button>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Awaiting triage
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Error Rate Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Error Rate Trends</CardTitle>
-          <CardDescription>Errors captured over the last 24 hours</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={errorMetrics}>
-              <XAxis 
-                dataKey="timestamp" 
-                tickFormatter={(value) => new Date(value).toLocaleTimeString('en-US', { hour: '2-digit' })}
-              />
-              <YAxis />
-              <Tooltip 
-                labelFormatter={(value) => new Date(value).toLocaleString()}
-                formatter={(value: number) => [`${value} errors`, 'Count']}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="count" 
-                stroke="hsl(var(--destructive))" 
-                strokeWidth={2}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+            {/* Metrics Overview */}
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Errors (24h)</CardTitle>
+                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{totalErrors}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Across all error boundaries
+                  </p>
+                </CardContent>
+              </Card>
 
-      {/* Bug Reports */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Bug Reports</CardTitle>
-              <CardDescription>User-submitted issues and errors</CardDescription>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Error Rate</CardTitle>
+                  {trend === 'up' ? (
+                    <TrendingUp className="h-4 w-4 text-destructive" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-green-500" />
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{recentErrors.toFixed(1)}/hr</div>
+                  <p className="text-xs text-muted-foreground">
+                    {trend === 'up' ? '+' : '-'}
+                    {Math.abs(((recentErrors - avgErrorRate) / avgErrorRate) * 100).toFixed(1)}% from average
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Open Bug Reports</CardTitle>
+                  <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {bugs.filter(b => b.status === 'open').length}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Awaiting triage
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="open">Open</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="resolved">Resolved</SelectItem>
-                <SelectItem value="closed">Closed</SelectItem>
-              </SelectContent>
-            </Select>
+
+            {/* Error Rate Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Error Rate Trends</CardTitle>
+                <CardDescription>Errors captured over the last 24 hours</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={errorMetrics}>
+                    <XAxis 
+                      dataKey="timestamp" 
+                      tickFormatter={(value) => new Date(value).toLocaleTimeString('en-US', { hour: '2-digit' })}
+                    />
+                    <YAxis />
+                    <Tooltip 
+                      labelFormatter={(value) => new Date(value).toLocaleString()}
+                      formatter={(value: number) => [`${value} errors`, 'Count']}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="count" 
+                      stroke="hsl(var(--destructive))" 
+                      strokeWidth={2}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Bug Reports */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Bug Reports</CardTitle>
+                    <CardDescription>User-submitted issues and errors</CardDescription>
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                      <SelectItem value="closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <p className="text-center py-8 text-muted-foreground">Loading bug reports...</p>
+                ) : bugs.length === 0 ? (
+                  <p className="text-center py-8 text-muted-foreground">No bug reports found</p>
+                ) : (
+                  <div className="space-y-4">
+                    {bugs.map((bug) => (
+                      <Card key={bug.id}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <CardTitle className="text-base">{bug.title}</CardTitle>
+                              <CardDescription className="text-sm">
+                                {new Date(bug.created_at).toLocaleString()}
+                              </CardDescription>
+                            </div>
+                            <div className="flex gap-2">
+                              <Badge variant={getSeverityColor(bug.severity) as any}>
+                                {bug.severity}
+                              </Badge>
+                              <Badge variant={getStatusColor(bug.status) as any}>
+                                {bug.status}
+                              </Badge>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <p className="text-sm">{bug.description}</p>
+                          
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <ExternalLink className="h-4 w-4" />
+                            <a 
+                              href={bug.page_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="hover:underline"
+                            >
+                              {bug.page_url}
+                            </a>
+                          </div>
+
+                          {bug.screenshot_url && (
+                            <a 
+                              href={bug.screenshot_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                            >
+                              <img 
+                                src={bug.screenshot_url} 
+                                alt="Bug screenshot" 
+                                className="max-w-md border rounded-md"
+                              />
+                            </a>
+                          )}
+
+                          <div className="flex gap-2">
+                            {bug.status === 'open' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateBugStatus(bug.id, 'in_progress')}
+                              >
+                                Start Investigation
+                              </Button>
+                            )}
+                            {bug.status === 'in_progress' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateBugStatus(bug.id, 'resolved')}
+                              >
+                                Mark Resolved
+                              </Button>
+                            )}
+                            {bug.status === 'resolved' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateBugStatus(bug.id, 'closed')}
+                              >
+                                Close
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-center py-8 text-muted-foreground">Loading bug reports...</p>
-          ) : bugs.length === 0 ? (
-            <p className="text-center py-8 text-muted-foreground">No bug reports found</p>
-          ) : (
-            <div className="space-y-4">
-              {bugs.map((bug) => (
-                <Card key={bug.id}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <CardTitle className="text-base">{bug.title}</CardTitle>
-                        <CardDescription className="text-sm">
-                          {new Date(bug.created_at).toLocaleString()}
-                        </CardDescription>
-                      </div>
-                      <div className="flex gap-2">
-                        <Badge variant={getSeverityColor(bug.severity)}>
-                          {bug.severity}
-                        </Badge>
-                        <Badge variant={getStatusColor(bug.status)}>
-                          {bug.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <p className="text-sm">{bug.description}</p>
-                    
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <ExternalLink className="h-4 w-4" />
-                      <a 
-                        href={bug.page_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="hover:underline"
-                      >
-                        {bug.page_url}
-                      </a>
-                    </div>
-
-                    {bug.screenshot_url && (
-                      <a 
-                        href={bug.screenshot_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                      >
-                        <img 
-                          src={bug.screenshot_url} 
-                          alt="Bug screenshot" 
-                          className="max-w-md border rounded-md"
-                        />
-                      </a>
-                    )}
-
-                    <div className="flex gap-2">
-                      {bug.status === 'open' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updateBugStatus(bug.id, 'in_progress')}
-                        >
-                          Start Investigation
-                        </Button>
-                      )}
-                      {bug.status === 'in_progress' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updateBugStatus(bug.id, 'resolved')}
-                        >
-                          Mark Resolved
-                        </Button>
-                      )}
-                      {bug.status === 'resolved' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updateBugStatus(bug.id, 'closed')}
-                        >
-                          Close
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        </div>
+      </main>
     </div>
   );
 }
