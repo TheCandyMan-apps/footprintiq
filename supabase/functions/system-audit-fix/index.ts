@@ -63,7 +63,7 @@ serve(async (req) => {
     }
 
     const { component, details } = await req.json();
-    console.log(`[system-audit/fix] Attempting to fix: ${component}`);
+    console.log(`[system-audit-fix] Attempting to fix: ${component}`);
 
     let result: FixResult;
 
@@ -116,13 +116,13 @@ serve(async (req) => {
       metadata: { result, details },
     });
 
-    console.log(`[system-audit/fix] Result for ${component}:`, result);
+    console.log(`[system-audit-fix] Result for ${component}:`, result);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
-    console.error("[system-audit/fix] Error:", error);
+    console.error("[system-audit-fix] Error:", error);
     return new Response(
       JSON.stringify({
         success: false,

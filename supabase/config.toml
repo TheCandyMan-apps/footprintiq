@@ -6,7 +6,6 @@ verify_jwt = true
 [functions.providers-maigret]
 verify_jwt = true
 
-
 [functions.scan-orchestrate]
 verify_jwt = true
 
@@ -76,11 +75,11 @@ verify_jwt = true
 [functions.ai-router]
 verify_jwt = true
 
-[functions."system-audit/run"]
+[functions.system-audit-run]
 verify_jwt = true
 
-[functions."system-audit/fix"]
+[functions.system-audit-fix]
 verify_jwt = true
 
-[functions."system-audit/alert"]
+[functions.system-audit-alert]
 verify_jwt = true
