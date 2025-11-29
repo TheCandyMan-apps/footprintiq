@@ -163,7 +163,7 @@ export default function SystemAudit() {
     toast.info('Starting comprehensive system audit...');
 
     try {
-      const { data, error } = await supabase.functions.invoke('system-audit/run', {
+      const { data, error } = await supabase.functions.invoke('system-audit-run', {
         body: { auditType: 'full_system' }
       });
 
@@ -257,7 +257,7 @@ export default function SystemAudit() {
     toast.info(`Running ${type} audit...`);
 
     try {
-      const { error } = await supabase.functions.invoke('system-audit/run', {
+      const { error } = await supabase.functions.invoke('system-audit-run', {
         body: { auditType: type }
       });
 
@@ -275,7 +275,7 @@ export default function SystemAudit() {
 
   const sendAdminAlert = async (failureRate: number) => {
     try {
-      const { error } = await supabase.functions.invoke('system-audit/alert', {
+      const { error } = await supabase.functions.invoke('system-audit-alert', {
         body: { failureRate }
       });
 
@@ -292,7 +292,7 @@ export default function SystemAudit() {
     toast.info(`Attempting to fix ${component}...`);
 
     try {
-      const { data, error } = await supabase.functions.invoke('system-audit/fix', {
+      const { data, error } = await supabase.functions.invoke('system-audit-fix', {
         body: { component, details }
       });
 
