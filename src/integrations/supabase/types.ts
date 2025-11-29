@@ -9319,6 +9319,17 @@ export type Database = {
         }
         Returns: string
       }
+      pg_get_table_policies: {
+        Args: { table_name: string }
+        Returns: {
+          cmd: string
+          permissive: string
+          policyname: unknown
+          qual: string
+          roles: unknown[]
+          with_check: string
+        }[]
+      }
       process_referral_reward: {
         Args: { _referral_id: string }
         Returns: boolean
