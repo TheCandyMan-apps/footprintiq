@@ -83,3 +83,6 @@ verify_jwt = true
 
 [functions.system-audit-alert]
 verify_jwt = true
+
+[functions.database-export]
+verify_jwt = true
