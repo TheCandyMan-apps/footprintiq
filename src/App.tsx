@@ -138,6 +138,7 @@ const CostTracking = lazy(() => import("./pages/admin/CostTracking"));
 const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
 const ErrorViewer = lazy(() => import("./pages/admin/ErrorViewer"));
 const SystemHealth = lazy(() => import("./pages/admin/SystemHealth"));
+const DatabaseExport = lazy(() => import("./pages/admin/DatabaseExport"));
 const ScanManagement = lazy(() => import("./pages/admin/ScanManagement"));
 const ScanTimeline = lazy(() => import("./pages/ScanTimeline"));
 const ProviderHealth = lazy(() => import("./pages/admin/ProviderHealth"));
@@ -393,6 +394,7 @@ function RouterContent() {
           <Route path="/admin/audit-viewer" element={<AuditViewer />} />
           <Route path="/referrals" element={<Referrals />} />
           <Route path="/admin/system-health" element={<SystemHealth />} />
+          <Route path="/admin/database-export" element={<DatabaseExport />} />
           <Route path="/admin/users" element={<Admin />} />
           <Route path="/admin/roles" element={<Admin />} />
           <Route path="/admin" element={<Admin />} />

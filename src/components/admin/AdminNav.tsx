@@ -24,7 +24,8 @@ import {
   Terminal,
   Gauge,
   ScrollText,
-  Building2
+  Building2,
+  Download
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -110,6 +111,11 @@ export function AdminNav() {
           title: 'Ops Console',
           path: '/admin/ops',
           icon: Terminal,
+        },
+        {
+          title: 'Database Export',
+          path: '/admin/database-export',
+          icon: Download,
         },
       ],
     },
