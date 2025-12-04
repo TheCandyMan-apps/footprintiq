@@ -893,10 +893,12 @@ serve(async (req) => {
       socialPenalty
     ));
 
-    // Update scan record
+    // Update scan record with completion status
     const { error: updateError } = await supabase
       .from('scans')
       .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
         privacy_score: privacyScore,
         total_sources_found: results.dataSources.length + results.socialProfiles.length,
         high_risk_count: highRiskCount,

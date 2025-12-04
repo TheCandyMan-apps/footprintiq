@@ -121,6 +121,13 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         // Step 1: Create scan record
         setProgress(10);
 
+        // Fetch user's workspace
+        const { data: workspaceMember } = await supabase
+          .from('workspace_members')
+          .select('workspace_id')
+          .eq('user_id', userId)
+          .single();
+
         const scanType = scanData.username && !scanData.firstName && !scanData.lastName ? 'username' : 
                         scanData.firstName && scanData.lastName ? 'personal_details' : 'both';
 
@@ -128,6 +135,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           .from("scans")
           .insert({
             user_id: userId,
+            workspace_id: workspaceMember?.workspace_id || null,
             scan_type: scanType,
             username: scanData.username,
             first_name: scanData.firstName,
