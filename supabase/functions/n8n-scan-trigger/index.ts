@@ -71,7 +71,7 @@ serve(async (req) => {
         scan_type: scanType,
         username: username,
         status: 'pending',
-        providers: ['maigret', 'sherlock', 'gosearch'],
+        provider_counts: {},
       })
       .select()
       .single();
