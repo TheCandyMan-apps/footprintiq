@@ -189,8 +189,8 @@ export function FindingCard({ finding }: FindingCardProps) {
   };
 
   const getSmartTitle = (kind: string, evidence: Evidence[], meta?: Record<string, any>) => {
-    // For username hits (profile_presence, presence.hit), show platform name
-    if (kind === 'profile_presence' || kind === 'presence.hit') {
+    // For username hits (profile_presence, presence.hit, account.profile), show platform name
+    if (kind === 'profile_presence' || kind === 'presence.hit' || kind === 'account.profile') {
       const platformName = extractPlatformName(evidence, meta);
       if (platformName) return platformName;
     }
@@ -223,7 +223,7 @@ export function FindingCard({ finding }: FindingCardProps) {
   const remediationSteps = getRemediationSteps(finding.kind, finding.severity);
   const severityColor = getSeverityColor(finding.severity);
   const isSystemError = isSystemFinding(finding.kind, finding.severity);
-  const shouldShowEnrichment = !isSystemError && (finding.kind === 'profile_presence' || finding.kind === 'presence.hit');
+  const shouldShowEnrichment = !isSystemError && (finding.kind === 'profile_presence' || finding.kind === 'presence.hit' || finding.kind === 'account.profile');
   
   // Extract URL and platform for UI enhancements
   const urlEvidence = finding.evidence.find(e => e.key === 'url');
@@ -388,7 +388,7 @@ export function FindingCard({ finding }: FindingCardProps) {
             <h3 className="text-lg font-semibold text-foreground mb-1">
               {getSmartTitle(finding.kind, finding.evidence, finding.meta)}
             </h3>
-            {(finding.kind === 'profile_presence' || finding.kind === 'presence.hit') && (
+            {(finding.kind === 'profile_presence' || finding.kind === 'presence.hit' || finding.kind === 'account.profile') && (
               <p className="text-sm text-muted-foreground">Username profile found</p>
             )}
             {profileUrl && (
