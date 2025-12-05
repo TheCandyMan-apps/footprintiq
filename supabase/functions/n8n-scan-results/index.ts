@@ -52,22 +52,26 @@ serve(async (req) => {
     if (findings && Array.isArray(findings) && findings.length > 0) {
       const findingsToInsert = findings.map((finding: Record<string, unknown>) => ({
         scan_id: scanId,
-        user_id: scan.user_id,
         workspace_id: scan.workspace_id,
+        provider: finding.provider || (finding.meta as Record<string, unknown>)?.provider || 'n8n',
         kind: finding.kind || 'profile_presence',
-        title: finding.title || finding.site || 'Unknown',
-        description: finding.description || `Profile found on ${finding.site || 'unknown platform'}`,
         severity: finding.severity || 'info',
         confidence: finding.confidence || 0.7,
-        evidence: finding.evidence || [],
+        observed_at: new Date().toISOString(),
+        evidence: [
+          { key: 'url', value: finding.url || finding.primary_url || '' },
+          { key: 'site', value: finding.site || '' },
+          { key: 'username', value: finding.username || '' },
+          ...(Array.isArray(finding.evidence) ? finding.evidence : []),
+        ],
         meta: {
           ...(finding.meta as Record<string, unknown> || {}),
-          provider: finding.provider || (finding.meta as Record<string, unknown>)?.provider || 'unknown',
+          title: finding.title || finding.site || 'Unknown',
+          description: finding.description || `Profile found on ${finding.site || 'unknown platform'}`,
           url: finding.url || finding.primary_url,
           site: finding.site,
           source: 'n8n',
         },
-        url: finding.url || finding.primary_url,
         created_at: new Date().toISOString(),
       }));
 
@@ -134,7 +138,6 @@ serve(async (req) => {
       .update({
         status: finalStatus,
         completed_at: new Date().toISOString(),
-        error_message: scanError || null,
         total_sources_found: findings?.length || 0,
       })
       .eq('id', scanId);
