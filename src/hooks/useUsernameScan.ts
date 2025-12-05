@@ -172,8 +172,12 @@ export const useUsernameScan = () => {
         throw new Error(errorMsg);
       }
       
-      // Success - use scan_id from orchestrator response
-      const scanId = data?.scan_id || data?.job_id || batchId;
+      // Success - use scanId from n8n-scan-trigger response (returns { id, scanId, status })
+      const scanId = data?.scanId || data?.id;
+      if (!scanId) {
+        addLog({ level: 'error', message: 'Server did not return a scan ID', data });
+        throw new Error('Server did not return a scan ID');
+      }
       const statusCode = data?.status;
       
       addLog({ 
