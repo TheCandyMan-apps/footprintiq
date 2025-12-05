@@ -84,7 +84,22 @@ Deno.serve(wrapHandler(async (req) => {
     const userId = user.id;
 
     // Rate limiting
-    await checkRateLimit(supabase, userId, 'cancel-scan');
+    try {
+      await checkRateLimit(supabase, userId, 'cancel-scan');
+    } catch (rateLimitError: any) {
+      if (rateLimitError.status === 429) {
+        console.log('[cancel-scan] Rate limit exceeded for user:', userId);
+        return new Response(
+          JSON.stringify({
+            error: 'Rate limit exceeded',
+            message: 'Too many requests. Please wait before trying again.',
+            resetAt: rateLimitError.resetAt,
+          }),
+          { status: 429, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
+        );
+      }
+      throw rateLimitError;
+    }
 
     // Validate request body
     const body = await req.json();
