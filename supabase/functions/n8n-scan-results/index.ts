@@ -50,30 +50,46 @@ serve(async (req) => {
 
     // Process and store findings
     if (findings && Array.isArray(findings) && findings.length > 0) {
-      const findingsToInsert = findings.map((finding: Record<string, unknown>) => ({
-        scan_id: scanId,
-        workspace_id: scan.workspace_id,
-        provider: finding.provider || (finding.meta as Record<string, unknown>)?.provider || 'n8n',
-        kind: finding.kind || 'profile_presence',
-        severity: finding.severity || 'info',
-        confidence: finding.confidence || 0.7,
-        observed_at: new Date().toISOString(),
-        evidence: [
-          { key: 'url', value: finding.url || finding.primary_url || '' },
-          { key: 'site', value: finding.site || '' },
-          { key: 'username', value: finding.username || '' },
-          ...(Array.isArray(finding.evidence) ? finding.evidence : []),
-        ],
-        meta: {
-          ...(finding.meta as Record<string, unknown> || {}),
-          title: finding.title || finding.site || 'Unknown',
-          description: finding.description || `Profile found on ${finding.site || 'unknown platform'}`,
-          url: finding.url || finding.primary_url,
-          site: finding.site,
-          source: 'n8n',
-        },
-        created_at: new Date().toISOString(),
-      }));
+      const findingsToInsert = findings.map((finding: Record<string, unknown>) => {
+        // Normalize kind - account.profile should become profile_presence
+        const normalizedKind = finding.kind === 'account.profile' ? 'profile_presence' : (finding.kind || 'profile_presence');
+        
+        // Build evidence array, only including non-empty values
+        const evidenceArray: Array<{key: string, value: string}> = [];
+        const urlValue = finding.url || finding.primary_url;
+        if (urlValue) evidenceArray.push({ key: 'url', value: String(urlValue) });
+        if (finding.site) evidenceArray.push({ key: 'site', value: String(finding.site) });
+        if (finding.username) evidenceArray.push({ key: 'username', value: String(finding.username) });
+        
+        // Append any additional evidence from n8n, filtering empty values
+        if (Array.isArray(finding.evidence)) {
+          for (const e of finding.evidence as Array<{key?: string, value?: unknown}>) {
+            if (e.key && e.value) {
+              evidenceArray.push({ key: String(e.key), value: String(e.value) });
+            }
+          }
+        }
+        
+        return {
+          scan_id: scanId,
+          workspace_id: scan.workspace_id,
+          provider: finding.provider || (finding.meta as Record<string, unknown>)?.provider || 'n8n',
+          kind: normalizedKind,
+          severity: finding.severity || 'info',
+          confidence: finding.confidence || 0.7,
+          observed_at: new Date().toISOString(),
+          evidence: evidenceArray,
+          meta: {
+            ...(finding.meta as Record<string, unknown> || {}),
+            title: finding.title || finding.site || 'Unknown',
+            description: finding.description || `Profile found on ${finding.site || 'unknown platform'}`,
+            url: finding.url || finding.primary_url,
+            site: finding.site,
+            source: 'n8n',
+          },
+          created_at: new Date().toISOString(),
+        };
+      });
 
       console.log(`[n8n-scan-results] Inserting ${findingsToInsert.length} findings`);
 
