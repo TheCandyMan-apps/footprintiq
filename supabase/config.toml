@@ -86,3 +86,9 @@ verify_jwt = true
 
 [functions.database-export]
 verify_jwt = true
+
+[functions.n8n-scan-trigger]
+verify_jwt = true
+
+[functions.n8n-scan-results]
+verify_jwt = false

@@ -54,6 +54,7 @@ export interface AdvancedScanOptions {
   darkwebDepth?: number;
   darkwebPages?: number;
   providers?: string[];
+  useN8n?: boolean; // Option to force n8n usage
 }
 
 export interface ScanProgress {
@@ -106,61 +107,98 @@ export function useAdvancedScan() {
         throw new Error('Please provide an email, username, or phone');
       }
 
-      const { data: orchestrateData, error: orchestrateError } = await supabase.functions.invoke('scan-orchestrate', {
-        body: {
-          type,
-          value: value!,
-          workspaceId: workspace.id,
-          options: {
-            includeDarkweb: !!options.deepWeb,
-            providers: buildProvidersList(type, workspace?.subscription_tier, options.providers),
-            premium: {
-              socialMediaFinder: !!options.socialMedia,
-              osintScraper: !!options.osintScraper,
-              osintKeywords: options.osintKeywords,
-              darkwebScraper: !!options.darkwebScraper,
-              darkwebSearch: options.darkwebSearch,
-              darkwebUrls: options.darkwebUrls,
-              darkwebDepth: options.darkwebDepth,
-              darkwebPages: options.darkwebPages,
+      let scanId: string;
+
+      // Use n8n for username scans (bypasses edge function timeout issues)
+      if (type === 'username') {
+        console.log('[useAdvancedScan] Using n8n for username scan');
+        setProgress({ stage: 'initializing', progress: 5, message: 'Queuing scan via n8n...' });
+        
+        const { data: n8nData, error: n8nError } = await supabase.functions.invoke('n8n-scan-trigger', {
+          body: {
+            username: value,
+            workspaceId: workspace.id,
+            scanType: 'username',
+          },
+        });
+
+        if (n8nError) {
+          console.error('[useAdvancedScan] n8n trigger error:', n8nError);
+          throw new Error(n8nError.message || 'Failed to trigger n8n scan');
+        }
+
+        if (!n8nData?.scanId && !n8nData?.id) {
+          throw new Error('n8n scan trigger failed - no scan ID returned');
+        }
+
+        scanId = n8nData.scanId || n8nData.id;
+        console.log(`[useAdvancedScan] n8n scan queued: ${scanId}`);
+        
+        setProgress({ stage: 'scanning', progress: 30, message: 'Scan running via n8n (no timeout!)...' });
+        toast.success('Scan queued successfully via n8n');
+
+      } else {
+        // Use traditional scan-orchestrate for email/phone scans
+        console.log(`[useAdvancedScan] Using scan-orchestrate for ${type} scan`);
+        
+        const { data: orchestrateData, error: orchestrateError } = await supabase.functions.invoke('scan-orchestrate', {
+          body: {
+            type,
+            value: value!,
+            workspaceId: workspace.id,
+            options: {
+              includeDarkweb: !!options.deepWeb,
+              providers: buildProvidersList(type, workspace?.subscription_tier, options.providers),
+              premium: {
+                socialMediaFinder: !!options.socialMedia,
+                osintScraper: !!options.osintScraper,
+                osintKeywords: options.osintKeywords,
+                darkwebScraper: !!options.darkwebScraper,
+                darkwebSearch: options.darkwebSearch,
+                darkwebUrls: options.darkwebUrls,
+                darkwebDepth: options.darkwebDepth,
+                darkwebPages: options.darkwebPages,
+              },
             },
           },
-        },
-      });
+        });
 
-      if (orchestrateError) {
-        console.error('[useAdvancedScan] Orchestrate error:', orchestrateError);
-        
-        // Extract structured error if available
-        const errorData = orchestrateError as any;
-        const errorCode = errorData?.code || '';
-        const errorMessage = errorData?.message || orchestrateError.message || 'Failed to start scan';
-        const errorDetails = errorData?.details;
-        
-        // Handle tier restriction errors with helpful message
-        if (errorCode === 'no_providers_available_for_tier') {
-          const blockedProviders = errorDetails?.blockedProviders || [];
-          const allowedProviders = errorDetails?.allowedProviders || [];
+        if (orchestrateError) {
+          console.error('[useAdvancedScan] Orchestrate error:', orchestrateError);
           
-          const error = new Error(
-            `Cannot start scan: ${blockedProviders.join(', ')} require${blockedProviders.length === 1 ? 's' : ''} a higher plan. ` +
-            `Available providers: ${allowedProviders.join(', ')}`
-          ) as any;
+          // Extract structured error if available
+          const errorData = orchestrateError as Record<string, unknown>;
+          const errorCode = (errorData?.code || '') as string;
+          const errorMessage = (errorData?.message || orchestrateError.message || 'Failed to start scan') as string;
+          const errorDetails = errorData?.details;
+          
+          // Handle tier restriction errors with helpful message
+          if (errorCode === 'no_providers_available_for_tier') {
+            const details = errorDetails as Record<string, string[]> | undefined;
+            const blockedProviders = details?.blockedProviders || [];
+            const allowedProviders = details?.allowedProviders || [];
+            
+            const error = new Error(
+              `Cannot start scan: ${blockedProviders.join(', ')} require${blockedProviders.length === 1 ? 's' : ''} a higher plan. ` +
+              `Available providers: ${allowedProviders.join(', ')}`
+            ) as Error & { code?: string; details?: unknown };
+            error.code = errorCode;
+            error.details = errorDetails;
+            throw error;
+          }
+          
+          // Re-throw with structured error info
+          const error = new Error(errorMessage) as Error & { code?: string; details?: unknown };
           error.code = errorCode;
           error.details = errorDetails;
           throw error;
         }
         
-        // Re-throw with structured error info
-        const error = new Error(errorMessage) as any;
-        error.code = errorCode;
-        error.details = errorDetails;
-        throw error;
+        if (!orchestrateData?.scanId) throw new Error('Scan orchestration failed');
+        scanId = orchestrateData.scanId as string;
+        
+        setProgress({ stage: 'scanning', progress: 30, message: 'Scanning data sources...' });
       }
-      if (!orchestrateData?.scanId) throw new Error('Scan orchestration failed');
-      const scanId = orchestrateData.scanId as string;
-
-      setProgress({ stage: 'scanning', progress: 30, message: 'Scanning data sources...' });
       
       // Clear isScanning immediately so UI updates
       setIsScanning(false);
