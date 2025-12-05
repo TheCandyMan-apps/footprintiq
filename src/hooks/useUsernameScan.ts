@@ -116,10 +116,15 @@ export const useUsernameScan = () => {
         },
       };
       
-      addLog({ level: 'info', message: 'Invoking scan-orchestrate', data: requestBody });
+      addLog({ level: 'info', message: 'Invoking n8n-scan-trigger for username scan', data: requestBody });
       
-      const { data, error } = await supabase.functions.invoke('scan-orchestrate', {
-        body: requestBody,
+      // Route username scans through n8n for longer provider timeouts
+      const { data, error } = await supabase.functions.invoke('n8n-scan-trigger', {
+        body: {
+          username: options.username,
+          workspaceId: workspaceId,
+          scanType: 'username',
+        },
       });
       
       // Enhanced error handling - detect validation errors / timeouts
