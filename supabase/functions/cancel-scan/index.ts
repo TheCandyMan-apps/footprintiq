@@ -43,19 +43,35 @@ async function isAdmin(supabase: any, userId: string): Promise<boolean> {
 }
 
 async function checkRateLimit(supabase: any, userId: string, endpoint: string) {
-  const { data: rateLimit } = await supabase.rpc('check_rate_limit', {
-    p_identifier: userId,
-    p_identifier_type: 'user',
-    p_endpoint: endpoint,
-    p_max_requests: 20,
-    p_window_seconds: 60
-  });
+  try {
+    const { data: rateLimit, error } = await supabase.rpc('check_rate_limit', {
+      p_identifier: userId,
+      p_identifier_type: 'user',
+      p_endpoint: endpoint,
+      p_max_requests: 20,
+      p_window_seconds: 60
+    });
 
-  if (!rateLimit?.allowed) {
-    const error = new Error('Rate limit exceeded');
-    (error as any).status = 429;
-    (error as any).resetAt = rateLimit?.reset_at;
-    throw error;
+    // Fail-open: if RPC doesn't exist or fails, allow the request
+    if (error) {
+      console.log('[cancel-scan] Rate limit check failed (allowing request):', error.message);
+      return;
+    }
+
+    // Only block if we got a valid response saying not allowed
+    if (rateLimit && rateLimit.allowed === false) {
+      const err = new Error('Rate limit exceeded');
+      (err as any).status = 429;
+      (err as any).resetAt = rateLimit?.reset_at;
+      throw err;
+    }
+  } catch (err: any) {
+    // Re-throw rate limit errors
+    if (err.status === 429) {
+      throw err;
+    }
+    // Otherwise fail-open
+    console.log('[cancel-scan] Rate limit check exception (allowing request):', err.message);
   }
 }
 
