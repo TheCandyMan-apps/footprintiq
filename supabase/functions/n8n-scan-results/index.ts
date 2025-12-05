@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-callback-token',
 };
 
 serve(async (req) => {
@@ -13,6 +13,26 @@ serve(async (req) => {
   }
 
   try {
+    // Validate authentication token
+    const callbackToken = req.headers.get('x-callback-token');
+    const expectedToken = Deno.env.get('N8N_CALLBACK_TOKEN');
+    
+    if (!expectedToken) {
+      console.error('[n8n-scan-results] N8N_CALLBACK_TOKEN not configured');
+      return new Response(JSON.stringify({ error: 'Server misconfiguration' }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    
+    if (!callbackToken || callbackToken !== expectedToken) {
+      console.warn('[n8n-scan-results] Unauthorized request - invalid or missing token');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
