@@ -257,17 +257,31 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       setProviders([]);
     }
 
-    // Fetch initial progress
+    // Fetch initial progress and check if already completed
     const fetchInitialProgress = async () => {
       const { data } = await supabase.from('scan_progress').select('*').eq('scan_id', scanId).maybeSingle();
       if (data) {
-        addDebugEvent('database', `Initial: ${data.completed_providers}/${data.total_providers}`);
-        if (data.status === 'completed') {
+        addDebugEvent('database', `Initial: ${data.completed_providers}/${data.total_providers}, status=${data.status}`);
+        
+        // Check if scan already completed
+        if (data.status === 'completed' || data.status === 'completed_partial') {
           setStatus('completed');
           setProgress(100);
           setTotalResults(data.findings_count || 0);
+          
+          // Trigger success effects
+          if (data.findings_count > 0) {
+            playSuccessSound();
+            triggerConfetti();
+            toast.success(`Scan completed - ${data.findings_count} results found`);
+          } else {
+            toast.info('Scan completed with no results');
+          }
+          setTimeout(() => onComplete?.(), 2000);
+          return; // Don't setup realtime if already complete
         } else if (data.status === 'failed') {
           setStatus('failed');
+          return;
         }
       }
     };
@@ -366,13 +380,13 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       })
       .subscribe();
 
-    // Health monitor - increased threshold to 30s for long-running providers like Maigret
+    // Health monitor - switch to polling faster (15s) for responsiveness
     const healthInterval = setInterval(() => {
       const timeSinceLastEvent = Date.now() - lastEventAt;
       if (status !== 'running') return;
       
-      if (timeSinceLastEvent > 30000 && !isPolling) {
-        console.log('[ScanProgress] No realtime events, switching to polling');
+      if (timeSinceLastEvent > 15000 && !isPolling) {
+        console.log('[ScanProgress] No realtime events for 15s, switching to polling');
         setConnectionMode('fallback');
         setIsPolling(true);
         // Only show toast once per scan
