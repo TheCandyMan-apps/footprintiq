@@ -170,7 +170,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         from: 'FootprintIQ Alerts <onboarding@resend.dev>',
-        to: ['admin@footprintiq.app'],
+        to: [Deno.env.get("ADMIN_EMAIL") || "robin.s.clifford@gmail.com"],
         subject: `🚨 Glitch Alert: ${failureRate.toFixed(1)}% Failure Rate Detected`,
         html: emailHtml,
       }),

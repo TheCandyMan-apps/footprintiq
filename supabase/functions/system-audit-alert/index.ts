@@ -28,7 +28,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: "FootprintIQ System Audit <onboarding@resend.dev>",
-        to: ["admin@footprintiq.app"],
+        to: [Deno.env.get("ADMIN_EMAIL") || "robin.s.clifford@gmail.com"],
         subject: `⚠️ System Audit Alert: ${failureRate.toFixed(1)}% Failure Rate`,
         html: `
           <!DOCTYPE html>
