@@ -224,13 +224,22 @@ serve(async (req) => {
     }
 
     // Update scan_progress table for real-time UI updates
+    // Preserve the original total_providers from initial setup, only update completed
+    const { data: existingProgress } = await supabase
+      .from('scan_progress')
+      .select('total_providers')
+      .eq('scan_id', scanId)
+      .maybeSingle();
+    
+    const originalTotalProviders = existingProgress?.total_providers || providerCount;
+    
     const { error: progressError } = await supabase
       .from('scan_progress')
       .upsert({
         scan_id: scanId,
         status: finalStatus,
-        total_providers: providerCount,
-        completed_providers: providerCount,
+        total_providers: originalTotalProviders,  // Preserve original total
+        completed_providers: providerCount,  // Actual providers that returned
         current_providers: [],
         findings_count: findings?.length || 0,
         message: `Scan complete: ${findings?.length || 0} findings from ${providerCount} providers`,
