@@ -135,7 +135,7 @@ serve(async (req) => {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              from: 'FootprintIQ <alerts@footprintiq.app>',
+              from: 'FootprintIQ <onboarding@resend.dev>',
               to: [profile.email],
               subject: `Dark Web Weekly Summary - ${findings.length} findings`,
               html: emailHtml,

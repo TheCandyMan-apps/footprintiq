@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'FootprintIQ Alerts <alerts@footprintiq.app>',
+            from: 'FootprintIQ Alerts <onboarding@resend.dev>',
             to: ['admin@footprintiq.app'],
             subject: '🚨 Maigret Worker Health Alert',
             html: `

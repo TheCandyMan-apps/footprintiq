@@ -181,7 +181,7 @@ serve(async (req) => {
 
       try {
         const emailResponse = await resend.emails.send({
-          from: 'FootprintIQ Alerts <alerts@footprintiq.app>',
+          from: 'FootprintIQ Alerts <onboarding@resend.dev>',
           to: [alertEmail],
           subject: `🔔 ${usernameChanges.length} Profile Change${usernameChanges.length > 1 ? 's' : ''} Detected: ${username}`,
           html: emailHtml,

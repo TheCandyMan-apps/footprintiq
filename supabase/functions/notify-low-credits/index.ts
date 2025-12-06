@@ -93,7 +93,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'FootprintIQ <notifications@footprintiq.app>',
+          from: 'FootprintIQ <onboarding@resend.dev>',
           to: [user.email],
           subject,
           html: `<p>${body}</p><p><a href="https://footprintiq.app/buy-credits">Buy Credits</a></p>`,

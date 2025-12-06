@@ -169,7 +169,7 @@ const handler = async (req: Request): Promise<Response> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'FootprintIQ Alerts <alerts@footprintiq.app>',
+        from: 'FootprintIQ Alerts <onboarding@resend.dev>',
         to: ['admin@footprintiq.app'],
         subject: `🚨 Glitch Alert: ${failureRate.toFixed(1)}% Failure Rate Detected`,
         html: emailHtml,
