@@ -246,6 +246,19 @@ serve(async (req) => {
     try {
       const channel = supabase.channel(`scan_progress:${scanId}`);
       
+      // Must subscribe before sending broadcasts
+      await new Promise<void>((resolve, reject) => {
+        channel.subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            resolve();
+          } else if (status === 'CHANNEL_ERROR') {
+            reject(new Error('Channel subscription failed'));
+          }
+        });
+        // Timeout after 5 seconds
+        setTimeout(() => resolve(), 5000);
+      });
+      
       // Send provider completion events using computed results
       for (const [provider, result] of Object.entries(computedProviderResults)) {
         await channel.send({
@@ -271,6 +284,11 @@ serve(async (req) => {
       });
       
       console.log(`[n8n-scan-results] Sent broadcast events for scan ${scanId}`);
+      
+      // Cleanup channel after a short delay
+      setTimeout(() => {
+        supabase.removeChannel(channel);
+      }, 1000);
     } catch (broadcastErr) {
       console.error('[n8n-scan-results] Error sending broadcast:', broadcastErr);
       // Non-fatal - continue anyway
