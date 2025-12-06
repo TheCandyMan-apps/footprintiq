@@ -40,6 +40,10 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
 
   // Track last scanId to prevent progress resets when reopening same scan
   const lastScanIdRef = useRef<string | null>(null);
+  
+  // Use refs for polling to avoid re-render loops
+  const isPollingRef = useRef(false);
+  const statusRef = useRef<'running' | 'completed' | 'failed' | 'cancelled'>('running');
 
   // State
   const [progress, setProgress] = useState(0);
@@ -51,12 +55,16 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   // Connection health
   const [connectionMode, setConnectionMode] = useState<'live' | 'fallback'>('live');
   const [lastEventAt, setLastEventAt] = useState(Date.now());
-  const [isPolling, setIsPolling] = useState(false);
   const [hasShownFallbackToast, setHasShownFallbackToast] = useState(false);
   
   // Debug
   const [debugEvents, setDebugEvents] = useState<DebugEvent[]>([]);
   const [showDebug, setShowDebug] = useState(false);
+
+  // Keep statusRef in sync
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
 
   // Add debug event
   const addDebugEvent = useCallback((source: DebugEvent['source'], message: string, provider?: string) => {
@@ -195,58 +203,84 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     return { min: fmt(minMs), max: fmt(maxMs) };
   }, [providers]);
 
-  // Fallback polling - polls scan_progress, scans table, AND scan_events for reliable updates
+  // Independent completion detector - runs every 2s regardless of other state
+  // This is the most reliable way to detect scan completion
   useEffect(() => {
-    if (!scanId || !open || !isPolling) return;
-
-    const pollInterval = setInterval(async () => {
+    if (!scanId || !open) return;
+    
+    console.log('[CompletionDetector] Starting for scan:', scanId);
+    
+    const checkCompletion = async () => {
+      // Skip if already completed
+      if (statusRef.current !== 'running') return;
+      
       try {
-        // 1. Check scans table directly for completion status (most reliable)
         const { data: scanData } = await supabase
           .from('scans')
           .select('status, completed_at')
           .eq('id', scanId)
           .maybeSingle();
         
-        if (scanData) {
-          const scanStatus = scanData.status;
-          const isComplete = ['completed', 'completed_empty', 'completed_partial', 'failed', 'timeout'].includes(scanStatus);
+        if (!scanData) return;
+        
+        const scanStatus = scanData.status;
+        const isComplete = ['completed', 'completed_empty', 'completed_partial', 'failed', 'timeout'].includes(scanStatus);
+        
+        if (isComplete) {
+          console.log('[CompletionDetector] Scan completed with status:', scanStatus);
+          addDebugEvent('polling', `Scan completed: ${scanStatus}`);
           
-          if (isComplete && status === 'running') {
-            addDebugEvent('polling', `Scan completed via scans table: ${scanStatus}`);
-            
-            // Get findings count
-            const { count } = await supabase
-              .from('findings')
-              .select('*', { count: 'exact', head: true })
-              .eq('scan_id', scanId);
-            
-            const findingsCount = count || 0;
-            setTotalResults(findingsCount);
-            
-            if (scanStatus === 'failed' || scanStatus === 'timeout') {
-              setStatus('failed');
-            } else {
-              setStatus('completed');
-            }
-            setProgress(100);
-            
-            // Trigger effects
-            if (findingsCount > 0) {
-              playSuccessSound();
-              triggerConfetti();
-              toast.success(`Scan completed - ${findingsCount} results found`);
-            } else {
-              toast.info('Scan completed with no results');
-            }
-            
-            setIsPolling(false);
-            setTimeout(() => onComplete?.(), 2000);
-            return;
+          // Get findings count
+          const { count } = await supabase
+            .from('findings')
+            .select('*', { count: 'exact', head: true })
+            .eq('scan_id', scanId);
+          
+          const findingsCount = count || 0;
+          setTotalResults(findingsCount);
+          
+          if (scanStatus === 'failed' || scanStatus === 'timeout') {
+            setStatus('failed');
+          } else {
+            setStatus('completed');
           }
+          setProgress(100);
+          
+          // Trigger effects
+          if (findingsCount > 0) {
+            playSuccessSound();
+            triggerConfetti();
+            toast.success(`Scan completed - ${findingsCount} results found`);
+          } else {
+            toast.info('Scan completed with no results');
+          }
+          
+          isPollingRef.current = false;
+          setTimeout(() => onComplete?.(), 2000);
         }
+      } catch (error) {
+        console.error('[CompletionDetector] Error:', error);
+      }
+    };
+    
+    // Check immediately
+    checkCompletion();
+    
+    // Then poll every 2 seconds
+    const interval = setInterval(checkCompletion, 2000);
+    
+    return () => clearInterval(interval);
+  }, [scanId, open, addDebugEvent, onComplete]);
 
-        // 2. Poll scan_events for accurate provider statuses
+  // Provider status polling - polls scan_events for provider updates
+  useEffect(() => {
+    if (!scanId || !open) return;
+    
+    const pollProviders = async () => {
+      if (statusRef.current !== 'running') return;
+      
+      try {
+        // Poll scan_events for provider statuses
         const { data: events } = await supabase
           .from('scan_events')
           .select('*')
@@ -254,7 +288,6 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           .order('created_at', { ascending: false });
         
         if (events && events.length > 0) {
-          // Track latest status per provider
           const providerStatuses = new Map<string, { stage: string; message?: string; resultCount?: number }>();
           
           events.forEach((event: any) => {
@@ -262,12 +295,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
               providerStatuses.set(event.provider, {
                 stage: event.stage,
                 message: event.message,
-                resultCount: event.results_count
+                resultCount: event.results_count || event.findings_count
               });
             }
           });
           
-          // Update provider statuses from events
           providerStatuses.forEach((eventData, providerName) => {
             let providerStatus: ProviderStatus['status'] = 'pending';
             if (eventData.stage === 'complete' || eventData.stage === 'completed') {
@@ -283,44 +315,20 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
             updateProvider(providerName, providerStatus, eventData.message, eventData.resultCount);
           });
           
-          addDebugEvent('polling', `Events: ${events.length}, Providers: ${providerStatuses.size}`);
-        }
-
-        // 3. Also check scan_progress as secondary source
-        const { data } = await supabase.from('scan_progress').select('*').eq('scan_id', scanId).maybeSingle();
-        if (data) {
-          if (data.current_providers && Array.isArray(data.current_providers)) {
-            data.current_providers.forEach((providerName: string) => {
-              // Only update to loading if not already in terminal state
-              setProviders(prev => {
-                const existing = prev.find(p => p.name === providerName);
-                if (existing && ['success', 'failed', 'warning'].includes(existing.status)) {
-                  return prev; // Don't overwrite terminal states
-                }
-                return prev.map(p => 
-                  p.name === providerName ? { ...p, status: 'loading' as const, message: 'Processing...' } : p
-                );
-              });
-            });
-          }
-
-          if (data.status === 'completed' || data.status === 'completed_partial') {
-            setStatus('completed');
-            setProgress(100);
-            setTotalResults(data.findings_count || 0);
-            setIsPolling(false);
-          } else if (data.status === 'failed') {
-            setStatus('failed');
-            setIsPolling(false);
+          if (events.length > 0) {
+            addDebugEvent('polling', `Events: ${events.length}, Providers: ${providerStatuses.size}`);
           }
         }
       } catch (error) {
-        console.error('[Polling] Error:', error);
+        console.error('[ProviderPolling] Error:', error);
       }
-    }, 2000); // Poll every 2 seconds for faster updates
-
-    return () => clearInterval(pollInterval);
-  }, [scanId, open, isPolling, updateProvider, addDebugEvent, status, onComplete]);
+    };
+    
+    // Poll every 3 seconds for provider updates
+    const interval = setInterval(pollProviders, 3000);
+    
+    return () => clearInterval(interval);
+  }, [scanId, open, updateProvider, addDebugEvent]);
 
   // Main effect: Setup realtime + health monitoring
   useEffect(() => {
@@ -334,7 +342,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     setTotalResults(0);
     setConnectionMode('live');
     setLastEventAt(Date.now());
-    setIsPolling(false);
+    isPollingRef.current = false;
     setDebugEvents([]);
 
     // Initialize providers immediately
@@ -403,7 +411,6 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
 
         setLastEventAt(Date.now());
         setConnectionMode('live');
-        if (isPolling) setIsPolling(false);
       })
       .subscribe();
 
@@ -420,7 +427,6 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
 
         setLastEventAt(Date.now());
         setConnectionMode('live');
-        if (isPolling) setIsPolling(false);
       })
       .on('broadcast', { event: 'scan_complete' }, (payload: any) => {
         addDebugEvent('broadcast', 'Scan completed');
@@ -473,25 +479,21 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       })
       .subscribe();
 
-    // Start polling immediately as backup for faster updates
-    setIsPolling(true);
-    console.log('[ScanProgress] Started immediate polling backup');
+    // Mark polling as started via ref (no state update to avoid re-renders)
+    isPollingRef.current = true;
+    console.log('[ScanProgress] Polling enabled via ref');
 
-    // Health monitor - switch to fallback mode faster (10s) for responsiveness
+    // Health monitor - updates connection mode based on realtime activity
     const healthInterval = setInterval(() => {
       const timeSinceLastEvent = Date.now() - lastEventAt;
-      if (status !== 'running') return;
+      if (statusRef.current !== 'running') return;
       
       if (timeSinceLastEvent > 10000) {
         if (connectionMode !== 'fallback') {
           console.log('[ScanProgress] No realtime events for 10s, switching to fallback mode');
           setConnectionMode('fallback');
         }
-        if (!isPolling) {
-          setIsPolling(true);
-        }
       } else if (connectionMode === 'fallback') {
-        // Received an event, switch back to live mode
         setConnectionMode('live');
       }
     }, 3000);
@@ -499,12 +501,13 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     // Cleanup
     return () => {
       console.log('[ScanProgress] Cleaning up');
+      isPollingRef.current = false;
       supabase.removeChannel(progressChannel);
       supabase.removeChannel(broadcastChannel);
       supabase.removeChannel(findingsChannel);
       clearInterval(healthInterval);
     };
-  }, [scanId, open, initialProvidersKey, onComplete, updateProvider, addDebugEvent]);
+  }, [scanId, open, initialProvidersKey, onComplete, updateProvider, addDebugEvent, lastEventAt, connectionMode]);
 
   // Handle cancel
   const handleCancel = async () => {
