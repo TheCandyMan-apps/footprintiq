@@ -27,7 +27,7 @@ serve(async (req) => {
         "Authorization": `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "FootprintIQ System Audit <noreply@footprintiq.app>",
+        from: "FootprintIQ System Audit <onboarding@resend.dev>",
         to: ["admin@footprintiq.app"],
         subject: `⚠️ System Audit Alert: ${failureRate.toFixed(1)}% Failure Rate`,
         html: `
