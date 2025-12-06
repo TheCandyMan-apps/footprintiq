@@ -6611,6 +6611,7 @@ export type Database = {
           created_at: string | null
           duration_ms: number | null
           error_message: string | null
+          findings_count: number | null
           id: string
           metadata: Json | null
           provider: string
@@ -6622,6 +6623,7 @@ export type Database = {
           created_at?: string | null
           duration_ms?: number | null
           error_message?: string | null
+          findings_count?: number | null
           id?: string
           metadata?: Json | null
           provider: string
@@ -6633,6 +6635,7 @@ export type Database = {
           created_at?: string | null
           duration_ms?: number | null
           error_message?: string | null
+          findings_count?: number | null
           id?: string
           metadata?: Json | null
           provider?: string
