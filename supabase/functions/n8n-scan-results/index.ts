@@ -55,6 +55,36 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const body = await req.json();
+
+    // ====== DEBUG LOGGING START ======
+    console.log('[n8n-scan-results] ===== FULL PAYLOAD DEBUG =====');
+    console.log('[n8n-scan-results] Raw body keys:', Object.keys(body));
+    console.log('[n8n-scan-results] Full body (truncated):', JSON.stringify(body).substring(0, 5000));
+
+    // Log each field specifically
+    console.log('[n8n-scan-results] scanId raw:', body.scanId);
+    console.log('[n8n-scan-results] findings type:', typeof body.findings);
+    console.log('[n8n-scan-results] findings isArray:', Array.isArray(body.findings));
+    console.log('[n8n-scan-results] findings length:', body.findings?.length);
+    console.log('[n8n-scan-results] findings value:', JSON.stringify(body.findings)?.substring(0, 2000));
+
+    // Log first 3 findings if present
+    if (body.findings && body.findings.length > 0) {
+      console.log('[n8n-scan-results] First finding:', JSON.stringify(body.findings[0]));
+      if (body.findings.length > 1) console.log('[n8n-scan-results] Second finding:', JSON.stringify(body.findings[1]));
+      if (body.findings.length > 2) console.log('[n8n-scan-results] Third finding:', JSON.stringify(body.findings[2]));
+    }
+
+    // Check for alternative field names n8n might use
+    console.log('[n8n-scan-results] Alternative fields check:');
+    console.log('  - results:', typeof body.results, Array.isArray(body.results) ? `length=${body.results?.length}` : 'N/A');
+    console.log('  - data:', typeof body.data, Array.isArray(body.data) ? `length=${body.data?.length}` : 'N/A');
+    console.log('  - items:', typeof body.items, Array.isArray(body.items) ? `length=${body.items?.length}` : 'N/A');
+    console.log('  - output:', typeof body.output, Array.isArray(body.output) ? `length=${body.output?.length}` : 'N/A');
+    console.log('  - providerResults:', typeof body.providerResults, body.providerResults ? JSON.stringify(body.providerResults).substring(0, 500) : 'N/A');
+    console.log('[n8n-scan-results] ===== END DEBUG =====');
+    // ====== DEBUG LOGGING END ======
+
     const { scanId: rawScanId, findings, status, providerResults, error: scanError } = body;
 
     // Sanitize scanId - strip leading '=' from n8n expression artifacts
