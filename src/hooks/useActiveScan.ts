@@ -46,33 +46,60 @@ export function useActiveScan() {
     }
   }, [activeScan]);
 
-  // Fetch progress from database
+  // Fetch progress from database - check scans table AND scan_events for reliable status
   const fetchProgress = async () => {
     if (!activeScan?.scanId) return null;
 
     try {
-      const { data, error } = await supabase
+      // 1. Check scans table directly for completion (most reliable)
+      const { data: scanData } = await supabase
+        .from('scans')
+        .select('status, completed_at')
+        .eq('id', activeScan.scanId)
+        .maybeSingle();
+      
+      const isComplete = scanData && ['completed', 'completed_empty', 'completed_partial', 'failed', 'timeout'].includes(scanData.status);
+      
+      // 2. Get provider statuses from scan_events
+      const { data: events } = await supabase
+        .from('scan_events')
+        .select('provider, stage')
+        .eq('scan_id', activeScan.scanId);
+      
+      const completedProviders = events?.filter((e: any) => 
+        ['complete', 'completed', 'failed', 'timeout'].includes(e.stage)
+      ).length || 0;
+      
+      const totalProviders = events ? new Set(events.map((e: any) => e.provider)).size : 0;
+      
+      // 3. Get findings count
+      const { count: findingsCount } = await supabase
+        .from('findings')
+        .select('*', { count: 'exact', head: true })
+        .eq('scan_id', activeScan.scanId);
+      
+      // 4. Also get scan_progress for message
+      const { data } = await supabase
         .from('scan_progress')
         .select('*')
         .eq('scan_id', activeScan.scanId)
         .maybeSingle();
       
-      if (error) throw error;
+      // Use scans table status if available, fallback to scan_progress
+      const finalStatus = isComplete ? scanData.status : (data?.status || 'running');
       
-      if (data) {
-        const progressData = {
-          status: data.status,
-          completedProviders: data.completed_providers || 0,
-          totalProviders: data.total_providers || 0,
-          currentProviders: data.current_providers || [],
-          totalFindings: data.findings_count || 0,
-          message: data.message || ''
-        };
-        setProgress(progressData);
-        lastUpdateRef.current = Date.now();
-        return progressData;
-      }
-      return null;
+      const progressData = {
+        status: finalStatus,
+        completedProviders: completedProviders || data?.completed_providers || 0,
+        totalProviders: totalProviders || data?.total_providers || 0,
+        currentProviders: data?.current_providers || [],
+        totalFindings: findingsCount || data?.findings_count || 0,
+        message: data?.message || ''
+      };
+      
+      setProgress(progressData);
+      lastUpdateRef.current = Date.now();
+      return progressData;
     } catch (error) {
       console.error('[useActiveScan] Error fetching progress:', error);
       return null;
@@ -87,13 +114,15 @@ export function useActiveScan() {
     pollingIntervalRef.current = setInterval(async () => {
       const progressData = await fetchProgress();
       
-      if (progressData && (progressData.status === 'completed' || progressData.status === 'error')) {
+      // Check for terminal states
+      if (progressData && ['completed', 'completed_empty', 'completed_partial', 'failed', 'timeout', 'error'].includes(progressData.status)) {
+        console.log('[useActiveScan] Scan completed via polling:', progressData.status);
         stopPolling();
         setTimeout(() => {
           clearActiveScan();
         }, 5000);
       }
-    }, POLLING_INTERVAL);
+    }, 2000); // Poll every 2 seconds for faster updates
   };
 
   const stopPolling = () => {

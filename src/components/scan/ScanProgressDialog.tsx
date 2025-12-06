@@ -195,23 +195,116 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     return { min: fmt(minMs), max: fmt(maxMs) };
   }, [providers]);
 
-  // Fallback polling
+  // Fallback polling - polls scan_progress, scans table, AND scan_events for reliable updates
   useEffect(() => {
     if (!scanId || !open || !isPolling) return;
 
     const pollInterval = setInterval(async () => {
       try {
+        // 1. Check scans table directly for completion status (most reliable)
+        const { data: scanData } = await supabase
+          .from('scans')
+          .select('status, completed_at')
+          .eq('id', scanId)
+          .maybeSingle();
+        
+        if (scanData) {
+          const scanStatus = scanData.status;
+          const isComplete = ['completed', 'completed_empty', 'completed_partial', 'failed', 'timeout'].includes(scanStatus);
+          
+          if (isComplete && status === 'running') {
+            addDebugEvent('polling', `Scan completed via scans table: ${scanStatus}`);
+            
+            // Get findings count
+            const { count } = await supabase
+              .from('findings')
+              .select('*', { count: 'exact', head: true })
+              .eq('scan_id', scanId);
+            
+            const findingsCount = count || 0;
+            setTotalResults(findingsCount);
+            
+            if (scanStatus === 'failed' || scanStatus === 'timeout') {
+              setStatus('failed');
+            } else {
+              setStatus('completed');
+            }
+            setProgress(100);
+            
+            // Trigger effects
+            if (findingsCount > 0) {
+              playSuccessSound();
+              triggerConfetti();
+              toast.success(`Scan completed - ${findingsCount} results found`);
+            } else {
+              toast.info('Scan completed with no results');
+            }
+            
+            setIsPolling(false);
+            setTimeout(() => onComplete?.(), 2000);
+            return;
+          }
+        }
+
+        // 2. Poll scan_events for accurate provider statuses
+        const { data: events } = await supabase
+          .from('scan_events')
+          .select('*')
+          .eq('scan_id', scanId)
+          .order('created_at', { ascending: false });
+        
+        if (events && events.length > 0) {
+          // Track latest status per provider
+          const providerStatuses = new Map<string, { stage: string; message?: string; resultCount?: number }>();
+          
+          events.forEach((event: any) => {
+            if (event.provider && !providerStatuses.has(event.provider)) {
+              providerStatuses.set(event.provider, {
+                stage: event.stage,
+                message: event.message,
+                resultCount: event.results_count
+              });
+            }
+          });
+          
+          // Update provider statuses from events
+          providerStatuses.forEach((eventData, providerName) => {
+            let providerStatus: ProviderStatus['status'] = 'pending';
+            if (eventData.stage === 'complete' || eventData.stage === 'completed') {
+              providerStatus = 'success';
+            } else if (eventData.stage === 'start' || eventData.stage === 'started' || eventData.stage === 'running') {
+              providerStatus = 'loading';
+            } else if (eventData.stage === 'failed' || eventData.stage === 'error') {
+              providerStatus = 'failed';
+            } else if (eventData.stage === 'timeout') {
+              providerStatus = 'warning';
+            }
+            
+            updateProvider(providerName, providerStatus, eventData.message, eventData.resultCount);
+          });
+          
+          addDebugEvent('polling', `Events: ${events.length}, Providers: ${providerStatuses.size}`);
+        }
+
+        // 3. Also check scan_progress as secondary source
         const { data } = await supabase.from('scan_progress').select('*').eq('scan_id', scanId).maybeSingle();
         if (data) {
-          addDebugEvent('polling', `Progress: ${data.completed_providers}/${data.total_providers}`);
-          
           if (data.current_providers && Array.isArray(data.current_providers)) {
             data.current_providers.forEach((providerName: string) => {
-              updateProvider(providerName, 'loading', 'Processing...');
+              // Only update to loading if not already in terminal state
+              setProviders(prev => {
+                const existing = prev.find(p => p.name === providerName);
+                if (existing && ['success', 'failed', 'warning'].includes(existing.status)) {
+                  return prev; // Don't overwrite terminal states
+                }
+                return prev.map(p => 
+                  p.name === providerName ? { ...p, status: 'loading' as const, message: 'Processing...' } : p
+                );
+              });
             });
           }
 
-          if (data.status === 'completed') {
+          if (data.status === 'completed' || data.status === 'completed_partial') {
             setStatus('completed');
             setProgress(100);
             setTotalResults(data.findings_count || 0);
@@ -224,10 +317,10 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       } catch (error) {
         console.error('[Polling] Error:', error);
       }
-    }, 3000);
+    }, 2000); // Poll every 2 seconds for faster updates
 
     return () => clearInterval(pollInterval);
-  }, [scanId, open, isPolling, updateProvider, addDebugEvent]);
+  }, [scanId, open, isPolling, updateProvider, addDebugEvent, status, onComplete]);
 
   // Main effect: Setup realtime + health monitoring
   useEffect(() => {
