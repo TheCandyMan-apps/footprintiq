@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             from: 'FootprintIQ Alerts <onboarding@resend.dev>',
-            to: ['admin@footprintiq.app'],
+            to: [Deno.env.get("ADMIN_EMAIL") || "robin.s.clifford@gmail.com"],
             subject: '🚨 Maigret Worker Health Alert',
             html: `
               <h2>Maigret Worker Health Check Failed</h2>
