@@ -87,7 +87,8 @@ serve(async (req) => {
     console.log(`[n8n-scan-trigger] Created scan record: ${scan.id}`);
 
     // Define providers for username scans
-    const providers = ['maigret', 'sherlock', 'gosearch', 'apify-social'];
+    // Use providers matching what n8n workflow actually runs
+    const providers = ['sherlock', 'gosearch', 'maigret', 'holehe', 'whatsmyname'];
 
     // Create initial scan_progress record so UI can track progress
     const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);

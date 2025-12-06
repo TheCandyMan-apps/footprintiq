@@ -139,22 +139,42 @@ serve(async (req) => {
       }
     }
 
+    // Compute per-provider stats from findings if providerResults not provided
+    let computedProviderResults: Record<string, { status: string; count: number; duration_ms?: number; error?: string }> = {};
+    
+    if (providerResults && typeof providerResults === 'object' && Object.keys(providerResults).length > 0) {
+      // Use provided providerResults
+      computedProviderResults = providerResults as typeof computedProviderResults;
+    } else if (findings && Array.isArray(findings) && findings.length > 0) {
+      // Compute from findings
+      for (const finding of findings) {
+        const provider = String(finding.provider || (finding.meta as Record<string, unknown>)?.provider || 'n8n');
+        if (!computedProviderResults[provider]) {
+          computedProviderResults[provider] = { status: 'success', count: 0 };
+        }
+        computedProviderResults[provider].count++;
+      }
+      console.log('[n8n-scan-results] Computed provider stats from findings:', computedProviderResults);
+    }
+
+    const providerCount = Object.keys(computedProviderResults).length || 1;
+
     // Log provider results for debugging
-    const providerCount = providerResults ? Object.keys(providerResults).length : 1;
-    if (providerResults) {
+    if (Object.keys(computedProviderResults).length > 0) {
       console.log('[n8n-scan-results] Provider results summary:');
-      for (const [provider, result] of Object.entries(providerResults as Record<string, Record<string, unknown>>)) {
+      for (const [provider, result] of Object.entries(computedProviderResults)) {
         console.log(`  ${provider}: ${result.status}, findings: ${result.count || 0}`);
       }
 
-      // Store provider events
-      const events = Object.entries(providerResults as Record<string, Record<string, unknown>>).map(([provider, result]) => ({
+      // Store provider events with required stage field
+      const events = Object.entries(computedProviderResults).map(([provider, result]) => ({
         scan_id: scanId,
         provider: provider,
-        status: result.status || 'unknown',
-        duration_ms: result.duration_ms,
+        stage: 'complete',  // Required field with default
+        status: result.status || 'success',
+        duration_ms: result.duration_ms || null,
         findings_count: result.count || 0,
-        error_message: result.error,
+        error_message: result.error || null,
         created_at: new Date().toISOString(),
       }));
 
@@ -164,6 +184,8 @@ serve(async (req) => {
 
       if (eventsError) {
         console.error('[n8n-scan-results] Error inserting scan events:', eventsError);
+      } else {
+        console.log(`[n8n-scan-results] Inserted ${events.length} scan_events`);
       }
     }
 
@@ -171,8 +193,8 @@ serve(async (req) => {
     let finalStatus = status || 'completed';
     if (scanError) {
       finalStatus = 'failed';
-    } else if (providerResults) {
-      const results = Object.values(providerResults as Record<string, Record<string, unknown>>);
+    } else if (Object.keys(computedProviderResults).length > 0) {
+      const results = Object.values(computedProviderResults);
       const hasSuccess = results.some((r) => r.status === 'success');
       const allFailed = results.every((r) => r.status === 'failed' || r.status === 'timeout');
       
@@ -224,20 +246,18 @@ serve(async (req) => {
     try {
       const channel = supabase.channel(`scan_progress:${scanId}`);
       
-      // Send provider completion events
-      if (providerResults) {
-        for (const [provider, result] of Object.entries(providerResults as Record<string, Record<string, unknown>>)) {
-          await channel.send({
-            type: 'broadcast',
-            event: 'provider_update',
-            payload: {
-              provider,
-              status: result.status === 'success' ? 'success' : 'failed',
-              message: `${provider}: ${result.count || 0} findings`,
-              resultCount: result.count || 0,
-            },
-          });
-        }
+      // Send provider completion events using computed results
+      for (const [provider, result] of Object.entries(computedProviderResults)) {
+        await channel.send({
+          type: 'broadcast',
+          event: 'provider_update',
+          payload: {
+            provider,
+            status: result.status === 'success' ? 'success' : 'failed',
+            message: `${provider}: ${result.count || 0} findings`,
+            resultCount: result.count || 0,
+          },
+        });
       }
       
       // Send scan complete event
