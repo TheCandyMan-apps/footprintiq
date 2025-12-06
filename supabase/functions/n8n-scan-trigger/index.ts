@@ -86,6 +86,31 @@ serve(async (req) => {
 
     console.log(`[n8n-scan-trigger] Created scan record: ${scan.id}`);
 
+    // Define providers for username scans
+    const providers = ['maigret', 'sherlock', 'gosearch', 'apify-social'];
+
+    // Create initial scan_progress record so UI can track progress
+    const serviceClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const { error: progressError } = await serviceClient
+      .from('scan_progress')
+      .upsert({
+        scan_id: scan.id,
+        status: 'running',
+        total_providers: providers.length,
+        completed_providers: 0,
+        current_providers: providers,
+        findings_count: 0,
+        message: `Starting scan with ${providers.length} providers...`,
+        error: false,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'scan_id' });
+
+    if (progressError) {
+      console.error('[n8n-scan-trigger] Failed to create scan_progress:', progressError);
+    } else {
+      console.log(`[n8n-scan-trigger] Created scan_progress for ${scan.id}`);
+    }
+
     // Trigger n8n webhook (fire and forget using fetch without await)
     const n8nPayload = {
       scanId: scan.id,
