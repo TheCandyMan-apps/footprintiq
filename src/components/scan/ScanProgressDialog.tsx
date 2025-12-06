@@ -380,22 +380,28 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       })
       .subscribe();
 
-    // Health monitor - switch to polling faster (15s) for responsiveness
+    // Start polling immediately as backup for faster updates
+    setIsPolling(true);
+    console.log('[ScanProgress] Started immediate polling backup');
+
+    // Health monitor - switch to fallback mode faster (10s) for responsiveness
     const healthInterval = setInterval(() => {
       const timeSinceLastEvent = Date.now() - lastEventAt;
       if (status !== 'running') return;
       
-      if (timeSinceLastEvent > 15000 && !isPolling) {
-        console.log('[ScanProgress] No realtime events for 15s, switching to polling');
-        setConnectionMode('fallback');
-        setIsPolling(true);
-        // Only show toast once per scan
-        if (!hasShownFallbackToast) {
-          toast.info('Using fallback updates mode', { duration: 3000 });
-          setHasShownFallbackToast(true);
+      if (timeSinceLastEvent > 10000) {
+        if (connectionMode !== 'fallback') {
+          console.log('[ScanProgress] No realtime events for 10s, switching to fallback mode');
+          setConnectionMode('fallback');
         }
+        if (!isPolling) {
+          setIsPolling(true);
+        }
+      } else if (connectionMode === 'fallback') {
+        // Received an event, switch back to live mode
+        setConnectionMode('live');
       }
-    }, 5000);
+    }, 3000);
 
     // Cleanup
     return () => {

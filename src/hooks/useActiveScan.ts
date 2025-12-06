@@ -115,8 +115,9 @@ export function useActiveScan() {
       supabase.removeChannel(channelRef.current);
     }
 
-    const channel = supabase
-      .channel(`scan_progress_${activeScan.scanId}`)
+    // Subscribe to database changes
+    const dbChannel = supabase
+      .channel(`scan_progress_db_${activeScan.scanId}`)
       .on(
         'postgres_changes',
         {
@@ -126,7 +127,7 @@ export function useActiveScan() {
           filter: `scan_id=eq.${activeScan.scanId}`
         },
         (payload) => {
-          console.log('[useActiveScan] Realtime update:', payload);
+          console.log('[useActiveScan] DB update:', payload);
           const progressData = payload.new as any;
           
           setProgress({
@@ -140,45 +141,68 @@ export function useActiveScan() {
 
           lastUpdateRef.current = Date.now();
           setConnectionStatus('connected');
-          
-          // Stop polling if it's running (realtime is working)
           stopPolling();
 
-          // Auto-clear when completed
-          if (progressData.status === 'completed' || progressData.status === 'error') {
-            setTimeout(() => {
-              clearActiveScan();
-            }, 5000);
+          if (progressData.status === 'completed' || progressData.status === 'error' || progressData.status === 'completed_partial') {
+            setTimeout(() => clearActiveScan(), 5000);
           }
         }
       )
       .subscribe((status) => {
-        console.log(`[useActiveScan] Channel status:`, status);
-        
+        console.log(`[useActiveScan] DB channel status:`, status);
         if (status === 'SUBSCRIBED') {
           setConnectionStatus('connected');
-          stopPolling(); // Stop polling when realtime connects
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           setConnectionStatus('disconnected');
-          startPolling(); // Start polling on error
-        } else if (status === 'CLOSED') {
-          setConnectionStatus('disconnected');
+          startPolling();
         }
       });
 
-    channelRef.current = channel;
+    // Subscribe to broadcast channel for immediate updates
+    const broadcastChannel = supabase
+      .channel(`scan_progress:${activeScan.scanId}`)
+      .on('broadcast', { event: 'provider_update' }, (payload: any) => {
+        console.log('[useActiveScan] Broadcast provider_update:', payload.payload);
+        lastUpdateRef.current = Date.now();
+        setConnectionStatus('connected');
+        stopPolling();
+        
+        // Refresh progress from DB to get full state
+        fetchProgress();
+      })
+      .on('broadcast', { event: 'scan_complete' }, (payload: any) => {
+        console.log('[useActiveScan] Broadcast scan_complete:', payload.payload);
+        setProgress(prev => prev ? {
+          ...prev,
+          status: payload.payload.status || 'completed',
+          totalFindings: payload.payload.findingsCount || prev.totalFindings,
+        } : null);
+        
+        setTimeout(() => clearActiveScan(), 5000);
+      })
+      .subscribe((status) => {
+        console.log(`[useActiveScan] Broadcast channel status:`, status);
+      });
 
-    // Start heartbeat monitoring - increased to 30s for long-running providers
+    channelRef.current = dbChannel;
+
+    // Start polling immediately as backup (faster initial updates)
+    startPolling();
+
+    // Heartbeat monitoring - switch to polling if no updates
     heartbeatIntervalRef.current = setInterval(() => {
       const timeSinceLastUpdate = Date.now() - lastUpdateRef.current;
       
-      // If no update in 30 seconds and scan isn't completed, switch to polling
-      if (timeSinceLastUpdate > 30000 && connectionStatus === 'connected') {
-        console.warn('[useActiveScan] No updates for 30s, starting polling fallback');
-        setConnectionStatus('reconnecting');
+      if (timeSinceLastUpdate > 20000 && !pollingIntervalRef.current) {
+        console.warn('[useActiveScan] No updates for 20s, ensuring polling is active');
         startPolling();
       }
     }, HEARTBEAT_INTERVAL);
+
+    // Store broadcast channel for cleanup
+    return () => {
+      supabase.removeChannel(broadcastChannel);
+    };
   };
 
   // Subscribe to progress updates via database

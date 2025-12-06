@@ -131,6 +131,57 @@ serve(async (req) => {
       });
     }
 
+    // Send realtime broadcast for frontend to receive immediately
+    try {
+      const channel = supabase.channel(`scan_progress:${scanId}`);
+      
+      // Subscribe and wait briefly for connection
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => resolve(), 2000);
+        channel.subscribe((subStatus) => {
+          if (subStatus === 'SUBSCRIBED') {
+            clearTimeout(timeout);
+            resolve();
+          }
+        });
+      });
+
+      // Broadcast provider update
+      if (provider) {
+        await channel.send({
+          type: 'broadcast',
+          event: 'provider_update',
+          payload: {
+            provider,
+            status: status === 'started' ? 'loading' : status === 'completed' ? 'success' : status === 'failed' ? 'failed' : status,
+            message: message || `${provider}: ${status}`,
+            resultCount: findingsCount,
+          },
+        });
+        console.log(`[n8n-scan-progress] Broadcast sent: ${provider} -> ${status}`);
+      }
+
+      // Broadcast scan completion if status is final
+      if (status === 'completed' || status === 'completed_partial' || status === 'completed_empty') {
+        await channel.send({
+          type: 'broadcast',
+          event: 'scan_complete',
+          payload: {
+            scanId,
+            status,
+            findingsCount: findingsCount || 0,
+          },
+        });
+        console.log(`[n8n-scan-progress] Scan complete broadcast sent`);
+      }
+
+      // Clean up channel
+      await supabase.removeChannel(channel);
+    } catch (broadcastErr) {
+      // Don't fail the request if broadcast fails - DB update already succeeded
+      console.warn('[n8n-scan-progress] Broadcast failed (non-fatal):', broadcastErr);
+    }
+
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
