@@ -6628,7 +6628,7 @@ export type Database = {
           metadata?: Json | null
           provider: string
           scan_id: string
-          stage: string
+          stage?: string
           status?: string | null
         }
         Update: {
