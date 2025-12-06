@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sanitizeScanId } from "../_shared/sanitizeIds.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,7 +42,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const { 
-      scanId, 
+      scanId: rawScanId, 
       provider, 
       status, 
       message, 
@@ -50,8 +51,11 @@ serve(async (req) => {
       findingsCount 
     } = body;
 
+    // Sanitize scanId - strip leading '=' from n8n expression artifacts
+    const scanId = sanitizeScanId(rawScanId);
     if (!scanId) {
-      return new Response(JSON.stringify({ error: 'scanId is required' }), {
+      console.error(`[n8n-scan-progress] Invalid or missing scanId: "${rawScanId}"`);
+      return new Response(JSON.stringify({ error: 'Invalid or missing scanId' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
