@@ -79,7 +79,7 @@ serve(async (req) => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            from: "FootprintIQ Heartbeat <alerts@footprintiq.app>",
+            from: "FootprintIQ Heartbeat <onboarding@resend.dev>",
             to: [adminEmail],
             subject: "⚠️ System Health Alert",
             html: `

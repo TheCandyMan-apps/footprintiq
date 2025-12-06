@@ -58,7 +58,7 @@ serve(async (req) => {
         "Authorization": `Bearer ${resendApiKey}`,
       },
       body: JSON.stringify({
-        from: "FootprintIQ <noreply@footprintiq.app>",
+        from: "FootprintIQ <onboarding@resend.dev>",
         to: [to],
         subject: "⚠️ Low Credits Alert – Top Up Now!",
         html: `
