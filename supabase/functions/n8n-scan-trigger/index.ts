@@ -112,17 +112,25 @@ serve(async (req) => {
       console.log(`[n8n-scan-trigger] Created scan_progress for ${scan.id}`);
     }
 
+    // Get callback token for n8n to post results back
+    const callbackToken = Deno.env.get('N8N_CALLBACK_TOKEN');
+    
     // Trigger n8n webhook (fire and forget using fetch without await)
     const n8nPayload = {
       scanId: scan.id,
       username: username,
       workspaceId: workspaceId,
       userId: user.id,
-      workerUrl: workerUrl,
-      workerToken: workerToken,
+      workerUrl: workerUrl || '',
+      workerToken: workerToken || '',
+      callbackToken: callbackToken || '',
+      progressWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-progress`,
+      resultsWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-results`,
       supabaseUrl: supabaseUrl,
       anonKey: supabaseAnonKey,
     };
+    
+    console.log(`[n8n-scan-trigger] Payload workerUrl: ${workerUrl ? 'set' : 'MISSING'}`);
 
     // Fire n8n webhook asynchronously - don't wait for response
     console.log(`[n8n-scan-trigger] Calling n8n webhook for scan ${scan.id}`);
