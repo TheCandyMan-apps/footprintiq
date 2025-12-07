@@ -61,8 +61,16 @@ serve(async (req) => {
     console.log('[n8n-scan-results] Raw body keys:', Object.keys(body));
     console.log('[n8n-scan-results] Body preview:', JSON.stringify(body).substring(0, 2000));
 
-    // Extract scanId from multiple possible locations
-    let rawScanId = body.scanId;
+    // First check URL query parameter - most reliable way to pass scanId from n8n
+    const url = new URL(req.url);
+    let rawScanId = url.searchParams.get('scanId') || '';
+    
+    console.log('[n8n-scan-results] Query param scanId:', rawScanId);
+
+    // Try body locations if query param is empty
+    if (!rawScanId || rawScanId === '') {
+      rawScanId = body.scanId || '';
+    }
     
     // Try alternative locations if scanId is missing or empty
     if (!rawScanId || rawScanId === '') {
