@@ -102,8 +102,8 @@ serve(async (req) => {
     
     const { data: stuckScans, error: queryError } = await supabase
       .from('scans')
-      .select('id, workspace_id, user_id, scan_type, created_at')
-      .eq('status', 'pending')
+      .select('id, workspace_id, user_id, scan_type, created_at, status')
+      .in('status', ['pending', 'running'])
       .lt('created_at', cutoffTime)
       .limit(100);
 
