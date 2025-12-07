@@ -69,68 +69,14 @@ export function ScanStatusIndicator({
     };
   }, [scanStatus]);
 
-  // Subscribe to realtime updates
+  // Subscribe to realtime updates - single unified channel
   useEffect(() => {
     console.log('[ScanStatusIndicator] Subscribing to scan progress for:', scanId);
     
-    const orchestratorChannel = supabase.channel(`scan_progress:${scanId}`);
-    const maigretChannel = supabase.channel(`scan_progress_${scanId}`);
+    // Use single channel with colon separator (matches n8n-scan-progress backend)
+    const channel = supabase.channel(`scan_progress:${scanId}`);
 
-    // Orchestrator channel events
-    orchestratorChannel
-      .on('broadcast', { event: 'progress' }, (payload) => {
-        console.log('[ScanStatusIndicator] Orchestrator progress:', payload);
-        const data = payload.payload;
-        
-        if (data.status) {
-          setScanStatus(data.status === 'started' || data.status === 'aggregating' || data.status === 'premium' 
-            ? 'running' 
-            : data.status);
-        }
-        
-        if (data.totalProviders) {
-          setTotalProviders(data.totalProviders);
-        }
-        
-        if (data.completedProviders !== undefined) {
-          setCompletedProviders(data.completedProviders);
-        }
-        
-        if (data.totalProviders && data.completedProviders !== undefined) {
-          const progress = (data.completedProviders / data.totalProviders) * 100;
-          setOverallProgress(progress);
-        }
-
-        if (data.totalFindings !== undefined) {
-          setTotalFindings(data.totalFindings);
-        }
-        
-        // Update current providers status
-        if (data.currentProviders && Array.isArray(data.currentProviders)) {
-          setProviders(prev => {
-            const updated = new Map(prev);
-            data.currentProviders.forEach((providerName: string) => {
-              if (!updated.has(providerName)) {
-                updated.set(providerName, {
-                  name: providerName,
-                  status: 'running',
-                  message: 'Processing...'
-                });
-              }
-            });
-            return updated;
-          });
-        }
-      })
-      .on('broadcast', { event: 'scan_cancelled' }, () => {
-        console.log('[ScanStatusIndicator] Scan cancelled');
-        setScanStatus('cancelled');
-        onComplete?.();
-      })
-      .subscribe();
-
-    // Maigret channel events
-    maigretChannel
+    channel
       .on('broadcast', { event: 'provider_update' }, (payload) => {
         console.log('[ScanStatusIndicator] Provider update:', payload);
         const data = payload.payload;
@@ -138,21 +84,44 @@ export function ScanStatusIndicator({
         if (data.provider) {
           setProviders(prev => {
             const updated = new Map(prev);
+            // Map backend status to frontend status
+            let status: ProviderStatus['status'] = 'running';
+            if (data.status === 'success' || data.status === 'completed') {
+              status = 'completed';
+            } else if (data.status === 'failed' || data.status === 'error') {
+              status = 'failed';
+            } else if (data.status === 'loading' || data.status === 'running') {
+              status = 'running';
+            }
+            
             updated.set(data.provider, {
               name: data.provider,
-              status: data.status || 'running',
+              status,
               message: data.message,
               resultCount: data.resultCount
             });
             return updated;
           });
+          
+          // Update progress counters
+          if (data.status === 'success' || data.status === 'completed') {
+            setCompletedProviders(prev => prev + 1);
+            setScanStatus('running');
+          }
+          
+          // Update total providers if provided
+          if (data.totalProviders) {
+            setTotalProviders(data.totalProviders);
+          }
         }
       })
       .on('broadcast', { event: 'scan_complete' }, (payload) => {
         console.log('[ScanStatusIndicator] Scan complete:', payload);
         setScanStatus('completed');
         setOverallProgress(100);
-        if (payload.payload?.totalFindings !== undefined) {
+        if (payload.payload?.findingsCount !== undefined) {
+          setTotalFindings(payload.payload.findingsCount);
+        } else if (payload.payload?.totalFindings !== undefined) {
           setTotalFindings(payload.payload.totalFindings);
         }
         onComplete?.();
@@ -162,16 +131,17 @@ export function ScanStatusIndicator({
         setScanStatus('failed');
       })
       .on('broadcast', { event: 'scan_cancelled' }, () => {
-        console.log('[ScanStatusIndicator] Scan cancelled (Maigret)');
+        console.log('[ScanStatusIndicator] Scan cancelled');
         setScanStatus('cancelled');
         onComplete?.();
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[ScanStatusIndicator] Channel subscription status:', status);
+      });
 
     return () => {
-      console.log('[ScanStatusIndicator] Unsubscribing from channels');
-      supabase.removeChannel(orchestratorChannel);
-      supabase.removeChannel(maigretChannel);
+      console.log('[ScanStatusIndicator] Unsubscribing from channel');
+      supabase.removeChannel(channel);
     };
   }, [scanId, onComplete]);
 
