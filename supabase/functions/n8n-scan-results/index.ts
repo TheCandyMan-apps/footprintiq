@@ -56,42 +56,61 @@ serve(async (req) => {
 
     const body = await req.json();
 
-    // ====== DEBUG LOGGING START ======
-    console.log('[n8n-scan-results] ===== FULL PAYLOAD DEBUG =====');
+    // ====== ROBUST PAYLOAD EXTRACTION ======
+    // n8n can send data in various structures depending on workflow configuration
     console.log('[n8n-scan-results] Raw body keys:', Object.keys(body));
-    console.log('[n8n-scan-results] Full body (truncated):', JSON.stringify(body).substring(0, 5000));
+    console.log('[n8n-scan-results] Body preview:', JSON.stringify(body).substring(0, 2000));
 
-    // Log each field specifically
-    console.log('[n8n-scan-results] scanId raw:', body.scanId);
-    console.log('[n8n-scan-results] findings type:', typeof body.findings);
-    console.log('[n8n-scan-results] findings isArray:', Array.isArray(body.findings));
-    console.log('[n8n-scan-results] findings length:', body.findings?.length);
-    console.log('[n8n-scan-results] findings value:', JSON.stringify(body.findings)?.substring(0, 2000));
+    // Extract scanId from multiple possible locations
+    let rawScanId = body.scanId;
+    
+    // Try alternative locations if scanId is missing or empty
+    if (!rawScanId || rawScanId === '') {
+      // Check if data is wrapped in json property (common n8n pattern)
+      if (body.json?.scanId) rawScanId = body.json.scanId;
+      // Check data property
+      else if (body.data?.scanId) rawScanId = body.data.scanId;
+      // Check if it's an array (n8n sometimes sends arrays)
+      else if (Array.isArray(body) && body[0]?.scanId) rawScanId = body[0].scanId;
+      else if (Array.isArray(body) && body[0]?.json?.scanId) rawScanId = body[0].json.scanId;
+      // Check items array
+      else if (body.items?.[0]?.scanId) rawScanId = body.items[0].scanId;
+      else if (body.items?.[0]?.json?.scanId) rawScanId = body.items[0].json.scanId;
+    }
+    
+    console.log('[n8n-scan-results] Extracted rawScanId:', rawScanId);
 
-    // Log first 3 findings if present
-    if (body.findings && body.findings.length > 0) {
-      console.log('[n8n-scan-results] First finding:', JSON.stringify(body.findings[0]));
-      if (body.findings.length > 1) console.log('[n8n-scan-results] Second finding:', JSON.stringify(body.findings[1]));
-      if (body.findings.length > 2) console.log('[n8n-scan-results] Third finding:', JSON.stringify(body.findings[2]));
+    // Extract findings from multiple possible locations
+    let findings = body.findings;
+    if (!Array.isArray(findings) || findings.length === 0) {
+      // Try alternative locations
+      if (Array.isArray(body.json?.findings)) findings = body.json.findings;
+      else if (Array.isArray(body.data?.findings)) findings = body.data.findings;
+      else if (Array.isArray(body.results)) findings = body.results;
+      else if (Array.isArray(body.data?.results)) findings = body.data.results;
+      else if (Array.isArray(body.items)) findings = body.items;
+      else if (Array.isArray(body) && body[0]?.findings) findings = body[0].findings;
     }
 
-    // Check for alternative field names n8n might use
-    console.log('[n8n-scan-results] Alternative fields check:');
-    console.log('  - results:', typeof body.results, Array.isArray(body.results) ? `length=${body.results?.length}` : 'N/A');
-    console.log('  - data:', typeof body.data, Array.isArray(body.data) ? `length=${body.data?.length}` : 'N/A');
-    console.log('  - items:', typeof body.items, Array.isArray(body.items) ? `length=${body.items?.length}` : 'N/A');
-    console.log('  - output:', typeof body.output, Array.isArray(body.output) ? `length=${body.output?.length}` : 'N/A');
-    console.log('  - providerResults:', typeof body.providerResults, body.providerResults ? JSON.stringify(body.providerResults).substring(0, 500) : 'N/A');
-    console.log('[n8n-scan-results] ===== END DEBUG =====');
-    // ====== DEBUG LOGGING END ======
+    // Extract status and providerResults similarly
+    let status = body.status || body.json?.status || body.data?.status;
+    let providerResults = body.providerResults || body.json?.providerResults || body.data?.providerResults;
+    let scanError = body.error || body.json?.error || body.data?.error;
 
-    const { scanId: rawScanId, findings, status, providerResults, error: scanError } = body;
+    console.log('[n8n-scan-results] Extracted findings count:', findings?.length || 0);
+    console.log('[n8n-scan-results] Extracted status:', status);
+    console.log('[n8n-scan-results] Provider results:', providerResults ? Object.keys(providerResults) : 'none');
 
     // Sanitize scanId - strip leading '=' from n8n expression artifacts
     const scanId = sanitizeScanId(rawScanId);
     if (!scanId) {
-      console.error(`[n8n-scan-results] Invalid or missing scanId: "${rawScanId}"`);
-      return new Response(JSON.stringify({ error: 'Invalid or missing scanId' }), {
+      console.error(`[n8n-scan-results] Invalid or missing scanId after extraction: "${rawScanId}"`);
+      console.error('[n8n-scan-results] Full body for debugging:', JSON.stringify(body).substring(0, 3000));
+      return new Response(JSON.stringify({ 
+        error: 'Invalid or missing scanId',
+        hint: 'Ensure your n8n Merge Results node outputs scanId in the payload',
+        receivedKeys: Object.keys(body),
+      }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
