@@ -95,3 +95,6 @@ verify_jwt = false
 
 [functions.n8n-scan-progress]
 verify_jwt = false
+
+[functions.osint-worker-diagnostic]
+verify_jwt = false
