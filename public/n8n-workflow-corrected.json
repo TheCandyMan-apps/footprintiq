@@ -1,0 +1,467 @@
+{
+  "name": "FootprintIQ - Universal Scan - CORRECTED",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "start-scan",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "b21b1c2f-36fe-46c6-b503-f2f0bdd9c563",
+      "name": "🎯 Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-1168, 4608],
+      "webhookId": "start-scan"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "workerUrl",
+              "name": "workerUrl",
+              "value": "https://osint-multitool-worker-312297078337.europe-west1.run.app/scan",
+              "type": "string"
+            },
+            {
+              "id": "workerToken",
+              "name": "workerToken",
+              "value": "GtLEWWGeXwm4an0quG2AX5SGGdPjyFwBH_IqCvsfGrni2Y4nSQyJKjYfpEakVcON",
+              "type": "string"
+            },
+            {
+              "id": "callbackToken",
+              "name": "callbackToken",
+              "value": "fpiq_n8n_callback_8f7d9e2c4b1a",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dfb3c353-48e3-4c12-af73-41bbd2c5d6b8",
+      "name": "⚙️ Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-960, 4608]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"success\": true, \"message\": \"Scan started\", \"scanId\": \"{{ $('🎯 Webhook Trigger').item.json.body.scanId }}\"}",
+        "options": {}
+      },
+      "id": "0fce5642-3176-4038-b1ae-936429279464",
+      "name": "✅ Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [-736, 4608]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/n8n-scan-progress",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-callback-token", "value": "={{ $('⚙️ Configuration').item.json.callbackToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"scanId\": \"{{ $('🎯 Webhook Trigger').item.json.body.scanId }}\",\n  \"provider\": \"sherlock\",\n  \"status\": \"started\",\n  \"message\": \"Sherlock scan initiated\"\n}",
+        "options": {}
+      },
+      "id": "c5afdaeb-5cc2-4330-8fe0-7ee984cf052e",
+      "name": "📊 Progress: Sherlock Started",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-512, 4304],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('⚙️ Configuration').item.json.workerUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "=Bearer {{ $('⚙️ Configuration').item.json.workerToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tool\": \"sherlock\",\n  \"username\": \"{{ $('🎯 Webhook Trigger').item.json.body.username }}\",\n  \"timeout\": 180000\n}",
+        "options": { "timeout": 180000 }
+      },
+      "id": "a107c5cd-1b71-451e-abc1-a2ea8b3525cb",
+      "name": "🔍 Run Sherlock",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-288, 4304],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/n8n-scan-progress",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-callback-token", "value": "={{ $('⚙️ Configuration').item.json.callbackToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"scanId\": \"{{ $('🎯 Webhook Trigger').item.json.body.scanId }}\",\n  \"provider\": \"sherlock\",\n  \"status\": \"completed\",\n  \"message\": \"Sherlock scan completed\"\n}",
+        "options": {}
+      },
+      "id": "4a81fbaf-54b0-43f3-833d-82386866a859",
+      "name": "📊 Progress: Sherlock Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-80, 4304],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/n8n-scan-progress",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-callback-token", "value": "={{ $('⚙️ Configuration').item.json.callbackToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"scanId\": \"{{ $('🎯 Webhook Trigger').item.json.body.scanId }}\",\n  \"provider\": \"gosearch\",\n  \"status\": \"started\",\n  \"message\": \"GoSearch scan initiated\"\n}",
+        "options": {}
+      },
+      "id": "7e9aa349-4470-4e01-a01b-f7f356cf77e8",
+      "name": "📊 Progress: GoSearch Started",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-512, 4512],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('⚙️ Configuration').item.json.workerUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "=Bearer {{ $('⚙️ Configuration').item.json.workerToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tool\": \"gosearch\",\n  \"username\": \"{{ $('🎯 Webhook Trigger').item.json.body.username }}\",\n  \"timeout\": 180000\n}",
+        "options": { "timeout": 180000 }
+      },
+      "id": "76dafa94-d1ad-4433-a72c-f9f2a6ba9582",
+      "name": "🔍 Run GoSearch",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-288, 4512],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/n8n-scan-progress",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-callback-token", "value": "={{ $('⚙️ Configuration').item.json.callbackToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"scanId\": \"{{ $('🎯 Webhook Trigger').item.json.body.scanId }}\",\n  \"provider\": \"gosearch\",\n  \"status\": \"completed\",\n  \"message\": \"GoSearch scan completed\"\n}",
+        "options": {}
+      },
+      "id": "e4664554-56b2-4aa5-a858-ad26942617e0",
+      "name": "📊 Progress: GoSearch Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-80, 4512],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/n8n-scan-progress",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-callback-token", "value": "={{ $('⚙️ Configuration').item.json.callbackToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"scanId\": \"{{ $('🎯 Webhook Trigger').item.json.body.scanId }}\",\n  \"provider\": \"maigret\",\n  \"status\": \"started\",\n  \"message\": \"Maigret scan initiated\"\n}",
+        "options": {}
+      },
+      "id": "3b1d2452-85bf-4c5c-8472-216f2bddbdcc",
+      "name": "📊 Progress: Maigret Started",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-512, 4704],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('⚙️ Configuration').item.json.workerUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "=Bearer {{ $('⚙️ Configuration').item.json.workerToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tool\": \"maigret\",\n  \"username\": \"{{ $('🎯 Webhook Trigger').item.json.body.username }}\",\n  \"timeout\": 120000\n}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "58afae32-750b-4e84-80eb-cd151a0de5a6",
+      "name": "🔍 Run Maigret",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-288, 4704],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/n8n-scan-progress",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-callback-token", "value": "={{ $('⚙️ Configuration').item.json.callbackToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"scanId\": \"{{ $('🎯 Webhook Trigger').item.json.body.scanId }}\",\n  \"provider\": \"maigret\",\n  \"status\": \"completed\",\n  \"message\": \"Maigret scan completed\"\n}",
+        "options": {}
+      },
+      "id": "7c4d7fb8-81b0-4529-85f6-edcde470edb8",
+      "name": "📊 Progress: Maigret Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-80, 4704],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/n8n-scan-progress",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-callback-token", "value": "={{ $('⚙️ Configuration').item.json.callbackToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"scanId\": \"{{ $('🎯 Webhook Trigger').item.json.body.scanId }}\",\n  \"provider\": \"holehe\",\n  \"status\": \"started\",\n  \"message\": \"Holehe scan initiated\"\n}",
+        "options": {}
+      },
+      "id": "6baf9075-6d8b-4265-9ffe-11b1f0143c5f",
+      "name": "📊 Progress: Holehe Started",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-512, 4912],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('⚙️ Configuration').item.json.workerUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "Authorization", "value": "=Bearer {{ $('⚙️ Configuration').item.json.workerToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tool\": \"holehe\",\n  \"username\": \"{{ $('🎯 Webhook Trigger').item.json.body.username }}\",\n  \"timeout\": 120000\n}",
+        "options": { "timeout": 120000 }
+      },
+      "id": "4f5ad9a8-f164-43f7-9d5e-eb6697643852",
+      "name": "🔍 Run Holehe",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-288, 4912],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/n8n-scan-progress",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-callback-token", "value": "={{ $('⚙️ Configuration').item.json.callbackToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"scanId\": \"{{ $('🎯 Webhook Trigger').item.json.body.scanId }}\",\n  \"provider\": \"holehe\",\n  \"status\": \"completed\",\n  \"message\": \"Holehe scan completed\"\n}",
+        "options": {}
+      },
+      "id": "12a13b1a-8492-430c-9087-98bbfa2613d5",
+      "name": "📊 Progress: Holehe Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-80, 4912],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Merge results from all providers\nconst allFindings = [];\nconst providerResults = {};\n\n// Gather all input items from all branches\nconst items = $input.all();\n\n// Iterate through each item (each should correspond to a provider's output)\nfor (const item of items) {\n  const data = item.json;\n\n  // If no data or an error is present, skip this item\n  if (!data || data.error) {\n    // Optionally store error info in providerResults for debugging\n    if (data && data.tool) {\n      providerResults[data.tool] = { error: data.error || true, message: data.message || 'Error occurred' };\n    }\n    continue;\n  }\n\n  // If this data has a tool identifier, store the raw data in providerResults under that tool name\n  if (data.tool) {\n    providerResults[data.tool] = data;\n  }\n\n  // Handle data in array formats (results, hits, findings if given at top-level)\n  if (data.results && Array.isArray(data.results)) {\n    for (const result of data.results) {\n      allFindings.push({\n        kind: result.kind || 'profile_presence',\n        title: result.site || result.platform || result.title || 'Unknown',\n        severity: result.severity || 'info',\n        confidence: result.confidence !== undefined ? result.confidence : 0.8,\n        evidence: [\n          { key: 'url', value: result.url || result.profile_url || '' },\n          { key: 'username', value: result.username || data.username || '' },\n          { key: 'site', value: result.site || result.platform || '' }\n        ],\n        provider: result.provider || data.provider || data.tool || result.site || result.platform || 'unknown',\n        meta: {\n          tool: result.tool || data.tool || 'unknown',\n          provider: result.provider || data.provider || data.tool || result.site || result.platform || 'unknown'\n        },\n        username: result.username || data.username || '',\n        url: result.url || result.profile_url || '',\n        site: result.site || result.platform || ''\n      });\n    }\n  }\n\n  if (data.hits && Array.isArray(data.hits)) {\n    for (const hit of data.hits) {\n      allFindings.push({\n        kind: hit.kind || 'profile_presence',\n        title: hit.site || hit.title || 'Unknown',\n        severity: hit.severity || 'info',\n        confidence: hit.confidence !== undefined ? hit.confidence : 0.8,\n        evidence: [\n          { key: 'url', value: hit.url || '' },\n          { key: 'username', value: hit.username || data.username || '' },\n          { key: 'site', value: hit.site || '' }\n        ],\n        provider: hit.provider || data.provider || data.tool || hit.site || 'unknown',\n        meta: {\n          tool: hit.tool || data.tool || 'unknown',\n          provider: hit.provider || data.provider || data.tool || hit.site || 'unknown'\n        },\n        username: hit.username || data.username || '',\n        url: hit.url || '',\n        site: hit.site || ''\n      });\n    }\n  }\n\n  if (data.findings && Array.isArray(data.findings)) {\n    for (const finding of data.findings) {\n      // Ensure required fields in each finding\n      finding.provider = finding.provider || (finding.meta && finding.meta.provider) || data.provider || data.tool || 'unknown';\n      finding.username = finding.username || data.username || '';\n      finding.url = finding.url || '';\n      finding.site = finding.site || '';\n      // Ensure meta exists and has tool and provider\n      if (!finding.meta) finding.meta = {};\n      finding.meta.tool = finding.meta.tool || data.tool || 'unknown';\n      finding.meta.provider = finding.meta.provider || finding.provider || 'unknown';\n      allFindings.push(finding);\n    }\n  }\n\n  // Handle any username-keyed objects in the data (e.g., data['someUsername'] contains results)\n  if (data && typeof data === 'object' && !Array.isArray(data)) {\n    for (const [key, value] of Object.entries(data)) {\n      // Skip keys that are known top-level properties\n      if (['tool','username','provider','results','findings','hits','error','meta','status','message','scanId'].includes(key)) {\n        continue;\n      }\n      // If value is an array (like results under a username key)\n      if (Array.isArray(value)) {\n        for (const result of value) {\n          allFindings.push({\n            kind: result.kind || 'profile_presence',\n            title: result.site || result.platform || result.title || 'Unknown',\n            severity: result.severity || 'info',\n            confidence: result.confidence !== undefined ? result.confidence : 0.8,\n            evidence: [\n              { key: 'url', value: result.url || result.profile_url || '' },\n              { key: 'username', value: result.username || key || '' },\n              { key: 'site', value: result.site || result.platform || '' }\n            ],\n            provider: result.provider || data.provider || data.tool || result.site || result.platform || 'unknown',\n            meta: {\n              tool: result.tool || data.tool || 'unknown',\n              provider: result.provider || data.provider || data.tool || result.site || result.platform || 'unknown'\n            },\n            username: result.username || key || '',\n            url: result.url || result.profile_url || '',\n            site: result.site || result.platform || ''\n          });\n        }\n      } else if (value && typeof value === 'object') {\n        // If the value is an object, it could contain nested results/findings or site info\n        if (value.results || value.findings || value.hits) {\n          const subData = { ...value };\n          if (!subData.username) subData.username = key;\n          // Use similar logic to process this subData\n          if (subData.results && Array.isArray(subData.results)) {\n            for (const result of subData.results) {\n              allFindings.push({\n                kind: result.kind || 'profile_presence',\n                title: result.site || result.platform || result.title || 'Unknown',\n                severity: result.severity || 'info',\n                confidence: result.confidence !== undefined ? result.confidence : 0.8,\n                evidence: [\n                  { key: 'url', value: result.url || result.profile_url || '' },\n                  { key: 'username', value: result.username || subData.username || '' },\n                  { key: 'site', value: result.site || result.platform || '' }\n                ],\n                provider: result.provider || subData.provider || data.tool || result.site || result.platform || 'unknown',\n                meta: {\n                  tool: result.tool || subData.tool || data.tool || 'unknown',\n                  provider: result.provider || subData.provider || data.tool || result.site || result.platform || 'unknown'\n                },\n                username: result.username || subData.username || '',\n                url: result.url || result.profile_url || '',\n                site: result.site || result.platform || ''\n              });\n            }\n          }\n          if (subData.hits && Array.isArray(subData.hits)) {\n            for (const hit of subData.hits) {\n              allFindings.push({\n                kind: hit.kind || 'profile_presence',\n                title: hit.site || hit.title || 'Unknown',\n                severity: hit.severity || 'info',\n                confidence: hit.confidence !== undefined ? hit.confidence : 0.8,\n                evidence: [\n                  { key: 'url', value: hit.url || '' },\n                  { key: 'username', value: hit.username || subData.username || '' },\n                  { key: 'site', value: hit.site || '' }\n                ],\n                provider: hit.provider || subData.provider || data.tool || hit.site || 'unknown',\n                meta: {\n                  tool: hit.tool || subData.tool || data.tool || 'unknown',\n                  provider: hit.provider || subData.provider || data.tool || hit.site || 'unknown'\n                },\n                username: hit.username || subData.username || '',\n                url: hit.url || '',\n                site: hit.site || ''\n              });\n            }\n          }\n          if (subData.findings && Array.isArray(subData.findings)) {\n            for (const finding of subData.findings) {\n              finding.provider = finding.provider || (finding.meta && finding.meta.provider) || subData.provider || data.tool || 'unknown';\n              finding.username = finding.username || subData.username || '';\n              finding.url = finding.url || '';\n              finding.site = finding.site || '';\n              if (!finding.meta) finding.meta = {};\n              finding.meta.tool = finding.meta.tool || subData.tool || data.tool || 'unknown';\n              finding.meta.provider = finding.meta.provider || finding.provider || 'unknown';\n              allFindings.push(finding);\n            }\n          }\n        } else {\n          // The value is an object with site keys possibly (like existence map)\n          for (const [site, info] of Object.entries(value)) {\n            // If info is falsy or explicitly indicates no finding, skip\n            if (!info || info === false) {\n              continue;\n            }\n            // If info is true or an object indicating a presence\n            let foundUrl = '';\n            let usernameVal = key;\n            let toolVal = data.tool || 'unknown';\n            if (typeof info === 'object') {\n              if (info.exists === false) {\n                continue;\n              }\n              if (info.url) foundUrl = info.url;\n              if (info.profile_url) foundUrl = info.profile_url;\n              if (info.username) usernameVal = info.username;\n            }\n            // If info is true boolean, it implies an existence with no further details\n            allFindings.push({\n              kind: 'profile_presence',\n              title: site,\n              severity: 'info',\n              confidence: 1.0,\n              evidence: [\n                { key: 'url', value: foundUrl },\n                { key: 'username', value: usernameVal || '' },\n                { key: 'site', value: site }\n              ],\n              provider: data.tool || site,\n              meta: {\n                tool: toolVal,\n                provider: data.tool || site\n              },\n              username: usernameVal || '',\n              url: foundUrl,\n              site: site\n            });\n          }\n        }\n      }\n    }\n  }\n}\n\n// Retrieve the scanId and original username from the webhook trigger\nconst scanId = $('🎯 Webhook Trigger').first().json.body.scanId;\nconst origUsername = $('🎯 Webhook Trigger').first().json.body.username;\n\n// Prepare final output object\nreturn [{\n  json: {\n    scanId: scanId,\n    username: origUsername,\n    findings: allFindings,\n    status: allFindings.length > 0 ? 'completed' : 'completed_empty',\n    providerResults: providerResults,\n    meta: {\n      totalFindings: allFindings.length,\n      processedAt: new Date().toISOString()\n    }\n  }\n}];",
+        "mode": "runOnceForAllItems",
+        "language": "JavaScript"
+      },
+      "id": "7f18cd0b-c4df-471e-a8de-6c3652ead80f",
+      "name": "🔄 Merge Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [160, 4608]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/n8n-scan-results",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-callback-token", "value": "={{ $('⚙️ Configuration').item.json.callbackToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "37891bba-d8d7-4d0c-ad37-936f4602a94e",
+      "name": "📤 Send Results to FootprintIQ",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [368, 4608]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/n8n-scan-progress",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-callback-token", "value": "={{ $('⚙️ Configuration').item.json.callbackToken }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"scanId\": \"{{ $('🎯 Webhook Trigger').item.json.body.scanId }}\",\n  \"provider\": \"all\",\n  \"status\": \"completed\",\n  \"message\": \"All scans completed\"\n}",
+        "options": {}
+      },
+      "id": "eb2c0ae4-c0e5-4506-93dc-5f6ddba59de6",
+      "name": "📊 Progress: All Completed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [576, 4608],
+      "continueOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "🎯 Webhook Trigger": {
+      "main": [[{ "node": "⚙️ Configuration", "type": "main", "index": 0 }]]
+    },
+    "⚙️ Configuration": {
+      "main": [[{ "node": "✅ Respond OK", "type": "main", "index": 0 }]]
+    },
+    "✅ Respond OK": {
+      "main": [[
+        { "node": "📊 Progress: Sherlock Started", "type": "main", "index": 0 },
+        { "node": "📊 Progress: GoSearch Started", "type": "main", "index": 0 },
+        { "node": "📊 Progress: Maigret Started", "type": "main", "index": 0 },
+        { "node": "📊 Progress: Holehe Started", "type": "main", "index": 0 }
+      ]]
+    },
+    "📊 Progress: Sherlock Started": {
+      "main": [[{ "node": "🔍 Run Sherlock", "type": "main", "index": 0 }]]
+    },
+    "🔍 Run Sherlock": {
+      "main": [[{ "node": "📊 Progress: Sherlock Completed", "type": "main", "index": 0 }]]
+    },
+    "📊 Progress: Sherlock Completed": {
+      "main": [[{ "node": "🔄 Merge Results", "type": "main", "index": 0 }]]
+    },
+    "📊 Progress: GoSearch Started": {
+      "main": [[{ "node": "🔍 Run GoSearch", "type": "main", "index": 0 }]]
+    },
+    "🔍 Run GoSearch": {
+      "main": [[{ "node": "📊 Progress: GoSearch Completed", "type": "main", "index": 0 }]]
+    },
+    "📊 Progress: GoSearch Completed": {
+      "main": [[{ "node": "🔄 Merge Results", "type": "main", "index": 0 }]]
+    },
+    "📊 Progress: Maigret Started": {
+      "main": [[{ "node": "🔍 Run Maigret", "type": "main", "index": 0 }]]
+    },
+    "🔍 Run Maigret": {
+      "main": [[{ "node": "📊 Progress: Maigret Completed", "type": "main", "index": 0 }]]
+    },
+    "📊 Progress: Maigret Completed": {
+      "main": [[{ "node": "🔄 Merge Results", "type": "main", "index": 0 }]]
+    },
+    "📊 Progress: Holehe Started": {
+      "main": [[{ "node": "🔍 Run Holehe", "type": "main", "index": 0 }]]
+    },
+    "🔍 Run Holehe": {
+      "main": [[{ "node": "📊 Progress: Holehe Completed", "type": "main", "index": 0 }]]
+    },
+    "📊 Progress: Holehe Completed": {
+      "main": [[{ "node": "🔄 Merge Results", "type": "main", "index": 0 }]]
+    },
+    "🔄 Merge Results": {
+      "main": [[{ "node": "📤 Send Results to FootprintIQ", "type": "main", "index": 0 }]]
+    },
+    "📤 Send Results to FootprintIQ": {
+      "main": [[{ "node": "📊 Progress: All Completed", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "corrected-v1",
+  "meta": {
+    "instanceId": "7763350ad68402edb68b16d49e1c8a240f88291c16955ac3db428e4608f686cc"
+  },
+  "id": "IPbj7og2TgdWpx94",
+  "tags": []
+}
