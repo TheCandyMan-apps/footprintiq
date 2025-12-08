@@ -131,6 +131,8 @@ serve(async (req) => {
     };
     
     console.log(`[n8n-scan-trigger] Payload workerUrl: ${workerUrl ? 'set' : 'MISSING'}`);
+    console.log(`[n8n-scan-trigger] Payload workerToken: ${workerToken ? `SET (${workerToken.length} chars)` : 'MISSING'}`);
+    console.log(`[n8n-scan-trigger] Payload callbackToken: ${callbackToken ? 'set' : 'MISSING'}`);
 
     // Fire n8n webhook asynchronously - don't wait for response
     console.log(`[n8n-scan-trigger] Calling n8n webhook for scan ${scan.id}`);
