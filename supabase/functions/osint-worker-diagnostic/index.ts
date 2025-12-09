@@ -20,8 +20,12 @@ interface DiagnosticCheck {
 
 interface DiagnosticResults {
   timestamp: string;
+  worker: {
+    name: string;
+    url: string;
+  };
   configuration: {
-    workerUrl: { set: boolean; value?: string; length?: number; endsWithSlash?: boolean; containsScan?: boolean };
+    workerUrl: { set: boolean; value?: string };
     workerToken: { set: boolean; length?: number; preview?: string };
   };
   checks: DiagnosticCheck[];
@@ -35,10 +39,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  console.log('[osint-worker-diagnostic] Starting diagnostic checks...');
+  console.log('[osint-worker-diagnostic] Starting diagnostic checks for unified OSINT worker...');
 
   const results: DiagnosticResults = {
     timestamp: new Date().toISOString(),
+    worker: {
+      name: 'osint-multitool-worker',
+      url: 'https://osint-multitool-worker-iikvulknua-ew.a.run.app',
+    },
     configuration: {
       workerUrl: { set: false },
       workerToken: { set: false }
@@ -59,9 +67,6 @@ serve(async (req) => {
     workerUrl: workerUrl ? {
       set: true,
       value: workerUrl,
-      length: workerUrl.length,
-      endsWithSlash: workerUrl.endsWith('/'),
-      containsScan: workerUrl.includes('/scan')
     } : { set: false },
     workerToken: workerToken ? {
       set: true,
@@ -110,8 +115,9 @@ serve(async (req) => {
     });
   }
 
-  // 2. Health Endpoint Test (with auth)
   const baseUrl = workerUrl.replace('/scan', '');
+
+  // 2. Health Endpoint Test
   const healthUrl = `${baseUrl}/health`;
   console.log('[osint-worker-diagnostic] Testing health endpoint:', healthUrl);
   
@@ -119,7 +125,7 @@ serve(async (req) => {
   try {
     const healthResponse = await fetch(healthUrl, {
       method: 'GET',
-      headers: { 'Authorization': `Bearer ${workerToken}` }
+      signal: AbortSignal.timeout(10000),
     });
     const healthBody = await healthResponse.text();
     const healthTime = Date.now() - healthStart;
@@ -127,7 +133,7 @@ serve(async (req) => {
     console.log('[osint-worker-diagnostic] Health response:', healthResponse.status, healthBody.substring(0, 200));
     
     results.checks.push({
-      name: 'health_endpoint_auth',
+      name: 'health_endpoint',
       url: healthUrl,
       status: healthResponse.ok ? 'pass' : (healthResponse.status === 404 ? 'warn' : 'fail'),
       httpStatus: healthResponse.status,
@@ -147,7 +153,7 @@ serve(async (req) => {
     console.error('[osint-worker-diagnostic] Health endpoint error:', errorMsg);
     
     results.checks.push({
-      name: 'health_endpoint_auth',
+      name: 'health_endpoint',
       url: healthUrl,
       status: 'fail',
       error: errorMsg,
@@ -156,78 +162,218 @@ serve(async (req) => {
     results.summary.failed++;
   }
 
-  // 3. Scan Endpoint Test (authenticated)
-  const scanUrl = workerUrl.endsWith('/scan') ? workerUrl : `${workerUrl}/scan`;
-  console.log('[osint-worker-diagnostic] Testing scan endpoint:', scanUrl);
+  // 3. Test Sherlock installed
+  const testSherlockUrl = `${baseUrl}/test-sherlock`;
+  console.log('[osint-worker-diagnostic] Testing Sherlock installation:', testSherlockUrl);
   
-  const scanStart = Date.now();
+  const sherlockTestStart = Date.now();
   try {
-    const scanPayload = {
+    const sherlockTestResponse = await fetch(testSherlockUrl, {
+      method: 'GET',
+      signal: AbortSignal.timeout(10000),
+    });
+    const sherlockTestBody = await sherlockTestResponse.text();
+    const sherlockTestTime = Date.now() - sherlockTestStart;
+    
+    results.checks.push({
+      name: 'sherlock_installed',
+      url: testSherlockUrl,
+      status: sherlockTestResponse.ok ? 'pass' : 'warn',
+      httpStatus: sherlockTestResponse.status,
+      responseTime: sherlockTestTime,
+      body: sherlockTestBody.substring(0, 300),
+      message: sherlockTestResponse.ok ? 'Sherlock is installed' : 'Sherlock test endpoint not available'
+    });
+    
+    if (sherlockTestResponse.ok) results.summary.passed++;
+    else results.summary.warnings++;
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    results.checks.push({
+      name: 'sherlock_installed',
+      url: testSherlockUrl,
+      status: 'warn',
+      error: errorMsg,
+      responseTime: Date.now() - sherlockTestStart
+    });
+    results.summary.warnings++;
+  }
+
+  // 4. Test Maigret installed
+  const testMaigretUrl = `${baseUrl}/test-maigret`;
+  console.log('[osint-worker-diagnostic] Testing Maigret installation:', testMaigretUrl);
+  
+  const maigretTestStart = Date.now();
+  try {
+    const maigretTestResponse = await fetch(testMaigretUrl, {
+      method: 'GET',
+      signal: AbortSignal.timeout(10000),
+    });
+    const maigretTestBody = await maigretTestResponse.text();
+    const maigretTestTime = Date.now() - maigretTestStart;
+    
+    results.checks.push({
+      name: 'maigret_installed',
+      url: testMaigretUrl,
+      status: maigretTestResponse.ok ? 'pass' : 'warn',
+      httpStatus: maigretTestResponse.status,
+      responseTime: maigretTestTime,
+      body: maigretTestBody.substring(0, 300),
+      message: maigretTestResponse.ok ? 'Maigret is installed' : 'Maigret test endpoint not available'
+    });
+    
+    if (maigretTestResponse.ok) results.summary.passed++;
+    else results.summary.warnings++;
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    results.checks.push({
+      name: 'maigret_installed',
+      url: testMaigretUrl,
+      status: 'warn',
+      error: errorMsg,
+      responseTime: Date.now() - maigretTestStart
+    });
+    results.summary.warnings++;
+  }
+
+  // 5. Self-test: Sherlock scan
+  const scanUrl = `${baseUrl}/scan`;
+  console.log('[osint-worker-diagnostic] Running Sherlock self-test scan...');
+  
+  const sherlockScanStart = Date.now();
+  try {
+    const sherlockPayload = {
       tool: 'sherlock',
-      username: 'diagnostic_test_12345',
+      username: 'TestUser123',
+      token: workerToken,
       fast_mode: true,
-      workers: 1
+      workers: 1,
     };
     
-    console.log('[osint-worker-diagnostic] Scan payload:', JSON.stringify(scanPayload));
-    
-    const scanResponse = await fetch(scanUrl, {
+    const sherlockScanResponse = await fetch(scanUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${workerToken}`
-      },
-      body: JSON.stringify(scanPayload)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sherlockPayload),
+      signal: AbortSignal.timeout(60000), // 60s timeout for scan
     });
     
-    const scanTime = Date.now() - scanStart;
-    let scanBody: unknown;
-    const rawBody = await scanResponse.text();
-    
-    try { 
-      scanBody = JSON.parse(rawBody); 
-    } catch { 
-      scanBody = rawBody.substring(0, 500); 
+    const sherlockScanTime = Date.now() - sherlockScanStart;
+    const sherlockScanBody = await sherlockScanResponse.text();
+    let sherlockScanJson: unknown;
+    try {
+      sherlockScanJson = JSON.parse(sherlockScanBody);
+    } catch {
+      sherlockScanJson = sherlockScanBody.substring(0, 500);
     }
     
-    console.log('[osint-worker-diagnostic] Scan response:', scanResponse.status, typeof scanBody === 'string' ? scanBody : JSON.stringify(scanBody).substring(0, 200));
+    console.log('[osint-worker-diagnostic] Sherlock scan response:', sherlockScanResponse.status);
+    
+    const hasResults = typeof sherlockScanJson === 'object' && 
+                       sherlockScanJson !== null && 
+                       'results' in sherlockScanJson &&
+                       Array.isArray((sherlockScanJson as { results: unknown[] }).results);
     
     results.checks.push({
-      name: 'scan_endpoint_auth',
+      name: 'sherlock_scan_test',
       url: scanUrl,
-      status: scanResponse.ok ? 'pass' : 'fail',
-      httpStatus: scanResponse.status,
-      responseTime: scanTime,
-      payload: scanPayload,
-      response: scanBody,
-      message: scanResponse.ok ? 'Scan endpoint working' : `Scan endpoint returned ${scanResponse.status}`
+      status: sherlockScanResponse.ok && hasResults ? 'pass' : 'fail',
+      httpStatus: sherlockScanResponse.status,
+      responseTime: sherlockScanTime,
+      payload: { tool: 'sherlock', username: 'TestUser123' },
+      response: sherlockScanJson,
+      message: sherlockScanResponse.ok && hasResults 
+        ? `Sherlock scan working (${((sherlockScanJson as { results: unknown[] }).results).length} results)` 
+        : `Sherlock scan failed: ${sherlockScanResponse.status}`
     });
     
-    if (scanResponse.ok) results.summary.passed++;
+    if (sherlockScanResponse.ok && hasResults) results.summary.passed++;
     else results.summary.failed++;
   } catch (err) {
-    const scanTime = Date.now() - scanStart;
     const errorMsg = err instanceof Error ? err.message : String(err);
-    console.error('[osint-worker-diagnostic] Scan endpoint error:', errorMsg);
+    console.error('[osint-worker-diagnostic] Sherlock scan error:', errorMsg);
     
     results.checks.push({
-      name: 'scan_endpoint_auth',
+      name: 'sherlock_scan_test',
       url: scanUrl,
       status: 'fail',
       error: errorMsg,
-      responseTime: scanTime
+      responseTime: Date.now() - sherlockScanStart
     });
     results.summary.failed++;
   }
 
-  // 4. Test without auth (should fail with 401 if auth is enforced)
+  // 6. Self-test: Maigret scan
+  console.log('[osint-worker-diagnostic] Running Maigret self-test scan...');
+  
+  const maigretScanStart = Date.now();
+  try {
+    const maigretPayload = {
+      tool: 'maigret',
+      username: 'TestUser123',
+      token: workerToken,
+    };
+    
+    const maigretScanResponse = await fetch(scanUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(maigretPayload),
+      signal: AbortSignal.timeout(90000), // 90s timeout for maigret
+    });
+    
+    const maigretScanTime = Date.now() - maigretScanStart;
+    const maigretScanBody = await maigretScanResponse.text();
+    let maigretScanJson: unknown;
+    try {
+      maigretScanJson = JSON.parse(maigretScanBody);
+    } catch {
+      maigretScanJson = maigretScanBody.substring(0, 500);
+    }
+    
+    console.log('[osint-worker-diagnostic] Maigret scan response:', maigretScanResponse.status);
+    
+    const hasResults = typeof maigretScanJson === 'object' && 
+                       maigretScanJson !== null && 
+                       'results' in maigretScanJson &&
+                       Array.isArray((maigretScanJson as { results: unknown[] }).results);
+    
+    results.checks.push({
+      name: 'maigret_scan_test',
+      url: scanUrl,
+      status: maigretScanResponse.ok && hasResults ? 'pass' : 'fail',
+      httpStatus: maigretScanResponse.status,
+      responseTime: maigretScanTime,
+      payload: { tool: 'maigret', username: 'TestUser123' },
+      response: maigretScanJson,
+      message: maigretScanResponse.ok && hasResults 
+        ? `Maigret scan working (${((maigretScanJson as { results: unknown[] }).results).length} results)` 
+        : `Maigret scan failed: ${maigretScanResponse.status}`
+    });
+    
+    if (maigretScanResponse.ok && hasResults) results.summary.passed++;
+    else results.summary.failed++;
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.error('[osint-worker-diagnostic] Maigret scan error:', errorMsg);
+    
+    results.checks.push({
+      name: 'maigret_scan_test',
+      url: scanUrl,
+      status: 'fail',
+      error: errorMsg,
+      responseTime: Date.now() - maigretScanStart
+    });
+    results.summary.failed++;
+  }
+
+  // 7. Test auth enforcement (should return 401 without token)
   console.log('[osint-worker-diagnostic] Testing auth enforcement...');
   const noAuthStart = Date.now();
   try {
     const noAuthResponse = await fetch(scanUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tool: 'sherlock', username: 'test' })
+      body: JSON.stringify({ tool: 'sherlock', username: 'test' }), // No token
+      signal: AbortSignal.timeout(10000),
     });
     const noAuthTime = Date.now() - noAuthStart;
     
@@ -253,7 +399,8 @@ serve(async (req) => {
     results.checks.push({
       name: 'auth_enforcement',
       status: 'fail',
-      error: errorMsg
+      error: errorMsg,
+      responseTime: Date.now() - noAuthStart
     });
     results.summary.failed++;
   }
@@ -267,7 +414,8 @@ serve(async (req) => {
     results.overall = 'issues_detected';
   }
 
-  console.log('[osint-worker-diagnostic] Complete:', results.overall, `(${results.summary.passed} passed, ${results.summary.failed} failed, ${results.summary.warnings} warnings)`);
+  console.log('[osint-worker-diagnostic] Complete:', results.overall, 
+    `(${results.summary.passed} passed, ${results.summary.failed} failed, ${results.summary.warnings} warnings)`);
 
   return new Response(JSON.stringify(results, null, 2), {
     status: 200,

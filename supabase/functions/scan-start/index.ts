@@ -34,9 +34,10 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const MAIGRET_WORKER_URL = Deno.env.get('MAIGRET_WORKER_URL')!;
-    const MAIGRET_WORKER_SCAN_PATH = Deno.env.get('MAIGRET_WORKER_SCAN_PATH') || '/scan';
-    const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN')!;
+    
+    // Use unified OSINT worker
+    const OSINT_WORKER_URL = Deno.env.get('OSINT_WORKER_URL')!;
+    const OSINT_WORKER_TOKEN = Deno.env.get('OSINT_WORKER_TOKEN')!;
     const SELFTEST_KEY = Deno.env.get('SELFTEST_KEY') ?? '';
 
     // Check for self-test bypass - strict validation only
@@ -129,44 +130,35 @@ Deno.serve(async (req) => {
 
     console.log(`[scan-start] Initiating scan for username: ${scanRequest.username}`);
     console.log(`[scan-start] User: ${userId}, Workspace: ${workspaceId || 'none'}`);
-    console.log(`[scan-start] Worker URL: ${MAIGRET_WORKER_URL}`);
+    console.log(`[scan-start] Worker URL: ${OSINT_WORKER_URL}`);
 
     // Calculate timeout: default 25s, min 10s, max 120s
     const timeoutSec = Math.max(10, Math.min(Number(body.timeout ?? 25), 120));
 
-    // Build base payload
-    const workerPayloadBase = {
+    // Build unified worker payload per contract
+    const workerPayload = {
+      tool: 'maigret', // Use maigret as default tool for scan-start
       username: body.username.trim(),
-      platforms: body.platforms || undefined,
-      batch_id: body.batch_id || undefined,
-      timeout: timeoutSec,
+      token: OSINT_WORKER_TOKEN,
     };
 
-    // In self-test mode, omit user_id/workspace_id to avoid FK constraints
-    const workerPayload = isSelfTest
-      ? workerPayloadBase
-      : {
-          ...workerPayloadBase,
-          ...(userId && isUUID(userId) ? { user_id: userId } : {}),
-          ...(workspaceId && isUUID(workspaceId) ? { workspace_id: workspaceId } : {}),
-        };
-
-    if (isSelfTest) {
-      console.log('[scan-start] Self-test mode: omitting user_id/workspace_id to avoid FK constraints');
-    }
+    console.log('[scan-start] Worker payload:', JSON.stringify({ ...workerPayload, token: '***' }, null, 2));
 
     const controller = new AbortController();
     // Dynamic request timeout: worker timeout + 5s buffer, max 90s
     const requestTimeoutMs = Math.min(timeoutSec * 1000 + 5000, 90000);
     const timeoutId = setTimeout(() => controller.abort(), requestTimeoutMs);
 
+    // Build scan URL
+    const scanUrl = OSINT_WORKER_URL.endsWith('/scan') 
+      ? OSINT_WORKER_URL 
+      : `${OSINT_WORKER_URL}/scan`;
+
     let workerResponse;
     try {
-      const scanPath = MAIGRET_WORKER_SCAN_PATH.startsWith('/') ? MAIGRET_WORKER_SCAN_PATH : `/${MAIGRET_WORKER_SCAN_PATH}`;
-      workerResponse = await fetch(`${MAIGRET_WORKER_URL}${scanPath}`, {
+      workerResponse = await fetch(scanUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${WORKER_TOKEN}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(workerPayload),
@@ -194,7 +186,7 @@ Deno.serve(async (req) => {
         // No batch_id: return 504 for backwards compatibility
         return new Response(
           JSON.stringify({ 
-            error: 'Worker URL unreachable. Check MAIGRET_WORKER_URL.',
+            error: 'Worker timeout. Check OSINT_WORKER_URL.',
             details: `Request timed out after ${requestTimeoutMs}ms`
           }),
           { status: 504, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -204,7 +196,7 @@ Deno.serve(async (req) => {
       console.error('[scan-start] Network error:', fetchError);
       return new Response(
         JSON.stringify({ 
-          error: 'Worker URL unreachable. Check MAIGRET_WORKER_URL.',
+          error: 'Worker unreachable. Check OSINT_WORKER_URL.',
           details: fetchError.message
         }),
         { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -219,7 +211,7 @@ Deno.serve(async (req) => {
       
       let errorMessage = 'Worker error';
       if (workerResponse.status === 401 || workerResponse.status === 403) {
-        errorMessage = 'Worker auth misconfigured. Check WORKER_TOKEN in Edge Function and Cloud Run.';
+        errorMessage = 'Worker auth misconfigured. Check OSINT_WORKER_TOKEN.';
       } else if (workerResponse.status === 404) {
         errorMessage = 'Worker route missing (/scan). Verify Cloud Run deployment.';
       } else if (workerResponse.status >= 500) {
@@ -241,8 +233,9 @@ Deno.serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        job_id: workerData.job_id || workerData.id,
-        status: workerData.status || 'queued'
+        job_id: workerData.job_id || workerData.id || body.batch_id,
+        status: workerData.status || 'completed',
+        results: workerData.results || [],
       }),
       { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

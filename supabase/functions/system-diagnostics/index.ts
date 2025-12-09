@@ -96,51 +96,46 @@ serve(async (req) => {
       });
     }
 
-    // Check 2: Maigret Worker
-    const maigretWorkerUrl = Deno.env.get('MAIGRET_WORKER_URL');
-    if (maigretWorkerUrl) {
+    // Check 2: OSINT Worker (unified)
+    const osintWorkerUrl = Deno.env.get('OSINT_WORKER_URL');
+    if (osintWorkerUrl) {
       const workerStart = Date.now();
       try {
-        const response = await safeFetch(
-          `${maigretWorkerUrl}/health`,
-          {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${Deno.env.get('WORKER_TOKEN') || ''}`
-            }
-          },
-          5000, // 5 second timeout
-          0 // No retries for health check
-        );
-
+        const baseUrl = osintWorkerUrl.replace('/scan', '');
+        const response = await fetch(`${baseUrl}/health`, {
+          method: 'GET',
+          signal: AbortSignal.timeout(10000),
+        });
+        
         if (response.ok) {
           checks.push({
-            name: 'maigret_worker',
+            name: 'osint_worker',
             status: 'ok',
             responseTime: Date.now() - workerStart,
-            message: 'Maigret worker responding'
+            message: 'OSINT worker healthy'
           });
         } else {
           checks.push({
-            name: 'maigret_worker',
+            name: 'osint_worker',
             status: 'degraded',
             responseTime: Date.now() - workerStart,
-            message: `Worker returned status ${response.status}`
+            message: `Health endpoint returned ${response.status}`
           });
         }
       } catch (error: any) {
         checks.push({
-          name: 'maigret_worker',
+          name: 'osint_worker',
           status: 'degraded',
           responseTime: Date.now() - workerStart,
-          message: `Worker unreachable: ${error.message}`
+          message: error.message
         });
       }
     } else {
       checks.push({
-        name: 'maigret_worker',
+        name: 'osint_worker',
         status: 'degraded',
-        message: 'Worker URL not configured'
+        message: 'OSINT_WORKER_URL not configured'
+      });
       });
     }
 
