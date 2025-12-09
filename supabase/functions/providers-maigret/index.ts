@@ -14,21 +14,6 @@ interface MaigretRequest {
   scanId?: string;
 }
 
-interface MaigretFinding {
-  type: 'profile_presence';
-  title: string;
-  severity: 'info' | 'low' | 'medium';
-  provider: 'maigret';
-  confidence: number;
-  evidence: {
-    site: string;
-    url: string;
-    username: string;
-    status?: string;
-  };
-  remediation?: string;
-}
-
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -42,15 +27,16 @@ serve(async (req) => {
     );
   }
 
-  const WORKER_URL = Deno.env.get('MAIGRET_WORKER_URL') ?? '';
-  const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN') ?? '';
+  // Use unified OSINT worker
+  const WORKER_URL = Deno.env.get('OSINT_WORKER_URL') ?? '';
+  const WORKER_TOKEN = Deno.env.get('OSINT_WORKER_TOKEN') ?? '';
 
   if (!WORKER_URL || !WORKER_TOKEN) {
-    console.error('❌ Missing Maigret worker configuration');
+    console.error('❌ Missing OSINT worker configuration');
     return new Response(
       JSON.stringify({ 
         findings: [],
-        error: 'Maigret worker not configured'
+        error: 'OSINT worker not configured (OSINT_WORKER_URL or OSINT_WORKER_TOKEN missing)'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -69,38 +55,38 @@ serve(async (req) => {
       );
     }
 
-    console.log(`🔍 Calling Maigret worker for ${body.usernames.length} username(s)`);
+    const username = body.usernames[0];
+    console.log(`🔍 Calling unified OSINT worker (maigret) for username: ${username}`);
 
-    // Construct payload matching Cloud Run worker's expected format
+    // Build scan URL
+    const scanUrl = WORKER_URL.endsWith('/scan') ? WORKER_URL : `${WORKER_URL}/scan`;
+
+    // Construct payload per unified worker contract
     const workerPayload = {
-      username: body.usernames[0], // Worker expects single username, not array
-      batch_id: body.scanId || crypto.randomUUID(),
-      workspace_id: body.workspaceId || null,
-      platforms: (body.sites && body.sites.length > 0) ? body.sites : undefined,
-      timeout: body.timeout || 60,
-      with_tor: Deno.env.get('TOR_ENABLED') === 'true',
+      tool: 'maigret',
+      username,
+      token: WORKER_TOKEN,
     };
 
-    console.log(`📤 Sending to worker:`, JSON.stringify(workerPayload, null, 2));
+    console.log(`📤 Sending to worker:`, JSON.stringify({ ...workerPayload, token: '***' }, null, 2));
 
-    // Call the Maigret worker
-    const workerResponse = await fetch(`${WORKER_URL}/scan`, {
+    // Call the unified OSINT worker
+    const workerResponse = await fetch(scanUrl, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${WORKER_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(workerPayload),
-      signal: AbortSignal.timeout(90000), // 90s timeout
+      signal: AbortSignal.timeout(120000), // 2 minute timeout
     });
 
     if (!workerResponse.ok) {
       const errorText = await workerResponse.text().catch(() => 'Unable to read error response');
-      console.error(`❌ Maigret worker returned ${workerResponse.status}:`, errorText);
+      console.error(`❌ OSINT worker returned ${workerResponse.status}:`, errorText);
       return new Response(
         JSON.stringify({ 
           findings: [],
-          error: `Worker returned ${workerResponse.status}: ${errorText}`
+          error: `Worker returned ${workerResponse.status}: ${errorText.substring(0, 500)}`
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -109,50 +95,33 @@ serve(async (req) => {
     const workerData = await workerResponse.json();
     console.log(`📦 Raw worker response:`, JSON.stringify(workerData).substring(0, 500));
 
-    // Support multiple worker response shapes: results[], summary[], or findings[]
-    const rawArray: any[] = Array.isArray(workerData?.results)
-      ? workerData.results
-      : Array.isArray(workerData?.summary)
-      ? workerData.summary
-      : Array.isArray(workerData?.findings)
-      ? workerData.findings
-      : [];
+    // Extract results array per worker contract
+    const rawArray: any[] = Array.isArray(workerData?.results) ? workerData.results : [];
 
-    console.log(`✅ Maigret worker returned ${rawArray.length} item(s) for username: "${body.usernames[0]}"`);
+    console.log(`✅ Worker returned ${rawArray.length} result(s) for username: "${username}"`);
 
     // Transform worker results to UFM-compliant findings
     const findings: any[] = [];
 
     for (const item of rawArray) {
-      // If already UFM-like, pass through with sane defaults
-      if (item && Array.isArray(item.evidence)) {
-        findings.push({
-          provider: item.provider ?? 'maigret',
-          kind: item.kind ?? 'presence.hit',
-          severity: item.severity ?? 'info',
-          confidence: item.confidence ?? 0.7,
-          observedAt: item.observedAt ?? new Date().toISOString(),
-          evidence: item.evidence,
-          meta: item.meta ?? item,
-        });
-        continue;
-      }
-
-      // Legacy maigret result shape -> normalize
+      // Worker returns: { site, url, username, status, response_time, found, nsfw }
       if (item?.site && item?.url) {
         findings.push({
           provider: 'maigret',
           kind: 'presence.hit',
           severity: 'info',
-          confidence: item.confidence ?? 0.7,
+          confidence: item.found === true ? 0.9 : 0.7,
           observedAt: new Date().toISOString(),
           evidence: [
             { key: 'site', value: item.site },
             { key: 'url', value: item.url },
-            { key: 'username', value: item.username || body.usernames[0] },
+            { key: 'username', value: item.username || username },
             { key: 'status', value: item.status || 'found' },
           ],
-          meta: item,
+          meta: {
+            ...item,
+            nsfw: item.nsfw || false,
+          },
         });
       }
     }
@@ -161,7 +130,7 @@ serve(async (req) => {
     
     // If 0 findings, add a diagnostic finding to distinguish from errors
     if (findings.length === 0) {
-      console.warn(`⚠️ Maigret returned 0 findings for username: "${body.usernames[0]}"`);
+      console.warn(`⚠️ Worker returned 0 findings for username: "${username}"`);
       findings.push({
         provider: 'maigret',
         kind: 'provider.empty_results',
@@ -170,9 +139,8 @@ serve(async (req) => {
         observedAt: new Date().toISOString(),
         evidence: [
           { key: 'message', value: 'No matching profiles found' },
-          { key: 'username', value: body.usernames[0] },
-          { key: 'sites_checked', value: body.sites?.length || 'all' },
-          { key: 'timeout', value: body.timeout || 60 }
+          { key: 'username', value: username },
+          { key: 'sites_checked', value: body.sites?.length ? String(body.sites.length) : 'all' },
         ],
         meta: {
           reason: 'legitimate_no_results',
@@ -193,7 +161,7 @@ serve(async (req) => {
             'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
           },
           body: JSON.stringify({
-            username: body.usernames[0],
+            username: username,
             workspaceId: body.workspaceId,
             scanId: body.scanId,
             findings: findings.map(f => {

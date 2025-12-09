@@ -570,8 +570,12 @@ serve(async (req) => {
   }
 });
 
+/**
+ * Unified OSINT worker call helper
+ * Uses the consolidated osint-multitool-worker for all tools
+ */
 async function callOsintWorker(
-  tool: 'whatsmyname' | 'holehe' | 'gosearch',
+  tool: 'sherlock' | 'whatsmyname' | 'maigret' | 'holehe' | 'gosearch',
   payload: { username?: string; email?: string }
 ): Promise<any> {
   const workerUrl = Deno.env.get('OSINT_WORKER_URL');
@@ -587,28 +591,14 @@ async function callOsintWorker(
 
   const target = payload.username || payload.email || 'unknown';
   console.log(`[OSINT Worker] Calling ${tool} for target: ${target}`);
-  console.log(`[OSINT Worker] Worker URL:`, workerUrl);
-  console.log(`[OSINT Worker] Request payload:`, JSON.stringify({
-    tool,
-    ...payload,
-    token: '***' // Redacted for security
-  }, null, 2));
+  console.log(`[OSINT Worker] Worker URL: ${workerUrl}`);
 
-  // Check worker health first
-  try {
-    const healthUrl = new URL('/health', workerUrl).toString();
-    const healthResp = await fetch(healthUrl);
-    console.log(`[OSINT Worker] Health check status:`, healthResp.status);
-  } catch (healthError) {
-    console.warn(`[OSINT Worker] Health check failed:`, healthError);
-  }
-
-  // Build scan URL (no query params - worker uses env vars)
-  const scanUrl = new URL('/scan', workerUrl);
+  // Build scan URL
+  const scanUrl = workerUrl.endsWith('/scan') 
+    ? workerUrl 
+    : new URL('/scan', workerUrl).toString();
   
-  const fullUrl = scanUrl.toString();
-  
-  // Prepare request body with strict mode control
+  // Prepare request body per worker contract
   const requestBody: any = {
     tool,
     ...payload,
@@ -620,60 +610,69 @@ async function callOsintWorker(
     requestBody.strict = false; // Allow broader matches for better coverage
     console.log(`[OSINT Worker] 🔍 GoSearch non-strict mode enabled for broader coverage`);
   }
-  
-  const resp = await fetch(fullUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
-  });
 
-  console.log(`[OSINT Worker] Response status:`, resp.status);
-
-  if (!resp.ok) {
-    const text = await resp.text();
-    console.error(`[OSINT Worker] ${tool} error:`, resp.status, text);
-    
-    // Return structured error instead of throwing
-    return {
-      error: 'provider_unavailable',
-      status: resp.status,
-      body: text,
-      tool,
-    };
-  }
-
-  const responseText = await resp.text();
-  console.log(`[OSINT Worker] Raw response (first 500 chars):`, responseText.substring(0, 500));
-  
-  const data = JSON.parse(responseText);
-  console.log(`[OSINT Worker] Parsed data structure:`, JSON.stringify({
-    hasResults: !!data?.results,
-    resultsType: Array.isArray(data?.results) ? 'array' : typeof data?.results,
-    resultsLength: Array.isArray(data?.results) ? data.results.length : 0,
-    keys: Object.keys(data || {}),
+  console.log(`[OSINT Worker] Request payload:`, JSON.stringify({
+    ...requestBody,
+    token: '***redacted***'
   }, null, 2));
 
-  if (data?.results && Array.isArray(data.results) && data.results.length > 0) {
-    console.log(`[OSINT Worker] First result sample:`, JSON.stringify(data.results[0], null, 2));
-  }
-
-  // Log GoSearch worker execution meta for debugging
-  if (tool === 'gosearch' && data?.meta) {
-    const safeMeta = typeof data.meta === 'object' && data.meta !== null ? data.meta : {};
-    console.log(`[GoSearch] Worker Execution Report:`, {
-      fast_mode: safeMeta.fast_mode,
-      workers: safeMeta.workers,
-      strict_mode: safeMeta.strict_mode,
-      return_code: safeMeta.return_code,
-      stdout_lines: safeMeta.stdout_lines,
-      parsed_count: safeMeta.parsed_count,
-      sample_output: safeMeta.sample_output,
+  try {
+    const resp = await fetch(scanUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody),
+      signal: AbortSignal.timeout(120000), // 2 minute timeout
     });
-  }
 
-  return data;
+    console.log(`[OSINT Worker] Response status: ${resp.status}`);
+
+    if (!resp.ok) {
+      const text = await resp.text();
+      console.error(`[OSINT Worker] ${tool} error: ${resp.status}`, text);
+      
+      // Return structured error instead of throwing
+      return {
+        error: 'provider_unavailable',
+        status: resp.status,
+        body: text,
+        tool,
+      };
+    }
+
+    const responseText = await resp.text();
+    console.log(`[OSINT Worker] Raw response (first 500 chars):`, responseText.substring(0, 500));
+    
+    const data = JSON.parse(responseText);
+    console.log(`[OSINT Worker] Parsed data structure:`, JSON.stringify({
+      hasResults: !!data?.results,
+      resultsType: Array.isArray(data?.results) ? 'array' : typeof data?.results,
+      resultsLength: Array.isArray(data?.results) ? data.results.length : 0,
+      keys: Object.keys(data || {}),
+    }, null, 2));
+
+    if (data?.results && Array.isArray(data.results) && data.results.length > 0) {
+      console.log(`[OSINT Worker] First result sample:`, JSON.stringify(data.results[0], null, 2));
+    }
+
+    // Log worker execution meta for debugging
+    if (data?.meta) {
+      const safeMeta = typeof data.meta === 'object' && data.meta !== null ? data.meta : {};
+      console.log(`[OSINT Worker] Execution meta:`, JSON.stringify(safeMeta, null, 2));
+    }
+
+    return data;
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`[OSINT Worker] ${tool} exception:`, errorMessage);
+    
+    return {
+      error: errorMessage,
+      tool,
+      results: [],
+    };
+  }
 }
 
 async function callProvider(name: string, body: any) {

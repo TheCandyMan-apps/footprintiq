@@ -16,52 +16,52 @@ Deno.serve(async (req) => {
     );
   }
 
-  const MAIGRET_WORKER_URL = Deno.env.get('MAIGRET_WORKER_URL');
-  const MAIGRET_WORKER_SCAN_PATH = Deno.env.get('MAIGRET_WORKER_SCAN_PATH') || '/scan';
-  const WORKER_TOKEN = Deno.env.get('WORKER_TOKEN');
+  // Use unified OSINT worker
+  const OSINT_WORKER_URL = Deno.env.get('OSINT_WORKER_URL');
+  const OSINT_WORKER_TOKEN = Deno.env.get('OSINT_WORKER_TOKEN');
 
-  if (!MAIGRET_WORKER_URL) {
+  if (!OSINT_WORKER_URL) {
     return new Response(
       JSON.stringify({ 
         status: 'error', 
-        message: 'MAIGRET_WORKER_URL not configured' 
+        message: 'OSINT_WORKER_URL not configured' 
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 
+  const baseUrl = OSINT_WORKER_URL.replace('/scan', '');
   const diagnostics: any = {
-    worker_url: MAIGRET_WORKER_URL,
-    scan_path: MAIGRET_WORKER_SCAN_PATH,
-    worker_token_configured: !!WORKER_TOKEN,
+    worker: 'osint-multitool-worker',
+    worker_url: OSINT_WORKER_URL,
+    worker_token_configured: !!OSINT_WORKER_TOKEN,
     checks: [],
   };
 
-  // Step 1: Check /healthz (optional - 404 is OK if diagnostics work)
+  // Step 1: Check /health endpoint
   try {
-    const healthzUrl = `${MAIGRET_WORKER_URL}/healthz`;
-    const healthzResponse = await fetch(healthzUrl, {
+    const healthUrl = `${baseUrl}/health`;
+    const healthResponse = await fetch(healthUrl, {
       method: 'GET',
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(10000),
     });
 
-    const healthzBody = await healthzResponse.text().catch(() => '');
-    let healthzJson: any = {};
+    const healthBody = await healthResponse.text().catch(() => '');
+    let healthJson: any = {};
     try {
-      healthzJson = JSON.parse(healthzBody);
+      healthJson = JSON.parse(healthBody);
     } catch {
-      healthzJson = { raw: healthzBody.substring(0, 200) }; // Truncate HTML errors
+      healthJson = { raw: healthBody.substring(0, 200) };
     }
 
     diagnostics.checks.push({
-      endpoint: '/healthz',
-      status: healthzResponse.status,
-      ok: healthzResponse.ok,
-      body: healthzJson,
+      endpoint: '/health',
+      status: healthResponse.status,
+      ok: healthResponse.ok,
+      body: healthJson,
     });
 
-    // If /healthz works, great!
-    if (healthzResponse.ok && healthzJson.ok === true) {
+    if (healthResponse.ok) {
       return new Response(
         JSON.stringify({ 
           status: 'healthy',
@@ -71,76 +71,116 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // If /healthz returns 404, that's OK - worker may not implement it
-    // We'll check diagnostics instead
   } catch (err: any) {
     diagnostics.checks.push({
-      endpoint: '/healthz',
+      endpoint: '/health',
       error: err.message,
     });
   }
 
-  // Step 2: Try /diag/env for diagnostics
+  // Step 2: Try /test-sherlock
   try {
-    const diagEnvUrl = `${MAIGRET_WORKER_URL}/diag/env`;
-    const diagEnvResponse = await fetch(diagEnvUrl, {
+    const testSherlockUrl = `${baseUrl}/test-sherlock`;
+    const testSherlockResponse = await fetch(testSherlockUrl, {
       method: 'GET',
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(10000),
     });
 
-    if (diagEnvResponse.ok) {
-      const diagEnvBody = await diagEnvResponse.json().catch(() => ({}));
-      diagnostics.diag_env = diagEnvBody;
-    }
+    diagnostics.sherlock_installed = testSherlockResponse.ok;
+    diagnostics.checks.push({
+      endpoint: '/test-sherlock',
+      status: testSherlockResponse.status,
+      ok: testSherlockResponse.ok,
+    });
   } catch (err: any) {
-    diagnostics.diag_env_error = err.message;
+    diagnostics.checks.push({
+      endpoint: '/test-sherlock',
+      error: err.message,
+    });
   }
 
-  // Step 3: Try /diag/maigret for Maigret info
+  // Step 3: Try /test-maigret
   try {
-    const diagMaigretUrl = `${MAIGRET_WORKER_URL}/diag/maigret`;
-    const diagMaigretResponse = await fetch(diagMaigretUrl, {
+    const testMaigretUrl = `${baseUrl}/test-maigret`;
+    const testMaigretResponse = await fetch(testMaigretUrl, {
       method: 'GET',
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(10000),
     });
 
-    if (diagMaigretResponse.ok) {
-      const diagMaigretBody = await diagMaigretResponse.json().catch(() => ({}));
-      diagnostics.diag_maigret = diagMaigretBody;
-      diagnostics.maigret_in_path = diagMaigretBody.maigret_in_path;
-      diagnostics.maigret_version = diagMaigretBody.version;
-    }
+    diagnostics.maigret_installed = testMaigretResponse.ok;
+    diagnostics.checks.push({
+      endpoint: '/test-maigret',
+      status: testMaigretResponse.status,
+      ok: testMaigretResponse.ok,
+    });
   } catch (err: any) {
-    diagnostics.diag_maigret_error = err.message;
+    diagnostics.checks.push({
+      endpoint: '/test-maigret',
+      error: err.message,
+    });
   }
 
-  // If we got here, /healthz didn't respond with ok:true
-  // Check if diagnostics prove the worker is functional
-  const diagMaigretOk = diagnostics.diag_maigret?.ok === true;
-  const diagEnvOk = diagnostics.diag_env?.maigret_in_path;
-  
-  if (diagMaigretOk && diagEnvOk) {
-    // Worker is functional even without /healthz endpoint
-    return new Response(
-      JSON.stringify({ 
-        status: 'healthy',
-        statusCode: 200,
-        message: 'Worker functional (diagnostics passed, /healthz not required)',
-        ...diagnostics 
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+  // Step 4: Try a test scan with authentication
+  if (OSINT_WORKER_TOKEN) {
+    try {
+      const scanUrl = `${baseUrl}/scan`;
+      const testPayload = {
+        tool: 'sherlock',
+        username: 'test_health_check',
+        token: OSINT_WORKER_TOKEN,
+        fast_mode: true,
+        workers: 1,
+      };
+
+      const scanResponse = await fetch(scanUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testPayload),
+        signal: AbortSignal.timeout(30000),
+      });
+
+      const scanBody = await scanResponse.text();
+      let scanJson: any = {};
+      try {
+        scanJson = JSON.parse(scanBody);
+      } catch {
+        scanJson = { raw: scanBody.substring(0, 500) };
+      }
+
+      diagnostics.scan_test = {
+        status: scanResponse.status,
+        ok: scanResponse.ok,
+        has_results: Array.isArray(scanJson?.results),
+        results_count: Array.isArray(scanJson?.results) ? scanJson.results.length : 0,
+      };
+
+      diagnostics.checks.push({
+        endpoint: '/scan (test)',
+        status: scanResponse.status,
+        ok: scanResponse.ok,
+      });
+    } catch (err: any) {
+      diagnostics.checks.push({
+        endpoint: '/scan (test)',
+        error: err.message,
+      });
+    }
   }
 
-  // Worker appears non-functional
+  // Determine overall status
+  const hasPassingCheck = diagnostics.checks.some((c: any) => c.ok);
+  const status = hasPassingCheck ? 'healthy' : 'unhealthy';
+  const statusCode = hasPassingCheck ? 200 : 503;
+
   return new Response(
     JSON.stringify({ 
-      status: 'unhealthy',
-      statusCode: 503,
-      message: 'Worker diagnostics failed - Maigret may not be installed or worker is down',
+      status,
+      statusCode,
+      message: hasPassingCheck 
+        ? 'Worker functional' 
+        : 'Worker diagnostics failed - check logs',
       ...diagnostics 
     }),
-    { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    { status: statusCode, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
 });
