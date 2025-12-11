@@ -120,6 +120,8 @@ serve(async (req) => {
     const callbackToken = Deno.env.get("N8N_CALLBACK_TOKEN");
 
     // Trigger n8n webhook (fire and forget using fetch without await)
+    // Note: Supabase URL and anon key intentionally NOT sent to n8n
+    // n8n should use callback tokens for authentication, not direct Supabase access
     const n8nPayload = {
       scanId: scan.id,
       username: username,
@@ -131,8 +133,6 @@ serve(async (req) => {
       callbackToken: callbackToken || "",
       progressWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-progress`,
       resultsWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-results`,
-      supabaseUrl: supabaseUrl,
-      anonKey: supabaseAnonKey,
     };
 
     console.log(`[n8n-scan-trigger] Payload workerUrl: ${workerUrl ? "set" : "MISSING"}`);
