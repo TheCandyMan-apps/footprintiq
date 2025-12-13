@@ -90,8 +90,14 @@ serve(async (req) => {
       updateData.message = message;
     }
 
+    // Handle completed_providers - INCREMENT when a provider completes
     if (typeof completedProviders === 'number') {
       updateData.completed_providers = completedProviders;
+    } else if (status === 'completed' && provider && provider !== 'all') {
+      // Auto-increment completed_providers when a specific provider completes
+      const currentCount = currentProgress?.completed_providers || 0;
+      updateData.completed_providers = currentCount + 1;
+      console.log(`[n8n-scan-progress] Auto-incrementing completed_providers: ${currentCount} -> ${currentCount + 1}`);
     }
 
     if (Array.isArray(currentProviders)) {
