@@ -273,61 +273,112 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   }, [scanId, open, addDebugEvent, onComplete]);
 
   // Provider status polling - polls scan_events for provider updates
+  // Also subscribes to real-time scan_events inserts for immediate updates
   useEffect(() => {
     if (!scanId || !open) return;
     
-    const pollProviders = async () => {
+    const processEvents = (events: any[]) => {
+      if (!events || events.length === 0) return;
+      
+      // Get the latest status for each provider (most recent event wins)
+      const providerStatuses = new Map<string, { stage: string; message?: string; resultCount?: number }>();
+      
+      // Process in chronological order so latest status wins
+      const sortedEvents = [...events].sort((a, b) => 
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+      
+      sortedEvents.forEach((event: any) => {
+        if (event.provider) {
+          providerStatuses.set(event.provider, {
+            stage: event.stage,
+            message: event.message,
+            resultCount: event.results_count || event.findings_count
+          });
+        }
+      });
+      
+      providerStatuses.forEach((eventData, providerName) => {
+        let providerStatus: ProviderStatus['status'] = 'pending';
+        if (eventData.stage === 'complete' || eventData.stage === 'completed') {
+          providerStatus = 'success';
+        } else if (eventData.stage === 'start' || eventData.stage === 'started' || eventData.stage === 'running') {
+          providerStatus = 'loading';
+        } else if (eventData.stage === 'failed' || eventData.stage === 'error') {
+          providerStatus = 'failed';
+        } else if (eventData.stage === 'timeout') {
+          providerStatus = 'warning';
+        }
+        
+        updateProvider(providerName, providerStatus, eventData.message, eventData.resultCount);
+      });
+      
+      addDebugEvent('polling', `Events: ${events.length}, Providers: ${providerStatuses.size}`);
+    };
+    
+    // Initial fetch
+    const fetchEvents = async () => {
       if (statusRef.current !== 'running') return;
       
       try {
-        // Poll scan_events for provider statuses
         const { data: events } = await supabase
           .from('scan_events')
           .select('*')
           .eq('scan_id', scanId)
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: true });
         
-        if (events && events.length > 0) {
-          const providerStatuses = new Map<string, { stage: string; message?: string; resultCount?: number }>();
-          
-          events.forEach((event: any) => {
-            if (event.provider && !providerStatuses.has(event.provider)) {
-              providerStatuses.set(event.provider, {
-                stage: event.stage,
-                message: event.message,
-                resultCount: event.results_count || event.findings_count
-              });
-            }
-          });
-          
-          providerStatuses.forEach((eventData, providerName) => {
-            let providerStatus: ProviderStatus['status'] = 'pending';
-            if (eventData.stage === 'complete' || eventData.stage === 'completed') {
-              providerStatus = 'success';
-            } else if (eventData.stage === 'start' || eventData.stage === 'started' || eventData.stage === 'running') {
-              providerStatus = 'loading';
-            } else if (eventData.stage === 'failed' || eventData.stage === 'error') {
-              providerStatus = 'failed';
-            } else if (eventData.stage === 'timeout') {
-              providerStatus = 'warning';
-            }
-            
-            updateProvider(providerName, providerStatus, eventData.message, eventData.resultCount);
-          });
-          
-          if (events.length > 0) {
-            addDebugEvent('polling', `Events: ${events.length}, Providers: ${providerStatuses.size}`);
-          }
+        if (events) {
+          processEvents(events);
         }
       } catch (error) {
         console.error('[ProviderPolling] Error:', error);
       }
     };
     
-    // Poll every 3 seconds for provider updates
-    const interval = setInterval(pollProviders, 3000);
+    // Fetch immediately
+    fetchEvents();
     
-    return () => clearInterval(interval);
+    // Subscribe to real-time scan_events inserts for immediate updates
+    const eventsChannel = supabase
+      .channel(`scan_events_realtime_${scanId}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'scan_events', 
+        filter: `scan_id=eq.${scanId}` 
+      }, (payload) => {
+        const event = payload.new as any;
+        console.log('[ScanProgress] Real-time scan_events update:', event);
+        addDebugEvent('database', `Event: ${event.provider} -> ${event.stage}`, event.provider);
+        
+        if (event.provider) {
+          let providerStatus: ProviderStatus['status'] = 'pending';
+          if (event.stage === 'complete' || event.stage === 'completed') {
+            providerStatus = 'success';
+          } else if (event.stage === 'start' || event.stage === 'started' || event.stage === 'running') {
+            providerStatus = 'loading';
+          } else if (event.stage === 'failed' || event.stage === 'error') {
+            providerStatus = 'failed';
+          } else if (event.stage === 'timeout') {
+            providerStatus = 'warning';
+          }
+          
+          updateProvider(event.provider, providerStatus, event.message, event.results_count || event.findings_count);
+          setLastEventAt(Date.now());
+          setConnectionMode('live');
+        }
+      })
+      .subscribe((status) => {
+        console.log('[ScanProgress] scan_events subscription status:', status);
+      });
+    
+    // Also poll every 3 seconds as fallback
+    const interval = setInterval(fetchEvents, 3000);
+    
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(eventsChannel);
+    };
   }, [scanId, open, updateProvider, addDebugEvent]);
 
   // Main effect: Setup realtime + health monitoring
