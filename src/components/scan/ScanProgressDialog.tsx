@@ -55,6 +55,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   // Connection health
   const [connectionMode, setConnectionMode] = useState<'live' | 'fallback'>('live');
   const [lastEventAt, setLastEventAt] = useState(Date.now());
+  const lastEventAtRef = useRef(Date.now()); // Ref to avoid stale closures in intervals
   const [hasShownFallbackToast, setHasShownFallbackToast] = useState(false);
   
   // Debug
@@ -65,6 +66,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   useEffect(() => {
     statusRef.current = status;
   }, [status]);
+
+  // Keep lastEventAtRef in sync with state (for use in intervals)
+  useEffect(() => {
+    lastEventAtRef.current = lastEventAt;
+  }, [lastEventAt]);
 
   // Add debug event
   const addDebugEvent = useCallback((source: DebugEvent['source'], message: string, provider?: string) => {
@@ -559,17 +565,16 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     console.log('[ScanProgress] Polling enabled via ref');
 
     // Health monitor - updates connection mode based on realtime activity
+    // Use refs to avoid stale closures and prevent effect re-runs
     const healthInterval = setInterval(() => {
-      const timeSinceLastEvent = Date.now() - lastEventAt;
       if (statusRef.current !== 'running') return;
       
+      // Access lastEventAt from ref to avoid stale closure
+      const timeSinceLastEvent = Date.now() - lastEventAtRef.current;
+      
       if (timeSinceLastEvent > 10000) {
-        if (connectionMode !== 'fallback') {
-          console.log('[ScanProgress] No realtime events for 10s, switching to fallback mode');
-          setConnectionMode('fallback');
-        }
-      } else if (connectionMode === 'fallback') {
-        setConnectionMode('live');
+        console.log('[ScanProgress] No realtime events for 10s, switching to fallback mode');
+        setConnectionMode('fallback');
       }
     }, 3000);
 
@@ -582,7 +587,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       supabase.removeChannel(findingsChannel);
       clearInterval(healthInterval);
     };
-  }, [scanId, open, initialProvidersKey, onComplete, updateProvider, addDebugEvent, lastEventAt, connectionMode]);
+    // ✅ CRITICAL: Remove lastEventAt and connectionMode from deps to prevent provider list reset
+  }, [scanId, open, initialProvidersKey, onComplete, updateProvider, addDebugEvent]);
 
   // Handle cancel
   const handleCancel = async () => {
