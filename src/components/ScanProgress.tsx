@@ -131,17 +131,21 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         const scanType = scanData.username && !scanData.firstName && !scanData.lastName ? 'username' : 
                         scanData.firstName && scanData.lastName ? 'personal_details' : 'both';
 
+        // Convert empty strings to null to avoid database validation errors
+        const toNullIfEmpty = (val: string | undefined | null): string | null => 
+          val && val.trim() ? val.trim() : null;
+
         const { data: scan, error: scanError } = await supabase
           .from("scans")
           .insert({
             user_id: userId,
             workspace_id: workspaceMember?.workspace_id || null,
             scan_type: scanType,
-            username: scanData.username,
-            first_name: scanData.firstName,
-            last_name: scanData.lastName,
-            email: scanData.email,
-            phone: scanData.phone,
+            username: toNullIfEmpty(scanData.username),
+            first_name: toNullIfEmpty(scanData.firstName),
+            last_name: toNullIfEmpty(scanData.lastName),
+            email: toNullIfEmpty(scanData.email),
+            phone: toNullIfEmpty(scanData.phone),
           })
           .select()
           .single();
