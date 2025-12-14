@@ -54,7 +54,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { username, workspaceId, scanType = "username", mode = "lean" } = body;
+    const { scanId: providedScanId, username, workspaceId, scanType = "username", mode = "lean" } = body;
 
     if (!username) {
       return new Response(JSON.stringify({ error: "Username is required" }), {
@@ -63,12 +63,18 @@ serve(async (req) => {
       });
     }
 
+    // ✅ CRITICAL: Use provided scanId from frontend, or generate new one
+    // This ensures frontend and backend use the SAME scan ID for real-time updates
+    const scanId = providedScanId || crypto.randomUUID();
+    console.log(`[n8n-scan-trigger] Using scanId: ${scanId} (provided: ${!!providedScanId})`);
+
     console.log(`[n8n-scan-trigger] Starting scan for username: ${username.substring(0, 3)}***`);
 
-    // Create scan record
+    // Create scan record with the provided scanId
     const { data: scan, error: scanError } = await supabase
       .from("scans")
       .insert({
+        id: scanId,  // ✅ Use the scanId (provided or generated)
         user_id: user.id,
         workspace_id: workspaceId,
         scan_type: scanType,

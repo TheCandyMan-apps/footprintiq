@@ -119,8 +119,10 @@ export const useUsernameScan = () => {
       addLog({ level: 'info', message: 'Invoking n8n-scan-trigger for username scan', data: requestBody });
       
       // Route username scans through n8n for longer provider timeouts
+      // ✅ CRITICAL: Pass pre-generated scanId so frontend and backend use same ID
       const { data, error } = await supabase.functions.invoke('n8n-scan-trigger', {
         body: {
+          scanId: batchId,  // ✅ Pass pre-generated scan ID
           username: options.username,
           workspaceId: workspaceId,
           scanType: 'username',
