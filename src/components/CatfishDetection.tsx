@@ -283,16 +283,18 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
 
             {/* Identity Graph */}
             {result.scanData.identityGraph && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-md">Identity Correlation Graph</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto">
-                    {JSON.stringify(result.scanData.identityGraph, null, 2)}
-                  </pre>
-                </CardContent>
-              </Card>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="identity-graph" className="border rounded-lg">
+                  <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                    <span className="text-md font-semibold">Identity Correlation Graph</span>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <pre className="text-xs bg-muted p-4 rounded-lg overflow-auto">
+                      {JSON.stringify(result.scanData.identityGraph, null, 2)}
+                    </pre>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             )}
 
             <Button 
