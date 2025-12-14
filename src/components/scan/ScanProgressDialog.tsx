@@ -229,6 +229,23 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     return { min: fmt(minMs), max: fmt(maxMs) };
   }, [providers]);
 
+  // ✅ EXTRACTED: Map stage to status - reusable in both polling and completion detector
+  const mapStageToStatus = useCallback((stage: string): ProviderStatus['status'] => {
+    const normalizedStage = (stage || '').toLowerCase().trim();
+    if (normalizedStage === 'complete' || normalizedStage === 'completed' || normalizedStage === 'success') {
+      return 'success';
+    } else if (normalizedStage === 'start' || normalizedStage === 'started' || normalizedStage === 'running' || normalizedStage === 'in_progress') {
+      return 'loading';
+    } else if (normalizedStage === 'failed' || normalizedStage === 'error') {
+      return 'failed';
+    } else if (normalizedStage === 'timeout') {
+      return 'warning';
+    } else if (normalizedStage === 'skipped') {
+      return 'skipped';
+    }
+    return 'pending';
+  }, [providers]);
+
   // Independent completion detector - runs every 2s regardless of other state
   // This is the most reliable way to detect scan completion
   useEffect(() => {
@@ -256,6 +273,39 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           console.log('[CompletionDetector] Scan completed with status:', scanStatus);
           addDebugEvent('polling', `Scan completed: ${scanStatus}`);
           
+          // ✅ FINAL SYNC: Fetch all provider events and update statuses BEFORE marking complete
+          const { data: finalEvents } = await supabase
+            .from('scan_events')
+            .select('*')
+            .eq('scan_id', scanId)
+            .order('created_at', { ascending: true });
+          
+          if (finalEvents && finalEvents.length > 0) {
+            console.log('[CompletionDetector] Final sync: processing', finalEvents.length, 'events');
+            
+            // Get the latest status for each provider
+            const providerFinalStatuses = new Map<string, { stage: string; message?: string; resultCount?: number }>();
+            finalEvents.forEach((event: any) => {
+              if (event.provider) {
+                const providerName = event.provider.toLowerCase();
+                providerFinalStatuses.set(providerName, {
+                  stage: event.stage,
+                  message: event.message,
+                  resultCount: event.results_count || event.findings_count
+                });
+              }
+            });
+            
+            console.log('[CompletionDetector] Final provider statuses:', Array.from(providerFinalStatuses.entries()));
+            
+            // Update all providers to their final state
+            providerFinalStatuses.forEach((data, providerName) => {
+              const finalStatus = mapStageToStatus(data.stage);
+              console.log(`[CompletionDetector] Final update: ${providerName} -> ${finalStatus}`);
+              updateProviderRef.current?.(providerName, finalStatus, data.message, data.resultCount);
+            });
+          }
+          
           // Get findings count
           const { count } = await supabase
             .from('findings')
@@ -265,6 +315,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           const findingsCount = count || 0;
           setTotalResults(findingsCount);
           
+          // NOW set the final status (after providers are updated)
           if (scanStatus === 'failed' || scanStatus === 'timeout') {
             setStatus('failed');
           } else {
@@ -296,7 +347,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     const interval = setInterval(checkCompletion, 2000);
     
     return () => clearInterval(interval);
-  }, [scanId, open, addDebugEvent, onComplete]);
+  }, [scanId, open, addDebugEvent, onComplete, mapStageToStatus]);
 
   // Provider status polling - polls scan_events for provider updates
   // Aggressive 1-second polling + real-time subscription for immediate updates
@@ -308,22 +359,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     const currentScanId = scanId;
     console.log('[ScanProgress] Starting provider status polling for scan:', currentScanId);
     
-    // Map stage to status with lowercase normalization
-    const mapStageToStatus = (stage: string): ProviderStatus['status'] => {
-      const normalizedStage = (stage || '').toLowerCase().trim();
-      if (normalizedStage === 'complete' || normalizedStage === 'completed' || normalizedStage === 'success') {
-        return 'success';
-      } else if (normalizedStage === 'start' || normalizedStage === 'started' || normalizedStage === 'running' || normalizedStage === 'in_progress') {
-        return 'loading';
-      } else if (normalizedStage === 'failed' || normalizedStage === 'error') {
-        return 'failed';
-      } else if (normalizedStage === 'timeout') {
-        return 'warning';
-      } else if (normalizedStage === 'skipped') {
-        return 'skipped';
-      }
-      return 'pending';
-    };
+    // ✅ Using component-level mapStageToStatus function
     
     const processEvents = (events: any[], source: string) => {
       if (!events || events.length === 0) {
