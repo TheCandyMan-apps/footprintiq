@@ -273,12 +273,36 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   }, [scanId, open, addDebugEvent, onComplete]);
 
   // Provider status polling - polls scan_events for provider updates
-  // Also subscribes to real-time scan_events inserts for immediate updates
+  // Aggressive 1-second polling + real-time subscription for immediate updates
   useEffect(() => {
     if (!scanId || !open) return;
     
-    const processEvents = (events: any[]) => {
-      if (!events || events.length === 0) return;
+    console.log('[ScanProgress] Starting provider status polling for scan:', scanId);
+    
+    // Map stage to status with lowercase normalization
+    const mapStageToStatus = (stage: string): ProviderStatus['status'] => {
+      const normalizedStage = (stage || '').toLowerCase().trim();
+      if (normalizedStage === 'complete' || normalizedStage === 'completed' || normalizedStage === 'success') {
+        return 'success';
+      } else if (normalizedStage === 'start' || normalizedStage === 'started' || normalizedStage === 'running' || normalizedStage === 'in_progress') {
+        return 'loading';
+      } else if (normalizedStage === 'failed' || normalizedStage === 'error') {
+        return 'failed';
+      } else if (normalizedStage === 'timeout') {
+        return 'warning';
+      } else if (normalizedStage === 'skipped') {
+        return 'skipped';
+      }
+      return 'pending';
+    };
+    
+    const processEvents = (events: any[], source: string) => {
+      if (!events || events.length === 0) {
+        console.log(`[ScanProgress] ${source}: No events found`);
+        return;
+      }
+      
+      console.log(`[ScanProgress] ${source}: Processing ${events.length} events`);
       
       // Get the latest status for each provider (most recent event wins)
       const providerStatuses = new Map<string, { stage: string; message?: string; resultCount?: number }>();
@@ -290,7 +314,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       
       sortedEvents.forEach((event: any) => {
         if (event.provider) {
-          providerStatuses.set(event.provider, {
+          // Normalize provider name to lowercase
+          const providerName = event.provider.toLowerCase();
+          console.log(`[ScanProgress] ${source}: Event - provider=${providerName}, stage=${event.stage}`);
+          
+          providerStatuses.set(providerName, {
             stage: event.stage,
             message: event.message,
             resultCount: event.results_count || event.findings_count
@@ -298,40 +326,42 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         }
       });
       
+      console.log(`[ScanProgress] ${source}: Found ${providerStatuses.size} unique providers:`, Array.from(providerStatuses.keys()));
+      
       providerStatuses.forEach((eventData, providerName) => {
-        let providerStatus: ProviderStatus['status'] = 'pending';
-        if (eventData.stage === 'complete' || eventData.stage === 'completed') {
-          providerStatus = 'success';
-        } else if (eventData.stage === 'start' || eventData.stage === 'started' || eventData.stage === 'running') {
-          providerStatus = 'loading';
-        } else if (eventData.stage === 'failed' || eventData.stage === 'error') {
-          providerStatus = 'failed';
-        } else if (eventData.stage === 'timeout') {
-          providerStatus = 'warning';
-        }
-        
+        const providerStatus = mapStageToStatus(eventData.stage);
+        console.log(`[ScanProgress] ${source}: Updating provider ${providerName} -> ${providerStatus}`);
         updateProvider(providerName, providerStatus, eventData.message, eventData.resultCount);
       });
       
-      addDebugEvent('polling', `Events: ${events.length}, Providers: ${providerStatuses.size}`);
+      addDebugEvent('polling', `${source}: ${events.length} events, ${providerStatuses.size} providers`);
     };
     
-    // Initial fetch
+    // Fetch events from database
     const fetchEvents = async () => {
-      if (statusRef.current !== 'running') return;
+      if (statusRef.current !== 'running') {
+        console.log('[ScanProgress] Poll skipped - scan not running');
+        return;
+      }
       
       try {
-        const { data: events } = await supabase
+        console.log('[ScanProgress] Polling scan_events...');
+        const { data: events, error } = await supabase
           .from('scan_events')
           .select('*')
           .eq('scan_id', scanId)
           .order('created_at', { ascending: true });
         
+        if (error) {
+          console.error('[ScanProgress] Poll error:', error);
+          return;
+        }
+        
         if (events) {
-          processEvents(events);
+          processEvents(events, 'POLL');
         }
       } catch (error) {
-        console.error('[ProviderPolling] Error:', error);
+        console.error('[ScanProgress] Poll exception:', error);
       }
     };
     
@@ -344,26 +374,26 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
-        table: 'scan_events', 
-        filter: `scan_id=eq.${scanId}` 
+        table: 'scan_events'
       }, (payload) => {
         const event = payload.new as any;
-        console.log('[ScanProgress] Real-time scan_events update:', event);
-        addDebugEvent('database', `Event: ${event.provider} -> ${event.stage}`, event.provider);
+        
+        // Filter by scan_id (in case filter doesn't work)
+        if (event.scan_id !== scanId) return;
+        
+        console.log('[ScanProgress] REALTIME EVENT:', {
+          scanId: event.scan_id,
+          provider: event.provider,
+          stage: event.stage,
+          timestamp: new Date().toISOString()
+        });
         
         if (event.provider) {
-          let providerStatus: ProviderStatus['status'] = 'pending';
-          if (event.stage === 'complete' || event.stage === 'completed') {
-            providerStatus = 'success';
-          } else if (event.stage === 'start' || event.stage === 'started' || event.stage === 'running') {
-            providerStatus = 'loading';
-          } else if (event.stage === 'failed' || event.stage === 'error') {
-            providerStatus = 'failed';
-          } else if (event.stage === 'timeout') {
-            providerStatus = 'warning';
-          }
+          const providerName = event.provider.toLowerCase();
+          const providerStatus = mapStageToStatus(event.stage);
           
-          updateProvider(event.provider, providerStatus, event.message, event.results_count || event.findings_count);
+          addDebugEvent('database', `Realtime: ${providerName} -> ${event.stage}`, providerName);
+          updateProvider(providerName, providerStatus, event.message, event.results_count || event.findings_count);
           setLastEventAt(Date.now());
           setConnectionMode('live');
         }
@@ -372,10 +402,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         console.log('[ScanProgress] scan_events subscription status:', status);
       });
     
-    // Also poll every 3 seconds as fallback
-    const interval = setInterval(fetchEvents, 3000);
+    // Aggressive 1-second polling as primary mechanism
+    const interval = setInterval(fetchEvents, 1000);
     
     return () => {
+      console.log('[ScanProgress] Cleaning up provider polling');
       clearInterval(interval);
       supabase.removeChannel(eventsChannel);
     };
@@ -396,18 +427,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     isPollingRef.current = false;
     setDebugEvents([]);
 
-    // Initialize providers immediately
-    if (initialProviders && initialProviders.length > 0) {
-      setProviders(initialProviders.map(name => ({
-        name,
-        status: 'pending',
-        message: 'Queued...',
-        lastUpdated: Date.now()
-      })));
-      addDebugEvent('database', `Initialized ${initialProviders.length} providers`);
-    } else {
-      setProviders([]);
-    }
+    // DON'T pre-populate providers from form - let scan_events drive the list dynamically
+    // This ensures only actual providers from n8n appear in the UI
+    console.log('[ScanProgress] Starting with empty providers - will populate from scan_events');
+    setProviders([]);
+    addDebugEvent('database', 'Providers will populate dynamically from scan_events');
 
     // Fetch initial progress and check if already completed
     const fetchInitialProgress = async () => {
