@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithRetry } from "@/lib/supabaseRetry";
@@ -561,7 +561,7 @@ export default function AdvancedScan() {
     }
   };
 
-  const handleScanComplete = () => {
+  const handleScanComplete = useCallback(() => {
     setIsScanning(false);
     setProgressOpen(false);
     if (currentScanId) {
@@ -574,12 +574,12 @@ export default function AdvancedScan() {
     } else {
       navigate("/dashboard");
     }
-  };
+  }, [currentScanId, scanType, navigate]);
 
-  const handleProgressClose = () => {
+  const handleProgressClose = useCallback(() => {
     setProgressOpen(false);
     setModalScanId(null);
-  };
+  }, []);
 
   const handleApplyTemplate = (template: ScanTemplate) => {
     const config = template.configuration;
