@@ -372,6 +372,14 @@ export default function AdvancedScan() {
         });
         console.log('[AdvancedScan] Scan started successfully:', result);
 
+        // ✅ CRITICAL: Update modalScanId with the REAL scan ID from n8n-scan-trigger
+        // The edge function creates its own scan ID in the database
+        if (result?.jobId && result.jobId !== preScanId) {
+          console.log('[AdvancedScan] Updating modalScanId from', preScanId, 'to', result.jobId);
+          setModalScanId(result.jobId);
+          setCurrentScanId(result.jobId);
+        }
+
         // Progress dialog will handle navigation on completion
         setIsScanning(false);
       } catch (error) {
