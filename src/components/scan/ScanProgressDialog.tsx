@@ -41,9 +41,14 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   // Track last scanId to prevent progress resets when reopening same scan
   const lastScanIdRef = useRef<string | null>(null);
   
-  // Use refs for polling to avoid re-render loops
+  // Use refs for polling to avoid re-render loops and stale closures
   const isPollingRef = useRef(false);
   const statusRef = useRef<'running' | 'completed' | 'failed' | 'cancelled'>('running');
+  
+  // Stable refs for callbacks to prevent stale closures in polling intervals
+  const scanIdRef = useRef<string | null>(null);
+  const updateProviderRef = useRef<typeof updateProvider | null>(null);
+  const addDebugEventRef = useRef<typeof addDebugEvent | null>(null);
 
   // State
   const [progress, setProgress] = useState(0);
@@ -72,10 +77,20 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     lastEventAtRef.current = lastEventAt;
   }, [lastEventAt]);
 
+  // Keep scanIdRef in sync
+  useEffect(() => {
+    scanIdRef.current = scanId;
+  }, [scanId]);
+
   // Add debug event
   const addDebugEvent = useCallback((source: DebugEvent['source'], message: string, provider?: string) => {
     setDebugEvents(prev => [...prev.slice(-19), { timestamp: Date.now(), source, provider, message }]);
   }, []);
+
+  // Keep addDebugEventRef in sync
+  useEffect(() => {
+    addDebugEventRef.current = addDebugEvent;
+  }, [addDebugEvent]);
 
   // Success effects
   const playSuccessSound = () => {
@@ -133,7 +148,12 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     setLastEventAt(now);
   }, []);
 
-  // Compute stats
+  // Keep updateProviderRef in sync
+  useEffect(() => {
+    updateProviderRef.current = updateProvider;
+  }, [updateProvider]);
+
+
   const stats = useMemo(() => {
     const total = providers.length;
 
@@ -280,10 +300,13 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
 
   // Provider status polling - polls scan_events for provider updates
   // Aggressive 1-second polling + real-time subscription for immediate updates
+  // Uses refs to prevent stale closures in polling intervals
   useEffect(() => {
     if (!scanId || !open) return;
     
-    console.log('[ScanProgress] Starting provider status polling for scan:', scanId);
+    // Store scanId in ref for stable access in callbacks
+    const currentScanId = scanId;
+    console.log('[ScanProgress] Starting provider status polling for scan:', currentScanId);
     
     // Map stage to status with lowercase normalization
     const mapStageToStatus = (stage: string): ProviderStatus['status'] => {
@@ -337,13 +360,14 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       providerStatuses.forEach((eventData, providerName) => {
         const providerStatus = mapStageToStatus(eventData.stage);
         console.log(`[ScanProgress] ${source}: Updating provider ${providerName} -> ${providerStatus}`);
-        updateProvider(providerName, providerStatus, eventData.message, eventData.resultCount);
+        // Use refs to get latest callback versions
+        updateProviderRef.current?.(providerName, providerStatus, eventData.message, eventData.resultCount);
       });
       
-      addDebugEvent('polling', `${source}: ${events.length} events, ${providerStatuses.size} providers`);
+      addDebugEventRef.current?.('polling', `${source}: ${events.length} events, ${providerStatuses.size} providers`);
     };
     
-    // Fetch events from database
+    // Fetch events from database - uses currentScanId from closure (stable)
     const fetchEvents = async () => {
       if (statusRef.current !== 'running') {
         console.log('[ScanProgress] Poll skipped - scan not running');
@@ -351,11 +375,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       }
       
       try {
-        console.log('[ScanProgress] Polling scan_events...');
+        console.log('[ScanProgress] Polling scan_events for:', currentScanId);
         const { data: events, error } = await supabase
           .from('scan_events')
           .select('*')
-          .eq('scan_id', scanId)
+          .eq('scan_id', currentScanId)
           .order('created_at', { ascending: true });
         
         if (error) {
@@ -376,7 +400,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     
     // Subscribe to real-time scan_events inserts for immediate updates
     const eventsChannel = supabase
-      .channel(`scan_events_realtime_${scanId}`)
+      .channel(`scan_events_realtime_${currentScanId}`)
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
@@ -385,7 +409,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         const event = payload.new as any;
         
         // Filter by scan_id (in case filter doesn't work)
-        if (event.scan_id !== scanId) return;
+        if (event.scan_id !== currentScanId) return;
         
         console.log('[ScanProgress] REALTIME EVENT:', {
           scanId: event.scan_id,
@@ -398,8 +422,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           const providerName = event.provider.toLowerCase();
           const providerStatus = mapStageToStatus(event.stage);
           
-          addDebugEvent('database', `Realtime: ${providerName} -> ${event.stage}`, providerName);
-          updateProvider(providerName, providerStatus, event.message, event.results_count || event.findings_count);
+          addDebugEventRef.current?.('database', `Realtime: ${providerName} -> ${event.stage}`, providerName);
+          updateProviderRef.current?.(providerName, providerStatus, event.message, event.results_count || event.findings_count);
           setLastEventAt(Date.now());
           setConnectionMode('live');
         }
@@ -416,7 +440,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       clearInterval(interval);
       supabase.removeChannel(eventsChannel);
     };
-  }, [scanId, open, updateProvider, addDebugEvent]);
+  }, [scanId, open]); // Reduced dependencies - callbacks accessed via refs
 
   // Main effect: Setup realtime + health monitoring
   useEffect(() => {
