@@ -150,7 +150,28 @@ export default function AdvancedScan() {
       setBatchItems([]);
     }
   }, [scanType, maigretEnabled, workspace?.plan]);
-  
+
+  // ✅ Move handleScanComplete here BEFORE any early returns
+  const handleScanComplete = useCallback(() => {
+    setIsScanning(false);
+    setProgressOpen(false);
+    if (currentScanId) {
+      // ALL username scans go to Simple pipeline results page
+      if (scanType === 'username') {
+        navigate(`/maigret/results/${currentScanId}`);
+      } else {
+        navigate(`/results/${currentScanId}`);
+      }
+    } else {
+      navigate("/dashboard");
+    }
+  }, [currentScanId, scanType, navigate]);
+
+  const handleProgressClose = useCallback(() => {
+    setProgressOpen(false);
+    setModalScanId(null);
+  }, []);
+
   // Guard: Show loading state while workspace initializes
   if (workspaceLoading) {
     return (
@@ -561,25 +582,6 @@ export default function AdvancedScan() {
     }
   };
 
-  const handleScanComplete = useCallback(() => {
-    setIsScanning(false);
-    setProgressOpen(false);
-    if (currentScanId) {
-      // ✅ FIX: ALL username scans go to Simple pipeline results page (maigret_results table)
-      if (scanType === 'username') {
-        navigate(`/maigret/results/${currentScanId}`);
-      } else {
-        navigate(`/results/${currentScanId}`);
-      }
-    } else {
-      navigate("/dashboard");
-    }
-  }, [currentScanId, scanType, navigate]);
-
-  const handleProgressClose = useCallback(() => {
-    setProgressOpen(false);
-    setModalScanId(null);
-  }, []);
 
   const handleApplyTemplate = (template: ScanTemplate) => {
     const config = template.configuration;
