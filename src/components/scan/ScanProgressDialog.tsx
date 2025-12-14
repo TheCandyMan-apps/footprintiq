@@ -422,22 +422,24 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   useEffect(() => {
     if (!scanId || !open) return;
 
-    console.log('[ScanProgress] Initializing for scanId:', scanId);
-    
-    // Reset state
-    setProgress(5);
-    setStatus('running');
-    setTotalResults(0);
-    setConnectionMode('live');
-    setLastEventAt(Date.now());
-    isPollingRef.current = false;
-    setDebugEvents([]);
+    // Check if this is a NEW scan vs reopening the same scan
+    const isNewScan = scanId !== lastScanIdRef.current;
+    lastScanIdRef.current = scanId;
 
-    // DON'T pre-populate providers from form - let scan_events drive the list dynamically
-    // This ensures only actual providers from n8n appear in the UI
-    console.log('[ScanProgress] Starting with empty providers - will populate from scan_events');
-    setProviders([]);
-    addDebugEvent('database', 'Providers will populate dynamically from scan_events');
+    console.log('[ScanProgress] Initializing for scanId:', scanId, isNewScan ? '(NEW)' : '(SAME)');
+    
+    // Only reset state for a NEW scan - don't clear providers if reopening same scan
+    if (isNewScan) {
+      setProgress(5);
+      setStatus('running');
+      setTotalResults(0);
+      setConnectionMode('live');
+      setLastEventAt(Date.now());
+      isPollingRef.current = false;
+      setDebugEvents([]);
+      setProviders([]);
+      addDebugEvent('database', 'Providers will populate dynamically from scan_events');
+    }
 
     // Fetch initial progress and check if already completed
     const fetchInitialProgress = async () => {
