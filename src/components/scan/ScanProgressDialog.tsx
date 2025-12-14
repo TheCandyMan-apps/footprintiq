@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -36,6 +37,7 @@ interface ScanProgressDialogProps {
 }
 
 export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, initialProviders }: ScanProgressDialogProps) {
+  const navigate = useNavigate();
   const initialProvidersKey = useMemo(() => initialProviders?.join(',') || '', [initialProviders]);
 
   // Track last scanId to prevent progress resets when reopening same scan
@@ -159,7 +161,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
 
     const TERMINAL = new Set<ProviderStatus['status']>([
       'success',
-      'failed',     // ✅ COUNT THIS
+      'failed',
       'skipped',
       'warning',
     ]);
@@ -168,7 +170,9 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     const active = providers.filter(p => p.status === 'loading' || p.status === 'retrying');
     const findingsCount = providers.reduce((sum, p) => sum + (p.resultCount || 0), 0);
 
-    const progressPct = total > 0 ? Math.round((completed / total) * 100) : 0;
+    // Include partial credit for active providers for smoother progress
+    const effectiveCompleted = completed + (active.length * 0.5);
+    const progressPct = total > 0 ? Math.round((effectiveCompleted / total) * 100) : 0;
     return { total, completed, active, findingsCount, progressPct };
   }, [providers]);
 
@@ -283,11 +287,13 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           if (finalEvents && finalEvents.length > 0) {
             console.log('[CompletionDetector] Final sync: processing', finalEvents.length, 'events');
             
-            // Get the latest status for each provider
+          // Get the latest status for each provider
             const providerFinalStatuses = new Map<string, { stage: string; message?: string; resultCount?: number }>();
             finalEvents.forEach((event: any) => {
               if (event.provider) {
                 const providerName = event.provider.toLowerCase();
+                // Skip 'all' summary event - it's not a real provider
+                if (providerName === 'all') return;
                 providerFinalStatuses.set(providerName, {
                   stage: event.stage,
                   message: event.message,
@@ -381,6 +387,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         if (event.provider) {
           // Normalize provider name to lowercase
           const providerName = event.provider.toLowerCase();
+          // Skip 'all' summary event - it's not a real provider
+          if (providerName === 'all') {
+            console.log(`[ScanProgress] ${source}: Skipping 'all' summary event`);
+            return;
+          }
           console.log(`[ScanProgress] ${source}: Event - provider=${providerName}, stage=${event.stage}`);
           
           providerStatuses.set(providerName, {
@@ -808,8 +819,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           {status === 'completed' && scanId && (
             <Button 
               onClick={async () => { 
-                onOpenChange(false);
-                // Detect scan type from database to route correctly
+                // Fetch scan type FIRST before closing dialog
                 const { data: scanData } = await supabase
                   .from('scans')
                   .select('scan_type')
@@ -817,10 +827,15 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
                   .maybeSingle();
                 
                 const scanType = scanData?.scan_type;
+                
+                // Close dialog
+                onOpenChange(false);
+                
+                // Navigate using React Router
                 if (scanType === 'username') {
-                  window.location.href = `/maigret/results/${scanId}`;
+                  navigate(`/maigret/results/${scanId}`);
                 } else {
-                  window.location.href = `/results/${scanId}`;
+                  navigate(`/results/${scanId}`);
                 }
               }} 
               className="flex-1"
