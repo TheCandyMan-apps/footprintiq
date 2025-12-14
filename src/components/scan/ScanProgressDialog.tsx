@@ -508,8 +508,21 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       setLastEventAt(Date.now());
       isPollingRef.current = false;
       setDebugEvents([]);
-      setProviders([]);
-      addDebugEvent('database', 'Providers will populate dynamically from scan_events');
+      
+      // Pre-populate providers from initialProviders if provided
+      if (initialProviders && initialProviders.length > 0) {
+        const prePopulatedProviders: ProviderStatus[] = initialProviders.map(name => ({
+          name: name.toLowerCase(),
+          status: 'pending',
+          message: 'Waiting to start...',
+          lastUpdated: Date.now()
+        }));
+        setProviders(prePopulatedProviders);
+        addDebugEvent('database', `Pre-populated ${initialProviders.length} providers: ${initialProviders.join(', ')}`);
+      } else {
+        setProviders([]);
+        addDebugEvent('database', 'No initialProviders - will populate dynamically from scan_events');
+      }
     }
 
     // Fetch initial progress and check if already completed
@@ -695,6 +708,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         return <AlertCircle className="h-4 w-4 text-yellow-500" />;
       case 'skipped':
         return <AlertCircle className="h-4 w-4 text-muted-foreground" />;
+      case 'pending':
+        return <div className="h-4 w-4 rounded-full border-2 border-dashed border-muted-foreground/50" />;
       default:
         return <div className="h-4 w-4 rounded-full border-2 border-muted" />;
     }
