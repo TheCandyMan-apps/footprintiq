@@ -272,86 +272,106 @@ const Dashboard = () => {
         activeMonitoring: activeWatchlistsCount || 0
       });
 
-      // Calculate DNA metrics from MULTIPLE recent scans (not just one)
-      if (scansData && scansData.length > 0) {
-        // Get recent completed scans for aggregated DNA calculation
-        const completedScans = scansData.filter(s => s.status === 'completed' || s.status === 'completed_partial');
-        const scansForMetrics = completedScans.slice(0, 5); // Aggregate from up to 5 recent scans
-        
-        setLatestScanId(scansData[0].id);
-
-        // Fetch findings for DNA metrics from multiple scans with workspace filter
-        const scanIds = scansForMetrics.map(s => s.id);
-        
-        let dnaFindings: any[] = [];
-        if (scanIds.length > 0) {
-          const findingsQuery = currentWorkspaceId
-            ? supabase.from('findings').select('kind, severity, provider').in('scan_id', scanIds).eq('workspace_id', currentWorkspaceId)
-            : supabase.from('findings').select('kind, severity, provider').in('scan_id', scanIds);
+        // Calculate DNA metrics from MULTIPLE recent scans (not just one)
+        if (scansData && scansData.length > 0) {
+          // Get recent completed scans for aggregated DNA calculation
+          const completedScans = scansData.filter(s => s.status === 'completed' || s.status === 'completed_partial');
+          const scansForMetrics = completedScans.slice(0, 5); // Aggregate from up to 5 recent scans
           
-          const { data } = await findingsQuery;
-          dnaFindings = data || [];
-        }
+          setLatestScanId(scansData[0].id);
 
-        if (dnaFindings && dnaFindings.length > 0) {
-          // Enhanced keyword arrays for accurate categorization
-          const BREACH_KEYWORDS = ['hibp', 'breach', 'leak', 'compromised', 'breach.hit', 'pwned', 'violation', 'exposed'];
-          const BROKER_KEYWORDS = ['broker', 'people-search', 'background-check', 'data-aggregator', 'whitepages', 'spokeo', 'peoplesearch', 'pipl', 'radaris'];
-          const DARK_WEB_KEYWORDS = ['dark', 'tor', 'onion', 'paste', 'intelx', 'dump', 'pastebin', 'leak'];
-          const EXPOSURE_KEYWORDS = ['profile', 'presence', 'hit', 'found', 'account', 'social'];
-          const EXPOSURE_PROVIDERS = ['maigret', 'sherlock', 'gosearch', 'holehe'];
+          // Detect if this is primarily a username scan (OSINT profile discovery)
+          const isUsernameScanPrimary = scansForMetrics.some(s => s.username && !s.email && !s.phone);
 
-          let breaches = 0, exposures = 0, dataBrokers = 0, darkWeb = 0;
+          // Fetch findings for DNA metrics from multiple scans with workspace filter
+          const scanIds = scansForMetrics.map(s => s.id);
           
-          // Filter out provider_error findings for accurate counts
-          const validFindings = dnaFindings.filter(f => {
-            const kind = (f.kind || '').toLowerCase();
-            return kind !== 'provider_error' && !kind.includes('error');
-          });
-          
-          for (const f of validFindings) {
-            const kind = (f.kind || '').toLowerCase();
-            const provider = (f.provider || '').toLowerCase();
+          let dnaFindings: any[] = [];
+          if (scanIds.length > 0) {
+            const findingsQuery = currentWorkspaceId
+              ? supabase.from('findings').select('kind, severity, provider').in('scan_id', scanIds).eq('workspace_id', currentWorkspaceId)
+              : supabase.from('findings').select('kind, severity, provider').in('scan_id', scanIds);
             
-            // Breaches: findings with breach-related keywords
-            if (BREACH_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
-              breaches++;
-              continue; // Count as breach, skip other categories
-            }
-            
-            // Data Brokers: findings matching broker keywords
-            if (BROKER_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
-              dataBrokers++;
-              continue;
-            }
-            
-            // Dark Web: findings matching dark web keywords
-            if (DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
-              darkWeb++;
-              continue;
-            }
-            
-            // Exposures: findings from OSINT providers OR containing exposure keywords
-            // This should be the largest category for typical OSINT scans
-            if (EXPOSURE_PROVIDERS.includes(provider) || 
-                EXPOSURE_KEYWORDS.some(k => kind.includes(k))) {
-              exposures++;
-            }
+            const { data } = await findingsQuery;
+            dnaFindings = data || [];
           }
 
-          // Calculate risk score (ensure it's an integer 0-100)
-          const riskScore = Math.min(100, Math.max(0, Math.round(breaches * 15 + darkWeb * 10 + dataBrokers * 5 + exposures * 1)));
-          setDnaMetrics({ 
-            score: Math.max(0, 100 - riskScore), 
-            breaches, 
-            exposures, 
-            dataBrokers, 
-            darkWeb 
-          });
-        } else {
-          // No findings - set all to 0
-          setDnaMetrics({ score: 100, breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 });
-        }
+          if (dnaFindings && dnaFindings.length > 0) {
+            // Enhanced keyword arrays for accurate categorization
+            const BREACH_KEYWORDS = ['hibp', 'breach', 'leak', 'compromised', 'breach.hit', 'pwned', 'violation', 'exposed'];
+            const BROKER_KEYWORDS = ['broker', 'people-search', 'background-check', 'data-aggregator', 'whitepages', 'spokeo', 'peoplesearch', 'pipl', 'radaris'];
+            const DARK_WEB_KEYWORDS = ['dark', 'tor', 'onion', 'paste', 'intelx', 'dump', 'pastebin', 'leak'];
+            const EXPOSURE_KEYWORDS = ['profile', 'presence', 'hit', 'found', 'account', 'social'];
+            const EXPOSURE_PROVIDERS = ['maigret', 'sherlock', 'gosearch', 'holehe'];
+
+            let breaches = 0, exposures = 0, dataBrokers = 0, darkWeb = 0;
+            
+            // Filter out provider_error findings for accurate counts
+            const validFindings = dnaFindings.filter(f => {
+              const kind = (f.kind || '').toLowerCase();
+              return kind !== 'provider_error' && !kind.includes('error');
+            });
+            
+            for (const f of validFindings) {
+              const kind = (f.kind || '').toLowerCase();
+              const provider = (f.provider || '').toLowerCase();
+              
+              // Breaches: findings with breach-related keywords
+              if (BREACH_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
+                breaches++;
+                continue; // Count as breach, skip other categories
+              }
+              
+              // Data Brokers: findings matching broker keywords
+              if (BROKER_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
+                dataBrokers++;
+                continue;
+              }
+              
+              // Dark Web: findings matching dark web keywords
+              if (DARK_WEB_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
+                darkWeb++;
+                continue;
+              }
+              
+              // Exposures: findings from OSINT providers OR containing exposure keywords
+              // This should be the largest category for typical OSINT scans
+              if (EXPOSURE_PROVIDERS.includes(provider) || 
+                  EXPOSURE_KEYWORDS.some(k => kind.includes(k))) {
+                exposures++;
+              }
+            }
+
+            // Calculate risk score with different formulas based on scan type
+            let riskScore: number;
+            
+            if (isUsernameScanPrimary) {
+              // Username scans: High exposure count is EXPECTED, not a high risk
+              // Profile discovery is intelligence data - only penalize actual risks
+              riskScore = Math.min(100, Math.max(0, Math.round(
+                darkWeb * 25 +           // Dark web is serious
+                breaches * 15 +          // Breaches are concerning
+                dataBrokers * 10 +       // Data brokers are moderate risk
+                Math.min(exposures, 20)  // Cap exposure penalty at 20 (expected for OSINT)
+              )));
+            } else {
+              // Breach/email scans: Traditional calculation where exposures matter more
+              riskScore = Math.min(100, Math.max(0, Math.round(
+                breaches * 15 + darkWeb * 10 + dataBrokers * 5 + exposures * 1
+              )));
+            }
+            
+            setDnaMetrics({ 
+              score: Math.max(0, 100 - riskScore), 
+              breaches, 
+              exposures, 
+              dataBrokers, 
+              darkWeb 
+            });
+          } else {
+            // No findings - set all to 0
+            setDnaMetrics({ score: 100, breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0 });
+          }
 
         // Fetch data sources for the most recent scan
         const recentScanForSources = scansData[0];
