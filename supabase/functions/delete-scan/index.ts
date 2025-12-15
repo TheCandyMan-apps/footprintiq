@@ -8,8 +8,14 @@ const corsHeaders = {
 };
 
 const DeleteScanSchema = z.object({
-  scanId: z.string().uuid("Invalid scan ID format"),
-  force: z.boolean().optional()
+  scanId: z.string().uuid("Invalid scan ID format").optional(),
+  scanIds: z.array(z.string().uuid()).optional(),
+  force: z.boolean().optional(),
+  selectAll: z.boolean().optional(),
+  filters: z.object({
+    status: z.string().optional(),
+    searchTerm: z.string().optional()
+  }).optional()
 });
 
 async function validateAuth(req: Request, supabase: any) {
@@ -60,11 +66,89 @@ Deno.serve(wrapHandler(async (req) => {
 
     const user = await validateAuth(req, supabase);
     const body = await req.json();
-    const { scanId, force = false } = DeleteScanSchema.parse(body);
+    const { scanId, scanIds, force = false, selectAll, filters } = DeleteScanSchema.parse(body);
+
+    const userIsAdmin = await isAdmin(supabase, user.id);
+    if (!userIsAdmin) {
+      throw ERROR_RESPONSES.FORBIDDEN('Admin access required');
+    }
+
+    // Handle bulk delete with selectAll
+    if (selectAll) {
+      console.log(`[${functionName}] Bulk delete with selectAll:`, sanitizeForLog({ filters, userId: user.id, force }));
+      
+      let query = supabase.from('scans').select('id');
+      
+      if (filters?.status) {
+        query = query.eq('status', filters.status);
+      }
+      if (filters?.searchTerm) {
+        query = query.or(`username.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%,id.ilike.%${filters.searchTerm}%`);
+      }
+      
+      const { data: scansToDelete, error: fetchError } = await query;
+      
+      if (fetchError) {
+        console.error(`[${functionName}] Failed to fetch scans:`, sanitizeForLog(fetchError));
+        throw ERROR_RESPONSES.INTERNAL_ERROR('Failed to fetch scans');
+      }
+      
+      const idsToDelete = scansToDelete?.map(s => s.id) || [];
+      console.log(`[${functionName}] Found ${idsToDelete.length} scans to delete`);
+      
+      if (idsToDelete.length > 0) {
+        await supabase.from('scan_events').delete().in('scan_id', idsToDelete);
+        await supabase.from('scan_progress').delete().in('scan_id', idsToDelete);
+        await supabase.from('findings').delete().in('scan_id', idsToDelete);
+        
+        const { error: deleteError } = await supabase
+          .from('scans')
+          .delete()
+          .in('id', idsToDelete);
+        
+        if (deleteError) {
+          console.error(`[${functionName}] Failed to bulk delete:`, sanitizeForLog(deleteError));
+          throw ERROR_RESPONSES.INTERNAL_ERROR('Failed to delete scans');
+        }
+      }
+      
+      return new Response(
+        JSON.stringify({ success: true, message: `Deleted ${idsToDelete.length} scans`, deleted: idsToDelete.length }),
+        { status: 200, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Handle bulk delete with scanIds array
+    if (scanIds && scanIds.length > 0) {
+      console.log(`[${functionName}] Bulk delete ${scanIds.length} scans`);
+      
+      await supabase.from('scan_events').delete().in('scan_id', scanIds);
+      await supabase.from('scan_progress').delete().in('scan_id', scanIds);
+      await supabase.from('findings').delete().in('scan_id', scanIds);
+      
+      const { error: deleteError } = await supabase
+        .from('scans')
+        .delete()
+        .in('id', scanIds);
+      
+      if (deleteError) {
+        console.error(`[${functionName}] Failed to bulk delete:`, sanitizeForLog(deleteError));
+        throw ERROR_RESPONSES.INTERNAL_ERROR('Failed to delete scans');
+      }
+      
+      return new Response(
+        JSON.stringify({ success: true, message: `Deleted ${scanIds.length} scans`, deleted: scanIds.length }),
+        { status: 200, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Single scan delete
+    if (!scanId) {
+      throw ERROR_RESPONSES.INVALID_REQUEST('scanId or scanIds required');
+    }
 
     console.log(`[${functionName}] Deleting scan:`, sanitizeForLog({ scanId, userId: user.id, force }));
 
-    // Get scan info
     const { data: scan, error: scanError } = await supabase
       .from('scans')
       .select('id, user_id, workspace_id, status, created_at')
@@ -75,15 +159,7 @@ Deno.serve(wrapHandler(async (req) => {
       throw ERROR_RESPONSES.NOT_FOUND('Scan not found');
     }
 
-    const userIsAdmin = await isAdmin(supabase, user.id);
-
-    // Check permissions
-    if (!userIsAdmin && scan.user_id !== user.id) {
-      throw ERROR_RESPONSES.FORBIDDEN('Unauthorized to delete this scan');
-    }
-
-    // Check deletion rules (unless admin with force flag)
-    if (!force || !userIsAdmin) {
+    if (!force) {
       const scanAge = Date.now() - new Date(scan.created_at).getTime();
       const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
 
@@ -96,7 +172,6 @@ Deno.serve(wrapHandler(async (req) => {
       }
     }
 
-    // Delete cascade
     await supabase.from('scan_events').delete().eq('scan_id', scanId);
     await supabase.from('scan_progress').delete().eq('scan_id', scanId);
     await supabase.from('findings').delete().eq('scan_id', scanId);
@@ -114,18 +189,11 @@ Deno.serve(wrapHandler(async (req) => {
     console.log(`[${functionName}] Successfully deleted scan:`, scanId);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Scan deleted successfully',
-        scanId
-      }),
-      { 
-        status: 200, 
-        headers: addSecurityHeaders({ 'Content-Type': 'application/json' })
-      }
+      JSON.stringify({ success: true, message: 'Scan deleted successfully', scanId }),
+      { status: 200, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
     );
   } catch (error: any) {
     console.error(`[${functionName}] Error:`, sanitizeForLog(error));
     throw error;
   }
-}, { timeoutMs: 15000, corsHeaders, functionName: 'delete-scan' }));
+}, { timeoutMs: 30000, corsHeaders, functionName: 'delete-scan' }));
