@@ -158,6 +158,14 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         setProgress(30);
 
         try {
+          // Normalize phone to E.164 format before sending
+          const normalizePhone = (phone: string): string => {
+            const digits = phone.replace(/\D/g, '');
+            if (digits.length === 10) return `+1${digits}`;
+            if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+            return digits.startsWith('+') ? digits : `+${digits}`;
+          };
+
           const body: Record<string, any> = {
             scanId: scan.id,
             scanType,
@@ -166,7 +174,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           if (scanData.firstName && scanData.firstName.trim()) body.firstName = scanData.firstName.trim();
           if (scanData.lastName && scanData.lastName.trim()) body.lastName = scanData.lastName.trim();
           if (scanData.email && scanData.email.trim()) body.email = scanData.email.trim();
-          if (scanData.phone && scanData.phone.trim()) body.phone = scanData.phone.trim();
+          if (scanData.phone && scanData.phone.trim()) body.phone = normalizePhone(scanData.phone.trim());
 
           // Actually wait for the scan to complete
           const invokeRes = await withTimeout(
