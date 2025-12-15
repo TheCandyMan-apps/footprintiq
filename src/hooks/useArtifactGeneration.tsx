@@ -63,7 +63,7 @@ export function useArtifactGeneration(scanId: string | undefined) {
     };
   }, [scanId]);
 
-  const generateArtifacts = async (artifactTypes: string[] = ['csv', 'json']) => {
+  const generateArtifacts = async (artifactTypes: string[] = ['csv', 'json', 'html', 'txt', 'pdf']) => {
     if (!scanId) return;
 
     setIsGenerating(true);
