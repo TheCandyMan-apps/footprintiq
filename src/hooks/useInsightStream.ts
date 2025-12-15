@@ -11,11 +11,13 @@ export const useInsightStream = () => {
   const [data, setData] = useState<InsightData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const generateInsight = useCallback(async (findings: any[], redact = true) => {
     setIsLoading(true);
     setError(null);
     setData(null);
+    setNotice(null);
 
     try {
       const { data: responseData, error: invokeError } = await supabase.functions.invoke(
@@ -27,6 +29,11 @@ export const useInsightStream = () => {
 
       if (invokeError) {
         throw invokeError;
+      }
+
+      // Handle notice (rate limit fallback message)
+      if (responseData?.notice) {
+        setNotice(responseData.notice);
       }
 
       // Handle both streaming and non-streaming responses
@@ -45,5 +52,5 @@ export const useInsightStream = () => {
     }
   }, []);
 
-  return { data, isLoading, error, generateInsight };
+  return { data, isLoading, error, notice, generateInsight };
 };
