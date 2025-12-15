@@ -67,10 +67,23 @@ export function useArtifactGeneration(scanId: string | undefined) {
     if (!scanId) return;
 
     setIsGenerating(true);
+    
+    // Set a timeout to prevent infinite loading state
+    const timeout = setTimeout(() => {
+      setIsGenerating(false);
+      toast({
+        title: 'Generation Timeout',
+        description: 'Artifact generation took too long. Please try again.',
+        variant: 'destructive'
+      });
+    }, 60000); // 60 second timeout
+
     try {
-      const { error } = await supabase.functions.invoke('generate-export-artifacts', {
+      const { data, error } = await supabase.functions.invoke('generate-export-artifacts', {
         body: { scanId, artifacts: artifactTypes }
       });
+
+      clearTimeout(timeout);
 
       if (error) {
         console.error('Artifact generation error:', error);
@@ -80,13 +93,34 @@ export function useArtifactGeneration(scanId: string | undefined) {
           variant: 'destructive'
         });
         setIsGenerating(false);
+      } else if (data?.artifacts?.length > 0) {
+        // If we got artifacts back directly, update state immediately
+        setArtifacts(prev => [...data.artifacts.map((a: any) => ({
+          id: crypto.randomUUID(),
+          artifact_type: a.type,
+          file_url: a.fileName,
+          signed_url: a.url,
+          file_size_bytes: a.size,
+          generated_at: new Date().toISOString(),
+          downloaded_at: null
+        })), ...prev]);
+        setIsGenerating(false);
+        toast({
+          title: 'Artifacts Generated',
+          description: `${data.artifacts.length} file(s) ready for download`
+        });
       } else {
         toast({
           title: 'Generating Artifacts',
           description: 'Your export files are being generated...'
         });
+        // Set a secondary timeout in case realtime doesn't fire
+        setTimeout(() => {
+          setIsGenerating(false);
+        }, 30000);
       }
     } catch (err) {
+      clearTimeout(timeout);
       console.error('Error invoking artifact generation:', err);
       toast({
         title: 'Error',

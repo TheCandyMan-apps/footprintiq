@@ -232,20 +232,39 @@ Guidelines:
       );
     }
 
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      console.error("AI API error:", response.status, await response.text());
+    let response;
+    try {
+      response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+    } catch (fetchError) {
+      console.error("AI API fetch error:", fetchError);
       const fallback = generateFallbackInsight(findings);
       return new Response(
         JSON.stringify({ type: "done", data: fallback }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'Unknown error');
+      console.error("AI API error:", response.status, errorText);
+      
+      // Return fallback for rate limits (429) or payment required (402)
+      const fallback = generateFallbackInsight(findings);
+      const errorMessage = response.status === 429 
+        ? "Rate limit exceeded - showing fallback analysis"
+        : response.status === 402
+        ? "Credits required - showing fallback analysis"
+        : "AI service unavailable - showing fallback analysis";
+      
+      return new Response(
+        JSON.stringify({ type: "done", data: fallback, notice: errorMessage }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
