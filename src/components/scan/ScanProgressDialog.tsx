@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -128,7 +129,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     }, 250);
   };
 
-  // Unified provider update
+  // Unified provider update - case-insensitive matching
   const updateProvider = useCallback((
     name: string,
     newStatus: ProviderStatus['status'],
@@ -136,11 +137,12 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     resultCount?: number
   ) => {
     const now = Date.now();
+    const nameLower = name.toLowerCase();
     setProviders(prev => {
-      const existing = prev.find(p => p.name === name);
+      const existing = prev.find(p => p.name.toLowerCase() === nameLower);
       if (existing) {
         return prev.map(p =>
-          p.name === name
+          p.name.toLowerCase() === nameLower
             ? { ...p, status: newStatus, message: message || p.message, resultCount: resultCount !== undefined ? resultCount : p.resultCount, lastUpdated: now }
             : p
         );
@@ -310,11 +312,20 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
             .eq('scan_id', scanId)
             .order('created_at', { ascending: true });
           
+          // Get findings count first
+          const { count } = await supabase
+            .from('findings')
+            .select('*', { count: 'exact', head: true })
+            .eq('scan_id', scanId);
+          
+          const findingsCount = count || 0;
+          
+          // Build final provider list from events
+          const providerFinalStatuses = new Map<string, { stage: string; message?: string; resultCount?: number }>();
+          
           if (finalEvents && finalEvents.length > 0) {
             console.log('[CompletionDetector] Final sync: processing', finalEvents.length, 'events');
             
-          // Get the latest status for each provider
-            const providerFinalStatuses = new Map<string, { stage: string; message?: string; resultCount?: number }>();
             finalEvents.forEach((event: any) => {
               if (event.provider) {
                 const providerName = event.provider.toLowerCase();
@@ -329,44 +340,50 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
             });
             
             console.log('[CompletionDetector] Final provider statuses:', Array.from(providerFinalStatuses.entries()));
-            
-            // Update all providers to their final state
-            providerFinalStatuses.forEach((data, providerName) => {
-              const finalStatus = mapStageToStatus(data.stage);
-              console.log(`[CompletionDetector] Final update: ${providerName} -> ${finalStatus}`);
-              updateProviderRef.current?.(providerName, finalStatus, data.message, data.resultCount);
-            });
-            
-            // Remove pre-populated providers that never received any events
+          }
+          
+          // ✅ ATOMIC STATE UPDATE with flushSync: Update all providers in ONE call and force synchronous render
+          flushSync(() => {
             setProviders(prev => {
+              const now = Date.now();
               const providersWithEvents = new Set(providerFinalStatuses.keys());
-              const filtered = prev.filter(p => 
+              
+              // Update providers that received events with their final status
+              const updatedProviders = prev.map(p => {
+                const finalData = providerFinalStatuses.get(p.name.toLowerCase());
+                if (finalData) {
+                  return {
+                    ...p,
+                    status: mapStageToStatus(finalData.stage),
+                    message: finalData.message || p.message,
+                    resultCount: finalData.resultCount !== undefined ? finalData.resultCount : p.resultCount,
+                    lastUpdated: now
+                  };
+                }
+                return p;
+              });
+              
+              // Filter out pending providers that never received events
+              const filtered = updatedProviders.filter(p => 
                 providersWithEvents.has(p.name.toLowerCase()) || p.status !== 'pending'
               );
-              console.log('[CompletionDetector] Removed stale providers, keeping:', filtered.map(p => p.name));
+              
+              console.log('[CompletionDetector] Atomic update: final providers:', filtered.map(p => `${p.name}:${p.status}`));
               return filtered;
             });
-          }
+            
+            setTotalResults(findingsCount);
+          });
           
-          // Get findings count
-          const { count } = await supabase
-            .from('findings')
-            .select('*', { count: 'exact', head: true })
-            .eq('scan_id', scanId);
-          
-          const findingsCount = count || 0;
-          setTotalResults(findingsCount);
-          
-          // Add a small delay to ensure UI updates before marking complete
-          await new Promise(resolve => setTimeout(resolve, 150));
-          
-          // NOW set the final status (after providers are updated and UI has time to render)
-          if (scanStatus === 'failed' || scanStatus === 'timeout') {
-            setStatus('failed');
-          } else {
-            setStatus('completed');
-          }
-          setProgress(100);
+          // ✅ NOW set the final status (after flushSync guarantees provider updates are rendered)
+          flushSync(() => {
+            if (scanStatus === 'failed' || scanStatus === 'timeout') {
+              setStatus('failed');
+            } else {
+              setStatus('completed');
+            }
+            setProgress(100);
+          });
           
           // Trigger effects
           if (findingsCount > 0) {
