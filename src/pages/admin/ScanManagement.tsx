@@ -126,6 +126,34 @@ export default function ScanManagement() {
     }
   });
 
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (scanIds: string[]) => {
+      const body = scanIds.length === 0
+        ? { 
+            selectAll: true, 
+            force: true,
+            filters: { 
+              status: statusFilter === 'all' ? undefined : statusFilter,
+              searchTerm: searchTerm || undefined 
+            } 
+          }
+        : { scanIds, force: true };
+      
+      const { data, error } = await supabase.functions.invoke('delete-scan', { body });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Scans deleted successfully");
+      setSelectedScans(new Set());
+      setSelectAllMode(false);
+      refetch();
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to delete scans');
+    }
+  });
+
   const getStatusBadge = (status: ScanStatus) => {
     const variants: Record<ScanStatus, any> = {
       pending: { variant: 'secondary', label: 'Pending' },
@@ -197,15 +225,17 @@ export default function ScanManagement() {
 
   const handleBulkCancel = () => {
     if (selectAllMode) {
-      // Pass selectAll flag with current filters
-      bulkCancelMutation.mutate([], {
-        onSuccess: () => {
-          clearSelection();
-        }
-      });
+      bulkCancelMutation.mutate([], { onSuccess: () => clearSelection() });
     } else {
-      const scanIds = Array.from(selectedScans);
-      bulkCancelMutation.mutate(scanIds);
+      bulkCancelMutation.mutate(Array.from(selectedScans));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectAllMode) {
+      bulkDeleteMutation.mutate([]);
+    } else {
+      bulkDeleteMutation.mutate(Array.from(selectedScans));
     }
   };
 
@@ -274,14 +304,41 @@ export default function ScanManagement() {
                   <div className="flex items-center gap-2">
                     <Button 
                       onClick={handleBulkCancel}
-                      variant="destructive"
+                      variant="outline"
                       disabled={bulkCancelMutation.isPending}
                       className="gap-2"
                     >
                       <StopCircle className="h-4 w-4" />
-                      Cancel {selectAllMode ? pagination.total : selectedScans.size} Selected
+                      Cancel {selectAllMode ? pagination.total : selectedScans.size}
                     </Button>
-                    <Button variant="outline" onClick={clearSelection} size="sm">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="destructive"
+                          disabled={bulkDeleteMutation.isPending}
+                          className="gap-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete {selectAllMode ? pagination.total : selectedScans.size}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete {selectAllMode ? pagination.total : selectedScans.size} Scans?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete all selected scans and their associated data.
+                            This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleBulkDelete}>
+                            Delete All
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <Button variant="ghost" onClick={clearSelection} size="sm">
                       Clear
                     </Button>
                   </div>
