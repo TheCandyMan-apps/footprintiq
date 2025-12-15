@@ -13,10 +13,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { IdentityStrengthScore } from '@/components/intelligence/IdentityStrengthScore';
 import { UsernameUniquenessScore } from '@/components/intelligence/UsernameUniquenessScore';
 import { FootprintClusterMap } from '@/components/intelligence/FootprintClusterMap';
+import { CategoryDistributionChart } from '@/components/intelligence/CategoryDistributionChart';
+import { ConfidenceDistributionChart } from '@/components/intelligence/ConfidenceDistributionChart';
+import { RiskBreakdownChart } from '@/components/intelligence/RiskBreakdownChart';
+import { CollapsibleSection } from '@/components/intelligence/CollapsibleSection';
 import { RequestStatusDistribution } from '@/components/scan/RequestStatusDistribution';
 import { ProviderStatusPanel } from '@/components/maigret/ProviderStatusPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 
 export default function SimpleMaigretResults() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -198,44 +203,73 @@ export default function SimpleMaigretResults() {
             <FootprintDNACard scanId={jobId} userId={scanUserId} />
           </ErrorBoundary>
 
+          {/* Charts Section - New visualizations */}
+          <CollapsibleSection 
+            title="Analytics & Distribution" 
+            defaultOpen={true}
+            badge={<Badge variant="secondary" className="text-xs">New</Badge>}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+                <CategoryDistributionChart scanId={jobId} />
+              </ErrorBoundary>
+              <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+                <ConfidenceDistributionChart scanId={jobId} />
+              </ErrorBoundary>
+            </div>
+            <div className="mt-6">
+              <ErrorBoundary fallback={<Skeleton className="h-32 w-full" />}>
+                <RiskBreakdownChart scanId={jobId} />
+              </ErrorBoundary>
+            </div>
+          </CollapsibleSection>
+
           {/* Intelligence Layer - Username Scan Tiles */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
-              <IdentityStrengthScore scanId={jobId} />
-            </ErrorBoundary>
-            <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
-              <UsernameUniquenessScore scanId={jobId} />
-            </ErrorBoundary>
-            <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
-              <FootprintClusterMap scanId={jobId} />
-            </ErrorBoundary>
-          </div>
+          <CollapsibleSection title="Intelligence Metrics" defaultOpen={true}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+                <IdentityStrengthScore scanId={jobId} />
+              </ErrorBoundary>
+              <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+                <UsernameUniquenessScore scanId={jobId} />
+              </ErrorBoundary>
+              <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+                <FootprintClusterMap scanId={jobId} />
+              </ErrorBoundary>
+            </div>
+          </CollapsibleSection>
 
           {/* Request Status Distribution */}
-          <ErrorBoundary fallback={<Skeleton className="h-48 w-full" />}>
-            <RequestStatusDistribution scanId={jobId} />
-          </ErrorBoundary>
+          <CollapsibleSection title="Request Status" defaultOpen={false}>
+            <ErrorBoundary fallback={<Skeleton className="h-48 w-full" />}>
+              <RequestStatusDistribution scanId={jobId} />
+            </ErrorBoundary>
+          </CollapsibleSection>
 
           {/* Provider Status Panel */}
-          <ErrorBoundary fallback={<Skeleton className="h-48 w-full" />}>
-            <ProviderStatusPanel scanId={jobId} />
-          </ErrorBoundary>
+          <CollapsibleSection title="Provider Status" defaultOpen={false}>
+            <ErrorBoundary fallback={<Skeleton className="h-48 w-full" />}>
+              <ProviderStatusPanel scanId={jobId} />
+            </ErrorBoundary>
+          </CollapsibleSection>
 
           {/* Filters */}
-          <ResultsFilters
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            selectedProviders={selectedProviders}
-            onProviderToggle={(provider) => {
-              setSelectedProviders(prev =>
-                prev.includes(provider)
-                  ? prev.filter(p => p !== provider)
-                  : [...prev, provider]
-              );
-            }}
-            availableProviders={availableProviders}
-            providerStats={providerStats}
-          />
+          <CollapsibleSection title="Search & Filters" defaultOpen={true}>
+            <ResultsFilters
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedProviders={selectedProviders}
+              onProviderToggle={(provider) => {
+                setSelectedProviders(prev =>
+                  prev.includes(provider)
+                    ? prev.filter(p => p !== provider)
+                    : [...prev, provider]
+                );
+              }}
+              availableProviders={availableProviders}
+              providerStats={providerStats}
+            />
+          </CollapsibleSection>
 
           <ErrorBoundary fallback={<Skeleton className="h-96 w-full" />}>
             <SimpleResultsViewer 
@@ -257,23 +291,25 @@ export default function SimpleMaigretResults() {
           </ErrorBoundary>
 
           {/* AI Insights Panel */}
-          <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
-            <AIInsightsPanel 
-              scanData={{
-                jobId: jobId,
-                scanType: 'username',
-                exposures: totalFindings,
-                presence: (providerStats.maigret || 0) + (providerStats.sherlock || 0) + (providerStats.gosearch || 0) + (providerStats['apify-social'] || 0),
-                providers: {
-                  maigret: providerStats.maigret || 0,
-                  sherlock: providerStats.sherlock || 0,
-                  gosearch: providerStats.gosearch || 0,
-                  apifySocial: providerStats['apify-social'] || 0
-                },
-                statuses: providerStatuses
-              }}
-            />
-          </ErrorBoundary>
+          <CollapsibleSection title="AI Insights" defaultOpen={true}>
+            <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+              <AIInsightsPanel 
+                scanData={{
+                  jobId: jobId,
+                  scanType: 'username',
+                  exposures: totalFindings,
+                  presence: (providerStats.maigret || 0) + (providerStats.sherlock || 0) + (providerStats.gosearch || 0) + (providerStats['apify-social'] || 0),
+                  providers: {
+                    maigret: providerStats.maigret || 0,
+                    sherlock: providerStats.sherlock || 0,
+                    gosearch: providerStats.gosearch || 0,
+                    apifySocial: providerStats['apify-social'] || 0
+                  },
+                  statuses: providerStatuses
+                }}
+              />
+            </ErrorBoundary>
+          </CollapsibleSection>
         </div>
       </main>
       <Footer />
