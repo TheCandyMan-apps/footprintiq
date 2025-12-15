@@ -3,8 +3,6 @@ import { useEffect, useRef } from 'react';
 interface Particle {
   x: number;
   y: number;
-  vx: number;
-  vy: number;
   radius: number;
 }
 
@@ -28,13 +26,11 @@ export function ParticleBackground() {
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // Initialize particles
+    // Initialize particles with fixed positions
     const particleCount = 80;
     particlesRef.current = Array.from({ length: particleCount }, () => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.3,
-      vy: (Math.random() - 0.5) * 0.3,
       radius: Math.random() * 2 + 1,
     }));
 
@@ -42,16 +38,8 @@ export function ParticleBackground() {
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Update and draw particles
+      // Draw static particles
       particlesRef.current.forEach((particle, i) => {
-        // Update position
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-
-        // Bounce off edges
-        if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
-        if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
-
         // Draw particle with glow
         const gradient = ctx.createRadialGradient(
           particle.x, particle.y, 0,
