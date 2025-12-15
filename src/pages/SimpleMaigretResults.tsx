@@ -22,6 +22,11 @@ import { ProviderStatusPanel } from '@/components/maigret/ProviderStatusPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { CatfishDetection } from '@/components/CatfishDetection';
+import { ScanSummary } from '@/components/ScanSummary';
+import { ArtifactDownloadCard } from '@/components/scan/ArtifactDownloadCard';
+import { useArtifactGeneration } from '@/hooks/useArtifactGeneration';
+import { Finding, Severity } from '@/lib/ufm';
 
 export default function SimpleMaigretResults() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -37,6 +42,10 @@ export default function SimpleMaigretResults() {
   const [isCached, setIsCached] = useState(false);
   const [cachedFromScanId, setCachedFromScanId] = useState<string | null>(null);
   const [gosearchPending, setGosearchPending] = useState(false);
+  const [findingsForExport, setFindingsForExport] = useState<Finding[]>([]);
+
+  // Artifact generation hook
+  const { artifacts, isGenerating, generateArtifacts } = useArtifactGeneration(jobId);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -113,6 +122,76 @@ export default function SimpleMaigretResults() {
       }
     };
   }, [jobId, gosearchPending]);
+
+  // Load findings for ScanSummary and Evidence Pack
+  useEffect(() => {
+    const loadFindings = async () => {
+      if (!jobId) return;
+      
+      const { data: findings, error } = await supabase
+        .from('findings')
+        .select('*')
+        .eq('scan_id', jobId);
+      
+      if (error) {
+        console.error('[SimpleMaigretResults] Error loading findings:', error);
+        return;
+      }
+      
+      if (findings && findings.length > 0) {
+        // Convert database findings to Finding format for ScanSummary
+        const converted: Finding[] = findings.map(f => {
+          // Parse evidence array format
+          const evidenceArray = Array.isArray(f.evidence) 
+            ? (f.evidence as Array<{key?: string; value?: string}>).map((e) => ({ 
+                key: e?.key || '', 
+                value: e?.value || '' 
+              }))
+            : [];
+          
+          // Map severity
+          const severityMap: Record<string, Severity> = {
+            'critical': 'critical',
+            'high': 'high', 
+            'medium': 'medium',
+            'low': 'low',
+            'info': 'info'
+          };
+          
+          // Extract title from meta or evidence
+          const meta = f.meta as Record<string, any> | null;
+          const title = meta?.site || meta?.platform || evidenceArray.find(e => e.key === 'site')?.value || 'Finding';
+          const description = meta?.url || evidenceArray.find(e => e.key === 'url')?.value || '';
+          
+          // Map kind to valid type, default to 'social_media' for profile_presence
+          const typeMapping: Record<string, Finding['type']> = {
+            'profile_presence': 'social_media',
+            'presence.hit': 'social_media',
+            'breach': 'breach',
+            'identity': 'identity',
+          };
+          const type = typeMapping[f.kind] || 'social_media';
+          
+          return {
+            id: f.id,
+            type,
+            title,
+            description,
+            severity: severityMap[f.severity || 'info'] || 'info',
+            confidence: f.confidence || 0.5,
+            timestamp: f.created_at || new Date().toISOString(),
+            evidence: evidenceArray,
+            source: f.provider || 'unknown',
+            tags: [],
+          };
+        });
+        
+        setFindingsForExport(converted);
+      }
+    };
+    
+    loadFindings();
+  }, [jobId]);
 
   if (isCheckingAuth) {
     return (
@@ -310,6 +389,37 @@ export default function SimpleMaigretResults() {
               />
             </ErrorBoundary>
           </CollapsibleSection>
+
+          {/* Catfish Detection */}
+          <CollapsibleSection title="Catfish Detection" defaultOpen={false}>
+            <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+              <CatfishDetection scanId={jobId} />
+            </ErrorBoundary>
+          </CollapsibleSection>
+
+          {/* Export Artifacts */}
+          <CollapsibleSection title="Export Artifacts" defaultOpen={false}>
+            <ErrorBoundary fallback={<Skeleton className="h-48 w-full" />}>
+              <ArtifactDownloadCard 
+                artifacts={artifacts}
+                isGenerating={isGenerating}
+                onRegenerate={() => generateArtifacts(['csv', 'json', 'html', 'txt'])}
+              />
+            </ErrorBoundary>
+          </CollapsibleSection>
+
+          {/* Scan Summary with Evidence Pack */}
+          {findingsForExport.length > 0 && (
+            <CollapsibleSection title="Summary & Evidence Pack" defaultOpen={true}>
+              <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
+                <ScanSummary 
+                  findings={findingsForExport}
+                  scanId={jobId}
+                  isPro={true}
+                />
+              </ErrorBoundary>
+            </CollapsibleSection>
+          )}
         </div>
       </main>
       <Footer />

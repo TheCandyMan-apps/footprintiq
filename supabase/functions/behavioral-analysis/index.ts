@@ -165,6 +165,10 @@ Provide structured analysis with specific evidence for each point.`;
       catfishRisk
     });
 
+    // Calculate counts for frontend compatibility
+    const profilePresenceCount = findings?.length || 0;
+    const correlationSourcesCount = correlationData?.sources?.length || 0;
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -176,7 +180,10 @@ Provide structured analysis with specific evidence for each point.`;
         },
         correlationData,
         scanData: {
-          platformPresencesCount: findings?.length || 0,
+          // Return all field names for backward compatibility
+          platformPresencesCount: profilePresenceCount,
+          socialProfilesCount: profilePresenceCount,
+          dataSourcesCount: correlationSourcesCount,
           identityGraph: correlationData?.identityGraph,
         },
       }),
