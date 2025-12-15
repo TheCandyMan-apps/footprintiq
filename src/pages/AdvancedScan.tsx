@@ -1217,7 +1217,7 @@ export default function AdvancedScan() {
           onOpenChange={handleProgressClose}
           scanId={modalScanId}
           onComplete={handleScanComplete}
-          initialProviders={scanType === 'username' ? providers : undefined}
+          initialProviders={scanType === 'username' ? ['sherlock', 'gosearch', 'maigret', 'holehe'] : undefined}
         />
       )}
 
