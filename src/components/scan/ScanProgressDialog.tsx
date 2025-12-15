@@ -156,8 +156,33 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   }, [updateProvider]);
 
 
+  // Helper function to get display message based on provider status
+  const getProviderDisplayMessage = useCallback((provider: ProviderStatus): string => {
+    switch (provider.status) {
+      case 'success':
+        return provider.resultCount !== undefined 
+          ? `Complete - ${provider.resultCount} results` 
+          : 'Complete';
+      case 'loading':
+        return 'Scanning...';
+      case 'retrying':
+        return 'Retrying...';
+      case 'failed':
+        return provider.message || 'Failed';
+      case 'warning':
+        return provider.message || 'Timeout';
+      case 'skipped':
+        return 'Skipped';
+      case 'pending':
+      default:
+        return 'Waiting to start...';
+    }
+  }, []);
+
   const stats = useMemo(() => {
-    const total = providers.length;
+    // Only count providers that have actually received events (not just pre-populated pending ones)
+    const activeProviders = providers.filter(p => p.status !== 'pending' || p.lastUpdated);
+    const total = activeProviders.length > 0 ? activeProviders.length : providers.length;
 
     const TERMINAL = new Set<ProviderStatus['status']>([
       'success',
@@ -166,7 +191,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       'warning',
     ]);
 
-    const completed = providers.filter(p => TERMINAL.has(p.status)).length;
+    // Only count providers that have reached a terminal state AND actually received updates
+    const completed = providers.filter(p => TERMINAL.has(p.status) && p.lastUpdated).length;
     const active = providers.filter(p => p.status === 'loading' || p.status === 'retrying');
     const findingsCount = providers.reduce((sum, p) => sum + (p.resultCount || 0), 0);
 
@@ -310,6 +336,16 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
               console.log(`[CompletionDetector] Final update: ${providerName} -> ${finalStatus}`);
               updateProviderRef.current?.(providerName, finalStatus, data.message, data.resultCount);
             });
+            
+            // Remove pre-populated providers that never received any events
+            setProviders(prev => {
+              const providersWithEvents = new Set(providerFinalStatuses.keys());
+              const filtered = prev.filter(p => 
+                providersWithEvents.has(p.name.toLowerCase()) || p.status !== 'pending'
+              );
+              console.log('[CompletionDetector] Removed stale providers, keeping:', filtered.map(p => p.name));
+              return filtered;
+            });
           }
           
           // Get findings count
@@ -321,7 +357,10 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           const findingsCount = count || 0;
           setTotalResults(findingsCount);
           
-          // NOW set the final status (after providers are updated)
+          // Add a small delay to ensure UI updates before marking complete
+          await new Promise(resolve => setTimeout(resolve, 150));
+          
+          // NOW set the final status (after providers are updated and UI has time to render)
           if (scanStatus === 'failed' || scanStatus === 'timeout') {
             setStatus('failed');
           } else {
@@ -787,12 +826,12 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
                   <div className="flex items-center gap-2">
                     {renderProviderIcon(provider)}
                     <div>
-                      <div className="font-medium text-sm">{provider.name}</div>
-                      <div className="text-xs text-muted-foreground">{provider.message || 'Waiting...'}</div>
+                      <div className="font-medium text-sm capitalize">{provider.name}</div>
+                      <div className="text-xs text-muted-foreground">{getProviderDisplayMessage(provider)}</div>
                     </div>
                   </div>
                   <div className="text-right text-sm">
-                    {provider.resultCount !== undefined && (
+                    {provider.resultCount !== undefined && provider.resultCount > 0 && (
                       <Badge variant="secondary">{provider.resultCount} results</Badge>
                     )}
                   </div>
