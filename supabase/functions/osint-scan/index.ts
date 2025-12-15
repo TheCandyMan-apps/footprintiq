@@ -11,6 +11,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Helper to normalize phone to E.164 format
+const normalizePhone = (phone: string): string => {
+  const digits = phone.replace(/\D/g, '');
+  // If 10 digits, assume US number
+  if (digits.length === 10) return `+1${digits}`;
+  // If 11 digits starting with 1, assume US with country code
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  // Otherwise, add + prefix if not present
+  return digits.startsWith('+') ? digits : `+${digits}`;
+};
+
 const ScanRequestSchema = z.object({
   scanId: z.string().uuid({ message: "Invalid scan ID format" }),
   scanType: z.enum(['username', 'personal_details', 'both'], { 
@@ -20,7 +31,8 @@ const ScanRequestSchema = z.object({
   firstName: z.string().min(1).max(100).optional(),
   lastName: z.string().min(1).max(100).optional(),
   email: z.string().email({ message: "Invalid email address" }).max(255).optional(),
-  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number format" }).optional(),
+  // Accept any phone format with 7-30 chars, will normalize before use
+  phone: z.string().min(7).max(30).optional().transform((val) => val ? normalizePhone(val) : undefined),
 }).refine(
   (data) => {
     // At least one identifier must be provided
