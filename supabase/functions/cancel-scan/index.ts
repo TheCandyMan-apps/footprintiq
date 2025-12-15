@@ -11,8 +11,14 @@ const corsHeaders = {
 const CancelScanSchema = z.object({
   scanId: z.string().uuid("Invalid scan ID format").optional(),
   scanIds: z.array(z.string().uuid("Invalid scan ID format")).optional(),
-}).refine(data => data.scanId || (data.scanIds && data.scanIds.length > 0), {
-  message: "Either scanId or scanIds must be provided"
+  // Support for "select all" mode with filters
+  selectAll: z.boolean().optional(),
+  filters: z.object({
+    status: z.string().optional(),
+    searchTerm: z.string().optional(),
+  }).optional(),
+}).refine(data => data.scanId || (data.scanIds && data.scanIds.length > 0) || data.selectAll, {
+  message: "Either scanId, scanIds, or selectAll must be provided"
 });
 
 // Security helpers
@@ -119,9 +125,81 @@ Deno.serve(wrapHandler(async (req) => {
 
     // Validate request body
     const body = await req.json();
-    const { scanId, scanIds } = CancelScanSchema.parse(body);
+    const { scanId, scanIds, selectAll, filters } = CancelScanSchema.parse(body);
 
     const userIsAdmin = await isAdmin(supabase, user.id);
+
+    // Handle "select all" mode - fetch all matching scan IDs first
+    if (selectAll) {
+      if (!userIsAdmin) {
+        throw ERROR_RESPONSES.FORBIDDEN('Bulk cancellation requires admin access');
+      }
+
+      console.log(`[${functionName}] Select-all mode with filters:`, sanitizeForLog(filters));
+
+      // Build query to get all cancellable scan IDs
+      let query = supabase
+        .from('scans')
+        .select('id')
+        .in('status', ['pending', 'running']);
+
+      if (filters?.status && filters.status !== 'all') {
+        query = query.eq('status', filters.status);
+      }
+
+      if (filters?.searchTerm) {
+        const searchTerm = `%${filters.searchTerm}%`;
+        query = query.or(`username.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm},id::text.ilike.${searchTerm}`);
+      }
+
+      const { data: allScans, error: fetchError } = await query.limit(5000);
+
+      if (fetchError) {
+        console.error(`[${functionName}] Failed to fetch scans for bulk cancel:`, fetchError);
+        throw ERROR_RESPONSES.INTERNAL_ERROR('Failed to fetch scans');
+      }
+
+      const allScanIds = allScans?.map(s => s.id) || [];
+      console.log(`[${functionName}] Found ${allScanIds.length} scans to cancel`);
+
+      if (allScanIds.length === 0) {
+        return new Response(
+          JSON.stringify({ success: true, message: 'No cancellable scans found', cancelled: 0 }),
+          { status: 200, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
+        );
+      }
+
+      // Batch cancel all scans
+      const { error: updateError, count } = await supabase
+        .from('scans')
+        .update({
+          status: 'cancelled',
+          completed_at: new Date().toISOString()
+        })
+        .in('id', allScanIds);
+
+      if (updateError) {
+        console.error(`[${functionName}] Bulk cancel error:`, updateError);
+        throw ERROR_RESPONSES.INTERNAL_ERROR('Failed to cancel scans');
+      }
+
+      // Also update scan_progress
+      await supabase
+        .from('scan_progress')
+        .update({ status: 'cancelled' })
+        .in('scan_id', allScanIds);
+
+      console.log(`[${functionName}] Bulk cancelled ${allScanIds.length} scans`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: `Cancelled ${allScanIds.length} scans`,
+          cancelled: allScanIds.length
+        }),
+        { status: 200, headers: addSecurityHeaders({ 'Content-Type': 'application/json' }) }
+      );
+    }
     
     // Handle bulk cancellation
     if (scanIds && scanIds.length > 0) {
