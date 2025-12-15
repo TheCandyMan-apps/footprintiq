@@ -403,7 +403,7 @@ export default function SimpleMaigretResults() {
               <ArtifactDownloadCard 
                 artifacts={artifacts}
                 isGenerating={isGenerating}
-                onRegenerate={() => generateArtifacts(['csv', 'json', 'html', 'txt'])}
+                onRegenerate={() => generateArtifacts(['csv', 'json', 'html', 'txt', 'pdf'])}
               />
             </ErrorBoundary>
           </CollapsibleSection>

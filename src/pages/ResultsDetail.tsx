@@ -1113,7 +1113,7 @@ const ResultsDetail = () => {
             <ArtifactDownloadCard 
               artifacts={artifacts}
               isGenerating={isGenerating}
-              onRegenerate={() => generateArtifacts(['csv', 'json', 'html', 'txt'])}
+              onRegenerate={() => generateArtifacts(['csv', 'json', 'html', 'txt', 'pdf'])}
             />
           </div>
         )}
