@@ -73,11 +73,27 @@ Deno.serve(wrapHandler(async (req) => {
       throw ERROR_RESPONSES.FORBIDDEN('Admin access required');
     }
 
+    // Helper to batch delete in chunks (Supabase .in() has limits)
+    const BATCH_SIZE = 100;
+    async function batchDelete(ids: string[]) {
+      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
+        const batch = ids.slice(i, i + BATCH_SIZE);
+        await supabase.from('scan_events').delete().in('scan_id', batch);
+        await supabase.from('scan_progress').delete().in('scan_id', batch);
+        await supabase.from('findings').delete().in('scan_id', batch);
+        const { error } = await supabase.from('scans').delete().in('id', batch);
+        if (error) {
+          console.error(`[${functionName}] Batch delete error:`, sanitizeForLog(error));
+          throw error;
+        }
+      }
+    }
+
     // Handle bulk delete with selectAll
     if (selectAll) {
       console.log(`[${functionName}] Bulk delete with selectAll:`, sanitizeForLog({ filters, userId: user.id, force }));
       
-      let query = supabase.from('scans').select('id');
+      let query = supabase.from('scans').select('id').limit(5000);
       
       if (filters?.status) {
         query = query.eq('status', filters.status);
@@ -97,19 +113,7 @@ Deno.serve(wrapHandler(async (req) => {
       console.log(`[${functionName}] Found ${idsToDelete.length} scans to delete`);
       
       if (idsToDelete.length > 0) {
-        await supabase.from('scan_events').delete().in('scan_id', idsToDelete);
-        await supabase.from('scan_progress').delete().in('scan_id', idsToDelete);
-        await supabase.from('findings').delete().in('scan_id', idsToDelete);
-        
-        const { error: deleteError } = await supabase
-          .from('scans')
-          .delete()
-          .in('id', idsToDelete);
-        
-        if (deleteError) {
-          console.error(`[${functionName}] Failed to bulk delete:`, sanitizeForLog(deleteError));
-          throw ERROR_RESPONSES.INTERNAL_ERROR('Failed to delete scans');
-        }
+        await batchDelete(idsToDelete);
       }
       
       return new Response(
@@ -122,19 +126,7 @@ Deno.serve(wrapHandler(async (req) => {
     if (scanIds && scanIds.length > 0) {
       console.log(`[${functionName}] Bulk delete ${scanIds.length} scans`);
       
-      await supabase.from('scan_events').delete().in('scan_id', scanIds);
-      await supabase.from('scan_progress').delete().in('scan_id', scanIds);
-      await supabase.from('findings').delete().in('scan_id', scanIds);
-      
-      const { error: deleteError } = await supabase
-        .from('scans')
-        .delete()
-        .in('id', scanIds);
-      
-      if (deleteError) {
-        console.error(`[${functionName}] Failed to bulk delete:`, sanitizeForLog(deleteError));
-        throw ERROR_RESPONSES.INTERNAL_ERROR('Failed to delete scans');
-      }
+      await batchDelete(scanIds);
       
       return new Response(
         JSON.stringify({ success: true, message: `Deleted ${scanIds.length} scans`, deleted: scanIds.length }),
