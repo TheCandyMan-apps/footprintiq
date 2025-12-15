@@ -9390,7 +9390,13 @@ export type Database = {
         | "suspended"
       removal_status: "pending" | "in_progress" | "completed" | "failed"
       risk_level: "low" | "medium" | "high"
-      scan_type: "username" | "personal_details" | "both"
+      scan_type:
+        | "username"
+        | "personal_details"
+        | "both"
+        | "phone"
+        | "domain"
+        | "email"
       subscription_tier: "free" | "premium" | "family" | "basic" | "enterprise"
       workspace_role: "viewer" | "analyst" | "admin"
     }
@@ -9534,7 +9540,14 @@ export const Constants = {
       ],
       removal_status: ["pending", "in_progress", "completed", "failed"],
       risk_level: ["low", "medium", "high"],
-      scan_type: ["username", "personal_details", "both"],
+      scan_type: [
+        "username",
+        "personal_details",
+        "both",
+        "phone",
+        "domain",
+        "email",
+      ],
       subscription_tier: ["free", "premium", "family", "basic", "enterprise"],
       workspace_role: ["viewer", "analyst", "admin"],
     },
