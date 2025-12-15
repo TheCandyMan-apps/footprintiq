@@ -24,8 +24,9 @@ interface AnalysisResult {
   };
   correlationData: any;
   scanData: {
-    socialProfilesCount: number;
-    dataSourcesCount: number;
+    socialProfilesCount?: number;
+    dataSourcesCount?: number;
+    platformPresencesCount?: number;
     identityGraph: any;
   };
 }
@@ -258,12 +259,19 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
                   <CardTitle className="text-sm font-medium">Data Points</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">
-                    {result.scanData.socialProfilesCount + result.scanData.dataSourcesCount}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {result.scanData.socialProfilesCount} profiles, {result.scanData.dataSourcesCount} sources
-                  </p>
+                  {(() => {
+                    const profiles = result.scanData.socialProfilesCount ?? result.scanData.platformPresencesCount ?? 0;
+                    const sources = result.scanData.dataSourcesCount ?? 0;
+                    const total = profiles + sources;
+                    return (
+                      <>
+                        <div className="text-3xl font-bold">{total}</div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {profiles} profiles, {sources} sources
+                        </p>
+                      </>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             </div>
