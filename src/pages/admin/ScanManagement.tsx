@@ -40,6 +40,7 @@ export default function ScanManagement() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedScans, setSelectedScans] = useState<Set<string>>(new Set());
+  const [selectAllMode, setSelectAllMode] = useState(false); // Tracks if "select all" across pages is active
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ScanStatus | 'all'>('all');
   const [page, setPage] = useState(1);
@@ -143,12 +144,30 @@ export default function ScanManagement() {
     setSelectedScans(newSelected);
   };
 
-  const toggleSelectAll = () => {
+  const toggleSelectPage = () => {
     if (selectedScans.size === scanData?.scans?.length) {
       setSelectedScans(new Set());
+      setSelectAllMode(false);
     } else {
       setSelectedScans(new Set(scanData?.scans?.map((s: Scan) => s.id) || []));
     }
+  };
+
+  const handleSelectAll = () => {
+    if (selectAllMode) {
+      // Deselect all
+      setSelectAllMode(false);
+      setSelectedScans(new Set());
+    } else {
+      // Select all across pages
+      setSelectAllMode(true);
+      setSelectedScans(new Set(scanData?.scans?.map((s: Scan) => s.id) || []));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectAllMode(false);
+    setSelectedScans(new Set());
   };
 
   const canCancelScan = (status: ScanStatus) => {
@@ -167,8 +186,17 @@ export default function ScanManagement() {
   };
 
   const handleBulkCancel = () => {
-    const scanIds = Array.from(selectedScans);
-    bulkCancelMutation.mutate(scanIds);
+    if (selectAllMode) {
+      // Pass flag for bulk operation on all matching scans
+      bulkCancelMutation.mutate(['ALL'], {
+        onSuccess: () => {
+          clearSelection();
+        }
+      });
+    } else {
+      const scanIds = Array.from(selectedScans);
+      bulkCancelMutation.mutate(scanIds);
+    }
   };
 
   const scans = scanData?.scans || [];
@@ -232,16 +260,21 @@ export default function ScanManagement() {
                   </SelectContent>
                 </Select>
 
-                {selectedScans.size > 0 && (
-                  <Button 
-                    onClick={handleBulkCancel}
-                    variant="destructive"
-                    disabled={bulkCancelMutation.isPending}
-                    className="gap-2"
-                  >
-                    <StopCircle className="h-4 w-4" />
-                    Cancel {selectedScans.size} Selected
-                  </Button>
+                {(selectedScans.size > 0 || selectAllMode) && (
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      onClick={handleBulkCancel}
+                      variant="destructive"
+                      disabled={bulkCancelMutation.isPending}
+                      className="gap-2"
+                    >
+                      <StopCircle className="h-4 w-4" />
+                      Cancel {selectAllMode ? pagination.total : selectedScans.size} Selected
+                    </Button>
+                    <Button variant="outline" onClick={clearSelection} size="sm">
+                      Clear
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardContent>
@@ -249,13 +282,27 @@ export default function ScanManagement() {
 
           {/* Scans Table */}
           <Card>
-            <CardHeader>
-              <CardTitle>
-                Scans ({pagination.total} total)
-              </CardTitle>
-              <CardDescription>
-                Page {pagination.page} of {pagination.totalPages}
-              </CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>
+                  Scans ({pagination.total} total)
+                </CardTitle>
+                <CardDescription>
+                  Page {pagination.page} of {pagination.totalPages}
+                  {selectAllMode && (
+                    <span className="ml-2 text-primary font-medium">
+                      • All {pagination.total} scans selected
+                    </span>
+                  )}
+                </CardDescription>
+              </div>
+              <Button 
+                variant={selectAllMode ? "default" : "outline"} 
+                size="sm"
+                onClick={handleSelectAll}
+              >
+                {selectAllMode ? `Deselect All (${pagination.total})` : `Select All ${pagination.total}`}
+              </Button>
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -273,8 +320,8 @@ export default function ScanManagement() {
                       <TableRow>
                         <TableHead className="w-12">
                           <Checkbox
-                            checked={selectedScans.size === scans.length && scans.length > 0}
-                            onCheckedChange={toggleSelectAll}
+                            checked={selectAllMode || (selectedScans.size === scans.length && scans.length > 0)}
+                            onCheckedChange={toggleSelectPage}
                           />
                         </TableHead>
                         <TableHead>Target</TableHead>
@@ -292,8 +339,17 @@ export default function ScanManagement() {
                         <TableRow key={scan.id}>
                           <TableCell>
                             <Checkbox
-                              checked={selectedScans.has(scan.id)}
-                              onCheckedChange={() => toggleSelectScan(scan.id)}
+                              checked={selectAllMode || selectedScans.has(scan.id)}
+                              onCheckedChange={() => {
+                                if (selectAllMode) {
+                                  // Exit select-all mode and deselect this one
+                                  setSelectAllMode(false);
+                                  const allExceptThis = new Set<string>(scanData?.scans?.map((s: Scan) => s.id).filter((id: string) => id !== scan.id) || []);
+                                  setSelectedScans(allExceptThis);
+                                } else {
+                                  toggleSelectScan(scan.id);
+                                }
+                              }}
                             />
                           </TableCell>
                           <TableCell className="font-mono text-xs max-w-xs truncate">
