@@ -15,10 +15,11 @@ export const CircularProgress = ({
   className,
   showPercentage = true,
 }: CircularProgressProps) => {
+  // Clamp and round value to prevent wiggly animation from floating point changes
+  const safeValue = Math.max(0, Math.min(100, Math.round(value || 0)));
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  const offset = circumference - (value / 100) * circumference;
-
+  const offset = circumference - (safeValue / 100) * circumference;
   return (
     <div className={cn("relative inline-flex items-center justify-center", className)}>
       <svg
@@ -55,8 +56,8 @@ export const CircularProgress = ({
       
       {showPercentage && (
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-bold text-primary animate-fade-in">
-            {Math.round(value)}%
+          <span className="text-3xl font-bold text-primary">
+            {safeValue}%
           </span>
           <span className="text-xs text-muted-foreground">Complete</span>
         </div>
