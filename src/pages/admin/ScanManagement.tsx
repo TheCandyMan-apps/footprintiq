@@ -83,15 +83,25 @@ export default function ScanManagement() {
 
   const bulkCancelMutation = useMutation({
     mutationFn: async (scanIds: string[]) => {
-      const { data, error } = await supabase.functions.invoke('cancel-scan', {
-        body: { scanIds }
-      });
+      // If scanIds is empty, use selectAll mode with filters
+      const body = scanIds.length === 0
+        ? { 
+            selectAll: true, 
+            filters: { 
+              status: statusFilter === 'all' ? undefined : statusFilter,
+              searchTerm: searchTerm || undefined 
+            } 
+          }
+        : { scanIds };
+      
+      const { data, error } = await supabase.functions.invoke('cancel-scan', { body });
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
       toast.success("Scans cancelled successfully");
       setSelectedScans(new Set());
+      setSelectAllMode(false);
       refetch();
     },
     onError: (err: any) => {
@@ -187,8 +197,8 @@ export default function ScanManagement() {
 
   const handleBulkCancel = () => {
     if (selectAllMode) {
-      // Pass flag for bulk operation on all matching scans
-      bulkCancelMutation.mutate(['ALL'], {
+      // Pass selectAll flag with current filters
+      bulkCancelMutation.mutate([], {
         onSuccess: () => {
           clearSelection();
         }
