@@ -66,8 +66,9 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   const [phase, setPhase] = useState<ScanPhase>('running');
   const phaseRef = useRef<ScanPhase>('running');
   
-  // Cached scan_type for deterministic routing
+  // Cached scan_type and results_route for deterministic routing
   const [scanType, setScanType] = useState<string | null>(null);
+  const [resultsRoute, setResultsRoute] = useState<string>('results');
 
   // State
   const [progress, setProgress] = useState(0);
@@ -202,7 +203,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     }
   }, []);
 
-  // Cache scan_type on dialog open for deterministic routing
+  // Cache scan_type and results_route on dialog open for deterministic routing
   useEffect(() => {
     if (!scanId) return;
     let cancelled = false;
@@ -210,11 +211,15 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     (async () => {
       const { data } = await supabase
         .from('scans')
-        .select('scan_type')
+        .select('scan_type, results_route')
         .eq('id', scanId)
         .maybeSingle();
 
-      if (!cancelled) setScanType(data?.scan_type ?? null);
+      if (!cancelled) {
+        setScanType(data?.scan_type ?? null);
+        // Use results_route if set, otherwise default to 'results' (safest)
+        setResultsRoute((data as any)?.results_route ?? 'results');
+      }
     })();
 
     return () => { cancelled = true; };
@@ -364,19 +369,20 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     }
   }, [phase]);
 
-  // Deterministic View Results handler using cached scanType
+  // Deterministic View Results handler using cached resultsRoute
   const handleViewResults = useCallback(() => {
     if (!scanId) return;
     
     onOpenChange(false);
     
-    // Use cached scanType - no async fetch inside click handler
-    if (scanType === 'username') {
+    // Use results_route for deterministic routing - no async fetch inside click handler
+    // 'maigret' routes to basic results page, 'results' (default) routes to full results page
+    if (resultsRoute === 'maigret') {
       navigate(`/maigret/results/${scanId}`);
     } else {
       navigate(`/results/${scanId}`);
     }
-  }, [scanId, scanType, navigate, onOpenChange]);
+  }, [scanId, resultsRoute, navigate, onOpenChange]);
 
   // Independent completion detector - runs every 2s regardless of other state
   // This is the most reliable way to detect scan completion

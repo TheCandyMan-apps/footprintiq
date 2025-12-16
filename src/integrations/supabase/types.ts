@@ -6928,6 +6928,7 @@ export type Database = {
           phone: string | null
           privacy_score: number | null
           provider_counts: Json | null
+          results_route: string
           scan_type: Database["public"]["Enums"]["scan_type"]
           status: string | null
           total_sources_found: number | null
@@ -6952,6 +6953,7 @@ export type Database = {
           phone?: string | null
           privacy_score?: number | null
           provider_counts?: Json | null
+          results_route?: string
           scan_type: Database["public"]["Enums"]["scan_type"]
           status?: string | null
           total_sources_found?: number | null
@@ -6976,6 +6978,7 @@ export type Database = {
           phone?: string | null
           privacy_score?: number | null
           provider_counts?: Json | null
+          results_route?: string
           scan_type?: Database["public"]["Enums"]["scan_type"]
           status?: string | null
           total_sources_found?: number | null

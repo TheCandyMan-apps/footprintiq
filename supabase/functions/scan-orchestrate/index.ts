@@ -562,7 +562,8 @@ serve(async (req) => {
         phone: type === 'phone' ? value : null,
         status: 'running',
         cache_key: cacheKey || undefined,
-        provider_counts: {}
+        provider_counts: {},
+        results_route: 'results',  // ✅ Orchestrated scans always route to /results/:id
       } as any, {
         onConflict: 'id'
       });

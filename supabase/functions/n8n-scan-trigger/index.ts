@@ -81,6 +81,7 @@ serve(async (req) => {
         username: username,
         status: "pending",
         provider_counts: {},
+        results_route: "results",  // ✅ Advanced n8n scans always route to /results/:id
       })
       .select()
       .single();
