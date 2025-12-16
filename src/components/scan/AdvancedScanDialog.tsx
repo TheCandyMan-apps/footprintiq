@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
@@ -233,10 +234,22 @@ export function AdvancedScanDialog({ open, onOpenChange }: AdvancedScanDialogPro
         open={progressOpen}
         onOpenChange={setProgressOpen}
         scanId={currentScanId}
-        onComplete={() => {
+        onComplete={async () => {
           setProgressOpen(false);
           if (currentScanId) {
-            navigate(`/maigret/results/${currentScanId}`);
+            // Fetch results_route from database for correct routing
+            const { data } = await supabase
+              .from('scans')
+              .select('results_route')
+              .eq('id', currentScanId)
+              .maybeSingle();
+            
+            const route = data?.results_route ?? 'results';
+            if (route === 'maigret') {
+              navigate(`/maigret/results/${currentScanId}`);
+            } else {
+              navigate(`/results/${currentScanId}`);
+            }
           }
         }}
       />
