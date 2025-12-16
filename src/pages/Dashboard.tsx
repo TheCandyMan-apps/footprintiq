@@ -107,6 +107,7 @@ const Dashboard = () => {
   const [trendData, setTrendData] = useState<any[]>([]);
   const [isRescanning, setIsRescanning] = useState(false);
   const [scanSocialLinks, setScanSocialLinks] = useState<Record<string, any[]>>({});
+  const [scanFindingStats, setScanFindingStats] = useState<Record<string, { total: number; high: number; medium: number; low: number }>>({});
   
   // Feature suggestions based on user behavior (will check after user is set)
   useFeatureSuggestions(user?.id);
@@ -414,6 +415,32 @@ const Dashboard = () => {
           }
         });
         setScanSocialLinks(socialLinksMap);
+        
+        // Fetch finding stats for entity cards (match % and risk score)
+        const entityScanIds = scansData.slice(0, 3).map(s => s.id);
+        const { data: findingsForStats } = await supabase
+          .from('findings')
+          .select('scan_id, severity')
+          .in('scan_id', entityScanIds);
+        
+        // Calculate stats per scan
+        const statsMap: Record<string, { total: number; high: number; medium: number; low: number }> = {};
+        entityScanIds.forEach(id => {
+          statsMap[id] = { total: 0, high: 0, medium: 0, low: 0 };
+        });
+        
+        findingsForStats?.forEach(f => {
+          if (statsMap[f.scan_id]) {
+            statsMap[f.scan_id].total++;
+            const severity = (f.severity || 'low').toLowerCase();
+            if (severity === 'high' || severity === 'critical') statsMap[f.scan_id].high++;
+            else if (severity === 'medium') statsMap[f.scan_id].medium++;
+            else statsMap[f.scan_id].low++;
+          }
+        });
+        
+        setScanFindingStats(statsMap);
+        
         // DNA metrics already calculated above (lines 277-341)
         // This duplicate calculation has been removed to prevent overwriting correct values
 
@@ -449,7 +476,26 @@ const Dashboard = () => {
     return 'default';
   };
   const getRiskScore = (scan: Scan) => {
+    // Use finding stats if available, otherwise fallback to scan's stored values
+    const stats = scanFindingStats[scan.id];
+    if (stats && stats.total > 0) {
+      // Calculate weighted risk score: high=3, medium=2, low=1
+      const weightedScore = (stats.high * 3) + (stats.medium * 2) + (stats.low * 1);
+      // Normalize to 0-100 scale (assuming max ~50 weighted points = 100)
+      return Math.min(100, Math.round((weightedScore / 50) * 100));
+    }
     return scan.privacy_score || 0;
+  };
+  
+  const getMatchPercentage = (scan: Scan) => {
+    // Match % represents how confident we are this entity exists on various platforms
+    const stats = scanFindingStats[scan.id];
+    if (stats && stats.total > 0) {
+      // If we found any profiles/findings, calculate match based on result count
+      // More findings = higher confidence (cap at 100%)
+      return Math.min(100, Math.round((stats.total / 10) * 100));
+    }
+    return 0;
   };
   const handleArchiveScan = async (scanId: string, e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -738,8 +784,12 @@ const Dashboard = () => {
                               subtitle={`Scanned ${format(new Date(scan.created_at), 'MMM d, yyyy')}`}
                               entityType={getEntityType(scan)}
                               lastUpdated={scan.completed_at ? format(new Date(scan.completed_at), 'MMM d, yyyy h:mm a') : undefined}
-                              tags={[`${scan.high_risk_count || 0} High Risk`, `${scan.medium_risk_count || 0} Medium`, `Score: ${getRiskScore(scan)}`]} 
-                              confidence={Math.round(getRiskScore(scan))}
+                              tags={[
+                                `${scanFindingStats[scan.id]?.high || scan.high_risk_count || 0} High Risk`, 
+                                `${scanFindingStats[scan.id]?.medium || scan.medium_risk_count || 0} Medium`, 
+                                `Score: ${getRiskScore(scan)}`
+                              ]} 
+                              confidence={getMatchPercentage(scan)}
                               socialLinks={scanSocialLinks[scan.id] || []}
                               onClick={() => navigate(`/results/${scan.id}`)}
                             />
