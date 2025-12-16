@@ -163,60 +163,61 @@ async function performRLSChecks(supabase: any): Promise<AuditCheck[]> {
 async function performProviderHealthChecks(): Promise<AuditCheck[]> {
   const checks: AuditCheck[] = [];
 
-  // Check Maigret
+  // Check Unified OSINT Worker (replaces separate Maigret/GoSearch workers)
   try {
-    const maigretUrl = Deno.env.get("VITE_MAIGRET_API_URL");
-    if (maigretUrl) {
-      const response = await fetch(`${maigretUrl}/health`, {
-        signal: AbortSignal.timeout(5000),
+    const osintWorkerUrl = Deno.env.get("OSINT_WORKER_URL");
+    const osintWorkerToken = Deno.env.get("OSINT_WORKER_TOKEN");
+    
+    if (osintWorkerUrl && osintWorkerToken) {
+      const baseUrl = osintWorkerUrl.replace('/scan', '');
+      const response = await fetch(`${baseUrl}/health`, {
+        signal: AbortSignal.timeout(10000),
       });
 
       checks.push({
-        component: "maigret",
+        component: "osint_worker",
         status: response.ok ? "success" : "failure",
-        message: response.ok ? "Maigret API responsive" : `Maigret API returned ${response.status}`,
+        message: response.ok ? "Unified OSINT Worker operational" : `OSINT Worker returned ${response.status}`,
       });
     } else {
       checks.push({
-        component: "maigret",
-        status: "warning",
-        message: "Maigret API URL not configured",
+        component: "osint_worker",
+        status: "failure",
+        message: osintWorkerUrl ? "OSINT_WORKER_TOKEN not configured" : "OSINT_WORKER_URL not configured",
       });
     }
   } catch (error) {
     checks.push({
-      component: "maigret",
+      component: "osint_worker",
       status: "failure",
-      message: "Maigret API unreachable",
+      message: "Unified OSINT Worker unreachable",
       details: { error: error instanceof Error ? error.message : "Timeout or network error" },
     });
   }
 
-  // Check SpiderFoot
+  // Check n8n Orchestration
   try {
-    const spiderfootUrl = Deno.env.get("VITE_SPIDERFOOT_API_URL");
-    if (spiderfootUrl) {
-      const response = await fetch(`${spiderfootUrl}/api`, {
-        signal: AbortSignal.timeout(5000),
-      });
-
+    const n8nWebhookUrl = Deno.env.get("N8N_SCAN_WEBHOOK_URL");
+    const n8nCallbackToken = Deno.env.get("N8N_CALLBACK_TOKEN");
+    
+    if (n8nWebhookUrl && n8nCallbackToken) {
       checks.push({
-        component: "spiderfoot",
-        status: response.ok ? "success" : "failure",
-        message: response.ok ? "SpiderFoot API responsive" : `SpiderFoot API returned ${response.status}`,
+        component: "n8n_orchestration",
+        status: "success",
+        message: "n8n scan orchestration configured",
       });
     } else {
       checks.push({
-        component: "spiderfoot",
-        status: "warning",
-        message: "SpiderFoot API URL not configured",
+        component: "n8n_orchestration",
+        status: "failure",
+        message: !n8nWebhookUrl ? "N8N_SCAN_WEBHOOK_URL not configured" : "N8N_CALLBACK_TOKEN not configured",
       });
     }
   } catch (error) {
     checks.push({
-      component: "spiderfoot",
+      component: "n8n_orchestration",
       status: "warning",
-      message: "SpiderFoot API unreachable (optional service)",
+      message: "Failed to verify n8n configuration",
     });
   }
 

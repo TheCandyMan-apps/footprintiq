@@ -86,8 +86,8 @@ const PRODUCTION_CHECKLIST: ChecklistItem[] = [
   { id: 'secrets', label: 'Secrets Configured', description: 'All API keys and tokens set in environment', category: 'security' },
   { id: 'stripe', label: 'Stripe Integration', description: 'Webhook configured and products created', category: 'integrations' },
   { id: 'email', label: 'Email Service', description: 'Resend API configured for notifications', category: 'integrations' },
-  { id: 'maigret', label: 'Maigret Worker', description: 'OSINT username scanner operational', category: 'integrations' },
-  { id: 'gosearch', label: 'GoSearch Worker', description: 'Deep username search operational', category: 'integrations' },
+  { id: 'osint_worker', label: 'Unified OSINT Worker', description: 'Sherlock, Maigret, GoSearch, Holehe operational', category: 'integrations' },
+  { id: 'n8n', label: 'n8n Orchestration', description: 'Scan workflow automation configured', category: 'integrations' },
   { id: 'sentry', label: 'Error Tracking', description: 'Sentry configured for error monitoring', category: 'monitoring' },
   { id: 'audit', label: 'Audit Logging', description: 'System audit checks passing', category: 'monitoring' },
   { id: 'scans', label: 'Scan Success Rate', description: 'Less than 10% scan failure rate', category: 'performance' },
@@ -201,9 +201,11 @@ export default function SystemAudit() {
       const rlsChecks = data.checks.filter((c: any) => c.component.startsWith('rls_'));
       newStatus['rls'] = rlsChecks.every((c: any) => c.status === 'success');
       
-      // Provider checks
-      newStatus['maigret'] = checksMap.get('maigret') === 'success';
-      newStatus['gosearch'] = checksMap.get('gosearch') === 'success' || checksMap.get('gosearch') === undefined;
+      // Unified OSINT Worker check
+      newStatus['osint_worker'] = checksMap.get('osint_worker') === 'success';
+      
+      // n8n Orchestration check
+      newStatus['n8n'] = checksMap.get('n8n_orchestration') === 'success';
       
       // Tier sync
       newStatus['auth'] = checksMap.get('tier_sync') === 'success';
@@ -328,7 +330,7 @@ export default function SystemAudit() {
   };
 
   const canAutoFix = (component: string): boolean => {
-    const autoFixable = ['scan_flow', 'scan_success_rate', 'tier_sync', 'maigret', 'gosearch'];
+    const autoFixable = ['scan_flow', 'scan_success_rate', 'tier_sync', 'osint_worker', 'n8n_orchestration'];
     return autoFixable.includes(component);
   };
 
