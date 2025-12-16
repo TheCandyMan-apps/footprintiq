@@ -199,10 +199,18 @@ serve(async (req) => {
 
     const status = error.status || 500;
     const message = error.message || 'Internal server error';
+    
+    // Add structured error codes for frontend parsing
+    let code = 'INTERNAL_ERROR';
+    if (status === 429) code = 'RATE_LIMIT_EXCEEDED';
+    else if (status === 402) code = 'PAYMENT_REQUIRED';
+    else if (status === 401) code = 'UNAUTHORIZED';
 
     return new Response(
       JSON.stringify({ 
         error: message,
+        status,
+        code,
         ...(error.resetAt && { retryAfter: error.resetAt })
       }),
       { 
