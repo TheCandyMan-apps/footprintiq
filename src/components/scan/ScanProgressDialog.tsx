@@ -342,7 +342,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       return 'skipped';
     }
     return 'pending';
-  }, [providers]);
+  }, []);
 
   // Dynamic dialog title based on phase
   const dialogTitle = useMemo(() => {
@@ -714,26 +714,54 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       if (data) {
         addDebugEvent('database', `Initial: ${data.completed_providers}/${data.total_providers}, status=${data.status}`);
         
-        // Check if scan already completed
+        // Check if scan already completed - use finalising phase
         if (data.status === 'completed' || data.status === 'completed_partial') {
-          setStatus('completed');
-          setPhase('completed');
+          console.log('[ScanProgress] Scan already completed, triggering finalising phase');
+          setPhase('finalising');
+          isPollingRef.current = false;
+          
+          // Force-finalise any providers
+          setProviders(prev => prev.map(p => 
+            (p.status === 'loading' || p.status === 'retrying' || p.status === 'pending')
+              ? { ...p, status: 'success', message: 'Completed', lastUpdated: Date.now() }
+              : p
+          ));
+          
           setProgress(100);
           setTotalResults(data.findings_count || 0);
           
-          // Trigger success effects
-          if (data.findings_count > 0) {
-            playSuccessSound();
-            triggerConfetti();
-            toast.success(`Scan completed - ${data.findings_count} results found`);
-          } else {
-            toast.info('Scan completed with no results');
-          }
-          setTimeout(() => onComplete?.(), 2000);
+          // After brief delay, set final phase
+          setTimeout(() => {
+            setStatus('completed');
+            setPhase('completed');
+            if (data.findings_count > 0) {
+              playSuccessSound();
+              triggerConfetti();
+              toast.success(`Scan completed - ${data.findings_count} results found`);
+            } else {
+              toast.info('Scan completed with no results');
+            }
+            setTimeout(() => onComplete?.(), 2000);
+          }, 400);
           return; // Don't setup realtime if already complete
         } else if (data.status === 'failed') {
-          setStatus('failed');
-          setPhase('failed');
+          console.log('[ScanProgress] Scan already failed, triggering finalising phase');
+          setPhase('finalising');
+          isPollingRef.current = false;
+          
+          // Force-finalise providers as failed
+          setProviders(prev => prev.map(p => 
+            (p.status === 'loading' || p.status === 'retrying' || p.status === 'pending')
+              ? { ...p, status: 'failed', message: 'Failed', lastUpdated: Date.now() }
+              : p
+          ));
+          
+          setProgress(100);
+          
+          setTimeout(() => {
+            setStatus('failed');
+            setPhase('failed');
+          }, 400);
           return;
         }
       }
@@ -744,6 +772,12 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     const progressChannel = supabase
       .channel(`scan_progress_${scanId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'scan_progress', filter: `scan_id=eq.${scanId}` }, (payload) => {
+        // Guard: don't process if already in terminal phase
+        if (phaseRef.current !== 'running') {
+          console.log('[ScanProgress] scan_progress update ignored - phase:', phaseRef.current);
+          return;
+        }
+        
         const data = payload.new as any;
         addDebugEvent('database', `DB update: ${data.completed_providers}/${data.total_providers}`);
         
@@ -753,16 +787,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           });
         }
 
-        if (data.status === 'completed') {
-          setStatus('completed');
-          setPhase('completed');
-          setProgress(100);
-          setTotalResults(data.findings_count || 0);
-        } else if (data.status === 'failed') {
-          setStatus('failed');
-          setPhase('failed');
-        }
-
+        // Don't directly set completed/failed - let CompletionDetector handle it
+        // Just update lastEventAt so polling can detect the change
         setLastEventAt(Date.now());
         setConnectionMode('live');
       })
@@ -783,27 +809,70 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         setConnectionMode('live');
       })
       .on('broadcast', { event: 'scan_complete' }, (payload: any) => {
+        // Guard: don't process if already in terminal phase
+        if (phaseRef.current !== 'running') {
+          console.log('[ScanProgress] scan_complete broadcast ignored - phase:', phaseRef.current);
+          return;
+        }
+        
         addDebugEvent('broadcast', 'Scan completed');
-        setStatus('completed');
-        setPhase('completed');
+        
+        // Enter finalising phase
+        setPhase('finalising');
+        isPollingRef.current = false;
+        
+        // Force-finalise providers
+        setProviders(prev => prev.map(p => 
+          (p.status === 'loading' || p.status === 'retrying' || p.status === 'pending')
+            ? { ...p, status: 'success', message: 'Completed', lastUpdated: Date.now() }
+            : p
+        ));
+        
         setProgress(100);
         setTotalResults(payload.payload.findingsCount || 0);
         
-        if (payload.payload.findingsCount > 0) {
-          playSuccessSound();
-          triggerConfetti();
-          toast.success(`Scan completed - ${payload.payload.findingsCount} results found`);
-        } else {
-          toast.info('Scan completed with no results');
-        }
-        
-        setTimeout(() => onComplete?.(), 3000);
+        setTimeout(() => {
+          setStatus('completed');
+          setPhase('completed');
+          
+          if (payload.payload.findingsCount > 0) {
+            playSuccessSound();
+            triggerConfetti();
+            toast.success(`Scan completed - ${payload.payload.findingsCount} results found`);
+          } else {
+            toast.info('Scan completed with no results');
+          }
+          
+          setTimeout(() => onComplete?.(), 2000);
+        }, 400);
       })
       .on('broadcast', { event: 'scan_failed' }, (payload: any) => {
+        // Guard: don't process if already in terminal phase
+        if (phaseRef.current !== 'running') {
+          console.log('[ScanProgress] scan_failed broadcast ignored - phase:', phaseRef.current);
+          return;
+        }
+        
         addDebugEvent('broadcast', payload.payload.error || 'Scan failed');
-        setStatus('failed');
-        setPhase('failed');
-        toast.error(payload.payload.error || 'Scan failed');
+        
+        // Enter finalising phase
+        setPhase('finalising');
+        isPollingRef.current = false;
+        
+        // Force-finalise providers as failed
+        setProviders(prev => prev.map(p => 
+          (p.status === 'loading' || p.status === 'retrying' || p.status === 'pending')
+            ? { ...p, status: 'failed', message: 'Failed', lastUpdated: Date.now() }
+            : p
+        ));
+        
+        setProgress(100);
+        
+        setTimeout(() => {
+          setStatus('failed');
+          setPhase('failed');
+          toast.error(payload.payload.error || 'Scan failed');
+        }, 400);
       })
       .on('broadcast', { event: 'scan_cancelled' }, () => {
         addDebugEvent('broadcast', 'Scan cancelled');
@@ -949,7 +1018,6 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
               <span>{progressLabel}</span>
               <span>{progress}%</span>
             </div>
-            <Progress value={progress} className="h-2" />
             <Progress value={progress} className="h-2" />
           </div>
 
