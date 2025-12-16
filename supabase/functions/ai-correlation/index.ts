@@ -116,10 +116,12 @@ serve(async (req) => {
       const errorText = await aiResponse.text();
       console.error('[ai-correlation] Lovable AI error:', aiResponse.status, errorText);
       
-      // Handle rate limits and payment errors
+      // Handle rate limits and payment errors with status in body for frontend parsing
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ 
-          error: 'Rate limit exceeded. Please try again in a moment.' 
+          error: 'Rate limit exceeded. Please try again in a moment.',
+          status: 429,
+          code: 'RATE_LIMIT_EXCEEDED'
         }), {
           status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -127,7 +129,9 @@ serve(async (req) => {
       }
       if (aiResponse.status === 402) {
         return new Response(JSON.stringify({ 
-          error: 'Payment required. Please add credits to your workspace.' 
+          error: 'Payment required. Please add credits to your workspace.',
+          status: 402,
+          code: 'PAYMENT_REQUIRED'
         }), {
           status: 402,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
