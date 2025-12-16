@@ -63,17 +63,24 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
       });
 
       if (functionError) {
-        // Check for specific error types
-        const errorMsg = functionError.message || '';
+        // Extract the actual error message - Supabase wraps edge function errors
+        // Check data.error first (edge function body), then functionError.message
+        const actualError = data?.error || '';
+        const wrapperError = functionError.message || '';
+        const errorLower = (actualError + ' ' + wrapperError).toLowerCase();
         
-        if (errorMsg.includes('Premium') || errorMsg.includes('upgrade')) {
-          setError('Premium subscription required for AI insights');
-        } else if (errorMsg.includes('Rate limit') || errorMsg.includes('429')) {
+        // Check for specific error types
+        if (errorLower.includes('rate limit') || errorLower.includes('429') || actualError.includes('try again')) {
           setError('Rate limit exceeded. Please wait a few minutes and try again.');
-        } else if (errorMsg.includes('Payment required') || errorMsg.includes('402') || errorMsg.includes('credits')) {
+        } else if (errorLower.includes('payment') || errorLower.includes('402') || errorLower.includes('credits')) {
           setError('Insufficient credits. Please add credits to your workspace to use AI features.');
+        } else if (errorLower.includes('premium') || errorLower.includes('upgrade')) {
+          setError('Premium subscription required for AI insights');
+        } else if (wrapperError.includes('non-2xx')) {
+          // Generic Supabase wrapper error - show friendlier message
+          setError(actualError || 'AI service temporarily unavailable. Please try again in a moment.');
         } else {
-          setError(errorMsg || 'Unable to generate insights');
+          setError(actualError || wrapperError || 'Unable to generate insights');
         }
         return;
       }

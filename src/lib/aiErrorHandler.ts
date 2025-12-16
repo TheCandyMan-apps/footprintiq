@@ -69,6 +69,16 @@ export function getAIErrorMessage(error: any): AIErrorInfo {
     };
   }
 
+  // Handle generic Supabase wrapper errors (e.g., "Edge Function returned a non-2xx status code")
+  if (errorLower.includes('non-2xx') || errorLower.includes('edge function')) {
+    return {
+      title: 'AI Service Temporarily Unavailable',
+      description: 'The AI service is experiencing high demand or rate limits.',
+      action: 'Please try again in a few minutes',
+      canRetry: true
+    };
+  }
+
   // Generic fallback
   return {
     title: 'Analysis Failed',
