@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useWorkspace } from "@/hooks/useWorkspace";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,22 +21,7 @@ export default function WorkflowNew() {
     trigger_type: "manual",
   });
 
-  const { data: userWorkspace } = useQuery({
-    queryKey: ["user-workspace"],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-      
-      const { data, error } = await supabase
-        .from("workspace_members")
-        .select("workspace_id")
-        .eq("user_id", user.id)
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { workspace, loading: workspaceLoading } = useWorkspace();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,14 +41,14 @@ export default function WorkflowNew() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      if (!userWorkspace?.workspace_id) {
+      if (!workspace?.id) {
         throw new Error("No workspace found");
       }
 
       const { error } = await supabase
         .from("workflows")
         .insert({
-          workspace_id: userWorkspace.workspace_id,
+          workspace_id: workspace.id,
           user_id: user.id,
           name: formData.name.trim(),
           description: formData.description.trim() || null,
