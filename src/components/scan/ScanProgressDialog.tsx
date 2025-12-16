@@ -37,6 +37,15 @@ interface ScanProgressDialogProps {
   initialProviders?: string[];
 }
 
+// Scan lifecycle phases
+type ScanPhase = 'running' | 'finalising' | 'completed' | 'failed';
+
+// Helper functions for terminal status detection
+const isTerminalStatus = (s?: string) =>
+  s === 'completed' || s === 'completed_empty' || s === 'completed_partial' || s === 'failed' || s === 'timeout';
+
+const isFailedStatus = (s?: string) => s === 'failed' || s === 'timeout';
+
 export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, initialProviders }: ScanProgressDialogProps) {
   const navigate = useNavigate();
   const initialProvidersKey = useMemo(() => initialProviders?.join(',') || '', [initialProviders]);
@@ -52,6 +61,13 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   const scanIdRef = useRef<string | null>(null);
   const updateProviderRef = useRef<typeof updateProvider | null>(null);
   const addDebugEventRef = useRef<typeof addDebugEvent | null>(null);
+
+  // Scan phase state and ref
+  const [phase, setPhase] = useState<ScanPhase>('running');
+  const phaseRef = useRef<ScanPhase>('running');
+  
+  // Cached scan_type for deterministic routing
+  const [scanType, setScanType] = useState<string | null>(null);
 
   // State
   const [progress, setProgress] = useState(0);
@@ -69,6 +85,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   // Debug
   const [debugEvents, setDebugEvents] = useState<DebugEvent[]>([]);
   const [showDebug, setShowDebug] = useState(false);
+
+  // Keep phaseRef in sync
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   // Keep statusRef in sync
   useEffect(() => {
@@ -181,10 +202,55 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     }
   }, []);
 
+  // Cache scan_type on dialog open for deterministic routing
+  useEffect(() => {
+    if (!scanId) return;
+    let cancelled = false;
+
+    (async () => {
+      const { data } = await supabase
+        .from('scans')
+        .select('scan_type')
+        .eq('id', scanId)
+        .maybeSingle();
+
+      if (!cancelled) setScanType(data?.scan_type ?? null);
+    })();
+
+    return () => { cancelled = true; };
+  }, [scanId]);
+
   const stats = useMemo(() => {
+    const total = providers.length;
+    
+    // Freeze stats when phase is completed
+    if (phase === 'completed') {
+      return {
+        total,
+        completed: total,
+        active: [] as ProviderStatus[],
+        findingsCount: totalResults ?? 0,
+        progressPct: 100,
+      };
+    }
+
+    // Freeze stats when phase is failed (show actual completed count)
+    if (phase === 'failed') {
+      const completedCount = providers.filter(p => 
+        ['success', 'failed', 'skipped', 'warning'].includes(p.status)
+      ).length;
+      return {
+        total,
+        completed: completedCount,
+        active: [] as ProviderStatus[],
+        findingsCount: totalResults ?? 0,
+        progressPct: 100,
+      };
+    }
+
     // Only count providers that have actually received events (not just pre-populated pending ones)
     const activeProviders = providers.filter(p => p.status !== 'pending' || p.lastUpdated);
-    const total = activeProviders.length > 0 ? activeProviders.length : providers.length;
+    const effectiveTotal = activeProviders.length > 0 ? activeProviders.length : total;
 
     const TERMINAL = new Set<ProviderStatus['status']>([
       'success',
@@ -200,9 +266,9 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
 
     // Include partial credit for active providers for smoother progress
     const effectiveCompleted = completed + (active.length * 0.5);
-    const progressPct = total > 0 ? Math.round((effectiveCompleted / total) * 100) : 0;
-    return { total, completed, active, findingsCount, progressPct };
-  }, [providers]);
+    const progressPct = effectiveTotal > 0 ? Math.round((effectiveCompleted / effectiveTotal) * 100) : 0;
+    return { total: effectiveTotal, completed, active, findingsCount, progressPct };
+  }, [providers, phase, totalResults]);
 
   // Update progress based on stats (monotonic - never decrease)
   useEffect(() => {
@@ -278,6 +344,40 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     return 'pending';
   }, [providers]);
 
+  // Dynamic dialog title based on phase
+  const dialogTitle = useMemo(() => {
+    switch (phase) {
+      case 'completed': return 'Scan Complete';
+      case 'failed': return 'Scan Failed';
+      case 'finalising': return 'Finalising Results';
+      default: return 'Scan in Progress';
+    }
+  }, [phase]);
+
+  // Progress bar label based on phase
+  const progressLabel = useMemo(() => {
+    switch (phase) {
+      case 'completed': return 'Complete!';
+      case 'failed': return 'Failed';
+      case 'finalising': return 'Finalising...';
+      default: return 'Scanning...';
+    }
+  }, [phase]);
+
+  // Deterministic View Results handler using cached scanType
+  const handleViewResults = useCallback(() => {
+    if (!scanId) return;
+    
+    onOpenChange(false);
+    
+    // Use cached scanType - no async fetch inside click handler
+    if (scanType === 'username') {
+      navigate(`/maigret/results/${scanId}`);
+    } else {
+      navigate(`/results/${scanId}`);
+    }
+  }, [scanId, scanType, navigate, onOpenChange]);
+
   // Independent completion detector - runs every 2s regardless of other state
   // This is the most reliable way to detect scan completion
   useEffect(() => {
@@ -286,8 +386,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     console.log('[CompletionDetector] Starting for scan:', scanId);
     
     const checkCompletion = async () => {
-      // Skip if already completed
-      if (statusRef.current !== 'running') return;
+      // Skip if already completed or finalising
+      if (phaseRef.current !== 'running') {
+        console.log('[CompletionDetector] Skipping - phase is:', phaseRef.current);
+        return;
+      }
       
       try {
         const { data: scanData } = await supabase
@@ -299,11 +402,17 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         if (!scanData) return;
         
         const scanStatus = scanData.status;
-        const isComplete = ['completed', 'completed_empty', 'completed_partial', 'failed', 'timeout'].includes(scanStatus);
         
-        if (isComplete) {
+        if (isTerminalStatus(scanStatus)) {
           console.log('[CompletionDetector] Scan completed with status:', scanStatus);
           addDebugEvent('polling', `Scan completed: ${scanStatus}`);
+          
+          // ✅ PHASE 1: Enter finalising phase immediately
+          const isFailed = isFailedStatus(scanStatus);
+          setPhase('finalising');
+          
+          // Stop polling immediately
+          isPollingRef.current = false;
           
           // ✅ FINAL SYNC: Fetch all provider events and update statuses BEFORE marking complete
           const { data: finalEvents } = await supabase
@@ -342,14 +451,15 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
             console.log('[CompletionDetector] Final provider statuses:', Array.from(providerFinalStatuses.entries()));
           }
           
-          // ✅ ATOMIC STATE UPDATE with flushSync: Update all providers in ONE call and force synchronous render
+          // ✅ PHASE 2: Force-finalise any providers still loading/retrying
           flushSync(() => {
             setProviders(prev => {
               const now = Date.now();
               const providersWithEvents = new Set(providerFinalStatuses.keys());
               
               // Update providers that received events with their final status
-              const updatedProviders = prev.map(p => {
+              // AND force-finalise any still in loading/retrying state
+              const updatedProviders: ProviderStatus[] = prev.map(p => {
                 const finalData = providerFinalStatuses.get(p.name.toLowerCase());
                 if (finalData) {
                   return {
@@ -357,6 +467,15 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
                     status: mapStageToStatus(finalData.stage),
                     message: finalData.message || p.message,
                     resultCount: finalData.resultCount !== undefined ? finalData.resultCount : p.resultCount,
+                    lastUpdated: now
+                  };
+                }
+                // Force-finalise providers still in loading/retrying state
+                if (p.status === 'loading' || p.status === 'retrying') {
+                  return {
+                    ...p,
+                    status: (isFailed ? 'failed' : 'success') as ProviderStatus['status'],
+                    message: isFailed ? 'Failed' : 'Completed',
                     lastUpdated: now
                   };
                 }
@@ -368,34 +487,39 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
                 providersWithEvents.has(p.name.toLowerCase()) || p.status !== 'pending'
               );
               
-              console.log('[CompletionDetector] Atomic update: final providers:', filtered.map(p => `${p.name}:${p.status}`));
+              console.log('[CompletionDetector] Force-finalised providers:', filtered.map(p => `${p.name}:${p.status}`));
               return filtered;
             });
             
             setTotalResults(findingsCount);
-          });
-          
-          // ✅ NOW set the final status (after flushSync guarantees provider updates are rendered)
-          flushSync(() => {
-            if (scanStatus === 'failed' || scanStatus === 'timeout') {
-              setStatus('failed');
-            } else {
-              setStatus('completed');
-            }
             setProgress(100);
           });
           
-          // Trigger effects
-          if (findingsCount > 0) {
-            playSuccessSound();
-            triggerConfetti();
-            toast.success(`Scan completed - ${findingsCount} results found`);
-          } else {
-            toast.info('Scan completed with no results');
-          }
-          
-          isPollingRef.current = false;
-          setTimeout(() => onComplete?.(), 2000);
+          // ✅ PHASE 3: Set final status after brief finalising delay
+          setTimeout(() => {
+            flushSync(() => {
+              if (isFailed) {
+                setStatus('failed');
+                setPhase('failed');
+              } else {
+                setStatus('completed');
+                setPhase('completed');
+              }
+            });
+            
+            // Trigger effects
+            if (findingsCount > 0 && !isFailed) {
+              playSuccessSound();
+              triggerConfetti();
+              toast.success(`Scan completed - ${findingsCount} results found`);
+            } else if (isFailed) {
+              toast.error('Scan failed');
+            } else {
+              toast.info('Scan completed with no results');
+            }
+            
+            setTimeout(() => onComplete?.(), 2000);
+          }, 400);
         }
       } catch (error) {
         console.error('[CompletionDetector] Error:', error);
@@ -472,8 +596,9 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     
     // Fetch events from database - uses currentScanId from closure (stable)
     const fetchEvents = async () => {
-      if (statusRef.current !== 'running') {
-        console.log('[ScanProgress] Poll skipped - scan not running');
+      // Guard: don't poll if not in running phase
+      if (phaseRef.current !== 'running') {
+        console.log('[ScanProgress] Poll skipped - phase is:', phaseRef.current);
         return;
       }
       
@@ -559,11 +684,13 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     if (isNewScan) {
       setProgress(5);
       setStatus('running');
+      setPhase('running'); // Reset phase for new scan
       setTotalResults(0);
       setConnectionMode('live');
       setLastEventAt(Date.now());
       isPollingRef.current = false;
       setDebugEvents([]);
+      setScanType(null); // Reset cached scanType for new scan
       
       // Pre-populate providers from initialProviders if provided
       if (initialProviders && initialProviders.length > 0) {
@@ -590,6 +717,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         // Check if scan already completed
         if (data.status === 'completed' || data.status === 'completed_partial') {
           setStatus('completed');
+          setPhase('completed');
           setProgress(100);
           setTotalResults(data.findings_count || 0);
           
@@ -605,6 +733,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           return; // Don't setup realtime if already complete
         } else if (data.status === 'failed') {
           setStatus('failed');
+          setPhase('failed');
           return;
         }
       }
@@ -626,10 +755,12 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
 
         if (data.status === 'completed') {
           setStatus('completed');
+          setPhase('completed');
           setProgress(100);
           setTotalResults(data.findings_count || 0);
         } else if (data.status === 'failed') {
           setStatus('failed');
+          setPhase('failed');
         }
 
         setLastEventAt(Date.now());
@@ -654,6 +785,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       .on('broadcast', { event: 'scan_complete' }, (payload: any) => {
         addDebugEvent('broadcast', 'Scan completed');
         setStatus('completed');
+        setPhase('completed');
         setProgress(100);
         setTotalResults(payload.payload.findingsCount || 0);
         
@@ -670,6 +802,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       .on('broadcast', { event: 'scan_failed' }, (payload: any) => {
         addDebugEvent('broadcast', payload.payload.error || 'Scan failed');
         setStatus('failed');
+        setPhase('failed');
         toast.error(payload.payload.error || 'Scan failed');
       })
       .on('broadcast', { event: 'scan_cancelled' }, () => {
@@ -709,7 +842,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     // Health monitor - updates connection mode based on realtime activity
     // Use refs to avoid stale closures and prevent effect re-runs
     const healthInterval = setInterval(() => {
-      if (statusRef.current !== 'running') return;
+      if (phaseRef.current !== 'running') return;
       
       // Access lastEventAt from ref to avoid stale closure
       const timeSinceLastEvent = Date.now() - lastEventAtRef.current;
@@ -784,7 +917,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         <DialogHeader>
           <div className="flex items-center justify-between">
             <div>
-              <DialogTitle>Scan in Progress</DialogTitle>
+              <DialogTitle>{dialogTitle}</DialogTitle>
               <DialogDescription className="space-y-1 mt-1">
                 <div className="flex items-center gap-2">
                   {stats.completed} of {stats.total} providers completed
@@ -813,9 +946,10 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         <div className="flex-1 overflow-auto space-y-4">
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span>{status === 'completed' ? 'Complete!' : status === 'failed' ? 'Failed' : 'Scanning...'}</span>
+              <span>{progressLabel}</span>
               <span>{progress}%</span>
             </div>
+            <Progress value={progress} className="h-2" />
             <Progress value={progress} className="h-2" />
           </div>
 
@@ -887,32 +1021,14 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
               {isCancelling ? 'Cancelling...' : 'Cancel Scan'}
             </Button>
           )}
-          {status === 'completed' && scanId && (
+          {(phase === 'completed' || phase === 'finalising') && scanId && (
             <Button 
-              onClick={async () => { 
-                // Fetch scan type FIRST before closing dialog
-                const { data: scanData } = await supabase
-                  .from('scans')
-                  .select('scan_type')
-                  .eq('id', scanId)
-                  .maybeSingle();
-                
-                const scanType = scanData?.scan_type;
-                
-                // Close dialog
-                onOpenChange(false);
-                
-                // Navigate using React Router
-                if (scanType === 'username') {
-                  navigate(`/maigret/results/${scanId}`);
-                } else {
-                  navigate(`/results/${scanId}`);
-                }
-              }} 
+              onClick={handleViewResults}
               className="flex-1"
+              disabled={phase === 'finalising'}
             >
               <Eye className="h-4 w-4 mr-2" />
-              View Results
+              {phase === 'finalising' ? 'Preparing...' : 'View Results'}
             </Button>
           )}
         </div>
