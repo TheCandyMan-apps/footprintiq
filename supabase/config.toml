@@ -72,6 +72,9 @@ verify_jwt = true
 [functions.fusion-compare]
 verify_jwt = true
 
+[functions.ai-correlation]
+verify_jwt = true
+
 [functions.ai-router]
 verify_jwt = true
 
