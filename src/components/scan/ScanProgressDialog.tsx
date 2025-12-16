@@ -160,17 +160,31 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   ) => {
     const now = Date.now();
     const nameLower = name.toLowerCase();
+
     setProviders(prev => {
       const existing = prev.find(p => p.name.toLowerCase() === nameLower);
       if (existing) {
+        // Never decrease result count (prevents later realtime events with 0 from overwriting actual counts)
+        const nextResultCount =
+          resultCount !== undefined
+            ? Math.max(resultCount, existing.resultCount ?? 0)
+            : existing.resultCount;
+
         return prev.map(p =>
           p.name.toLowerCase() === nameLower
-            ? { ...p, status: newStatus, message: message || p.message, resultCount: resultCount !== undefined ? resultCount : p.resultCount, lastUpdated: now }
+            ? {
+                ...p,
+                status: newStatus,
+                message: message || p.message,
+                resultCount: nextResultCount,
+                lastUpdated: now,
+              }
             : p
         );
       }
       return [...prev, { name, status: newStatus, message: message || '', resultCount, lastUpdated: now }];
     });
+
     setLastEventAt(now);
   }, []);
 
@@ -209,20 +223,32 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     let cancelled = false;
 
     (async () => {
-      const { data } = await supabase
+      console.log('[ScanProgress] Fetching results_route:', { scanId });
+
+      const { data, error } = await supabase
         .from('scans')
         .select('scan_type, results_route')
         .eq('id', scanId)
         .maybeSingle();
 
+      console.log('[ScanProgress] results_route fetch result:', {
+        scanId,
+        data,
+        error: error ? { message: error.message, code: (error as any).code } : null,
+      });
+
       if (!cancelled) {
         setScanType(data?.scan_type ?? null);
         // Use results_route if set, otherwise default to 'results' (safest)
-        setResultsRoute((data as any)?.results_route ?? 'results');
+        const route = (data as any)?.results_route ?? 'results';
+        console.log('[ScanProgress] Setting resultsRoute:', { scanId, route });
+        setResultsRoute(route);
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [scanId]);
 
   const stats = useMemo(() => {
@@ -372,17 +398,26 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   // Deterministic View Results handler using cached resultsRoute
   const handleViewResults = useCallback(() => {
     if (!scanId) return;
-    
+
+    console.log('[ScanProgress] handleViewResults:', {
+      scanId,
+      resultsRoute,
+      scanType,
+      phase: phaseRef.current,
+    });
+
     onOpenChange(false);
-    
+
     // Use results_route for deterministic routing - no async fetch inside click handler
     // 'maigret' routes to basic results page, 'results' (default) routes to full results page
     if (resultsRoute === 'maigret') {
+      console.log('[ScanProgress] Navigating:', { to: 'maigret', path: `/maigret/results/${scanId}` });
       navigate(`/maigret/results/${scanId}`);
     } else {
+      console.log('[ScanProgress] Navigating:', { to: 'results', path: `/results/${scanId}` });
       navigate(`/results/${scanId}`);
     }
-  }, [scanId, resultsRoute, navigate, onOpenChange]);
+  }, [scanId, resultsRoute, scanType, navigate, onOpenChange]);
 
   // Independent completion detector - runs every 2s regardless of other state
   // This is the most reliable way to detect scan completion
