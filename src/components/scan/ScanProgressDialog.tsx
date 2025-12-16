@@ -580,11 +580,19 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           }
           console.log(`[ScanProgress] ${source}: Event - provider=${providerName}, stage=${event.stage}`);
           
-          providerStatuses.set(providerName, {
-            stage: event.stage,
-            message: event.message,
-            resultCount: event.results_count || event.findings_count
-          });
+          // Prefer event with higher findings count (avoid 0 results overwriting actual count)
+          const existing = providerStatuses.get(providerName);
+          const newFindingsCount = event.results_count || event.findings_count || 0;
+          const existingCount = existing?.resultCount || 0;
+          
+          // Update if: no existing, or stage changed, or new has higher findings count
+          if (!existing || existing.stage !== event.stage || newFindingsCount > existingCount) {
+            providerStatuses.set(providerName, {
+              stage: event.stage,
+              message: event.message,
+              resultCount: Math.max(newFindingsCount, existingCount)
+            });
+          }
         }
       });
       

@@ -15,6 +15,7 @@ interface Finding {
   severity: string;
   provider: string;
   created_at: string;
+  results_route?: string;
 }
 
 interface RecentFindingsProps {
@@ -40,10 +41,10 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
 
       console.log('[RecentFindings] Fetching findings, workspaceId:', workspaceId);
 
-      // Get recent findings (limit 10) with workspace filter
+      // Get recent findings (limit 10) with workspace filter - join scans for results_route
       let findingsQuery = supabase
         .from('findings')
-        .select('id, scan_id, kind, severity, provider, created_at');
+        .select('id, scan_id, kind, severity, provider, created_at, scans!inner(results_route)');
       
       if (workspaceId) {
         findingsQuery = findingsQuery.eq('workspace_id', workspaceId);
@@ -61,14 +62,17 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
 
       console.log('[RecentFindings] Raw findings count:', data?.length || 0);
 
-      // Filter out provider errors and tier restrictions
+      // Filter out provider errors and tier restrictions, extract results_route
       const validFindings = (data || []).filter(f => {
         const kind = (f.kind || '').toLowerCase();
         return !kind.includes('provider_error') && 
                !kind.includes('error') &&
                !kind.includes('tier_restricted') &&
                !kind.includes('plan_blocked');
-      }).slice(0, 10);
+      }).slice(0, 10).map(f => ({
+        ...f,
+        results_route: (f.scans as any)?.results_route || 'results'
+      }));
 
       console.log('[RecentFindings] Valid findings after filtering:', validFindings.length);
       setFindings(validFindings);
@@ -135,13 +139,21 @@ export function RecentFindings({ workspaceId }: RecentFindingsProps) {
             {findings.map((finding) => (
               <div
                 key={finding.id}
-                onClick={() => navigate(`/maigret/results/${finding.scan_id}`)}
+                onClick={() => {
+                  const route = finding.results_route === 'maigret' 
+                    ? `/maigret/results/${finding.scan_id}` 
+                    : `/results/${finding.scan_id}`;
+                  navigate(route);
+                }}
                 role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    navigate(`/maigret/results/${finding.scan_id}`);
+                    const route = finding.results_route === 'maigret' 
+                      ? `/maigret/results/${finding.scan_id}` 
+                      : `/results/${finding.scan_id}`;
+                    navigate(route);
                   }
                 }}
                 aria-label={`View details for ${finding.kind} finding from ${finding.provider}`}

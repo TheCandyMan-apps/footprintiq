@@ -152,12 +152,19 @@ export default function AdvancedScan() {
   }, [scanType, maigretEnabled, workspace?.plan]);
 
   // ✅ Move handleScanComplete here BEFORE any early returns
-  const handleScanComplete = useCallback(() => {
+  const handleScanComplete = useCallback(async () => {
     setIsScanning(false);
     setProgressOpen(false);
     if (currentScanId) {
-      // ALL username scans go to Simple pipeline results page
-      if (scanType === 'username') {
+      // Fetch results_route from database for correct routing
+      const { data } = await supabase
+        .from('scans')
+        .select('results_route')
+        .eq('id', currentScanId)
+        .maybeSingle();
+      
+      const route = data?.results_route ?? 'results';
+      if (route === 'maigret') {
         navigate(`/maigret/results/${currentScanId}`);
       } else {
         navigate(`/results/${currentScanId}`);
@@ -165,7 +172,7 @@ export default function AdvancedScan() {
     } else {
       navigate("/dashboard");
     }
-  }, [currentScanId, scanType, navigate]);
+  }, [currentScanId, navigate]);
 
   const handleProgressClose = useCallback(() => {
     setProgressOpen(false);

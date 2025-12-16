@@ -27,6 +27,7 @@ interface ActiveScan {
   progress?: number;
   completedProviders?: number;
   totalProviders?: number;
+  resultsRoute?: string;
 }
 
 export function ScansInProgressCard() {
@@ -56,10 +57,10 @@ export function ScansInProgressCard() {
         .in('status', ['pending', 'running'])
         .order('created_at', { ascending: false });
 
-      // Fetch from scans (advanced scans)
+      // Fetch from scans (advanced scans) - include results_route
       const { data: advScans, error: scansError } = await supabase
         .from('scans')
-        .select('id, email, first_name, last_name, username, phone, scan_type, status, created_at')
+        .select('id, email, first_name, last_name, username, phone, scan_type, status, created_at, results_route')
         .in('status', ['pending', 'running'])
         .order('created_at', { ascending: false });
 
@@ -73,6 +74,7 @@ export function ScansInProgressCard() {
           target: job.username,
           status: job.status,
           createdAt: job.created_at,
+          resultsRoute: 'maigret', // Legacy scan_jobs always go to maigret
         })),
         ...(advScans || []).map(scan => {
           // Construct target from available fields
@@ -89,6 +91,7 @@ export function ScansInProgressCard() {
             target: targetParts[0] || 'Unknown',
             status: scan.status || 'unknown',
             createdAt: scan.created_at,
+            resultsRoute: scan.results_route || 'results',
           };
         }),
       ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -191,7 +194,8 @@ export function ScansInProgressCard() {
   };
 
   const handleViewScan = (scan: ActiveScan) => {
-    if (scan.type === 'username') {
+    // Use results_route for deterministic routing
+    if (scan.resultsRoute === 'maigret') {
       navigate(`/maigret/results/${scan.id}`);
     } else {
       navigate(`/results/${scan.id}`);
