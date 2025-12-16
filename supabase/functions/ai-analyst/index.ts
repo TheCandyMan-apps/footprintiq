@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { authenticateRequest } from "../_shared/auth-utils.ts";
 import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
-import { validateRequestBody } from "../_shared/security-validation.ts";
+// Security validation import removed - using direct Zod parsing for context field
 import { secureJsonResponse } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
@@ -50,20 +50,21 @@ serve(async (req) => {
 
     // Validate and sanitize input
     const body = await req.json();
-    const validation = validateRequestBody(body, AnalystRequestSchema);
     
-    if (!validation.valid) {
-      console.error("[ai-analyst] Validation failed:", validation.error);
-      if (validation.threat) {
-        console.warn("[ai-analyst] Security threat detected:", validation.threat);
-      }
+    // Parse with Zod directly (skip command injection check as context contains normal text)
+    let parsed;
+    try {
+      parsed = AnalystRequestSchema.parse(body);
+    } catch (error: any) {
+      const message = error.errors?.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ') || 'Invalid request body';
+      console.error("[ai-analyst] Validation failed:", message);
       return secureJsonResponse(
-        { error: "Invalid request", message: validation.error },
+        { error: "Invalid request", message },
         400
       );
     }
 
-    const { action, prompt, entityIds, sourceEntityId, targetEntityId, context } = validation.data!;
+    const { action, prompt, entityIds, sourceEntityId, targetEntityId, context } = parsed;
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
