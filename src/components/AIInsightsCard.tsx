@@ -63,17 +63,34 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
       });
 
       if (functionError) {
-        // Extract the actual error message - Supabase wraps edge function errors
-        // Check data.error first (edge function body), then functionError.message
-        const actualError = data?.error || '';
-        const errorCode = data?.code || '';
-        const errorStatus = data?.status || 0;
+        // Supabase wraps non-2xx edge function responses in `functionError`.
+        // The actual JSON body is commonly available in functionError.context.body.
+        const ctx = (functionError as any)?.context;
+
+        let parsedBody: any = null;
+        try {
+          if (data && typeof data === 'object') parsedBody = data;
+          else if (typeof ctx?.body === 'string' && ctx.body.trim()) parsedBody = JSON.parse(ctx.body);
+          else if (ctx?.body && typeof ctx.body === 'object') parsedBody = ctx.body;
+        } catch {
+          // ignore parse errors
+        }
+
+        const actualError = parsedBody?.error || '';
+        const errorCode = parsedBody?.code || '';
+        const errorStatus = Number(parsedBody?.status ?? ctx?.status ?? 0);
         const wrapperError = functionError.message || '';
         const errorLower = (actualError + ' ' + wrapperError).toLowerCase();
-        
-        console.log('[AIInsightsCard] Error details:', { actualError, errorCode, errorStatus, wrapperError });
-        
-        // Check for specific error types using code first, then text patterns
+
+        console.log('[AIInsightsCard] Error details:', {
+          actualError,
+          errorCode,
+          errorStatus,
+          wrapperError,
+          ctxStatus: ctx?.status,
+        });
+
+        // Prefer structured codes/status, then text patterns.
         if (errorCode === 'RATE_LIMIT_EXCEEDED' || errorStatus === 429 || errorLower.includes('rate limit')) {
           setError('Rate limit exceeded. Please wait a few minutes and try again.');
         } else if (errorCode === 'PAYMENT_REQUIRED' || errorStatus === 402 || errorLower.includes('credits')) {
