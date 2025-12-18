@@ -11,6 +11,7 @@ import { LastScanned } from '@/components/LastScanned';
 import { ConfidenceScoreBadge } from '@/components/ConfidenceScoreBadge';
 import { ConfidenceScoreIndicator } from '@/components/ConfidenceScoreIndicator';
 import { ProviderMatchVisual } from '@/components/ProviderMatchVisual';
+import { PhoneIntelligenceCard } from '@/components/results/PhoneIntelligenceCard';
 import { analyzeTrends } from '@/lib/trends';
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -851,6 +852,18 @@ const ResultsDetail = () => {
             </ScanErrorBoundary>
             <ScanErrorBoundary context="results">
               <FootprintClusterMap scanId={scanId!} />
+            </ScanErrorBoundary>
+          </div>
+        )}
+
+        {/* Phone Intelligence Card for Phone Scans */}
+        {scan?.phone && (
+          <div className="mb-8">
+            <ScanErrorBoundary context="results">
+              <PhoneIntelligenceCard 
+                phone={scan.phone} 
+                findings={findings.filter(f => f.type === 'phone_intelligence')} 
+              />
             </ScanErrorBoundary>
           </div>
         )}
