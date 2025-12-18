@@ -9227,6 +9227,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_identifier: string
+          p_identifier_type: string
+          p_max_requests?: number
+          p_window_seconds?: number
+        }
+        Returns: {
+          allowed: boolean
+          remaining: number
+          reset_at: string
+        }[]
+      }
       check_workspace_scan_limit: {
         Args: { _rate_type?: string; _workspace_id: string }
         Returns: boolean
