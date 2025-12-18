@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.osint-worker-diagnostic]
 verify_jwt = false
+
+[functions.phone-intel]
+verify_jwt = true

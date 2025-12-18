@@ -30,6 +30,22 @@ export const PROVIDER_COSTS: Record<string, number> = {
   holehe: 1,
   abstract_ipgeo: 1,
   abstract_company: 1,
+  
+  // Phone intelligence providers (higher cost due to premium APIs)
+  abstract_phone: 2,
+  ipqs_phone: 3,
+  numverify: 2,
+  twilio_lookup: 3,
+  
+  // Phone messaging presence
+  whatsapp_check: 2,
+  telegram_check: 2,
+  signal_check: 1,
+  
+  // Phone OSINT presence
+  phone_osint: 2,
+  truecaller: 3,
+  phone_reputation: 2,
 };
 
 /**
