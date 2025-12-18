@@ -31,19 +31,27 @@ async function validateAuth(req: Request, supabase: any) {
 }
 
 async function checkRateLimit(supabase: any, userId: string, endpoint: string) {
-  const { data: rateLimit } = await supabase.rpc('check_rate_limit', {
+  const { data, error } = await supabase.rpc('check_rate_limit', {
     p_identifier: userId,
     p_identifier_type: 'user',
     p_endpoint: endpoint,
-    p_max_requests: 100,  // 100 per hour (more reasonable for scan insights)
-    p_window_seconds: 3600
+    p_max_requests: 100, // 100 per hour
+    p_window_seconds: 3600,
   });
 
+  if (error) {
+    console.error('[ai-correlation] Rate limit RPC error:', error);
+    throw new Error('Rate limit check failed');
+  }
+
+  // PostgREST returns TABLE results as an array
+  const rateLimit = Array.isArray(data) ? data[0] : data;
+
   if (!rateLimit?.allowed) {
-    const error = new Error('Rate limit exceeded');
-    (error as any).status = 429;
-    (error as any).resetAt = rateLimit?.reset_at;
-    throw error;
+    const err = new Error('Rate limit exceeded');
+    (err as any).status = 429;
+    (err as any).resetAt = rateLimit?.reset_at;
+    throw err;
   }
 }
 
