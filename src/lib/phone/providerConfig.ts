@@ -4,6 +4,7 @@
  */
 
 export type PhoneProviderTier = 'basic' | 'medium' | 'advanced';
+export type ProviderStatus = 'success' | 'failed' | 'not_configured' | 'tier_restricted' | 'skipped';
 
 export interface PhoneProviderConfig {
   id: string;
@@ -13,6 +14,8 @@ export interface PhoneProviderConfig {
   tier: PhoneProviderTier;
   category: 'carrier' | 'messaging' | 'osint' | 'risk';
   enabled: boolean;
+  /** Environment variable name required for this provider (optional = can run without it) */
+  requiresKey?: string;
 }
 
 export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
@@ -25,6 +28,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'basic',
     category: 'carrier',
     enabled: true,
+    requiresKey: 'ABSTRACT_PHONE_API_KEY',
   },
   {
     id: 'numverify',
@@ -34,6 +38,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'basic',
     category: 'carrier',
     enabled: true,
+    requiresKey: 'NUMVERIFY_API_KEY',
   },
   {
     id: 'ipqs_phone',
@@ -43,6 +48,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'basic',
     category: 'risk',
     enabled: true,
+    requiresKey: 'IPQS_API_KEY',
   },
   {
     id: 'twilio_lookup',
@@ -52,6 +58,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'basic',
     category: 'carrier',
     enabled: true,
+    requiresKey: 'TWILIO_API_KEY',
   },
 
   // Tier 2 - Medium (messaging presence)
@@ -63,6 +70,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'medium',
     category: 'messaging',
     enabled: true,
+    requiresKey: 'WHATSAPP_CHECK_API_KEY',
   },
   {
     id: 'telegram_check',
@@ -72,6 +80,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'medium',
     category: 'messaging',
     enabled: true,
+    requiresKey: 'TELEGRAM_CHECK_API_KEY',
   },
   {
     id: 'signal_check',
@@ -81,6 +90,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'medium',
     category: 'messaging',
     enabled: true,
+    requiresKey: 'SIGNAL_CHECK_API_KEY',
   },
 
   // Tier 3 - Advanced (OSINT & reputation)
@@ -92,6 +102,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'advanced',
     category: 'osint',
     enabled: true,
+    requiresKey: 'PHONE_OSINT_API_KEY',
   },
   {
     id: 'truecaller',
@@ -101,6 +112,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'advanced',
     category: 'osint',
     enabled: true,
+    requiresKey: 'TRUECALLER_API_KEY',
   },
   {
     id: 'phone_reputation',
@@ -110,8 +122,37 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'advanced',
     category: 'risk',
     enabled: true,
+    requiresKey: 'PHONE_REPUTATION_API_KEY',
+  },
+  {
+    id: 'caller_hint',
+    name: 'Caller Hint',
+    description: 'Caller ID hints & business listings',
+    creditCost: 3,
+    tier: 'advanced',
+    category: 'osint',
+    enabled: true,
+    requiresKey: 'CALLERHINT_API_KEY',
   },
 ];
+
+/**
+ * Terminal statuses that indicate a provider is done (scan should not wait)
+ */
+export const TERMINAL_PROVIDER_STATUSES: ProviderStatus[] = [
+  'success',
+  'failed',
+  'not_configured',
+  'tier_restricted',
+  'skipped',
+];
+
+/**
+ * Check if a provider status is terminal (scan can complete)
+ */
+export function isTerminalStatus(status: ProviderStatus): boolean {
+  return TERMINAL_PROVIDER_STATUSES.includes(status);
+}
 
 /**
  * Get providers available for a given user tier
