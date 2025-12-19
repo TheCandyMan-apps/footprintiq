@@ -45,9 +45,10 @@ import {
   persistProviders,
   groupProvidersByCategory,
   getCategoryLabel,
-  getTierLabel,
+  getProviderTierLabel,
 } from '@/lib/providers/registry';
-import type { PlanId } from '@/lib/billing/tiers';
+import type { PlanTier } from '@/lib/billing/planCapabilities';
+import { enforceProviderAccess } from '@/lib/billing/planCapabilities';
 
 interface ProviderPanelProps {
   scanType: ScanType;
@@ -79,7 +80,7 @@ export function ProviderPanel({
   const { subscriptionTier } = useSubscription();
   const navigate = useNavigate();
 
-  const userPlan = (subscriptionTier || 'free') as PlanId;
+  const userPlan = (subscriptionTier || 'free') as PlanTier;
 
   const { available, locked } = useMemo(
     () => getProvidersForPlan(scanType, userPlan),
@@ -200,7 +201,7 @@ export function ProviderPanel({
   const renderProviderCard = (provider: ProviderConfig, isLocked = false) => {
     const isSelected = selectedProviders.includes(provider.id);
     const statusBadge = getProviderStatusBadge(provider.id);
-    const tierLabel = getTierLabel(provider.minTier);
+    const tierLabel = getProviderTierLabel(provider.minTier);
 
     return (
       <div

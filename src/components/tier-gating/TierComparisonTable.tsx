@@ -1,10 +1,10 @@
 import { Check, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { PLAN_QUOTAS } from '@/lib/workspace/quotas';
 import { TierBadge } from './FeatureGate';
 import { Link } from 'react-router-dom';
-import { useTierGating } from '@/hooks/useTierGating';
+import { useTierGating, type PlanTier } from '@/hooks/useTierGating';
+import { CAPABILITIES_BY_PLAN } from '@/lib/billing/planCapabilities';
 
 export function TierComparisonTable() {
   const { subscriptionTier } = useTierGating();
@@ -20,20 +20,19 @@ export function TierComparisonTable() {
     { key: 'monitorsPerWorkspace', label: 'Dark Web Monitors', format: (v) => typeof v === 'number' ? (v === -1 ? 'Unlimited' : v.toString()) : '' },
     { key: 'apiCallsPerHour', label: 'API Calls/Hour', format: (v) => typeof v === 'number' ? (v === -1 ? 'Unlimited' : v.toLocaleString()) : '' },
     { key: 'teamMembers', label: 'Team Members', format: (v) => typeof v === 'number' ? (v === -1 ? 'Unlimited' : v.toString()) : '' },
-    { key: 'retentionDays', label: 'Data Retention', format: (v) => typeof v === 'number' ? `${v} days` : '' },
-    { key: 'aiAnalystQueries', label: 'AI Queries/Month', format: (v) => typeof v === 'number' ? (v === -1 ? 'Unlimited' : v.toString()) : '' },
-    { key: 'darkWebAccess', label: 'Dark Web Access', format: (v) => typeof v === 'boolean' ? v : false },
-    { key: 'ssoEnabled', label: 'SSO', format: (v) => typeof v === 'boolean' ? v : false },
-    { key: 'prioritySupport', label: 'Priority Support', format: (v) => typeof v === 'boolean' ? v : false },
+    { key: 'aiQueriesPerMonth', label: 'AI Queries/Month', format: (v) => typeof v === 'number' ? (v === -1 ? 'Unlimited' : v.toString()) : '' },
+    { key: 'darkWebMonitoring', label: 'Dark Web Access', format: (v) => typeof v === 'boolean' ? v : false },
+    { key: 'sharedWorkspaces', label: 'Shared Workspaces', format: (v) => typeof v === 'boolean' ? v : false },
+    { key: 'priorityQueue', label: 'Priority Queue', format: (v) => typeof v === 'boolean' ? v : false },
   ];
 
-  const tiers = ['free', 'pro', 'enterprise'] as const;
+  const tiers: PlanTier[] = ['free', 'pro', 'business'];
 
   return (
     <div className="space-y-6">
       <div className="grid md:grid-cols-3 gap-6">
         {tiers.map((tier) => {
-          const quotas = PLAN_QUOTAS[tier];
+          const quotas = CAPABILITIES_BY_PLAN[tier];
           const isCurrentTier = subscriptionTier === tier;
 
           return (
@@ -49,7 +48,7 @@ export function TierComparisonTable() {
                 <CardDescription>
                   {tier === 'free' && 'Perfect for getting started'}
                   {tier === 'pro' && 'Advanced OSINT capabilities'}
-                  {tier === 'enterprise' && 'Unlimited power'}
+                  {tier === 'business' && 'Unlimited power for teams'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
