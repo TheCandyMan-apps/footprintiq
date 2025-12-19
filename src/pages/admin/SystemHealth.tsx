@@ -57,11 +57,54 @@ export default function SystemHealth() {
   if (error) {
     return (
       <div className="container mx-auto p-6 space-y-6">
-        <Card>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">System Health</h1>
+            <p className="text-muted-foreground">Real-time platform monitoring</p>
+          </div>
+          <Button onClick={() => refetch()} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
+        </div>
+        <Card className="border-destructive/50">
           <CardContent className="pt-6">
-            <div className="text-center text-red-500">
-              <AlertCircle className="h-12 w-12 mx-auto mb-4" />
-              <p>Failed to load system health</p>
+            <div className="text-center space-y-4">
+              <AlertCircle className="h-12 w-12 mx-auto text-destructive" />
+              <div className="space-y-2">
+                <p className="font-medium text-destructive">Unable to Load System Health</p>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  {error instanceof Error ? error.message : 'Connection to health check service failed. This may be a temporary issue.'}
+                </p>
+              </div>
+              <Button onClick={() => refetch()} variant="outline" className="mt-4">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Show partial status when health check fails */}
+        <Card className="bg-muted/50">
+          <CardHeader>
+            <CardTitle className="text-lg">Status Overview</CardTitle>
+            <CardDescription>Limited data available while health check is unavailable</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <Database className="h-4 w-4 text-muted-foreground" />
+                <span>Database: Unknown</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                <span>OSINT Workers: Unknown</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-muted-foreground" />
+                <span>Edge Functions: Unknown</span>
+              </div>
             </div>
           </CardContent>
         </Card>

@@ -90,6 +90,7 @@ const ScanRequestSchema = z.object({
   }),
   value: z.string().trim().min(1, 'value cannot be empty').max(255, 'value too long'),
   workspaceId: z.string().uuid('invalid workspace ID format'),
+  anonMode: z.boolean().optional(), // Anonymous mode for proxy routing
   options: z.object({
     includeDarkweb: z.boolean().optional(),
     includeDating: z.boolean().optional(),
@@ -119,6 +120,7 @@ interface ScanRequest {
   type: 'email' | 'username' | 'domain' | 'phone';
   value: string;
   workspaceId: string;
+  anonMode?: boolean;
   options?: {
     includeDarkweb?: boolean;
     includeDating?: boolean;
@@ -196,7 +198,7 @@ serve(async (req) => {
       return bad(400, `Invalid request: ${errors}`);
     }
 
-    const { scanId: providedScanId, type, value, workspaceId, options = {} } = parseResult.data;
+    const { scanId: providedScanId, type, value, workspaceId, anonMode = false, options = {} } = parseResult.data;
 
     // Enhanced logging for username scans with provider info
     const requestedProviders = options.providers || [];
@@ -205,7 +207,8 @@ serve(async (req) => {
       providers: requestedProviders.length > 0 ? requestedProviders : 'all-default',
       includeDarkweb: options.includeDarkweb,
       includeDating: options.includeDating,
-      includeNsfw: options.includeNsfw
+      includeNsfw: options.includeNsfw,
+      anonMode
     });
     console.log('[orchestrate] Providers requested:', options.providers);
     
