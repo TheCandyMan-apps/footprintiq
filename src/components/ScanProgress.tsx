@@ -174,7 +174,13 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           if (scanData.firstName && scanData.firstName.trim()) body.firstName = scanData.firstName.trim();
           if (scanData.lastName && scanData.lastName.trim()) body.lastName = scanData.lastName.trim();
           if (scanData.email && scanData.email.trim()) body.email = scanData.email.trim();
-          if (scanData.phone && scanData.phone.trim()) body.phone = normalizePhone(scanData.phone.trim());
+          if (scanData.phone && scanData.phone.trim()) {
+            body.phone = normalizePhone(scanData.phone.trim());
+            // Pass selected phone providers if available
+            if (scanData.phoneProviders && scanData.phoneProviders.length > 0) {
+              body.phoneProviders = scanData.phoneProviders;
+            }
+          }
 
           // Actually wait for the scan to complete
           const invokeRes = await withTimeout(

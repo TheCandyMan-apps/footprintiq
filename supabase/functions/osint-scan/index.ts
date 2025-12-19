@@ -33,6 +33,8 @@ const ScanRequestSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }).max(255).optional(),
   // Accept any phone format with 7-30 chars, will normalize before use
   phone: z.string().min(7).max(30).optional().transform((val) => val ? normalizePhone(val) : undefined),
+  // Phone providers to use for phone scan
+  phoneProviders: z.array(z.string()).optional(),
 }).refine(
   (data) => {
     // At least one identifier must be provided
@@ -49,6 +51,7 @@ interface ScanRequest {
   lastName?: string;
   email?: string;
   phone?: string;
+  phoneProviders?: string[];
 }
 
 // Import shared PII masking utility
@@ -274,6 +277,65 @@ serve(async (req) => {
         }
       } catch (error) {
         console.error('WhitePages error:', error);
+      }
+    }
+
+    // 3b. Phone Intelligence via phone-intel function (when providers selected)
+    if (scanData.phone && scanData.phoneProviders && scanData.phoneProviders.length > 0) {
+      console.log('[osint-scan] Invoking phone-intel with providers:', scanData.phoneProviders);
+      await broadcastProviderStatus('phone', 'loading', 'Running phone intelligence...');
+      diagnostics.providersInvoked.push('phone-intel:start');
+      
+      try {
+        // Get workspace ID for the scan
+        const { data: scanRecord } = await supabase
+          .from('scans')
+          .select('workspace_id')
+          .eq('id', scanData.scanId)
+          .single();
+
+        const { data: phoneIntelData, error: phoneIntelError } = await supabase.functions.invoke(
+          'phone-intel',
+          {
+            body: {
+              scanId: scanData.scanId,
+              phone: scanData.phone,
+              workspaceId: scanRecord?.workspace_id,
+              providers: scanData.phoneProviders,
+            }
+          }
+        );
+
+        if (!phoneIntelError && phoneIntelData?.success) {
+          diagnostics.providersInvoked.push(`phone-intel:success:${phoneIntelData.findingsCount || 0}`);
+          console.log('[osint-scan] phone-intel completed with', phoneIntelData.findingsCount, 'findings');
+          
+          // Phone findings are stored directly by phone-intel, but we can add a summary to dataSources
+          if (phoneIntelData.findingsCount > 0) {
+            results.dataSources.push({
+              name: 'Phone Intelligence',
+              category: 'Phone Analysis',
+              url: '',
+              risk_level: 'medium',
+              data_found: [`${phoneIntelData.findingsCount} phone findings`],
+              metadata: {
+                providers_used: scanData.phoneProviders,
+                findings_count: phoneIntelData.findingsCount,
+                provider_results: phoneIntelData.providerResults || {},
+              },
+            });
+          }
+          
+          await broadcastProviderStatus('phone', 'success', `Found ${phoneIntelData.findingsCount} findings`, phoneIntelData.findingsCount);
+        } else {
+          console.error('[osint-scan] phone-intel error:', phoneIntelError);
+          diagnostics.providersSkipped.push('phone-intel:error');
+          await broadcastProviderStatus('phone', 'failed', 'Phone intelligence failed');
+        }
+      } catch (error) {
+        console.error('[osint-scan] phone-intel invoke error:', error);
+        diagnostics.providersSkipped.push('phone-intel:error');
+        await broadcastProviderStatus('phone', 'failed', 'Phone intelligence error');
       }
     }
 

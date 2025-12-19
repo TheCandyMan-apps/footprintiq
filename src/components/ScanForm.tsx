@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useNavigate } from "react-router-dom";
+import { PhoneProviderSelector } from "@/components/scan/PhoneProviderSelector";
 
 interface ScanFormProps {
   onSubmit: (data: ScanFormData) => void;
@@ -20,6 +21,7 @@ export interface ScanFormData {
   email?: string;
   phone?: string;
   username?: string;
+  phoneProviders?: string[];
 }
 
 const scanFormSchema = z.object({
@@ -47,8 +49,17 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     email: "",
     phone: "",
     username: "",
+    phoneProviders: [],
   });
+  const [phoneProviders, setPhoneProviders] = useState<string[]>([]);
   const { toast } = useToast();
+
+  // Check if phone number is entered (trimmed, at least 7 digits)
+  const hasPhoneInput = useMemo(() => {
+    const phone = formData.phone?.trim() || "";
+    const digitCount = phone.replace(/\D/g, "").length;
+    return digitCount >= 7;
+  }, [formData.phone]);
 
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -67,7 +78,13 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
       return;
     }
     
-    onSubmit(result.data);
+    // Include phone providers if phone scan
+    const submitData = {
+      ...result.data,
+      phoneProviders: hasPhoneInput ? phoneProviders : undefined,
+    };
+    
+    onSubmit(submitData);
   };
 
   return (
@@ -154,6 +171,14 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
               maxLength={20}
             />
           </div>
+
+          {/* Phone provider selector - only show when phone is entered */}
+          {hasPhoneInput && (
+            <PhoneProviderSelector
+              selectedProviders={phoneProviders}
+              onSelectionChange={setPhoneProviders}
+            />
+          )}
 
           <div className="pt-4 space-y-3">
             <Button 
