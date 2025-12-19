@@ -56,10 +56,15 @@ export function PhoneInput({
   return (
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
-        <Label htmlFor="phone" className="flex items-center gap-2">
-          <Phone className="h-4 w-4 text-muted-foreground" />
-          Phone Number
-        </Label>
+        <div className="space-y-1">
+          <Label htmlFor="phone" className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-muted-foreground" />
+            Phone Number
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            E.164 preferred. Examples: +447712345678, +1 415 555 2671
+          </p>
+        </div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -86,7 +91,7 @@ export function PhoneInput({
         <Input
           id="phone"
           type="tel"
-          placeholder="Enter phone number (E.164 preferred)"
+          placeholder="+1 555 123 4567"
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
@@ -112,8 +117,9 @@ export function PhoneInput({
           <p className="text-xs text-destructive">{validation.error}</p>
         ) : showSuccess ? (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-mono">
-              {validation.normalized}
+            <span className="text-xs text-muted-foreground">
+              Normalized:{' '}
+              <span className="font-mono text-foreground">{validation.normalized}</span>
             </span>
             {validation.country && (
               <Badge variant="outline" className="text-xs py-0">
@@ -121,11 +127,7 @@ export function PhoneInput({
               </Badge>
             )}
           </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            E.164 format recommended (e.g., +447712345678)
-          </p>
-        )}
+        ) : null}
       </div>
     </div>
   );

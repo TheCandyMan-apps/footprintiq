@@ -367,18 +367,20 @@ export function getProviderById(id: string): ProviderConfig | undefined {
 }
 
 /**
- * Storage key for persisted provider selection
+ * Storage key for persisted provider selection (includes plan tier)
  */
-export function getProviderStorageKey(scanType: ScanType): string {
-  return `footprintiq_${scanType}_providers`;
+export function getProviderStorageKey(scanType: ScanType, plan?: PlanTier): string {
+  return plan 
+    ? `footprintiq_${scanType}_${plan}_providers`
+    : `footprintiq_${scanType}_providers`;
 }
 
 /**
  * Load persisted provider selection from localStorage
  */
-export function loadPersistedProviders(scanType: ScanType): string[] | null {
+export function loadPersistedProviders(scanType: ScanType, plan?: PlanTier): string[] | null {
   try {
-    const stored = localStorage.getItem(getProviderStorageKey(scanType));
+    const stored = localStorage.getItem(getProviderStorageKey(scanType, plan));
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) {
@@ -394,9 +396,9 @@ export function loadPersistedProviders(scanType: ScanType): string[] | null {
 /**
  * Persist provider selection to localStorage
  */
-export function persistProviders(scanType: ScanType, providerIds: string[]): void {
+export function persistProviders(scanType: ScanType, providerIds: string[], plan?: PlanTier): void {
   try {
-    localStorage.setItem(getProviderStorageKey(scanType), JSON.stringify(providerIds));
+    localStorage.setItem(getProviderStorageKey(scanType, plan), JSON.stringify(providerIds));
   } catch {
     // Ignore storage errors
   }

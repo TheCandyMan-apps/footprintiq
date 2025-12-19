@@ -30,6 +30,7 @@ import {
   Users,
   AlertTriangle,
   Zap,
+  Crown,
 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
@@ -48,7 +49,13 @@ import {
   getProviderTierLabel,
 } from '@/lib/providers/registry';
 import type { PlanTier } from '@/lib/billing/planCapabilities';
-import { enforceProviderAccess } from '@/lib/billing/planCapabilities';
+import { CAPABILITIES_BY_PLAN } from '@/lib/billing/planCapabilities';
+
+// Known configured API keys - these would ideally come from a secrets check
+// For now, we track which keys are typically configured
+const KNOWN_CONFIGURED_KEYS: string[] = [
+  // Add keys that are configured in your system
+];
 
 interface ProviderPanelProps {
   scanType: ScanType;
@@ -82,6 +89,12 @@ export function ProviderPanel({
 
   const userPlan = (subscriptionTier || 'free') as PlanTier;
 
+  // Get plan capabilities for provider limits
+  const planCapabilities = CAPABILITIES_BY_PLAN[userPlan];
+  const maxProviders = scanType === 'phone' 
+    ? planCapabilities.phoneProvidersMax 
+    : planCapabilities.usernameProvidersMax;
+
   const { available, locked } = useMemo(
     () => getProvidersForPlan(scanType, userPlan),
     [scanType, userPlan]
@@ -102,6 +115,9 @@ export function ProviderPanel({
     [selectedProviders]
   );
 
+  // Check if provider limit is reached (for free plan)
+  const isLimitReached = maxProviders !== -1 && selectedProviders.length >= maxProviders;
+
   // Track if we've initialized
   const hasInitialized = useRef(false);
 
@@ -110,43 +126,66 @@ export function ProviderPanel({
     if (hasInitialized.current) return;
     hasInitialized.current = true;
 
-    const persisted = loadPersistedProviders(scanType);
+    const persisted = loadPersistedProviders(scanType, userPlan);
     if (persisted && persisted.length > 0) {
-      // Filter to only include available providers
-      const validSelection = persisted.filter((id) =>
+      // Filter to only include available providers and respect limit
+      let validSelection = persisted.filter((id) =>
         available.some((p) => p.id === id)
       );
+      // Enforce max providers for free tier
+      if (maxProviders !== -1 && validSelection.length > maxProviders) {
+        validSelection = validSelection.slice(0, maxProviders);
+      }
       if (validSelection.length > 0) {
         onSelectionChange(validSelection);
         return;
       }
     }
-    // Fall back to defaults
-    onSelectionChange(getDefaultProviders(scanType, userPlan));
-  }, [scanType, userPlan, available, onSelectionChange]);
+    // Fall back to defaults (limited by plan)
+    let defaults = getDefaultProviders(scanType, userPlan);
+    if (maxProviders !== -1 && defaults.length > maxProviders) {
+      defaults = defaults.slice(0, maxProviders);
+    }
+    onSelectionChange(defaults);
+  }, [scanType, userPlan, available, onSelectionChange, maxProviders]);
 
   const toggleProvider = (providerId: string) => {
     if (disabled) return;
 
-    const newSelection = selectedProviders.includes(providerId)
+    const isCurrentlySelected = selectedProviders.includes(providerId);
+    
+    // If trying to add and limit reached, prevent it
+    if (!isCurrentlySelected && isLimitReached) return;
+
+    const newSelection = isCurrentlySelected
       ? selectedProviders.filter((id) => id !== providerId)
       : [...selectedProviders, providerId];
 
     onSelectionChange(newSelection);
-    persistProviders(scanType, newSelection);
+    persistProviders(scanType, newSelection, userPlan);
   };
 
   const selectAll = () => {
     if (disabled) return;
-    const allIds = available.map((p) => p.id);
+    let allIds = available.map((p) => p.id);
+    // Enforce limit for free tier
+    if (maxProviders !== -1 && allIds.length > maxProviders) {
+      allIds = allIds.slice(0, maxProviders);
+    }
     onSelectionChange(allIds);
-    persistProviders(scanType, allIds);
+    persistProviders(scanType, allIds, userPlan);
   };
 
   const selectNone = () => {
     if (disabled) return;
     onSelectionChange([]);
-    persistProviders(scanType, []);
+    persistProviders(scanType, [], userPlan);
+  };
+
+  // Check if provider requires an API key that is not configured
+  const isProviderConfigured = (provider: ProviderConfig): boolean => {
+    if (!provider.requiresKey) return true;
+    return KNOWN_CONFIGURED_KEYS.includes(provider.requiresKey);
   };
 
   const getProviderStatusBadge = (providerId: string) => {
@@ -202,6 +241,10 @@ export function ProviderPanel({
     const isSelected = selectedProviders.includes(provider.id);
     const statusBadge = getProviderStatusBadge(provider.id);
     const tierLabel = getProviderTierLabel(provider.minTier);
+    const isConfigured = isProviderConfigured(provider);
+    
+    // Check if this provider cannot be selected (limit reached and not already selected)
+    const isDisabledByLimit = !isLocked && !isSelected && isLimitReached;
 
     return (
       <div
@@ -209,11 +252,13 @@ export function ProviderPanel({
         className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
           isLocked
             ? 'opacity-60 bg-muted/30 border-border cursor-not-allowed'
+            : isDisabledByLimit
+            ? 'opacity-50 border-border cursor-not-allowed'
             : isSelected
-            ? 'border-primary bg-primary/5 cursor-pointer'
-            : 'border-border hover:border-muted-foreground/50 cursor-pointer'
+            ? 'border-primary bg-primary/5 cursor-pointer hover:bg-primary/10'
+            : 'border-border hover:border-muted-foreground/50 cursor-pointer hover:bg-muted/30'
         }`}
-        onClick={() => !isLocked && toggleProvider(provider.id)}
+        onClick={() => !isLocked && !isDisabledByLimit && toggleProvider(provider.id)}
       >
         {isLocked ? (
           <TooltipProvider>
@@ -229,7 +274,7 @@ export function ProviderPanel({
         ) : (
           <Checkbox
             checked={isSelected}
-            disabled={disabled}
+            disabled={disabled || isDisabledByLimit}
             className="mt-0.5"
           />
         )}
@@ -244,9 +289,25 @@ export function ProviderPanel({
                 {tierLabel}+
               </Badge>
             )}
+            {/* Show not-configured badge before scan */}
+            {!isLocked && !isConfigured && !statusBadge && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge variant="outline" className="text-xs text-amber-500 border-amber-500/50">
+                      <Settings className="w-3 h-3 mr-1" />
+                      Not configured
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Connect API key in Settings → Integrations</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             {statusBadge}
           </div>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <p className="text-xs text-muted-foreground mt-1">
             {provider.description}
           </p>
         </div>
@@ -308,12 +369,30 @@ export function ProviderPanel({
         </div>
       </div>
 
+      {/* Free plan limit message */}
+      {userPlan === 'free' && (
+        <Alert variant="default" className="border-amber-500/30 bg-amber-500/5">
+          <Crown className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-sm">
+            Free plan runs core checks only (max {maxProviders} providers).{' '}
+            <Button
+              variant="link"
+              className="h-auto p-0 text-sm text-primary"
+              onClick={() => navigate('/pricing')}
+            >
+              Upgrade for more
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Summary bar */}
       <Alert className="bg-primary/5 border-primary/20">
         <Info className="h-4 w-4" />
         <AlertDescription className="flex items-center justify-between">
           <span>
-            {selectedProviders.length} of {available.length} providers selected
+            {selectedProviders.length}
+            {maxProviders !== -1 ? ` / ${maxProviders}` : ` of ${available.length}`} providers selected
             {locked.length > 0 && (
               <span className="text-muted-foreground ml-1">
                 ({locked.length} locked)
@@ -328,7 +407,7 @@ export function ProviderPanel({
               disabled={disabled}
               className="text-xs h-7"
             >
-              Select All
+              {maxProviders !== -1 ? `Select ${maxProviders}` : 'Select All'}
             </Button>
             <Button
               variant="ghost"
