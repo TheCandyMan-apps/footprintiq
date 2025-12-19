@@ -1,15 +1,14 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Shield } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { useSubscription } from "@/hooks/useSubscription";
-import { useNavigate } from "react-router-dom";
-import { PhoneProviderSelector } from "@/components/scan/PhoneProviderSelector";
+import { PhoneInput } from "@/components/scan/PhoneInput";
+import { ProviderPanel } from "@/components/scan/ProviderPanel";
+import { validatePhone } from "@/lib/phone/phoneUtils";
 
 interface ScanFormProps {
   onSubmit: (data: ScanFormData) => void;
@@ -28,7 +27,7 @@ const scanFormSchema = z.object({
   firstName: z.string().trim().max(100, "First name must be less than 100 characters").optional(),
   lastName: z.string().trim().max(100, "Last name must be less than 100 characters").optional(),
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters").optional().or(z.literal("")),
-  phone: z.string().trim().regex(/^[\d\s\+\-\(\)]*$/, "Invalid phone number format").max(20, "Phone number must be less than 20 characters").optional().or(z.literal("")),
+  phone: z.string().trim().max(20, "Phone number must be less than 20 characters").optional().or(z.literal("")),
   username: z.string().trim().min(1).max(50, "Username must be less than 50 characters").optional().or(z.literal("")),
 }).refine(
   (data) => {
@@ -52,15 +51,25 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     phoneProviders: [],
   });
   const [phoneProviders, setPhoneProviders] = useState<string[]>([]);
+  const [phoneValid, setPhoneValid] = useState(false);
+  const [normalizedPhone, setNormalizedPhone] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Check if phone number is entered (trimmed, at least 7 digits)
-  const hasPhoneInput = useMemo(() => {
+  // Check if phone number is valid and should show providers
+  const showPhoneProviders = useMemo(() => {
     const phone = formData.phone?.trim() || "";
     const digitCount = phone.replace(/\D/g, "").length;
-    return digitCount >= 7;
-  }, [formData.phone]);
+    return digitCount >= 7 && phoneValid;
+  }, [formData.phone, phoneValid]);
 
+  const handlePhoneChange = useCallback((value: string) => {
+    setFormData((prev) => ({ ...prev, phone: value }));
+  }, []);
+
+  const handlePhoneValidChange = useCallback((isValid: boolean, normalized: string | null) => {
+    setPhoneValid(isValid);
+    setNormalizedPhone(normalized);
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,11 +86,25 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
       });
       return;
     }
+
+    // Validate phone if provided
+    if (formData.phone && formData.phone.trim().length > 0) {
+      const phoneValidation = validatePhone(formData.phone);
+      if (!phoneValidation.isValid) {
+        toast({
+          title: "Invalid Phone Number",
+          description: phoneValidation.error || "Please enter a valid phone number",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     
-    // Include phone providers if phone scan
+    // Include phone providers if phone scan, use normalized phone
     const submitData = {
       ...result.data,
-      phoneProviders: hasPhoneInput ? phoneProviders : undefined,
+      phone: normalizedPhone || result.data.phone,
+      phoneProviders: showPhoneProviders ? phoneProviders : undefined,
     };
     
     onSubmit(submitData);
@@ -159,22 +182,17 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="+1 (555) 000-0000"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="bg-secondary border-border"
-              maxLength={20}
-            />
-          </div>
+          {/* Improved phone input */}
+          <PhoneInput
+            value={formData.phone || ""}
+            onChange={handlePhoneChange}
+            onValidChange={handlePhoneValidChange}
+          />
 
-          {/* Phone provider selector - only show when phone is entered */}
-          {hasPhoneInput && (
-            <PhoneProviderSelector
+          {/* Phone provider selector - only show when phone is valid */}
+          {showPhoneProviders && (
+            <ProviderPanel
+              scanType="phone"
               selectedProviders={phoneProviders}
               onSelectionChange={setPhoneProviders}
             />

@@ -57,7 +57,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { scanId, phone, workspaceId, providers = ['abstract_phone', 'ipqs_phone'] } = body;
+    const { scanId, phone, workspaceId, providers = ['abstract_phone', 'ipqs_phone'], userPlan = 'free' } = body;
 
     if (!phone || !scanId) {
       return new Response(
@@ -69,9 +69,37 @@ serve(async (req) => {
     const normalizedPhone = normalizePhone(phone);
     console.log(`[phone-intel] Starting scan for ${normalizedPhone.slice(0, 5)}***`);
     console.log(`[phone-intel] Requested providers: ${providers.join(', ')}`);
+    console.log(`[phone-intel] User plan: ${userPlan}`);
 
     const findings: any[] = [];
     const providerResults: Record<string, { status: string; findingsCount: number; latencyMs: number; message?: string }> = {};
+
+    // Plan-based provider restrictions
+    const PLAN_ALLOWED_PROVIDERS: Record<string, string[]> = {
+      free: ['abstract_phone', 'numverify', 'ipqs_phone', 'twilio_lookup'],
+      pro: ['abstract_phone', 'numverify', 'ipqs_phone', 'twilio_lookup', 'whatsapp_check', 'telegram_check', 'signal_check'],
+      business: ['abstract_phone', 'numverify', 'ipqs_phone', 'twilio_lookup', 'whatsapp_check', 'telegram_check', 'signal_check', 'phone_osint', 'truecaller', 'phone_reputation', 'caller_hint'],
+    };
+
+    const allowedForPlan = PLAN_ALLOWED_PROVIDERS[userPlan] || PLAN_ALLOWED_PROVIDERS.free;
+    
+    // Filter providers and mark tier_restricted
+    const validatedProviders: string[] = [];
+    for (const providerId of providers) {
+      if (allowedForPlan.includes(providerId)) {
+        validatedProviders.push(providerId);
+      } else {
+        console.log(`[phone-intel] Provider ${providerId} restricted for plan ${userPlan}`);
+        providerResults[providerId] = {
+          status: 'tier_restricted',
+          findingsCount: 0,
+          latencyMs: 0,
+          message: `Requires ${providerId.includes('whatsapp') || providerId.includes('telegram') || providerId.includes('signal') ? 'Pro' : 'Business'} plan`
+        };
+      }
+    }
+
+    console.log(`[phone-intel] Validated providers: ${validatedProviders.join(', ')}`);
 
     // Helper to log and record not_configured status
     const markNotConfigured = (providerId: string, keyName: string) => {
