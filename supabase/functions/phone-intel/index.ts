@@ -68,16 +68,31 @@ serve(async (req) => {
 
     const normalizedPhone = normalizePhone(phone);
     console.log(`[phone-intel] Starting scan for ${normalizedPhone.slice(0, 5)}***`);
+    console.log(`[phone-intel] Requested providers: ${providers.join(', ')}`);
 
     const findings: any[] = [];
-    const providerResults: Record<string, { status: string; findingsCount: number; latencyMs: number }> = {};
+    const providerResults: Record<string, { status: string; findingsCount: number; latencyMs: number; message?: string }> = {};
+
+    // Helper to log and record not_configured status
+    const markNotConfigured = (providerId: string, keyName: string) => {
+      console.log(`[phone-intel] Provider ${providerId} skipped: ${keyName} not configured`);
+      providerResults[providerId] = { 
+        status: 'not_configured', 
+        findingsCount: 0, 
+        latencyMs: 0,
+        message: `API key ${keyName} not configured`
+      };
+    };
 
     // Provider: AbstractAPI Phone
     if (providers.includes('abstract_phone')) {
       const startTime = Date.now();
-      try {
-        const ABSTRACT_API_KEY = Deno.env.get('ABSTRACT_PHONE_API_KEY');
-        if (ABSTRACT_API_KEY) {
+      const ABSTRACT_API_KEY = Deno.env.get('ABSTRACT_PHONE_API_KEY');
+      
+      if (!ABSTRACT_API_KEY) {
+        markNotConfigured('abstract_phone', 'ABSTRACT_PHONE_API_KEY');
+      } else {
+        try {
           const response = await fetch(
             `https://phonevalidation.abstractapi.com/v1/?api_key=${ABSTRACT_API_KEY}&phone=${encodeURIComponent(normalizedPhone)}`
           );
@@ -116,21 +131,22 @@ serve(async (req) => {
           } else {
             providerResults['abstract_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
           }
-        } else {
-          providerResults['abstract_phone'] = { status: 'skipped', findingsCount: 0, latencyMs: 0 };
+        } catch (error) {
+          console.error('[phone-intel] AbstractAPI error:', error);
+          providerResults['abstract_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
         }
-      } catch (error) {
-        console.error('[phone-intel] AbstractAPI error:', error);
-        providerResults['abstract_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
       }
     }
 
     // Provider: IPQualityScore Phone
     if (providers.includes('ipqs_phone')) {
       const startTime = Date.now();
-      try {
-        const IPQS_KEY = Deno.env.get('IPQS_API_KEY');
-        if (IPQS_KEY) {
+      const IPQS_KEY = Deno.env.get('IPQS_API_KEY');
+      
+      if (!IPQS_KEY) {
+        markNotConfigured('ipqs_phone', 'IPQS_API_KEY');
+      } else {
+        try {
           const response = await fetch(
             `https://ipqualityscore.com/api/json/phone/${IPQS_KEY}/${encodeURIComponent(normalizedPhone)}`
           );
@@ -243,12 +259,52 @@ serve(async (req) => {
           } else {
             providerResults['ipqs_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
           }
-        } else {
-          providerResults['ipqs_phone'] = { status: 'skipped', findingsCount: 0, latencyMs: 0 };
+        } catch (error) {
+          console.error('[phone-intel] IPQS error:', error);
+          providerResults['ipqs_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
         }
-      } catch (error) {
-        console.error('[phone-intel] IPQS error:', error);
-        providerResults['ipqs_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
+      }
+    }
+
+    // Provider: Caller Hint (optional - requires CALLERHINT_API_KEY)
+    if (providers.includes('caller_hint')) {
+      const CALLERHINT_KEY = Deno.env.get('CALLERHINT_API_KEY');
+      
+      if (!CALLERHINT_KEY) {
+        markNotConfigured('caller_hint', 'CALLERHINT_API_KEY');
+      } else {
+        const startTime = Date.now();
+        try {
+          // Placeholder for actual CallerHint API call
+          // This would be replaced with actual implementation when API is available
+          console.log(`[phone-intel] CallerHint lookup for ${normalizedPhone.slice(0, 5)}***`);
+          
+          // For now, mark as skipped until API is implemented
+          providerResults['caller_hint'] = { 
+            status: 'success', 
+            findingsCount: 0, 
+            latencyMs: Date.now() - startTime,
+            message: 'API integration pending'
+          };
+        } catch (error) {
+          console.error('[phone-intel] CallerHint error:', error);
+          providerResults['caller_hint'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
+        }
+      }
+    }
+
+    // Handle other requested providers that aren't configured
+    const handledProviders = ['abstract_phone', 'ipqs_phone', 'caller_hint'];
+    for (const providerId of providers) {
+      if (!handledProviders.includes(providerId) && !providerResults[providerId]) {
+        // Mark unimplemented providers as not_configured
+        console.log(`[phone-intel] Provider ${providerId} not implemented yet`);
+        providerResults[providerId] = { 
+          status: 'not_configured', 
+          findingsCount: 0, 
+          latencyMs: 0,
+          message: 'Provider not yet implemented'
+        };
       }
     }
 

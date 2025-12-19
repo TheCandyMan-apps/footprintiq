@@ -20,11 +20,13 @@ import {
   Coins,
   Lock,
   Info,
+  Settings,
 } from 'lucide-react';
 import {
   PHONE_PROVIDERS,
   PhoneProviderConfig,
   PhoneProviderTier,
+  ProviderStatus,
   getProvidersForTier,
   getDefaultProviders,
   calculateTotalCredits,
@@ -35,11 +37,14 @@ import {
   getCategoryLabel,
 } from '@/lib/phone/providerConfig';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useNavigate } from 'react-router-dom';
 
 interface PhoneProviderSelectorProps {
   selectedProviders: string[];
   onSelectionChange: (providers: string[]) => void;
   disabled?: boolean;
+  /** Optional provider results to show status after scan */
+  providerResults?: Record<string, { status: ProviderStatus; message?: string }>;
 }
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -53,9 +58,11 @@ export function PhoneProviderSelector({
   selectedProviders,
   onSelectionChange,
   disabled = false,
+  providerResults,
 }: PhoneProviderSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { subscriptionTier } = useSubscription();
+  const navigate = useNavigate();
 
   const userTier = useMemo(
     () => mapSubscriptionToPhoneTier(subscriptionTier),
@@ -134,8 +141,58 @@ export function PhoneProviderSelector({
     persistProviders([]);
   };
 
+  const getProviderStatusBadge = (providerId: string) => {
+    if (!providerResults) return null;
+    const result = providerResults[providerId];
+    if (!result) return null;
+
+    switch (result.status) {
+      case 'not_configured':
+        return (
+          <div className="flex items-center gap-1">
+            <Badge variant="outline" className="text-xs text-amber-500 border-amber-500/50">
+              Not configured
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-5 px-1 text-xs text-amber-500 hover:text-amber-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate('/settings/integrations');
+              }}
+            >
+              <Settings className="w-3 h-3 mr-1" />
+              Connect
+            </Button>
+          </div>
+        );
+      case 'tier_restricted':
+        return (
+          <Badge variant="outline" className="text-xs text-muted-foreground">
+            Upgrade required
+          </Badge>
+        );
+      case 'failed':
+        return (
+          <Badge variant="destructive" className="text-xs">
+            Failed
+          </Badge>
+        );
+      case 'success':
+        return (
+          <Badge variant="outline" className="text-xs text-green-500 border-green-500/50">
+            ✓
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
   const renderProviderCard = (provider: PhoneProviderConfig, isLocked = false) => {
     const isSelected = selectedProviders.includes(provider.id);
+    const statusBadge = getProviderStatusBadge(provider.id);
 
     return (
       <div
@@ -169,10 +226,16 @@ export function PhoneProviderSelector({
                 {provider.tier === 'medium' ? 'Pro+' : 'Business+'}
               </Badge>
             )}
+            {statusBadge}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             {provider.description}
           </p>
+          {provider.requiresKey && (
+            <p className="text-xs text-muted-foreground/60 mt-0.5">
+              Requires: {provider.requiresKey}
+            </p>
+          )}
         </div>
       </div>
     );

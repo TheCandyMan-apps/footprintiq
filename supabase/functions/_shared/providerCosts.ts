@@ -46,6 +46,7 @@ export const PROVIDER_COSTS: Record<string, number> = {
   phone_osint: 2,
   truecaller: 3,
   phone_reputation: 2,
+  caller_hint: 3,
 };
 
 /**
