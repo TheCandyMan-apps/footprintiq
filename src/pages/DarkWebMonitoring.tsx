@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Shield, Plus, Trash2, AlertTriangle, CheckCircle2, Clock, Search } from "lucide-react";
+import { Shield, Plus, Trash2, AlertTriangle, CheckCircle2, Clock, Search, Play, Loader2 } from "lucide-react";
 import { DarkWebFindingsCard } from "@/components/darkweb/DarkWebFindingsCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -86,6 +86,28 @@ export default function DarkWebMonitoring() {
     },
   });
 
+  // Run scan now mutation
+  const runScanMutation = useMutation({
+    mutationFn: async () => {
+      if (!workspace?.id) throw new Error("No workspace found");
+
+      const { data, error } = await supabase.functions.invoke("darkweb/monitor", {
+        body: { workspaceId: workspace.id },
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["darkweb-targets"] });
+      queryClient.invalidateQueries({ queryKey: ["darkweb-findings"] });
+      toast.success(`Scan complete. Checked ${data?.checkedCount || 0} targets, found ${data?.newFindings || 0} new findings.`);
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Scan failed");
+    },
+  });
+
   const handleAdd = () => {
     if (newTarget.trim()) {
       addMutation.mutate(newTarget.trim());
@@ -145,7 +167,22 @@ export default function DarkWebMonitoring() {
 
           {/* Targets List */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Monitored Targets</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Monitored Targets</h2>
+              <Button
+                onClick={() => runScanMutation.mutate()}
+                disabled={runScanMutation.isPending || !targets?.length}
+                variant="outline"
+                size="sm"
+              >
+                {runScanMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Play className="w-4 h-4 mr-2" />
+                )}
+                Run Scan Now
+              </Button>
+            </div>
             {isLoading ? (
               <Card className="p-6 text-center text-muted-foreground">
                 Loading targets...

@@ -12,6 +12,8 @@ import {
   Shield,
   Users,
   TrendingUp,
+  Eye,
+  Globe,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +21,8 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "New Scan", href: "/scan", icon: Search },
   { label: "Cases", href: "/cases", icon: FileText },
+  { label: "Watchlists", href: "/watchlists", icon: Eye },
+  { label: "Dark Web Monitoring", href: "/dark-web-monitoring", icon: Globe },
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
   { label: "Trends", href: "/trends", icon: TrendingUp },
   { label: "Teams", href: "/teams", icon: Users },

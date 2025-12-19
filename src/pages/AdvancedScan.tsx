@@ -498,6 +498,7 @@ export default function AdvancedScan() {
                 type: scanType,
                 value: targetValue,
                 workspaceId: workspace.id,
+                anonMode: anonModeEnabled,
                 options: {
                   providers,
                   includeDating: sensitiveSources.includes('dating'),
