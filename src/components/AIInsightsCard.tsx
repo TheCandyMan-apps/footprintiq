@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, AlertTriangle, Info, TrendingUp, Shield, Loader2, Crown, Zap } from "lucide-react";
+import { Sparkles, AlertTriangle, Info, TrendingUp, Shield, Loader2, Crown, Zap, Phone, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { Finding } from "@/lib/ufm";
 import { AIActionButton } from "@/components/AIActionButton";
 import { enableMonitoring } from "@/lib/monitoring";
 import { HelpIcon } from "@/components/ui/help-icon";
+import { cn } from "@/lib/utils";
 
 interface AIAction {
   title: string;
@@ -18,22 +19,44 @@ interface AIAction {
   sourceIds?: string[];
 }
 
+interface PhoneInsightsResponse {
+  summary: string;
+  riskScore: number;
+  riskLevel: 'low' | 'medium' | 'high';
+  keySignals: string[];
+  recommendedActions: string[];
+  confidence: number;
+  fallbackMode?: boolean;
+  fallbackReason?: string;
+}
+
 interface AIInsightsCardProps {
   findings: Finding[];
   subscriptionTier: string;
   scanId: string;
   userId?: string;
   dataSources?: Array<{ id: string; name: string; category: string }>;
+  scanType?: 'username' | 'email' | 'phone' | 'personal_details';
 }
 
-export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dataSources = [] }: AIInsightsCardProps) => {
+export const AIInsightsCard = ({ 
+  findings, 
+  subscriptionTier, 
+  scanId, 
+  userId, 
+  dataSources = [],
+  scanType = 'username'
+}: AIInsightsCardProps) => {
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<string | null>(null);
+  const [phoneInsights, setPhoneInsights] = useState<PhoneInsightsResponse | null>(null);
   const [actions, setActions] = useState<AIAction[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isFallbackMode, setIsFallbackMode] = useState(false);
   const { toast } = useToast();
 
   const isPremium = subscriptionTier === 'premium' || subscriptionTier === 'enterprise';
+  const isPhoneScan = scanType === 'phone';
 
   const generateInsights = async () => {
     if (!isPremium) {
@@ -56,15 +79,18 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
 
     setLoading(true);
     setError(null);
+    setIsFallbackMode(false);
 
     try {
       const { data, error: functionError } = await supabase.functions.invoke('ai-correlation', {
-        body: { findings: findings.slice(0, 50) }, // Limit to 50 findings to avoid token limits
+        body: { 
+          findings: findings.slice(0, 50), // Limit to 50 findings to avoid token limits
+          scanType 
+        },
       });
 
       if (functionError) {
         // Supabase wraps non-2xx edge function responses in `functionError`.
-        // The actual JSON body is commonly available in functionError.context.body.
         const ctx = (functionError as any)?.context;
 
         let parsedBody: any = null;
@@ -107,11 +133,33 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
         return;
       }
 
-      if (data?.analysis) {
+      // Check for fallback mode
+      if (data?.fallbackMode) {
+        setIsFallbackMode(true);
+      }
+
+      // Handle phone scan response
+      if (isPhoneScan && data?.summary) {
+        setPhoneInsights({
+          summary: data.summary,
+          riskScore: data.riskScore || 0,
+          riskLevel: data.riskLevel || 'low',
+          keySignals: data.keySignals || [],
+          recommendedActions: data.recommendedActions || [],
+          confidence: data.confidence || 0.8,
+          fallbackMode: data.fallbackMode,
+          fallbackReason: data.fallbackReason,
+        });
+        toast({
+          title: data.fallbackMode ? "Analysis Complete (Fallback)" : "AI Analysis Complete",
+          description: `Risk Level: ${data.riskLevel?.toUpperCase()} - ${data.keySignals?.length || 0} signals detected`,
+        });
+      } else if (data?.analysis) {
+        // Handle standard scan response
         setInsights(data.analysis);
         setActions(data.actions || []);
         toast({
-          title: "AI Analysis Complete",
+          title: data.fallbackMode ? "Analysis Complete (Fallback)" : "AI Analysis Complete",
           description: `Analyzed ${data.findings_analyzed} findings with ${data.actions?.length || 0} suggested actions`,
         });
       } else {
@@ -131,12 +179,11 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
   };
 
   const parseInsights = (text: string): string[] => {
-    // Split by common bullet point indicators and newlines
     const lines = text
       .split(/\n/)
       .map(line => line.trim())
       .filter(line => line.length > 0)
-      .map(line => line.replace(/^[•\-*\d.]+\s*/, '')); // Remove bullet points
+      .map(line => line.replace(/^[•\-*\d.]+\s*/, ''));
 
     return lines;
   };
@@ -154,7 +201,6 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
     try {
       switch (action.type) {
         case 'removal':
-          // Request removal for all relevant sources
           if (action.sourceIds && action.sourceIds.length > 0) {
             for (const sourceId of action.sourceIds) {
               const source = dataSources.find(s => s.id === sourceId);
@@ -182,7 +228,6 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
           break;
 
         case 'monitoring':
-          // Enable monitoring for the scan
           const { error: monitoringError } = await enableMonitoring(scanId, userId);
           if (monitoringError) throw monitoringError;
           toast({
@@ -193,7 +238,6 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
 
         case 'security':
         case 'privacy':
-          // For security/privacy actions, show guidance
           toast({
             title: "Action Guidance",
             description: action.description,
@@ -218,16 +262,46 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
     }
   };
 
+  const getRiskColor = (level: string) => {
+    switch (level) {
+      case 'high': return 'text-destructive';
+      case 'medium': return 'text-yellow-500';
+      case 'low': return 'text-green-500';
+      default: return 'text-muted-foreground';
+    }
+  };
+
+  const getRiskBgColor = (level: string) => {
+    switch (level) {
+      case 'high': return 'bg-destructive/10 border-destructive/20';
+      case 'medium': return 'bg-yellow-500/10 border-yellow-500/20';
+      case 'low': return 'bg-green-500/10 border-green-500/20';
+      default: return 'bg-muted/10 border-border';
+    }
+  };
+
+  const hasContent = insights || phoneInsights;
+
   return (
     <Card className="p-6 border-2 border-primary/20 bg-gradient-to-br from-background to-primary/5">
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
+        <div className="flex items-center gap-2 flex-wrap">
+          {isPhoneScan ? (
+            <Phone className="h-5 w-5 text-primary" />
+          ) : (
+            <Sparkles className="h-5 w-5 text-primary" />
+          )}
           <h3 className="text-lg font-semibold">AI Insights</h3>
           <HelpIcon helpKey="ai_insights" />
           {!isPremium && <Badge variant="secondary"><Crown className="h-3 w-3 mr-1" />Premium</Badge>}
+          {isFallbackMode && (
+            <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+              <AlertCircle className="h-3 w-3 mr-1" />
+              Fallback Mode
+            </Badge>
+          )}
         </div>
-        {!insights && (
+        {!hasContent && (
           <Button 
             onClick={generateInsights} 
             disabled={loading || !isPremium}
@@ -249,7 +323,7 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
         )}
       </div>
 
-      {!isPremium && !insights && (
+      {!isPremium && !hasContent && (
         <div className="text-center py-8 text-muted-foreground">
           <Crown className="h-12 w-12 mx-auto mb-3 text-primary/50" />
           <p className="text-sm mb-2">AI-powered correlation analysis is a Premium feature</p>
@@ -264,8 +338,123 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
         </div>
       )}
 
-      {insights && (
+      {/* Phone scan insights display */}
+      {phoneInsights && (
+        <div className="space-y-4">
+          {isFallbackMode && (
+            <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                AI service temporarily unavailable. Showing deterministic analysis based on findings.
+              </p>
+            </div>
+          )}
+
+          {/* Risk Score Display */}
+          <div className={cn(
+            "p-4 rounded-lg border",
+            getRiskBgColor(phoneInsights.riskLevel)
+          )}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">Risk Assessment</span>
+              <Badge className={cn("uppercase", getRiskColor(phoneInsights.riskLevel))}>
+                {phoneInsights.riskLevel}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-3xl font-bold">{phoneInsights.riskScore}</div>
+              <div className="flex-1">
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full rounded-full transition-all",
+                      phoneInsights.riskLevel === 'high' ? 'bg-destructive' :
+                      phoneInsights.riskLevel === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                    )}
+                    style={{ width: `${phoneInsights.riskScore}%` }}
+                  />
+                </div>
+              </div>
+              <span className="text-xs text-muted-foreground">/ 100</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Confidence: {Math.round(phoneInsights.confidence * 100)}%
+            </p>
+          </div>
+
+          {/* Summary */}
+          <div className="p-4 bg-background/50 rounded-lg border border-border/50">
+            <p className="text-sm leading-relaxed">{phoneInsights.summary}</p>
+          </div>
+
+          {/* Key Signals */}
+          {phoneInsights.keySignals.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Key Signals
+              </h4>
+              <div className="space-y-2">
+                {phoneInsights.keySignals.map((signal, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 bg-background/50 rounded-lg border border-border/50">
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+                    <p className="text-sm">{signal}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recommended Actions */}
+          {phoneInsights.recommendedActions.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <Shield className="h-4 w-4 text-green-500" />
+                Recommended Actions
+              </h4>
+              <div className="space-y-2">
+                {phoneInsights.recommendedActions.map((action, index) => (
+                  <div key={index} className="flex items-start gap-3 p-3 bg-green-500/5 rounded-lg border border-green-500/20">
+                    <Zap className="h-4 w-4 mt-0.5 flex-shrink-0 text-green-500" />
+                    <p className="text-sm">{action}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Legal Disclaimer */}
+          <div className="p-3 bg-muted/30 rounded-lg border border-border/50">
+            <p className="text-xs text-muted-foreground italic">
+              Phone intelligence is probabilistic. Results reflect aggregated public and commercial signals, not guaranteed identity.
+            </p>
+          </div>
+
+          <Button 
+            onClick={generateInsights} 
+            disabled={loading}
+            variant="outline"
+            size="sm"
+            className="w-full"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Regenerate Insights
+          </Button>
+        </div>
+      )}
+
+      {/* Standard scan insights display */}
+      {insights && !phoneInsights && (
         <div className="space-y-3">
+          {isFallbackMode && (
+            <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <AlertCircle className="h-4 w-4 text-yellow-600" />
+              <p className="text-xs text-yellow-700 dark:text-yellow-400">
+                AI service temporarily unavailable. Showing deterministic analysis based on findings.
+              </p>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 mb-4">
             <Info className="h-4 w-4 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">
@@ -275,7 +464,6 @@ export const AIInsightsCard = ({ findings, subscriptionTier, scanId, userId, dat
           
           <div className="space-y-2">
             {parseInsights(insights).map((insight, index) => {
-              // Determine icon based on content
               let Icon = Info;
               let colorClass = "text-blue-500";
               

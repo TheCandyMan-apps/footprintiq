@@ -894,6 +894,7 @@ const ResultsDetail = () => {
               scanId={scanId!}
               userId={user?.id}
               dataSources={dataSources}
+              scanType={scan?.scan_type as 'username' | 'email' | 'phone' | 'personal_details'}
             />
           </div>
         )}
