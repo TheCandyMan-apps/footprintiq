@@ -104,3 +104,6 @@ verify_jwt = false
 
 [functions.phone-intel]
 verify_jwt = true
+
+[functions.security-rls-check]
+verify_jwt = true
