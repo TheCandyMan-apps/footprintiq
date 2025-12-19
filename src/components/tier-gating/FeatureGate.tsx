@@ -1,10 +1,9 @@
 import { ReactNode } from 'react';
-import { useTierGating } from '@/hooks/useTierGating';
+import { useTierGating, type PlanTier } from '@/hooks/useTierGating';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, Zap, Crown } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import type { SubscriptionTier } from '@/lib/workspace/quotas';
 
 interface FeatureGateProps {
   feature: string;
@@ -38,7 +37,7 @@ export function FeatureGate({
     <Card className="p-6 border-2 border-dashed border-border/50 bg-muted/20">
       <div className="flex items-start gap-4">
         <div className="p-3 rounded-lg bg-primary/10">
-          {result.requiresTier === 'enterprise' ? (
+          {result.requiresTier === 'business' ? (
             <Crown className="w-6 h-6 text-primary" />
           ) : (
             <Zap className="w-6 h-6 text-primary" />
@@ -54,7 +53,7 @@ export function FeatureGate({
           </p>
           <Link to="/settings/billing">
             <Button>
-              Upgrade to {result.requiresTier === 'enterprise' ? 'Enterprise' : 'Pro'}
+              Upgrade to {result.requiresTier === 'business' ? 'Business' : 'Pro'}
             </Button>
           </Link>
         </div>
@@ -64,12 +63,12 @@ export function FeatureGate({
 }
 
 interface TierBadgeProps {
-  tier: SubscriptionTier;
+  tier: PlanTier;
   className?: string;
 }
 
 export function TierBadge({ tier, className = '' }: TierBadgeProps) {
-  const config = {
+  const config: Record<PlanTier, { label: string; icon: typeof Zap | null; className: string }> = {
     free: {
       label: 'Free',
       icon: null,
@@ -80,8 +79,8 @@ export function TierBadge({ tier, className = '' }: TierBadgeProps) {
       icon: Zap,
       className: 'bg-primary/10 text-primary',
     },
-    enterprise: {
-      label: 'Enterprise',
+    business: {
+      label: 'Business',
       icon: Crown,
       className: 'bg-primary text-primary-foreground',
     },

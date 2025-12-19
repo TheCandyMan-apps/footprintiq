@@ -4,7 +4,7 @@
  * Supports plan-based access, credit costs, and API key requirements
  */
 
-import type { PlanId } from '@/lib/billing/tiers';
+import type { PlanTier } from '@/lib/billing/planCapabilities';
 
 export type ScanType = 'username' | 'phone' | 'email' | 'domain';
 export type ProviderCategory = 'carrier' | 'messaging' | 'osint' | 'risk' | 'broker' | 'breach' | 'social';
@@ -16,7 +16,7 @@ export interface ProviderConfig {
   description: string;
   scanType: ScanType;
   creditCost: number;
-  minTier: PlanId;
+  minTier: PlanTier;
   category: ProviderCategory;
   requiresKey?: string;
   enabled: boolean;
@@ -233,7 +233,7 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
 /**
  * Tier hierarchy for access control
  */
-const TIER_HIERARCHY: Record<PlanId, PlanId[]> = {
+const TIER_HIERARCHY: Record<PlanTier, PlanTier[]> = {
   free: ['free'],
   pro: ['free', 'pro'],
   business: ['free', 'pro', 'business'],
@@ -251,7 +251,7 @@ export function getProvidersForScanType(scanType: ScanType): ProviderConfig[] {
  */
 export function getProvidersForPlan(
   scanType: ScanType,
-  userPlan: PlanId
+  userPlan: PlanTier
 ): { available: ProviderConfig[]; locked: ProviderConfig[] } {
   const allProviders = getProvidersForScanType(scanType);
   const allowedTiers = TIER_HIERARCHY[userPlan] || TIER_HIERARCHY.free;
@@ -267,7 +267,7 @@ export function getProvidersForPlan(
  */
 export function isProviderAvailableForPlan(
   providerId: string,
-  userPlan: PlanId
+  userPlan: PlanTier
 ): boolean {
   const provider = PROVIDER_REGISTRY.find((p) => p.id === providerId);
   if (!provider) return false;
@@ -288,7 +288,7 @@ export function calculateTotalCredits(providerIds: string[]): number {
 /**
  * Get default enabled providers for a plan and scan type
  */
-export function getDefaultProviders(scanType: ScanType, userPlan: PlanId): string[] {
+export function getDefaultProviders(scanType: ScanType, userPlan: PlanTier): string[] {
   const { available } = getProvidersForPlan(scanType, userPlan);
   return available.filter((p) => p.enabled).map((p) => p.id);
 }
@@ -298,7 +298,7 @@ export function getDefaultProviders(scanType: ScanType, userPlan: PlanId): strin
  */
 export function filterProvidersByPlan(
   providerIds: string[],
-  userPlan: PlanId
+  userPlan: PlanTier
 ): { allowed: string[]; blocked: string[] } {
   const allowed: string[] = [];
   const blocked: string[] = [];
@@ -348,7 +348,7 @@ export function getCategoryLabel(category: ProviderCategory): string {
 /**
  * Get tier label for display
  */
-export function getTierLabel(minTier: PlanId): string {
+export function getProviderTierLabel(minTier: PlanTier): string {
   switch (minTier) {
     case 'pro':
       return 'Pro';
