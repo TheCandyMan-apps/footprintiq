@@ -42,6 +42,11 @@ import { useGeocoding } from "@/hooks/useGeocoding";
 import { useActiveScanContext } from "@/contexts/ActiveScanContext";
 import { useWorkerStatus } from "@/hooks/useWorkerStatus";
 import { WorkerStatusBanner } from "@/components/scan/WorkerStatusBanner";
+import { ScanTypeHelp } from "@/components/scan/ScanTypeHelp";
+import { ProviderPreviewStrip } from "@/components/scan/ProviderPreviewStrip";
+import { getWorkersForScanType, scanTypeUsesWorkers, getScanTypeMeta } from "@/lib/scan/scanTypeMeta";
+import { type ScanType } from "@/lib/providers/registry";
+import { normalizePlanTier } from "@/lib/billing/planCapabilities";
 import { WhatsMyNameTab } from "@/components/scan/WhatsMyNameTab";
 import { ToolSelector } from "@/components/scan/ToolSelector";
 import { UpgradeTeaser } from "@/components/upsell/UpgradeTeaser";
@@ -662,7 +667,20 @@ export default function AdvancedScan() {
           {!workspaceLoading && workspace && (
             <>
               {/* Worker Status Banner */}
-              <WorkerStatusBanner showIfAllOnline={true} workerNames={['maigret', 'sherlock', 'gosearch']} />
+              {/* Worker Status Banner - Dynamic based on scan type */}
+              {scanTypeUsesWorkers(scanType as ScanType) ? (
+                <WorkerStatusBanner 
+                  showIfAllOnline={true} 
+                  workerNames={getWorkersForScanType(scanType as ScanType)} 
+                />
+              ) : (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-muted-foreground">
+                    {getScanTypeMeta(scanType as ScanType)?.label || scanType} providers ready
+                  </span>
+                </div>
+              )}
               
               {/* Premium Upgrade CTA for Free Users */}
               {isFree && (
@@ -727,7 +745,7 @@ export default function AdvancedScan() {
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 Scan Type
-                <span className="text-xs text-muted-foreground">(Choose the type of identifier you want to investigate)</span>
+                <ScanTypeHelp scanType={scanType as ScanType} />
               </Label>
               <Select value={scanType} onValueChange={setScanType}>
                 <SelectTrigger>
@@ -979,12 +997,20 @@ export default function AdvancedScan() {
                   )}
                 </>
               ) : (
-                <Input
-                  placeholder={`Enter ${scanType}...`}
-                  value={target}
-                  onChange={(e) => setTarget(e.target.value)}
-                  className="text-lg"
-                />
+                <div className="space-y-2">
+                  <Input
+                    placeholder={getScanTypeMeta(scanType as ScanType)?.placeholder || `Enter ${scanType}...`}
+                    value={target}
+                    onChange={(e) => setTarget(e.target.value)}
+                    className="text-lg"
+                  />
+                  {/* Provider Preview Strip */}
+                  <ProviderPreviewStrip
+                    scanType={scanType as ScanType}
+                    selectedProviders={scanType === 'phone' ? phoneProviders : providers}
+                    userPlan={normalizePlanTier(actualSubscriptionTier)}
+                  />
+                </div>
               )}
             </div>
 
