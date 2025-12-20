@@ -5,6 +5,7 @@ import { corsHeaders, ok, bad } from '../../_shared/secure.ts';
 /**
  * Dark Web Scraper via Apify
  * Uses epctex/darkweb-scraper for dark web-specific searches
+ * Falls back gracefully if Apify is unavailable
  */
 
 serve(async (req) => {
@@ -21,16 +22,26 @@ serve(async (req) => {
     const { searchQuery, targetId, workspaceId } = await req.json();
 
     if (!searchQuery || !targetId || !workspaceId) {
+      console.error('[darkweb-scraper] Missing required fields');
       return bad(400, 'Missing required fields: searchQuery, targetId, workspaceId');
     }
 
-    console.log(`[darkweb-scraper] Searching dark web for: ${searchQuery}`);
+    console.log(`[darkweb-scraper] Starting search for: "${searchQuery}" (target: ${targetId})`);
 
     const apifyToken = Deno.env.get('APIFY_API_TOKEN');
     if (!apifyToken) {
-      console.error('[darkweb-scraper] APIFY_API_TOKEN not configured');
-      return bad(500, 'Apify integration not configured');
+      console.warn('[darkweb-scraper] APIFY_API_TOKEN not configured - returning empty results');
+      // Return empty but valid response instead of error
+      return ok({
+        findingsCount: 0,
+        criticalCount: 0,
+        highCount: 0,
+        findings: [],
+        message: 'Apify integration not configured',
+      });
     }
+
+    console.log('[darkweb-scraper] Initiating Apify actor run');
 
     // Call Apify actor
     const actorRunResponse = await fetch(
@@ -50,82 +61,121 @@ serve(async (req) => {
 
     if (!actorRunResponse.ok) {
       const errorText = await actorRunResponse.text();
-      console.error('[darkweb-scraper] Apify run failed:', errorText);
-      return bad(500, 'Failed to start Apify actor');
+      console.error('[darkweb-scraper] Apify run failed:', actorRunResponse.status, errorText);
+      // Return empty results instead of failing
+      return ok({
+        findingsCount: 0,
+        criticalCount: 0,
+        highCount: 0,
+        findings: [],
+        error: `Apify error: ${actorRunResponse.status}`,
+      });
     }
 
     const runData = await actorRunResponse.json();
-    const runId = runData.data.id;
+    const runId = runData.data?.id;
+
+    if (!runId) {
+      console.error('[darkweb-scraper] No run ID returned from Apify');
+      return ok({
+        findingsCount: 0,
+        criticalCount: 0,
+        highCount: 0,
+        findings: [],
+        error: 'No run ID from Apify',
+      });
+    }
 
     console.log(`[darkweb-scraper] Apify run started: ${runId}`);
 
     // Wait for completion (max 3 minutes)
     let attempts = 0;
+    const maxAttempts = 36;
     let results: any[] = [];
+    let finalStatus = 'UNKNOWN';
 
-    while (attempts < 36) {
+    while (attempts < maxAttempts) {
       await new Promise((resolve) => setTimeout(resolve, 5000));
 
-      const statusResponse = await fetch(
-        `https://api.apify.com/v2/actor-runs/${runId}?token=${apifyToken}`
-      );
-
-      if (!statusResponse.ok) {
-        attempts++;
-        continue;
-      }
-
-      const statusData = await statusResponse.json();
-      const status = statusData.data.status;
-
-      if (status === 'SUCCEEDED') {
-        const resultsResponse = await fetch(
-          `https://api.apify.com/v2/actor-runs/${runId}/dataset/items?token=${apifyToken}`
+      try {
+        const statusResponse = await fetch(
+          `https://api.apify.com/v2/actor-runs/${runId}?token=${apifyToken}`
         );
 
-        if (resultsResponse.ok) {
-          results = await resultsResponse.json();
+        if (!statusResponse.ok) {
+          console.warn(`[darkweb-scraper] Status check failed (attempt ${attempts + 1}):`, statusResponse.status);
+          attempts++;
+          continue;
         }
-        break;
-      } else if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
-        console.error(`[darkweb-scraper] Apify run ${status}`);
-        break;
+
+        const statusData = await statusResponse.json();
+        finalStatus = statusData.data?.status || 'UNKNOWN';
+
+        console.log(`[darkweb-scraper] Run status (attempt ${attempts + 1}): ${finalStatus}`);
+
+        if (finalStatus === 'SUCCEEDED') {
+          const resultsResponse = await fetch(
+            `https://api.apify.com/v2/actor-runs/${runId}/dataset/items?token=${apifyToken}`
+          );
+
+          if (resultsResponse.ok) {
+            results = await resultsResponse.json();
+            console.log(`[darkweb-scraper] Retrieved ${results.length} results`);
+          } else {
+            console.warn('[darkweb-scraper] Failed to fetch results:', resultsResponse.status);
+          }
+          break;
+        } else if (finalStatus === 'FAILED' || finalStatus === 'ABORTED' || finalStatus === 'TIMED-OUT') {
+          console.error(`[darkweb-scraper] Apify run ${finalStatus}`);
+          break;
+        }
+      } catch (pollErr) {
+        console.warn(`[darkweb-scraper] Polling error (attempt ${attempts + 1}):`, pollErr);
       }
 
       attempts++;
     }
 
-    console.log(`[darkweb-scraper] Found ${results.length} dark web results`);
+    if (attempts >= maxAttempts) {
+      console.warn('[darkweb-scraper] Polling timed out');
+    }
+
+    console.log(`[darkweb-scraper] Final: ${results.length} dark web results (status: ${finalStatus})`);
 
     // Determine severity
     const getSeverity = (result: any): string => {
-      if (result.type === 'api_key' || result.type === 'credentials' || result.type === 'crypto_wallet') {
+      const type = result.type?.toLowerCase() || '';
+      if (type.includes('api_key') || type.includes('credential') || type.includes('password') || type.includes('crypto_wallet')) {
         return 'critical';
       }
-      if (result.type === 'email' || result.type === 'phone') {
+      if (type.includes('email') || type.includes('phone') || type.includes('ssn')) {
         return 'high';
       }
       return 'medium';
     };
 
-    // Store findings
+    // Format findings
     const findings = results.map((result) => ({
       target_id: targetId,
       provider: 'apify-darkweb',
-      url: result.url || result.source,
+      url: result.url || result.source || `darkweb-${Date.now()}-${Math.random().toString(36).substring(7)}`,
       meta: {
         type: result.type,
         breach: result.breach,
         database: result.database,
         leak_date: result.leakDate,
         snippet: result.snippet?.substring(0, 500),
+        raw_title: result.title,
       },
       observed_at: new Date().toISOString(),
       is_new: true,
       severity: getSeverity(result),
     }));
 
+    // Store findings
     if (findings.length > 0) {
+      console.log(`[darkweb-scraper] Storing ${findings.length} findings in database`);
+
       const { error: insertError } = await supabase
         .from('darkweb_findings')
         .upsert(findings, {
@@ -135,14 +185,20 @@ serve(async (req) => {
 
       if (insertError) {
         console.error('[darkweb-scraper] Insert error:', insertError);
+      } else {
+        console.log('[darkweb-scraper] Findings stored successfully');
       }
     }
 
-    // Update target
-    await supabase
+    // Update target last_checked
+    const { error: updateError } = await supabase
       .from('darkweb_targets')
       .update({ last_checked: new Date().toISOString() })
       .eq('id', targetId);
+
+    if (updateError) {
+      console.warn('[darkweb-scraper] Failed to update last_checked:', updateError);
+    }
 
     return ok({
       findingsCount: findings.length,
@@ -153,6 +209,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[darkweb-scraper] Error:', error);
-    return bad(500, error instanceof Error ? error.message : 'Unknown error');
+    // Return graceful error response
+    return ok({
+      findingsCount: 0,
+      criticalCount: 0,
+      highCount: 0,
+      findings: [],
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 });

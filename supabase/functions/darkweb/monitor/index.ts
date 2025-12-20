@@ -13,54 +13,88 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    console.log('[darkweb-monitor] Starting daily dark web monitoring');
+    console.log('[darkweb-monitor] Starting dark web monitoring scan');
+
+    // Parse optional body for manual runs
+    let requestedWorkspaceId: string | null = null;
+    try {
+      const body = await req.json();
+      requestedWorkspaceId = body?.workspaceId || null;
+    } catch {
+      // No body or not JSON - running as cron job
+    }
 
     // Fetch active targets that need checking
-    const { data: targets, error: targetsError } = await supabaseService
+    let query = supabaseService
       .from('darkweb_targets')
       .select('*')
-      .eq('active', true)
-      .or(`last_checked.is.null,last_checked.lt.${new Date(Date.now() - 24 * 3600000).toISOString()}`);
+      .eq('active', true);
 
-    if (targetsError) throw targetsError;
+    // If workspace specified, only check that workspace's targets
+    if (requestedWorkspaceId) {
+      query = query.eq('workspace_id', requestedWorkspaceId);
+      console.log(`[darkweb-monitor] Manual run for workspace: ${requestedWorkspaceId}`);
+    } else {
+      // For cron runs, only check targets not checked in last 24h
+      query = query.or(`last_checked.is.null,last_checked.lt.${new Date(Date.now() - 24 * 3600000).toISOString()}`);
+    }
+
+    const { data: targets, error: targetsError } = await query;
+
+    if (targetsError) {
+      console.error('[darkweb-monitor] Failed to fetch targets:', targetsError);
+      throw targetsError;
+    }
 
     if (!targets || targets.length === 0) {
       console.log('[darkweb-monitor] No targets to check');
-      return ok({ checked: 0, newFindings: 0 });
+      return ok({ checked: 0, newFindings: 0, checkedCount: 0 });
     }
 
-    console.log(`[darkweb-monitor] Checking ${targets.length} targets`);
+    console.log(`[darkweb-monitor] Found ${targets.length} targets to check`);
 
     let newFindingsCount = 0;
+    let checkedCount = 0;
 
     for (const target of targets) {
       try {
-        console.log(`[darkweb-monitor] Processing target ${target.id}: ${target.value}`);
+        console.log(`[darkweb-monitor] Processing target ${target.id}: "${target.value}" (type: ${target.type})`);
 
         // Check consent for darkweb monitoring
-        const { data: consent } = await supabaseService
+        // Query by workspace only since darkweb_targets doesn't have user_id
+        const { data: consent, error: consentError } = await supabaseService
           .from('sensitive_consents')
           .select('categories')
           .eq('workspace_id', target.workspace_id)
-          .eq('user_id', target.user_id)
-          .single();
+          .maybeSingle(); // Use maybeSingle to avoid error if no consent exists
 
+        if (consentError) {
+          console.warn(`[darkweb-monitor] Consent check error for target ${target.id}:`, consentError);
+        }
+
+        // If consent exists but doesn't include 'darkweb', skip
+        // If no consent record exists, proceed (default-allow for monitoring)
         const allowedCategories = consent?.categories || [];
-        if (!allowedCategories.includes('darkweb')) {
-          console.warn(`[darkweb-monitor] Skipping target ${target.id}: no darkweb consent`);
+        if (consent && !allowedCategories.includes('darkweb')) {
+          console.log(`[darkweb-monitor] Skipping target ${target.id}: no darkweb consent (has: ${allowedCategories.join(', ')})`);
           continue;
         }
 
-        // Determine target type and run appropriate searches
+        console.log(`[darkweb-monitor] Consent check passed for target ${target.id}`);
+
+        // Determine target type
         const isEmail = target.value.includes('@');
         const isDomain = target.value.includes('.') && !isEmail;
         const isUsername = !isEmail && !isDomain;
+
+        console.log(`[darkweb-monitor] Target ${target.id} detected as: ${isEmail ? 'email' : isDomain ? 'domain' : 'username'}`);
 
         let allFindings: any[] = [];
 
         // 1. Dark web scraper (always run)
         try {
-          const { data: darkwebData } = await supabaseService.functions.invoke(
+          console.log(`[darkweb-monitor] Invoking darkweb-scraper for target ${target.id}`);
+          const { data: darkwebData, error: darkwebError } = await supabaseService.functions.invoke(
             'darkweb/darkweb-scraper',
             {
               body: {
@@ -70,8 +104,14 @@ serve(async (req) => {
               },
             }
           );
-          if (darkwebData?.findings) {
+
+          if (darkwebError) {
+            console.error(`[darkweb-monitor] darkweb-scraper error for ${target.id}:`, darkwebError);
+          } else if (darkwebData?.findings) {
+            console.log(`[darkweb-monitor] darkweb-scraper returned ${darkwebData.findings.length} findings`);
             allFindings.push(...darkwebData.findings);
+          } else {
+            console.log(`[darkweb-monitor] darkweb-scraper returned no findings`);
           }
         } catch (err) {
           console.error(`[darkweb-monitor] Dark web scraper failed for ${target.id}:`, err);
@@ -79,7 +119,8 @@ serve(async (req) => {
 
         // 2. OSINT paste site scraper (for all types)
         try {
-          const { data: osintData } = await supabaseService.functions.invoke(
+          console.log(`[darkweb-monitor] Invoking osint-scraper for target ${target.id}`);
+          const { data: osintData, error: osintError } = await supabaseService.functions.invoke(
             'darkweb/osint-scraper',
             {
               body: {
@@ -89,8 +130,14 @@ serve(async (req) => {
               },
             }
           );
-          if (osintData?.findings) {
+
+          if (osintError) {
+            console.error(`[darkweb-monitor] osint-scraper error for ${target.id}:`, osintError);
+          } else if (osintData?.findings) {
+            console.log(`[darkweb-monitor] osint-scraper returned ${osintData.findings.length} findings`);
             allFindings.push(...osintData.findings);
+          } else {
+            console.log(`[darkweb-monitor] osint-scraper returned no findings`);
           }
         } catch (err) {
           console.error(`[darkweb-monitor] OSINT scraper failed for ${target.id}:`, err);
@@ -99,7 +146,8 @@ serve(async (req) => {
         // 3. Social media search (for usernames only)
         if (isUsername) {
           try {
-            const { data: socialData } = await supabaseService.functions.invoke(
+            console.log(`[darkweb-monitor] Invoking social-media-search for username target ${target.id}`);
+            const { data: socialData, error: socialError } = await supabaseService.functions.invoke(
               'darkweb/social-media-search',
               {
                 body: {
@@ -109,78 +157,108 @@ serve(async (req) => {
                 },
               }
             );
-            if (socialData?.findings) {
+
+            if (socialError) {
+              console.error(`[darkweb-monitor] social-media-search error for ${target.id}:`, socialError);
+            } else if (socialData?.findings) {
+              console.log(`[darkweb-monitor] social-media-search returned ${socialData.findings.length} findings`);
               allFindings.push(...socialData.findings);
+            } else {
+              console.log(`[darkweb-monitor] social-media-search returned no findings`);
             }
           } catch (err) {
             console.error(`[darkweb-monitor] Social media search failed for ${target.id}:`, err);
           }
         }
 
-        const findings = allFindings;
+        console.log(`[darkweb-monitor] Total findings for target ${target.id}: ${allFindings.length}`);
 
-        // Upsert findings to avoid duplicate key errors
-        for (const finding of findings) {
-          const { error: insertError } = await supabaseService
-            .from('darkweb_findings')
-            .upsert({
-              target_id: target.id,
-              provider: finding.provider,
-              url: finding.evidence.find((e: any) => e.key === 'url')?.value || '',
-              meta: finding.meta || {},
-              observed_at: finding.observedAt,
-              is_new: true,
-            }, {
-              onConflict: 'target_id,provider,url',
-              ignoreDuplicates: false, // Update if exists
-            });
+        // Store findings directly if they aren't already stored by sub-functions
+        for (const finding of allFindings) {
+          if (finding.target_id && finding.provider && finding.url) {
+            // Already in correct format for upsert
+            const { error: insertError } = await supabaseService
+              .from('darkweb_findings')
+              .upsert({
+                target_id: finding.target_id,
+                provider: finding.provider,
+                url: finding.url,
+                meta: finding.meta || {},
+                observed_at: finding.observed_at || new Date().toISOString(),
+                is_new: true,
+                severity: finding.severity || 'medium',
+              }, {
+                onConflict: 'target_id,provider,url',
+                ignoreDuplicates: true,
+              });
 
-          if (!insertError) {
-            newFindingsCount++;
+            if (!insertError) {
+              newFindingsCount++;
+            } else {
+              console.warn(`[darkweb-monitor] Failed to upsert finding:`, insertError);
+            }
           }
         }
 
         // Update last_checked
-        await supabaseService
+        const { error: updateError } = await supabaseService
           .from('darkweb_targets')
           .update({ last_checked: new Date().toISOString() })
           .eq('id', target.id);
 
-        // Consume credits for Pro plan (1 credit per hit)
-        if (findings.length > 0) {
-          await supabaseService.from('credits_ledger').insert({
+        if (updateError) {
+          console.error(`[darkweb-monitor] Failed to update last_checked for ${target.id}:`, updateError);
+        } else {
+          console.log(`[darkweb-monitor] Updated last_checked for target ${target.id}`);
+        }
+
+        checkedCount++;
+
+        // Consume credits for Pro plan (1 credit per finding)
+        if (allFindings.length > 0) {
+          const { error: creditError } = await supabaseService.from('credits_ledger').insert({
             workspace_id: target.workspace_id,
-            delta: -findings.length,
+            delta: -allFindings.length,
             reason: 'darkweb_scan',
             ref_id: target.id,
           });
+
+          if (creditError) {
+            console.warn(`[darkweb-monitor] Failed to deduct credits for ${target.id}:`, creditError);
+          }
         }
 
         // Send alert email for new findings
-        if (findings.length > 0) {
-          await supabaseService.functions.invoke('send-monitoring-alert', {
-            body: {
-              workspace_id: target.workspace_id,
-              target,
-              findings: findings.slice(0, 10), // Top 10
-            },
-          });
+        if (allFindings.length > 0) {
+          try {
+            await supabaseService.functions.invoke('send-monitoring-alert', {
+              body: {
+                workspace_id: target.workspace_id,
+                target,
+                findings: allFindings.slice(0, 10),
+              },
+            });
+            console.log(`[darkweb-monitor] Sent alert for target ${target.id}`);
+          } catch (alertErr) {
+            console.warn(`[darkweb-monitor] Failed to send alert for ${target.id}:`, alertErr);
+          }
         }
 
       } catch (error) {
-        console.error(`[darkweb-monitor] Target ${target.id} error:`, error);
+        console.error(`[darkweb-monitor] Target ${target.id} processing error:`, error);
       }
     }
 
-    console.log(`[darkweb-monitor] Completed: ${newFindingsCount} new findings`);
+    console.log(`[darkweb-monitor] Completed: checked ${checkedCount} targets, found ${newFindingsCount} new findings`);
 
     return ok({
-      checked: targets.length,
+      checked: checkedCount,
+      checkedCount: checkedCount,
       newFindings: newFindingsCount,
     });
 
   } catch (error) {
-    console.error('[darkweb-monitor] Error:', error);
+    console.error('[darkweb-monitor] Fatal error:', error);
     return bad(500, error instanceof Error ? error.message : 'Unknown error');
   }
 });

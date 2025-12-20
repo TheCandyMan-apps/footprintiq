@@ -8,14 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Shield, Plus, Trash2, AlertTriangle, CheckCircle2, Clock, Search, Play, Loader2 } from "lucide-react";
+import { Shield, Plus, Trash2, AlertTriangle, CheckCircle2, Clock, Play, Loader2, ChevronDown, ChevronUp, Eye } from "lucide-react";
 import { DarkWebFindingsCard } from "@/components/darkweb/DarkWebFindingsCard";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export default function DarkWebMonitoring() {
   const [newTarget, setNewTarget] = useState("");
-  const [selectedTarget, setSelectedTarget] = useState<string | null>(null);
+  const [expandedTargets, setExpandedTargets] = useState<Set<string>>(new Set());
   const queryClient = useQueryClient();
   const { workspace } = useWorkspace();
 
@@ -37,17 +37,51 @@ export default function DarkWebMonitoring() {
     enabled: !!workspace?.id,
   });
 
+  // Fetch findings counts per target
+  const { data: findingsCounts } = useQuery({
+    queryKey: ["darkweb-findings-counts", workspace?.id],
+    queryFn: async () => {
+      if (!workspace?.id || !targets?.length) return {};
+
+      const targetIds = targets.map(t => t.id);
+      const { data, error } = await supabase
+        .from("darkweb_findings")
+        .select("target_id, severity")
+        .in("target_id", targetIds);
+
+      if (error) throw error;
+
+      // Count findings per target
+      const counts: Record<string, { total: number; critical: number; high: number; new: number }> = {};
+      for (const finding of data || []) {
+        if (!counts[finding.target_id]) {
+          counts[finding.target_id] = { total: 0, critical: 0, high: 0, new: 0 };
+        }
+        counts[finding.target_id].total++;
+        if (finding.severity === 'critical') counts[finding.target_id].critical++;
+        if (finding.severity === 'high') counts[finding.target_id].high++;
+      }
+      return counts;
+    },
+    enabled: !!workspace?.id && !!targets?.length,
+  });
+
   // Add target mutation
   const addMutation = useMutation({
     mutationFn: async (identifier: string) => {
       if (!workspace?.id) throw new Error("No workspace found");
+
+      // Auto-detect type
+      const isEmail = identifier.includes('@');
+      const isDomain = identifier.includes('.') && !isEmail;
+      const type = isEmail ? 'email' : isDomain ? 'domain' : 'username';
 
       const { data, error } = await supabase
         .from("darkweb_targets")
         .insert({
           workspace_id: workspace.id,
           value: identifier,
-          type: "email", // Auto-detect type in future
+          type,
           frequency: "daily",
           active: true,
         })
@@ -79,6 +113,7 @@ export default function DarkWebMonitoring() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["darkweb-targets"] });
+      queryClient.invalidateQueries({ queryKey: ["darkweb-findings-counts"] });
       toast.success("Target removed from monitoring");
     },
     onError: (error) => {
@@ -101,7 +136,10 @@ export default function DarkWebMonitoring() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["darkweb-targets"] });
       queryClient.invalidateQueries({ queryKey: ["darkweb-findings"] });
-      toast.success(`Scan complete. Checked ${data?.checkedCount || 0} targets, found ${data?.newFindings || 0} new findings.`);
+      queryClient.invalidateQueries({ queryKey: ["darkweb-findings-counts"] });
+      const checked = data?.checkedCount || data?.checked || 0;
+      const found = data?.newFindings || 0;
+      toast.success(`Scan complete: checked ${checked} targets, found ${found} new findings`);
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Scan failed");
@@ -114,11 +152,52 @@ export default function DarkWebMonitoring() {
     }
   };
 
+  const toggleExpanded = (targetId: string) => {
+    setExpandedTargets(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(targetId)) {
+        newSet.delete(targetId);
+      } else {
+        newSet.add(targetId);
+      }
+      return newSet;
+    });
+  };
+
   const getStatusIcon = (active: boolean) => {
     if (active) {
       return <CheckCircle2 className="w-4 h-4 text-green-500" />;
     }
     return <Clock className="w-4 h-4 text-muted-foreground" />;
+  };
+
+  const getFindingsCountBadge = (targetId: string) => {
+    const counts = findingsCounts?.[targetId];
+    if (!counts || counts.total === 0) {
+      return <Badge variant="outline" className="text-green-600 border-green-600/30">No findings</Badge>;
+    }
+
+    if (counts.critical > 0) {
+      return (
+        <Badge variant="destructive">
+          {counts.total} finding{counts.total !== 1 ? 's' : ''} ({counts.critical} critical)
+        </Badge>
+      );
+    }
+
+    if (counts.high > 0) {
+      return (
+        <Badge className="bg-orange-500 hover:bg-orange-600">
+          {counts.total} finding{counts.total !== 1 ? 's' : ''} ({counts.high} high)
+        </Badge>
+      );
+    }
+
+    return (
+      <Badge variant="secondary">
+        {counts.total} finding{counts.total !== 1 ? 's' : ''}
+      </Badge>
+    );
   };
 
   return (
@@ -194,34 +273,61 @@ export default function DarkWebMonitoring() {
             ) : (
               <div className="grid gap-4">
                 {targets?.map((target) => (
-                  <Card key={target.id} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3 flex-1">
-                        {getStatusIcon(target.active)}
-                        <div className="flex-1">
-                          <div className="font-medium">{target.value}</div>
-                          <div className="text-sm text-muted-foreground">
-                            Added {new Date(target.created_at).toLocaleDateString()}
-                            {target.last_checked && ` • Last checked ${new Date(target.last_checked).toLocaleDateString()}`}
-                            {` • ${target.frequency} scans`}
+                  <Collapsible
+                    key={target.id}
+                    open={expandedTargets.has(target.id)}
+                    onOpenChange={() => toggleExpanded(target.id)}
+                  >
+                    <Card className="overflow-hidden">
+                      <div className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 flex-1">
+                            {getStatusIcon(target.active)}
+                            <div className="flex-1">
+                              <div className="font-medium flex items-center gap-2">
+                                {target.value}
+                                <Badge variant="outline" className="text-xs">
+                                  {target.type}
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                Added {new Date(target.created_at).toLocaleDateString()}
+                                {target.last_checked && ` • Last checked ${new Date(target.last_checked).toLocaleDateString()}`}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {getFindingsCountBadge(target.id)}
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                {expandedTargets.has(target.id) ? (
+                                  <ChevronUp className="w-4 h-4" />
+                                ) : (
+                                  <Eye className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </CollapsibleTrigger>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeMutation.mutate(target.id);
+                              }}
+                              disabled={removeMutation.isPending}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={target.active ? "default" : "secondary"}>
-                          {target.active ? "Active" : "Paused"}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeMutation.mutate(target.id)}
-                          disabled={removeMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
+                      <CollapsibleContent>
+                        <div className="border-t px-4 py-4">
+                          <DarkWebFindingsCard targetId={target.id} />
+                        </div>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
                 ))}
               </div>
             )}
@@ -233,8 +339,8 @@ export default function DarkWebMonitoring() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>• Targets are checked daily at 2 AM UTC</li>
               <li>• You'll receive email alerts for new exposures</li>
-              <li>• Weekly summary reports sent every Monday</li>
-              <li>• Each scan costs 1 premium credit</li>
+              <li>• Click the eye icon on any target to view findings</li>
+              <li>• Each scan costs 1 premium credit per finding</li>
             </ul>
           </Card>
         </div>
