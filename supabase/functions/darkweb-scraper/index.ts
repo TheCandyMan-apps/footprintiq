@@ -1,6 +1,10 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad } from '../../_shared/secure.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 /**
  * Dark Web Scraper via Apify
@@ -10,7 +14,7 @@ import { corsHeaders, ok, bad } from '../../_shared/secure.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -23,7 +27,10 @@ serve(async (req) => {
 
     if (!searchQuery || !targetId || !workspaceId) {
       console.error('[darkweb-scraper] Missing required fields');
-      return bad(400, 'Missing required fields: searchQuery, targetId, workspaceId');
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: searchQuery, targetId, workspaceId' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`[darkweb-scraper] Starting search for: "${searchQuery}" (target: ${targetId})`);
@@ -31,14 +38,16 @@ serve(async (req) => {
     const apifyToken = Deno.env.get('APIFY_API_TOKEN');
     if (!apifyToken) {
       console.warn('[darkweb-scraper] APIFY_API_TOKEN not configured - returning empty results');
-      // Return empty but valid response instead of error
-      return ok({
-        findingsCount: 0,
-        criticalCount: 0,
-        highCount: 0,
-        findings: [],
-        message: 'Apify integration not configured',
-      });
+      return new Response(
+        JSON.stringify({
+          findingsCount: 0,
+          criticalCount: 0,
+          highCount: 0,
+          findings: [],
+          message: 'Apify integration not configured',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log('[darkweb-scraper] Initiating Apify actor run');
@@ -62,14 +71,16 @@ serve(async (req) => {
     if (!actorRunResponse.ok) {
       const errorText = await actorRunResponse.text();
       console.error('[darkweb-scraper] Apify run failed:', actorRunResponse.status, errorText);
-      // Return empty results instead of failing
-      return ok({
-        findingsCount: 0,
-        criticalCount: 0,
-        highCount: 0,
-        findings: [],
-        error: `Apify error: ${actorRunResponse.status}`,
-      });
+      return new Response(
+        JSON.stringify({
+          findingsCount: 0,
+          criticalCount: 0,
+          highCount: 0,
+          findings: [],
+          error: `Apify error: ${actorRunResponse.status}`,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const runData = await actorRunResponse.json();
@@ -77,13 +88,16 @@ serve(async (req) => {
 
     if (!runId) {
       console.error('[darkweb-scraper] No run ID returned from Apify');
-      return ok({
-        findingsCount: 0,
-        criticalCount: 0,
-        highCount: 0,
-        findings: [],
-        error: 'No run ID from Apify',
-      });
+      return new Response(
+        JSON.stringify({
+          findingsCount: 0,
+          criticalCount: 0,
+          highCount: 0,
+          findings: [],
+          error: 'No run ID from Apify',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`[darkweb-scraper] Apify run started: ${runId}`);
@@ -200,22 +214,27 @@ serve(async (req) => {
       console.warn('[darkweb-scraper] Failed to update last_checked:', updateError);
     }
 
-    return ok({
-      findingsCount: findings.length,
-      criticalCount: findings.filter(f => f.severity === 'critical').length,
-      highCount: findings.filter(f => f.severity === 'high').length,
-      findings: findings.slice(0, 10),
-    });
+    return new Response(
+      JSON.stringify({
+        findingsCount: findings.length,
+        criticalCount: findings.filter(f => f.severity === 'critical').length,
+        highCount: findings.filter(f => f.severity === 'high').length,
+        findings: findings.slice(0, 10),
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('[darkweb-scraper] Error:', error);
-    // Return graceful error response
-    return ok({
-      findingsCount: 0,
-      criticalCount: 0,
-      highCount: 0,
-      findings: [],
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+    return new Response(
+      JSON.stringify({
+        findingsCount: 0,
+        criticalCount: 0,
+        highCount: 0,
+        findings: [],
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 });

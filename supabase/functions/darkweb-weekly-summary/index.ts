@@ -1,12 +1,16 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad } from '../../_shared/secure.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -164,13 +168,19 @@ serve(async (req) => {
 
     console.log(`[darkweb-weekly-summary] Completed: ${emailsSent} emails sent`);
 
-    return ok({
-      workspaces: uniqueWorkspaceIds.length,
-      emailsSent,
-    });
+    return new Response(
+      JSON.stringify({
+        workspaces: uniqueWorkspaceIds.length,
+        emailsSent,
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('[darkweb-weekly-summary] Error:', error);
-    return bad(500, error instanceof Error ? error.message : 'Unknown error');
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 });

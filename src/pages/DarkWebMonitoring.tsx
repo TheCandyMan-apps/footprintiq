@@ -184,7 +184,7 @@ export default function DarkWebMonitoring() {
     mutationFn: async () => {
       if (!workspace?.id) throw new Error("No workspace found");
 
-      const { data, error } = await supabase.functions.invoke("darkweb/monitor", {
+      const { data, error } = await supabase.functions.invoke("darkweb-monitor", {
         body: { workspaceId: workspace.id },
       });
 

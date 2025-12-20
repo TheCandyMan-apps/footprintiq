@@ -107,3 +107,21 @@ verify_jwt = true
 
 [functions.security-rls-check]
 verify_jwt = true
+
+[functions.darkweb-monitor]
+verify_jwt = false
+
+[functions.darkweb-scraper]
+verify_jwt = false
+
+[functions.darkweb-osint-scraper]
+verify_jwt = false
+
+[functions.darkweb-social-search]
+verify_jwt = false
+
+[functions.darkweb-realtime-alert]
+verify_jwt = false
+
+[functions.darkweb-weekly-summary]
+verify_jwt = false
