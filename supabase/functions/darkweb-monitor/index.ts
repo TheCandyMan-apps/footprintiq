@@ -1,10 +1,14 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad } from '../../_shared/secure.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -48,7 +52,10 @@ serve(async (req) => {
 
     if (!targets || targets.length === 0) {
       console.log('[darkweb-monitor] No targets to check');
-      return ok({ checked: 0, newFindings: 0, checkedCount: 0 });
+      return new Response(
+        JSON.stringify({ checked: 0, newFindings: 0, checkedCount: 0 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`[darkweb-monitor] Found ${targets.length} targets to check`);
@@ -61,22 +68,19 @@ serve(async (req) => {
         console.log(`[darkweb-monitor] Processing target ${target.id}: "${target.value}" (type: ${target.type})`);
 
         // Check consent for darkweb monitoring
-        // Query by workspace only since darkweb_targets doesn't have user_id
         const { data: consent, error: consentError } = await supabaseService
           .from('sensitive_consents')
           .select('categories')
           .eq('workspace_id', target.workspace_id)
-          .maybeSingle(); // Use maybeSingle to avoid error if no consent exists
+          .maybeSingle();
 
         if (consentError) {
           console.warn(`[darkweb-monitor] Consent check error for target ${target.id}:`, consentError);
         }
 
-        // If consent exists but doesn't include 'darkweb', skip
-        // If no consent record exists, proceed (default-allow for monitoring)
         const allowedCategories = consent?.categories || [];
         if (consent && !allowedCategories.includes('darkweb')) {
-          console.log(`[darkweb-monitor] Skipping target ${target.id}: no darkweb consent (has: ${allowedCategories.join(', ')})`);
+          console.log(`[darkweb-monitor] Skipping target ${target.id}: no darkweb consent`);
           continue;
         }
 
@@ -95,7 +99,7 @@ serve(async (req) => {
         try {
           console.log(`[darkweb-monitor] Invoking darkweb-scraper for target ${target.id}`);
           const { data: darkwebData, error: darkwebError } = await supabaseService.functions.invoke(
-            'darkweb/darkweb-scraper',
+            'darkweb-scraper',
             {
               body: {
                 searchQuery: target.value,
@@ -119,9 +123,9 @@ serve(async (req) => {
 
         // 2. OSINT paste site scraper (for all types)
         try {
-          console.log(`[darkweb-monitor] Invoking osint-scraper for target ${target.id}`);
+          console.log(`[darkweb-monitor] Invoking darkweb-osint-scraper for target ${target.id}`);
           const { data: osintData, error: osintError } = await supabaseService.functions.invoke(
-            'darkweb/osint-scraper',
+            'darkweb-osint-scraper',
             {
               body: {
                 searchQuery: target.value,
@@ -146,9 +150,9 @@ serve(async (req) => {
         // 3. Social media search (for usernames only)
         if (isUsername) {
           try {
-            console.log(`[darkweb-monitor] Invoking social-media-search for username target ${target.id}`);
+            console.log(`[darkweb-monitor] Invoking darkweb-social-search for username target ${target.id}`);
             const { data: socialData, error: socialError } = await supabaseService.functions.invoke(
-              'darkweb/social-media-search',
+              'darkweb-social-search',
               {
                 body: {
                   username: target.value,
@@ -176,7 +180,6 @@ serve(async (req) => {
         // Store findings directly if they aren't already stored by sub-functions
         for (const finding of allFindings) {
           if (finding.target_id && finding.provider && finding.url) {
-            // Already in correct format for upsert
             const { error: insertError } = await supabaseService
               .from('darkweb_findings')
               .upsert({
@@ -251,14 +254,20 @@ serve(async (req) => {
 
     console.log(`[darkweb-monitor] Completed: checked ${checkedCount} targets, found ${newFindingsCount} new findings`);
 
-    return ok({
-      checked: checkedCount,
-      checkedCount: checkedCount,
-      newFindings: newFindingsCount,
-    });
+    return new Response(
+      JSON.stringify({
+        checked: checkedCount,
+        checkedCount: checkedCount,
+        newFindings: newFindingsCount,
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('[darkweb-monitor] Fatal error:', error);
-    return bad(500, error instanceof Error ? error.message : 'Unknown error');
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 });

@@ -1,6 +1,10 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad } from '../../_shared/secure.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 /**
  * OSINT Paste Sites Scraper via Apify
@@ -9,7 +13,7 @@ import { corsHeaders, ok, bad } from '../../_shared/secure.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -21,15 +25,25 @@ serve(async (req) => {
     const { searchQuery, targetId, workspaceId } = await req.json();
 
     if (!searchQuery || !targetId || !workspaceId) {
-      return bad(400, 'Missing required fields: searchQuery, targetId, workspaceId');
+      return new Response(
+        JSON.stringify({ error: 'Missing required fields: searchQuery, targetId, workspaceId' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log(`[osint-scraper] Searching for: ${searchQuery}`);
 
     const apifyToken = Deno.env.get('APIFY_API_TOKEN');
     if (!apifyToken) {
-      console.error('[osint-scraper] APIFY_API_TOKEN not configured');
-      return bad(500, 'Apify integration not configured');
+      console.warn('[osint-scraper] APIFY_API_TOKEN not configured - returning empty results');
+      return new Response(
+        JSON.stringify({
+          findingsCount: 0,
+          findings: [],
+          message: 'Apify integration not configured',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Call Apify actor
@@ -49,11 +63,26 @@ serve(async (req) => {
     if (!actorRunResponse.ok) {
       const errorText = await actorRunResponse.text();
       console.error('[osint-scraper] Apify run failed:', errorText);
-      return bad(500, 'Failed to start Apify actor');
+      return new Response(
+        JSON.stringify({
+          findingsCount: 0,
+          findings: [],
+          error: `Apify error: ${actorRunResponse.status}`,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const runData = await actorRunResponse.json();
-    const runId = runData.data.id;
+    const runId = runData.data?.id;
+
+    if (!runId) {
+      console.error('[osint-scraper] No run ID returned');
+      return new Response(
+        JSON.stringify({ findingsCount: 0, findings: [], error: 'No run ID from Apify' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     console.log(`[osint-scraper] Apify run started: ${runId}`);
 
@@ -74,7 +103,7 @@ serve(async (req) => {
       }
 
       const statusData = await statusResponse.json();
-      const status = statusData.data.status;
+      const status = statusData.data?.status;
 
       if (status === 'SUCCEEDED') {
         const resultsResponse = await fetch(
@@ -116,7 +145,7 @@ serve(async (req) => {
       meta: {
         source: result.source,
         title: result.title,
-        snippet: result.snippet?.substring(0, 500), // Truncate for storage
+        snippet: result.snippet?.substring(0, 500),
         author: result.author,
         date: result.date,
       },
@@ -144,15 +173,25 @@ serve(async (req) => {
       .update({ last_checked: new Date().toISOString() })
       .eq('id', targetId);
 
-    return ok({
-      findingsCount: findings.length,
-      criticalCount: findings.filter(f => f.severity === 'critical').length,
-      highCount: findings.filter(f => f.severity === 'high').length,
-      findings: findings.slice(0, 10),
-    });
+    return new Response(
+      JSON.stringify({
+        findingsCount: findings.length,
+        criticalCount: findings.filter(f => f.severity === 'critical').length,
+        highCount: findings.filter(f => f.severity === 'high').length,
+        findings: findings.slice(0, 10),
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('[osint-scraper] Error:', error);
-    return bad(500, error instanceof Error ? error.message : 'Unknown error');
+    return new Response(
+      JSON.stringify({
+        findingsCount: 0,
+        findings: [],
+        error: error instanceof Error ? error.message : 'Unknown error',
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 });

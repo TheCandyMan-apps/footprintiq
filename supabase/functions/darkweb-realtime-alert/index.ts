@@ -1,6 +1,10 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
-import { corsHeaders, ok, bad } from '../../_shared/secure.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
 
@@ -28,15 +32,23 @@ function escapeHtml(unsafe: string): string {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders() });
+    return new Response(null, { headers: corsHeaders });
   }
 
-  if (req.method !== 'POST') return bad(405, 'method_not_allowed');
+  if (req.method !== 'POST') {
+    return new Response(
+      JSON.stringify({ error: 'method_not_allowed' }),
+      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 
   try {
     if (!RESEND_API_KEY) {
       console.error('[darkweb-alert] RESEND_API_KEY not configured');
-      return bad(500, 'email_service_not_configured');
+      return new Response(
+        JSON.stringify({ error: 'email_service_not_configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const supabase = createClient(
@@ -56,7 +68,10 @@ serve(async (req) => {
 
     if (subError || !subscription) {
       console.error('[darkweb-alert] Subscription not found:', subscriptionId);
-      return bad(404, 'subscription_not_found');
+      return new Response(
+        JSON.stringify({ error: 'subscription_not_found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Check severity threshold
@@ -72,7 +87,10 @@ serve(async (req) => {
 
     if (currentSeverity < threshold) {
       console.log('[darkweb-alert] Severity below threshold, skipping alert');
-      return ok({ skipped: true, reason: 'below_threshold' });
+      return new Response(
+        JSON.stringify({ skipped: true, reason: 'below_threshold' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Send email via Resend
@@ -148,7 +166,10 @@ serve(async (req) => {
     if (!emailResponse.ok) {
       const errorText = await emailResponse.text();
       console.error('[darkweb-alert] Resend error:', emailResponse.status, errorText);
-      return bad(500, `email_send_failed: ${errorText}`);
+      return new Response(
+        JSON.stringify({ error: `email_send_failed: ${errorText}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const emailResult = await emailResponse.json();
@@ -169,14 +190,20 @@ serve(async (req) => {
       .update({ last_alerted_at: new Date().toISOString() })
       .eq('id', subscriptionId);
 
-    return ok({ 
-      sent: true, 
-      email_id: emailResult.id,
-      recipient: subscription.alert_email 
-    });
+    return new Response(
+      JSON.stringify({ 
+        sent: true, 
+        email_id: emailResult.id,
+        recipient: subscription.alert_email 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
   } catch (error) {
     console.error('[darkweb-alert] Error:', error);
-    return bad(500, error instanceof Error ? error.message : 'unknown_error');
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'unknown_error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 });
