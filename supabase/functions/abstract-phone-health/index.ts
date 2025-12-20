@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const ABSTRACT_API_URL = 'https://phonevalidation.abstractapi.com/v1/';
+const ABSTRACT_API_URL = 'https://phoneintelligence.abstractapi.com/v1/';
 const TEST_PHONE = '+14155552671'; // Standard test number
 
 interface HealthCheckResult {
@@ -82,25 +82,32 @@ serve(async (req) => {
       }
 
       if (response.ok) {
-        // Check if the response looks valid
-        if (data.valid !== undefined || data.phone !== undefined) {
+        const normalized = {
+          phone: data.phone ?? data.phone_number ?? data.phone_format?.international ?? TEST_PHONE,
+          valid: data.valid ?? data.phone_validation?.is_valid,
+          format: data.format ?? data.phone_format,
+          country: data.country ?? data.phone_location,
+          carrier: data.carrier ?? data.phone_carrier?.name,
+          type: data.type ?? data.phone_carrier?.line_type,
+          isVoip: data.is_voip ?? data.phone_validation?.is_voip,
+        };
+
+        const looksValid =
+          typeof normalized.valid === 'boolean' ||
+          typeof data.phone_number === 'string' ||
+          typeof data.phone === 'string';
+
+        if (looksValid) {
           result.checks.apiKeyValid = {
             status: 'pass',
             message: 'API key is valid and working',
           };
-          
+
           result.checks.testCall = {
             status: 'pass',
             message: `Test call successful (${responseTime}ms)`,
             responseTime,
-            details: {
-              phone: data.phone,
-              valid: data.valid,
-              format: data.format,
-              country: data.country,
-              carrier: data.carrier,
-              type: data.type,
-            },
+            details: normalized,
           };
         } else {
           result.checks.apiKeyValid = {
