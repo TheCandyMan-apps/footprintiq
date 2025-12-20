@@ -45,6 +45,7 @@ import { WorkerStatusBanner } from "@/components/scan/WorkerStatusBanner";
 import { ScanTypeHelp } from "@/components/scan/ScanTypeHelp";
 import { ProviderPreviewStrip } from "@/components/scan/ProviderPreviewStrip";
 import { getWorkersForScanType, scanTypeUsesWorkers, getScanTypeMeta } from "@/lib/scan/scanTypeMeta";
+import { validateScanInput, getFormatHint } from "@/lib/scan/inputValidation";
 import { type ScanType } from "@/lib/providers/registry";
 import { normalizePlanTier } from "@/lib/billing/planCapabilities";
 import { WhatsMyNameTab } from "@/components/scan/WhatsMyNameTab";
@@ -113,6 +114,8 @@ export default function AdvancedScan() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<'provider_blocked' | 'insufficient_credits' | 'batch_blocked' | 'darkweb_blocked'>('insufficient_credits');
   const [phoneProviders, setPhoneProviders] = useState<string[]>([]);
+  const [inputError, setInputError] = useState<string | null>(null);
+  const [inputTouched, setInputTouched] = useState(false);
 
   const { saveTemplate } = useScanTemplates();
   const { startScan: startUsernameScan } = useUsernameScan();
@@ -156,6 +159,10 @@ export default function AdvancedScan() {
       setIsBatchMode(false);
       setBatchItems([]);
     }
+    
+    // Reset validation state when scan type changes
+    setInputError(null);
+    setInputTouched(false);
   }, [scanType, maigretEnabled, workspace?.plan]);
 
   // ✅ Move handleScanComplete here BEFORE any early returns
@@ -333,9 +340,21 @@ export default function AdvancedScan() {
   }
 
   const handleScan = async () => {
+    // Validate input before scanning
+    const validation = validateScanInput(scanType as ScanType, target);
+    if (!validation.isValid) {
+      setInputTouched(true);
+      setInputError(validation.error || 'Invalid input');
+      toast.error(validation.error || `Please enter a valid ${scanType}`);
+      return;
+    }
+    
+    // Use normalized value if available
+    const normalizedTarget = validation.normalizedValue || target.trim();
+    
     // Handle username scans with progress dialog
     if (scanType === 'username') {
-      if (!target.trim()) {
+      if (!normalizedTarget) {
         toast.error("Please enter a username to scan");
         return;
       }
@@ -998,12 +1017,44 @@ export default function AdvancedScan() {
                 </>
               ) : (
                 <div className="space-y-2">
-                  <Input
-                    placeholder={getScanTypeMeta(scanType as ScanType)?.placeholder || `Enter ${scanType}...`}
-                    value={target}
-                    onChange={(e) => setTarget(e.target.value)}
-                    className="text-lg"
-                  />
+                  <div className="relative">
+                    <Input
+                      placeholder={getScanTypeMeta(scanType as ScanType)?.placeholder || `Enter ${scanType}...`}
+                      value={target}
+                      onChange={(e) => {
+                        setTarget(e.target.value);
+                        setInputTouched(true);
+                        // Validate on change
+                        const result = validateScanInput(scanType as ScanType, e.target.value);
+                        setInputError(e.target.value && !result.isValid ? result.error || null : null);
+                      }}
+                      onBlur={() => {
+                        setInputTouched(true);
+                        if (target) {
+                          const result = validateScanInput(scanType as ScanType, target);
+                          setInputError(!result.isValid ? result.error || null : null);
+                        }
+                      }}
+                      className={`text-lg ${inputError && inputTouched ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    />
+                    {/* Format hint when empty */}
+                    {!target && !inputTouched && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Format: {getFormatHint(scanType as ScanType)}
+                      </p>
+                    )}
+                    {/* Validation error */}
+                    {inputError && inputTouched && (
+                      <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" />
+                        {inputError}
+                      </p>
+                    )}
+                    {/* Valid indicator */}
+                    {target && !inputError && inputTouched && (
+                      <p className="text-xs text-green-600 mt-1">✓ Valid format</p>
+                    )}
+                  </div>
                   {/* Provider Preview Strip */}
                   <ProviderPreviewStrip
                     scanType={scanType as ScanType}
