@@ -98,7 +98,7 @@ const ScanRequestSchema = z.object({
     noCache: z.boolean().optional(),
     artifacts: z.array(z.string()).optional(),
     providers: z.array(
-      z.string().regex(/^[a-z0-9-]+$/, 'invalid provider name format')
+      z.string().regex(/^[a-z0-9_-]+$/, 'invalid provider name format')
     ).max(20, 'too many providers specified').optional(),
     premium: z.object({
       socialMediaFinder: z.boolean().optional(),
