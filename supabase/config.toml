@@ -128,3 +128,9 @@ verify_jwt = false
 
 [functions.darkweb-health]
 verify_jwt = false
+
+[functions.abstract-phone]
+verify_jwt = true
+
+[functions.abstract-phone-health]
+verify_jwt = false
