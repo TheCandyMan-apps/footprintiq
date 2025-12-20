@@ -55,40 +55,47 @@ export function PhoneInput({
 
   return (
     <div className={cn('space-y-3', className)}>
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
-            <Phone className="h-4 w-4 text-muted-foreground" />
-            Phone Number
-          </Label>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <Label htmlFor="phone" className="flex items-center gap-2 text-sm font-medium">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              Phone Number
+            </Label>
+          </div>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  type="button" 
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                  <span>Format help</span>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="max-w-xs p-3">
+                <p className="font-medium mb-2">Phone Format</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  E.164 format is preferred. Include the country code for accurate carrier lookups.
+                </p>
+                <div className="space-y-1.5">
+                  {PHONE_EXAMPLES.map((ex) => (
+                    <div key={ex.format} className="flex justify-between gap-4 text-xs">
+                      <span className="text-muted-foreground">{ex.format}</span>
+                      <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{ex.example}</code>
+                    </div>
+                  ))}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
-        <TooltipProvider delayDuration={200}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                type="button" 
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <HelpCircle className="h-3.5 w-3.5" />
-                <span>Format help</span>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="left" className="max-w-xs p-3">
-              <p className="font-medium mb-2">Phone Format</p>
-              <p className="text-xs text-muted-foreground mb-3">
-                E.164 format is preferred. Include the country code for accurate carrier lookups.
-              </p>
-              <div className="space-y-1.5">
-                {PHONE_EXAMPLES.map((ex) => (
-                  <div key={ex.format} className="flex justify-between gap-4 text-xs">
-                    <span className="text-muted-foreground">{ex.format}</span>
-                    <code className="font-mono bg-muted px-1.5 py-0.5 rounded">{ex.example}</code>
-                  </div>
-                ))}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        {/* Inline helper text */}
+        <p className="text-xs text-muted-foreground">
+          E.164 recommended (e.g. <code className="font-mono bg-muted px-1 rounded">+447700900123</code>). 
+          UK/US local formats also accepted. We'll normalize automatically.
+        </p>
       </div>
 
       <div className="relative">
