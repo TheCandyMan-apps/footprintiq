@@ -26,6 +26,7 @@ import { PremiumApifyOptions } from "@/components/scan/PremiumApifyOptions";
 import { AnonModeToggle } from "@/components/scan/AnonModeToggle";
 import { CreditsBadge } from "@/components/workspace/CreditsBadge";
 import { ScanProgressDialog } from "@/components/scan/ScanProgressDialog";
+import { ProviderPanel } from "@/components/scan/ProviderPanel";
 import { ScanStatusIndicator } from "@/components/scan/ScanStatusIndicator";
 import { ScanErrorBoundary } from "@/components/ScanErrorBoundary";
 import { BatchUpload } from "@/components/scan/BatchUpload";
@@ -106,7 +107,8 @@ export default function AdvancedScan() {
   const [usernameArtifacts, setUsernameArtifacts] = useState<string[]>([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeReason, setUpgradeReason] = useState<'provider_blocked' | 'insufficient_credits' | 'batch_blocked' | 'darkweb_blocked'>('insufficient_credits');
-  
+  const [phoneProviders, setPhoneProviders] = useState<string[]>([]);
+
   const { saveTemplate } = useScanTemplates();
   const { startScan: startUsernameScan } = useUsernameScan();
   
@@ -500,7 +502,7 @@ export default function AdvancedScan() {
                 workspaceId: workspace.id,
                 anonMode: anonModeEnabled,
                 options: {
-                  providers,
+                  providers: scanType === 'phone' ? phoneProviders : providers,
                   includeDating: sensitiveSources.includes('dating'),
                   includeNsfw: sensitiveSources.includes('nsfw'),
                   includeDarkweb: sensitiveSources.includes('darkweb') || darkwebEnabled,
@@ -996,57 +998,66 @@ export default function AdvancedScan() {
             {/* Tool selection for Username Scans is now handled via providers checkboxes above */}
 
             {/* Provider Selection */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                Data Providers
-                <span className="text-xs text-muted-foreground">
-                  ({compatibleProviders.length} providers available for {scanType} scans)
-                </span>
-                {isStandard && (
-                  <Badge variant="secondary" className="ml-2">
-                    Simplified Mode
-                  </Badge>
-                )}
-              </Label>
-              {compatibleProviders.length === 0 ? (
-                <div className="p-4 border border-border rounded-lg bg-muted/50 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    No providers available for {scanType} scans. Try a different scan type.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid md:grid-cols-2 gap-3">
-                  {compatibleProviders.map((provider) => {
-                    const Icon = provider.icon;
-                    return (
-                    <Card
-                      key={provider.id}
-                      className={`p-4 cursor-pointer transition-all ${
-                        providers.includes(provider.id)
-                          ? "border-primary bg-primary/5"
-                          : "hover:border-muted-foreground/50"
-                      }`}
-                      onClick={() => toggleProvider(provider.id)}
-                    >
-                      <div className="flex items-start gap-3">
-                        <Checkbox checked={providers.includes(provider.id)} className="mt-1" />
-                        <Icon className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium">{provider.name}</span>
-                            {provider.premium && <Badge variant="secondary">Premium</Badge>}
+            {scanType === 'phone' ? (
+              <ProviderPanel
+                scanType="phone"
+                selectedProviders={phoneProviders}
+                onSelectionChange={setPhoneProviders}
+                disabled={isScanning}
+              />
+            ) : (
+              <div className="space-y-3">
+                <Label className="flex items-center gap-2">
+                  Data Providers
+                  <span className="text-xs text-muted-foreground">
+                    ({compatibleProviders.length} providers available for {scanType} scans)
+                  </span>
+                  {isStandard && (
+                    <Badge variant="secondary" className="ml-2">
+                      Simplified Mode
+                    </Badge>
+                  )}
+                </Label>
+                {compatibleProviders.length === 0 ? (
+                  <div className="p-4 border border-border rounded-lg bg-muted/50 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      No providers available for {scanType} scans. Try a different scan type.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 gap-3">
+                    {compatibleProviders.map((provider) => {
+                      const Icon = provider.icon;
+                      return (
+                      <Card
+                        key={provider.id}
+                        className={`p-4 cursor-pointer transition-all ${
+                          providers.includes(provider.id)
+                            ? "border-primary bg-primary/5"
+                            : "hover:border-muted-foreground/50"
+                        }`}
+                        onClick={() => toggleProvider(provider.id)}
+                      >
+                        <div className="flex items-start gap-3">
+                          <Checkbox checked={providers.includes(provider.id)} className="mt-1" />
+                          <Icon className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-medium">{provider.name}</span>
+                              {provider.premium && <Badge variant="secondary">Premium</Badge>}
+                            </div>
+                            {provider.description && (
+                              <p className="text-xs text-muted-foreground mt-1">{provider.description}</p>
+                            )}
                           </div>
-                          {provider.description && (
-                            <p className="text-xs text-muted-foreground mt-1">{provider.description}</p>
-                          )}
                         </div>
-                      </div>
-                    </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      </Card>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Sensitive Sources */}
             <div className="space-y-3 p-4 border border-warning/30 rounded-lg bg-warning/5">
