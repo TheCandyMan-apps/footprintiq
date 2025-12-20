@@ -54,7 +54,7 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
     creditCost: 2,
     minTier: 'free',
     category: 'carrier',
-    requiresKey: 'ABSTRACT_PHONE_API_KEY',
+    requiresKey: 'ABSTRACTAPI_PHONE_VALIDATION_KEY',
     enabled: true,
   },
   {

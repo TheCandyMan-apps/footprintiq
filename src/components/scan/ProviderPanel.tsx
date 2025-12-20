@@ -31,6 +31,7 @@ import {
   AlertTriangle,
   Zap,
   Crown,
+  Bug,
 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
@@ -40,6 +41,7 @@ import {
   type ProviderCategory,
   type ProviderStatus,
   getProvidersForPlan,
+  getProvidersForScanType,
   calculateTotalCredits,
   getDefaultProviders,
   loadPersistedProviders,
@@ -50,10 +52,12 @@ import {
 } from '@/lib/providers/registry';
 import { normalizePlanTier, CAPABILITIES_BY_PLAN } from '@/lib/billing/planCapabilities';
 
-// Known configured API keys - these would ideally come from a secrets check
-// For now, we track which keys are typically configured
+// Known configured API keys based on actual Supabase secrets
+// Update this list as keys are added to the system
 const KNOWN_CONFIGURED_KEYS: string[] = [
-  // Add keys that are configured in your system
+  'ABSTRACTAPI_PHONE_VALIDATION_KEY',
+  'FULLCONTACT_API_KEY',
+  // Add more keys as they get configured
 ];
 
 interface ProviderPanelProps {
@@ -87,6 +91,7 @@ export function ProviderPanel({
   const navigate = useNavigate();
 
   const userPlan = normalizePlanTier(subscriptionTier);
+  const { user } = useSubscription();
 
   // Get plan capabilities for provider limits
   const planCapabilities = CAPABILITIES_BY_PLAN[userPlan];
@@ -98,6 +103,22 @@ export function ProviderPanel({
     () => getProvidersForPlan(scanType, userPlan),
     [scanType, userPlan]
   );
+
+  // All providers for this scan type (for debug panel)
+  const allProvidersForType = useMemo(
+    () => getProvidersForScanType(scanType),
+    [scanType]
+  );
+
+  // Debug logging in development mode
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[PhoneProviders] tier:', userPlan, 'user:', user?.id);
+      console.log('[PhoneProviders] available:', available.length, 'locked:', locked.length);
+      console.log('[PhoneProviders] available providers:', available.map(p => p.id).join(', '));
+      console.log('[PhoneProviders] configured keys:', KNOWN_CONFIGURED_KEYS);
+    }
+  }, [userPlan, user?.id, available, locked]);
 
   const groupedAvailable = useMemo(
     () => groupProvidersByCategory(available),
@@ -368,8 +389,25 @@ export function ProviderPanel({
         </div>
       </div>
 
+      {/* Unknown plan warning */}
+      {subscriptionTier === null && (
+        <Alert variant="default" className="border-amber-500/30 bg-amber-500/5">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="text-sm">
+            Plan unknown — showing Free providers.{' '}
+            <Button
+              variant="link"
+              className="h-auto p-0 text-sm text-primary"
+              onClick={() => navigate('/pricing')}
+            >
+              View plans
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Free plan limit message */}
-      {userPlan === 'free' && (
+      {userPlan === 'free' && subscriptionTier !== null && (
         <Alert variant="default" className="border-amber-500/30 bg-amber-500/5">
           <Crown className="h-4 w-4 text-amber-500" />
           <AlertDescription className="text-sm">
@@ -484,6 +522,54 @@ export function ProviderPanel({
               </Badge>
             </div>
           </div>
+
+          {/* Debug Panel (dev/admin only) */}
+          {process.env.NODE_ENV === 'development' && (
+            <Collapsible className="pt-4 border-t border-border">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="w-full justify-between text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Bug className="w-3 h-3" />
+                    Provider Inventory (Dev)
+                  </span>
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2 p-3 bg-muted/30 rounded-lg text-xs space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total {scanType} providers:</span>
+                  <span className="font-mono">{allProvidersForType.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Eligible for {userPlan}:</span>
+                  <span className="font-mono text-green-500">{available.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Locked (higher tier):</span>
+                  <span className="font-mono text-amber-500">{locked.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Missing API keys:</span>
+                  <span className="font-mono text-red-500">
+                    {available.filter(p => p.requiresKey && !KNOWN_CONFIGURED_KEYS.includes(p.requiresKey)).length}
+                  </span>
+                </div>
+                <div className="pt-2 border-t border-border/50">
+                  <span className="text-muted-foreground block mb-1">Configured keys:</span>
+                  <code className="text-[10px] break-all">{KNOWN_CONFIGURED_KEYS.join(', ') || 'None'}</code>
+                </div>
+                <div className="pt-2 border-t border-border/50">
+                  <span className="text-muted-foreground block mb-1">Missing keys:</span>
+                  <code className="text-[10px] break-all text-red-400">
+                    {available
+                      .filter(p => p.requiresKey && !KNOWN_CONFIGURED_KEYS.includes(p.requiresKey))
+                      .map(p => p.requiresKey)
+                      .join(', ') || 'None'}
+                  </code>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </CollapsibleContent>
       </Collapsible>
     </Card>
