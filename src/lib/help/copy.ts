@@ -351,6 +351,63 @@ export const HELP_ENTRIES: Record<string, HelpEntry> = {
     content: "Some providers exceeded their timeout limits but other providers succeeded. Results shown are valid but incomplete. Try re-running individual providers or increasing provider timeouts in advanced settings.",
     category: "Results",
     tags: ["timeout", "partial", "errors"]
+  },
+  
+  // Scan Form Help Entries
+  anonymous_mode: {
+    key: "anonymous_mode",
+    title: "Anonymous Mode",
+    content: "Routes all scan requests through anonymizing proxies (including Tor when available) to mask your IP address. This protects your identity when scanning sensitive targets but may slow down scans. Available on Pro and Business plans.",
+    category: "Search",
+    tags: ["privacy", "proxy", "tor", "anonymity"]
+  },
+  
+  phone_format: {
+    key: "phone_format",
+    title: "Phone Number Format",
+    content: "Enter phone numbers in E.164 format for best results (e.g., +447712345678). We'll auto-detect the country and normalize the number. Include the country code for accurate carrier and risk lookups.",
+    category: "Search",
+    tags: ["phone", "format", "input"]
+  },
+  
+  estimated_credits: {
+    key: "estimated_credits",
+    title: "Estimated Credits",
+    content: "The estimated credit cost is based on selected providers. Actual cost may vary if some providers skip (not configured, rate limited, or fail). You'll never be charged more than the estimate. Remaining credits shown in your account.",
+    category: "Admin",
+    tags: ["credits", "cost", "billing"]
+  },
+  
+  provider_available: {
+    key: "provider_available",
+    title: "Provider Available",
+    content: "This provider is ready to use. Your API key is configured and the service is responding normally.",
+    category: "Search",
+    tags: ["provider", "status"]
+  },
+  
+  provider_not_configured: {
+    key: "provider_not_configured",
+    title: "Provider Not Configured",
+    content: "This provider requires an API key to function. Click 'Connect' to add your API key in Settings → Integrations. The scan will skip this provider until configured.",
+    category: "Search",
+    tags: ["provider", "configuration", "api"]
+  },
+  
+  provider_tier_locked: {
+    key: "provider_tier_locked",
+    title: "Provider Locked",
+    content: "This provider requires a higher plan tier. Upgrade to Pro or Business to unlock additional providers with more comprehensive data sources.",
+    category: "Search",
+    tags: ["provider", "upgrade", "plan"]
+  },
+  
+  scan_included_summary: {
+    key: "scan_included_summary",
+    title: "What's Included",
+    content: "Shows which providers will run based on your current plan and selection. Disabled providers won't be charged. Pro and Business plans unlock additional intelligence sources.",
+    category: "Search",
+    tags: ["providers", "plan", "features"]
   }
 };
 
