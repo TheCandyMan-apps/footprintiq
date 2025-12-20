@@ -61,6 +61,36 @@ serve(async (req) => {
 
     if (scanError) throw scanError;
 
+    // Check if this is a username scan - catfish detection requires username/profile data
+    const isUsernameScan = !!scan.username;
+    console.log('Scan type check:', { isUsernameScan, username: scan.username, scanType: scan.scan_type });
+
+    if (!isUsernameScan) {
+      // Return graceful response for non-username scans
+      console.log('Non-username scan detected, returning not-applicable response');
+      return new Response(
+        JSON.stringify({
+          success: true,
+          notApplicable: true,
+          message: 'Catfish detection requires a username scan with social media presence data. This scan type (email/phone/personal details) does not include the platform presence data needed for identity verification.',
+          analysis: 'N/A - Catfish detection analyzes social media profiles and cross-platform identity consistency. For email or phone scans, please use the AI Analysis feature instead for breach and exposure insights.',
+          scores: {
+            identityConsistency: null,
+            authenticityScore: null,
+            catfishRisk: 'N/A',
+          },
+          correlationData: null,
+          scanData: {
+            platformPresencesCount: 0,
+            socialProfilesCount: 0,
+            dataSourcesCount: 0,
+            identityGraph: null,
+          },
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Fetch findings for username scans
     const { data: findings, error: findingsError } = await supabaseClient
       .from('findings')
@@ -74,6 +104,11 @@ serve(async (req) => {
     }
 
     console.log(`Found ${findings?.length || 0} profile presence findings for analysis`);
+
+    // If no profile findings found for a username scan, still proceed but note the limitation
+    if ((findings?.length || 0) === 0) {
+      console.log('Username scan with no profile findings - proceeding with limited data');
+    }
 
     // Fetch correlation data
     const { data: correlationData, error: correlationError } = await supabaseClient.functions.invoke(

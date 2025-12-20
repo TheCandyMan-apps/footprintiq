@@ -930,7 +930,11 @@ const ResultsDetail = () => {
 
         {/* Catfish Detection */}
         <div className="mb-8">
-          <CatfishDetection scanId={scanId!} />
+          <CatfishDetection 
+            scanId={scanId!} 
+            scanType={scan.scan_type}
+            hasUsername={!!scan.username}
+          />
         </div>
 
         {/* AI Analysis */}

@@ -393,7 +393,7 @@ export default function SimpleMaigretResults() {
           {/* Catfish Detection */}
           <CollapsibleSection title="Catfish Detection" defaultOpen={false}>
             <ErrorBoundary fallback={<Skeleton className="h-64 w-full" />}>
-              <CatfishDetection scanId={jobId} />
+              <CatfishDetection scanId={jobId} scanType="username" hasUsername={true} />
             </ErrorBoundary>
           </CollapsibleSection>
 
