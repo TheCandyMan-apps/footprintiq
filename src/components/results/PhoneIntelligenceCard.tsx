@@ -1,13 +1,37 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Smartphone, Radio, MessageSquare, AlertTriangle, Shield, Building, HelpCircle } from "lucide-react";
+import { 
+  Phone, 
+  Smartphone, 
+  Radio, 
+  AlertTriangle, 
+  Shield, 
+  Building, 
+  HelpCircle,
+  CheckCircle,
+  XCircle,
+  SkipForward,
+  Settings,
+  Lock
+} from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { Finding } from "@/lib/ufm";
 
+export interface ProviderStatusSummary {
+  success: number;
+  failed: number;
+  skipped: number;
+  notConfigured: number;
+  tierRestricted: number;
+  limitExceeded: number;
+  total: number;
+}
+
 interface PhoneIntelligenceCardProps {
   phone: string;
   findings: Finding[];
+  providerStatuses?: ProviderStatusSummary;
   className?: string;
 }
 
@@ -98,27 +122,9 @@ function LineTypeIcon({ type }: { type: string }) {
   }
 }
 
-function MessagingIcon({ platform, active }: { platform: string; active: boolean }) {
-  const baseClasses = "h-5 w-5 transition-colors";
-  const activeClasses = active ? "text-green-500" : "text-muted-foreground/30";
-  
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger>
-          <div className={cn(baseClasses, activeClasses)}>
-            <MessageSquare className="h-5 w-5" />
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{platform}: {active ? 'Active' : 'Not found'}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
+// MessagingIcon removed - using inline indicators instead
 
-export function PhoneIntelligenceCard({ phone, findings, className }: PhoneIntelligenceCardProps) {
+export function PhoneIntelligenceCard({ phone, findings, providerStatuses, className }: PhoneIntelligenceCardProps) {
   const phoneFindings = findings.filter(f => f.type === 'phone_intelligence');
   const metrics = extractPhoneMetrics(phoneFindings);
 
@@ -256,13 +262,67 @@ export function PhoneIntelligenceCard({ phone, findings, className }: PhoneIntel
           </div>
         </div>
 
-        {/* Provider Attribution */}
-        <div className="pt-2 border-t">
+        {/* Provider Attribution & Status Summary */}
+        <div className="pt-3 border-t border-border/50 space-y-2">
           <p className="text-xs text-muted-foreground">
             {phoneFindings.length} finding{phoneFindings.length !== 1 ? 's' : ''} from {
               [...new Set(phoneFindings.map(f => f.provider))].length
             } provider{[...new Set(phoneFindings.map(f => f.provider))].length !== 1 ? 's' : ''}
           </p>
+          
+          {/* Provider Status Summary Row */}
+          {providerStatuses && providerStatuses.total > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              {providerStatuses.success > 0 && (
+                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30 text-xs">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  {providerStatuses.success} Success
+                </Badge>
+              )}
+              {providerStatuses.skipped > 0 && (
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs">
+                  <SkipForward className="h-3 w-3 mr-1" />
+                  {providerStatuses.skipped} Skipped
+                </Badge>
+              )}
+              {providerStatuses.notConfigured > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="bg-muted text-muted-foreground border-muted-foreground/30 text-xs cursor-help">
+                        <Settings className="h-3 w-3 mr-1" />
+                        {providerStatuses.notConfigured} Not Configured
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Some providers require API keys to be configured</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {providerStatuses.tierRestricted > 0 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/30 text-xs cursor-help">
+                        <Lock className="h-3 w-3 mr-1" />
+                        {providerStatuses.tierRestricted} Locked
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Upgrade your plan to unlock more providers</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+              {providerStatuses.failed > 0 && (
+                <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/30 text-xs">
+                  <XCircle className="h-3 w-3 mr-1" />
+                  {providerStatuses.failed} Failed
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

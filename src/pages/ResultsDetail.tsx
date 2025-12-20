@@ -12,6 +12,9 @@ import { ConfidenceScoreBadge } from '@/components/ConfidenceScoreBadge';
 import { ConfidenceScoreIndicator } from '@/components/ConfidenceScoreIndicator';
 import { ProviderMatchVisual } from '@/components/ProviderMatchVisual';
 import { PhoneIntelligenceCard } from '@/components/results/PhoneIntelligenceCard';
+import { PhoneExportOptions } from '@/components/results/PhoneExportOptions';
+import { LockedInsightTile } from '@/components/results/LockedInsightTile';
+import { usePhoneProviderStatuses } from '@/hooks/usePhoneProviderStatuses';
 import { analyzeTrends } from '@/lib/trends';
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -46,6 +49,7 @@ import { exportAsJSON, exportAsCSV, exportAsPDF } from "@/lib/exports";
 import { ArtifactDownloadCard } from "@/components/scan/ArtifactDownloadCard";
 import { useArtifactGeneration } from "@/hooks/useArtifactGeneration";
 import { cn } from "@/lib/utils";
+import { normalizePlanTier, hasCapability } from '@/lib/billing/planCapabilities';
 import { 
   AlertTriangle, 
   CheckCircle2, 
@@ -61,7 +65,8 @@ import {
   FileSpreadsheet,
   FileText,
   Network,
-  Zap
+  Zap,
+  Brain
 } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import { AddToCaseButton } from "@/components/case/AddToCaseButton";
@@ -151,6 +156,12 @@ const ResultsDetail = () => {
   
   // Artifact generation hook
   const { artifacts, isGenerating, generateArtifacts } = useArtifactGeneration(scanId);
+  
+  // Phone provider statuses hook
+  const { statuses: phoneProviderStatuses } = usePhoneProviderStatuses(scanId);
+  
+  // Normalize user plan for capability checks
+  const userPlan = normalizePlanTier(subscriptionTier);
 
   useEffect(() => {
     // Reset poll counter when scanId changes
@@ -856,15 +867,57 @@ const ResultsDetail = () => {
           </div>
         )}
 
-        {/* Phone Intelligence Card for Phone Scans */}
+        {/* Phone Intelligence Section */}
         {scan?.phone && (
           <div className="mb-8">
-            <ScanErrorBoundary context="results">
-              <PhoneIntelligenceCard 
-                phone={scan.phone} 
-                findings={findings.filter(f => f.type === 'phone_intelligence')} 
-              />
-            </ScanErrorBoundary>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main Phone Intelligence Card */}
+              <div className="lg:col-span-2">
+                <ScanErrorBoundary context="results">
+                  <PhoneIntelligenceCard 
+                    phone={scan.phone} 
+                    findings={findings.filter(f => f.type === 'phone_intelligence')}
+                    providerStatuses={phoneProviderStatuses}
+                  />
+                </ScanErrorBoundary>
+              </div>
+              
+              {/* Export Options */}
+              <div className="space-y-4">
+                <ScanErrorBoundary context="results">
+                  <PhoneExportOptions
+                    scanId={scanId!}
+                    findings={findings.filter(f => f.type === 'phone_intelligence')}
+                    userPlan={userPlan}
+                    phone={scan.phone}
+                    redactPII={redactPII}
+                  />
+                </ScanErrorBoundary>
+              </div>
+            </div>
+            
+            {/* Locked Insight Tiles for Premium Features */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+              {/* AI Risk Analysis - locked for free users */}
+              {!hasCapability(userPlan, 'aiInsights') && (
+                <LockedInsightTile
+                  title="AI Risk Analysis"
+                  description="Get AI-powered insights about this phone number's risk profile"
+                  icon={<Brain className="h-5 w-5 text-primary" />}
+                  requiredTier="pro"
+                />
+              )}
+              
+              {/* Identity Graph - locked for free/pro users */}
+              {!hasCapability(userPlan, 'identityGraph') && (
+                <LockedInsightTile
+                  title="Identity Graph"
+                  description="See connections between this phone and other entities"
+                  icon={<Network className="h-5 w-5 text-primary" />}
+                  requiredTier="business"
+                />
+              )}
+            </div>
           </div>
         )}
 
