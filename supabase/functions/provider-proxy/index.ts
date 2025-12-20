@@ -1285,16 +1285,27 @@ async function callWHOISXML(domain: string) {
 }
 
 async function callAbstractPhone(phone: string) {
-  const API_KEY = Deno.env.get('ABSTRACT_API_KEY');
-  if (!API_KEY) return { findings: [] };
+  const API_KEY = Deno.env.get('ABSTRACTAPI_PHONE_VALIDATION_KEY');
+  if (!API_KEY) {
+    console.log('[callAbstractPhone] ABSTRACTAPI_PHONE_VALIDATION_KEY not configured');
+    return { findings: [] };
+  }
 
+  console.log(`[callAbstractPhone] Validating phone: ${phone}`);
+  
   const response = await fetch(
     `https://phonevalidation.abstractapi.com/v1/?api_key=${API_KEY}&phone=${encodeURIComponent(phone)}`,
     { headers: { 'User-Agent': 'FootprintIQ-Server' } }
   );
 
-  if (!response.ok) throw new Error(`Abstract Phone API error: ${response.status}`);
-  return await response.json();
+  if (!response.ok) {
+    console.error(`[callAbstractPhone] API error: ${response.status}`);
+    throw new Error(`Abstract Phone API error: ${response.status}`);
+  }
+  
+  const data = await response.json();
+  console.log(`[callAbstractPhone] Response:`, JSON.stringify(data).substring(0, 200));
+  return data;
 }
 
 async function callAbstractIPGeo(ip: string) {
