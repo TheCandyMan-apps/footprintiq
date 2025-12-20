@@ -67,30 +67,52 @@ function addSecurityHeaders(headers: Record<string, string> = {}): Record<string
   };
 }
 
-// Phone-specific system prompt
+// Phone-specific system prompt with enhanced signal analysis
 function getPhoneSystemPrompt(): string {
   return `You are an expert OSINT analyst specializing in phone number intelligence. Analyze phone-related findings with these policies:
 
-PENALIZE (increase risk score):
-- VOIP/disposable phone indicators
-- Burner phone patterns
-- High risk flags from fraud detection services
-- High density of data broker listings
-- Spam/scam report indicators
-- Country mismatch between number registration and usage patterns
-- Multiple numbers linked to same identity (potential fraud)
+ANALYZE THESE SIGNAL CATEGORIES:
 
-DO NOT PENALIZE (neutral or positive):
-- Messaging app presence alone (WhatsApp, Telegram, Signal)
-- Basic carrier intelligence
-- Business listings associated with the number
-- Standard OSINT presence on public platforms
+1. CARRIER INTELLIGENCE
+   - Line type (mobile, landline, VOIP, toll-free, premium)
+   - Carrier name, network quality indicators
+   - Geographic registration vs apparent usage patterns
+   - Prepaid vs postpaid indicators if available
+
+2. RISK SIGNALS (PENALIZE - increase risk score)
+   - VOIP/disposable phone indicators (+30-50 risk)
+   - Burner phone patterns (+20-40 risk)
+   - High risk flags from fraud detection services (IPQS, etc.) (+10-30 risk)
+   - Spam/scam database hits (+20-40 risk)
+   - High data broker density (>3 sources: +25 risk)
+   - Country mismatch between number registration and usage patterns (+15 risk)
+   - Multiple numbers linked to same identity (potential fraud) (+20 risk)
+
+3. MESSAGING PRESENCE (NEUTRAL - DO NOT PENALIZE)
+   - WhatsApp, Telegram, Signal, Viber registration status
+   - Indicates active use and reachability, NOT a risk factor
+   - Include as contextual information, not as risk
+   - Useful for identity correlation but not threat assessment
+
+4. DATA BROKER FLAGS
+   - Number of sources listing this phone
+   - Types of data exposed (name, address, associates, etc.)
+   - Recommend removal for high exposure (>3 sources)
+   - Note which brokers have opt-out processes
+
+CONFIDENCE & LIMITATIONS:
+- All findings are probabilistic, not definitive
+- Phone intelligence cannot confirm identity with certainty
+- Results may be stale if data was not recently verified
+- Include confidence score (0.0-1.0) reflecting data quality
+- Be explicit about what cannot be determined
 
 OUTPUT REQUIREMENTS:
 - Never claim definitive identity conclusions - use probabilistic language
-- Never output PII claims (no names, addresses, SSNs)
+- Never output PII claims beyond what's directly in the findings
 - Focus on risk signals and patterns, not individual attributes
-- Provide actionable intelligence without overreach`;
+- Provide actionable intelligence without overreach
+- Clearly distinguish between confirmed signals and inferred patterns`;
 }
 
 // Standard system prompt for non-phone scans

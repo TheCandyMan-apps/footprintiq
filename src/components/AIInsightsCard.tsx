@@ -1,8 +1,8 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, AlertTriangle, Info, TrendingUp, Shield, Loader2, Crown, Zap, Phone, AlertCircle } from "lucide-react";
-import { useState } from "react";
+import { Sparkles, AlertTriangle, Info, TrendingUp, Shield, Loader2, Crown, Zap, Phone, AlertCircle, ArrowUpRight } from "lucide-react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Finding } from "@/lib/ufm";
@@ -10,6 +10,9 @@ import { AIActionButton } from "@/components/AIActionButton";
 import { enableMonitoring } from "@/lib/monitoring";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { cn } from "@/lib/utils";
+import { normalizePlanTier, hasCapability, getTierLabel, type PlanTier } from "@/lib/billing/planCapabilities";
+import { generateDeterministicPhoneInsights, generateDeterministicScanSummary } from "@/lib/phoneInsightsFallback";
+import { Link } from "react-router-dom";
 
 interface AIAction {
   title: string;
@@ -55,16 +58,42 @@ export const AIInsightsCard = ({
   const [isFallbackMode, setIsFallbackMode] = useState(false);
   const { toast } = useToast();
 
-  const isPremium = subscriptionTier === 'premium' || subscriptionTier === 'enterprise';
+  // Use proper plan capability check
+  const planTier = normalizePlanTier(subscriptionTier);
+  const canUseAI = hasCapability(planTier, 'aiInsights');
   const isPhoneScan = scanType === 'phone';
 
+  // Auto-generate deterministic insights for Free users on mount
+  useEffect(() => {
+    if (!canUseAI && findings.length > 0 && !phoneInsights && !insights) {
+      if (isPhoneScan) {
+        // Auto-generate phone insights for Free users
+        const fallback = generateDeterministicPhoneInsights(findings, 'free_tier');
+        setPhoneInsights(fallback);
+        setIsFallbackMode(true);
+      }
+      // For non-phone scans, we'll show a teaser instead of auto-generating
+    }
+  }, [canUseAI, isPhoneScan, findings.length, phoneInsights, insights]);
+
   const generateInsights = async () => {
-    if (!isPremium) {
-      toast({
-        title: "Premium Feature",
-        description: "AI correlation analysis is available for Premium subscribers.",
-        variant: "destructive",
-      });
+    // For Free users, regenerate deterministic fallback
+    if (!canUseAI) {
+      if (isPhoneScan) {
+        const fallback = generateDeterministicPhoneInsights(findings, 'free_tier');
+        setPhoneInsights(fallback);
+        setIsFallbackMode(true);
+        toast({
+          title: "Basic Analysis",
+          description: "Showing deterministic analysis. Upgrade to Pro for AI-powered insights.",
+        });
+      } else {
+        toast({
+          title: "Pro Feature",
+          description: "AI-powered insights require a Pro subscription.",
+          variant: "destructive",
+        });
+      }
       return;
     }
 
@@ -167,12 +196,27 @@ export const AIInsightsCard = ({
       }
     } catch (err) {
       console.error('[AIInsightsCard] Error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate insights');
-      toast({
-        title: "Analysis Failed",
-        description: "Unable to generate AI insights. Please try again.",
-        variant: "destructive",
-      });
+      
+      // CRITICAL: On any error, show deterministic fallback instead of blocking
+      if (isPhoneScan) {
+        const fallback = generateDeterministicPhoneInsights(findings, 'ai_error');
+        setPhoneInsights(fallback);
+        setIsFallbackMode(true);
+        toast({
+          title: "Using Basic Analysis",
+          description: "AI service unavailable. Showing deterministic analysis.",
+        });
+      } else {
+        // For non-phone scans, show fallback summary
+        const fallback = generateDeterministicScanSummary(findings);
+        setInsights(`## Basic Analysis (Fallback Mode)\n\n${fallback.keyPoints.map(p => `• ${p}`).join('\n')}\n\n**Risk Level:** ${fallback.riskLevel.toUpperCase()}`);
+        setIsFallbackMode(true);
+        toast({
+          title: "Using Basic Analysis",
+          description: "AI service unavailable. Showing basic analysis.",
+        });
+      }
+      // Don't set error state - we're showing fallback content instead
     } finally {
       setLoading(false);
     }
@@ -293,18 +337,24 @@ export const AIInsightsCard = ({
           )}
           <h3 className="text-lg font-semibold">AI Insights</h3>
           <HelpIcon helpKey="ai_insights" />
-          {!isPremium && <Badge variant="secondary"><Crown className="h-3 w-3 mr-1" />Premium</Badge>}
+          {!canUseAI && !isFallbackMode && (
+            <Badge variant="secondary"><Crown className="h-3 w-3 mr-1" />Pro</Badge>
+          )}
           {isFallbackMode && (
-            <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+            <Badge variant="outline" className={cn(
+              canUseAI 
+                ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/30" 
+                : "bg-muted text-muted-foreground border-border"
+            )}>
               <AlertCircle className="h-3 w-3 mr-1" />
-              Fallback Mode
+              {canUseAI ? 'Fallback Mode' : 'Basic Analysis'}
             </Badge>
           )}
         </div>
-        {!hasContent && (
+        {!hasContent && canUseAI && (
           <Button 
             onClick={generateInsights} 
-            disabled={loading || !isPremium}
+            disabled={loading}
             size="sm"
             className="gap-2"
           >
@@ -323,11 +373,18 @@ export const AIInsightsCard = ({
         )}
       </div>
 
-      {!isPremium && !hasContent && (
+      {/* Free tier placeholder - only show if no content and not phone scan (phone auto-generates) */}
+      {!canUseAI && !hasContent && !isPhoneScan && (
         <div className="text-center py-8 text-muted-foreground">
           <Crown className="h-12 w-12 mx-auto mb-3 text-primary/50" />
-          <p className="text-sm mb-2">AI-powered correlation analysis is a Premium feature</p>
-          <p className="text-xs">Upgrade to unlock advanced insights and risk detection</p>
+          <p className="text-sm mb-2">AI-powered insights require a Pro subscription</p>
+          <p className="text-xs mb-4">Upgrade to unlock advanced analysis and risk detection</p>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/pricing">
+              Upgrade to Pro
+              <ArrowUpRight className="h-3 w-3 ml-1" />
+            </Link>
+          </Button>
         </div>
       )}
 
@@ -341,7 +398,7 @@ export const AIInsightsCard = ({
       {/* Phone scan insights display */}
       {phoneInsights && (
         <div className="space-y-4">
-          {isFallbackMode && (
+          {isFallbackMode && canUseAI && (
             <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
               <AlertCircle className="h-4 w-4 text-yellow-600" />
               <p className="text-xs text-yellow-700 dark:text-yellow-400">
@@ -430,16 +487,39 @@ export const AIInsightsCard = ({
             </p>
           </div>
 
-          <Button 
-            onClick={generateInsights} 
-            disabled={loading}
-            variant="outline"
-            size="sm"
-            className="w-full"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Regenerate Insights
-          </Button>
+          {/* Upgrade teaser for Free users */}
+          {!canUseAI && (
+            <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium">Want deeper AI insights?</p>
+                  <p className="text-xs text-muted-foreground">
+                    Upgrade to Pro for AI-powered risk analysis and recommendations
+                  </p>
+                </div>
+                <Button variant="default" size="sm" asChild>
+                  <Link to="/pricing">
+                    Upgrade
+                    <ArrowUpRight className="h-3 w-3 ml-1" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Only show regenerate button for Pro+ users */}
+          {canUseAI && (
+            <Button 
+              onClick={generateInsights} 
+              disabled={loading}
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Regenerate Insights
+            </Button>
+          )}
         </div>
       )}
 
