@@ -5,6 +5,20 @@ import { validateAuth } from '../_shared/auth-utils.ts';
 import { checkRateLimit } from '../_shared/rate-limiter.ts';
 import { addSecurityHeaders } from '../_shared/security-headers.ts';
 import { getProviderCost } from '../_shared/providerCosts.ts';
+import { 
+  normalizePlanTier, 
+  getCapabilityLimit, 
+  enforceProviderAccess,
+  PlanTier,
+  ProviderAccessReason 
+} from '../_shared/planCapabilities.ts';
+import { 
+  PHONE_PROVIDERS, 
+  getPhoneProvider, 
+  isProviderKeyConfigured,
+  getRequiredTierLabel,
+  PhoneProviderConfig
+} from '../_shared/phoneProviderConfig.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -22,6 +36,17 @@ function normalizePhone(phone: string): string {
 // Generate finding ID
 function generateFindingId(provider: string, kind: string, unique: string): string {
   return `${provider}_${kind}_${unique.replace(/[^a-zA-Z0-9]/g, '')}`;
+}
+
+// Provider result status type
+type ProviderStatus = 'success' | 'failed' | 'skipped' | 'not_configured' | 'tier_restricted' | 'limit_exceeded';
+
+interface ProviderResult {
+  status: ProviderStatus;
+  findingsCount: number;
+  latencyMs: number;
+  message?: string;
+  terminal?: boolean;
 }
 
 serve(async (req) => {
@@ -57,7 +82,7 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { scanId, phone, workspaceId, providers = ['abstract_phone', 'ipqs_phone'], userPlan = 'free' } = body;
+    const { scanId, phone, workspaceId, providers = ['abstract_phone', 'ipqs_phone'], userPlan: rawUserPlan } = body;
 
     if (!phone || !scanId) {
       return new Response(
@@ -66,59 +91,137 @@ serve(async (req) => {
       );
     }
 
+    // Normalize plan tier using centralized function
+    const userPlan = normalizePlanTier(rawUserPlan);
     const normalizedPhone = normalizePhone(phone);
+    
     console.log(`[phone-intel] Starting scan for ${normalizedPhone.slice(0, 5)}***`);
     console.log(`[phone-intel] Requested providers: ${providers.join(', ')}`);
-    console.log(`[phone-intel] User plan: ${userPlan}`);
+    console.log(`[phone-intel] User plan: ${userPlan} (raw: ${rawUserPlan})`);
 
     const findings: any[] = [];
-    const providerResults: Record<string, { status: string; findingsCount: number; latencyMs: number; message?: string }> = {};
+    const providerResults: Record<string, ProviderResult> = {};
 
-    // Plan-based provider restrictions
-    const PLAN_ALLOWED_PROVIDERS: Record<string, string[]> = {
-      free: ['abstract_phone', 'numverify', 'ipqs_phone', 'twilio_lookup'],
-      pro: ['abstract_phone', 'numverify', 'ipqs_phone', 'twilio_lookup', 'whatsapp_check', 'telegram_check', 'signal_check'],
-      business: ['abstract_phone', 'numverify', 'ipqs_phone', 'twilio_lookup', 'whatsapp_check', 'telegram_check', 'signal_check', 'phone_osint', 'truecaller', 'phone_reputation', 'caller_hint'],
+    // Get max providers limit from plan capabilities
+    const maxProviders = getCapabilityLimit(userPlan, 'phoneProvidersMax');
+    console.log(`[phone-intel] Max providers for ${userPlan}: ${maxProviders === -1 ? 'unlimited' : maxProviders}`);
+
+    // Helper to log scan events
+    const logScanEvent = async (
+      providerId: string, 
+      stage: string, 
+      status: string, 
+      errorMessage?: string
+    ) => {
+      try {
+        await supabase.from('scan_events').insert({
+          scan_id: scanId,
+          provider: providerId,
+          stage,
+          status,
+          error_message: errorMessage || null,
+          created_at: new Date().toISOString(),
+        });
+      } catch (e) {
+        console.error(`[phone-intel] Failed to log scan event for ${providerId}:`, e);
+      }
     };
 
-    const allowedForPlan = PLAN_ALLOWED_PROVIDERS[userPlan] || PLAN_ALLOWED_PROVIDERS.free;
-    
-    // Filter providers and mark tier_restricted
+    // Process each requested provider
     const validatedProviders: string[] = [];
+    let providersAccepted = 0;
+
     for (const providerId of providers) {
-      if (allowedForPlan.includes(providerId)) {
-        validatedProviders.push(providerId);
-      } else {
-        console.log(`[phone-intel] Provider ${providerId} restricted for plan ${userPlan}`);
+      const providerConfig = getPhoneProvider(providerId);
+
+      // Unknown provider
+      if (!providerConfig) {
+        console.log(`[phone-intel] Provider ${providerId} not found in registry`);
         providerResults[providerId] = {
-          status: 'tier_restricted',
+          status: 'not_configured',
           findingsCount: 0,
           latencyMs: 0,
-          message: `Requires ${providerId.includes('whatsapp') || providerId.includes('telegram') || providerId.includes('signal') ? 'Pro' : 'Business'} plan`
+          message: 'Provider not implemented',
+          terminal: true,
         };
+        await logScanEvent(providerId, 'validation', 'not_configured', 'Provider not in registry');
+        continue;
       }
+
+      // Check provider limit for plan
+      if (maxProviders !== -1 && providersAccepted >= maxProviders) {
+        console.log(`[phone-intel] Provider ${providerId} skipped: limit exceeded (${providersAccepted}/${maxProviders})`);
+        providerResults[providerId] = {
+          status: 'limit_exceeded',
+          findingsCount: 0,
+          latencyMs: 0,
+          message: `Free plan limited to ${maxProviders} providers. Upgrade for more.`,
+          terminal: true,
+        };
+        await logScanEvent(providerId, 'validation', 'limit_exceeded', `Plan limit of ${maxProviders} providers reached`);
+        continue;
+      }
+
+      // Enforce tier and key requirements using centralized function
+      const accessResult = enforceProviderAccess({
+        plan: userPlan,
+        provider: {
+          id: providerConfig.id,
+          name: providerConfig.name,
+          minTier: providerConfig.minTier,
+          enabled: providerConfig.enabled,
+          requiresKey: providerConfig.requiresKey || undefined,
+        },
+        isKeyConfigured: isProviderKeyConfigured(providerConfig),
+      });
+
+      if (!accessResult.allowed) {
+        console.log(`[phone-intel] Provider ${providerId} blocked: ${accessResult.reason} - ${accessResult.message}`);
+        
+        providerResults[providerId] = {
+          status: accessResult.reason as ProviderStatus,
+          findingsCount: 0,
+          latencyMs: 0,
+          message: accessResult.message,
+          terminal: true,
+        };
+        
+        await logScanEvent(
+          providerId, 
+          'validation', 
+          accessResult.reason, 
+          accessResult.message
+        );
+        continue;
+      }
+
+      // Provider is allowed
+      validatedProviders.push(providerId);
+      providersAccepted++;
     }
 
-    console.log(`[phone-intel] Validated providers: ${validatedProviders.join(', ')}`);
+    console.log(`[phone-intel] Validated providers (${validatedProviders.length}): ${validatedProviders.join(', ')}`);
 
-    // Helper to log and record not_configured status
+    // Helper to mark not_configured status (for missing keys at runtime)
     const markNotConfigured = (providerId: string, keyName: string) => {
       console.log(`[phone-intel] Provider ${providerId} skipped: ${keyName} not configured`);
       providerResults[providerId] = { 
         status: 'not_configured', 
         findingsCount: 0, 
         latencyMs: 0,
-        message: `API key ${keyName} not configured`
+        message: `Missing ${keyName}`,
+        terminal: true,
       };
+      logScanEvent(providerId, 'execution', 'not_configured', `API key ${keyName} not configured`);
     };
 
     // Provider: AbstractAPI Phone
-    if (providers.includes('abstract_phone')) {
+    if (validatedProviders.includes('abstract_phone')) {
       const startTime = Date.now();
-      const ABSTRACT_API_KEY = Deno.env.get('ABSTRACT_PHONE_API_KEY');
+      const ABSTRACT_API_KEY = Deno.env.get('ABSTRACTAPI_PHONE_VALIDATION_KEY');
       
       if (!ABSTRACT_API_KEY) {
-        markNotConfigured('abstract_phone', 'ABSTRACT_PHONE_API_KEY');
+        markNotConfigured('abstract_phone', 'ABSTRACTAPI_PHONE_VALIDATION_KEY');
       } else {
         try {
           const response = await fetch(
@@ -157,17 +260,17 @@ serve(async (req) => {
             
             providerResults['abstract_phone'] = { status: 'success', findingsCount: data.valid ? 1 : 0, latencyMs: latency };
           } else {
-            providerResults['abstract_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
+            providerResults['abstract_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime, message: `API returned ${response.status}` };
           }
         } catch (error) {
           console.error('[phone-intel] AbstractAPI error:', error);
-          providerResults['abstract_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
+          providerResults['abstract_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime, message: error instanceof Error ? error.message : 'Unknown error' };
         }
       }
     }
 
     // Provider: IPQualityScore Phone
-    if (providers.includes('ipqs_phone')) {
+    if (validatedProviders.includes('ipqs_phone')) {
       const startTime = Date.now();
       const IPQS_KEY = Deno.env.get('IPQS_API_KEY');
       
@@ -285,17 +388,17 @@ serve(async (req) => {
             const findingsFromIPQS = data.valid ? (data.fraud_score > 0 || data.leaked ? 2 : 1) + (data.VOIP ? 1 : 0) : 0;
             providerResults['ipqs_phone'] = { status: 'success', findingsCount: findingsFromIPQS, latencyMs: latency };
           } else {
-            providerResults['ipqs_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
+            providerResults['ipqs_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime, message: `API returned ${response.status}` };
           }
         } catch (error) {
           console.error('[phone-intel] IPQS error:', error);
-          providerResults['ipqs_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
+          providerResults['ipqs_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime, message: error instanceof Error ? error.message : 'Unknown error' };
         }
       }
     }
 
     // Provider: Caller Hint (optional - requires CALLERHINT_API_KEY)
-    if (providers.includes('caller_hint')) {
+    if (validatedProviders.includes('caller_hint')) {
       const CALLERHINT_KEY = Deno.env.get('CALLERHINT_API_KEY');
       
       if (!CALLERHINT_KEY) {
@@ -304,10 +407,9 @@ serve(async (req) => {
         const startTime = Date.now();
         try {
           // Placeholder for actual CallerHint API call
-          // This would be replaced with actual implementation when API is available
           console.log(`[phone-intel] CallerHint lookup for ${normalizedPhone.slice(0, 5)}***`);
           
-          // For now, mark as skipped until API is implemented
+          // For now, mark as success with no findings until API is implemented
           providerResults['caller_hint'] = { 
             status: 'success', 
             findingsCount: 0, 
@@ -316,23 +418,25 @@ serve(async (req) => {
           };
         } catch (error) {
           console.error('[phone-intel] CallerHint error:', error);
-          providerResults['caller_hint'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime };
+          providerResults['caller_hint'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime, message: error instanceof Error ? error.message : 'Unknown error' };
         }
       }
     }
 
-    // Handle other requested providers that aren't configured
-    const handledProviders = ['abstract_phone', 'ipqs_phone', 'caller_hint'];
-    for (const providerId of providers) {
-      if (!handledProviders.includes(providerId) && !providerResults[providerId]) {
-        // Mark unimplemented providers as not_configured
-        console.log(`[phone-intel] Provider ${providerId} not implemented yet`);
+    // Handle other validated providers that have stub implementations
+    const implementedProviders = ['abstract_phone', 'ipqs_phone', 'caller_hint'];
+    for (const providerId of validatedProviders) {
+      if (!implementedProviders.includes(providerId) && !providerResults[providerId]) {
+        // Provider is allowed but not yet implemented
+        console.log(`[phone-intel] Provider ${providerId} validated but not yet implemented`);
         providerResults[providerId] = { 
-          status: 'not_configured', 
+          status: 'skipped', 
           findingsCount: 0, 
           latencyMs: 0,
-          message: 'Provider not yet implemented'
+          message: 'Provider implementation pending',
+          terminal: true,
         };
+        await logScanEvent(providerId, 'execution', 'skipped', 'Provider not yet implemented');
       }
     }
 
@@ -373,20 +477,28 @@ serve(async (req) => {
       }
     }
 
-    // Broadcast progress
+    // Broadcast progress with accurate status mapping
     try {
       const channel = supabase.channel(`scan_progress:${scanId}`);
       for (const [provider, result] of Object.entries(providerResults)) {
+        const isTerminal = ['not_configured', 'tier_restricted', 'limit_exceeded', 'skipped'].includes(result.status);
+        
         await channel.send({
           type: 'broadcast',
           event: 'provider_update',
           payload: {
             providerId: provider,
-            status: result.status === 'success' ? 'success' : result.status === 'skipped' ? 'skipped' : 'failed',
-            message: result.status === 'success' 
-              ? `Found ${result.findingsCount} findings` 
-              : result.status === 'skipped' ? 'API key not configured' : 'Provider error',
+            status: result.status,
+            message: result.message || (
+              result.status === 'success' ? `Found ${result.findingsCount} findings`
+              : result.status === 'not_configured' ? 'API key not configured'
+              : result.status === 'tier_restricted' ? 'Requires plan upgrade'
+              : result.status === 'limit_exceeded' ? 'Provider limit reached'
+              : result.status === 'skipped' ? 'Provider skipped'
+              : 'Provider error'
+            ),
             resultCount: result.findingsCount,
+            terminal: isTerminal,
           }
         });
       }
@@ -405,6 +517,12 @@ serve(async (req) => {
         findings,
         providerResults,
         creditsUsed: totalCredits,
+        enforcement: {
+          userPlan,
+          maxProviders: maxProviders === -1 ? 'unlimited' : maxProviders,
+          requestedCount: providers.length,
+          validatedCount: validatedProviders.length,
+        },
       }),
       { headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
     );
