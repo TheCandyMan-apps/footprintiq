@@ -31,6 +31,9 @@ export const PROVIDER_COSTS: Record<string, number> = {
   abstract_ipgeo: 1,
   abstract_company: 1,
   
+  // Email intelligence (IPQS)
+  ipqs_email: 2,
+
   // Phone intelligence providers (higher cost due to premium APIs)
   abstract_phone: 2,
   ipqs_phone: 3,

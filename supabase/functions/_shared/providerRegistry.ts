@@ -24,6 +24,9 @@ export const IMPLEMENTED_PROVIDERS = new Set([
   // Abstract / enrichment
   'abstract_ipgeo', 'abstract_company',
   
+  // IPQualityScore
+  'ipqs_email',  // Email fraud + disposable + breach detection
+  
   // Person search (feature-flagged)
   'pipl',
 
