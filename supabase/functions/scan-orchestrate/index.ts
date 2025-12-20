@@ -665,6 +665,9 @@ serve(async (req) => {
       whatsmyname: ['username'], // Legacy alias
       gosearch: ['username'],
       holehe: ['email'],
+      ipqs_email: ['email'],
+      ipqs_phone: ['phone'],
+      abstract_phone: ['phone'],
       'apify-social': ['username'],
       'apify-osint': ['email', 'username'],
       'apify-darkweb': ['email', 'username'],

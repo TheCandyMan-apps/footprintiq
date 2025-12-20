@@ -180,6 +180,22 @@ export const REGISTRY: ProviderMeta[] = [
     unitCost: 0.005,
     description: "Multi-platform social profiles and breach aggregation",
   },
+  {
+    id: "ipqs_email",
+    title: "IPQualityScore Email",
+    supports: ["email"],
+    ttlMs: 24 * 3600e3,
+    unitCost: 0.002,
+    description: "Email fraud scoring, disposable detection, and breach checks",
+  },
+  {
+    id: "ipqs_phone",
+    title: "IPQualityScore Phone",
+    supports: ["phone"],
+    ttlMs: 24 * 3600e3,
+    unitCost: 0.003,
+    description: "Phone fraud scoring, carrier intel, and risk detection",
+  },
 ];
 
 export function getProviderMeta(providerId: string): ProviderMeta | undefined {

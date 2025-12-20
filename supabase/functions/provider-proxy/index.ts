@@ -131,6 +131,9 @@ serve(async (req) => {
       case 'abstract_company':
         result = await callAbstractCompany(target);
         break;
+      case 'ipqs_email':
+        result = await callIPQSEmail(target);
+        break;
       case 'abuseipdb':
         result = await callAbuseIPDB(target);
         break;
@@ -1332,6 +1335,146 @@ async function callAbstractCompany(domain: string) {
 
   if (!response.ok) throw new Error(`Abstract Company API error: ${response.status}`);
   return await response.json();
+}
+
+async function callIPQSEmail(email: string) {
+  const API_KEY = Deno.env.get('IPQS_API_KEY');
+  if (!API_KEY) {
+    console.log('[IPQS Email] No API key configured');
+    return { 
+      findings: [{
+        provider: 'ipqs_email',
+        kind: 'provider.unconfigured',
+        severity: 'info' as const,
+        confidence: 1.0,
+        observedAt: new Date().toISOString(),
+        evidence: [
+          { key: 'message', value: 'IPQS API key not configured' },
+          { key: 'config_required', value: 'IPQS_API_KEY' }
+        ],
+        meta: { unconfigured: true }
+      }]
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `https://ipqualityscore.com/api/json/email/${API_KEY}/${encodeURIComponent(email)}`,
+      { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+    );
+
+    if (!response.ok) {
+      console.error(`[IPQS Email] API error: ${response.status}`);
+      return { findings: [] };
+    }
+
+    const data = await response.json();
+    const now = new Date().toISOString();
+    const findings: any[] = [];
+
+    // Basic email validation finding
+    if (data.valid !== undefined) {
+      const riskLevel = data.fraud_score > 75 ? 'high' : data.fraud_score > 50 ? 'medium' : data.fraud_score > 25 ? 'low' : 'info';
+      
+      findings.push({
+        provider: 'ipqs_email',
+        kind: 'email.validation',
+        severity: riskLevel,
+        confidence: 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Valid', value: String(data.valid) },
+          { key: 'Fraud Score', value: `${data.fraud_score}/100` },
+          { key: 'Deliverable', value: data.deliverability || 'unknown' },
+          { key: 'Domain Age', value: data.domain_age?.human || 'Unknown' },
+          { key: 'First Seen', value: data.first_seen?.human || 'Unknown' },
+          { key: 'SPF Record', value: String(data.spf_record || false) },
+          { key: 'DMARC Record', value: String(data.dmarc_record || false) },
+        ],
+        meta: {
+          fraud_score: data.fraud_score,
+          recent_abuse: data.recent_abuse,
+          suspect: data.suspect,
+          deliverability: data.deliverability,
+        }
+      });
+    }
+
+    // Disposable email detection
+    if (data.disposable) {
+      findings.push({
+        provider: 'ipqs_email',
+        kind: 'email.disposable',
+        severity: 'medium' as const,
+        confidence: 0.9,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Disposable', value: 'true' },
+          { key: 'Domain', value: email.split('@')[1] || '' },
+        ],
+        meta: { disposable: true }
+      });
+    }
+
+    // Data leak detection
+    if (data.leaked) {
+      findings.push({
+        provider: 'ipqs_email',
+        kind: 'email.leaked',
+        severity: 'high' as const,
+        confidence: 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Leaked', value: 'true' },
+          { key: 'First Seen', value: data.first_seen?.human || 'Unknown' },
+        ],
+        meta: { leaked: true, first_seen: data.first_seen }
+      });
+    }
+
+    // Spam trap / honeypot detection
+    if (data.honeypot || data.spam_trap_score !== 'none') {
+      findings.push({
+        provider: 'ipqs_email',
+        kind: 'email.spam_trap',
+        severity: 'medium' as const,
+        confidence: 0.8,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Honeypot', value: String(data.honeypot || false) },
+          { key: 'Spam Trap Score', value: data.spam_trap_score || 'none' },
+        ],
+        meta: { honeypot: data.honeypot, spam_trap_score: data.spam_trap_score }
+      });
+    }
+
+    // Recent abuse detection
+    if (data.recent_abuse) {
+      findings.push({
+        provider: 'ipqs_email',
+        kind: 'email.abuse',
+        severity: 'high' as const,
+        confidence: 0.8,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Recent Abuse', value: 'true' },
+          { key: 'Fraud Score', value: `${data.fraud_score}/100` },
+        ],
+        meta: { recent_abuse: true, fraud_score: data.fraud_score }
+      });
+    }
+
+    console.log(`[IPQS Email] Generated ${findings.length} findings for ${email}`);
+    return { findings };
+  } catch (error) {
+    console.error('[IPQS Email] Exception:', error);
+    return { findings: [] };
+  }
 }
 
 async function callAbuseIPDB(ip: string) {
