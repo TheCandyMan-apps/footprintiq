@@ -11,6 +11,12 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   Phone,
   MessageCircle,
   Search,
@@ -21,6 +27,9 @@ import {
   Lock,
   Info,
   Settings,
+  HelpCircle,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
 import {
   PHONE_PROVIDERS,
@@ -146,48 +155,71 @@ export function PhoneProviderSelector({
     const result = providerResults[providerId];
     if (!result) return null;
 
-    switch (result.status) {
-      case 'not_configured':
-        return (
-          <div className="flex items-center gap-1">
-            <Badge variant="outline" className="text-xs text-amber-500 border-amber-500/50">
-              Not configured
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-5 px-1 text-xs text-amber-500 hover:text-amber-600"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate('/settings/integrations');
-              }}
-            >
-              <Settings className="w-3 h-3 mr-1" />
-              Connect
-            </Button>
-          </div>
-        );
-      case 'tier_restricted':
-        return (
-          <Badge variant="outline" className="text-xs text-muted-foreground">
-            Upgrade required
-          </Badge>
-        );
-      case 'failed':
-        return (
-          <Badge variant="destructive" className="text-xs">
-            Failed
-          </Badge>
-        );
-      case 'success':
-        return (
-          <Badge variant="outline" className="text-xs text-green-500 border-green-500/50">
-            ✓
-          </Badge>
-        );
-      default:
-        return null;
-    }
+    const statusConfig = {
+      not_configured: {
+        icon: <AlertCircle className="w-3 h-3" />,
+        label: 'Not configured',
+        tooltip: 'API key required. Click Connect to set up.',
+        variant: 'outline' as const,
+        className: 'text-amber-500 border-amber-500/50',
+      },
+      tier_restricted: {
+        icon: <Lock className="w-3 h-3" />,
+        label: 'Locked',
+        tooltip: 'Upgrade your plan to access this provider',
+        variant: 'outline' as const,
+        className: 'text-muted-foreground',
+      },
+      failed: {
+        icon: <AlertCircle className="w-3 h-3" />,
+        label: 'Failed',
+        tooltip: result.message || 'Provider returned an error',
+        variant: 'destructive' as const,
+        className: '',
+      },
+      success: {
+        icon: <Check className="w-3 h-3" />,
+        label: '✓',
+        tooltip: 'Provider completed successfully',
+        variant: 'outline' as const,
+        className: 'text-green-500 border-green-500/50',
+      },
+    };
+
+    const config = statusConfig[result.status];
+    if (!config) return null;
+
+    return (
+      <TooltipProvider delayDuration={200}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1">
+              <Badge variant={config.variant} className={`text-xs ${config.className}`}>
+                {config.icon}
+                <span className="ml-1">{config.label}</span>
+              </Badge>
+              {result.status === 'not_configured' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1.5 text-xs text-amber-500 hover:text-amber-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('/settings/integrations');
+                  }}
+                >
+                  <Settings className="w-3 h-3 mr-0.5" />
+                  Connect
+                </Button>
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs max-w-xs">
+            {config.tooltip}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   };
 
   const renderProviderCard = (provider: PhoneProviderConfig, isLocked = false) => {
@@ -259,51 +291,83 @@ export function PhoneProviderSelector({
   );
 
   return (
-    <Card className="p-4 space-y-4">
+    <Card className="p-4 space-y-4 border-border/50">
       {/* Header with cost estimate */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Phone className="w-5 h-5 text-primary" />
-          <Label className="text-base font-semibold">Phone Scan Providers</Label>
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
+            <Phone className="w-4 h-4 text-primary" />
+          </div>
+          <Label className="text-sm font-semibold">Phone Scan Providers</Label>
         </div>
-        <div className="flex items-center gap-2">
-          <Coins className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium">
-            Est. {totalCredits} credits
-          </span>
-        </div>
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-muted/50 cursor-help">
+                <Coins className="w-3.5 h-3.5 text-muted-foreground" />
+                <span className="text-sm font-medium">
+                  Est. {totalCredits} credits
+                </span>
+                <HelpCircle className="w-3 h-3 text-muted-foreground" />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="max-w-xs">
+              <p className="font-medium mb-1">Estimated Credits</p>
+              <p className="text-xs text-muted-foreground">
+                Based on selected providers. Actual cost may be lower if providers are skipped
+                (not configured, rate limited, or fail). You're never charged more than the estimate.
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Summary bar */}
-      <Alert className="bg-primary/5 border-primary/20">
-        <Info className="h-4 w-4" />
-        <AlertDescription className="flex items-center justify-between">
-          <span>
-            {selectedProviders.length} of {availableProviders.length} providers
-            selected
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={selectAll}
-              disabled={disabled}
-              className="text-xs h-7"
-            >
-              Select All
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={selectNone}
-              disabled={disabled}
-              className="text-xs h-7"
-            >
-              Clear
-            </Button>
+      <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/30 border border-border/50">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <Check className="w-3.5 h-3.5 text-green-500" />
+            <span className="text-sm text-muted-foreground">
+              {selectedProviders.length} of {availableProviders.length} selected
+            </span>
           </div>
-        </AlertDescription>
-      </Alert>
+          {lockedProviders.length > 0 && (
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Lock className="w-3 h-3" />
+                    <span className="text-xs">{lockedProviders.length} locked</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="text-xs">Upgrade to unlock more providers</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={selectAll}
+            disabled={disabled}
+            className="text-xs h-6 px-2"
+          >
+            All
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={selectNone}
+            disabled={disabled}
+            className="text-xs h-6 px-2"
+          >
+            None
+          </Button>
+        </div>
+      </div>
 
       {/* Collapsible provider list */}
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
