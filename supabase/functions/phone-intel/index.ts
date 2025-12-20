@@ -225,42 +225,60 @@ serve(async (req) => {
       } else {
         try {
           const response = await fetch(
-            `https://phonevalidation.abstractapi.com/v1/?api_key=${ABSTRACT_API_KEY}&phone=${encodeURIComponent(normalizedPhone)}`
+            `https://phoneintelligence.abstractapi.com/v1/?api_key=${ABSTRACT_API_KEY}&phone=${encodeURIComponent(normalizedPhone)}`
           );
           
           if (response.ok) {
             const data = await response.json();
             const latency = Date.now() - startTime;
-            
-            if (data.valid) {
+
+            const isValid = data.valid ?? data.phone_validation?.is_valid;
+            const isVoip = data.is_voip ?? data.phone_validation?.is_voip;
+            const lineType = data.type ?? data.phone_carrier?.line_type;
+            const carrierName = data.carrier ?? data.phone_carrier?.name;
+            const countryName = data.country?.name ?? data.phone_location?.country_name;
+            const countryCode = data.country?.code ?? data.phone_location?.country_code;
+            const intlFormat = data.format?.international ?? data.phone_format?.international ?? normalizedPhone;
+
+            if (isValid) {
               findings.push({
                 id: generateFindingId('abstract_phone', 'carrier_intel', normalizedPhone),
                 type: 'phone_intelligence',
-                title: `Carrier: ${data.carrier || 'Unknown'} (${data.type || 'unknown'})`,
-                description: `Phone validated as ${data.type || 'unknown'} line in ${data.country?.name || 'unknown country'}.`,
-                severity: data.type === 'voip' ? 'low' : 'info',
+                title: `Carrier: ${carrierName || 'Unknown'} (${lineType || 'unknown'})`,
+                description: `Phone validated as ${lineType || 'unknown'} line in ${countryName || 'unknown country'}.`,
+                severity: isVoip ? 'low' : 'info',
                 confidence: 0.85,
                 provider: 'AbstractAPI Phone',
                 providerCategory: 'Carrier Intelligence',
                 evidence: [
                   { key: 'Phone', value: normalizedPhone },
-                  { key: 'Valid', value: String(data.valid) },
-                  { key: 'Line Type', value: data.type || 'unknown' },
-                  { key: 'Carrier', value: data.carrier || 'Unknown' },
-                  { key: 'Country', value: data.country?.name || 'Unknown' },
-                  { key: 'Country Code', value: data.country?.code || 'Unknown' },
-                  { key: 'International Format', value: data.format?.international || normalizedPhone },
+                  { key: 'Valid', value: String(isValid) },
+                  { key: 'Line Type', value: lineType || 'unknown' },
+                  { key: 'Carrier', value: carrierName || 'Unknown' },
+                  { key: 'Country', value: countryName || 'Unknown' },
+                  { key: 'Country Code', value: countryCode || 'Unknown' },
+                  { key: 'International Format', value: intlFormat },
+                  { key: 'Is VoIP', value: String(!!isVoip) },
                 ],
                 impact: 'Phone carrier and type identified for verification',
                 remediation: [],
-                tags: ['phone', 'carrier', data.type || 'unknown'],
+                tags: ['phone', 'carrier', lineType || 'unknown'],
                 observedAt: new Date().toISOString(),
               });
             }
-            
-            providerResults['abstract_phone'] = { status: 'success', findingsCount: data.valid ? 1 : 0, latencyMs: latency };
+
+            providerResults['abstract_phone'] = {
+              status: 'success',
+              findingsCount: isValid ? 1 : 0,
+              latencyMs: latency,
+            };
           } else {
-            providerResults['abstract_phone'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime, message: `API returned ${response.status}` };
+            providerResults['abstract_phone'] = {
+              status: 'failed',
+              findingsCount: 0,
+              latencyMs: Date.now() - startTime,
+              message: `API returned ${response.status}`,
+            };
           }
         } catch (error) {
           console.error('[phone-intel] AbstractAPI error:', error);

@@ -33,7 +33,7 @@ serve(async (req) => {
     console.log(`[abstract-phone] Validating phone: ${phone}`);
 
     const response = await fetch(
-      `https://phonevalidation.abstractapi.com/v1/?api_key=${API_KEY}&phone=${encodeURIComponent(phone)}`,
+      `https://phoneintelligence.abstractapi.com/v1/?api_key=${API_KEY}&phone=${encodeURIComponent(phone)}`,
       {
         headers: {
           'User-Agent': 'FootprintIQ',
