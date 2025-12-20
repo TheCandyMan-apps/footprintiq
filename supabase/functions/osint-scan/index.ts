@@ -287,12 +287,28 @@ serve(async (req) => {
       diagnostics.providersInvoked.push('phone-intel:start');
       
       try {
-        // Get workspace ID for the scan
+        // Get workspace ID and plan for the scan
         const { data: scanRecord } = await supabase
           .from('scans')
           .select('workspace_id')
           .eq('id', scanData.scanId)
           .single();
+
+        // Fetch workspace plan for server-side enforcement
+        let userPlan = 'free';
+        if (scanRecord?.workspace_id) {
+          const { data: workspace } = await supabase
+            .from('workspaces')
+            .select('plan, subscription_tier')
+            .eq('id', scanRecord.workspace_id)
+            .single();
+          
+          if (workspace) {
+            // Use subscription_tier if available, otherwise fall back to plan
+            userPlan = workspace.subscription_tier || workspace.plan || 'free';
+            console.log(`[osint-scan] Workspace plan resolved: ${userPlan}`);
+          }
+        }
 
         const { data: phoneIntelData, error: phoneIntelError } = await supabase.functions.invoke(
           'phone-intel',
@@ -302,13 +318,23 @@ serve(async (req) => {
               phone: scanData.phone,
               workspaceId: scanRecord?.workspace_id,
               providers: scanData.phoneProviders,
+              userPlan, // Pass plan for server-side enforcement
             }
           }
         );
 
         if (!phoneIntelError && phoneIntelData?.success) {
-          diagnostics.providersInvoked.push(`phone-intel:success:${phoneIntelData.findingsCount || 0}`);
+          // Log provider-level statuses for diagnostics
+          if (phoneIntelData.providerResults) {
+            for (const [provider, result] of Object.entries(phoneIntelData.providerResults as Record<string, { status: string }>)) {
+              diagnostics.providersInvoked.push(`phone-intel:${provider}:${result.status}`);
+            }
+          }
+          
           console.log('[osint-scan] phone-intel completed with', phoneIntelData.findingsCount, 'findings');
+          if (phoneIntelData.enforcement) {
+            console.log('[osint-scan] phone-intel enforcement:', phoneIntelData.enforcement);
+          }
           
           // Phone findings are stored directly by phone-intel, but we can add a summary to dataSources
           if (phoneIntelData.findingsCount > 0) {
@@ -322,6 +348,7 @@ serve(async (req) => {
                 providers_used: scanData.phoneProviders,
                 findings_count: phoneIntelData.findingsCount,
                 provider_results: phoneIntelData.providerResults || {},
+                enforcement: phoneIntelData.enforcement || null,
               },
             });
           }
