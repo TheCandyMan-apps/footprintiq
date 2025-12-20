@@ -186,6 +186,10 @@ export function hasCapability(
   capability: keyof PlanCapabilities
 ): boolean {
   const capabilities = CAPABILITIES_BY_PLAN[plan];
+  if (!capabilities) {
+    console.warn(`[planCapabilities] Unknown plan tier: ${plan}, falling back to 'free'`);
+    return hasCapability('free', capability);
+  }
   const value = capabilities[capability];
   
   // For boolean capabilities, return the value directly
@@ -205,7 +209,12 @@ export function getCapabilityLimit(
   plan: PlanTier,
   capability: keyof PlanCapabilities
 ): number {
-  const value = CAPABILITIES_BY_PLAN[plan][capability];
+  const capabilities = CAPABILITIES_BY_PLAN[plan];
+  if (!capabilities) {
+    console.warn(`[planCapabilities] Unknown plan tier: ${plan}, falling back to 'free'`);
+    return getCapabilityLimit('free', capability);
+  }
+  const value = capabilities[capability];
   return typeof value === 'number' ? value : (value ? -1 : 0);
 }
 

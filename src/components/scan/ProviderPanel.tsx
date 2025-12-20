@@ -48,8 +48,7 @@ import {
   getCategoryLabel,
   getProviderTierLabel,
 } from '@/lib/providers/registry';
-import type { PlanTier } from '@/lib/billing/planCapabilities';
-import { CAPABILITIES_BY_PLAN } from '@/lib/billing/planCapabilities';
+import { normalizePlanTier, CAPABILITIES_BY_PLAN } from '@/lib/billing/planCapabilities';
 
 // Known configured API keys - these would ideally come from a secrets check
 // For now, we track which keys are typically configured
@@ -87,7 +86,7 @@ export function ProviderPanel({
   const { subscriptionTier } = useSubscription();
   const navigate = useNavigate();
 
-  const userPlan = (subscriptionTier || 'free') as PlanTier;
+  const userPlan = normalizePlanTier(subscriptionTier);
 
   // Get plan capabilities for provider limits
   const planCapabilities = CAPABILITIES_BY_PLAN[userPlan];
