@@ -14,6 +14,7 @@ import {
   TrendingUp,
   Eye,
   Globe,
+  GitBranch,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const navItems = [
   { label: "Cases", href: "/cases", icon: FileText },
   { label: "Watchlists", href: "/watchlists", icon: Eye },
   { label: "Dark Web Monitoring", href: "/dark-web-monitoring", icon: Globe },
+  { label: "Workflows", href: "/workflows", icon: GitBranch },
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
   { label: "Trends", href: "/trends", icon: TrendingUp },
   { label: "Teams", href: "/teams", icon: Users },
