@@ -116,7 +116,41 @@ serve(async (req) => {
       console.log('[ai-analysis] Username scan platforms:', { count: platforms.length, platforms });
 
       if (platforms.length === 0) {
-        throw new Error('No data to analyze. This username scan returned no profile findings.');
+        console.log('[ai-analysis] Username scan with no platforms found, returning fallback');
+        return new Response(
+          JSON.stringify({
+            analysis: `## No Profile Data Found
+
+This username scan completed but did not find any associated social media or platform profiles. This could indicate:
+
+### Possible Reasons
+- **Unique Username**: The username may be uncommon and not used on major platforms
+- **Privacy-Conscious User**: The target may intentionally limit their online presence
+- **New or Limited Identity**: The digital footprint may be minimal
+
+### Recommendations
+1. **Try Variations**: Search for common variations of the username (e.g., with numbers, underscores)
+2. **Cross-Reference**: Try scanning associated email addresses or phone numbers
+3. **Alternative Platforms**: The username may be active on niche platforms not covered by our scanners
+
+### Next Steps
+- Run an email or phone scan for additional data points
+- Check the breach database for any historical exposures
+- Consider running a fresh scan if the target is known to be active online`,
+            scanData: {
+              privacyScore: scan.privacy_score || 95,
+              totalSources: 0,
+              highRisk: 0,
+              mediumRisk: 0,
+              lowRisk: 0
+            },
+            noFindings: true
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
 
       analysisPrompt = `You are a digital privacy expert analyzing a USERNAME scan for: ${scan.username}
@@ -147,7 +181,39 @@ Format your response in clear sections with bullet points. Be specific and actio
       });
 
       if (findings?.length === 0) {
-        throw new Error('No data to analyze. This scan returned no findings.');
+        console.log('[ai-analysis] Breach/email scan with no findings, returning fallback');
+        return new Response(
+          JSON.stringify({
+            analysis: `## No Findings Detected
+
+Good news! This scan completed successfully and did not find any concerning data exposures.
+
+### What This Means
+- **No Known Breaches**: The target email/phone was not found in our breach databases
+- **Limited Exposure**: No significant data broker listings were detected
+- **Clean Status**: The digital identity appears to have minimal exposure
+
+### Recommendations
+1. **Stay Vigilant**: Continue monitoring for future breaches
+2. **Enable Alerts**: Set up monitoring to be notified of new exposures
+3. **Maintain Security**: Use strong, unique passwords and enable 2FA
+
+### Note
+This scan checks against current databases. New breaches are discovered regularly, so periodic re-scanning is recommended.`,
+            scanData: {
+              privacyScore: scan.privacy_score || 90,
+              totalSources: 0,
+              highRisk: 0,
+              mediumRisk: 0,
+              lowRisk: 0
+            },
+            noFindings: true
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
       }
 
       analysisPrompt = `You are a privacy and data security expert analyzing a BREACH/EMAIL scan.

@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Shield, AlertTriangle, CheckCircle2, XCircle, Loader2, UserCheck, Lock } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle2, XCircle, Loader2, UserCheck, Lock, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -13,14 +13,19 @@ import { HelpIcon } from '@/components/ui/help-icon';
 
 interface CatfishDetectionProps {
   scanId: string;
+  scanType?: string;
+  hasUsername?: boolean;
 }
 
 interface AnalysisResult {
+  success?: boolean;
+  notApplicable?: boolean;
+  message?: string;
   analysis: string;
   scores: {
-    identityConsistency: number;
-    authenticityScore: number;
-    catfishRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    identityConsistency: number | null;
+    authenticityScore: number | null;
+    catfishRisk: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | 'N/A';
   };
   correlationData: any;
   scanData: {
@@ -31,19 +36,22 @@ interface AnalysisResult {
   };
 }
 
-export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
+export const CatfishDetection = ({ scanId, scanType, hasUsername }: CatfishDetectionProps) => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const { toast } = useToast();
   const { isPremium } = useSubscription();
 
-  // Auto-run detection if premium and not already run
+  // Auto-run detection only for username scans (when hasUsername is true or scanType indicates username)
+  const isUsernameBasedScan = hasUsername || scanType === 'username' || scanType === 'social_media';
+
   useEffect(() => {
-    if (isPremium && scanId && !result && !loading) {
+    // Only auto-run for premium users with username-based scans
+    if (isPremium && scanId && !result && !loading && isUsernameBasedScan) {
       runDetection();
     }
-  }, [scanId, isPremium]);
+  }, [scanId, isPremium, isUsernameBasedScan]);
 
   const runDetection = async () => {
     if (!isPremium) {
@@ -60,10 +68,14 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
       if (error) throw error;
 
       setResult(data);
-      toast({
-        title: "Analysis Complete",
-        description: "Catfish detection and identity correlation completed",
-      });
+      
+      // Only show success toast if analysis actually ran (not for notApplicable)
+      if (!data.notApplicable) {
+        toast({
+          title: "Analysis Complete",
+          description: "Catfish detection and identity correlation completed",
+        });
+      }
     } catch (error) {
       console.error('Error running catfish detection:', error);
       toast({
@@ -153,6 +165,40 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
     ));
   };
 
+  // Render "Not Applicable" state for non-username scans
+  if (result?.notApplicable) {
+    return (
+      <Card className="border-muted">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Info className="h-6 w-6 text-muted-foreground" />
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                Catfish Detection
+                <Badge variant="secondary">Not Applicable</Badge>
+              </CardTitle>
+              <CardDescription>
+                This feature requires username scan data
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>Feature Not Available for This Scan Type</AlertTitle>
+            <AlertDescription className="mt-2">
+              {result.message || 'Catfish detection requires a username scan with social media presence data.'}
+              <p className="mt-2 text-sm">
+                For email or phone scans, use the <strong>AI Analysis</strong> feature to get breach and exposure insights.
+              </p>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="border-primary/20">
       <CardHeader>
@@ -180,6 +226,15 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
                   Upgrade to Pro to unlock catfish detection and identity verification
                 </p>
               </div>
+            )}
+            {!isUsernameBasedScan && isPremium && (
+              <Alert className="mb-4 text-left">
+                <Info className="h-4 w-4" />
+                <AlertTitle>Limited Applicability</AlertTitle>
+                <AlertDescription>
+                  This scan may not have username data. Catfish detection works best with username-based scans that include social media profiles.
+                </AlertDescription>
+              </Alert>
             )}
             <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
             <p className="text-muted-foreground mb-4">
@@ -223,6 +278,7 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
                     {result.scores.catfishRisk === 'MEDIUM' && 'Some inconsistencies detected, exercise caution'}
                     {result.scores.catfishRisk === 'HIGH' && 'Multiple red flags detected, high probability of fake identity'}
                     {result.scores.catfishRisk === 'CRITICAL' && 'Severe authenticity concerns, likely catfish profile'}
+                    {result.scores.catfishRisk === 'N/A' && 'Unable to assess risk - insufficient data'}
                   </AlertDescription>
                 </div>
               </div>
@@ -235,7 +291,9 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
                   <CardTitle className="text-sm font-medium">Identity Consistency</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{result.scores.identityConsistency}%</div>
+                  <div className="text-3xl font-bold">
+                    {result.scores.identityConsistency === null ? 'N/A' : `${result.scores.identityConsistency}%`}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Cross-platform verification
                   </p>
@@ -247,7 +305,9 @@ export const CatfishDetection = ({ scanId }: CatfishDetectionProps) => {
                   <CardTitle className="text-sm font-medium">Authenticity Score</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">{result.scores.authenticityScore}%</div>
+                  <div className="text-3xl font-bold">
+                    {result.scores.authenticityScore === null ? 'N/A' : `${result.scores.authenticityScore}%`}
+                  </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Overall confidence level
                   </p>
