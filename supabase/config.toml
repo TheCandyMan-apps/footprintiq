@@ -125,3 +125,6 @@ verify_jwt = false
 
 [functions.darkweb-weekly-summary]
 verify_jwt = false
+
+[functions.darkweb-health]
+verify_jwt = false
