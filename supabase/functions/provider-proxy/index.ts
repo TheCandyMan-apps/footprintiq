@@ -134,6 +134,9 @@ serve(async (req) => {
       case 'ipqs_email':
         result = await callIPQSEmail(target);
         break;
+      case 'perplexity_osint':
+        result = await callPerplexityOSINT(target, type, options);
+        break;
       case 'abuseipdb':
         result = await callAbuseIPDB(target);
         break;
@@ -1627,4 +1630,169 @@ async function callVirusTotal(target: string, type: 'domain' | 'ip' | 'url' | 'f
 
   if (!response.ok) throw new Error(`VirusTotal API error: ${response.status}`);
   return await response.json();
+}
+
+// =================== Perplexity OSINT Provider ===================
+
+async function callPerplexityOSINT(target: string, type: string, options: any = {}): Promise<{ findings: any[], citations?: string[] }> {
+  const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
+  const now = new Date().toISOString();
+  
+  if (!PERPLEXITY_API_KEY) {
+    console.log('[perplexity_osint] API key not configured');
+    return {
+      findings: [{
+        provider: 'perplexity_osint',
+        kind: 'provider.unconfigured',
+        severity: 'info' as const,
+        confidence: 1.0,
+        observedAt: now,
+        evidence: [
+          { key: 'message', value: 'Perplexity API key not configured' },
+          { key: 'config_required', value: 'PERPLEXITY_API_KEY' }
+        ],
+        meta: { unconfigured: true }
+      }]
+    };
+  }
+
+  // Build targeted OSINT query based on type
+  const queryBuilders: Record<string, string> = {
+    username: `Find all publicly available information about the username "${target}". Look for social media profiles, forum accounts, gaming profiles, and any mentions on websites. Focus on verified accounts and significant online presence. Report each finding with the source URL.`,
+    email: `Search for any public exposure of the email address "${target}". Look for data breaches, paste sites, public registrations, social media accounts linked to this email, and any security incidents. Report findings with source URLs.`,
+    phone: `Find any public information associated with the phone number "${target}". Look for spam reports, scam reports, business listings, social media profiles, and any public registrations. Report each finding with the source URL.`,
+  };
+
+  const query = queryBuilders[type] || `Search for all public information about "${target}". Report findings with source URLs.`;
+
+  console.log(`[perplexity_osint] Searching for ${type}: ${target}`);
+
+  try {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'sonar',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an OSINT analyst searching for publicly available information. Be thorough but only report verified, publicly accessible data. Focus on actionable intelligence. Never fabricate information - if you cannot find data, say so.'
+          },
+          { role: 'user', content: query }
+        ],
+        search_recency_filter: options.recencyFilter || 'month',
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[perplexity_osint] API error:', response.status, errorText);
+      return {
+        findings: [{
+          provider: 'perplexity_osint',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: `Perplexity API error: ${response.status}` },
+            { key: 'target', value: target }
+          ],
+          meta: { error: errorText.slice(0, 500) }
+        }]
+      };
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    const citations = data.citations || [];
+
+    console.log(`[perplexity_osint] Response received with ${citations.length} citations`);
+
+    // Parse the response into structured findings
+    const findings = normalizePerplexityFindings(content, citations, target, type, now);
+
+    return {
+      findings: findings.length > 0 ? findings : [{
+        provider: 'perplexity_osint',
+        kind: 'web_intel.no_results',
+        severity: 'info' as const,
+        confidence: 0.9,
+        observedAt: now,
+        evidence: [
+          { key: 'message', value: 'No significant public information found' },
+          { key: 'target', value: target },
+          { key: 'type', value: type }
+        ],
+        meta: { rawContent: content.slice(0, 1000) }
+      }],
+      citations
+    };
+
+  } catch (error: any) {
+    console.error('[perplexity_osint] Error:', error);
+    return {
+      findings: [{
+        provider: 'perplexity_osint',
+        kind: 'provider_error',
+        severity: 'warn' as const,
+        confidence: 0.5,
+        observedAt: now,
+        evidence: [
+          { key: 'error', value: error.message || 'Unknown error' },
+          { key: 'target', value: target }
+        ],
+        meta: { error: String(error) }
+      }]
+    };
+  }
+}
+
+function normalizePerplexityFindings(content: string, citations: string[], target: string, type: string, observedAt: string): any[] {
+  const findings: any[] = [];
+
+  // Add a main web intelligence finding with the full analysis
+  if (content && content.length > 50) {
+    findings.push({
+      provider: 'perplexity_osint',
+      kind: 'web_intel.analysis',
+      severity: 'medium' as const,
+      confidence: 0.8,
+      observedAt,
+      evidence: [
+        { key: 'target', value: target },
+        { key: 'type', value: type },
+        { key: 'summary', value: content.slice(0, 500) }
+      ],
+      meta: {
+        fullContent: content,
+        citationCount: citations.length,
+        sources: citations.slice(0, 10)
+      }
+    });
+  }
+
+  // Create individual findings for each citation
+  citations.slice(0, 10).forEach((url, index) => {
+    const domain = new URL(url).hostname.replace('www.', '');
+    findings.push({
+      provider: 'perplexity_osint',
+      kind: 'web_intel.mention',
+      severity: 'info' as const,
+      confidence: 0.7,
+      observedAt,
+      evidence: [
+        { key: 'source', value: domain },
+        { key: 'url', value: url },
+        { key: 'target', value: target },
+        { key: 'citation_index', value: String(index + 1) }
+      ],
+      meta: { url, domain }
+    });
+  });
+
+  return findings;
 }

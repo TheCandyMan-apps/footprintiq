@@ -668,6 +668,7 @@ serve(async (req) => {
       ipqs_email: ['email'],
       ipqs_phone: ['phone'],
       abstract_phone: ['phone'],
+      perplexity_osint: ['email', 'username', 'phone'],
       'apify-social': ['username'],
       'apify-osint': ['email', 'username'],
       'apify-darkweb': ['email', 'username'],

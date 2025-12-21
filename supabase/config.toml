@@ -134,3 +134,6 @@ verify_jwt = true
 
 [functions.abstract-phone-health]
 verify_jwt = false
+
+[functions.perplexity-research]
+verify_jwt = true

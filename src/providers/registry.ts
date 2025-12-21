@@ -196,6 +196,16 @@ export const REGISTRY: ProviderMeta[] = [
     unitCost: 0.003,
     description: "Phone fraud scoring, carrier intel, and risk detection",
   },
+  
+  // Perplexity AI (real-time web intelligence)
+  {
+    id: "perplexity_osint",
+    title: "Perplexity OSINT",
+    supports: ["email", "username", "phone"],
+    ttlMs: 24 * 3600e3,
+    unitCost: 0.003,
+    description: "Real-time web intelligence with live citations",
+  },
 ];
 
 export function getProviderMeta(providerId: string): ProviderMeta | undefined {

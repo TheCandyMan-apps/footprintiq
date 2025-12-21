@@ -13,9 +13,11 @@ const corsHeaders = {
 const EnrichRequestSchema = z.object({
   findingId: z.string().uuid(),
   workspaceId: z.string().uuid(),
+  usePerplexity: z.boolean().optional().default(true), // Use Perplexity for live web context
 });
 
-const ENRICHMENT_COST = 5;
+const ENRICHMENT_COST_BASE = 5;
+const ENRICHMENT_COST_PERPLEXITY = 2; // Extra cost for Perplexity web search
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -56,7 +58,8 @@ serve(async (req) => {
       });
     }
 
-    const { findingId, workspaceId } = validation.data;
+    const { findingId, workspaceId, usePerplexity } = validation.data;
+    const ENRICHMENT_COST = usePerplexity ? ENRICHMENT_COST_BASE + ENRICHMENT_COST_PERPLEXITY : ENRICHMENT_COST_BASE;
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -93,7 +96,52 @@ serve(async (req) => {
       });
     }
 
-    // Call Lovable AI for enrichment
+    // ========== Perplexity Live Web Context (if enabled) ==========
+    let perplexityContext = '';
+    let perplexityCitations: string[] = [];
+    
+    if (usePerplexity) {
+      const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
+      
+      if (PERPLEXITY_API_KEY) {
+        console.log('[enrich-finding] Fetching live web context from Perplexity');
+        
+        try {
+          const searchQuery = `Find recent information about: ${finding.kind} from ${finding.provider}. 
+            Evidence: ${JSON.stringify(finding.evidence || {}).slice(0, 200)}. 
+            Search for related security incidents, remediation guides, and current threat intelligence.`;
+          
+          const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'sonar',
+              messages: [
+                { role: 'system', content: 'You are a security researcher. Provide current, relevant context for security findings with source URLs.' },
+                { role: 'user', content: searchQuery }
+              ],
+              search_recency_filter: 'month',
+            }),
+          });
+
+          if (perplexityResponse.ok) {
+            const perplexityData = await perplexityResponse.json();
+            perplexityContext = perplexityData.choices?.[0]?.message?.content || '';
+            perplexityCitations = perplexityData.citations || [];
+            console.log(`[enrich-finding] Got Perplexity context with ${perplexityCitations.length} citations`);
+          } else {
+            console.warn('[enrich-finding] Perplexity API error:', perplexityResponse.status);
+          }
+        } catch (perplexityError) {
+          console.error('[enrich-finding] Perplexity error:', perplexityError);
+        }
+      }
+    }
+
+    // Call Lovable AI for enrichment (now with Perplexity context)
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
 
@@ -104,6 +152,8 @@ Analyze the finding and provide:
 3. Detailed remediation steps
 4. Potential attack vectors or exploitation scenarios
 
+${perplexityContext ? `\n## Current Web Intelligence (from live search):\n${perplexityContext}` : ''}
+
 Be specific, actionable, and security-focused.`;
 
     const userPrompt = `Enrich this finding:
@@ -113,6 +163,7 @@ Severity: ${finding.severity}
 Confidence: ${finding.confidence}
 Evidence: ${JSON.stringify(finding.evidence || {})}
 Additional Data: ${JSON.stringify(finding.meta || {})}
+${perplexityCitations.length > 0 ? `\nLive Sources: ${perplexityCitations.slice(0, 5).join(', ')}` : ''}
 
 Provide a structured analysis with context, links, and remediation steps.`;
 
@@ -222,10 +273,16 @@ Provide a structured analysis with context, links, and remediation steps.`;
         workspace_id: workspaceId,
         enriched_by: userId,
         context: enrichment.context,
-        links: enrichment.links,
+        links: [...(enrichment.links || []), ...perplexityCitations.slice(0, 5).map(url => ({
+          title: new URL(url).hostname.replace('www.', ''),
+          url,
+          description: 'Live web source'
+        }))],
         remediation_steps: enrichment.remediation_steps,
         attack_vectors: enrichment.attack_vectors,
-        credits_spent: ENRICHMENT_COST
+        credits_spent: ENRICHMENT_COST,
+        perplexity_context: perplexityContext || null,
+        perplexity_citations: perplexityCitations.length > 0 ? perplexityCitations : null
       });
 
     if (insertError) {
@@ -239,6 +296,10 @@ Provide a structured analysis with context, links, and remediation steps.`;
 
     return new Response(JSON.stringify({
       enrichment,
+      perplexity: {
+        context: perplexityContext || null,
+        citations: perplexityCitations
+      },
       credits_spent: ENRICHMENT_COST,
       new_balance: newBalance || 0
     }), {
