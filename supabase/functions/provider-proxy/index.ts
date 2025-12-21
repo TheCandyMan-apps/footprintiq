@@ -1295,26 +1295,123 @@ async function callWHOISXML(domain: string) {
 
 async function callAbstractPhone(phone: string) {
   const API_KEY = Deno.env.get('ABSTRACTAPI_PHONE_VALIDATION_KEY');
+  const now = new Date().toISOString();
+  
   if (!API_KEY) {
     console.log('[callAbstractPhone] ABSTRACTAPI_PHONE_VALIDATION_KEY not configured');
-    return { findings: [] };
+    return { 
+      findings: [{
+        provider: 'abstract_phone',
+        kind: 'provider.unconfigured',
+        severity: 'info' as const,
+        confidence: 1.0,
+        observedAt: now,
+        evidence: [
+          { key: 'message', value: 'Abstract Phone API key not configured' },
+          { key: 'config_required', value: 'ABSTRACTAPI_PHONE_VALIDATION_KEY' }
+        ],
+        meta: { unconfigured: true }
+      }]
+    };
   }
 
-  console.log(`[callAbstractPhone] Validating phone: ${phone}`);
-  
-  const response = await fetch(
-    `https://phoneintelligence.abstractapi.com/v1/?api_key=${API_KEY}&phone=${encodeURIComponent(phone)}`,
-    { headers: { 'User-Agent': 'FootprintIQ-Server' } }
-  );
+  try {
+    // Normalize phone to E.164 format if needed
+    let normalizedPhone = phone.replace(/[\s\-\(\)\.]/g, '');
+    
+    // If starts with 0 and looks like UK number (10-11 digits after 0), add +44
+    if (normalizedPhone.startsWith('0') && normalizedPhone.length >= 10 && normalizedPhone.length <= 11) {
+      normalizedPhone = '+44' + normalizedPhone.substring(1);
+      console.log(`[callAbstractPhone] Normalized UK phone: ${phone} -> ${normalizedPhone}`);
+    }
+    // If no country code prefix, try to add one
+    else if (!normalizedPhone.startsWith('+') && !normalizedPhone.startsWith('00')) {
+      // Default to +44 for UK if 10-11 digits
+      if (normalizedPhone.length >= 10 && normalizedPhone.length <= 11) {
+        normalizedPhone = '+44' + normalizedPhone;
+        console.log(`[callAbstractPhone] Added UK prefix: ${phone} -> ${normalizedPhone}`);
+      }
+    }
+    
+    console.log(`[callAbstractPhone] Validating phone: ${normalizedPhone}`);
+    
+    const response = await fetch(
+      `https://phonevalidation.abstractapi.com/v1/?api_key=${API_KEY}&phone=${encodeURIComponent(normalizedPhone)}`,
+      { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+    );
 
-  if (!response.ok) {
-    console.error(`[callAbstractPhone] API error: ${response.status}`);
-    throw new Error(`Abstract Phone API error: ${response.status}`);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[callAbstractPhone] API error: ${response.status} - ${errorText}`);
+      return { 
+        findings: [{
+          provider: 'abstract_phone',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: `Abstract Phone API error: ${response.status}` },
+            { key: 'phone', value: normalizedPhone }
+          ],
+          meta: { error: errorText.slice(0, 200), status: response.status }
+        }]
+      };
+    }
+    
+    const data = await response.json();
+    console.log(`[callAbstractPhone] Response:`, JSON.stringify(data).substring(0, 300));
+    
+    // Convert raw API response to UFM findings format
+    const findings: any[] = [];
+    
+    if (data.valid !== undefined) {
+      findings.push({
+        provider: 'abstract_phone',
+        kind: 'phone.validation',
+        severity: data.valid ? 'info' as const : 'low' as const,
+        confidence: 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'Phone Number', value: data.format?.international || normalizedPhone },
+          { key: 'Valid', value: String(data.valid) },
+          { key: 'Type', value: data.type || 'Unknown' },
+          { key: 'Carrier', value: data.carrier || 'Unknown' },
+          { key: 'Country', value: data.country?.name || 'Unknown' },
+          { key: 'Country Code', value: data.country?.code || 'Unknown' },
+          { key: 'Location', value: data.location || 'Unknown' },
+        ].filter(e => e.value && e.value !== 'Unknown'),
+        meta: {
+          valid: data.valid,
+          type: data.type,
+          carrier: data.carrier,
+          country: data.country,
+          location: data.location,
+          format: data.format
+        }
+      });
+    }
+    
+    console.log(`[callAbstractPhone] Generated ${findings.length} findings`);
+    return { findings };
+    
+  } catch (error: any) {
+    console.error('[callAbstractPhone] Exception:', error);
+    return { 
+      findings: [{
+        provider: 'abstract_phone',
+        kind: 'provider_error',
+        severity: 'warn' as const,
+        confidence: 0.5,
+        observedAt: now,
+        evidence: [
+          { key: 'error', value: error.message || 'Unknown error' },
+          { key: 'phone', value: phone }
+        ],
+        meta: { error: String(error) }
+      }]
+    };
   }
-  
-  const data = await response.json();
-  console.log(`[callAbstractPhone] Response:`, JSON.stringify(data).substring(0, 200));
-  return data;
 }
 
 async function callAbstractIPGeo(ip: string) {
@@ -1504,8 +1601,15 @@ async function callIPQSPhone(phone: string) {
   }
 
   try {
-    // Clean phone number - remove spaces, dashes, parentheses
-    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    // Clean phone number - remove spaces, dashes, parentheses, dots
+    let cleanPhone = phone.replace(/[\s\-\(\)\.]/g, '');
+    
+    // Normalize to E.164 format for better API compatibility
+    if (cleanPhone.startsWith('0') && cleanPhone.length >= 10 && cleanPhone.length <= 11) {
+      cleanPhone = '44' + cleanPhone.substring(1); // UK format without +
+      console.log(`[IPQS Phone] Normalized UK phone: ${phone} -> ${cleanPhone}`);
+    }
+    
     console.log(`[IPQS Phone] Validating phone: ${cleanPhone}`);
     
     const response = await fetch(
@@ -1514,12 +1618,55 @@ async function callIPQSPhone(phone: string) {
     );
 
     if (!response.ok) {
-      console.error(`[IPQS Phone] API error: ${response.status}`);
-      return { findings: [] };
+      const errorText = await response.text();
+      console.error(`[IPQS Phone] API error: ${response.status} - ${errorText}`);
+      
+      // Return informative finding instead of empty
+      const now = new Date().toISOString();
+      return { 
+        findings: [{
+          provider: 'ipqs_phone',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: `IPQS Phone API error: ${response.status}` },
+            { key: 'phone', value: cleanPhone },
+            { key: 'hint', value: response.status === 401 || response.status === 403 
+              ? 'API key may not have phone validation permissions' 
+              : 'API request failed' }
+          ],
+          meta: { error: errorText.slice(0, 200), status: response.status }
+        }]
+      };
     }
 
     const data = await response.json();
     console.log(`[IPQS Phone] Response:`, JSON.stringify(data).substring(0, 500));
+    
+    // Check for API-level error responses
+    if (data.success === false || data.message) {
+      console.error(`[IPQS Phone] API returned error:`, data.message);
+      const now = new Date().toISOString();
+      return { 
+        findings: [{
+          provider: 'ipqs_phone',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: data.message || 'Unknown API error' },
+            { key: 'phone', value: cleanPhone },
+            { key: 'hint', value: data.message?.includes('unauthorized') || data.message?.includes('key')
+              ? 'API key may not have phone validation permissions - check IPQS subscription'
+              : 'Check API configuration' }
+          ],
+          meta: { apiError: data.message, request_id: data.request_id }
+        }]
+      };
+    }
     
     const now = new Date().toISOString();
     const findings: any[] = [];
