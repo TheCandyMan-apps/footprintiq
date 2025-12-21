@@ -87,7 +87,27 @@ export async function cacheDelete(key: string): Promise<boolean> {
 }
 
 /**
+ * Check if a result is empty (empty array or object with empty findings)
+ */
+function isEmptyResult(result: unknown): boolean {
+  if (result === null || result === undefined) {
+    return true;
+  }
+  if (Array.isArray(result) && result.length === 0) {
+    return true;
+  }
+  if (typeof result === 'object' && result !== null) {
+    const obj = result as Record<string, unknown>;
+    if ('findings' in obj && Array.isArray(obj.findings) && obj.findings.length === 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Wrap a function call with caching
+ * NOTE: Empty results (empty arrays, empty findings) are NOT cached to prevent cache poisoning
  */
 export async function withCache<T>(
   key: string,
@@ -97,8 +117,15 @@ export async function withCache<T>(
   // Try cache first
   const cached = await cacheGet<T>(key);
   if (cached !== null) {
-    console.log(`[cache] HIT: ${key}`);
-    return cached;
+    // Validate cached result - don't return poisoned empty cache entries
+    if (isEmptyResult(cached)) {
+      console.warn(`[cache] POISONED (empty result in cache, ignoring): ${key}`);
+      // Delete the poisoned entry
+      await cacheDelete(key);
+    } else {
+      console.log(`[cache] HIT: ${key}`);
+      return cached;
+    }
   }
 
   console.log(`[cache] MISS: ${key}`);
@@ -106,7 +133,14 @@ export async function withCache<T>(
   // Execute function
   const result = await fn();
   
+  // Don't cache empty results to prevent cache poisoning
+  if (isEmptyResult(result)) {
+    console.warn(`[cache] SKIP (not caching empty result): ${key}`);
+    return result;
+  }
+  
   // Store in cache
+  console.log(`[cache] SET: ${key}`);
   await cacheSet(key, result, options);
   
   return result;
