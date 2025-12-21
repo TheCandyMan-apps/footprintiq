@@ -73,11 +73,21 @@ function sanitizeObject(obj: any, depth = 0): any {
  * - Removes error stack traces
  */
 export function sanitizeProviderData(data: any): any {
+  // Guard against null/undefined to prevent crashes
+  if (data === null || data === undefined) {
+    return data;
+  }
+  
   // First, sanitize sensitive data
   const sanitized = sanitizeObject(data);
   
   // Then check size and truncate if needed
   const str = JSON.stringify(sanitized);
+  
+  // Guard against stringify returning undefined
+  if (!str) {
+    return sanitized;
+  }
   
   if (str.length > MAX_BODY_LENGTH) {
     return {
