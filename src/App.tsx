@@ -183,6 +183,7 @@ const UsernameResultsPage = lazy(() => import("./pages/scan/UsernameResultsPage"
 const OpsConsole = lazy(() => import("./pages/admin/OpsConsole"));
 const AuditViewer = lazy(() => import("./pages/admin/AuditViewer"));
 const Referrals = lazy(() => import("./pages/Referrals"));
+const Research = lazy(() => import("./pages/Research"));
 
 
 const queryClient = new QueryClient({
@@ -398,6 +399,7 @@ function RouterContent() {
           <Route path="/admin/users" element={<Admin />} />
           <Route path="/admin/roles" element={<Admin />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/research" element={<Research />} />
         
           {/* AI Fusion & Predictive Routes */}
           <Route path="/persona-resolver" element={<PersonaResolver />} />

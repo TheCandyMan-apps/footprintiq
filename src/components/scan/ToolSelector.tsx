@@ -17,6 +17,21 @@ interface Tool {
 
 const TOOLS: Tool[] = [
   {
+    id: 'perplexity_osint',
+    name: 'Perplexity Web Intel',
+    description: 'Real-time AI-powered web intelligence with live search across news, social media, and forums',
+    icon: Globe,
+    tier: 'pro',
+    features: [
+      'Live web search',
+      'Real-time intelligence',
+      'Source citations',
+      'Multi-platform coverage',
+      'News & social media',
+    ],
+    scanTypes: ['username', 'email', 'phone'],
+  },
+  {
     id: 'maigret',
     name: 'Maigret',
     description: 'Advanced username reconnaissance across 500+ platforms including social media, forums, and gaming sites',
