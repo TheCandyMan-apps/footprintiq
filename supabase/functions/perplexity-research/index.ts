@@ -80,9 +80,45 @@ serve(async (req) => {
 
     console.log(`[perplexity-research] Starting ${depth} research on ${type}: ${target}`);
 
-    // Build research queries based on depth
-    const queries = buildResearchQueries(target, type, depth);
+    // Fetch existing HIBP breach data if researching an email
+    let knownBreaches: string[] = [];
+    let hibpFindings: any[] = [];
+    
+    if (type === 'email') {
+      // Look for existing scan findings for this email
+      const { data: existingScans } = await supabaseService
+        .from('scans')
+        .select('id, findings')
+        .eq('target', target)
+        .eq('scan_type', 'email')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (existingScans?.[0]?.findings) {
+        const findings = existingScans[0].findings as any[];
+        hibpFindings = findings.filter((f: any) => 
+          f.source === 'hibp' || 
+          f.provider === 'hibp' ||
+          f.title?.toLowerCase().includes('breach') ||
+          f.category === 'breach'
+        );
+        knownBreaches = hibpFindings.map((f: any) => f.title || f.name).filter(Boolean);
+        console.log(`[perplexity-research] Found ${knownBreaches.length} known breaches from HIBP`);
+      }
+    }
+
+    // Build research queries based on depth and known breaches
+    const queries = buildResearchQueries(target, type, depth, knownBreaches);
     const results: any[] = [];
+
+    const systemPrompt = `You are an expert OSINT researcher specializing in digital footprint analysis. Your role is to:
+1. Provide thorough, factual analysis based ONLY on information you can verify from sources
+2. Always include source URLs for every claim you make
+3. For email/username research, explicitly check breach databases like haveibeenpwned.com
+4. Structure your findings clearly with sections for: Data Breaches, Social Media, Paste Sites, Public Records
+5. If you cannot find information, say so clearly - never fabricate or assume
+6. Provide actionable remediation steps when security issues are found
+7. Include dates and severity levels where applicable`;
 
     for (const query of queries) {
       try {
@@ -95,10 +131,15 @@ serve(async (req) => {
           body: JSON.stringify({
             model: depth === 'deep' ? 'sonar-pro' : 'sonar',
             messages: [
-              { role: 'system', content: 'You are an OSINT researcher. Provide thorough, factual analysis with source URLs. Never fabricate information.' },
+              { role: 'system', content: systemPrompt },
               { role: 'user', content: query }
             ],
-            search_recency_filter: 'month',
+            search_recency_filter: depth === 'deep' ? 'year' : 'month',
+            search_domain_filter: type === 'email' ? [
+              'haveibeenpwned.com',
+              'breachdirectory.org',
+              'dehashed.com'
+            ] : undefined,
           }),
         });
 
@@ -107,7 +148,8 @@ serve(async (req) => {
           results.push({
             query,
             content: data.choices?.[0]?.message?.content || '',
-            citations: data.citations || []
+            citations: data.citations || [],
+            source: 'perplexity'
           });
         }
       } catch (err) {
@@ -131,7 +173,18 @@ serve(async (req) => {
       depth,
       results,
       citations: allCitations,
-      credits_spent: cost
+      credits_spent: cost,
+      // Include HIBP data so UI can display both sources
+      known_breaches: {
+        count: hibpFindings.length,
+        breaches: hibpFindings.slice(0, 10).map((f: any) => ({
+          name: f.title || f.name,
+          severity: f.severity,
+          date: f.breach_date || f.date,
+          dataTypes: f.data_types || f.compromised_data
+        })),
+        source: 'hibp'
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -145,34 +198,94 @@ serve(async (req) => {
   }
 });
 
-function buildResearchQueries(target: string, type: string, depth: string): string[] {
-  const baseQueries: Record<string, string[]> = {
-    username: [
-      `Find all social media profiles and online accounts for username "${target}". Include URLs.`,
-    ],
-    email: [
-      `Search for any public exposure or breaches involving email "${target}". Include source URLs.`,
-    ],
-    phone: [
-      `Find public information about phone number "${target}". Look for spam reports, business listings, social profiles.`,
-    ],
-    domain: [
-      `Research the domain "${target}". Find company info, security incidents, and related infrastructure.`,
-    ],
-    entity: [
-      `Research "${target}". Find background information, news, and public records.`,
-    ],
-  };
+function buildResearchQueries(target: string, type: string, depth: string, knownBreaches?: string[]): string[] {
+  const queries: string[] = [];
+  
+  // Add known breach context if available
+  const breachContext = knownBreaches?.length 
+    ? ` Known breaches include: ${knownBreaches.slice(0, 5).join(', ')}.`
+    : '';
 
-  const queries = baseQueries[type] || [`Research "${target}"`];
-
-  if (depth === 'standard' || depth === 'deep') {
-    queries.push(`Find recent news and security incidents related to "${target}".`);
-  }
-
-  if (depth === 'deep') {
-    queries.push(`Search for "${target}" in breach databases, paste sites, and dark web mentions.`);
-    queries.push(`Find technical infrastructure and related entities for "${target}".`);
+  if (type === 'email') {
+    // Primary OSINT-focused queries for email
+    queries.push(
+      `Search haveibeenpwned.com and other breach databases for email "${target}". List any data breaches this email appears in with dates and affected data types.${breachContext}`
+    );
+    
+    if (depth === 'standard' || depth === 'deep') {
+      queries.push(
+        `Search for "${target}" on pastebin.com, ghostbin.com, and paste sites. Look for any public exposure, leaked credentials, or mentions. Include source URLs.`
+      );
+      queries.push(
+        `Find social media profiles, forum accounts, and online registrations linked to email "${target}". Include platform names and URLs.`
+      );
+    }
+    
+    if (depth === 'deep') {
+      queries.push(
+        `Search for recent data breach news mentioning "${target}" or related breaches. Look for security incidents, leak announcements, and exposure reports.`
+      );
+      queries.push(
+        `Find any data broker listings, people search sites, or public records containing "${target}". Include removal options if available.`
+      );
+    }
+  } else if (type === 'username') {
+    queries.push(
+      `Find all social media profiles for username "${target}" across platforms like Twitter, Instagram, TikTok, Reddit, GitHub, LinkedIn. Include profile URLs and creation dates if visible.`
+    );
+    
+    if (depth === 'standard' || depth === 'deep') {
+      queries.push(
+        `Search for "${target}" in breach databases, paste sites, and public data dumps. Look for any password leaks or credential exposure.`
+      );
+      queries.push(
+        `Find gaming profiles, forum accounts, and community memberships for username "${target}". Include platform names and activity level.`
+      );
+    }
+    
+    if (depth === 'deep') {
+      queries.push(
+        `Research the history and activity patterns of username "${target}". Look for archived posts, deleted content, and cross-platform connections.`
+      );
+    }
+  } else if (type === 'phone') {
+    queries.push(
+      `Search for phone number "${target}" in spam reports, caller ID databases, and public directories. Include carrier info if available.`
+    );
+    
+    if (depth === 'standard' || depth === 'deep') {
+      queries.push(
+        `Find business listings, social media profiles, or online accounts linked to phone "${target}".`
+      );
+    }
+    
+    if (depth === 'deep') {
+      queries.push(
+        `Search for "${target}" in data breach databases and leak compilations. Look for any exposed personal information.`
+      );
+    }
+  } else if (type === 'domain') {
+    queries.push(
+      `Research domain "${target}". Find WHOIS history, company info, related domains, and infrastructure details.`
+    );
+    
+    if (depth === 'standard' || depth === 'deep') {
+      queries.push(
+        `Search for security incidents, data breaches, or vulnerabilities affecting "${target}". Include CVEs and security advisories.`
+      );
+    }
+    
+    if (depth === 'deep') {
+      queries.push(
+        `Find subdomains, email patterns, and employee information for "${target}". Look for exposed assets and misconfigurations.`
+      );
+    }
+  } else {
+    queries.push(`Research "${target}". Find background information, news, public records, and online presence.`);
+    
+    if (depth === 'deep') {
+      queries.push(`Search for "${target}" in breach databases, court records, and business registrations.`);
+    }
   }
 
   return queries;
