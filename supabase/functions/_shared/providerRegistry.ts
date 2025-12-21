@@ -45,4 +45,7 @@ export const IMPLEMENTED_PROVIDERS = new Set([
   'phone_osint',         // Public OSINT mentions
   'truecaller',          // Caller ID hints
   'phone_reputation',    // Spam/scam reputation
+  
+  // Perplexity AI (real-time web intelligence)
+  'perplexity_osint',    // Live web search with citations
 ]);

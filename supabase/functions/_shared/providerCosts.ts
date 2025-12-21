@@ -50,6 +50,9 @@ export const PROVIDER_COSTS: Record<string, number> = {
   truecaller: 3,
   phone_reputation: 2,
   caller_hint: 3,
+  
+  // Perplexity AI (real-time web intelligence)
+  perplexity_osint: 3,
 };
 
 /**

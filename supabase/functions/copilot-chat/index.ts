@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { query, contextType, contextId, workspaceId } = await req.json();
+    const { query, contextType, contextId, workspaceId, enableWebSearch } = await req.json();
     
     const authHeader = req.headers.get('Authorization')!;
     const token = authHeader.replace('Bearer ', '');
@@ -71,6 +71,63 @@ Findings: ${scan.findings?.length || 0}`;
       }
     }
 
+    // Detect web search intent
+    const webSearchPatterns = [
+      /search\s+(the\s+)?web/i,
+      /find\s+(latest|recent|current)/i,
+      /what'?s\s+(the\s+)?(latest|happening|new)/i,
+      /look\s+up/i,
+      /search\s+for/i,
+      /news\s+about/i,
+      /current\s+(events?|news|threats?)/i,
+    ];
+    
+    const shouldUseWebSearch = enableWebSearch || webSearchPatterns.some(pattern => pattern.test(query));
+    
+    let perplexityContext = '';
+    let perplexityCitations: string[] = [];
+    
+    // Use Perplexity for web search if detected or enabled
+    if (shouldUseWebSearch) {
+      const PERPLEXITY_API_KEY = Deno.env.get('PERPLEXITY_API_KEY');
+      
+      if (PERPLEXITY_API_KEY) {
+        console.log('[copilot-chat] Web search detected, using Perplexity');
+        
+        try {
+          const perplexityResponse = await fetch('https://api.perplexity.ai/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${PERPLEXITY_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'sonar',
+              messages: [
+                { 
+                  role: 'system', 
+                  content: 'You are a security-focused web researcher. Search for current, relevant information and provide source URLs. Focus on cybersecurity, OSINT, and threat intelligence topics.' 
+                },
+                { role: 'user', content: query }
+              ],
+              search_recency_filter: 'week',
+            }),
+          });
+
+          if (perplexityResponse.ok) {
+            const perplexityData = await perplexityResponse.json();
+            perplexityContext = perplexityData.choices?.[0]?.message?.content || '';
+            perplexityCitations = perplexityData.citations || [];
+            console.log(`[copilot-chat] Got Perplexity response with ${perplexityCitations.length} citations`);
+          } else {
+            console.warn('[copilot-chat] Perplexity API error:', perplexityResponse.status);
+          }
+        } catch (perplexityError) {
+          console.error('[copilot-chat] Perplexity error:', perplexityError);
+        }
+      }
+    }
+
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
     if (!lovableApiKey) {
       throw new Error('LOVABLE_API_KEY not configured');
@@ -87,6 +144,7 @@ Your capabilities:
 - Help with integration and automation tasks
 
 ${contextData ? `\n${contextData}` : ''}
+${perplexityContext ? `\n## Live Web Intelligence:\n${perplexityContext}\n\nSources: ${perplexityCitations.slice(0, 5).join(', ')}` : ''}
 
 Be concise, accurate, and security-focused. Provide actionable recommendations. Never expose raw PII.`;
 
@@ -162,7 +220,14 @@ Be concise, accurate, and security-focused. Provide actionable recommendations. 
     });
 
     return new Response(
-      JSON.stringify({ response, latency }),
+      JSON.stringify({ 
+        response, 
+        latency,
+        webSearch: shouldUseWebSearch ? { 
+          enabled: true, 
+          citations: perplexityCitations 
+        } : null
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
