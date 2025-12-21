@@ -244,6 +244,9 @@ export const Header = () => {
                   <Link to="/ai-analyst" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">AI Analyst</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link to="/research" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">Deep Research</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
                   <Link to="/assistant" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">AI Assistant</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
