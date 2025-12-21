@@ -134,6 +134,9 @@ serve(async (req) => {
       case 'ipqs_email':
         result = await callIPQSEmail(target);
         break;
+      case 'ipqs_phone':
+        result = await callIPQSPhone(target);
+        break;
       case 'perplexity_osint':
         result = await callPerplexityOSINT(target, type, options);
         break;
@@ -1476,6 +1479,180 @@ async function callIPQSEmail(email: string) {
     return { findings };
   } catch (error) {
     console.error('[IPQS Email] Exception:', error);
+    return { findings: [] };
+  }
+}
+
+async function callIPQSPhone(phone: string) {
+  const API_KEY = Deno.env.get('IPQS_API_KEY');
+  if (!API_KEY) {
+    console.log('[IPQS Phone] No API key configured');
+    return { 
+      findings: [{
+        provider: 'ipqs_phone',
+        kind: 'provider.unconfigured',
+        severity: 'info' as const,
+        confidence: 1.0,
+        observedAt: new Date().toISOString(),
+        evidence: [
+          { key: 'message', value: 'IPQS API key not configured' },
+          { key: 'config_required', value: 'IPQS_API_KEY' }
+        ],
+        meta: { unconfigured: true }
+      }]
+    };
+  }
+
+  try {
+    // Clean phone number - remove spaces, dashes, parentheses
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '');
+    console.log(`[IPQS Phone] Validating phone: ${cleanPhone}`);
+    
+    const response = await fetch(
+      `https://ipqualityscore.com/api/json/phone/${API_KEY}/${encodeURIComponent(cleanPhone)}`,
+      { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+    );
+
+    if (!response.ok) {
+      console.error(`[IPQS Phone] API error: ${response.status}`);
+      return { findings: [] };
+    }
+
+    const data = await response.json();
+    console.log(`[IPQS Phone] Response:`, JSON.stringify(data).substring(0, 500));
+    
+    const now = new Date().toISOString();
+    const findings: any[] = [];
+
+    // Main phone intelligence finding
+    if (data.valid !== undefined) {
+      const riskLevel = data.fraud_score > 75 ? 'high' : data.fraud_score > 50 ? 'medium' : data.fraud_score > 25 ? 'low' : 'info';
+      
+      // Build location string
+      const locationParts = [data.city, data.region, data.country].filter(Boolean);
+      const location = locationParts.length > 0 ? locationParts.join(', ') : 'Unknown';
+      
+      findings.push({
+        provider: 'ipqs_phone',
+        kind: 'phone.validation',
+        severity: riskLevel,
+        confidence: 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'Phone Number', value: data.formatted || cleanPhone },
+          { key: 'Valid', value: String(data.valid) },
+          { key: 'Active', value: String(data.active || 'unknown') },
+          { key: 'Carrier', value: data.carrier || 'Unknown' },
+          { key: 'Line Type', value: data.line_type || 'Unknown' },
+          { key: 'Location', value: location },
+          { key: 'Fraud Score', value: `${data.fraud_score}/100` },
+          { key: 'VoIP', value: String(data.VOIP || false) },
+          { key: 'Prepaid', value: String(data.prepaid || false) },
+        ],
+        meta: {
+          fraud_score: data.fraud_score,
+          carrier: data.carrier,
+          line_type: data.line_type,
+          voip: data.VOIP,
+          active: data.active,
+          country: data.country,
+          region: data.region,
+          city: data.city,
+        }
+      });
+    }
+
+    // VoIP detection finding
+    if (data.VOIP) {
+      findings.push({
+        provider: 'ipqs_phone',
+        kind: 'phone.voip',
+        severity: 'low' as const,
+        confidence: 0.9,
+        observedAt: now,
+        evidence: [
+          { key: 'Phone Number', value: data.formatted || cleanPhone },
+          { key: 'VoIP', value: 'true' },
+          { key: 'Carrier', value: data.carrier || 'Unknown' },
+          { key: 'Line Type', value: data.line_type || 'VoIP' },
+        ],
+        meta: { voip: true, carrier: data.carrier }
+      });
+    }
+
+    // Data leak detection
+    if (data.leaked) {
+      findings.push({
+        provider: 'ipqs_phone',
+        kind: 'phone.leaked',
+        severity: 'high' as const,
+        confidence: 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'Phone Number', value: data.formatted || cleanPhone },
+          { key: 'Leaked', value: 'true' },
+          { key: 'Carrier', value: data.carrier || 'Unknown' },
+        ],
+        meta: { leaked: true }
+      });
+    }
+
+    // Recent abuse detection
+    if (data.recent_abuse) {
+      findings.push({
+        provider: 'ipqs_phone',
+        kind: 'phone.abuse',
+        severity: 'high' as const,
+        confidence: 0.8,
+        observedAt: now,
+        evidence: [
+          { key: 'Phone Number', value: data.formatted || cleanPhone },
+          { key: 'Recent Abuse', value: 'true' },
+          { key: 'Fraud Score', value: `${data.fraud_score}/100` },
+        ],
+        meta: { recent_abuse: true, fraud_score: data.fraud_score }
+      });
+    }
+
+    // Spammer detection
+    if (data.spammer) {
+      findings.push({
+        provider: 'ipqs_phone',
+        kind: 'phone.spammer',
+        severity: 'medium' as const,
+        confidence: 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'Phone Number', value: data.formatted || cleanPhone },
+          { key: 'Spammer', value: 'true' },
+          { key: 'Fraud Score', value: `${data.fraud_score}/100` },
+        ],
+        meta: { spammer: true, fraud_score: data.fraud_score }
+      });
+    }
+
+    // Risky phone detection
+    if (data.risky) {
+      findings.push({
+        provider: 'ipqs_phone',
+        kind: 'phone.risky',
+        severity: 'medium' as const,
+        confidence: 0.75,
+        observedAt: now,
+        evidence: [
+          { key: 'Phone Number', value: data.formatted || cleanPhone },
+          { key: 'Risky', value: 'true' },
+          { key: 'Fraud Score', value: `${data.fraud_score}/100` },
+          { key: 'Line Type', value: data.line_type || 'Unknown' },
+        ],
+        meta: { risky: true, fraud_score: data.fraud_score }
+      });
+    }
+
+    console.log(`[IPQS Phone] Generated ${findings.length} findings for ${cleanPhone}`);
+    return { findings };
+  } catch (error) {
+    console.error('[IPQS Phone] Exception:', error);
     return { findings: [] };
   }
 }
