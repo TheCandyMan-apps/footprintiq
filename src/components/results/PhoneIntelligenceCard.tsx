@@ -112,11 +112,40 @@ function extractPhoneMetrics(findings: Finding[]): PhoneMetrics {
       }
     }
     
-    if (finding.providerCategory === 'Messaging Presence') {
+    // Check for messaging presence from various providers/formats
+    const isMessagingFinding = 
+      finding.providerCategory === 'Messaging Presence' ||
+      finding.providerCategory?.toLowerCase().startsWith('messaging') ||
+      finding.provider?.toLowerCase().includes('whatsapp') ||
+      finding.provider?.toLowerCase().includes('telegram') ||
+      finding.provider?.toLowerCase().includes('signal') ||
+      finding.provider?.toLowerCase() === 'whatsapp_check' ||
+      finding.provider?.toLowerCase() === 'telegram_check' ||
+      finding.provider?.toLowerCase() === 'signal_check';
+    
+    if (isMessagingFinding) {
       for (const ev of finding.evidence || []) {
-        if (ev.key === 'WhatsApp') metrics.whatsapp = ev.value === 'true';
-        if (ev.key === 'Telegram') metrics.telegram = ev.value === 'true';
-        if (ev.key === 'Signal') metrics.signal = ev.value === 'true';
+        const key = ev.key?.toLowerCase() || '';
+        const value = String(ev.value || '').toLowerCase();
+        
+        // Check for WhatsApp
+        if (key === 'whatsapp' || key.includes('whatsapp')) {
+          metrics.whatsapp = value === 'true' || value === 'yes' || value === 'detected' || value === 'present';
+        }
+        // Check for Telegram
+        if (key === 'telegram' || key.includes('telegram')) {
+          metrics.telegram = value === 'true' || value === 'yes' || value === 'detected' || value === 'present';
+        }
+        // Check for Signal
+        if (key === 'signal' || key.includes('signal')) {
+          metrics.signal = value === 'true' || value === 'yes' || value === 'detected' || value === 'present';
+        }
+        // Generic 'present' key that may contain the service name
+        if (key === 'present' || key === 'detected' || key === 'registered') {
+          if (value.includes('whatsapp')) metrics.whatsapp = true;
+          if (value.includes('telegram')) metrics.telegram = true;
+          if (value.includes('signal')) metrics.signal = true;
+        }
       }
     }
     
