@@ -827,6 +827,7 @@ serve(async (req) => {
       status?: string;
       duration_ms?: number;
       error_message?: string;
+      findings_count?: number;
       metadata?: any;
     }) => {
       try {
@@ -1175,12 +1176,13 @@ serve(async (req) => {
           }
         }
         
-        // Log provider completed event
+        // Log provider completed event with findings count
         await logEvent({
           provider,
-          stage: 'completed',
+          stage: 'complete',
           status: 'success',
           duration_ms: providerDuration,
+          findings_count: sanitizedResult.length,
           metadata: { result_count: sanitizedResult.length }
         });
         
