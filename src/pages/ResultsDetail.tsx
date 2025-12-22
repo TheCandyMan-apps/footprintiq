@@ -37,6 +37,7 @@ import { ScanSummary } from "@/components/ScanSummary";
 import { AnomalyDetector } from "@/components/AnomalyDetector";
 import { ScanProgressTracker } from "@/components/ScanProgressTracker";
 import { ScanStatusIndicator } from "@/components/scan/ScanStatusIndicator";
+import { ScanExecutionSummary } from "@/components/scan/ScanExecutionSummary";
 import { FindingCard } from "@/components/scan/FindingCard";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart, Pie, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cell, ResponsiveContainer, Legend } from "recharts";
@@ -845,6 +846,11 @@ const ResultsDetail = () => {
             currentScore={scan.privacy_score || 0}
           />
         </div>
+
+        {/* Scan Execution Summary - Provider Audit */}
+        {scanId && (
+          <ScanExecutionSummary scanId={scanId} className="mb-8" />
+        )}
 
         {/* Intelligence Tiles for Username Scans */}
         {scan?.scan_type === 'username' && (
