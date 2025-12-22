@@ -89,12 +89,17 @@ export function deduplicateFindings(findings: UFMFinding[] | undefined): UFMFind
   const unique: UFMFinding[] = [];
 
   for (const finding of findings) {
-    if (!finding || !finding.provider || !finding.evidence) {
+    if (!finding || !finding.provider) {
       console.warn('[normalize] Skipping invalid finding:', finding);
       continue;
     }
     
-    const key = `${finding.provider}:${finding.evidence.map(e => `${e.key}=${e.value}`).join('|')}`;
+    // Defensive check: evidence must be an array, otherwise fallback to JSON stringify
+    const evidenceKey = Array.isArray(finding.evidence) 
+      ? finding.evidence.map(e => `${e.key}=${e.value}`).join('|')
+      : JSON.stringify(finding.evidence || {});
+    
+    const key = `${finding.provider}:${evidenceKey}`;
     
     if (!seen.has(key)) {
       seen.add(key);

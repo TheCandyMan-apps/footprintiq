@@ -1068,7 +1068,7 @@ serve(async (req) => {
                     severity: 'info',
                     provider: 'maigret',
                     confidence: 1.0,
-                    evidence: { message: 'Service temporarily unavailable' }
+                    evidence: [{ key: 'message', value: 'Service temporarily unavailable' }]
                   }];
                 }
                 
@@ -1088,7 +1088,7 @@ serve(async (req) => {
                   severity: 'info',
                   provider: 'maigret',
                   confidence: 1.0,
-                  evidence: { message: 'Service temporarily unavailable' }
+                  evidence: [{ key: 'message', value: 'Service temporarily unavailable' }]
                 }];
               }
             } else {
@@ -1112,10 +1112,10 @@ serve(async (req) => {
                   severity: 'info',
                   provider: provider,
                   confidence: 1.0,
-                  evidence: { 
-                    message: 'Service temporarily unavailable',
-                    error: error.message || 'Unknown error'
-                  }
+                  evidence: [
+                    { key: 'message', value: 'Service temporarily unavailable' },
+                    { key: 'error', value: error.message || 'Unknown error' }
+                  ]
                 }];
               }
               
