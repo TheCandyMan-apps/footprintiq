@@ -56,6 +56,9 @@ import { normalizePlanTier, CAPABILITIES_BY_PLAN } from '@/lib/billing/planCapab
 // Update this list as keys are added to the system
 const KNOWN_CONFIGURED_KEYS: string[] = [
   'ABSTRACTAPI_PHONE_VALIDATION_KEY',
+  'IPQS_API_KEY',
+  'NUMVERIFY_API_KEY',
+  'HIBP_API_KEY',
   'FULLCONTACT_API_KEY',
   // Add more keys as they get configured
 ];
