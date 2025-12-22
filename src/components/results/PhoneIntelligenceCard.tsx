@@ -65,13 +65,50 @@ function extractPhoneMetrics(findings: Finding[]): PhoneMetrics {
   };
 
   for (const finding of findings) {
-    if (finding.providerCategory === 'Carrier Intelligence') {
+    // Check for carrier intelligence from various sources
+    // IPQS uses kind like 'phone.validation', other providers use 'Carrier Intelligence'
+    const isCarrierFinding = 
+      finding.providerCategory === 'Carrier Intelligence' ||
+      finding.providerCategory?.startsWith('phone.') ||
+      finding.provider?.toLowerCase().includes('ipqs') ||
+      finding.provider?.toLowerCase().includes('numverify') ||
+      finding.provider?.toLowerCase().includes('abstract_phone') ||
+      finding.provider?.toLowerCase().includes('twilio');
+    
+    if (isCarrierFinding) {
       for (const ev of finding.evidence || []) {
-        if (ev.key === 'Line Type') metrics.lineType = String(ev.value);
-        if (ev.key === 'Carrier') metrics.carrier = String(ev.value);
-        if (ev.key === 'Country') metrics.country = String(ev.value);
-        if (ev.key === 'Is VoIP') metrics.isVoip = ev.value === 'true';
-        if (ev.key === 'Is Disposable') metrics.isDisposable = ev.value === 'true';
+        const key = ev.key?.toLowerCase() || '';
+        const value = String(ev.value || '');
+        
+        if (key === 'line type' || key === 'line_type' || key === 'linetype') {
+          if (value && value !== 'N/A') metrics.lineType = value;
+        }
+        if (key === 'carrier' || key === 'carrier_name' || key === 'name') {
+          if (value && value !== 'N/A') metrics.carrier = value;
+        }
+        if (key === 'country' || key === 'location' || key === 'country_code') {
+          if (value && value !== 'N/A') {
+            // Parse "N/A, United Kingdom, GB" format
+            if (value.includes(',')) {
+              const parts = value.split(',').map(s => s.trim()).filter(s => s && s !== 'N/A');
+              metrics.country = parts[parts.length - 1] || parts[0] || value;
+            } else {
+              metrics.country = value;
+            }
+          }
+        }
+        if (key === 'is voip' || key === 'is_voip' || key === 'voip') {
+          metrics.isVoip = value === 'true' || value === 'Yes';
+        }
+        if (key === 'is disposable' || key === 'is_disposable' || key === 'disposable') {
+          metrics.isDisposable = value === 'true' || value === 'Yes';
+        }
+        if (key === 'fraud score' || key === 'fraud_score' || key === 'fraudscore' || key === 'risk_score') {
+          if (value && value !== 'N/A') {
+            const score = parseInt(value, 10);
+            if (!isNaN(score)) metrics.fraudScore = score;
+          }
+        }
       }
     }
     
@@ -85,8 +122,9 @@ function extractPhoneMetrics(findings: Finding[]): PhoneMetrics {
     
     if (finding.providerCategory === 'Risk Intelligence') {
       for (const ev of finding.evidence || []) {
-        if (ev.key === 'Fraud Score' && ev.value !== 'N/A') {
-          metrics.fraudScore = Number(ev.value);
+        if ((ev.key === 'Fraud Score' || ev.key === 'fraud_score') && ev.value !== 'N/A') {
+          const score = parseInt(String(ev.value), 10);
+          if (!isNaN(score)) metrics.fraudScore = score;
         }
       }
       if (finding.severity === 'high' || finding.severity === 'critical') {
@@ -101,7 +139,12 @@ function extractPhoneMetrics(findings: Finding[]): PhoneMetrics {
     }
   }
 
-  // Adjust risk level based on VoIP/disposable
+  // Adjust risk level based on fraud score, VoIP, or disposable flags
+  if (metrics.fraudScore !== null && metrics.fraudScore > 75) {
+    metrics.riskLevel = 'high';
+  } else if (metrics.fraudScore !== null && metrics.fraudScore > 50 && metrics.riskLevel !== 'high') {
+    metrics.riskLevel = 'medium';
+  }
   if (metrics.isDisposable && metrics.riskLevel === 'low') {
     metrics.riskLevel = 'medium';
   }
@@ -125,7 +168,9 @@ function LineTypeIcon({ type }: { type: string }) {
 // MessagingIcon removed - using inline indicators instead
 
 export function PhoneIntelligenceCard({ phone, findings, providerStatuses, className }: PhoneIntelligenceCardProps) {
-  const phoneFindings = findings.filter(f => f.type === 'phone_intelligence');
+  // Use all findings passed in - parent already filters for phone_intelligence type
+  // But also accept any findings for backwards compatibility
+  const phoneFindings = findings.length > 0 ? findings : [];
   const metrics = extractPhoneMetrics(phoneFindings);
 
   const riskColors = {
