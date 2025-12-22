@@ -222,9 +222,12 @@ const ResultsDetail = () => {
          * This only affects which features are displayed in the UI.
          */
         if (data.role === 'admin') {
-          setSubscriptionTier('premium');
+          // Admins get business tier access (or their actual tier if higher)
+          // Use their subscription_tier if it exists, otherwise default to 'business'
+          const tier = data.subscription_tier || 'business';
+          setSubscriptionTier(tier);
         } else {
-          setSubscriptionTier(data.subscription_tier);
+          setSubscriptionTier(data.subscription_tier || 'free');
         }
       }
     } catch (error) {
