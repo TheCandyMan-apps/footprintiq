@@ -137,3 +137,6 @@ verify_jwt = false
 
 [functions.perplexity-research]
 verify_jwt = true
+
+[functions.admin-clear-cache]
+verify_jwt = true
