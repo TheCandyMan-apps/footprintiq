@@ -216,31 +216,50 @@ function generateHTMLReport(scan: any): string {
         </div>
       </div>
       
-      ${Object.entries(groupedFindings).map(([provider, providerFindings]: [string, any]) => `
-        <div class="section provider-section">
-          <h2>🔎 ${provider.charAt(0).toUpperCase() + provider.slice(1)} Results</h2>
-          <p><strong>${providerFindings.length}</strong> findings from this provider</p>
+      ${Object.entries(groupedFindings).map(([provider, providerFindings]: [string, any]) => {
+        const providerHtml = providerFindings.slice(0, 20).map((finding: any) => {
+          const evidence = Array.isArray(finding.evidence) ? finding.evidence : [];
           
-          ${providerFindings.slice(0, 20).map((finding: any) => {
-            const evidence = Array.isArray(finding.evidence) ? finding.evidence : [];
-            const platformEvidence = evidence.find((e: any) => e.key === 'site' || e.key === 'platform');
-            const urlEvidence = evidence.find((e: any) => e.key === 'url');
-            
-            return `
-              <div class="finding">
-                <h3>${finding.title || platformEvidence?.value || finding.kind}</h3>
-                <div class="evidence">
-                  ${finding.confidence ? `<p><strong>Confidence:</strong> ${Math.round(finding.confidence * 100)}%</p>` : ''}
-                  ${urlEvidence ? `<p><strong>URL:</strong> <a href="${urlEvidence.value}">${urlEvidence.value}</a></p>` : ''}
-                  <p><strong>Type:</strong> ${finding.kind}</p>
-                </div>
-              </div>
-            `;
-          }).join('')}
+          // Extract site/platform name from evidence
+          const siteEvidence = evidence.find((e: any) => e.key === 'site');
+          const platformEvidence = evidence.find((e: any) => e.key === 'platform');
+          const usernameEvidence = evidence.find((e: any) => e.key === 'username');
+          const urlEvidence = evidence.find((e: any) => e.key === 'url');
+          const breachEvidence = evidence.find((e: any) => e.key === 'breach');
           
-          ${providerFindings.length > 20 ? `<p><em>...and ${providerFindings.length - 20} more findings</em></p>` : ''}
-        </div>
-      `).join('')}
+          // Build a meaningful title - prioritize site/platform/breach over generic title
+          const siteName = siteEvidence?.value || platformEvidence?.value || breachEvidence?.value;
+          const displayTitle = siteName || finding.title || finding.kind || 'Finding';
+          
+          // Build subtitle info
+          const subtitle = usernameEvidence ? '@' + usernameEvidence.value : '';
+          
+          let findingHtml = '<div class="finding">';
+          findingHtml += '<h3>' + displayTitle + (subtitle ? ' (' + subtitle + ')' : '') + '</h3>';
+          findingHtml += '<div class="evidence">';
+          if (finding.confidence) {
+            findingHtml += '<p><strong>Confidence:</strong> ' + Math.round(finding.confidence * 100) + '%</p>';
+          }
+          if (urlEvidence) {
+            findingHtml += '<p><strong>URL:</strong> <a href="' + urlEvidence.value + '">' + urlEvidence.value + '</a></p>';
+          }
+          findingHtml += '<p><strong>Type:</strong> ' + finding.kind + '</p>';
+          findingHtml += '</div></div>';
+          
+          return findingHtml;
+        }).join('');
+        
+        let sectionHtml = '<div class="section provider-section">';
+        sectionHtml += '<h2>🔎 ' + provider.charAt(0).toUpperCase() + provider.slice(1) + ' Results</h2>';
+        sectionHtml += '<p><strong>' + providerFindings.length + '</strong> findings from this provider</p>';
+        sectionHtml += providerHtml;
+        if (providerFindings.length > 20) {
+          sectionHtml += '<p><em>...and ' + (providerFindings.length - 20) + ' more findings</em></p>';
+        }
+        sectionHtml += '</div>';
+        
+        return sectionHtml;
+      }).join('')}
       
       ${findings.length === 0 ? '<div class="section"><p>No findings available for this scan.</p></div>' : ''}
       

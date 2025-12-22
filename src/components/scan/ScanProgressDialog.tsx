@@ -617,7 +617,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           
           // Prefer event with higher findings count (avoid 0 results overwriting actual count)
           const existing = providerStatuses.get(providerName);
-          const newFindingsCount = event.results_count || event.findings_count || 0;
+          // Check multiple sources for findings count
+          const newFindingsCount = event.findings_count || event.results_count || event.metadata?.result_count || 0;
           const existingCount = existing?.resultCount || 0;
           
           // Update if: no existing, or stage changed, or new has higher findings count
