@@ -68,6 +68,7 @@ import {
   Zap,
   Brain
 } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
 import type { User } from "@supabase/supabase-js";
 import { AddToCaseButton } from "@/components/case/AddToCaseButton";
 import { ExportEnrichedButton } from "@/components/scan/ExportEnrichedButton";
@@ -140,14 +141,20 @@ const ResultsDetail = () => {
   const { scanId } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
+  
+  // Use centralized subscription hook as single source of truth
+  const { 
+    user, 
+    subscriptionTier: rawSubscriptionTier, 
+    isLoading: subscriptionLoading 
+  } = useSubscription();
+  
   const [scan, setScan] = useState<Scan | null>(null);
   const [dataSources, setDataSources] = useState<DataSource[]>([]);
   const [socialProfiles, setSocialProfiles] = useState<SocialProfile[]>([]);
   const [removalRequests, setRemovalRequests] = useState<RemovalRequest[]>([]);
   const [redactPII, setRedactPII] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [isDNAModalOpen, setIsDNAModalOpen] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [findings, setFindings] = useState<Finding[]>([]);
@@ -161,7 +168,8 @@ const ResultsDetail = () => {
   const { statuses: phoneProviderStatuses } = usePhoneProviderStatuses(scanId);
   
   // Normalize user plan for capability checks
-  const userPlan = normalizePlanTier(subscriptionTier);
+  // Map enterprise -> business for planCapabilities (enterprise is our commercial name, business is internal tier)
+  const userPlan = normalizePlanTier(rawSubscriptionTier === 'enterprise' ? 'business' : rawSubscriptionTier);
   
   // Terminal states that stop polling
   const TERMINAL_STATES = [
@@ -182,18 +190,13 @@ const ResultsDetail = () => {
       if (!session) {
         navigate("/auth");
       } else {
-        setUser(session.user);
         fetchScanData();
-        fetchSubscriptionTier(session.user.id);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
         navigate("/auth");
-      } else {
-        setUser(session.user);
-        fetchSubscriptionTier(session.user.id);
       }
     });
 
@@ -205,35 +208,6 @@ const ResultsDetail = () => {
       }
     };
   }, [navigate, scanId]);
-
-  const fetchSubscriptionTier = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role, subscription_tier")
-        .eq("user_id", userId)
-        .single();
-      
-      if (!error && data) {
-        /**
-         * UI-ONLY role check for display purposes.
-         * SECURITY: Actual authorization enforced server-side via RLS policies.
-         * DO NOT use this for access control decisions.
-         * This only affects which features are displayed in the UI.
-         */
-        if (data.role === 'admin') {
-          // Admins get business tier access (or their actual tier if higher)
-          // Use their subscription_tier if it exists, otherwise default to 'business'
-          const tier = data.subscription_tier || 'business';
-          setSubscriptionTier(tier);
-        } else {
-          setSubscriptionTier(data.subscription_tier || 'free');
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching subscription tier:", error);
-    }
-  };
 
   const fetchScanData = async (opts?: { silent?: boolean }) => {
     if (!scanId) return;
@@ -918,7 +892,7 @@ const ResultsDetail = () => {
             
             {/* Locked Insight Tiles for Premium Features */}
             {/* Only show locked tiles if user is on a lower tier - use explicit check to handle loading state */}
-            {subscriptionTier && (
+            {!subscriptionLoading && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                 {/* AI Risk Analysis - locked for free users */}
                 {userPlan === 'free' && (
@@ -970,7 +944,7 @@ const ResultsDetail = () => {
           <div className="mb-8">
             <AIInsightsCard 
               findings={findings} 
-              subscriptionTier={subscriptionTier}
+              subscriptionTier={rawSubscriptionTier}
               scanId={scanId!}
               userId={user?.id}
               dataSources={dataSources}
@@ -1229,7 +1203,7 @@ const ResultsDetail = () => {
             <ScanSummary 
               findings={findingsForExport}
               scanId={scanId}
-              isPro={subscriptionTier === "premium" || subscriptionTier === "enterprise"}
+              isPro={rawSubscriptionTier === "premium" || rawSubscriptionTier === "enterprise" || rawSubscriptionTier === "pro" || rawSubscriptionTier === "business"}
             />
           </div>
         )}
