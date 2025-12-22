@@ -288,6 +288,106 @@ serve(async (req) => {
       }
     }
 
+    // Provider: Numverify
+    if (validatedProviders.includes('numverify')) {
+      const startTime = Date.now();
+      const NUMVERIFY_KEY = Deno.env.get('NUMVERIFY_API_KEY');
+      
+      if (!NUMVERIFY_KEY) {
+        markNotConfigured('numverify', 'NUMVERIFY_API_KEY');
+      } else {
+        try {
+          console.log(`[phone-intel] Calling Numverify API for ${normalizedPhone.slice(0, 5)}***`);
+          
+          // Numverify API call - uses HTTP (not HTTPS) on free tier
+          const response = await fetch(
+            `http://apilayer.net/api/validate?access_key=${NUMVERIFY_KEY}&number=${encodeURIComponent(normalizedPhone)}&format=1`
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            const latency = Date.now() - startTime;
+            
+            console.log(`[phone-intel] Numverify response:`, JSON.stringify(data));
+            
+            // Check for API error response
+            if (data.error) {
+              console.error(`[phone-intel] Numverify API error:`, data.error);
+              providerResults['numverify'] = { 
+                status: 'failed', 
+                findingsCount: 0, 
+                latencyMs: latency, 
+                message: data.error.info || data.error.type || 'API error' 
+              };
+              await logScanEvent('numverify', 'execution', 'failed', data.error.info || 'Numverify API error');
+            } else if (data.valid) {
+              // Create findings from Numverify data
+              findings.push({
+                id: generateFindingId('numverify', 'carrier_intel', normalizedPhone),
+                kind: 'phone.carrier',
+                type: 'phone_intelligence',
+                title: `Carrier: ${data.carrier || 'Unknown'} (${data.line_type || 'unknown'})`,
+                description: `Phone validated as ${data.line_type || 'unknown'} line in ${data.country_name || 'unknown country'}.`,
+                severity: 'info',
+                confidence: 0.9,
+                provider: 'Numverify',
+                providerCategory: 'Carrier Intelligence',
+                evidence: [
+                  { key: 'Phone', value: normalizedPhone },
+                  { key: 'Valid', value: String(data.valid) },
+                  { key: 'Line Type', value: data.line_type || 'unknown' },
+                  { key: 'Carrier', value: data.carrier || 'Unknown' },
+                  { key: 'Country', value: data.country_name || 'Unknown' },
+                  { key: 'Country Code', value: data.country_code || 'Unknown' },
+                  { key: 'Country Prefix', value: data.country_prefix || 'Unknown' },
+                  { key: 'Location', value: data.location || 'Unknown' },
+                  { key: 'Local Format', value: data.local_format || normalizedPhone },
+                  { key: 'International Format', value: data.international_format || normalizedPhone },
+                ],
+                impact: 'Phone carrier and type identified for verification',
+                remediation: [],
+                tags: ['phone', 'carrier', data.line_type || 'unknown', 'numverify'],
+                observedAt: new Date().toISOString(),
+              });
+
+              providerResults['numverify'] = { 
+                status: 'success', 
+                findingsCount: 1, 
+                latencyMs: latency 
+              };
+              await logScanEvent('numverify', 'execution', 'success');
+            } else {
+              // Invalid phone number
+              providerResults['numverify'] = { 
+                status: 'success', 
+                findingsCount: 0, 
+                latencyMs: latency,
+                message: 'Phone number invalid or not found'
+              };
+              await logScanEvent('numverify', 'execution', 'success', 'Phone invalid');
+            }
+          } else {
+            providerResults['numverify'] = { 
+              status: 'failed', 
+              findingsCount: 0, 
+              latencyMs: Date.now() - startTime, 
+              message: `API returned ${response.status}` 
+            };
+            await logScanEvent('numverify', 'execution', 'failed', `HTTP ${response.status}`);
+          }
+        } catch (error) {
+          console.error('[phone-intel] Numverify error:', error);
+          providerResults['numverify'] = { 
+            status: 'failed', 
+            findingsCount: 0, 
+            latencyMs: Date.now() - startTime, 
+            message: error instanceof Error ? error.message : 'Unknown error' 
+          };
+          await logScanEvent('numverify', 'execution', 'failed', error instanceof Error ? error.message : 'Unknown error');
+        }
+      }
+    }
+
     // Provider: IPQualityScore Phone
     if (validatedProviders.includes('ipqs_phone')) {
       const startTime = Date.now();
@@ -445,20 +545,35 @@ serve(async (req) => {
       }
     }
 
-    // Handle other validated providers that have stub implementations
-    const implementedProviders = ['abstract_phone', 'ipqs_phone', 'caller_hint'];
+    // Handle other validated providers - distinguish between "not implemented" and "skipped"
+    const implementedProviders = ['abstract_phone', 'ipqs_phone', 'caller_hint', 'numverify'];
+    const messagingProviders = ['whatsapp_check', 'telegram_check', 'signal_check'];
+    
     for (const providerId of validatedProviders) {
       if (!implementedProviders.includes(providerId) && !providerResults[providerId]) {
-        // Provider is allowed but not yet implemented
-        console.log(`[phone-intel] Provider ${providerId} validated but not yet implemented`);
-        providerResults[providerId] = { 
-          status: 'skipped', 
-          findingsCount: 0, 
-          latencyMs: 0,
-          message: 'Provider implementation pending',
-          terminal: true,
-        };
-        await logScanEvent(providerId, 'execution', 'skipped', 'Provider not yet implemented');
+        // Check if it's a messaging provider - mark as not_implemented (honest)
+        if (messagingProviders.includes(providerId)) {
+          console.log(`[phone-intel] Provider ${providerId} is not implemented - no legitimate API available`);
+          providerResults[providerId] = { 
+            status: 'skipped', 
+            findingsCount: 0, 
+            latencyMs: 0,
+            message: 'Unavailable - no legitimate API',
+            terminal: true,
+          };
+          await logScanEvent(providerId, 'execution', 'not_implemented', 'No legitimate API available for messaging presence detection');
+        } else {
+          // Other providers - implementation pending
+          console.log(`[phone-intel] Provider ${providerId} validated but not yet implemented`);
+          providerResults[providerId] = { 
+            status: 'skipped', 
+            findingsCount: 0, 
+            latencyMs: 0,
+            message: 'Provider implementation pending',
+            terminal: true,
+          };
+          await logScanEvent(providerId, 'execution', 'skipped', 'Provider not yet implemented');
+        }
       }
     }
 
