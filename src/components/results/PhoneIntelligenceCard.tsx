@@ -264,39 +264,36 @@ export function PhoneIntelligenceCard({ phone, findings, providerStatuses, class
           <p className="font-medium">{metrics.country}</p>
         </div>
 
-        {/* Messaging Presence */}
+        {/* Messaging Presence - show as Unavailable since no legitimate API exists */}
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground uppercase tracking-wide">Messaging Presence</p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">Messaging Presence</p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>Messaging presence detection requires access to platform APIs that are not publicly available. This feature is not currently supported.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
-              <div className={cn(
-                "h-3 w-3 rounded-full",
-                metrics.whatsapp ? "bg-green-500" : "bg-muted"
-              )} />
-              <span className={cn(
-                "text-sm",
-                metrics.whatsapp ? "text-foreground" : "text-muted-foreground"
-              )}>WhatsApp</span>
+              <Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">
+                WhatsApp: Unavailable
+              </Badge>
             </div>
             <div className="flex items-center gap-1">
-              <div className={cn(
-                "h-3 w-3 rounded-full",
-                metrics.telegram ? "bg-blue-500" : "bg-muted"
-              )} />
-              <span className={cn(
-                "text-sm",
-                metrics.telegram ? "text-foreground" : "text-muted-foreground"
-              )}>Telegram</span>
+              <Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">
+                Telegram: Unavailable
+              </Badge>
             </div>
             <div className="flex items-center gap-1">
-              <div className={cn(
-                "h-3 w-3 rounded-full",
-                metrics.signal ? "bg-blue-600" : "bg-muted"
-              )} />
-              <span className={cn(
-                "text-sm",
-                metrics.signal ? "text-foreground" : "text-muted-foreground"
-              )}>Signal</span>
+              <Badge variant="outline" className="text-xs text-muted-foreground border-muted-foreground/30">
+                Signal: Unavailable
+              </Badge>
             </div>
           </div>
         </div>

@@ -931,19 +931,23 @@ const ResultsDetail = () => {
           </ScanErrorBoundary>
         </div>
 
-        {/* Catfish Detection */}
-        <div className="mb-8">
-          <CatfishDetection 
-            scanId={scanId!} 
-            scanType={scan.scan_type}
-            hasUsername={!!scan.username}
-          />
-        </div>
+        {/* Catfish Detection - only show for username scans */}
+        {scan.scan_type === 'username' && (
+          <div className="mb-8">
+            <CatfishDetection 
+              scanId={scanId!} 
+              scanType={scan.scan_type}
+              hasUsername={!!scan.username}
+            />
+          </div>
+        )}
 
-        {/* AI Analysis */}
-        <div className="mb-8">
-          <AIAnalysis scanId={scanId!} />
-        </div>
+        {/* AI Analysis - only show for username/email scans (not phone) */}
+        {(scan.scan_type === 'username' || scan.scan_type === 'email') && (
+          <div className="mb-8">
+            <AIAnalysis scanId={scanId!} />
+          </div>
+        )}
 
         {/* AI Insights - Correlation Analysis */}
         {findings.length > 0 && (
