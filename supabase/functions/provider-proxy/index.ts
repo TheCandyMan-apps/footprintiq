@@ -1338,7 +1338,7 @@ async function callAbstractPhone(phone: string) {
     console.log(`[callAbstractPhone] Validating phone: ${normalizedPhone}`);
 
     const response = await fetch(
-      `https://phonevalidation.abstractapi.com/v1/?api_key=${apiKey}&phone=${encodeURIComponent(normalizedPhone)}`,
+      `https://phoneintelligence.abstractapi.com/v1/?api_key=${apiKey}&phone=${encodeURIComponent(normalizedPhone)}`,
       { headers: { 'User-Agent': 'FootprintIQ-Server' } }
     );
 
