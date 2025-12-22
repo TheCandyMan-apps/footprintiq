@@ -164,7 +164,15 @@ const ResultsDetail = () => {
   const userPlan = normalizePlanTier(subscriptionTier);
   
   // Terminal states that stop polling
-  const TERMINAL_STATES = ['completed', 'failed', 'timeout', 'complete_partial', 'cancelled'];
+  const TERMINAL_STATES = [
+    'completed',
+    'completed_empty',
+    'completed_partial',
+    'failed',
+    'timeout',
+    'error',
+    'cancelled',
+  ];
 
   useEffect(() => {
     // Reset poll counter when scanId changes
@@ -224,10 +232,12 @@ const ResultsDetail = () => {
     }
   };
 
-  const fetchScanData = async () => {
+  const fetchScanData = async (opts?: { silent?: boolean }) => {
     if (!scanId) return;
 
-    if (!scan) setLoading(true);
+    const silent = opts?.silent ?? false;
+
+    if (!silent && !scan) setLoading(true);
 
     try {
       // Fetch scan
@@ -249,7 +259,7 @@ const ResultsDetail = () => {
             description: "This scan may have failed to start. Please refresh or try a new scan.",
             variant: "destructive",
           });
-          setLoading(false);
+          if (!silent) setLoading(false);
           return;
         }
         
@@ -259,7 +269,7 @@ const ResultsDetail = () => {
           if (pollTimeoutRef.current !== null) {
             clearTimeout(pollTimeoutRef.current);
           }
-          pollTimeoutRef.current = window.setTimeout(fetchScanData, 5000);
+          pollTimeoutRef.current = window.setTimeout(() => fetchScanData({ silent: true }), 5000);
         }
         return;
       }
@@ -281,13 +291,13 @@ const ResultsDetail = () => {
         }
       }
 
-      // Stop polling if scan is in a terminal state (completed, failed, timeout, cancelled, or partial)
+      // Stop polling if scan is in a terminal state
       if (TERMINAL_STATES.includes(scanData.status)) {
         if (pollTimeoutRef.current !== null) {
           clearTimeout(pollTimeoutRef.current);
           pollTimeoutRef.current = null;
         }
-        setLoading(false); // Stop loading state
+        if (!silent) setLoading(false); // Stop loading state
       }
 
       // Fetch trend data for this user
@@ -479,7 +489,7 @@ const ResultsDetail = () => {
         if (pollTimeoutRef.current !== null) {
           clearTimeout(pollTimeoutRef.current);
         }
-        pollTimeoutRef.current = window.setTimeout(fetchScanData, 5000);
+        pollTimeoutRef.current = window.setTimeout(() => fetchScanData({ silent: true }), 5000);
       } else {
         // Stop polling if scan is in terminal state or has data
         console.log('[ResultsDetail] Stopping poll - terminal state or has data');
@@ -487,7 +497,7 @@ const ResultsDetail = () => {
           clearTimeout(pollTimeoutRef.current);
           pollTimeoutRef.current = null;
         }
-        setLoading(false);
+        if (!silent) setLoading(false);
       }
     } catch (error: any) {
       console.error("Error fetching scan data:", error);
@@ -497,7 +507,7 @@ const ResultsDetail = () => {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
