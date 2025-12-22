@@ -1296,10 +1296,12 @@ async function callWHOISXML(domain: string) {
 async function callAbstractPhone(phone: string) {
   const API_KEY = Deno.env.get('ABSTRACTAPI_PHONE_VALIDATION_KEY');
   const now = new Date().toISOString();
-  
-  if (!API_KEY) {
+
+  const apiKey = (API_KEY ?? '').trim();
+
+  if (!apiKey) {
     console.log('[callAbstractPhone] ABSTRACTAPI_PHONE_VALIDATION_KEY not configured');
-    return { 
+    return {
       findings: [{
         provider: 'abstract_phone',
         kind: 'provider.unconfigured',
@@ -1318,7 +1320,7 @@ async function callAbstractPhone(phone: string) {
   try {
     // Normalize phone to E.164 format if needed
     let normalizedPhone = phone.replace(/[\s\-\(\)\.]/g, '');
-    
+
     // If starts with 0 and looks like UK number (10-11 digits after 0), add +44
     if (normalizedPhone.startsWith('0') && normalizedPhone.length >= 10 && normalizedPhone.length <= 11) {
       normalizedPhone = '+44' + normalizedPhone.substring(1);
@@ -1332,11 +1334,11 @@ async function callAbstractPhone(phone: string) {
         console.log(`[callAbstractPhone] Added UK prefix: ${phone} -> ${normalizedPhone}`);
       }
     }
-    
+
     console.log(`[callAbstractPhone] Validating phone: ${normalizedPhone}`);
-    
+
     const response = await fetch(
-      `https://phonevalidation.abstractapi.com/v1/?api_key=${API_KEY}&phone=${encodeURIComponent(normalizedPhone)}`,
+      `https://phonevalidation.abstractapi.com/v1/?api_key=${apiKey}&phone=${encodeURIComponent(normalizedPhone)}`,
       { headers: { 'User-Agent': 'FootprintIQ-Server' } }
     );
 
@@ -1646,8 +1648,10 @@ async function callIPQSPhone(phone: string) {
     console.log(`[IPQS Phone] Response:`, JSON.stringify(data).substring(0, 500));
     
     // Check for API-level error responses
-    if (data.success === false || data.message) {
-      console.error(`[IPQS Phone] API returned error:`, data.message);
+    const msg = typeof data.message === 'string' ? data.message : '';
+    const msgLooksLikeError = /unauthorized|invalid|forbidden|error|missing|expired/i.test(msg);
+    if (data.success === false || data.error || msgLooksLikeError) {
+      console.error(`[IPQS Phone] API returned error:`, data.error || msg || 'Unknown API error');
       const now = new Date().toISOString();
       return { 
         findings: [{
