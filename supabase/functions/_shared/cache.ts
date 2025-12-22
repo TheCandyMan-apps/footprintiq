@@ -87,9 +87,13 @@ export async function cacheDelete(key: string): Promise<boolean> {
 }
 
 /**
- * Check if a result is empty (empty array or object with empty findings)
+ * Check if a result is empty or contains only error responses
+ * This prevents caching of:
+ * - Empty arrays/objects
+ * - API key errors (which would be stale after key is configured)
+ * - Provider errors that should be retried
  */
-function isEmptyResult(result: unknown): boolean {
+function isEmptyOrErrorResult(result: unknown): boolean {
   if (result === null || result === undefined) {
     return true;
   }
@@ -98,8 +102,39 @@ function isEmptyResult(result: unknown): boolean {
   }
   if (typeof result === 'object' && result !== null) {
     const obj = result as Record<string, unknown>;
+    
+    // Don't cache empty findings
     if ('findings' in obj && Array.isArray(obj.findings) && obj.findings.length === 0) {
       return true;
+    }
+    
+    // Don't cache error responses (API key errors, etc.)
+    if ('error' in obj || 'kind' in obj && obj.kind === 'provider_error') {
+      console.warn('[cache] Detected error result, not caching');
+      return true;
+    }
+    
+    // Check for evidence containing error indicators
+    if ('evidence' in obj && Array.isArray(obj.evidence)) {
+      const hasApiError = (obj.evidence as Array<{key?: string; value?: string}>).some(
+        e => e.key === 'error' || (e.value && typeof e.value === 'string' && 
+          (e.value.includes('Invalid API key') || 
+           e.value.includes('unauthorized') ||
+           e.value.includes('401')))
+      );
+      if (hasApiError) {
+        console.warn('[cache] Detected API error in evidence, not caching');
+        return true;
+      }
+    }
+    
+    // Check meta for error status codes
+    if ('meta' in obj && typeof obj.meta === 'object' && obj.meta !== null) {
+      const meta = obj.meta as Record<string, unknown>;
+      if (meta.status === 401 || meta.status === 403 || meta.apiError) {
+        console.warn('[cache] Detected auth error in meta, not caching');
+        return true;
+      }
     }
   }
   return false;
@@ -117,9 +152,9 @@ export async function withCache<T>(
   // Try cache first
   const cached = await cacheGet<T>(key);
   if (cached !== null) {
-    // Validate cached result - don't return poisoned empty cache entries
-    if (isEmptyResult(cached)) {
-      console.warn(`[cache] POISONED (empty result in cache, ignoring): ${key}`);
+    // Validate cached result - don't return poisoned empty/error cache entries
+    if (isEmptyOrErrorResult(cached)) {
+      console.warn(`[cache] POISONED (empty/error result in cache, ignoring): ${key}`);
       // Delete the poisoned entry
       await cacheDelete(key);
     } else {
@@ -133,9 +168,9 @@ export async function withCache<T>(
   // Execute function
   const result = await fn();
   
-  // Don't cache empty results to prevent cache poisoning
-  if (isEmptyResult(result)) {
-    console.warn(`[cache] SKIP (not caching empty result): ${key}`);
+  // Don't cache empty or error results to prevent cache poisoning
+  if (isEmptyOrErrorResult(result)) {
+    console.warn(`[cache] SKIP (not caching empty/error result): ${key}`);
     return result;
   }
   

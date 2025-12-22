@@ -91,7 +91,7 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
     enabled: true,
   },
 
-  // Pro tier (messaging presence)
+  // Pro tier (messaging presence) - no API keys required, use free detection
   {
     id: 'whatsapp_check',
     name: 'WhatsApp Check',
@@ -100,7 +100,6 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
     creditCost: 2,
     minTier: 'pro',
     category: 'messaging',
-    requiresKey: 'WHATSAPP_CHECK_API_KEY',
     enabled: true,
   },
   {
@@ -111,7 +110,6 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
     creditCost: 2,
     minTier: 'pro',
     category: 'messaging',
-    requiresKey: 'TELEGRAM_CHECK_API_KEY',
     enabled: true,
   },
   {
@@ -122,7 +120,6 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
     creditCost: 1,
     minTier: 'pro',
     category: 'messaging',
-    requiresKey: 'SIGNAL_CHECK_API_KEY',
     enabled: true,
   },
 
@@ -135,7 +132,6 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
     creditCost: 2,
     minTier: 'business',
     category: 'osint',
-    requiresKey: 'PHONE_OSINT_API_KEY',
     enabled: true,
   },
   {
@@ -157,7 +153,6 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
     creditCost: 2,
     minTier: 'business',
     category: 'risk',
-    requiresKey: 'PHONE_REPUTATION_API_KEY',
     enabled: true,
   },
   {
