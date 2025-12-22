@@ -433,12 +433,23 @@ serve(async (req) => {
     // CACHE LOGIC (username scans only, 7-day TTL)
     // =====================================================
     const normalizedTarget = value.toLowerCase().trim();
-    const cacheKey = type === 'username' && !options.noCache 
-      ? `${workspaceId}:username:${normalizedTarget}`
-      : null;
+    const cacheKey = `${workspaceId}:${type}:${normalizedTarget}`;
+    
+    // If noCache is set, clear any existing cached results first
+    if (options.noCache) {
+      console.log(`[orchestrate] noCache=true, clearing cached results for key: ${cacheKey}`);
+      try {
+        await cacheDelete(cacheKey);
+        console.log(`[orchestrate] Cleared cache for: ${cacheKey}`);
+      } catch (err) {
+        console.warn(`[orchestrate] Failed to clear cache for ${cacheKey}:`, err);
+      }
+    }
+    
+    const shouldUseCache = type === 'username' && !options.noCache;
 
     // Check for cached results (username scans only, last 7 days)
-    if (cacheKey) {
+    if (shouldUseCache) {
       console.log(`[orchestrate] Checking cache for key: ${cacheKey}`);
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -564,7 +575,7 @@ serve(async (req) => {
         username: type === 'username' ? value : null,
         phone: type === 'phone' ? value : null,
         status: 'running',
-        cache_key: cacheKey || undefined,
+        cache_key: cacheKey,
         provider_counts: {},
         results_route: 'results',  // ✅ Orchestrated scans always route to /results/:id
       } as any, {
@@ -649,10 +660,25 @@ serve(async (req) => {
 
     // Enforce provider compatibility with scan type
     const providerTypeSupport: Record<string, Array<ScanRequest['type']>> = {
+      // Email providers
       hibp: ['email'],
       dehashed: ['email', 'username'],
-      fullcontact: ['email', 'phone', 'domain'],
-      clearbit: ['email', 'domain'],
+      holehe: ['email'],
+      ipqs_email: ['email'],
+      
+      // Phone providers
+      ipqs_phone: ['phone'],
+      abstract_phone: ['phone'],
+      numverify: ['phone'],
+      twilio_lookup: ['phone'],
+      whatsapp_check: ['phone'],
+      telegram_check: ['phone'],
+      signal_check: ['phone'],
+      phone_osint: ['phone'],
+      truecaller: ['phone'],
+      phone_reputation: ['phone'],
+      
+      // Domain providers
       shodan: ['domain'],
       virustotal: ['domain'],
       securitytrails: ['domain'],
@@ -660,14 +686,16 @@ serve(async (req) => {
       censys: ['domain'],
       binaryedge: ['domain'],
       otx: ['domain'],
+      
+      // Username providers
       maigret: ['username'],
       sherlock: ['username'],
       whatsmyname: ['username'], // Legacy alias
       gosearch: ['username'],
-      holehe: ['email'],
-      ipqs_email: ['email'],
-      ipqs_phone: ['phone'],
-      abstract_phone: ['phone'],
+      
+      // Multi-type providers
+      fullcontact: ['email', 'phone', 'domain'],
+      clearbit: ['email', 'domain'],
       perplexity_osint: ['email', 'username', 'phone'],
       'apify-social': ['username'],
       'apify-osint': ['email', 'username'],

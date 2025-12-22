@@ -97,9 +97,28 @@ function isEmptyOrErrorResult(result: unknown): boolean {
   if (result === null || result === undefined) {
     return true;
   }
-  if (Array.isArray(result) && result.length === 0) {
-    return true;
+  
+  // Check arrays - either empty or containing error items
+  if (Array.isArray(result)) {
+    if (result.length === 0) {
+      return true;
+    }
+    // Check if array contains error findings
+    const hasErrors = result.some((item: unknown) => {
+      if (typeof item === 'object' && item !== null) {
+        const obj = item as Record<string, unknown>;
+        return obj.kind === 'provider_error' || 
+               obj.error === true ||
+               (typeof obj.error === 'string' && obj.error.length > 0);
+      }
+      return false;
+    });
+    if (hasErrors) {
+      console.warn('[cache] Detected error items in array result, not caching');
+      return true;
+    }
   }
+  
   if (typeof result === 'object' && result !== null) {
     const obj = result as Record<string, unknown>;
     
@@ -109,7 +128,7 @@ function isEmptyOrErrorResult(result: unknown): boolean {
     }
     
     // Don't cache error responses (API key errors, etc.)
-    if ('error' in obj || 'kind' in obj && obj.kind === 'provider_error') {
+    if ('error' in obj || ('kind' in obj && obj.kind === 'provider_error')) {
       console.warn('[cache] Detected error result, not caching');
       return true;
     }
@@ -118,9 +137,11 @@ function isEmptyOrErrorResult(result: unknown): boolean {
     if ('evidence' in obj && Array.isArray(obj.evidence)) {
       const hasApiError = (obj.evidence as Array<{key?: string; value?: string}>).some(
         e => e.key === 'error' || (e.value && typeof e.value === 'string' && 
-          (e.value.includes('Invalid API key') || 
-           e.value.includes('unauthorized') ||
-           e.value.includes('401')))
+          (e.value.toLowerCase().includes('invalid api key') || 
+           e.value.toLowerCase().includes('unauthorized') ||
+           e.value.toLowerCase().includes('401') ||
+           e.value.toLowerCase().includes('403') ||
+           e.value.toLowerCase().includes('api_error')))
       );
       if (hasApiError) {
         console.warn('[cache] Detected API error in evidence, not caching');
