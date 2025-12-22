@@ -1468,8 +1468,8 @@ serve(async (req) => {
             severity = 'info';
           }
           
-          // Defensive kind normalization - derive from type if kind is missing
-          let kind = f.kind || f.type || 'unknown';
+          // Defensive kind normalization - ensure kind is never null/undefined
+          let kind = f.kind || 'unknown';
           if (!kind || kind === 'undefined') {
             console.warn(`[orchestrate] Missing kind for finding from ${f.provider}, using 'unknown'`, f);
             kind = 'unknown';
