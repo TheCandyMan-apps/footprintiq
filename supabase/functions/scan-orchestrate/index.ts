@@ -1458,19 +1458,28 @@ serve(async (req) => {
     try {
       // Persist findings (linked to scan_id)
       if (sortedFindings.length > 0 && scanId) {
-        // Sanitize severity values to ensure DB constraint compliance
+        // Sanitize severity and kind values to ensure DB constraint compliance
         const VALID_SEVERITIES = ['critical', 'high', 'medium', 'low', 'info'];
         const sanitizedFindings = sortedFindings.map(f => {
+          // Normalize severity
           let severity = f.severity;
           if (!VALID_SEVERITIES.includes(severity)) {
             console.warn(`[orchestrate] Invalid severity '${severity}' for finding, coercing to 'info'`, f);
             severity = 'info';
           }
+          
+          // Defensive kind normalization - derive from type if kind is missing
+          let kind = f.kind || f.type || 'unknown';
+          if (!kind || kind === 'undefined') {
+            console.warn(`[orchestrate] Missing kind for finding from ${f.provider}, using 'unknown'`, f);
+            kind = 'unknown';
+          }
+          
           return {
             scan_id: scanId,
             workspace_id: workspaceId,
             provider: f.provider,
-            kind: f.kind,
+            kind: kind,
             severity: severity,
             confidence: normalizeConfidence(f.confidence),
             observed_at: f.observedAt,
@@ -1665,7 +1674,7 @@ serve(async (req) => {
       // Ensure scan is marked as error, not left pending
       if (scanId) {
         try {
-          await supabaseService
+          const { error: statusError } = await supabaseService
             .from('scans')
             .update({
               status: 'error',
@@ -1673,13 +1682,18 @@ serve(async (req) => {
               error_message: finalizationError instanceof Error ? finalizationError.message : 'Finalization failed'
             } as any)
             .eq('id', scanId);
-          console.log(`[orchestrate] Scan ${scanId} marked as error due to finalization failure`);
+          
+          if (statusError) {
+            console.error('[orchestrate] CRITICAL: Failed to update scan status to error:', statusError);
+          } else {
+            console.log(`[orchestrate] Scan ${scanId} marked as error due to finalization failure`);
+          }
         } catch (updateErr) {
           console.error('[orchestrate] Could not update scan to error state:', updateErr);
         }
       }
       
-      throw finalizationError;
+      // Don't re-throw - let finally block clean up and return gracefully
     } finally {
       // Always broadcast terminal event and update progress, regardless of success/failure
       if (scanId) {

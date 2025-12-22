@@ -243,6 +243,7 @@ serve(async (req) => {
             if (isValid) {
               findings.push({
                 id: generateFindingId('abstract_phone', 'carrier_intel', normalizedPhone),
+                kind: 'phone.carrier',
                 type: 'phone_intelligence',
                 title: `Carrier: ${carrierName || 'Unknown'} (${lineType || 'unknown'})`,
                 description: `Phone validated as ${lineType || 'unknown'} line in ${countryName || 'unknown country'}.`,
@@ -308,6 +309,7 @@ serve(async (req) => {
               // Carrier finding
               findings.push({
                 id: generateFindingId('ipqs_phone', 'carrier_intel', normalizedPhone),
+                kind: 'phone.carrier',
                 type: 'phone_intelligence',
                 title: `Carrier: ${data.carrier || 'Unknown'} (${data.line_type || 'unknown'})`,
                 description: `Phone is a ${data.line_type || 'unknown'} line on ${data.carrier || 'unknown carrier'} in ${data.country || 'unknown country'}.`,
@@ -345,6 +347,7 @@ serve(async (req) => {
                 
                 findings.push({
                   id: generateFindingId('ipqs_phone', 'risk_signal', normalizedPhone),
+                  kind: 'phone.risk',
                   type: 'phone_intelligence',
                   title: riskFactors.length > 0 
                     ? `Risk: ${riskFactors.slice(0, 2).join(', ')}`
@@ -380,6 +383,7 @@ serve(async (req) => {
               if (data.VOIP) {
                 findings.push({
                   id: generateFindingId('ipqs_phone', 'voip_detection', normalizedPhone),
+                  kind: 'phone.voip',
                   type: 'phone_intelligence',
                   title: 'VoIP Number Detected',
                   description: `Phone number is a VoIP line, which may have lower security protections.`,
