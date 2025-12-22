@@ -28,7 +28,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'basic',
     category: 'carrier',
     enabled: true,
-    requiresKey: 'ABSTRACT_PHONE_API_KEY',
+    requiresKey: 'ABSTRACTAPI_PHONE_VALIDATION_KEY',
   },
   {
     id: 'numverify',
@@ -61,7 +61,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     requiresKey: 'TWILIO_API_KEY',
   },
 
-  // Tier 2 - Medium (messaging presence)
+  // Tier 2 - Medium (messaging presence) - no API keys required
   {
     id: 'whatsapp_check',
     name: 'WhatsApp Check',
@@ -70,7 +70,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'medium',
     category: 'messaging',
     enabled: true,
-    requiresKey: 'WHATSAPP_CHECK_API_KEY',
+    // No API key required - uses free detection
   },
   {
     id: 'telegram_check',
@@ -80,7 +80,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'medium',
     category: 'messaging',
     enabled: true,
-    requiresKey: 'TELEGRAM_CHECK_API_KEY',
+    // No API key required - uses free detection
   },
   {
     id: 'signal_check',
@@ -90,7 +90,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'medium',
     category: 'messaging',
     enabled: true,
-    requiresKey: 'SIGNAL_CHECK_API_KEY',
+    // No API key required - uses free detection
   },
 
   // Tier 3 - Advanced (OSINT & reputation)
@@ -102,7 +102,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'advanced',
     category: 'osint',
     enabled: true,
-    requiresKey: 'PHONE_OSINT_API_KEY',
+    // No API key required - uses aggregated sources
   },
   {
     id: 'truecaller',
@@ -122,7 +122,7 @@ export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
     tier: 'advanced',
     category: 'risk',
     enabled: true,
-    requiresKey: 'PHONE_REPUTATION_API_KEY',
+    // No API key required - uses aggregated sources
   },
   {
     id: 'caller_hint',
