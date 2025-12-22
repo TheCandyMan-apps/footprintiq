@@ -748,7 +748,10 @@ const ResultsDetail = () => {
                     {scan.status === 'pending' && "Scan Processing"}
                   </h3>
                   <p className="text-muted-foreground mb-4">
-                    {scan.status === 'failed' && "This scan encountered an error and could not complete. The scan was not picked up by our orchestrator."}
+                    {scan.status === 'failed' && (findings.length > 0
+                      ? "This scan ran, but one or more providers returned errors. Review the provider cards below for details."
+                      : "This scan encountered an error and could not complete."
+                    )}
                     {scan.status === 'timeout' && findings.length === 0 && "This scan exceeded the maximum processing time and was automatically stopped. No results were found."}
                     {scan.status === 'timeout' && findings.length > 0 && "Some providers timed out during this scan, but results are available below. The scan may not be 100% complete."}
                     {scan.status === 'pending' && "Your scan is being processed. This typically takes 30-60 seconds."}
