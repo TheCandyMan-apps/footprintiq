@@ -162,6 +162,9 @@ const ResultsDetail = () => {
   
   // Normalize user plan for capability checks
   const userPlan = normalizePlanTier(subscriptionTier);
+  
+  // Terminal states that stop polling
+  const TERMINAL_STATES = ['completed', 'failed', 'timeout', 'complete_partial', 'cancelled'];
 
   useEffect(() => {
     // Reset poll counter when scanId changes
@@ -278,8 +281,8 @@ const ResultsDetail = () => {
         }
       }
 
-      // Stop polling if scan is completed or failed/timeout
-      if (scanData.status === 'completed' || scanData.status === 'failed' || scanData.status === 'timeout' || scanData.status === 'complete_partial') {
+      // Stop polling if scan is in a terminal state (completed, failed, timeout, cancelled, or partial)
+      if (TERMINAL_STATES.includes(scanData.status)) {
         if (pollTimeoutRef.current !== null) {
           clearTimeout(pollTimeoutRef.current);
           pollTimeoutRef.current = null;
@@ -469,7 +472,7 @@ const ResultsDetail = () => {
 
       // If background job is still populating AND scan not completed, poll less frequently (max 30 tries)
       const hasData = (sources?.length ?? 0) > 0 || (profiles?.length ?? 0) > 0 || convertedFindings.length > 0;
-      const isTerminalState = scanData.status === 'completed' || scanData.status === 'failed' || scanData.status === 'timeout' || scanData.status === 'complete_partial';
+      const isTerminalState = TERMINAL_STATES.includes(scanData.status);
       
       if (!hasData && !isTerminalState && pollTriesRef.current < 30) {
         pollTriesRef.current++;
