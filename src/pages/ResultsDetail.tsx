@@ -334,10 +334,11 @@ const ResultsDetail = () => {
       let convertedFindings: Finding[] = [];
 
       if (!findingsError && Array.isArray(findingsData) && findingsData.length > 0) {
-        // Convert unified findings
+        // Convert unified findings - use phone_intelligence type for phone scans
+        const findingType = scanData.scan_type === 'phone' ? 'phone_intelligence' : 'breach';
         convertedFindings = ((findingsData as any[]) || []).map((f: any) => ({
           id: f.id,
-          type: 'breach' as const,
+          type: findingType as any,
           title: `${f.provider}: ${f.kind}`,
           description: JSON.stringify(f.evidence || []),
           severity: f.severity as any,
@@ -913,27 +914,30 @@ const ResultsDetail = () => {
             </div>
             
             {/* Locked Insight Tiles for Premium Features */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-              {/* AI Risk Analysis - locked for free users */}
-              {!hasCapability(userPlan, 'aiInsights') && (
-                <LockedInsightTile
-                  title="AI Risk Analysis"
-                  description="Get AI-powered insights about this phone number's risk profile"
-                  icon={<Brain className="h-5 w-5 text-primary" />}
-                  requiredTier="pro"
-                />
-              )}
-              
-              {/* Identity Graph - locked for free/pro users */}
-              {!hasCapability(userPlan, 'identityGraph') && (
-                <LockedInsightTile
-                  title="Identity Graph"
-                  description="See connections between this phone and other entities"
-                  icon={<Network className="h-5 w-5 text-primary" />}
-                  requiredTier="business"
-                />
-              )}
-            </div>
+            {/* Only show locked tiles if user is on a lower tier - use explicit check to handle loading state */}
+            {subscriptionTier && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                {/* AI Risk Analysis - locked for free users */}
+                {userPlan === 'free' && (
+                  <LockedInsightTile
+                    title="AI Risk Analysis"
+                    description="Get AI-powered insights about this phone number's risk profile"
+                    icon={<Brain className="h-5 w-5 text-primary" />}
+                    requiredTier="pro"
+                  />
+                )}
+                
+                {/* Identity Graph - locked for free/pro users only */}
+                {(userPlan === 'free' || userPlan === 'pro') && (
+                  <LockedInsightTile
+                    title="Identity Graph"
+                    description="See connections between this phone and other entities"
+                    icon={<Network className="h-5 w-5 text-primary" />}
+                    requiredTier="business"
+                  />
+                )}
+              </div>
+            )}
           </div>
         )}
 
