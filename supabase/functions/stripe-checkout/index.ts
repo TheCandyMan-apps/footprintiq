@@ -12,7 +12,7 @@ const corsHeaders = {
 
 const CheckoutSchema = z.object({
   workspaceId: z.string().uuid().optional(),
-  plan: z.enum(['pro', 'unlimited']),
+  plan: z.enum(['pro', 'business']),
 });
 
 serve(async (req) => {
@@ -101,7 +101,7 @@ serve(async (req) => {
     }
 
     // Get Stripe price ID from environment
-    const priceIdEnvVar = plan === 'pro' ? 'STRIPE_PRICE_PRO' : 'STRIPE_PRICE_UNLIMITED';
+    const priceIdEnvVar = plan === 'pro' ? 'STRIPE_PRICE_PRO' : 'STRIPE_PRICE_BUSINESS';
     const priceId = Deno.env.get(priceIdEnvVar);
 
     if (!priceId) {
