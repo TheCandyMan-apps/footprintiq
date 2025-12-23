@@ -42,28 +42,46 @@ Deno.serve(async (req) => {
       throw new Error('Missing required environment variables');
     }
 
-    // Get the authenticated user from the Authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Authentication required');
-    }
-
-    const supabase = createClient(
-      supabaseUrl,
-      Deno.env.get('SUPABASE_ANON_KEY')!,
-      {
-        global: {
-          headers: { Authorization: authHeader }
-        }
+    // Parse request body for flow type
+    let flowType = 'sign_in'; // Default to sign-in flow
+    try {
+      const body = await req.json();
+      if (body.flowType === 'link') {
+        flowType = 'link';
       }
-    );
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
-      console.error('Auth error:', userError);
-      throw new Error('Invalid authentication token');
+    } catch {
+      // No body or invalid JSON - use default
     }
+
+    // Check for authenticated user (optional for sign-in, required for linking)
+    const authHeader = req.headers.get('Authorization');
+    let userId: string | null = null;
+
+    if (authHeader) {
+      const supabase = createClient(
+        supabaseUrl,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        {
+          global: {
+            headers: { Authorization: authHeader }
+          }
+        }
+      );
+
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (!userError && user) {
+        userId = user.id;
+        console.log('Authenticated user starting OAuth:', user.id);
+      }
+    }
+
+    // For linking flow, user must be authenticated
+    if (flowType === 'link' && !userId) {
+      throw new Error('Authentication required to link Twitter account');
+    }
+
+    console.log('Starting Twitter OAuth:', { flowType, hasUser: !!userId });
 
     // Generate PKCE code verifier and challenge
     const codeVerifier = generateCodeVerifier();
@@ -83,14 +101,15 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    // Store state and code verifier
+    // Store state, code verifier, and flow type
     const { error: insertError } = await serviceSupabase
       .from('oauth_states')
       .insert({
         state,
         provider: 'twitter',
-        user_id: user.id,
+        user_id: userId, // Can be null for sign-in flow
         code_verifier: codeVerifier,
+        flow_type: flowType,
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
 
@@ -99,7 +118,7 @@ Deno.serve(async (req) => {
       throw new Error('Failed to initialize OAuth flow');
     }
 
-    // Build Twitter OAuth URL
+    // Build Twitter OAuth URL - request email scope for sign-in
     const redirectUri = `${supabaseUrl}/functions/v1/twitter-oauth-callback`;
     const scope = 'tweet.read users.read offline.access';
     
@@ -112,7 +131,7 @@ Deno.serve(async (req) => {
     authUrl.searchParams.set('code_challenge', codeChallenge);
     authUrl.searchParams.set('code_challenge_method', 'S256');
 
-    console.log('Generated Twitter OAuth URL with S256 PKCE');
+    console.log('Generated Twitter OAuth URL with S256 PKCE for flow:', flowType);
 
     return new Response(
       JSON.stringify({ url: authUrl.toString() }),
