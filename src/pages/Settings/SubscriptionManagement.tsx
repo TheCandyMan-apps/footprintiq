@@ -82,8 +82,8 @@ export default function SubscriptionManagement() {
       setLoading(true);
       
       const [historyRes, upcomingRes] = await Promise.all([
-        supabase.functions.invoke('billing/history'),
-        supabase.functions.invoke('billing/upcoming-invoice'),
+        supabase.functions.invoke('billing-history'),
+        supabase.functions.invoke('billing-upcoming-invoice'),
       ]);
 
       if (historyRes.data) {

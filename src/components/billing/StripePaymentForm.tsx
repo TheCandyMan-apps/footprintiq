@@ -203,7 +203,7 @@ export const StripePaymentForm = ({ priceId, planName, amount, onSuccess, onCanc
   useState(() => {
     const initializePayment = async () => {
       try {
-        const { data, error } = await supabase.functions.invoke('billing/create-payment-intent', {
+        const { data, error } = await supabase.functions.invoke('billing-create-payment-intent', {
           body: { priceId, planName },
         });
 

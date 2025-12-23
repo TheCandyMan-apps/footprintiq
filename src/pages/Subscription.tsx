@@ -24,7 +24,7 @@ const Subscription = () => {
     }
     
     const fetchSubscriptionDetails = async () => {
-      const { data } = await supabase.functions.invoke("billing/check-subscription");
+      const { data } = await supabase.functions.invoke("billing-check-subscription");
       if (data?.subscription_end) {
         setSubscriptionEnd(data.subscription_end);
       }
@@ -61,7 +61,7 @@ const Subscription = () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("billing-checkout", {
-        body: { plan: 'analyst' }
+        body: { plan: 'pro' }
       });
       if (error || !data?.url) {
         toast({
