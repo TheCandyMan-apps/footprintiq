@@ -357,7 +357,7 @@ const PersonaDnaLaunch = () => {
                   <Badge variant="default" className="mb-4">Pro</Badge>
                   <h4 className="font-semibold text-lg mb-2">Unlimited Access</h4>
                   <p className="text-sm text-muted-foreground">
-                    $49/month — unlimited scans, API access, priority support
+                    £49.99/month — unlimited scans, API access, priority support
                   </p>
                 </Card>
                 <Card className="p-6">

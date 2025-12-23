@@ -327,14 +327,14 @@ export default function BillingSettings() {
                       onClick={() => handleUpgrade('pro')}
                       disabled={loading}
                     >
-                      PRO (£19/mo)
+                      PRO (£14.99/mo)
                     </Button>
                     <Button 
                       onClick={() => handleUpgrade('business')}
                       disabled={loading}
                       variant="outline"
                     >
-                      Business (£49/mo)
+                      Business (£49.99/mo)
                     </Button>
                     <Button 
                       onClick={() => handleUpgrade('pro_annual')}

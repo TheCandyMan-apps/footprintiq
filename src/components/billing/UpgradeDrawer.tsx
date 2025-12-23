@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Zap, Building2, Crown, Loader2 } from "lucide-react";
+import { Check, Zap, Crown, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -21,43 +21,34 @@ interface UpgradeDrawerProps {
 
 const PLANS = [
   {
-    id: "analyst",
-    name: "Analyst Basic",
-    price: "19",
+    id: "pro",
+    name: "Pro",
+    price: "14.99",
     icon: Zap,
     features: [
       "100 scans per month",
-      "Presence & breach checks",
-      "Basic reports",
-      "Email support",
+      "Multi-tool OSINT (Maigret + Sherlock)",
+      "IPQS Email & Phone Intelligence",
+      "Full results view",
+      "PDF & CSV export",
+      "Priority queue",
+      "Risk scoring",
     ],
   },
   {
-    id: "pro",
-    name: "Professional OSINT",
-    price: "59",
+    id: "business",
+    name: "Business",
+    price: "49.99",
     icon: Crown,
     popular: true,
     features: [
-      "Unlimited standard scans",
-      "10 dark web credits/month",
-      "PDF exports & AI summaries",
-      "1 workspace",
-      "Priority support",
-    ],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise Intelligence",
-    price: "179",
-    icon: Building2,
-    features: [
-      "Everything in Pro",
-      "Unlimited dark web monitoring",
+      "Unlimited scans",
+      "All multi-tool providers (incl. GoSearch)",
+      "Shared workspaces",
+      "Audit logs",
       "API access",
-      "White-label reports",
-      "Multi-workspace",
-      "Dedicated support",
+      "Case notes & tagging",
+      "Early access to premium providers",
     ],
   },
 ];
@@ -66,11 +57,6 @@ export const UpgradeDrawer = ({ open, onOpenChange, currentPlan }: UpgradeDrawer
   const [loading, setLoading] = useState<string | null>(null);
 
   const handleUpgrade = async (planId: string) => {
-    if (planId === "enterprise") {
-      window.location.href = "/enterprise";
-      return;
-    }
-
     setLoading(planId);
     try {
       // Refresh session before checkout to prevent 401 errors

@@ -42,7 +42,7 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
     monthlyScanLimit: 100,
     allowedProviders: ['maigret', 'sherlock', 'gosearch', 'holehe'], // Multi-tool OSINT
     stripePriceId: STRIPE_PRICE_IDS.pro,
-    priceMonthly: 19,
+    priceMonthly: 14.99,
     features: [
       '100 scans per month',
       'Multi-tool OSINT engine (Sherlock + GoSearch)',
@@ -61,7 +61,7 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
     monthlyScanLimit: 500,
     allowedProviders: ['maigret', 'sherlock', 'gosearch', 'holehe', 'spiderfoot'], // All providers
     stripePriceId: STRIPE_PRICE_IDS.business,
-    priceMonthly: 49,
+    priceMonthly: 49.99,
     features: [
       '500 scans per month',
       'All multi-tool providers',
