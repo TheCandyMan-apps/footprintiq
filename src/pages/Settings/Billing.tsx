@@ -96,7 +96,7 @@ export default function BillingSettings() {
   const { data: subscriptionData, refetch: refetchSubscription } = useQuery({
     queryKey: ['subscription-details'],
     queryFn: async () => {
-      const { data } = await supabase.functions.invoke("billing/check-subscription");
+      const { data } = await supabase.functions.invoke("billing-check-subscription");
       return data;
     },
   });
@@ -104,7 +104,7 @@ export default function BillingSettings() {
   const { data: billingHistory, isLoading: loadingHistory } = useQuery<BillingHistoryItem[]>({
     queryKey: ['billing-history'],
     queryFn: async () => {
-      const { data } = await supabase.functions.invoke("billing/history");
+      const { data } = await supabase.functions.invoke("billing-history");
       return data?.invoices || [];
     },
   });
@@ -112,7 +112,7 @@ export default function BillingSettings() {
   const { data: upcomingInvoice } = useQuery<UpcomingInvoice | null>({
     queryKey: ['upcoming-invoice'],
     queryFn: async () => {
-      const { data } = await supabase.functions.invoke("billing/upcoming-invoice");
+      const { data } = await supabase.functions.invoke("billing-upcoming-invoice");
       return data?.upcoming || null;
     },
     enabled: isPremium,
@@ -126,7 +126,7 @@ export default function BillingSettings() {
   const verifyUpgrade = async (expectedTier: string): Promise<boolean> => {
     try {
       await refreshSubscription();
-      const { data } = await supabase.functions.invoke("billing/check-subscription");
+      const { data } = await supabase.functions.invoke("billing-check-subscription");
       
       // Check if user role was updated
       const { data: userRole } = await supabase
