@@ -5,6 +5,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Generate a random code verifier (43-128 characters)
+function generateCodeVerifier(): string {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return btoa(String.fromCharCode(...array))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '')
+    .substring(0, 64);
+}
+
+// Create S256 code challenge from verifier
+async function generateCodeChallenge(verifier: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = new Uint8Array(hashBuffer);
+  return btoa(String.fromCharCode(...hashArray))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -15,6 +38,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     
     if (!clientId || !supabaseUrl) {
+      console.error('Missing environment variables:', { clientId: !!clientId, supabaseUrl: !!supabaseUrl });
       throw new Error('Missing required environment variables');
     }
 
@@ -37,8 +61,18 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
+      console.error('Auth error:', userError);
       throw new Error('Invalid authentication token');
     }
+
+    // Generate PKCE code verifier and challenge
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+    console.log('Generated PKCE:', { 
+      verifierLength: codeVerifier.length,
+      challengeLength: codeChallenge.length 
+    });
 
     // Generate state for CSRF protection
     const state = crypto.randomUUID();
@@ -49,14 +83,21 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
-    await serviceSupabase
+    // Store state and code verifier
+    const { error: insertError } = await serviceSupabase
       .from('oauth_states')
       .insert({
         state,
         provider: 'twitter',
         user_id: user.id,
+        code_verifier: codeVerifier,
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
       });
+
+    if (insertError) {
+      console.error('Failed to store OAuth state:', insertError);
+      throw new Error('Failed to initialize OAuth flow');
+    }
 
     // Build Twitter OAuth URL
     const redirectUri = `${supabaseUrl}/functions/v1/twitter-oauth-callback`;
@@ -68,10 +109,10 @@ Deno.serve(async (req) => {
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('scope', scope);
     authUrl.searchParams.set('state', state);
-    authUrl.searchParams.set('code_challenge', 'challenge');
-    authUrl.searchParams.set('code_challenge_method', 'plain');
+    authUrl.searchParams.set('code_challenge', codeChallenge);
+    authUrl.searchParams.set('code_challenge_method', 'S256');
 
-    console.log('Generated Twitter OAuth URL:', authUrl.toString());
+    console.log('Generated Twitter OAuth URL with S256 PKCE');
 
     return new Response(
       JSON.stringify({ url: authUrl.toString() }),
