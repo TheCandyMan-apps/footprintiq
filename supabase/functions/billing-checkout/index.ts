@@ -72,9 +72,8 @@ serve(async (req) => {
 
     // Map plan names to price IDs
     const priceMap: Record<string, string> = {
-      analyst: 'price_1SQgxEPNdM5SAyj7pZEUc11u',
-      pro: 'price_1SQwWCPNdM5SAyj7XS394cD8',
-      enterprise: 'price_1SQh9JPNdM5SAyj722p376Qh',
+      pro: 'price_1ShdnEA3ptI9drLWLFG8qPyk',
+      business: 'price_1ShdxJA3ptI9drLWjndMjptw',
     };
 
     // Use direct priceId if provided, otherwise map from plan name

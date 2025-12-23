@@ -36,7 +36,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     label: 'Pro',
     description: 'Powerful OSINT for investigators & power users.',
     priceMonthly: 14.99,
-    stripePriceId: 'price_1SIbjiA3ptI9drLWsG0noPeX',
+    stripePriceId: 'price_1ShdnEA3ptI9drLWLFG8qPyk',
     monthlyScanLimit: 100,
     allowedProviders: ['maigret', 'sherlock', 'holehe', 'ipqs_email', 'ipqs_phone', 'perplexity_osint'],
     features: [
@@ -54,7 +54,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     label: 'Business',
     description: 'Teams, agencies and corporate investigators.',
     priceMonthly: 49.99,
-    stripePriceId: 'price_1SN3uIA3ptI9drLWMCDo1mAT',
+    stripePriceId: 'price_1ShdxJA3ptI9drLWjndMjptw',
     monthlyScanLimit: null, // unlimited
     allowedProviders: ['maigret', 'sherlock', 'gosearch', 'holehe', 'ipqs_email', 'ipqs_phone', 'perplexity_osint'],
     features: [
