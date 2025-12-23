@@ -20,7 +20,7 @@ export const WhiteLabelToggle = () => {
               Customize reports with your company branding
             </p>
           </div>
-          <Badge variant="secondary">£49/mo</Badge>
+          <Badge variant="secondary">£49.99/mo</Badge>
         </div>
 
         <div className="flex items-center space-x-2">

@@ -82,7 +82,7 @@ export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: 
         <div className="space-y-6 pt-4">
           <div className="bg-gradient-card border border-primary/50 rounded-xl p-6 shadow-glow">
             <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-4xl font-bold">$19</span>
+              <span className="text-4xl font-bold">£14.99</span>
               <span className="text-muted-foreground">/month</span>
             </div>
 
