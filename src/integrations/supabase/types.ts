@@ -4741,6 +4741,7 @@ export type Database = {
       }
       oauth_states: {
         Row: {
+          code_verifier: string | null
           created_at: string | null
           expires_at: string
           id: string
@@ -4749,6 +4750,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          code_verifier?: string | null
           created_at?: string | null
           expires_at: string
           id?: string
@@ -4757,6 +4759,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          code_verifier?: string | null
           created_at?: string | null
           expires_at?: string
           id?: string
