@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+type FlowType = 'sign_in' | 'link';
+
 export function useTwitterAuth() {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -10,9 +12,14 @@ export function useTwitterAuth() {
     const params = new URLSearchParams(window.location.search);
     const authStatus = params.get('twitter_auth');
     const errorMessage = params.get('message');
+    const isLinked = params.get('linked');
 
     if (authStatus === 'success') {
-      toast.success('Successfully connected Twitter/X account!');
+      if (isLinked) {
+        toast.success('Successfully connected Twitter/X account!');
+      } else {
+        toast.success('Successfully signed in with Twitter/X!');
+      }
       // Clean up URL
       window.history.replaceState({}, '', window.location.pathname);
     } else if (authStatus === 'error') {
@@ -25,22 +32,26 @@ export function useTwitterAuth() {
     }
   }, []);
 
-  const signInWithTwitter = useCallback(async () => {
+  const signInWithTwitter = useCallback(async (flowType: FlowType = 'sign_in') => {
     try {
       setIsLoading(true);
       
-      // Check if user is authenticated first
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error('Please sign in first before connecting Twitter');
-        setIsLoading(false);
-        return;
+      // For linking flow, check if user is authenticated
+      if (flowType === 'link') {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          toast.error('Please sign in first before connecting Twitter');
+          setIsLoading(false);
+          return;
+        }
       }
 
-      console.log('Starting Twitter OAuth flow...');
+      console.log('Starting Twitter OAuth flow:', flowType);
       
-      // Call the start OAuth function
-      const { data, error } = await supabase.functions.invoke('twitter-oauth-start');
+      // Call the start OAuth function with flow type
+      const { data, error } = await supabase.functions.invoke('twitter-oauth-start', {
+        body: { flowType }
+      });
       
       if (error) {
         console.error('Twitter OAuth start error:', error);
@@ -63,8 +74,14 @@ export function useTwitterAuth() {
     }
   }, []);
 
+  // Convenience methods
+  const signIn = useCallback(() => signInWithTwitter('sign_in'), [signInWithTwitter]);
+  const linkAccount = useCallback(() => signInWithTwitter('link'), [signInWithTwitter]);
+
   return {
     signInWithTwitter,
+    signIn,
+    linkAccount,
     isLoading,
   };
 }

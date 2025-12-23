@@ -4744,6 +4744,7 @@ export type Database = {
           code_verifier: string | null
           created_at: string | null
           expires_at: string
+          flow_type: string | null
           id: string
           provider: string
           state: string
@@ -4753,6 +4754,7 @@ export type Database = {
           code_verifier?: string | null
           created_at?: string | null
           expires_at: string
+          flow_type?: string | null
           id?: string
           provider: string
           state: string
@@ -4762,6 +4764,7 @@ export type Database = {
           code_verifier?: string | null
           created_at?: string | null
           expires_at?: string
+          flow_type?: string | null
           id?: string
           provider?: string
           state?: string
