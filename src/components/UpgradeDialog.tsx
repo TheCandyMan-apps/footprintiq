@@ -32,12 +32,12 @@ export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: 
 
       // Try primary checkout function
       let url: string | undefined;
-      const primary = await supabase.functions.invoke("billing-checkout", { body: { plan: 'analyst' } });
+      const primary = await supabase.functions.invoke("billing-checkout", { body: { plan: 'pro' } });
       if (!primary.error && primary.data?.url) {
         url = primary.data.url;
       } else {
         // Fallback to namespaced function
-        const fallback = await supabase.functions.invoke("billing/checkout", { body: { plan: 'analyst' } });
+        const fallback = await supabase.functions.invoke("billing/checkout", { body: { plan: 'pro' } });
         if (!fallback.error && fallback.data?.url) {
           url = fallback.data.url;
         }

@@ -13,7 +13,7 @@ interface UpgradeTeaserProps {
   title: string;
   description: string;
   benefits: string[];
-  plan?: 'pro' | 'enterprise';
+  plan?: 'pro' | 'business';
   className?: string;
 }
 
@@ -79,17 +79,17 @@ export function UpgradeTeaser({
 
   // Don't show if user already has access
   if (plan === 'pro' && (isPro || !isFree)) return null;
-  if (plan === 'enterprise' && !isFree && !isPro) return null;
+  if (plan === 'business' && !isFree && !isPro) return null;
 
   return (
     <Card className={`relative overflow-hidden border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-background to-background ${className}`}>
       <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-accent opacity-10 blur-3xl" />
       
       <div className="relative p-6 space-y-4">
-        <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-xl bg-primary/10 backdrop-blur-sm">
-              {plan === 'enterprise' ? (
+              {plan === 'business' ? (
                 <Crown className="w-6 h-6 text-primary" />
               ) : (
                 <Zap className="w-6 h-6 text-primary" />
@@ -99,7 +99,7 @@ export function UpgradeTeaser({
               <div className="flex items-center gap-2 mb-1">
                 <Lock className="w-4 h-4 text-muted-foreground" />
                 <Badge variant="secondary" className="text-xs">
-                  {plan === 'enterprise' ? 'Enterprise' : 'Pro'} Feature
+                  {plan === 'business' ? 'Business' : 'Pro'} Feature
                 </Badge>
               </div>
               <h3 className="font-bold text-lg">{title}</h3>
@@ -133,9 +133,9 @@ export function UpgradeTeaser({
               </>
             ) : (
               <>
-                Upgrade to {plan === 'enterprise' ? 'Enterprise' : 'Pro'} 
-                {plan === 'pro' && ' – $15/mo'}
-                {plan === 'enterprise' && ' – $299/mo'}
+                Upgrade to {plan === 'business' ? 'Business' : 'Pro'} 
+                {plan === 'pro' && ' – £14.99/mo'}
+                {plan === 'business' && ' – £49.99/mo'}
               </>
             )}
           </Button>
