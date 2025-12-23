@@ -47,30 +47,68 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState("24h");
 
-  // Fetch provider metrics
-  const { data: providerMetrics } = useQuery({
-    queryKey: ["provider-metrics"],
+  // Fetch real provider health metrics from scan_provider_events
+  const { data: providerHealth } = useQuery({
+    queryKey: ["provider-health-metrics", timeRange],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("metrics-providers");
+      const hoursBack = timeRange === "24h" ? 24 : timeRange === "7d" ? 168 : 720;
+      const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString();
+      
+      const { data, error } = await supabase
+        .from("scan_provider_events")
+        .select("provider, event")
+        .gte("created_at", since);
+      
       if (error) throw error;
-      return data;
+      
+      // Aggregate by provider
+      const providerStats: Record<string, { successes: number; failures: number }> = {};
+      (data || []).forEach((evt: any) => {
+        if (!providerStats[evt.provider]) {
+          providerStats[evt.provider] = { successes: 0, failures: 0 };
+        }
+        if (evt.event === "success") {
+          providerStats[evt.provider].successes++;
+        } else if (evt.event === "error" || evt.event === "timeout") {
+          providerStats[evt.provider].failures++;
+        }
+      });
+      
+      return providerStats;
     },
-    refetchInterval: 30000 // Refresh every 30 seconds
+    refetchInterval: 30000
   });
 
-  // Fetch SLO status
+  // Fetch SLO definitions with recent measurements
   const { data: slos } = useQuery({
     queryKey: ["slo-summary"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("slo_definitions" as any)
-        .select(`
-          *,
-          measurements:slo_measurements(*)
-        `)
-        .limit(10);
-      if (error) throw error;
-      return data;
+      const { data: definitions, error: defError } = await supabase
+        .from("slo_definitions")
+        .select("*")
+        .eq("is_active", true);
+      
+      if (defError) throw defError;
+      
+      // Get recent measurements for each SLO
+      const { data: measurements, error: measError } = await supabase
+        .from("slo_measurements")
+        .select("*")
+        .order("measured_at", { ascending: false })
+        .limit(100);
+      
+      if (measError) throw measError;
+      
+      // Attach latest measurement to each SLO
+      return (definitions || []).map((slo: any) => {
+        const latestMeasurement = (measurements || []).find((m: any) => m.slo_id === slo.id);
+        return {
+          ...slo,
+          latestMeasurement,
+          target: slo.target_value,
+          enabled: slo.is_active,
+        };
+      });
     }
   });
 
@@ -79,7 +117,7 @@ export default function AdminDashboard() {
     queryKey: ["active-incidents"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("incidents" as any)
+        .from("incidents")
         .select("*")
         .in("status", ["investigating", "identified", "monitoring"])
         .order("created_at", { ascending: false })
@@ -94,7 +132,7 @@ export default function AdminDashboard() {
     queryKey: ["circuit-status"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("circuit_breaker_states" as any)
+        .from("circuit_breaker_states")
         .select("*")
         .order("failure_count", { ascending: false })
         .limit(10);
@@ -103,15 +141,23 @@ export default function AdminDashboard() {
     }
   });
 
-  // Fetch cost summary
+  // Fetch cost summary - use credits_ledger directly for reliability
   const { data: costs } = useQuery({
-    queryKey: ["cost-summary"],
+    queryKey: ["cost-summary-credits", timeRange],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke("cost-tracker?action=summary&period=daily", {
-        method: "GET"
-      });
+      const hoursBack = timeRange === "24h" ? 24 : timeRange === "7d" ? 168 : 720;
+      const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString();
+      
+      const { data, error } = await supabase
+        .from("credits_ledger")
+        .select("delta")
+        .lt("delta", 0)
+        .gte("created_at", since);
+      
       if (error) throw error;
-      return data;
+      
+      const totalSpent = (data || []).reduce((sum: number, item: any) => sum + Math.abs(item.delta), 0);
+      return { totalSpent };
     }
   });
 
@@ -120,7 +166,7 @@ export default function AdminDashboard() {
     queryKey: ["budget-alerts-summary"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("budget_alerts" as any)
+        .from("budget_alerts")
         .select("*")
         .eq("acknowledged", false)
         .order("created_at", { ascending: false })
@@ -131,32 +177,36 @@ export default function AdminDashboard() {
   });
 
   // Calculate metrics
-  const totalProviders = Object.keys(providerMetrics?.providers || {}).length;
-  const openCircuits = providerMetrics?.circuits?.length || 0;
+  const totalProviders = Object.keys(providerHealth || {}).length;
+  const openCircuits = circuits?.filter((c: any) => c.state === 'open').length || 0;
   const activeSLOs = slos?.filter((slo: any) => slo.enabled).length || 0;
   const sloViolations = slos?.reduce((sum: number, slo: any) => {
-    const latestMeasurement = slo.measurements?.[0];
-    return sum + (latestMeasurement?.value < slo.target ? 1 : 0);
+    const measurement = slo.latestMeasurement;
+    if (!measurement) return sum;
+    return sum + (measurement.is_violation ? 1 : 0);
   }, 0) || 0;
 
-  const totalMonthlyCost = costs?.costs?.reduce((sum: number, cost: any) => 
-    cost.period_type === "monthly" ? sum + Number(cost.total_cost_gbp) : sum, 0) || 0;
+  const totalCreditSpent = costs?.totalSpent || 0;
 
-  // Prepare chart data
-  const providerHealthData = circuits?.map((circuit: any) => ({
-    name: circuit.provider_id,
-    failures: circuit.failure_count,
-    successes: circuit.success_count,
-    state: circuit.state
-  })) || [];
+  // Prepare chart data from real provider events
+  const providerHealthData = Object.entries(providerHealth || {})
+    .map(([name, stats]: [string, any]) => ({
+      name,
+      successes: stats.successes,
+      failures: stats.failures,
+    }))
+    .filter(p => p.successes > 0 || p.failures > 0)
+    .sort((a, b) => (b.successes + b.failures) - (a.successes + a.failures))
+    .slice(0, 10);
 
+  // SLO compliance data from definitions with target values
   const sloComplianceData = slos?.map((slo: any) => {
-    const latestMeasurement = slo.measurements?.[0];
+    const measurement = slo.latestMeasurement;
     return {
-      name: slo.name,
-      current: latestMeasurement?.value || 0,
-      target: slo.target,
-      compliant: (latestMeasurement?.value || 0) >= slo.target
+      name: slo.name?.replace(/^(API |Scan |Provider )/, '') || 'Unknown',
+      current: measurement?.measured_value || 0,
+      target: slo.target || 0,
+      compliant: measurement ? !measurement.is_violation : true
     };
   }) || [];
 
@@ -248,11 +298,11 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Monthly Cost</CardTitle>
+              <CardTitle className="text-sm font-medium">Credits Spent</CardTitle>
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">£{totalMonthlyCost.toFixed(2)}</div>
+              <div className="text-2xl font-bold">{totalCreditSpent} credits</div>
               <p className="text-xs text-muted-foreground">
                 {alerts?.length || 0} budget alerts
               </p>
