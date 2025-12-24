@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Trash2, XCircle, Eye, Filter, RefreshCw, StopCircle } from "lucide-react";
+import { Search, Trash2, XCircle, Eye, Filter, RefreshCw, StopCircle, Ban } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
@@ -78,6 +78,28 @@ export default function ScanManagement() {
     },
     onError: (err: any) => {
       toast.error(err?.message || 'Failed to cancel scan');
+    }
+  });
+
+  // Force cancel mutation - directly updates DB for stuck scans
+  const forceCancelMutation = useMutation({
+    mutationFn: async (scanId: string) => {
+      const { error } = await supabase
+        .from('scans')
+        .update({
+          status: 'failed',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', scanId);
+      if (error) throw error;
+      return { scanId };
+    },
+    onSuccess: () => {
+      toast.success("Scan force-cancelled successfully");
+      refetch();
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to force-cancel scan');
     }
   });
 
@@ -450,13 +472,49 @@ export default function ScanManagement() {
                               
                               {canCancelScan(scan.status) && (
                                 <Button
-                                  variant="ghost"
+                                  variant="destructive"
                                   size="sm"
                                   onClick={() => cancelScanMutation.mutate(scan.id)}
                                   disabled={cancelScanMutation.isPending}
+                                  className="gap-1"
                                 >
-                                  <XCircle className="h-4 w-4" />
+                                  <StopCircle className="h-4 w-4" />
+                                  Cancel
                                 </Button>
+                              )}
+
+                              {/* Force cancel for stuck scans - works on any non-terminal status */}
+                              {!['completed', 'failed', 'cancelled', 'timeout'].includes(scan.status) && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="gap-1 text-destructive border-destructive/50 hover:bg-destructive/10"
+                                    >
+                                      <Ban className="h-4 w-4" />
+                                      Force
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Force Cancel Scan?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will forcibly mark the scan as "failed" and set a completed timestamp.
+                                        Use this for stuck scans that won't cancel normally.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        onClick={() => forceCancelMutation.mutate(scan.id)}
+                                        disabled={forceCancelMutation.isPending}
+                                      >
+                                        Force Cancel
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               )}
 
                               {canDeleteScan(scan) && (
