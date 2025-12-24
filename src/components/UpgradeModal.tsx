@@ -19,7 +19,7 @@ export function UpgradeModal({ open, onOpenChange, reason, blockedFeature }: Upg
   const { workspace } = useWorkspace();
   const [loading, setLoading] = useState(false);
 
-  const handleUpgrade = async (plan: 'pro' | 'unlimited') => {
+  const handleUpgrade = async (plan: 'pro' | 'business') => {
     if (!workspace?.id) {
       toast({
         title: 'Error',
@@ -50,7 +50,7 @@ export function UpgradeModal({ open, onOpenChange, reason, blockedFeature }: Upg
     } catch (err: any) {
       toast({
         title: 'Checkout error',
-        description: err.message,
+        description: err?.message || 'Failed to start checkout',
         variant: 'destructive',
       });
     } finally {

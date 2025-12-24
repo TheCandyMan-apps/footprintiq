@@ -101,8 +101,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/settings/billing?credits_success=true&pack=${packType}`,
-      cancel_url: `${req.headers.get("origin")}/settings/billing?credits_canceled=true`,
+      success_url: `${req.headers.get("origin")}/scan/advanced?credits_success=true&pack=${packType}&credits=${pack.credits}`,
+      cancel_url: `${req.headers.get("origin")}/scan/advanced?credits_canceled=true`,
       metadata: {
         user_id: userId,
         workspace_id: workspaceId,

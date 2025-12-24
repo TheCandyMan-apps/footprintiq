@@ -8,6 +8,8 @@ import { addSecurityHeaders } from '../_shared/security-headers.ts';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 const CheckoutSchema = z.object({
@@ -17,7 +19,7 @@ const CheckoutSchema = z.object({
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: addSecurityHeaders(corsHeaders) });
   }
 
   if (req.method !== 'POST') {
