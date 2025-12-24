@@ -336,17 +336,19 @@ export default function BillingSettings() {
                     >
                       Business (£49.99/mo)
                     </Button>
-                    <Button 
-                      onClick={() => handleUpgrade('pro_annual')}
-                      disabled={loading}
-                      variant="default"
-                      className="relative"
-                    >
-                      <Badge className="absolute -top-2 -right-2 bg-green-500 text-xs">
+                    <div className="relative">
+                      <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-xs whitespace-nowrap z-10">
                         Save $30
                       </Badge>
-                      Pro Pack ($150/yr)
-                    </Button>
+                      <Button 
+                        onClick={() => handleUpgrade('pro_annual')}
+                        disabled={loading}
+                        variant="default"
+                        className="mt-2"
+                      >
+                        Pro Pack ($150/yr)
+                      </Button>
+                    </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
                     💰 Annual plan saves you $30/year compared to monthly billing
