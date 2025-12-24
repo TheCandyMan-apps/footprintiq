@@ -38,7 +38,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceMonthly: 14.99,
     stripePriceId: 'price_1ShdnEA3ptI9drLWLFG8qPyk',
     monthlyScanLimit: 100,
-    allowedProviders: ['maigret', 'sherlock', 'holehe', 'ipqs_email', 'ipqs_phone', 'perplexity_osint'],
+    allowedProviders: ['maigret', 'sherlock', 'holehe', 'ipqs_email', 'ipqs_phone', 'perplexity_osint', 'hibp', 'dehashed', 'clearbit', 'fullcontact'],
     features: [
       '100 scans per month',
       'Multi-tool OSINT (Maigret + Sherlock)',
@@ -56,7 +56,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceMonthly: 49.99,
     stripePriceId: 'price_1ShdxJA3ptI9drLWjndMjptw',
     monthlyScanLimit: null, // unlimited
-    allowedProviders: ['maigret', 'sherlock', 'gosearch', 'holehe', 'ipqs_email', 'ipqs_phone', 'perplexity_osint'],
+    allowedProviders: ['maigret', 'sherlock', 'gosearch', 'holehe', 'ipqs_email', 'ipqs_phone', 'perplexity_osint', 'hibp', 'dehashed', 'clearbit', 'fullcontact'],
     features: [
       'Unlimited scans',
       'All multi-tool providers (incl. GoSearch)',
