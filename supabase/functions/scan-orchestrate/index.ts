@@ -722,6 +722,15 @@ serve(async (req) => {
     // Ensure we have at least one provider after tier filtering
     if (providers.length === 0) {
       console.error('[orchestrate] Critical: No providers available after tier filtering!');
+      
+      // Mark scan as failed BEFORE returning error to prevent stuck "running" scans
+      await supabaseService.from('scans').update({
+        status: 'failed',
+        completed_at: new Date().toISOString()
+      }).eq('id', scanId);
+      
+      console.log(`[orchestrate] Marked scan ${scanId} as failed due to no available providers`);
+      
       const errorData = {
         error: 'no_providers_available_for_tier',
         blockedProviders: blocked,
