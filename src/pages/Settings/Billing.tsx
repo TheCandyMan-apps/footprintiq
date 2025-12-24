@@ -205,7 +205,7 @@ export default function BillingSettings() {
   const handlePortal = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('billing/create-portal');
+      const { data, error } = await supabase.functions.invoke('customer-portal');
 
       if (error) throw error;
 

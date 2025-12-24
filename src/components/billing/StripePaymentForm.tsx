@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import {
   Elements,
@@ -13,8 +13,8 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { trackPaymentError, trackCheckoutEvent, trackStripeError } from '@/lib/sentry';
 
-// Initialize Stripe - using the anon key which is safe for client-side
-const stripePromise = loadStripe(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.replace('eyJ', 'pk_test_') || '');
+// Initialize Stripe with the publishable key
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
 interface PaymentFormProps {
   priceId: string;
@@ -200,7 +200,7 @@ export const StripePaymentForm = ({ priceId, planName, amount, onSuccess, onCanc
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useState(() => {
+  useEffect(() => {
     const initializePayment = async () => {
       try {
         const { data, error } = await supabase.functions.invoke('billing-create-payment-intent', {
@@ -228,7 +228,7 @@ export const StripePaymentForm = ({ priceId, planName, amount, onSuccess, onCanc
     };
 
     initializePayment();
-  });
+  }, [priceId, planName]);
 
   if (loading) {
     return (
@@ -261,10 +261,10 @@ export const StripePaymentForm = ({ priceId, planName, amount, onSuccess, onCanc
           appearance: {
             theme: 'stripe',
             variables: {
-              colorPrimary: 'hsl(var(--primary))',
-              colorBackground: 'hsl(var(--background))',
-              colorText: 'hsl(var(--foreground))',
-              colorDanger: 'hsl(var(--destructive))',
+              colorPrimary: '#6366f1',
+              colorBackground: '#ffffff',
+              colorText: '#1f2937',
+              colorDanger: '#ef4444',
               borderRadius: '0.5rem',
             },
           },

@@ -132,16 +132,10 @@ export const Header = () => {
 
   const handleManageSubscription = async () => {
     try {
-      // Try primary portal function
-      const primary = await supabase.functions.invoke("billing/create-portal");
-      if (!primary.error && primary.data?.url) {
-        window.open(primary.data.url, "_blank");
-        return;
-      }
-      // Fallback to legacy endpoint
-      const fallback = await supabase.functions.invoke("customer-portal");
-      if (!fallback.error && fallback.data?.url) {
-        window.open(fallback.data.url, "_blank");
+      const { data, error } = await supabase.functions.invoke("customer-portal");
+      if (error) throw error;
+      if (data?.url) {
+        window.open(data.url, "_blank");
         return;
       }
       toast({
