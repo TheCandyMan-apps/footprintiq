@@ -13,8 +13,8 @@ import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { trackPaymentError, trackCheckoutEvent, trackStripeError } from '@/lib/sentry';
 
-// Initialize Stripe with the publishable key
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
+// Initialize Stripe with the live publishable key
+const stripePromise = loadStripe('pk_live_51SIHkEA3ptI9drLWtrAiSwM3jOY7qwSA95m1yG2ChIVuiAUsNmjhk7ylaRsTZ9LsRo4ahXQ1vsW318bKnLpeUil300ikSnlrWU');
 
 interface PaymentFormProps {
   priceId: string;
