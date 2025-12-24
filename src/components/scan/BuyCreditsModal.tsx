@@ -14,10 +14,20 @@ interface BuyCreditsModalProps {
 }
 
 const CREDIT_PACKAGES = [
-  { credits: 10, price: 5, popular: false },
-  { credits: 50, price: 20, popular: true },
-  { credits: 100, price: 35, popular: false },
-  { credits: 500, price: 150, popular: false },
+  {
+    packType: 'starter' as const,
+    credits: 500,
+    priceLabel: '£29',
+    popular: false,
+    name: 'OSINT Starter Pack',
+  },
+  {
+    packType: 'pro' as const,
+    credits: 2000,
+    priceLabel: '£99',
+    popular: true,
+    name: 'Pro Pack',
+  },
 ];
 
 export function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
@@ -28,8 +38,8 @@ export function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
   // Check for success/cancel params on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const success = params.get("success");
-    const canceled = params.get("canceled");
+    const success = params.get("credits_success");
+    const canceled = params.get("credits_canceled");
     const credits = params.get("credits");
 
     if (success === "true") {
@@ -37,24 +47,24 @@ export function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
       // Show verification loader for 300ms
       setTimeout(() => {
         setVerifying(false);
-        toast.success(`${credits || "100"} credits added! 🎉`, {
-          description: "Your credits are now available to use"
+        toast.success(`${credits || "0"} credits added!`, {
+          description: "Your credits are now available to use",
         });
         // Clean up URL
         window.history.replaceState({}, document.title, window.location.pathname);
       }, 300);
     } else if (canceled === "true") {
       toast.error("Payment canceled", {
-        description: "No charges were made to your account"
+        description: "No charges were made to your account",
       });
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
 
-  const handlePurchase = async (credits: number) => {
+  const handlePurchase = async (packType: (typeof CREDIT_PACKAGES)[number]['packType']) => {
     try {
-      setLoading(credits);
+      setLoading(packType === 'starter' ? 500 : 2000);
 
       // Validate and refresh session
       const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -76,16 +86,16 @@ export function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
 
       if (!workspace?.id) {
         toast.error("No workspace found", {
-          description: "Please select a workspace first"
+          description: "Please select a workspace first",
         });
         setLoading(null);
         return;
       }
 
-      // Call edge function to create checkout session
-      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+      // Call backend function to create checkout session
+      const { data, error } = await supabase.functions.invoke("purchase-credit-pack", {
         body: {
-          credits,
+          packType,
           workspaceId: workspace.id,
         },
       });
@@ -104,7 +114,7 @@ export function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
     } catch (error) {
       console.error("Purchase error:", error);
       toast.error("Purchase failed", {
-        description: error instanceof Error ? error.message : "Please try again"
+        description: error instanceof Error ? error.message : "Please try again",
       });
       setLoading(null);
     }
@@ -135,7 +145,7 @@ export function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
           {CREDIT_PACKAGES.map((pkg) => (
             <Card
-              key={pkg.credits}
+              key={pkg.packType}
               className={`p-6 relative transition-all hover:shadow-lg ${
                 pkg.popular ? "border-primary shadow-md" : ""
               }`}
@@ -149,46 +159,33 @@ export function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-2xl font-bold flex items-center gap-2">
-                      <Coins className="w-5 h-5 text-primary" />
-                      {pkg.credits}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">Credits</p>
+                    <h3 className="text-lg font-semibold">{pkg.name}</h3>
+                    <p className="text-sm text-muted-foreground">{pkg.credits} credits</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-3xl font-bold">${pkg.price}</p>
-                    <p className="text-xs text-muted-foreground">
-                      ${(pkg.price / pkg.credits).toFixed(2)} per credit
-                    </p>
+                    <p className="text-3xl font-bold">{pkg.priceLabel}</p>
+                    <p className="text-xs text-muted-foreground">One-time purchase</p>
                   </div>
                 </div>
 
                 <div className="space-y-2 text-sm">
                   <div className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
-                    <span>{Math.floor(pkg.credits / 3)} Social Media scans</span>
+                    <span>Credits never expire</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
-                    <span>{Math.floor(pkg.credits / 2)} OSINT scans</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
-                    <span>{Math.floor(pkg.credits / 5)} Dark Web scans</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
-                    <span>Never expires</span>
+                    <span>Instant activation after payment</span>
                   </div>
                 </div>
 
                 <Button
                   className="w-full"
-                  onClick={() => handlePurchase(pkg.credits)}
+                  onClick={() => handlePurchase(pkg.packType)}
                   disabled={loading !== null}
                   variant={pkg.popular ? "default" : "outline"}
                 >
-                  {loading === pkg.credits ? (
+                  {loading !== null && (pkg.packType === 'starter' ? loading === 500 : loading === 2000) ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Processing...
