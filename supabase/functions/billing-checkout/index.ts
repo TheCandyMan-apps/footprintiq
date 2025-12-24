@@ -70,10 +70,10 @@ serve(async (req) => {
       customerId = customer.id;
     }
 
-    // Map plan names to price IDs (correct Stripe account: acct_1SIHkRPNdM5SAyj7)
+    // Map plan names to price IDs (correct Stripe account: acct_1SIHkEA3ptI9drLW)
     const priceMap: Record<string, string> = {
-      pro: 'price_1ShdeYPNdM5SAyj7rXNVcK7x',
-      business: 'price_1Shd40PNdM5SAyj71SAtXpyf',
+      pro: 'price_1ShgNPA3ptI9drLW40rbWMjq',
+      business: 'price_1ShdxJA3ptI9drLWjndMjptw',
     };
 
     // Use direct priceId if provided, otherwise map from plan name
