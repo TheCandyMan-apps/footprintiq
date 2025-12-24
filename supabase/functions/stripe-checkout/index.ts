@@ -11,7 +11,7 @@ const corsHeaders = {
 };
 
 const CheckoutSchema = z.object({
-  workspaceId: z.string().uuid().optional(),
+  workspaceId: z.string().uuid(),
   plan: z.enum(['pro', 'business']),
 });
 
@@ -85,20 +85,40 @@ serve(async (req) => {
       return rateLimitResult.response!;
     }
 
-    // Verify user is a member of the workspace
+    // Verify user can act on this workspace (member OR owner)
     const { data: membership, error: membershipError } = await supabase
       .from('workspace_members')
       .select('role')
       .eq('workspace_id', workspaceId)
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
-    if (membershipError || !membership) {
-      return new Response(JSON.stringify({ error: 'Not a workspace member' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    const { data: workspace, error: workspaceError } = await supabase
+      .from('workspaces')
+      .select('owner_id')
+      .eq('id', workspaceId)
+      .maybeSingle();
+
+    const isOwner = !!workspace && workspace.owner_id === user.id;
+    const isMember = !!membership && !membershipError;
+
+    if (workspaceError || !workspace) {
+      console.error('[STRIPE-CHECKOUT] Workspace not found or not accessible', { workspaceId, workspaceError });
+      return new Response(JSON.stringify({ error: 'Workspace not found' }), {
+        status: 404,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       });
     }
+
+    if (!isMember && !isOwner) {
+      console.warn('[STRIPE-CHECKOUT] Not authorized for workspace', { workspaceId, userId: user.id });
+      return new Response(JSON.stringify({ error: 'Not authorized for workspace' }), {
+        status: 403,
+        headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
+      });
+    }
+
+    console.log('[STRIPE-CHECKOUT] Workspace access OK', { workspaceId, isOwner, isMember });
 
     // Get Stripe price ID from environment
     const priceIdEnvVar = plan === 'pro' ? 'STRIPE_PRICE_PRO' : 'STRIPE_PRICE_BUSINESS';
