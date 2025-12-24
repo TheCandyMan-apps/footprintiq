@@ -7,9 +7,9 @@
 export const SUBSCRIPTION_PLANS = {
   pro: {
     name: 'PRO',
-    price: 19,
-    priceId: 'price_1SQwWCPNdM5SAyj7XS394cD8',
-    productId: 'prod_TNhwJ5AkeLgQUk',
+    price: 14.99,
+    priceId: 'price_1ShdnEA3ptI9drLWLFG8qPyk',
+    productId: 'prod_ToKdKWNPFIpwOC',
     tier: 'pro',
     currency: 'GBP',
     features: [
@@ -24,9 +24,9 @@ export const SUBSCRIPTION_PLANS = {
   },
   business: {
     name: 'Business',
-    price: 49,
-    priceId: 'price_1SQh7LPNdM5SAyj7PMKySuO6',
-    productId: 'prod_TNS1YvaaS0c6MZ',
+    price: 49.99,
+    priceId: 'price_1ShdxJA3ptI9drLWjndMjptw',
+    productId: 'prod_ToKoN1D3QvlnhH',
     tier: 'business',
     currency: 'GBP',
     features: [
@@ -102,10 +102,10 @@ export const CREDIT_PACKS = {
 // Price ID to Tier Mapping (for webhook processing)
 export const PRICE_TO_TIER_MAP: Record<string, 'free' | 'pro' | 'business' | 'enterprise'> = {
   // Pro
-  'price_1SQwWCPNdM5SAyj7XS394cD8': 'pro',
+  'price_1ShdnEA3ptI9drLWLFG8qPyk': 'pro',
   
   // Business
-  'price_1SQh7LPNdM5SAyj7PMKySuO6': 'business',
+  'price_1ShdxJA3ptI9drLWjndMjptw': 'business',
   
   // Enterprise
   'price_1SQh9JPNdM5SAyj722p376Qh': 'enterprise',
