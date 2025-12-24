@@ -9225,6 +9225,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_grant_credits: {
+        Args: { _amount: number; _description: string; _workspace_id: string }
+        Returns: Json
+      }
       check_ip_rate_limit: {
         Args: {
           _endpoint: string
