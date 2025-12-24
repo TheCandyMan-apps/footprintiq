@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Check, Zap, Crown, Building2 } from 'lucide-react';
+import { Check, Zap, Building2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -135,34 +135,30 @@ export function UpgradeModal({ open, onOpenChange, reason, blockedFeature }: Upg
             </Button>
           </Card>
 
-          {/* Unlimited */}
+          {/* Business */}
           <Card className="p-6 border-muted">
             <div className="text-center mb-4">
-              <Crown className="h-8 w-8 mx-auto mb-2 text-amber-500" />
-              <h3 className="text-lg font-semibold">Unlimited</h3>
+              <Building2 className="h-8 w-8 mx-auto mb-2 text-amber-500" />
+              <h3 className="text-lg font-semibold">Business</h3>
               <div className="text-3xl font-bold my-2">$99<span className="text-base font-normal">/mo</span></div>
-              <p className="text-sm text-muted-foreground">For Power Users</p>
+              <p className="text-sm text-muted-foreground">For Teams</p>
             </div>
             <ul className="space-y-2 text-sm mb-4">
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-amber-500 mt-0.5" />
-                <span>Unlimited scans</span>
+                <span>Higher limits & priority</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-amber-500 mt-0.5" />
-                <span>Dark web monitoring</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <Check className="h-4 w-4 text-amber-500 mt-0.5" />
-                <span>All providers</span>
+                <span>Advanced capabilities</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-amber-500 mt-0.5" />
                 <span>Priority support</span>
               </li>
             </ul>
-            <Button onClick={() => handleUpgrade('unlimited')} disabled={loading} variant="outline" className="w-full">
-              Go Unlimited
+            <Button onClick={() => handleUpgrade('business')} disabled={loading} variant="outline" className="w-full">
+              Upgrade to Business
             </Button>
           </Card>
         </div>
