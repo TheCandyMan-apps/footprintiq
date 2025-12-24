@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,9 +18,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Edit, Shield, Crown, User as UserIcon } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Search, Edit, Shield, Crown, User as UserIcon, Coins, Loader2 } from 'lucide-react';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { EditUserDialog } from './EditUserDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const roleColors = {
   admin: 'bg-red-500/10 text-red-500 border-red-500/20',
@@ -33,6 +41,91 @@ const roleIcons = {
   free: UserIcon,
   premium: Crown,
 };
+
+const CREDIT_PRESETS = [50, 100, 500];
+
+interface QuickCreditButtonsProps {
+  userId: string;
+  userEmail: string;
+}
+
+function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [granting, setGranting] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Fetch user's primary workspace
+    const fetchWorkspace = async () => {
+      const { data } = await supabase
+        .from('workspaces')
+        .select('id')
+        .eq('owner_id', userId)
+        .limit(1)
+        .single();
+      
+      if (data) {
+        setWorkspaceId(data.id);
+      }
+    };
+    fetchWorkspace();
+  }, [userId]);
+
+  const handleGrantCredits = async (amount: number) => {
+    if (!workspaceId) {
+      toast.error('No workspace found for this user');
+      return;
+    }
+
+    setGranting(amount);
+    try {
+      const { error } = await supabase.rpc('admin_grant_credits', {
+        _workspace_id: workspaceId,
+        _amount: amount,
+        _description: `Quick grant for ${userEmail}`
+      });
+
+      if (error) throw error;
+      toast.success(`+${amount} credits granted to ${userEmail}`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to grant credits');
+    } finally {
+      setGranting(null);
+    }
+  };
+
+  if (!workspaceId) {
+    return <span className="text-xs text-muted-foreground">No workspace</span>;
+  }
+
+  return (
+    <TooltipProvider>
+      <div className="flex gap-1">
+        {CREDIT_PRESETS.map((amount) => (
+          <Tooltip key={amount}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => handleGrantCredits(amount)}
+                disabled={granting !== null}
+              >
+                {granting === amount ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  `+${amount}`
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Grant {amount} credits</p>
+            </TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
+    </TooltipProvider>
+  );
+}
 
 export function UserManagementTable() {
   const { users, isLoading } = useAdminUsers();
@@ -103,7 +196,7 @@ export function UserManagementTable() {
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Subscription</TableHead>
-                  <TableHead>Joined</TableHead>
+                  <TableHead>Quick Credits</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -136,7 +229,7 @@ export function UserManagementTable() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          {new Date(user.created_at).toLocaleDateString()}
+                          <QuickCreditButtons userId={user.user_id} userEmail={user.email} />
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
