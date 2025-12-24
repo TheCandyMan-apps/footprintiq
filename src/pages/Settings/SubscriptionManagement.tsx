@@ -109,9 +109,7 @@ export default function SubscriptionManagement() {
 
   const handleManageSubscription = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('billing/create-portal', {
-        body: { workspace_id: 'default' }
-      });
+      const { data, error } = await supabase.functions.invoke('customer-portal');
 
       if (error) throw error;
 
