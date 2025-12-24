@@ -31,20 +31,31 @@ serve(async (req) => {
   try {
     console.log('[STRIPE-CHECKOUT] Starting checkout request');
     
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    );
-
     // Authenticate user
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       console.error('[STRIPE-CHECKOUT] Missing authorization header');
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      return new Response(JSON.stringify({ error: 'Unauthorized', code: 'MISSING_AUTH' }), {
         status: 401,
         headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }),
       });
     }
+
+    // IMPORTANT: attach the caller JWT to the Supabase client so RLS evaluates as the user
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+        auth: {
+          persistSession: false,
+        },
+      }
+    );
 
     const token = authHeader.replace('Bearer ', '');
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
