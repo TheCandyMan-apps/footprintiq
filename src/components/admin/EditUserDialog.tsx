@@ -102,11 +102,10 @@ export function EditUserDialog({ user, open, onClose }: EditUserDialogProps) {
 
     setGrantingCredits(true);
     try {
-      const { data, error } = await supabase.rpc('add_credits', {
+      const { data, error } = await supabase.rpc('admin_grant_credits', {
         _workspace_id: selectedWorkspace,
         _amount: amount,
-        _description: `Admin credit grant for ${user.email}`,
-        _transaction_type: 'admin_grant'
+        _description: `Admin credit grant for ${user.email}`
       });
 
       if (error) throw error;
