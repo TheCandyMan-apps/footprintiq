@@ -185,7 +185,7 @@ const AuditViewer = lazy(() => import("./pages/admin/AuditViewer"));
 const Referrals = lazy(() => import("./pages/Referrals"));
 const Research = lazy(() => import("./pages/Research"));
 const AdminScanHealth = lazy(() => import("./pages/admin/ScanHealth"));
-
+const SecuritySettings = lazy(() => import("./pages/admin/SecuritySettings"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -396,6 +396,7 @@ function RouterContent() {
           <Route path="/admin/audit-viewer" element={<AuditViewer />} />
           <Route path="/referrals" element={<Referrals />} />
           <Route path="/admin/system-health" element={<SystemHealth />} />
+          <Route path="/admin/security-settings" element={<SecuritySettings />} />
           <Route path="/admin/scan-health" element={<AdminScanHealth />} />
           <Route path="/admin/database-export" element={<DatabaseExport />} />
           <Route path="/admin/users" element={<Admin />} />

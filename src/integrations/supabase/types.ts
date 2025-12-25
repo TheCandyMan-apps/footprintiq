@@ -1404,6 +1404,33 @@ export type Database = {
           },
         ]
       }
+      brand_protection_patterns: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_regex: boolean
+          pattern: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_regex?: boolean
+          pattern: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_regex?: boolean
+          pattern?: string
+        }
+        Relationships: []
+      }
       branding_profiles: {
         Row: {
           created_at: string
@@ -3090,6 +3117,36 @@ export type Database = {
           pattern_type?: string
           severity?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      email_domain_blocklist: {
+        Row: {
+          added_by: string | null
+          category: string
+          created_at: string
+          domain: string
+          id: string
+          is_active: boolean
+          reason: string | null
+        }
+        Insert: {
+          added_by?: string | null
+          category?: string
+          created_at?: string
+          domain: string
+          id?: string
+          is_active?: boolean
+          reason?: string | null
+        }
+        Update: {
+          added_by?: string | null
+          category?: string
+          created_at?: string
+          domain?: string
+          id?: string
+          is_active?: boolean
+          reason?: string | null
         }
         Relationships: []
       }
@@ -5854,6 +5911,36 @@ export type Database = {
           rows_returned?: number | null
           table_name?: string | null
           used_index?: boolean | null
+        }
+        Relationships: []
+      }
+      rate_limit_thresholds: {
+        Row: {
+          created_at: string
+          flag_type: string
+          id: string
+          is_active: boolean
+          metric_type: string
+          threshold_value: number
+          window_minutes: number
+        }
+        Insert: {
+          created_at?: string
+          flag_type?: string
+          id?: string
+          is_active?: boolean
+          metric_type: string
+          threshold_value: number
+          window_minutes: number
+        }
+        Update: {
+          created_at?: string
+          flag_type?: string
+          id?: string
+          is_active?: boolean
+          metric_type?: string
+          threshold_value?: number
+          window_minutes?: number
         }
         Relationships: []
       }
@@ -9333,6 +9420,10 @@ export type Database = {
         Args: { _amount: number; _description: string; _workspace_id: string }
         Returns: Json
       }
+      check_and_flag_rate_abuse: {
+        Args: { _user_id: string }
+        Returns: undefined
+      }
       check_ip_rate_limit: {
         Args: {
           _endpoint: string
@@ -9419,6 +9510,7 @@ export type Database = {
         Args: { _client_id: string; _user_id: string }
         Returns: boolean
       }
+      is_email_blocklisted: { Args: { _email: string }; Returns: boolean }
       is_org_admin: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
@@ -9461,6 +9553,7 @@ export type Database = {
         }
         Returns: string
       }
+      matches_brand_pattern: { Args: { _username: string }; Returns: boolean }
       pg_get_table_policies: {
         Args: { table_name: string }
         Returns: {
