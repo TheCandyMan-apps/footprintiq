@@ -24,7 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Search, Edit, Shield, Crown, User as UserIcon, Coins, Loader2 } from 'lucide-react';
+import { Search, Edit, Shield, Crown, User as UserIcon, Coins, Loader2, Plus } from 'lucide-react';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { EditUserDialog } from './EditUserDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,6 +52,7 @@ interface QuickCreditButtonsProps {
 function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [granting, setGranting] = useState<number | null>(null);
+  const [customAmount, setCustomAmount] = useState<string>('');
 
   useEffect(() => {
     // Fetch user's primary workspace
@@ -93,13 +94,23 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
     }
   };
 
+  const handleCustomGrant = async () => {
+    const amount = parseInt(customAmount, 10);
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Enter a valid positive number');
+      return;
+    }
+    await handleGrantCredits(amount);
+    setCustomAmount('');
+  };
+
   if (!workspaceId) {
     return <span className="text-xs text-muted-foreground">No workspace</span>;
   }
 
   return (
     <TooltipProvider>
-      <div className="flex gap-1">
+      <div className="flex items-center gap-1">
         {CREDIT_PRESETS.map((amount) => (
           <Tooltip key={amount}>
             <TooltipTrigger asChild>
@@ -122,6 +133,39 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
             </TooltipContent>
           </Tooltip>
         ))}
+        
+        {/* Custom amount input */}
+        <div className="flex items-center gap-1 ml-1">
+          <Input
+            type="number"
+            placeholder="Custom"
+            value={customAmount}
+            onChange={(e) => setCustomAmount(e.target.value)}
+            className="h-7 w-16 text-xs px-2"
+            min="1"
+            onKeyDown={(e) => e.key === 'Enter' && handleCustomGrant()}
+          />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={handleCustomGrant}
+                disabled={granting !== null || !customAmount}
+              >
+                {granting !== null && !CREDIT_PRESETS.includes(granting) ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Plus className="h-3 w-3" />
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Grant custom credits</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
     </TooltipProvider>
   );
