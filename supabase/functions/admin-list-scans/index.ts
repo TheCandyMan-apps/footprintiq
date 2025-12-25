@@ -114,19 +114,41 @@ Deno.serve(wrapHandler(async (req) => {
       throw ERROR_RESPONSES.INTERNAL_ERROR('Failed to list scans');
     }
 
-    // Get findings count for each scan
+    // Get findings count for each scan - aggregate from all result tables
     const enrichedScans = await Promise.all(
       (scans || []).map(async (scan: any) => {
-        const { count: findingsCount } = await supabase
-          .from('findings')
-          .select('*', { count: 'exact', head: true })
-          .eq('scan_id', scan.id);
+        // Count from all result tables in parallel
+        const [
+          { count: findingsCount },
+          { count: socialProfilesCount },
+          { count: dataSourcesCount }
+        ] = await Promise.all([
+          supabase
+            .from('findings')
+            .select('*', { count: 'exact', head: true })
+            .eq('scan_id', scan.id),
+          supabase
+            .from('social_profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('scan_id', scan.id),
+          supabase
+            .from('data_sources')
+            .select('*', { count: 'exact', head: true })
+            .eq('scan_id', scan.id)
+        ]);
+
+        const totalFindingsCount = (findingsCount || 0) + (socialProfilesCount || 0) + (dataSourcesCount || 0);
 
         return {
           ...scan,
-          findingsCount: findingsCount || 0,
+          findingsCount: totalFindingsCount,
+          findingsBreakdown: {
+            findings: findingsCount || 0,
+            socialProfiles: socialProfilesCount || 0,
+            dataSources: dataSourcesCount || 0
+          },
           workspaceName: scan.workspaces?.name,
-          userEmail: scan.user_id, // Return user_id for now - frontend can fetch if needed
+          userEmail: scan.user_id,
           userName: null
         };
       })
