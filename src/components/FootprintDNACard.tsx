@@ -145,6 +145,48 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
     // Priority 1: Use scanId if provided (most direct)
     if (scanId) {
       try {
+        // First check scan type
+        const { data: scanData } = await supabase.from('scans').select('username, scan_type').eq('id', scanId).single();
+        const isUsernameScan = !!(scanData?.username || scanData?.scan_type === 'username');
+        
+        // For username scans, also check social_profiles table (primary data source)
+        if (isUsernameScan) {
+          const { data: profiles, error: profileError } = await supabase
+            .from('social_profiles')
+            .select('platform, profile_url, confidence_score, metadata')
+            .eq('scan_id', scanId);
+          
+          if (!profileError && profiles && profiles.length > 0) {
+            console.log('[FootprintDNA] Found social_profiles:', { count: profiles.length });
+            
+            let social = 0, gaming = 0, professional = 0, other = 0;
+            
+            for (const profile of profiles) {
+              const platform = profile.platform || '';
+              const category = getPlatformCategory(platform);
+              
+              switch (category) {
+                case 'Social':
+                  social++;
+                  break;
+                case 'Games':
+                  gaming++;
+                  break;
+                case 'Developer':
+                case 'Forums':
+                  professional++;
+                  break;
+                default:
+                  other++;
+              }
+            }
+            
+            console.log('[FootprintDNA] Calculated metrics from social_profiles:', { social, gaming, professional, other });
+            return { social, gaming, professional, other, isUsernameScan: true };
+          }
+        }
+        
+        // Fall back to findings table
         const { data, error } = await (supabase as any).from('findings').select('kind, severity, evidence, provider, meta').eq('scan_id', scanId);
         if (error) throw error;
         
@@ -153,9 +195,6 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
         // If no findings, return proper empty state
         if (!data || data.length === 0) {
           console.log('[FootprintDNA] No findings for scan, returning empty state');
-          // Check if this is username scan by looking at scan record
-          const { data: scanData } = await supabase.from('scans').select('username, scan_type').eq('id', scanId).single();
-          const isUsernameScan = !!(scanData?.username || scanData?.scan_type === 'username');
           
           return isUsernameScan 
             ? { social: 0, gaming: 0, professional: 0, other: 0, isUsernameScan: true }
@@ -166,7 +205,7 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
         console.log('[FootprintDNA] Calculated metrics:', metrics);
         return metrics;
       } catch (err) {
-        console.error('Error fetching scan metrics from findings:', err);
+        console.error('Error fetching scan metrics:', err);
         return { breaches: 0, exposures: 0, dataBrokers: 0, darkWeb: 0, isUsernameScan: false };
       }
     }
