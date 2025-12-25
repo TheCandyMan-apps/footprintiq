@@ -4991,7 +4991,9 @@ export type Database = {
           id: string
           logo_url: string | null
           primary_color: string | null
+          report_template: string | null
           secondary_color: string | null
+          template_options: Json | null
           updated_at: string | null
           user_id: string
           website_url: string | null
@@ -5005,7 +5007,9 @@ export type Database = {
           id?: string
           logo_url?: string | null
           primary_color?: string | null
+          report_template?: string | null
           secondary_color?: string | null
+          template_options?: Json | null
           updated_at?: string | null
           user_id: string
           website_url?: string | null
@@ -5019,7 +5023,9 @@ export type Database = {
           id?: string
           logo_url?: string | null
           primary_color?: string | null
+          report_template?: string | null
           secondary_color?: string | null
+          template_options?: Json | null
           updated_at?: string | null
           user_id?: string
           website_url?: string | null
