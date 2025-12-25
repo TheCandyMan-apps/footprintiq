@@ -232,13 +232,14 @@ serve(async (req) => {
             const data = await response.json();
             const latency = Date.now() - startTime;
 
-            const isValid = data.valid ?? data.phone_validation?.is_valid;
-            const isVoip = data.is_voip ?? data.phone_validation?.is_voip;
-            const lineType = data.type ?? data.phone_carrier?.line_type;
-            const carrierName = data.carrier ?? data.phone_carrier?.name;
-            const countryName = data.country?.name ?? data.phone_location?.country_name;
-            const countryCode = data.country?.code ?? data.phone_location?.country_code;
-            const intlFormat = data.format?.international ?? data.phone_format?.international ?? normalizedPhone;
+            // Add null checks to prevent TypeError when accessing nested properties
+            const isValid = data?.valid ?? data?.phone_validation?.is_valid ?? false;
+            const isVoip = data?.is_voip ?? data?.phone_validation?.is_voip ?? false;
+            const lineType = data?.type ?? data?.phone_carrier?.line_type ?? null;
+            const carrierName = data?.carrier ?? data?.phone_carrier?.name ?? null;
+            const countryName = data?.country?.name ?? data?.phone_location?.country_name ?? null;
+            const countryCode = data?.country?.code ?? data?.phone_location?.country_code ?? null;
+            const intlFormat = data?.format?.international ?? data?.phone_format?.international ?? normalizedPhone;
 
             if (isValid) {
               findings.push({

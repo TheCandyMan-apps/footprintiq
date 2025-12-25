@@ -1033,6 +1033,29 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('[osint-scan] Error:', error instanceof Error ? error.message : 'Unknown error');
+    
+    // Always mark scan as failed on exception to prevent stuck scans
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      const body = await req.clone().json().catch(() => ({}));
+      if (body.scanId) {
+        await supabase
+          .from('scans')
+          .update({
+            status: 'failed',
+            completed_at: new Date().toISOString(),
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+          })
+          .eq('id', body.scanId);
+        console.log(`[osint-scan] Marked scan ${body.scanId} as failed due to exception`);
+      }
+    } catch (updateError) {
+      console.error('[osint-scan] Failed to mark scan as failed:', updateError);
+    }
+    
     return new Response(
       JSON.stringify({ error: 'An error occurred processing your scan request' }),
       { 
