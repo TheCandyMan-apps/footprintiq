@@ -4985,35 +4985,44 @@ export type Database = {
         Row: {
           company_name: string | null
           company_tagline: string | null
+          contact_email: string | null
           created_at: string | null
+          footer_text: string | null
           id: string
           logo_url: string | null
           primary_color: string | null
           secondary_color: string | null
           updated_at: string | null
           user_id: string
+          website_url: string | null
         }
         Insert: {
           company_name?: string | null
           company_tagline?: string | null
+          contact_email?: string | null
           created_at?: string | null
+          footer_text?: string | null
           id?: string
           logo_url?: string | null
           primary_color?: string | null
           secondary_color?: string | null
           updated_at?: string | null
           user_id: string
+          website_url?: string | null
         }
         Update: {
           company_name?: string | null
           company_tagline?: string | null
+          contact_email?: string | null
           created_at?: string | null
+          footer_text?: string | null
           id?: string
           logo_url?: string | null
           primary_color?: string | null
           secondary_color?: string | null
           updated_at?: string | null
           user_id?: string
+          website_url?: string | null
         }
         Relationships: []
       }
