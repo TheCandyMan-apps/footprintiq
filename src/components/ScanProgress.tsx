@@ -128,8 +128,24 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           .eq('user_id', userId)
           .single();
 
-        const scanType = scanData.username && !scanData.firstName && !scanData.lastName ? 'username' : 
-                        scanData.firstName && scanData.lastName ? 'personal_details' : 'both';
+        // Determine scan type based on what data is provided
+        // Priority: phone-only → username-only → personal_details → both
+        const hasPhone = !!(scanData.phone && scanData.phone.trim());
+        const hasUsername = !!(scanData.username && scanData.username.trim());
+        const hasFirstName = !!(scanData.firstName && scanData.firstName.trim());
+        const hasLastName = !!(scanData.lastName && scanData.lastName.trim());
+        const hasEmail = !!(scanData.email && scanData.email.trim());
+        
+        let scanType: 'phone' | 'username' | 'personal_details' | 'both' | 'email' | 'domain' = 'both';
+        if (hasPhone && !hasUsername && !hasFirstName && !hasLastName && !hasEmail) {
+          scanType = 'phone';
+        } else if (hasUsername && !hasFirstName && !hasLastName) {
+          scanType = 'username';
+        } else if (hasFirstName || hasLastName || hasEmail) {
+          scanType = 'personal_details';
+        }
+        
+        console.log('[ScanProgress] Detected scan type:', scanType, { hasPhone, hasUsername, hasFirstName, hasLastName, hasEmail });
 
         // Convert empty strings to null to avoid database validation errors
         const toNullIfEmpty = (val: string | undefined | null): string | null => 
@@ -137,7 +153,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
 
         const { data: scan, error: scanError } = await supabase
           .from("scans")
-          .insert({
+          .insert([{
             user_id: userId,
             workspace_id: workspaceMember?.workspace_id || null,
             scan_type: scanType,
@@ -146,7 +162,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
             last_name: toNullIfEmpty(scanData.lastName),
             email: toNullIfEmpty(scanData.email),
             phone: toNullIfEmpty(scanData.phone),
-          })
+          }])
           .select()
           .single();
 
