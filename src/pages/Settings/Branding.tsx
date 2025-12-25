@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Upload, Image as ImageIcon, FileText, ArrowLeft, Save } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { ReportTemplateSelector, ReportTemplate, TemplateOptions } from '@/components/settings/ReportTemplateSelector';
 
 interface BrandingSettings {
   company_name: string;
@@ -18,7 +19,17 @@ interface BrandingSettings {
   footer_text: string;
   contact_email: string;
   website_url: string;
+  report_template: ReportTemplate;
+  template_options: TemplateOptions;
 }
+
+const defaultTemplateOptions: TemplateOptions = {
+  show_executive_summary: true,
+  show_provider_breakdown: true,
+  show_risk_analysis: true,
+  show_timeline: false,
+  show_detailed_findings: true,
+};
 
 export default function BrandingSettings() {
   const { toast } = useToast();
@@ -34,6 +45,8 @@ export default function BrandingSettings() {
     footer_text: 'Confidential - For authorized use only',
     contact_email: '',
     website_url: '',
+    report_template: 'executive',
+    template_options: defaultTemplateOptions,
   });
 
   useEffect(() => {
@@ -64,6 +77,10 @@ export default function BrandingSettings() {
           footer_text: data.footer_text || 'Confidential - For authorized use only',
           contact_email: data.contact_email || '',
           website_url: data.website_url || '',
+          report_template: (data.report_template as ReportTemplate) || 'executive',
+          template_options: data.template_options 
+            ? (data.template_options as unknown as TemplateOptions) 
+            : defaultTemplateOptions,
         });
       }
     } catch (error) {
@@ -143,21 +160,49 @@ export default function BrandingSettings() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase
+      const { data: existingData } = await supabase
         .from('pdf_branding_settings')
-        .upsert({
-          user_id: user.id,
-          company_name: settings.company_name,
-          company_tagline: settings.company_tagline,
-          logo_url: settings.logo_url,
-          primary_color: settings.primary_color,
-          secondary_color: settings.secondary_color,
-          footer_text: settings.footer_text,
-          contact_email: settings.contact_email,
-          website_url: settings.website_url,
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      if (error) throw error;
+      const templateOptionsJson = JSON.parse(JSON.stringify(settings.template_options));
+
+      if (existingData?.id) {
+        const { error: updateError } = await supabase
+          .from('pdf_branding_settings')
+          .update({
+            company_name: settings.company_name,
+            company_tagline: settings.company_tagline,
+            logo_url: settings.logo_url,
+            primary_color: settings.primary_color,
+            secondary_color: settings.secondary_color,
+            footer_text: settings.footer_text,
+            contact_email: settings.contact_email,
+            website_url: settings.website_url,
+            report_template: settings.report_template,
+            template_options: templateOptionsJson,
+          })
+          .eq('id', existingData.id);
+        if (updateError) throw updateError;
+      } else {
+        const { error: insertError } = await supabase
+          .from('pdf_branding_settings')
+          .insert({
+            user_id: user.id,
+            company_name: settings.company_name,
+            company_tagline: settings.company_tagline,
+            logo_url: settings.logo_url,
+            primary_color: settings.primary_color,
+            secondary_color: settings.secondary_color,
+            footer_text: settings.footer_text,
+            contact_email: settings.contact_email,
+            website_url: settings.website_url,
+            report_template: settings.report_template,
+            template_options: templateOptionsJson,
+          });
+        if (insertError) throw insertError;
+      }
 
       toast({
         title: "Settings saved",
@@ -398,6 +443,24 @@ export default function BrandingSettings() {
                   Used for success indicators and positive metrics
                 </p>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Report Templates */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Report Templates</CardTitle>
+              <CardDescription>
+                Choose a template style and customize which sections appear in your reports
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ReportTemplateSelector
+                selectedTemplate={settings.report_template}
+                templateOptions={settings.template_options}
+                onTemplateChange={(template) => setSettings(prev => ({ ...prev, report_template: template }))}
+                onOptionsChange={(options) => setSettings(prev => ({ ...prev, template_options: options }))}
+              />
             </CardContent>
           </Card>
 
