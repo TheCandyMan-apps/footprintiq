@@ -20,7 +20,7 @@ export interface UserPreferences {
 const STORAGE_KEY = 'footprintiq_preferences';
 
 const defaultPreferences: UserPreferences = {
-  theme: 'auto',
+  theme: 'light',
   density: 'cozy',
   language: 'en',
   tooltips: 'brief',
