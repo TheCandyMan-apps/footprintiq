@@ -16,17 +16,17 @@ const PurchaseRequestSchema = z.object({
   workspaceId: z.string().uuid(),
 });
 
-// Credit pack mappings
+// Credit pack mappings - using correct Stripe price IDs
 const CREDIT_PACKS = {
   'starter': {
-    priceId: 'price_1SRP2KPNdM5SAyj7j99PagEP',
-    productId: 'prod_TOBP5MSoYtgefY',
+    priceId: 'price_1ShybzA3ptI9drLWWxLWAMYN',
+    productId: 'prod_TfJEFdAKyUzqTX',
     credits: 500,
     name: 'OSINT Starter Pack'
   },
   'pro': {
-    priceId: 'price_1SRP2WPNdM5SAyj7GLCvttAF',
-    productId: 'prod_TOBP6U1ZvowHE7',
+    priceId: 'price_1ShycjA3ptI9drLW6zWBiEj4',
+    productId: 'prod_TfJFObINjrsLxO',
     credits: 2000,
     name: 'Pro Pack'
   }
