@@ -140,3 +140,6 @@ verify_jwt = true
 
 [functions.admin-clear-cache]
 verify_jwt = true
+
+[functions.validate-share-link]
+verify_jwt = false
