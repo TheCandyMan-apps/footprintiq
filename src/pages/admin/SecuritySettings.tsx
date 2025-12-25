@@ -332,7 +332,7 @@ export default function SecuritySettings() {
         </p>
       </div>
 
-        {/* Summary Cards */}
+      {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
@@ -686,7 +686,6 @@ export default function SecuritySettings() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
     </div>
   );
 }
