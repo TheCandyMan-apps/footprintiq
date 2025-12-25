@@ -449,7 +449,9 @@ export default function ScanManagement() {
                           </TableCell>
                           <TableCell>{getStatusBadge(scan.status)}</TableCell>
                           <TableCell className="max-w-xs truncate">
-                            {scan.workspaceName}
+                            {scan.workspaceName || (
+                              <span className="text-muted-foreground italic">Legacy Scan</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
                             {scan.userName || scan.userEmail}
