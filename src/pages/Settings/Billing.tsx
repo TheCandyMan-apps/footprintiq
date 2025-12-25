@@ -46,14 +46,7 @@ interface UpcomingInvoice {
 // Pricing tiers - using centralized config
 const PRICING_TIERS = {
   pro: SUBSCRIPTION_PLANS.pro,
-  pro_annual: {
-    ...SUBSCRIPTION_PLANS.pro,
-    name: 'PRO Annual',
-    price: 190,
-    period: 'year',
-    priceId: 'price_1SQwWCPNdM5SAyj7XS394cD9', // Annual price ID
-    savings: 38,
-  },
+  pro_annual: SUBSCRIPTION_PLANS.pro_annual,
   business: SUBSCRIPTION_PLANS.business,
   enterprise: SUBSCRIPTION_PLANS.enterprise,
 };
@@ -338,7 +331,7 @@ export default function BillingSettings() {
                     </Button>
                     <div className="relative">
                       <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-xs whitespace-nowrap z-10">
-                        Save $30
+                        Save £40
                       </Badge>
                       <Button 
                         onClick={() => handleUpgrade('pro_annual')}
@@ -346,12 +339,12 @@ export default function BillingSettings() {
                         variant="default"
                         className="mt-2"
                       >
-                        Pro Pack ($150/yr)
+                        PRO Annual (£140/yr)
                       </Button>
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    💰 Annual plan saves you $30/year compared to monthly billing
+                    💰 Annual plan saves you £40/year compared to monthly billing
                   </p>
                 </>
               )}

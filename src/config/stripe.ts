@@ -12,6 +12,26 @@ export const SUBSCRIPTION_PLANS = {
     productId: 'prod_Tf0OnPtxra5eM9',
     tier: 'pro',
     currency: 'GBP',
+    period: 'month',
+    features: [
+      '100 scans per month',
+      'Multi-tool OSINT engine (Sherlock + GoSearch)',
+      'Email & domain scanning',
+      'Full results view',
+      'PDF & CSV export',
+      'Priority queue',
+      'Risk scoring',
+    ],
+  },
+  pro_annual: {
+    name: 'PRO Annual',
+    price: 140,
+    priceId: 'price_1Si2vkA3ptI9drLWCQrxU4Dc',
+    productId: 'prod_TfNh5g6CTii7RT',
+    tier: 'pro',
+    currency: 'GBP',
+    period: 'year',
+    savings: 40,
     features: [
       '100 scans per month',
       'Multi-tool OSINT engine (Sherlock + GoSearch)',
@@ -29,6 +49,7 @@ export const SUBSCRIPTION_PLANS = {
     productId: 'prod_Textge6NbkyUmf',
     tier: 'business',
     currency: 'GBP',
+    period: 'month',
     features: [
       '500 scans per month',
       'All multi-tool providers',
@@ -47,6 +68,7 @@ export const SUBSCRIPTION_PLANS = {
     productId: 'prod_TNS31ceFOSPimB',
     tier: 'enterprise',
     currency: 'GBP',
+    period: 'month',
     features: [
       'Unlimited scans',
       'White-label reporting',
@@ -101,8 +123,11 @@ export const CREDIT_PACKS = {
 
 // Price ID to Tier Mapping (for webhook processing)
 export const PRICE_TO_TIER_MAP: Record<string, 'free' | 'pro' | 'business' | 'enterprise'> = {
-  // Pro
+  // Pro Monthly
   'price_1ShgNPA3ptI9drLW40rbWMjq': 'pro',
+  
+  // Pro Annual
+  'price_1Si2vkA3ptI9drLWCQrxU4Dc': 'pro',
   
   // Business
   'price_1ShdxJA3ptI9drLWjndMjptw': 'business',
