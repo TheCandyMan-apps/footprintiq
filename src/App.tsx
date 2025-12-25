@@ -184,6 +184,7 @@ const OpsConsole = lazy(() => import("./pages/admin/OpsConsole"));
 const AuditViewer = lazy(() => import("./pages/admin/AuditViewer"));
 const Referrals = lazy(() => import("./pages/Referrals"));
 const Research = lazy(() => import("./pages/Research"));
+const AdminScanHealth = lazy(() => import("./pages/admin/ScanHealth"));
 
 
 const queryClient = new QueryClient({
@@ -395,6 +396,7 @@ function RouterContent() {
           <Route path="/admin/audit-viewer" element={<AuditViewer />} />
           <Route path="/referrals" element={<Referrals />} />
           <Route path="/admin/system-health" element={<SystemHealth />} />
+          <Route path="/admin/scan-health" element={<AdminScanHealth />} />
           <Route path="/admin/database-export" element={<DatabaseExport />} />
           <Route path="/admin/users" element={<Admin />} />
           <Route path="/admin/roles" element={<Admin />} />
