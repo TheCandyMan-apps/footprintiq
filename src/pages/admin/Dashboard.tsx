@@ -40,6 +40,7 @@ import {
 } from "recharts";
 import { CreditUsageBreakdown } from "@/components/admin/CreditUsageBreakdown";
 import { ScanMonitoringWidget } from "@/components/admin/ScanMonitoringWidget";
+import { SuspiciousUsersWidget } from "@/components/dashboard/SuspiciousUsersWidget";
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--muted))"];
 
@@ -366,6 +367,9 @@ export default function AdminDashboard() {
               <CreditUsageBreakdown />
               <ScanMonitoringWidget />
             </div>
+            
+            {/* Suspicious Users Widget */}
+            <SuspiciousUsersWidget />
 
             {/* Quick Actions */}
             <Card>

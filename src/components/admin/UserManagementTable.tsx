@@ -83,23 +83,65 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [granting, setGranting] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState<string>('');
+  const [creating, setCreating] = useState(false);
+  const [lookupComplete, setLookupComplete] = useState(false);
 
   useEffect(() => {
-    // Fetch user's primary workspace
+    // Fetch user's workspace - check owned first, then memberships
     const fetchWorkspace = async () => {
-      const { data } = await supabase
+      // First try owned workspaces
+      const { data: ownedWorkspace } = await supabase
         .from('workspaces')
         .select('id')
         .eq('owner_id', userId)
         .limit(1)
         .single();
       
-      if (data) {
-        setWorkspaceId(data.id);
+      if (ownedWorkspace) {
+        setWorkspaceId(ownedWorkspace.id);
+        setLookupComplete(true);
+        return;
       }
+
+      // Fallback: check workspace memberships
+      const { data: membership } = await supabase
+        .from('workspace_members')
+        .select('workspace_id')
+        .eq('user_id', userId)
+        .limit(1)
+        .single();
+
+      if (membership) {
+        setWorkspaceId(membership.workspace_id);
+      }
+      setLookupComplete(true);
     };
     fetchWorkspace();
   }, [userId]);
+
+  const handleCreateWorkspace = async () => {
+    setCreating(true);
+    try {
+      // Create a personal workspace for this user
+      const { data, error } = await supabase
+        .from('workspaces')
+        .insert({
+          name: `${userEmail.split('@')[0]}'s Workspace`,
+          owner_id: userId,
+        })
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      
+      setWorkspaceId(data.id);
+      toast.success(`Workspace created for ${userEmail}`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create workspace');
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const handleGrantCredits = async (amount: number) => {
     if (!workspaceId) {
@@ -134,8 +176,38 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
     setCustomAmount('');
   };
 
+  // Still loading
+  if (!lookupComplete) {
+    return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+  }
+
+  // No workspace - show create button
   if (!workspaceId) {
-    return <span className="text-xs text-muted-foreground">No workspace</span>;
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs"
+              onClick={handleCreateWorkspace}
+              disabled={creating}
+            >
+              {creating ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <Plus className="h-3 w-3 mr-1" />
+              )}
+              Create Workspace
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Create a personal workspace for this user</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   }
 
   return (
