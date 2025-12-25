@@ -3602,6 +3602,56 @@ export type Database = {
           },
         ]
       }
+      flagged_users: {
+        Row: {
+          created_at: string
+          flag_type: string
+          flagged_by: string
+          id: string
+          is_active: boolean
+          notes: string | null
+          reason: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          flag_type: string
+          flagged_by: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          reason: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          flag_type?: string
+          flagged_by?: string
+          id?: string
+          is_active?: boolean
+          notes?: string | null
+          reason?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flagged_users_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       graph_queries: {
         Row: {
           created_at: string | null
@@ -5343,6 +5393,10 @@ export type Database = {
           full_name: string | null
           id: string
           persona: string | null
+          status: string
+          status_changed_at: string | null
+          status_changed_by: string | null
+          status_reason: string | null
           updated_at: string
           user_id: string
         }
@@ -5353,6 +5407,10 @@ export type Database = {
           full_name?: string | null
           id?: string
           persona?: string | null
+          status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          status_reason?: string | null
           updated_at?: string
           user_id: string
         }
@@ -5363,6 +5421,10 @@ export type Database = {
           full_name?: string | null
           id?: string
           persona?: string | null
+          status?: string
+          status_changed_at?: string | null
+          status_changed_by?: string | null
+          status_reason?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -8550,6 +8612,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          id: string
+          new_status: string
+          previous_status: string | null
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          id?: string
+          new_status: string
+          previous_status?: string | null
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          new_status?: string
+          previous_status?: string | null
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_status_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       username_site_cache: {
         Row: {
           last_seen: string | null
@@ -9225,6 +9325,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_delete_user: {
+        Args: { _reason?: string; _user_id: string }
+        Returns: Json
+      }
       admin_grant_credits: {
         Args: { _amount: number; _description: string; _workspace_id: string }
         Returns: Json
@@ -9385,6 +9489,10 @@ export type Database = {
         Returns: boolean
       }
       update_referral_stats: { Args: { _user_id: string }; Returns: undefined }
+      update_user_status: {
+        Args: { _new_status: string; _reason?: string; _user_id: string }
+        Returns: Json
+      }
       update_user_streak: { Args: { _user_id: string }; Returns: undefined }
       update_user_subscription: {
         Args: {

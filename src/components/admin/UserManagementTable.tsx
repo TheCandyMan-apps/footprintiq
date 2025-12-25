@@ -24,9 +24,25 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Search, Edit, Shield, Crown, User as UserIcon, Coins, Loader2, Plus } from 'lucide-react';
+import { 
+  Search, 
+  Edit, 
+  Shield, 
+  Crown, 
+  User as UserIcon, 
+  Coins, 
+  Loader2, 
+  Plus,
+  Flag,
+  Ban,
+  AlertTriangle,
+  Eye,
+  ShieldAlert,
+  Bot
+} from 'lucide-react';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { EditUserDialog } from './EditUserDialog';
+import { UserFlagDialog } from './UserFlagDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -40,6 +56,20 @@ const roleIcons = {
   admin: Shield,
   free: UserIcon,
   premium: Crown,
+};
+
+const statusColors = {
+  active: 'bg-green-500/10 text-green-500 border-green-500/20',
+  disabled: 'bg-red-500/10 text-red-500 border-red-500/20',
+  deleted: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+};
+
+const flagIcons = {
+  suspicious: AlertTriangle,
+  watching: Eye,
+  high_risk: ShieldAlert,
+  abuse: Ban,
+  spam: Bot,
 };
 
 const CREDIT_PRESETS = [50, 100, 500];
@@ -171,11 +201,37 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
   );
 }
 
+interface FlaggedUser {
+  user_id: string;
+  flag_type: string;
+}
+
 export function UserManagementTable() {
-  const { users, isLoading } = useAdminUsers();
+  const { users, isLoading, refetch } = useAdminUsers();
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [flagFilter, setFlagFilter] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [flagUser, setFlagUser] = useState<any>(null);
+  const [flaggedUsers, setFlaggedUsers] = useState<FlaggedUser[]>([]);
+
+  // Fetch flagged users
+  useEffect(() => {
+    fetchFlaggedUsers();
+  }, []);
+
+  const fetchFlaggedUsers = async () => {
+    const { data } = await supabase
+      .from('flagged_users')
+      .select('user_id, flag_type')
+      .eq('is_active', true);
+    setFlaggedUsers(data || []);
+  };
+
+  const getUserFlags = (userId: string) => {
+    return flaggedUsers.filter(f => f.user_id === userId);
+  };
 
   const filteredUsers = users?.filter(user => {
     const matchesSearch = 
@@ -183,8 +239,15 @@ export function UserManagementTable() {
       user.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    const matchesStatus = statusFilter === 'all' || (user.status || 'active') === statusFilter;
     
-    return matchesSearch && matchesRole;
+    const userFlags = getUserFlags(user.user_id);
+    const matchesFlag = flagFilter === 'all' || 
+      (flagFilter === 'flagged' && userFlags.length > 0) ||
+      (flagFilter === 'not_flagged' && userFlags.length === 0) ||
+      userFlags.some(f => f.flag_type === flagFilter);
+    
+    return matchesSearch && matchesRole && matchesStatus && matchesFlag;
   });
 
   if (isLoading) {
@@ -203,13 +266,13 @@ export function UserManagementTable() {
         <CardHeader>
           <CardTitle>User Management</CardTitle>
           <CardDescription>
-            Manage user accounts, roles, and subscriptions
+            Manage user accounts, roles, flags, and subscriptions
           </CardDescription>
         </CardHeader>
         <CardContent>
           {/* Filters */}
-          <div className="flex gap-4 mb-6">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap gap-4 mb-6">
+            <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search by email or name..."
@@ -219,14 +282,37 @@ export function UserManagementTable() {
               />
             </div>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by role" />
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Role" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="free">Free</SelectItem>
                 <SelectItem value="premium">Premium</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="disabled">Disabled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={flagFilter} onValueChange={setFlagFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Flags" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users</SelectItem>
+                <SelectItem value="flagged">Flagged Only</SelectItem>
+                <SelectItem value="not_flagged">Not Flagged</SelectItem>
+                <SelectItem value="suspicious">Suspicious</SelectItem>
+                <SelectItem value="high_risk">High Risk</SelectItem>
+                <SelectItem value="abuse">Abuse</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -237,7 +323,7 @@ export function UserManagementTable() {
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Subscription</TableHead>
                   <TableHead>Quick Credits</TableHead>
@@ -254,13 +340,42 @@ export function UserManagementTable() {
                 ) : (
                   filteredUsers?.map((user) => {
                     const RoleIcon = roleIcons[user.role as keyof typeof roleIcons] || UserIcon;
+                    const userFlags = getUserFlags(user.user_id);
+                    const userStatus = user.status || 'active';
                     
                     return (
-                      <TableRow key={user.user_id}>
-                        <TableCell className="font-medium">
-                          {user.full_name || 'No name'}
+                      <TableRow key={user.user_id} className={userStatus === 'disabled' ? 'opacity-60' : ''}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <div className="font-medium flex items-center gap-2">
+                                {user.full_name || 'No name'}
+                                {userFlags.map((flag, idx) => {
+                                  const FlagIcon = flagIcons[flag.flag_type as keyof typeof flagIcons] || Flag;
+                                  return (
+                                    <TooltipProvider key={idx}>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <FlagIcon className="h-4 w-4 text-destructive" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Flagged: {flag.flag_type}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  );
+                                })}
+                              </div>
+                              <div className="text-sm text-muted-foreground">{user.email}</div>
+                            </div>
+                          </div>
                         </TableCell>
-                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={statusColors[userStatus as keyof typeof statusColors]}>
+                            {userStatus === 'disabled' && <Ban className="w-3 h-3 mr-1" />}
+                            {userStatus}
+                          </Badge>
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className={roleColors[user.role as keyof typeof roleColors]}>
                             <RoleIcon className="w-3 h-3 mr-1" />
@@ -276,13 +391,32 @@ export function UserManagementTable() {
                           <QuickCreditButtons userId={user.user_id} userEmail={user.email} />
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedUser(user)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
+                          <div className="flex items-center justify-end gap-1">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setFlagUser(user)}
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Flag className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Flag user</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedUser(user)}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -298,7 +432,24 @@ export function UserManagementTable() {
         <EditUserDialog
           user={selectedUser}
           open={!!selectedUser}
-          onClose={() => setSelectedUser(null)}
+          onClose={() => {
+            setSelectedUser(null);
+            refetch?.();
+            fetchFlaggedUsers();
+          }}
+        />
+      )}
+
+      {flagUser && (
+        <UserFlagDialog
+          userId={flagUser.user_id}
+          userEmail={flagUser.email}
+          open={!!flagUser}
+          onClose={() => setFlagUser(null)}
+          onFlagged={() => {
+            fetchFlaggedUsers();
+            refetch?.();
+          }}
         />
       )}
     </>
