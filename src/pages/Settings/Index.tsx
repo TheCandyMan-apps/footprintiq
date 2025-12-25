@@ -12,7 +12,8 @@ import {
   Zap,
   Brain,
   TrendingUp,
-  User
+  User,
+  FileText
 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Badge } from '@/components/ui/badge';
@@ -85,6 +86,12 @@ export default function SettingsIndex() {
       description: 'Control your privacy settings, data sharing preferences, and consent management',
       icon: Shield,
       path: '/settings/privacy',
+    },
+    {
+      title: 'Report Branding',
+      description: 'Customize PDF reports with your company logo, colors, and contact information',
+      icon: FileText,
+      path: '/settings/branding',
     },
   ];
 

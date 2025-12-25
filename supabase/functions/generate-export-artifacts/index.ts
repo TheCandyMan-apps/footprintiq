@@ -3,6 +3,17 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
 import { corsHeaders } from '../_shared/secure.ts';
 import { ERROR_RESPONSES, errorResponse, logSystemError } from '../_shared/errorHandler.ts';
 
+interface BrandingSettings {
+  company_name: string;
+  company_tagline: string;
+  logo_url: string | null;
+  primary_color: string;
+  secondary_color: string;
+  footer_text: string;
+  contact_email: string;
+  website_url: string;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders() });
@@ -41,6 +52,27 @@ serve(async (req) => {
       throw ERROR_RESPONSES.INTERNAL_ERROR('Failed to fetch findings');
     }
 
+    // Fetch user branding settings
+    let branding: BrandingSettings | null = null;
+    const { data: brandingData } = await supabase
+      .from('pdf_branding_settings')
+      .select('*')
+      .eq('user_id', scan.user_id)
+      .maybeSingle();
+
+    if (brandingData) {
+      branding = {
+        company_name: brandingData.company_name || '',
+        company_tagline: brandingData.company_tagline || '',
+        logo_url: brandingData.logo_url || null,
+        primary_color: brandingData.primary_color || '#667eea',
+        secondary_color: brandingData.secondary_color || '#10b981',
+        footer_text: brandingData.footer_text || 'Confidential - For authorized use only',
+        contact_email: brandingData.contact_email || '',
+        website_url: brandingData.website_url || '',
+      };
+    }
+
     const generatedArtifacts: any[] = [];
 
     // Generate each requested artifact
@@ -70,13 +102,13 @@ serve(async (req) => {
             break;
 
           case 'html':
-            content = generateHTML(scan, findings || []);
+            content = generateHTML(scan, findings || [], branding);
             fileName = `scan-${scanId}-report.html`;
             contentType = 'text/html';
             break;
 
           case 'pdf':
-            content = generatePDF(scan, findings || []);
+            content = generatePDF(scan, findings || [], branding);
             fileName = `scan-${scanId}-report.pdf`;
             contentType = 'application/pdf';
             break;
@@ -207,11 +239,19 @@ function generateTXT(scan: any, findings: any[]): string {
   return lines.join('\n');
 }
 
-function generateHTML(scan: any, findings: any[]): string {
+function generateHTML(scan: any, findings: any[], branding: BrandingSettings | null): string {
+  const primaryColor = branding?.primary_color || '#667eea';
+  const secondaryColor = branding?.secondary_color || '#10b981';
+  const companyName = branding?.company_name || 'FootprintIQ';
+  const companyTagline = branding?.company_tagline || '';
+  const footerText = branding?.footer_text || 'This report is confidential and intended for authorized use only.';
+  const websiteUrl = branding?.website_url || 'https://footprintiq.com';
+  const contactEmail = branding?.contact_email || '';
+
   const findingsHTML = findings.map((f, i) => `
     <tr>
       <td>${i + 1}</td>
-      <td>${escapeHtml(f.site || 'Unknown')}</td>
+      <td>${escapeHtml(f.site || f.platform || extractSiteName(f) || 'Unknown')}</td>
       <td><a href="${escapeHtml(f.url || '')}" target="_blank">${escapeHtml(f.url || 'N/A')}</a></td>
       <td>${escapeHtml(f.provider || 'N/A')}</td>
       <td><span class="badge badge-${f.confidence === 'high' ? 'success' : 'secondary'}">${escapeHtml(f.confidence || 'unknown')}</span></td>
@@ -225,33 +265,42 @@ function generateHTML(scan: any, findings: any[]): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FootprintIQ Scan Report - ${scan.id}</title>
+  <title>${escapeHtml(companyName)} - Scan Report - ${scan.id}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; max-width: 1200px; margin: 0 auto; background: #f5f5f5; }
-    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; }
+    .header { background: linear-gradient(135deg, ${primaryColor} 0%, ${adjustColorBrightness(primaryColor, -20)} 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; }
     .header h1 { margin: 0 0 10px 0; }
+    .header-content { display: flex; align-items: center; gap: 20px; }
+    .logo { height: 60px; width: 60px; object-fit: contain; background: white; border-radius: 8px; padding: 8px; }
     .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
     .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .stat-card h3 { margin: 0 0 10px 0; color: #666; font-size: 14px; }
-    .stat-card .value { font-size: 32px; font-weight: bold; color: #667eea; }
+    .stat-card .value { font-size: 32px; font-weight: bold; color: ${primaryColor}; }
     table { width: 100%; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-collapse: collapse; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
-    th { background: #f8f9fa; font-weight: 600; color: #333; }
+    th { background: ${primaryColor}; color: white; font-weight: 600; }
     tr:hover { background: #f8f9fa; }
-    a { color: #667eea; text-decoration: none; }
+    a { color: ${primaryColor}; text-decoration: none; }
     a:hover { text-decoration: underline; }
     .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
-    .badge-success { background: #d4edda; color: #155724; }
+    .badge-success { background: ${secondaryColor}; color: white; }
     .badge-secondary { background: #e2e3e5; color: #383d41; }
     .badge-danger { background: #f8d7da; color: #721c24; }
-    .footer { margin-top: 40px; text-align: center; color: #666; font-size: 14px; }
+    .footer { margin-top: 40px; padding: 20px; background: white; border-radius: 8px; text-align: center; color: #666; font-size: 14px; }
+    .footer a { color: ${primaryColor}; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>FootprintIQ OSINT Scan Report</h1>
-    <p>Scan ID: ${scan.id}</p>
-    <p>Generated: ${new Date().toLocaleString()}</p>
+    <div class="header-content">
+      ${branding?.logo_url ? `<img src="${escapeHtml(branding.logo_url)}" alt="Logo" class="logo" />` : ''}
+      <div>
+        <h1>${escapeHtml(companyName)} OSINT Scan Report</h1>
+        ${companyTagline ? `<p style="margin: 5px 0 0 0; opacity: 0.9;">${escapeHtml(companyTagline)}</p>` : ''}
+        <p style="margin: 10px 0 0 0; opacity: 0.8;">Scan ID: ${scan.id}</p>
+        <p style="margin: 5px 0 0 0; opacity: 0.8;">Generated: ${new Date().toLocaleString()}</p>
+      </div>
+    </div>
   </div>
 
   <div class="stats">
@@ -290,12 +339,40 @@ function generateHTML(scan: any, findings: any[]): string {
   </table>
 
   <div class="footer">
-    <p>Generated by FootprintIQ | <a href="https://footprintiq.com">footprintiq.com</a></p>
-    <p>This report is confidential and intended for authorized use only.</p>
+    <p><strong>${escapeHtml(companyName)}</strong></p>
+    ${websiteUrl ? `<p><a href="${escapeHtml(websiteUrl)}">${escapeHtml(websiteUrl)}</a></p>` : ''}
+    ${contactEmail ? `<p>Contact: <a href="mailto:${escapeHtml(contactEmail)}">${escapeHtml(contactEmail)}</a></p>` : ''}
+    <p style="margin-top: 15px; font-size: 12px; color: #999;">${escapeHtml(footerText)}</p>
   </div>
 </body>
 </html>
   `.trim();
+}
+
+// Extract site name from finding
+function extractSiteName(finding: any): string {
+  if (finding.site) return finding.site;
+  if (finding.platform) return finding.platform;
+  if (finding.evidence?.site) return finding.evidence.site;
+  if (finding.url) {
+    try {
+      const url = new URL(finding.url);
+      return url.hostname.replace('www.', '');
+    } catch {
+      return '';
+    }
+  }
+  return '';
+}
+
+// Adjust color brightness
+function adjustColorBrightness(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.min(255, Math.max(0, (num >> 16) + amt));
+  const G = Math.min(255, Math.max(0, (num >> 8 & 0x00FF) + amt));
+  const B = Math.min(255, Math.max(0, (num & 0x0000FF) + amt));
+  return '#' + ((1 << 24) + (R << 16) + (G << 8) + B).toString(16).slice(1);
 }
 
 function escapeHtml(text: string): string {
@@ -309,11 +386,16 @@ function escapeHtml(text: string): string {
   return String(text).replace(/[&<>"']/g, (m) => map[m]);
 }
 
-function generatePDF(scan: any, findings: any[]): string {
+function generatePDF(scan: any, findings: any[], branding: BrandingSettings | null): string {
   // Generate a simple text-based PDF using PDF 1.4 specification
   // This creates a minimal but valid PDF with proper structure
   
-  const title = `FootprintIQ Scan Report - ${scan.id}`;
+  const companyName = branding?.company_name || 'FootprintIQ';
+  const companyTagline = branding?.company_tagline || '';
+  const footerText = branding?.footer_text || 'This report is confidential and intended for authorized use only.';
+  const websiteUrl = branding?.website_url || 'https://footprintiq.com';
+  const contactEmail = branding?.contact_email || '';
+  
   const timestamp = new Date().toLocaleString();
   const target = scan.username || scan.email || scan.phone || 'N/A';
   
@@ -323,9 +405,17 @@ function generatePDF(scan: any, findings: any[]): string {
   
   // Content stream with report data
   const content = [
-    'FootprintIQ OSINT Scan Report',
+    `${companyName} OSINT Scan Report`,
     '=' .repeat(60),
-    '',
+    ''
+  ];
+  
+  if (companyTagline) {
+    content.push(companyTagline);
+    content.push('');
+  }
+  
+  content.push(
     `Scan ID: ${scan.id}`,
     `Target: ${target}`,
     `Status: ${scan.status}`,
@@ -338,7 +428,7 @@ function generatePDF(scan: any, findings: any[]): string {
     'FINDINGS BY PROVIDER',
     '=' .repeat(60),
     ''
-  ];
+  );
   
   // Group findings by provider
   const byProvider: Record<string, any[]> = {};
@@ -354,7 +444,8 @@ function generatePDF(scan: any, findings: any[]): string {
     content.push('-'.repeat(40));
     
     providerFindings.slice(0, 20).forEach((f, i) => {
-      content.push(`  [${i + 1}] ${f.site || 'Unknown Site'}`);
+      const siteName = f.site || f.platform || extractSiteName(f) || 'Unknown Site';
+      content.push(`  [${i + 1}] ${siteName}`);
       if (f.url) content.push(`      URL: ${f.url}`);
       content.push(`      Confidence: ${f.confidence || 'unknown'}`);
       if (f.nsfw) content.push(`      NSFW: Yes`);
@@ -369,11 +460,11 @@ function generatePDF(scan: any, findings: any[]): string {
   content.push('');
   content.push('=' .repeat(60));
   content.push(`Generated: ${timestamp}`);
-  content.push('FootprintIQ - https://footprintiq.com');
-  content.push('This report is confidential and intended for authorized use only.');
+  content.push(`${companyName}${websiteUrl ? ` - ${websiteUrl}` : ''}`);
+  if (contactEmail) content.push(`Contact: ${contactEmail}`);
+  content.push(footerText);
   
   const contentText = content.join('\n');
-  const contentLength = contentText.length;
   
   // Object 1: Catalog
   const obj1Offset = pdf.length;
