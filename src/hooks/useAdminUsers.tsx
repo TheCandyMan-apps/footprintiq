@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 export function useAdminUsers() {
   const queryClient = useQueryClient();
 
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['admin-users'],
     queryFn: async () => {
       // Get all users from profiles and user_roles
@@ -112,6 +112,7 @@ export function useAdminUsers() {
   return {
     users,
     isLoading,
+    refetch,
     updateUserRole: updateUserRole.mutate,
     updateUserSubscription: updateUserSubscription.mutate,
     isUpdating: updateUserRole.isPending || updateUserSubscription.isPending,
