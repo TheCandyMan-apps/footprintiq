@@ -89,15 +89,61 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Predicta Search API error: ${response.status} - ${errorText}`);
+      
+      // Handle quota exhausted (402) gracefully - return soft failure instead of throwing
+      if (response.status === 402) {
+        console.warn('[predicta-search] API quota exhausted - returning soft failure');
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'quota_exhausted',
+            provider: 'predictasearch',
+            retry: false,
+            message: 'Predicta Search API quota exhausted. Please try again later.',
+          }),
+          {
+            status: 200, // Return 200 so the caller doesn't throw
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      
+      // Handle rate limiting (429) gracefully
+      if (response.status === 429) {
+        console.warn('[predicta-search] API rate limited - returning soft failure');
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'rate_limited',
+            provider: 'predictasearch',
+            retry: true,
+            message: 'Predicta Search API rate limited. Please try again in a few minutes.',
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      
+      // For other errors, throw to be caught by the catch block
       throw new Error(`Predicta Search API error: ${response.status}`);
     }
 
     const data = await response.json();
     
-    // Log remaining credits from response header
+    // Log remaining credits from response header and warn if low
     const creditBalance = response.headers.get('x-credit-balance');
     if (creditBalance) {
-      console.log(`Predicta Search credits remaining: ${creditBalance}`);
+      const credits = parseInt(creditBalance, 10);
+      console.log(`Predicta Search credits remaining: ${credits}`);
+      
+      // Warn if credits are running low
+      if (credits < 100) {
+        console.warn(`[predicta-search] LOW CREDITS WARNING: Only ${credits} credits remaining!`);
+      } else if (credits < 500) {
+        console.warn(`[predicta-search] Credits running low: ${credits} remaining`);
+      }
     }
 
     return new Response(

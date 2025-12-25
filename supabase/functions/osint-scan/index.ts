@@ -403,6 +403,16 @@ serve(async (req) => {
             }
           );
 
+          // Handle soft failures (quota exhausted, rate limited) - continue with other queries/providers
+          if (predictaData && !predictaData.success) {
+            if (predictaData.error === 'quota_exhausted' || predictaData.error === 'rate_limited') {
+              console.warn(`[osint-scan] Predicta ${queryType} ${predictaData.error} - skipping but continuing scan`);
+              diagnostics.providersSkipped.push(`predicta:${predictaData.error}:${queryType}`);
+              // Don't break the loop - try remaining queries and continue with other providers
+              continue;
+            }
+          }
+
           if (!predictaError && predictaData?.success && predictaData?.data) {
             diagnostics.providersInvoked.push(`predicta:success:${queryType}`);
 
@@ -475,10 +485,12 @@ serve(async (req) => {
           } else if (predictaError) {
             diagnostics.providersSkipped.push(`predicta:error:${queryType}:${predictaError?.message || 'unknown'}`);
             console.error(`Predicta ${queryType} error:`, predictaError);
+            // Don't throw - continue with other providers
           }
         } catch (error) {
           diagnostics.providersSkipped.push(`predicta:exception:${queryType}`);
           console.error(`Predicta ${queryType} exception:`, error);
+          // Don't throw - continue with other providers
         }
       }
       
@@ -486,7 +498,13 @@ serve(async (req) => {
       if (predictaResultCount > 0) {
         await broadcastProviderStatus('predicta', 'success', `Found ${predictaResultCount} profiles`, predictaResultCount);
       } else {
-        await broadcastProviderStatus('predicta', 'success', 'No profiles found', 0);
+        // Check if all queries were skipped due to quota/rate limit
+        const allSkipped = diagnostics.providersSkipped.some(s => s.includes('predicta:quota_exhausted') || s.includes('predicta:rate_limited'));
+        if (allSkipped) {
+          await broadcastProviderStatus('predicta', 'failed', 'API quota exhausted', 0);
+        } else {
+          await broadcastProviderStatus('predicta', 'success', 'No profiles found', 0);
+        }
       }
     }
 
