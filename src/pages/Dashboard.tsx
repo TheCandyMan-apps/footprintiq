@@ -14,6 +14,7 @@ import { RecentFindings } from '@/components/dashboard/RecentFindings';
 import { CreditUsageMeter } from '@/components/dashboard/CreditUsageMeter';
 import { RecommendedScans } from '@/components/dashboard/RecommendedScans';
 import { PowerFeaturesCard } from '@/components/dashboard/PowerFeaturesCard';
+import { SuspiciousUsersWidget } from '@/components/dashboard/SuspiciousUsersWidget';
 import { SectionErrorBoundary } from '@/components/SectionErrorBoundary';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -879,6 +880,11 @@ const Dashboard = () => {
                           <RecommendedScans />
                         </SectionErrorBoundary>
                       </div>
+
+                      {/* Admin: Suspicious Users Widget */}
+                      <SectionErrorBoundary section="Suspicious Users">
+                        <SuspiciousUsersWidget />
+                      </SectionErrorBoundary>
                     </div>
                   </div>
 
