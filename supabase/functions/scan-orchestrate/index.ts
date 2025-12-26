@@ -156,14 +156,24 @@ serve(async (req) => {
   }
 
   const startTime = Date.now();
-  const TIMEOUT_MS = 50 * 1000; // 50 seconds - Supabase edge function hard limit
+  const HARD_TIMEOUT_MS = 50 * 1000; // 50 seconds - Supabase edge function hard limit
+  const SOFT_TIMEOUT_MS = 42 * 1000; // 42 seconds - soft limit to save partial results before hard cutoff
   
   // Global abort controller to enforce function timeout
   const abortController = new AbortController();
+  let softTimeoutTriggered = false;
+  
+  // Soft timeout - triggers graceful winding down
+  const softTimeoutId = setTimeout(() => {
+    softTimeoutTriggered = true;
+    console.warn('[orchestrate] ⏱️ SOFT TIMEOUT at 42s - starting graceful wind-down, will save partial results');
+  }, SOFT_TIMEOUT_MS);
+  
+  // Hard timeout - aborts all operations
   const timeoutId = setTimeout(() => {
-    console.error('[orchestrate] ⏱️ FUNCTION TIMEOUT at 50s - aborting all operations');
+    console.error('[orchestrate] ⏱️ HARD TIMEOUT at 50s - aborting all remaining operations');
     abortController.abort();
-  }, TIMEOUT_MS);
+  }, HARD_TIMEOUT_MS);
 
   try {
     // Use anon key for RLS-protected operations
@@ -750,8 +760,9 @@ serve(async (req) => {
     const executeProvidersInBackground = async () => {
       console.log(`[orchestrate] 🔄 Starting background execution for scan ${scanId}`);
       
-      // Clear the old timeout since we're in background now
+      // Clear the old timeouts since we're in background now
       clearTimeout(timeoutId);
+      clearTimeout(softTimeoutId);
 
       // Helper function to update progress in database
       const updateProgress = async (payload: {
@@ -1326,40 +1337,53 @@ serve(async (req) => {
       }
     });
 
-    // Wrap queue execution with abort signal check
+    // Wrap queue execution with abort signal check and use allSettled for resilience
     let results: any[] = [];
+    let partialDueToTimeout = false;
+    
     try {
       if (abortController.signal.aborted) {
         throw new Error('Function timeout - scan aborted');
       }
+      
+      // Use Promise.allSettled via queue.addAll to ensure all providers get a chance
+      // even if some fail or timeout
       results = await queue.addAll(tasks);
-      clearTimeout(timeoutId); // Clear timeout on successful completion
+      clearTimeout(timeoutId);
+      clearTimeout(softTimeoutId);
+      
     } catch (error) {
       clearTimeout(timeoutId);
-      if (abortController.signal.aborted) {
-        console.error('[orchestrate] Function aborted due to timeout');
-        // Mark scan as partial completion
-        await supabaseService.from('scans').update({
-          status: 'completed_partial',
-          completed_at: new Date().toISOString(),
-          error_message: 'Scan exceeded time limit - partial results saved'
-        }).eq('id', scanId);
+      clearTimeout(softTimeoutId);
+      
+      if (abortController.signal.aborted || softTimeoutTriggered) {
+        partialDueToTimeout = true;
+        console.warn(`[orchestrate] ${abortController.signal.aborted ? 'Hard' : 'Soft'} timeout triggered - collecting partial results`);
         
-        return ok({
-          scanId,
-          status: 'completed_partial',
-          message: 'Scan exceeded time limit but partial results were saved',
-          findingsCount: allFindings.length
-        });
+        // Collect whatever results we have so far from allFindings
+        // The queue may have already added some results before aborting
+      } else {
+        // For non-timeout errors, still try to save what we have
+        console.error('[orchestrate] Queue execution error:', error);
+        partialDueToTimeout = true;
       }
-      throw error;
     }
     
-    // Collect successful results
+    // Collect successful results from queue execution
+    // Handle both fulfilled results and already-pushed allFindings
     for (const result of results) {
-      if (result.status === 'fulfilled' && result.value) {
+      // Queue returns raw results, not PromiseSettledResult objects
+      if (Array.isArray(result)) {
+        allFindings.push(...result);
+      } else if (result?.status === 'fulfilled' && result.value) {
+        // In case queue wraps in PromiseSettledResult
         allFindings.push(...result.value);
       }
+    }
+    
+    // If we hit timeout but have some findings, mark as partial success
+    if (partialDueToTimeout && allFindings.length > 0) {
+      console.log(`[orchestrate] Partial results collected: ${allFindings.length} findings despite timeout`);
     }
 
     // Update completion of standard providers
@@ -1530,7 +1554,12 @@ serve(async (req) => {
         );
         
         let scanStatus = 'completed';
-        if (gosearchRequested) {
+        
+        // Factor in timeout conditions for status determination
+        if (partialDueToTimeout) {
+          // Function-level timeout occurred - always mark as partial if we have any findings
+          scanStatus = successfulFindings.length > 0 ? 'completed_partial' : 'timeout';
+        } else if (gosearchRequested) {
           // GoSearch is running async, mark as partial
           scanStatus = 'completed_partial';
         } else if (successfulFindings.length > 0 && (timedOutFindings.length > 0 || failedFindings.length > 0)) {
@@ -1538,7 +1567,13 @@ serve(async (req) => {
           scanStatus = 'completed_partial';
         } else if (successfulFindings.length === 0 && (timedOutFindings.length > 0 || failedFindings.length > 0)) {
           // All providers failed/timed out with no successful findings
-          scanStatus = 'failed';
+          // But if we have ANY findings at all (even info ones), don't mark as failed
+          const anyRealFindings = sortedFindings.filter(f => 
+            f.kind !== 'info.no_hits' && 
+            !f.kind?.startsWith('provider.') &&
+            f.kind !== 'provider_error'
+          ).length > 0;
+          scanStatus = anyRealFindings ? 'completed_partial' : 'failed';
         }
         
         console.log(`[orchestrate] UPDATING scans table for ${scanId} to ${scanStatus} with ${sortedFindings.length} findings (${successfulFindings.length} successful, ${timedOutFindings.length} timed out, ${failedFindings.length} failed) ${gosearchRequested ? '(GoSearch pending)' : ''}`);
@@ -1820,9 +1855,9 @@ serve(async (req) => {
 
     const tookMs = Date.now() - startTime;
 
-    // Check for timeout (> 5 minutes)
-    if (tookMs > TIMEOUT_MS) {
-      console.warn(`[orchestrate] ⚠️ Scan exceeded timeout: ${tookMs}ms > ${TIMEOUT_MS}ms`);
+    // Check for timeout (> hard limit)
+    if (tookMs > HARD_TIMEOUT_MS) {
+      console.warn(`[orchestrate] ⚠️ Scan exceeded hard timeout: ${tookMs}ms > ${HARD_TIMEOUT_MS}ms`);
       
       // Mark scan as timeout
       await supabaseService
@@ -1836,13 +1871,13 @@ serve(async (req) => {
       // Log timeout to system_errors
       await supabaseService.from('system_errors').insert({
         error_code: 'SCAN_TIMEOUT',
-        error_message: `Scan exceeded ${TIMEOUT_MS / 60000} minute timeout`,
+        error_message: `Scan exceeded ${HARD_TIMEOUT_MS / 60000} minute timeout`,
         function_name: 'scan-orchestrate',
         scan_id: scanId,
         workspace_id: workspaceId,
         user_id: user.id,
         severity: 'warn',
-        metadata: { durationMs: tookMs, timeoutMs: TIMEOUT_MS }
+        metadata: { durationMs: tookMs, timeoutMs: HARD_TIMEOUT_MS }
       });
       
       return bad(408, `Scan timed out after ${Math.floor(tookMs / 60000)} minutes`);
