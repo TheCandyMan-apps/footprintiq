@@ -66,6 +66,14 @@ export const analytics = {
     trackEvent("export_pdf");
   },
 
+  pageNotFound: (path: string, referrer?: string, search?: string) => {
+    trackEvent("404_error", { 
+      path,
+      referrer: referrer || "direct",
+      ...(search && { search })
+    });
+  },
+
   trackEvent: (eventName: string, props?: Record<string, string | number>) => {
     trackEvent(eventName, props);
   },
