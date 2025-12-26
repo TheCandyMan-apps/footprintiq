@@ -111,14 +111,21 @@ serve(async (req) => {
     const queries = buildResearchQueries(target, type, depth, knownBreaches);
     const results: any[] = [];
 
-    const systemPrompt = `You are an expert OSINT researcher specializing in digital footprint analysis. Your role is to:
-1. Provide thorough, factual analysis based ONLY on information you can verify from sources
-2. Always include source URLs for every claim you make
-3. For email/username research, explicitly check breach databases like haveibeenpwned.com
-4. Structure your findings clearly with sections for: Data Breaches, Social Media, Paste Sites, Public Records
-5. If you cannot find information, say so clearly - never fabricate or assume
-6. Provide actionable remediation steps when security issues are found
-7. Include dates and severity levels where applicable`;
+    // Build context from known findings
+    const contextSection = knownBreaches.length > 0
+      ? `\n\nKNOWN FINDINGS (from FootprintIQ scans): This target appears in these breaches: ${knownBreaches.join(', ')}. Use this as context for your research.`
+      : '';
+
+    const systemPrompt = `You are a web intelligence analyst helping users understand their digital footprint. Your role is to:
+
+1. Search the PUBLIC WEB for mentions, news, discussions, and articles about the target
+2. Look for forum posts, social media discussions, news coverage, and public profiles
+3. Always cite your sources with URLs
+4. Be honest about what you find - if nothing is publicly indexed, say so clearly
+5. Focus on what IS findable: news mentions, public profiles, forum activity, published content
+6. DO NOT claim to directly query databases you cannot access - instead report what web sources say about them
+
+IMPORTANT: You search the web, not private databases. If you find no results, that often means the target has minimal public web presence - which can be positive for privacy.${contextSection}`;
 
     for (const query of queries) {
       try {
@@ -135,11 +142,6 @@ serve(async (req) => {
               { role: 'user', content: query }
             ],
             search_recency_filter: depth === 'deep' ? 'year' : 'month',
-            search_domain_filter: type === 'email' ? [
-              'haveibeenpwned.com',
-              'breachdirectory.org',
-              'dehashed.com'
-            ] : undefined,
           }),
         });
 
@@ -200,91 +202,78 @@ serve(async (req) => {
 
 function buildResearchQueries(target: string, type: string, depth: string, knownBreaches?: string[]): string[] {
   const queries: string[] = [];
-  
-  // Add known breach context if available
-  const breachContext = knownBreaches?.length 
-    ? ` Known breaches include: ${knownBreaches.slice(0, 5).join(', ')}.`
-    : '';
 
   if (type === 'email') {
-    // Primary OSINT-focused queries for email
+    // Web-searchable queries for email - focus on what Perplexity CAN find
     queries.push(
-      `Search haveibeenpwned.com and other breach databases for email "${target}". List any data breaches this email appears in with dates and affected data types.${breachContext}`
+      `Search for news articles, forum posts, or discussions mentioning the email "${target}". Look for any public mentions, registrations, or exposure reports.`
     );
     
     if (depth === 'standard' || depth === 'deep') {
       queries.push(
-        `Search for "${target}" on pastebin.com, ghostbin.com, and paste sites. Look for any public exposure, leaked credentials, or mentions. Include source URLs.`
-      );
-      queries.push(
-        `Find social media profiles, forum accounts, and online registrations linked to email "${target}". Include platform names and URLs.`
+        `Find any public profiles, websites, or accounts associated with "${target}". Include social media, professional sites, or personal pages.`
       );
     }
     
     if (depth === 'deep') {
       queries.push(
-        `Search for recent data breach news mentioning "${target}" or related breaches. Look for security incidents, leak announcements, and exposure reports.`
-      );
-      queries.push(
-        `Find any data broker listings, people search sites, or public records containing "${target}". Include removal options if available.`
+        `Search for security news, breach announcements, or incident reports that may reference "${target}" or the domain associated with it.`
       );
     }
   } else if (type === 'username') {
     queries.push(
-      `Find all social media profiles for username "${target}" across platforms like Twitter, Instagram, TikTok, Reddit, GitHub, LinkedIn. Include profile URLs and creation dates if visible.`
+      `Search for public profiles using the username "${target}" on social media platforms like Twitter/X, Instagram, TikTok, Reddit, GitHub, YouTube. Include profile URLs if found.`
     );
     
     if (depth === 'standard' || depth === 'deep') {
       queries.push(
-        `Search for "${target}" in breach databases, paste sites, and public data dumps. Look for any password leaks or credential exposure.`
+        `Find forum posts, gaming profiles, or community accounts for username "${target}". Look on Steam, Discord communities, gaming forums, and hobby communities.`
       );
       queries.push(
-        `Find gaming profiles, forum accounts, and community memberships for username "${target}". Include platform names and activity level.`
+        `Search for news articles, blog posts, or discussions mentioning the username "${target}".`
       );
     }
     
     if (depth === 'deep') {
       queries.push(
-        `Research the history and activity patterns of username "${target}". Look for archived posts, deleted content, and cross-platform connections.`
+        `Search for archived content, cross-platform mentions, or historical activity for username "${target}". Include any public repositories or contributions.`
       );
     }
   } else if (type === 'phone') {
     queries.push(
-      `Search for phone number "${target}" in spam reports, caller ID databases, and public directories. Include carrier info if available.`
+      `Search for phone number "${target}" in public directories, spam reports, or caller ID lookups. Report any public listings or complaints found.`
     );
     
     if (depth === 'standard' || depth === 'deep') {
       queries.push(
-        `Find business listings, social media profiles, or online accounts linked to phone "${target}".`
-      );
-    }
-    
-    if (depth === 'deep') {
-      queries.push(
-        `Search for "${target}" in data breach databases and leak compilations. Look for any exposed personal information.`
+        `Find any business listings, advertisements, or public records mentioning phone number "${target}".`
       );
     }
   } else if (type === 'domain') {
     queries.push(
-      `Research domain "${target}". Find WHOIS history, company info, related domains, and infrastructure details.`
+      `Research the domain "${target}". Find company information, public WHOIS data, related news, and what the organization does.`
     );
     
     if (depth === 'standard' || depth === 'deep') {
       queries.push(
-        `Search for security incidents, data breaches, or vulnerabilities affecting "${target}". Include CVEs and security advisories.`
+        `Search for security news, breach reports, or incidents involving "${target}". Include any public CVEs or advisories.`
       );
     }
     
     if (depth === 'deep') {
       queries.push(
-        `Find subdomains, email patterns, and employee information for "${target}". Look for exposed assets and misconfigurations.`
+        `Find press coverage, employee information, company announcements, or public documentation about "${target}".`
       );
     }
   } else {
-    queries.push(`Research "${target}". Find background information, news, public records, and online presence.`);
+    queries.push(
+      `Search for news articles, public profiles, and online presence for "${target}". Include any notable mentions or publications.`
+    );
     
     if (depth === 'deep') {
-      queries.push(`Search for "${target}" in breach databases, court records, and business registrations.`);
+      queries.push(
+        `Find business records, professional profiles, or public records mentioning "${target}".`
+      );
     }
   }
 
