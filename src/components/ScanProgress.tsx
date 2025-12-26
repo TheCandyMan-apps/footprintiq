@@ -330,7 +330,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-8">
-      <Card className="w-full max-w-2xl p-8 bg-gradient-card border-border shadow-card">
+      <Card className="w-full max-w-2xl p-8 bg-white border border-border/60 shadow-sm">
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold mb-3">Scanning Your Digital Footprint</h2>
           <p className="text-muted-foreground">

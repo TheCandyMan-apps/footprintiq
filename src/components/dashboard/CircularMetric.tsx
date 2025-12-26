@@ -15,7 +15,7 @@ export function CircularMetric({
   max = 10,
   label,
   size = 'md',
-  gradient = true,
+  gradient = false,
   className,
 }: CircularMetricProps) {
   const [animatedValue, setAnimatedValue] = useState(0);
@@ -32,9 +32,6 @@ export function CircularMetric({
   // Ensure minimum 20% visibility for small values
   const percentage = Math.max(20, (animatedValue / max) * 100);
   const offset = circumference - (percentage / 100) * circumference;
-  
-  // Sanitize label for valid SVG ID
-  const sanitizedLabel = label.replace(/\s+/g, '-').toLowerCase();
 
   useEffect(() => {
     let startTime: number;
@@ -82,52 +79,25 @@ export function CircularMetric({
             stroke="hsl(var(--border))"
             strokeWidth={stroke}
             fill="none"
-            opacity="0.2"
+            opacity="0.3"
           />
-          {gradient ? (
-            <>
-              <defs>
-                <linearGradient id={`gradient-${sanitizedLabel}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="hsl(280 90% 60%)" />
-                  <stop offset="50%" stopColor="hsl(320 90% 60%)" />
-                  <stop offset="100%" stopColor="hsl(263 90% 65%)" />
-                </linearGradient>
-              </defs>
-              <circle
-                cx={dimension / 2}
-                cy={dimension / 2}
-                r={radius}
-                stroke={`url(#gradient-${sanitizedLabel})`}
-                strokeWidth={stroke + 2}
-                fill="none"
-                strokeDasharray={circumference}
-                strokeDashoffset={offset}
-                strokeLinecap="round"
-                className="transition-all duration-1000 ease-out"
-                style={{
-                  filter: 'drop-shadow(0 0 8px hsl(280 90% 60% / 0.6))',
-                }}
-              />
-            </>
-          ) : (
-            <circle
-              cx={dimension / 2}
-              cy={dimension / 2}
-              r={radius}
-              stroke="hsl(var(--primary))"
-              strokeWidth={stroke}
-              fill="none"
-              strokeDasharray={circumference}
-              strokeDashoffset={offset}
-              strokeLinecap="round"
-              className="transition-all duration-1000 ease-out"
-            />
-          )}
+          <circle
+            cx={dimension / 2}
+            cy={dimension / 2}
+            r={radius}
+            stroke="hsl(var(--primary))"
+            strokeWidth={stroke}
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            className="transition-all duration-1000 ease-out"
+          />
         </svg>
         {/* Center value */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className={cn("font-bold bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent", fontSize)}>
-            {animatedValue.toFixed(1)}
+          <span className={cn("font-bold text-foreground", fontSize)}>
+            {Math.round(animatedValue)}
           </span>
         </div>
       </div>
