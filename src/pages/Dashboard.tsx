@@ -43,8 +43,6 @@ import { CircularMetric } from '@/components/dashboard/CircularMetric';
 import { EntityCard } from '@/components/dashboard/EntityCard';
 import { NetworkPreview } from '@/components/dashboard/NetworkPreview';
 import { SocialIntegrations } from '@/components/dashboard/SocialIntegrations';
-import { ParticleBackground } from '@/components/dashboard/ParticleBackground';
-import { GridOverlay } from '@/components/dashboard/GridOverlay';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useLowCreditToast } from '@/hooks/useLowCreditToast';
@@ -645,8 +643,6 @@ const Dashboard = () => {
   }];
   if (!user) return null;
   return <>
-      <ParticleBackground />
-      <GridOverlay />
       <InitializeDarkWebDemo />
       <SEO title="Dashboard — FootprintIQ" description="View your OSINT scans, findings, and entity relationships" canonical="https://footprintiq.app/dashboard" />
       <AnnouncementBar message="💡 Pro Tip: Use AI Analyst to get instant insights from your scan results." link="/ai-analyst" linkText="Try AI Analyst" storageKey="ai-analyst-dashboard-tip" variant="update" />
@@ -655,52 +651,39 @@ const Dashboard = () => {
         <Header />
 
         {/* Hero Section */}
-        <div data-tour="dashboard-hero" className="relative bg-gradient-to-br from-primary/10 via-background to-accent/5 p-8 rounded-2xl shadow-[var(--shadow-elevated)] mx-6 mt-6 animate-fade-in border border-primary/20 overflow-hidden">
-          {/* Decorative background elements */}
-          <div className="absolute inset-0 bg-grid-primary/[0.02] pointer-events-none" />
-          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-          
-          <div className="max-w-7xl mx-auto relative z-10">
-            <div className="flex items-center gap-6">
-              {/* Logo Shield */}
-              <div className="relative shrink-0 group">
-                <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-2xl group-hover:blur-3xl transition-all duration-500" />
-                
-              </div>
-
-              {/* Heading and Subtitle */}
-              <div className="flex-1 min-w-0">
-                <h1 className="font-bold bg-gradient-to-br from-primary via-primary to-accent bg-clip-text text-transparent whitespace-nowrap text-4xl text-center">
-                  Your Intelligence Command Center
-                </h1>
-                <p className="text-muted-foreground/80 font-medium mt-2 whitespace-nowrap text-base text-center">
-                  Real-time monitoring and threat intelligence at your fingertips
-                </p>
-              </div>
+        <div data-tour="dashboard-hero" className="bg-white border border-border/60 p-8 rounded-2xl shadow-sm mx-6 mt-6 animate-fade-in">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center">
+              <h1 className="font-bold text-foreground text-3xl">
+                Dashboard
+              </h1>
+              <p className="text-muted-foreground mt-2 text-base">
+                Monitor your digital footprint and track OSINT findings
+              </p>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="max-w-7xl mx-auto px-6 mt-6 mb-2">
-          <div className="flex flex-wrap gap-4 justify-center items-center">
-            <Button onClick={() => navigate('/anomaly-history')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
+          <div className="flex flex-wrap gap-3 justify-center items-center">
+            <Button onClick={() => navigate('/anomaly-history')} variant="outline" className="border-border/60">
               <Zap className="h-4 w-4 mr-2" />
               Anomaly History
             </Button>
-            <Button onClick={() => navigate('/graph')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
+            <Button onClick={() => navigate('/graph')} variant="outline" className="border-border/60">
               <Network className="h-4 w-4 mr-2" />
               Entity Graph
             </Button>
-            <Button onClick={() => navigate('/scan/batch')} variant="outline" className="shadow-lg hover:shadow-glow transition-[var(--transition-smooth)]">
+            <Button onClick={() => navigate('/scan/batch')} variant="outline" className="border-border/60">
               <FileStack className="h-4 w-4 mr-2" />
               Batch Scan
             </Button>
-            <Button data-tour="advanced-scan-btn" onClick={() => navigate('/scan/advanced')} variant="outline" className="shadow-lg shadow-accent/20 hover:shadow-glow hover:border-accent transition-[var(--transition-smooth)]">
+            <Button data-tour="advanced-scan-btn" onClick={() => navigate('/scan/advanced')} variant="outline" className="border-border/60">
               <Zap className="h-4 w-4 mr-2" />
               Advanced Scan
             </Button>
-            <Button onClick={() => navigate('/scan')} className="shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-[var(--transition-smooth)] hover:scale-105">
+            <Button onClick={() => navigate('/scan')}>
               <Play className="h-4 w-4 mr-2" />
               Start New Scan
             </Button>
@@ -898,25 +881,25 @@ const Dashboard = () => {
                     </div> : null}
 
                   {/* Quick Actions */}
-                  <Card className="group relative overflow-hidden rounded-lg bg-card p-6 shadow-card hover:shadow-glow transition-all duration-300">
-                    <CardHeader>
-                      <CardTitle className="text-xl flex items-center gap-2">
+                  <Card className="p-6">
+                    <CardHeader className="p-0 pb-4">
+                      <CardTitle className="text-lg flex items-center gap-2">
                         <Zap className="h-5 w-5 text-primary" />
                         Quick Actions
                       </CardTitle>
                       <CardDescription>Start scanning or manage your security</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <Button onClick={() => navigate('/scan')} className="w-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-105">
+                    <CardContent className="p-0">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <Button onClick={() => navigate('/scan')} className="w-full">
                           <Play className="h-4 w-4 mr-2" />
                           Quick Scan
                         </Button>
-                        <Button onClick={() => navigate('/scan/batch')} variant="outline" className="w-full shadow-lg hover:shadow-glow transition-all duration-300">
+                        <Button onClick={() => navigate('/scan/batch')} variant="outline" className="w-full">
                           <FileStack className="h-4 w-4 mr-2" />
                           Batch Scan
                         </Button>
-                        <Button onClick={() => navigate('/graph')} variant="outline" className="w-full shadow-lg hover:shadow-glow transition-all duration-300">
+                        <Button onClick={() => navigate('/graph')} variant="outline" className="w-full">
                           <Network className="h-4 w-4 mr-2" />
                           View Graph
                         </Button>
