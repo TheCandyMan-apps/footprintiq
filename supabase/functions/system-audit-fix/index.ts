@@ -138,19 +138,31 @@ serve(async (req) => {
 
 async function fixStuckScans(supabase: any): Promise<FixResult> {
   try {
-    const cutoffTime = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    // More aggressive cleanup: 2 min for pending, 5 min for processing/running
+    const pendingCutoff = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const runningCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-    // Find stuck scans
-    const { data: stuckScans, error: queryError } = await supabase
+    // Find stuck scans with different thresholds
+    const { data: pendingStuck, error: pendingError } = await supabase
       .from("scans")
-      .select("id, workspace_id, user_id, scan_type, created_at")
-      .in("status", ["pending", "processing"])
-      .lt("created_at", cutoffTime)
+      .select("id, workspace_id, user_id, scan_type, created_at, status")
+      .eq("status", "pending")
+      .lt("created_at", pendingCutoff)
       .limit(100);
 
-    if (queryError) throw queryError;
+    const { data: runningStuck, error: runningError } = await supabase
+      .from("scans")
+      .select("id, workspace_id, user_id, scan_type, created_at, status")
+      .in("status", ["running", "processing"])
+      .lt("created_at", runningCutoff)
+      .limit(100);
 
-    if (!stuckScans || stuckScans.length === 0) {
+    if (pendingError) throw pendingError;
+    if (runningError) throw runningError;
+
+    const stuckScans = [...(pendingStuck || []), ...(runningStuck || [])];
+
+    if (stuckScans.length === 0) {
       return {
         success: true,
         component: "scan_flow",
@@ -162,12 +174,33 @@ async function fixStuckScans(supabase: any): Promise<FixResult> {
 
     let fixedCount = 0;
     const affectedResources: string[] = [];
+    const failedUpdates: string[] = [];
 
     for (const scan of stuckScans) {
       const stuckDuration = Math.floor(
         (Date.now() - new Date(scan.created_at).getTime()) / 60000
       );
-      const status = stuckDuration > 10 ? "failed" : "timeout";
+      
+      // Check if there are any partial results
+      const { count: findingsCount } = await supabase
+        .from("findings")
+        .select("id", { count: "exact", head: true })
+        .eq("scan_id", scan.id);
+
+      // Determine appropriate status based on duration and existing results
+      let status: string;
+      let errorMessage: string;
+      
+      if (stuckDuration > 30) {
+        status = "failed";
+        errorMessage = `Scan abandoned after ${stuckDuration}m - marked as failed by cleanup`;
+      } else if (stuckDuration > 10) {
+        status = findingsCount && findingsCount > 0 ? "complete_partial" : "timeout";
+        errorMessage = `Scan ${findingsCount ? 'completed with partial results' : 'timed out'} after ${stuckDuration}m`;
+      } else {
+        status = "timeout";
+        errorMessage = `Scan marked as timeout after ${stuckDuration}m stuck in ${scan.status}`;
+      }
 
       const { error: updateError } = await supabase
         .from("scans")
@@ -187,25 +220,54 @@ async function fixStuckScans(supabase: any): Promise<FixResult> {
           provider: "system",
           stage: "admin_fix",
           status: status,
-          error_message: `Scan marked as ${status} by admin fix (${stuckDuration}m stuck)`,
-          metadata: { stuckDuration, fixedBy: "system_audit_fix" },
+          error_message: errorMessage,
+          metadata: { 
+            stuckDuration, 
+            fixedBy: "system_audit_fix",
+            originalStatus: scan.status,
+            findingsCount: findingsCount || 0
+          },
         });
+
+        // Also log to system_errors for tracking
+        await supabase.from("system_errors").insert({
+          error_code: "STUCK_SCAN_CLEANUP",
+          error_message: errorMessage,
+          function_name: "system-audit-fix",
+          scan_id: scan.id,
+          workspace_id: scan.workspace_id,
+          severity: "warning",
+          metadata: { scanType: scan.scan_type, stuckDuration },
+        });
+      } else {
+        failedUpdates.push(scan.id);
       }
     }
+
+    // Also clear any gosearch_pending flags on old scans
+    const { data: clearedFlags } = await supabase
+      .from("scans")
+      .update({ gosearch_pending: false })
+      .eq("gosearch_pending", true)
+      .lt("created_at", new Date(Date.now() - 10 * 60 * 1000).toISOString())
+      .select("id");
+
+    const flagsCleared = clearedFlags?.length || 0;
 
     return {
       success: true,
       component: "scan_flow",
       fixed: fixedCount > 0,
-      message: `Fixed ${fixedCount} of ${stuckScans.length} stuck scans`,
+      message: `Fixed ${fixedCount} of ${stuckScans.length} stuck scans${flagsCleared ? `, cleared ${flagsCleared} pending flags` : ""}${failedUpdates.length ? `, ${failedUpdates.length} failed to update` : ""}`,
       details: {
         itemsFixed: fixedCount,
-        itemsRemaining: stuckScans.length - fixedCount,
+        itemsRemaining: stuckScans.length - fixedCount + failedUpdates.length,
         affectedResources,
       },
       rerunAudit: true,
     };
   } catch (error) {
+    console.error("[system-audit-fix] fixStuckScans error:", error);
     return {
       success: false,
       component: "scan_flow",
@@ -215,6 +277,7 @@ async function fixStuckScans(supabase: any): Promise<FixResult> {
         "Check database connectivity",
         "Manually review stuck scans in admin panel",
         "Consider restarting scan workers",
+        "Check Cloud Run worker health",
       ],
     };
   }
