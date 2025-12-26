@@ -4,123 +4,112 @@
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
+
+DESIGN PHILOSOPHY:
+- Light mode first
+- Clean, neutral, professional aesthetic
+- Purple is an ACCENT color only
+- No neon, glow, or cyberpunk effects
+- No glassmorphism in light mode
+- High readability and accessibility
 */
 
 @layer base {
   :root {
-    /* Light mode colors */
+    /* Light mode colors - Clean, professional */
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 220 14% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 220 14% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover-foreground: 220 14% 10%;
 
+    /* Purple as restrained accent */
     --primary: 263 70% 50%;
-    --primary-foreground: 210 40% 98%;
-    --primary-glow: 263 70% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 10% 3.9%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 14% 10%;
 
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
+    /* Teal accent for highlights */
     --accent: 188 95% 42%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
     --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
+    --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 98%;
+    --warning-foreground: 0 0% 100%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
     --ring: 263 70% 50%;
 
-    --radius: 1.125rem;
+    --radius: 0.75rem;
 
-    --gradient-hero: linear-gradient(135deg, hsl(263 70% 90%) 0%, hsl(0 0% 100%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 98%) 0%, hsl(0 0% 95%) 100%);
+    /* Clean gradients - subtle only */
+    --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 14% 98%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 100%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(188 95% 42%) 100%);
-    --gradient-mesh: radial-gradient(at 0% 0%, hsl(263 70% 90% / 0.3) 0px, transparent 50%), radial-gradient(at 100% 100%, hsl(188 95% 85% / 0.3) 0px, transparent 50%);
-    --gradient-premium: linear-gradient(135deg, hsl(263 70% 50%) 0%, hsl(280 70% 45%) 50%, hsl(188 95% 42%) 100%);
-    --gradient-shine: linear-gradient(110deg, transparent 33%, hsl(0 0% 100% / 0.3) 50%, transparent 66%);
-    --shadow-glow: 0 0 40px hsl(263 70% 50% / 0.2);
-    --shadow-card: 0 8px 32px hsl(240 10% 3% / 0.1);
-    --shadow-elevated: 0 20px 60px hsl(240 10% 3% / 0.15), 0 0 80px hsl(263 70% 50% / 0.1);
-    --shadow-inner: inset 0 2px 8px hsl(240 10% 3% / 0.05);
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    /* Clean shadows - no glows */
+    --shadow-card: 0 1px 3px hsl(220 14% 10% / 0.04), 0 1px 2px hsl(220 14% 10% / 0.06);
+    --shadow-elevated: 0 4px 6px -1px hsl(220 14% 10% / 0.05), 0 2px 4px -1px hsl(220 14% 10% / 0.04);
+    --shadow-soft: 0 10px 25px -5px hsl(220 14% 10% / 0.05), 0 8px 10px -6px hsl(220 14% 10% / 0.02);
+    
+    --transition-smooth: all 0.2s ease;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
+    --background: 222 47% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 240 8% 8%;
+    --card: 222 47% 8%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 240 8% 8%;
+    --popover: 222 47% 8%;
     --popover-foreground: 210 40% 98%;
 
     --primary: 263 70% 60%;
-    --primary-foreground: 210 40% 98%;
-    --primary-glow: 263 70% 70%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 5% 15%;
+    --secondary: 222 47% 12%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 240 5% 15%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 222 47% 12%;
+    --muted-foreground: 215 20% 65%;
 
     --accent: 188 95% 52%;
-    --accent-foreground: 240 10% 3.9%;
+    --accent-foreground: 222 47% 6%;
 
-    --destructive: 0 62.8% 50.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 63% 51%;
+    --destructive-foreground: 0 0% 100%;
 
     --success: 142 70% 45%;
-    --success-foreground: 210 40% 98%;
+    --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 240 10% 3.9%;
+    --warning-foreground: 222 47% 6%;
 
-    --border: 240 5% 15%;
-    --input: 240 5% 15%;
+    --border: 222 47% 15%;
+    --input: 222 47% 15%;
     --ring: 263 70% 60%;
     
-    --gradient-hero: linear-gradient(135deg, hsl(263 70% 25%) 0%, hsl(240 10% 3.9%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(240 8% 10%) 0%, hsl(240 8% 6%) 100%);
+    --gradient-hero: linear-gradient(180deg, hsl(222 47% 6%) 0%, hsl(222 47% 8%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(222 47% 8%) 0%, hsl(222 47% 10%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(263 70% 60%) 0%, hsl(188 95% 52%) 100%);
-    --gradient-mesh: radial-gradient(at 0% 0%, hsl(263 70% 25% / 0.3) 0px, transparent 50%), radial-gradient(at 100% 100%, hsl(188 95% 35% / 0.2) 0px, transparent 50%);
-    --gradient-premium: linear-gradient(135deg, hsl(263 70% 60%) 0%, hsl(280 70% 55%) 50%, hsl(188 95% 52%) 100%);
-    --gradient-shine: linear-gradient(110deg, transparent 33%, hsl(0 0% 100% / 0.1) 50%, transparent 66%);
-    --shadow-glow: 0 0 40px hsl(263 70% 60% / 0.3);
-    --shadow-card: 0 8px 32px hsl(240 10% 0% / 0.4);
-    --shadow-elevated: 0 20px 60px hsl(240 10% 0% / 0.6), 0 0 80px hsl(263 70% 60% / 0.15);
-    --shadow-inner: inset 0 2px 8px hsl(240 10% 0% / 0.3);
     
-    /* OSINT Glassmorphism */
-    --glass-background: hsl(240 10% 10% / 0.6);
-    --glass-border: hsl(263 70% 60% / 0.2);
-    --glass-blur: blur(12px);
-    
-    /* Enhanced Cyber Gradients */
-    --gradient-cyber: linear-gradient(135deg, hsl(280 70% 50%) 0%, hsl(320 70% 50%) 50%, hsl(263 70% 60%) 100%);
-    --gradient-mesh-cyber: radial-gradient(at 20% 30%, hsl(280 70% 35% / 0.4) 0px, transparent 50%), radial-gradient(at 80% 70%, hsl(320 70% 35% / 0.3) 0px, transparent 50%);
-    --gradient-circular: conic-gradient(from 180deg at 50% 50%, hsl(280 70% 50%), hsl(320 70% 50%), hsl(263 70% 60%), hsl(280 70% 50%));
-    
-    /* Enhanced Shadows */
-    --shadow-glow-intense: 0 0 60px hsl(280 70% 60% / 0.4), 0 0 100px hsl(320 70% 60% / 0.2);
-    --shadow-cyber: 0 8px 32px hsl(240 10% 0% / 0.6), 0 0 80px hsl(280 70% 60% / 0.15);
-    --radius: 1.125rem;
+    --shadow-card: 0 1px 3px hsl(0 0% 0% / 0.2), 0 1px 2px hsl(0 0% 0% / 0.3);
+    --shadow-elevated: 0 10px 15px -3px hsl(0 0% 0% / 0.3), 0 4px 6px -2px hsl(0 0% 0% / 0.2);
+    --shadow-soft: 0 20px 40px -10px hsl(0 0% 0% / 0.4);
   }
 }
 
@@ -131,17 +120,10 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    background-image: var(--gradient-mesh);
   }
 
   html {
     transition: background-color 0.3s ease, color 0.3s ease;
-  }
-
-  * {
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-duration: 0.3s;
-    transition-timing-function: ease;
   }
 
   @keyframes shimmer {
