@@ -29,20 +29,22 @@ export async function checkRateLimit(
 
     const now = new Date();
     const windowStart = new Date(now.getTime() - config.windowMs);
-    const key = `${config.endpoint}:${ip}`;
+    const windowSeconds = Math.floor(config.windowMs / 1000);
 
-    // Get or create rate limit entry
+    // Get or create rate limit entry using correct schema columns
     const { data: existing } = await supabase
       .from("rate_limits")
       .select("*")
-      .eq("key", key)
+      .eq("identifier", ip)
+      .eq("identifier_type", "ip")
+      .eq("endpoint", config.endpoint)
       .gte("window_start", windowStart.toISOString())
       .single();
 
     if (existing) {
       // Check if limit exceeded
-      if (existing.current_count >= config.maxRequests) {
-        console.log(`Rate limit exceeded for ${key}: ${existing.current_count}/${config.maxRequests}`);
+      if (existing.current_count >= existing.limit_per_window) {
+        console.log(`Rate limit exceeded for ${config.endpoint}:${ip}: ${existing.current_count}/${existing.limit_per_window}`);
         return false;
       }
 
@@ -51,22 +53,28 @@ export async function checkRateLimit(
         .from("rate_limits")
         .update({
           current_count: existing.current_count + 1,
+          last_request_at: now.toISOString(),
+          total_requests: (existing.total_requests || 0) + 1,
         })
         .eq("id", existing.id);
 
       return true;
     }
 
-    // Create new rate limit entry
+    // Create new rate limit entry with correct schema
     const { error } = await supabase
       .from("rate_limits")
       .insert({
-        key,
+        identifier: ip,
+        identifier_type: "ip",
         endpoint: config.endpoint,
         current_count: 1,
-        max_requests: config.maxRequests,
-        window_seconds: Math.floor(config.windowMs / 1000),
+        limit_per_window: config.maxRequests,
+        window_seconds: windowSeconds,
         window_start: now.toISOString(),
+        last_request_at: now.toISOString(),
+        total_requests: 1,
+        total_blocked: 0,
       });
 
     if (error) {

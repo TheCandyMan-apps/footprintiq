@@ -258,133 +258,171 @@ export default function Performance() {
           </TabsList>
 
           <TabsContent value="queries" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Query Execution Times</CardTitle>
-                <CardDescription>Recent query performance (last 50 queries)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={queryTimeData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="index" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
-                    <Line type="monotone" dataKey="time" stroke="hsl(var(--primary))" name="Time (ms)" />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+            {!queryPerf?.length ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <BarChart3 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Query Performance Data Yet</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    Query performance tracking is not yet active. Performance metrics will appear here once database queries are monitored.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Query Execution Times</CardTitle>
+                    <CardDescription>Recent query performance (last 50 queries)</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={queryTimeData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="index" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Line type="monotone" dataKey="time" stroke="hsl(var(--primary))" name="Time (ms)" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Slow Queries</CardTitle>
-                <CardDescription>Queries taking &gt; 1 second</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {queryPerf?.filter((q: any) => q.execution_time_ms > 1000).slice(0, 10).map((query: any) => (
-                    <div key={query.id} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-semibold">{query.query_type}</h3>
-                          <p className="text-sm text-muted-foreground">{query.table_name}</p>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Slow Queries</CardTitle>
+                    <CardDescription>Queries taking &gt; 1 second</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {queryPerf?.filter((q: any) => q.execution_time_ms > 1000).slice(0, 10).map((query: any) => (
+                        <div key={query.id} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="font-semibold">{query.query_type}</h3>
+                              <p className="text-sm text-muted-foreground">{query.table_name}</p>
+                            </div>
+                            <Badge variant="destructive">{query.execution_time_ms}ms</Badge>
+                          </div>
+                          {!query.used_index && (
+                            <p className="text-xs text-orange-600">⚠️ No index used</p>
+                          )}
                         </div>
-                        <Badge variant="destructive">{query.execution_time_ms}ms</Badge>
-                      </div>
-                      {!query.used_index && (
-                        <p className="text-xs text-orange-600">⚠️ No index used</p>
+                      ))}
+                      {queryPerf?.filter((q: any) => q.execution_time_ms > 1000).length === 0 && (
+                        <p className="text-center text-muted-foreground py-8">No slow queries detected</p>
                       )}
                     </div>
-                  ))}
-                  {queryPerf?.filter((q: any) => q.execution_time_ms > 1000).length === 0 && (
-                    <p className="text-center text-muted-foreground py-8">No slow queries detected</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="cache" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {!cacheStats?.total_entries && cacheTypeData.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Zap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Cache Entries Yet</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    The cache layer is ready but empty. Cache entries will appear here as the system stores frequently accessed data.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Cache Entries by Type</CardTitle>
+                    <CardDescription>Distribution of cached data</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={cacheTypeData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="type" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="entries" fill="hsl(var(--primary))" name="Entries" />
+                        <Bar dataKey="hits" fill="hsl(var(--secondary))" name="Hits" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Cache Management</CardTitle>
+                    <CardDescription>Clear cache by type</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {Object.entries(cacheStats?.by_type || {}).map(([type, stats]: [string, any]) => (
+                        <div key={type} className="flex justify-between items-center border-b pb-4">
+                          <div>
+                            <h3 className="font-semibold capitalize">{type}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {stats.count} entries • {stats.total_hits} hits
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => clearCache.mutate(type)}
+                          >
+                            Clear
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="jobs" className="space-y-4">
+            {!jobStats?.total && jobTypeData.length === 0 ? (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Activity className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Background Jobs Yet</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto">
+                    The job queue is empty. Background jobs will appear here when async tasks are enqueued (e.g., large scan processing, report generation).
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
               <Card>
                 <CardHeader>
-                  <CardTitle>Cache Entries by Type</CardTitle>
-                  <CardDescription>Distribution of cached data</CardDescription>
+                  <CardTitle>Background Jobs</CardTitle>
+                  <CardDescription>Job queue status and distribution</CardDescription>
                 </CardHeader>
                 <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                    {Object.entries(jobStats?.by_status || {}).map(([status, count]) => (
+                      <div key={status} className="text-center">
+                        <div className="text-2xl font-bold">{count as number}</div>
+                        <p className="text-sm text-muted-foreground capitalize">{status}</p>
+                      </div>
+                    ))}
+                  </div>
+
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={cacheTypeData}>
+                    <BarChart data={jobTypeData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="type" />
                       <YAxis />
                       <Tooltip />
-                      <Legend />
-                      <Bar dataKey="entries" fill="hsl(var(--primary))" name="Entries" />
-                      <Bar dataKey="hits" fill="hsl(var(--secondary))" name="Hits" />
+                      <Bar dataKey="count" fill="hsl(var(--primary))" />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Cache Management</CardTitle>
-                  <CardDescription>Clear cache by type</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {Object.entries(cacheStats?.by_type || {}).map(([type, stats]: [string, any]) => (
-                      <div key={type} className="flex justify-between items-center border-b pb-4">
-                        <div>
-                          <h3 className="font-semibold capitalize">{type}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            {stats.count} entries • {stats.total_hits} hits
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => clearCache.mutate(type)}
-                        >
-                          Clear
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="jobs" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Background Jobs</CardTitle>
-                <CardDescription>Job queue status and distribution</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-                  {Object.entries(jobStats?.by_status || {}).map(([status, count]) => (
-                    <div key={status} className="text-center">
-                      <div className="text-2xl font-bold">{count as number}</div>
-                      <p className="text-sm text-muted-foreground capitalize">{status}</p>
-                    </div>
-                  ))}
-                </div>
-
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={jobTypeData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="type" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="count" fill="hsl(var(--primary))" />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="limits" className="space-y-4">
