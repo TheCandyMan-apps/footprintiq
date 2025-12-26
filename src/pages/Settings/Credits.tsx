@@ -196,16 +196,13 @@ export default function CreditsSettings() {
                         const timeoutId = setTimeout(() => controller.abort(), 15000);
 
                         try {
-                          const { data, error } = await supabase.functions.invoke(
-                            'billing/purchase-credits-checkout', 
+                        const { data, error } = await supabase.functions.invoke(
+                            'credits-checkout', 
                             {
                               body: { 
                                 priceId: pack.priceId,
                                 credits: pack.credits,
                                 workspaceId: workspace.id 
-                              },
-                              headers: {
-                                'Content-Type': 'application/json',
                               },
                             }
                           );
