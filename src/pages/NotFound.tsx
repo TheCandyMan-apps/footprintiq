@@ -1,6 +1,7 @@
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { analytics } from "@/lib/analytics";
+import { supabase } from "@/integrations/supabase/client";
 
 const NotFound = () => {
   const location = useLocation();
@@ -14,6 +15,19 @@ const NotFound = () => {
       document.referrer,
       location.search
     );
+    
+    // Log to database for detailed analysis
+    supabase
+      .from('page_not_found_events')
+      .insert({
+        path: location.pathname,
+        referrer: document.referrer || null,
+        search: location.search || null,
+        user_agent: navigator.userAgent
+      })
+      .then(({ error }) => {
+        if (error) console.error('Failed to log 404 event:', error);
+      });
   }, [location.pathname, location.search]);
 
   return (

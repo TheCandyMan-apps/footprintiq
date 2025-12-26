@@ -4936,6 +4936,33 @@ export type Database = {
         }
         Relationships: []
       }
+      page_not_found_events: {
+        Row: {
+          created_at: string
+          id: string
+          path: string
+          referrer: string | null
+          search: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          path: string
+          referrer?: string | null
+          search?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          path?: string
+          referrer?: string | null
+          search?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       payment_errors: {
         Row: {
           amount: number | null
