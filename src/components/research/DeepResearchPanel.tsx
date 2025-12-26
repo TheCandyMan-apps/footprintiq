@@ -128,6 +128,17 @@ export function DeepResearchPanel() {
     }));
   };
 
+  // Check if results are empty/negative
+  const hasNoWebResults = results && results.results.every(r => {
+    const content = r.content.toLowerCase();
+    return content.includes('no information found') ||
+           content.includes('could not find') ||
+           content.includes('no results') ||
+           content.includes('unable to find') ||
+           content.includes('no public') ||
+           r.citations.length === 0;
+  });
+
   return (
     <div className="space-y-6">
       {/* Research Form */}
@@ -135,13 +146,22 @@ export function DeepResearchPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Globe className="h-5 w-5 text-primary" />
-            Deep Research
+            Web Intelligence
           </CardTitle>
           <CardDescription>
-            AI-powered research with real-time web intelligence from Perplexity
+            Search the public web for mentions, profiles, and discussions about a target
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Info box about what this does */}
+          <Alert className="border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/30">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-sm text-blue-800 dark:text-blue-300">
+              This searches the public web for news, forum posts, social profiles, and discussions. 
+              For breach data, run a full OSINT scan instead.
+            </AlertDescription>
+          </Alert>
+
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="target">Target</Label>
@@ -263,14 +283,23 @@ export function DeepResearchPanel() {
             </Alert>
           )}
 
-          {/* No HIBP breaches but Perplexity found nothing - clarify */}
-          {(!results.known_breaches || results.known_breaches.count === 0) && 
-           results.results.every(r => !r.content.toLowerCase().includes('breach')) && (
-            <Alert className="border-muted bg-muted/20">
-              <Info className="h-4 w-4" />
-              <AlertTitle>No Confirmed Breaches Found</AlertTitle>
-              <AlertDescription>
-                Web search found no public breach mentions for this target. This doesn't guarantee safety—some breaches may not be publicly indexed.
+          {/* Empty results - explain constructively */}
+          {hasNoWebResults && (
+            <Alert className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30">
+              <Info className="h-4 w-4 text-green-600 dark:text-green-400" />
+              <AlertTitle className="text-green-800 dark:text-green-300">Minimal Web Presence Detected</AlertTitle>
+              <AlertDescription className="text-green-700 dark:text-green-400">
+                <p className="mb-2">
+                  No significant public web mentions were found for "{results.target}". This is common for:
+                </p>
+                <ul className="list-disc list-inside text-sm space-y-1 mb-3">
+                  <li>Usernames with no social media or forum activity</li>
+                  <li>Private individuals without a public profile</li>
+                  <li>New or unused identifiers</li>
+                </ul>
+                <p className="text-sm">
+                  <strong>Tip:</strong> For breach detection and platform presence, run a full OSINT scan which uses specialized tools like Sherlock, Maigret, and HIBP.
+                </p>
               </AlertDescription>
             </Alert>
           )}

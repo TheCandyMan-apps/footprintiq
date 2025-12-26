@@ -8,17 +8,17 @@ export default function Research() {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Deep Research | FootprintIQ</title>
-        <meta name="description" content="AI-powered deep research with real-time web intelligence from Perplexity. Research usernames, emails, phones, and more." />
+        <title>Web Intelligence | FootprintIQ</title>
+        <meta name="description" content="Search the public web for mentions, profiles, and discussions. Powered by Perplexity for real-time web intelligence." />
       </Helmet>
       
       <Header />
       
       <main className="max-w-4xl mx-auto px-6 py-12">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Deep Research</h1>
+          <h1 className="text-3xl font-bold mb-2">Web Intelligence</h1>
           <p className="text-muted-foreground">
-            AI-powered research with real-time web intelligence from Perplexity
+            Search the public web for mentions, profiles, and discussions about a target
           </p>
         </div>
 
