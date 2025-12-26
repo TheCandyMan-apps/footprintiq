@@ -71,11 +71,13 @@ serve(async (req) => {
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
 
     // Try to fetch real audit logs for recent API activity
+    // Note: audit_log table uses 'at' column, not 'created_at'
     const { data: auditLogs } = await supabase
       .from('audit_log')
       .select('*')
-      .gte('created_at', oneHourAgo.toISOString())
-      .order('created_at', { ascending: true });
+      .gte('at', oneHourAgo.toISOString())
+      .order('at', { ascending: true })
+      .limit(500); // Limit to reduce connection usage
 
     // Try to fetch recent scan results for activity metrics
     const { data: scans } = await supabase
@@ -232,7 +234,7 @@ function generateEnhancedLogs(startTime: Date, endTime: Date, auditLogs: any, sc
   if (auditLogs && auditLogs.length > 0) {
     auditLogs.forEach((audit: any) => {
       logs.push({
-        timestamp: audit.created_at,
+        timestamp: audit.at, // Use 'at' column, not 'created_at'
         function_id: audit.action || 'api-action',
         status_code: 200,
         execution_time_ms: Math.floor(Math.random() * 300) + 50,
