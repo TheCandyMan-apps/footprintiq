@@ -11,7 +11,15 @@ export default function SystemHealth() {
     queryKey: ['system-health'],
     queryFn: async () => {
       const { data, error } = await supabase.functions.invoke('health-check');
-      if (error) throw error;
+      // The health-check returns non-2xx for degraded/unhealthy states,
+      // but still includes valid health data in the response
+      if (error) {
+        // Check if we still got data back (degraded/unhealthy response)
+        if (data && typeof data === 'object' && 'status' in data) {
+          return data;
+        }
+        throw error;
+      }
       return data;
     },
     refetchInterval: 30000, // Auto-refresh every 30 seconds
