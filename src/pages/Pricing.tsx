@@ -123,27 +123,26 @@ const PricingPage = () => {
         canonical="https://footprintiq.app/pricing"
         structuredData={pricingStructuredData}
       />
-      <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+      <div className="min-h-screen bg-background">
         <Header />
         
-        {/* Hero Section */}
-        <section className="relative overflow-hidden py-20 px-4">
-          <div className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent" />
-          <div className="relative z-10 container mx-auto text-center max-w-4xl">
+        {/* Hero Section - Clean design */}
+        <section className="py-20 px-4 bg-background">
+          <div className="container mx-auto text-center max-w-4xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              <Badge variant="outline" className="mb-6 px-4 py-2">
-                <Sparkles className="w-4 h-4 mr-2" />
-                Trusted by Investigators Worldwide
-              </Badge>
-              <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-accent bg-clip-text text-transparent">
-                OSINT Intelligence, Instantly.
+              <h1 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
+                Simple, Transparent Pricing
               </h1>
-              <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-                FootprintIQ reveals usernames, accounts, exposures and digital footprint signals across hundreds of platforms — using world-class automation powered by Maigret, Sherlock, GoSearch and AI analysis.
+              <p className="text-xl text-muted-foreground mb-4 max-w-3xl mx-auto">
+                Choose the plan that fits your needs. All plans include secure scanning with privacy-first defaults.
+              </p>
+              <p className="text-sm text-muted-foreground mb-8">
+                <Lock className="w-4 h-4 inline mr-1" />
+                Stripe-secured checkout · Cancel anytime
               </p>
               <div className="flex gap-4 justify-center flex-wrap">
                 <Button size="lg" onClick={() => navigate('/auth')} className="gap-2">
@@ -179,7 +178,7 @@ const PricingPage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, delay: index * 0.1 }}
                   >
-                    <Card className={`relative h-full transition-all hover:shadow-lg ${isPopular ? 'border-primary shadow-md scale-105' : ''} ${isCurrent ? 'ring-2 ring-primary' : ''}`}>
+                    <Card className={`relative h-full transition-shadow hover:shadow-md ${isPopular ? 'border-primary shadow-sm' : ''} ${isCurrent ? 'ring-2 ring-primary' : ''}`}>
                       {isPopular && (
                         <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                           <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>

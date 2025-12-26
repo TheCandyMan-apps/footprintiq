@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect } from "react";
-import { Shield } from "lucide-react";
+import { Shield, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { SEO } from "@/components/SEO";
 import { StructuredData, organizationSchema } from "@/components/StructuredData";
@@ -14,15 +14,13 @@ import { PremiumTeaser } from "@/components/PremiumTeaser";
 import { Testimonials } from "@/components/Testimonials";
 import { FAQ } from "@/components/FAQ";
 import { TrustSignals } from "@/components/TrustSignals";
+import { TrustCredibility } from "@/components/TrustCredibility";
 import { OrganizationSchema } from "@/components/OrganizationSchema";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { FloatingCTA } from "@/components/FloatingCTA";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { AnnouncementBar } from "@/components/AnnouncementBar";
 import { ExplainerAnimation } from "@/components/ExplainerAnimation";
-import scanCapabilitiesBg from "@/assets/scan-capabilities-bg.jpg";
-import privacyBadge from "@/assets/privacy-badge.jpg";
-import privacyShield from "@/assets/privacy-shield.jpg";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -138,72 +136,63 @@ export default function Home() {
       <PremiumTeaser />
       <Testimonials />
       
-      <main className="relative px-6 py-16 mx-auto max-w-5xl overflow-hidden animate-fadeIn">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0 -mx-6">
-          <img 
-            src={scanCapabilitiesBg} 
-            alt="Digital footprint scanning visualization" 
-            className="w-full h-full object-cover opacity-10"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/90 to-background" />
-        </div>
-        
-        <section className="relative z-10 mt-10">
+      {/* Scan Capabilities Section - Clean design */}
+      <section className="py-20 px-6 bg-background">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              What You Can Scan with FootprintIQ
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
+              What You Can Scan
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Comprehensive OSINT scanning across multiple data types to uncover your complete digital footprint
+              Comprehensive OSINT scanning across multiple data types
             </p>
           </div>
           
           <div className="grid gap-6 md:grid-cols-2 mb-12">
-            <div className="group p-6 rounded-xl bg-gradient-card border border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1">
-              <h3 className="text-xl font-semibold mb-4 group-hover:text-primary transition-colors">What You Can Scan</h3>
+            <div className="p-6 rounded-xl bg-card border border-border shadow-sm">
+              <h3 className="text-xl font-semibold mb-4 text-foreground">Scan Types</h3>
               <ul className="space-y-3 text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span><strong>Email breach checks</strong> — Identity enrichment via Have I Been Pwned</span>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-foreground">Email breach checks</strong> — via Have I Been Pwned</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span><strong>Username presence</strong> — Search across major social platforms</span>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-foreground">Username presence</strong> — across major platforms</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span><strong>Domain reputation</strong> — Tech stack, DNS history &amp; VirusTotal analysis</span>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-foreground">Domain reputation</strong> — DNS &amp; VirusTotal</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span><strong>IP exposure</strong> — Open ports &amp; device scanning via Shodan</span>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-foreground">IP exposure</strong> — open ports via Shodan</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span><strong>Phone intelligence</strong> — Carrier checks &amp; number validation</span>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-foreground">Phone intelligence</strong> — carrier validation</span>
                 </li>
               </ul>
             </div>
             
-            <div className="group p-6 rounded-xl bg-gradient-card border border-border/50 hover:border-accent/50 transition-all duration-300 hover:shadow-glow hover:-translate-y-1">
-              <h3 className="text-xl font-semibold mb-4 group-hover:text-accent transition-colors">Why It Matters</h3>
+            <div className="p-6 rounded-xl bg-card border border-border shadow-sm">
+              <h3 className="text-xl font-semibold mb-4 text-foreground">Why It Matters</h3>
               <ul className="space-y-3 text-muted-foreground">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span><strong>Reduce risk</strong> from exposed personal data and security breaches</span>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-foreground">Reduce risk</strong> from exposed data and breaches</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span><strong>Protect privacy</strong> for yourself, your family, and your brand</span>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-foreground">Protect privacy</strong> for you and your family</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span><strong>Get actionable steps</strong> with detailed cleanup instructions</span>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-foreground">Get actionable steps</strong> with cleanup guides</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary mt-1">•</span>
-                  <span><strong>Monitor continuously</strong> with automated tracking of new exposures</span>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-accent mt-0.5 flex-shrink-0" />
+                  <span><strong className="text-foreground">Monitor continuously</strong> for new exposures</span>
                 </li>
               </ul>
             </div>
@@ -212,54 +201,46 @@ export default function Home() {
           <div className="text-center">
             <Link 
               to="/scan" 
-              className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-6 py-3 font-semibold hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary text-primary-foreground px-6 py-3 font-semibold hover:bg-primary/90 transition-colors shadow-sm"
             >
               Run a Free Scan
             </Link>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Privacy Trust Note with Image */}
-        <section className="relative mt-20 rounded-3xl overflow-hidden group">
-          <div className="absolute inset-0">
-            <img 
-              src={privacyShield} 
-              alt="Privacy protection shield" 
-              className="w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background/90 to-accent/20" />
+      {/* Privacy Section - Clean card design */}
+      <section className="py-20 px-6 bg-muted/30 border-y border-border">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 mb-6">
+            <Shield className="w-7 h-7 text-primary" />
           </div>
-          
-          <div className="relative z-10 p-12">
-            <div className="max-w-3xl mx-auto text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/20 border-2 border-primary/30 mb-6">
-                <Shield className="w-8 h-8 text-primary" />
-              </div>
-              <h3 className="text-3xl font-bold mb-4 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-                Your Privacy is Our Priority
-              </h3>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                We never sell your data. All scan queries are <span className="text-foreground font-semibold">transient and encrypted</span>. 
-                We only query reputable OSINT providers and <span className="text-foreground font-semibold">delete search data</span> after delivering your results.
-              </p>
-              <div className="mt-8 flex justify-center gap-8 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <span>256-bit Encryption</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:200ms]" />
-                  <span>Zero Data Retention</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse [animation-delay:400ms]" />
-                  <span>GDPR Compliant</span>
-                </div>
-              </div>
+          <h3 className="text-2xl md:text-3xl font-bold mb-4 text-foreground">
+            Your Privacy is Our Priority
+          </h3>
+          <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+            We never sell your data. All scan queries are transient and encrypted. 
+            We only query reputable OSINT providers and delete search data after delivering your results.
+          </p>
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-primary" />
+              <span>256-bit Encryption</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-primary" />
+              <span>Zero Data Retention</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-primary" />
+              <span>GDPR Compliant</span>
             </div>
           </div>
-        </section>
-      </main>
+        </div>
+      </section>
+
+      {/* Trust & Credibility Section */}
+      <TrustCredibility />
       
       <FAQ />
       <FloatingCTA />
