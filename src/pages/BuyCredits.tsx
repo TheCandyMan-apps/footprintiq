@@ -219,9 +219,9 @@ export default function BuyCredits() {
                     <div className="text-sm text-muted-foreground">credits</div>
                   </div>
                   <div>
-                    <div className="text-3xl font-bold">${pkg.price}</div>
+                    <div className="text-3xl font-bold">£{pkg.price}</div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      ${pkg.pricePerCredit.toFixed(3)} per credit
+                      £{pkg.pricePerCredit.toFixed(3)} per credit
                     </div>
                     {pkg.description && (
                       <p className="text-xs text-muted-foreground mt-2">
@@ -263,15 +263,15 @@ export default function BuyCredits() {
                   One-time payment • No subscription required
                 </p>
               </div>
-              <Button
-                size="lg"
-                onClick={handlePurchase}
-                disabled={purchaseMutation.isPending}
-                className="min-w-[200px]"
-              >
-                <Zap className="w-5 h-5 mr-2" />
-                {purchaseMutation.isPending ? "Processing..." : `Pay $${CREDIT_PACKAGES.find(p => p.id === selectedPackage)?.price}`}
-              </Button>
+                <Button
+                  size="lg"
+                  onClick={handlePurchase}
+                  disabled={purchaseMutation.isPending}
+                  className="min-w-[200px]"
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  {purchaseMutation.isPending ? "Processing..." : `Pay £${CREDIT_PACKAGES.find(p => p.id === selectedPackage)?.price}`}
+                </Button>
             </div>
           </Card>
 
