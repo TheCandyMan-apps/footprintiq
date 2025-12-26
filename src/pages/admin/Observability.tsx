@@ -34,7 +34,7 @@ export default function Observability() {
     };
 
     fetchMetrics();
-    const interval = setInterval(fetchMetrics, 10000); // Refresh every 10s for real-time
+    const interval = setInterval(fetchMetrics, 60000); // Refresh every 60s to reduce connection pressure
     return () => clearInterval(interval);
   }, []);
 
@@ -79,7 +79,7 @@ export default function Observability() {
         <div className="flex items-center gap-2">
           <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
           <span className="text-sm text-muted-foreground">
-            Live · Updates every 10s
+            Live · Updates every 60s
           </span>
         </div>
         <span className="text-xs text-muted-foreground">
