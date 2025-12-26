@@ -7,38 +7,39 @@
  */
 
 export const PROVIDER_TIMEOUTS: Record<string, number> = {
-  // Username scanners - comprehensive scans with generous timeouts (background execution)
-  'maigret': 120000,      // 120 seconds - scans 3000+ sites thoroughly
-  'sherlock': 180000,     // 180 seconds - scans 400+ sites thoroughly (can take up to 150s)
-  'whatsmyname': 60000,   // 60 seconds - legacy alias for sherlock
-  'gosearch': 180000,     // 180 seconds - deep search across 300+ platforms (fully async)
+  // Username scanners - reduced timeouts for edge function compatibility
+  // Edge functions have 50s hard limit, so max provider timeout should be ~35s
+  'maigret': 35000,       // 35 seconds - prioritize speed over completeness
+  'sherlock': 35000,      // 35 seconds - reduced from 180s for edge function compat
+  'whatsmyname': 30000,   // 30 seconds - legacy alias for sherlock
+  'gosearch': 35000,      // 35 seconds for sync portion (async job handles the rest)
   
   // Breach & identity providers - API calls, faster
-  'hibp': 30000,          // 30 seconds - Have I Been Pwned API
-  'dehashed': 30000,      // 30 seconds - DeHashed API
-  'holehe': 45000,        // 45 seconds - multiple email registrations
+  'hibp': 15000,          // 15 seconds - Have I Been Pwned API
+  'dehashed': 15000,      // 15 seconds - DeHashed API
+  'holehe': 25000,        // 25 seconds - multiple email registrations
   
   // Enrichment providers - API calls
-  'hunter': 30000,        // 30 seconds - Hunter.io API
-  'clearbit': 30000,      // 30 seconds - Clearbit API
-  'fullcontact': 30000,   // 30 seconds - FullContact API
+  'hunter': 15000,        // 15 seconds - Hunter.io API
+  'clearbit': 15000,      // 15 seconds - Clearbit API
+  'fullcontact': 15000,   // 15 seconds - FullContact API
   
   // Threat intelligence - API calls
-  'shodan': 45000,        // 45 seconds - Shodan API
-  'virustotal': 30000,    // 30 seconds - VirusTotal API
-  'securitytrails': 30000,// 30 seconds - SecurityTrails API
-  'urlscan': 45000,       // 45 seconds - URLScan API
-  'censys': 30000,        // 30 seconds - Censys API
-  'binaryedge': 30000,    // 30 seconds - BinaryEdge API
-  'otx': 30000,           // 30 seconds - AlienVault OTX API
+  'shodan': 20000,        // 20 seconds - Shodan API
+  'virustotal': 15000,    // 15 seconds - VirusTotal API
+  'securitytrails': 15000,// 15 seconds - SecurityTrails API
+  'urlscan': 20000,       // 20 seconds - URLScan API
+  'censys': 15000,        // 15 seconds - Censys API
+  'binaryedge': 15000,    // 15 seconds - BinaryEdge API
+  'otx': 15000,           // 15 seconds - AlienVault OTX API
   
-  // Apify actors - longer running tasks
-  'apify-social': 120000, // 120 seconds - social media scraping
-  'apify-osint': 120000,  // 120 seconds - OSINT scraping
-  'apify-darkweb': 180000,// 180 seconds - dark web scraping
+  // Apify actors - reduced for edge function compatibility
+  'apify-social': 35000,  // 35 seconds - social media scraping
+  'apify-osint': 35000,   // 35 seconds - OSINT scraping
+  'apify-darkweb': 35000, // 35 seconds - dark web scraping
   
-  // Default timeout for unlisted providers
-  'default': 60000        // 60 seconds default (increased from 45s)
+  // Default timeout for unlisted providers - aggressive for edge function compat
+  'default': 25000        // 25 seconds default (reduced from 60s)
 };
 
 /**
