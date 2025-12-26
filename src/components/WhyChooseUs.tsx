@@ -1,75 +1,61 @@
-import { Brain, Lock, Zap, Users, Eye, Target } from "lucide-react";
+import { User, MessageSquare, ShieldAlert, Database, Link2, BarChart3 } from "lucide-react";
 
-const benefits = [
+const scanItems = [
   {
-    icon: <Brain className="w-6 h-6" />,
-    title: "AI-Powered Detection",
-    description:
-      "Machine learning algorithms detect fake profiles and correlate identities across platforms, reducing false positives.",
+    icon: <User className="w-5 h-5" />,
+    title: "Public usernames and aliases",
   },
   {
-    icon: <Lock className="w-6 h-6" />,
-    title: "Enterprise-Grade Security",
-    description:
-      "Your data is encrypted end-to-end and never sold. We're serious about protecting your privacy.",
+    icon: <MessageSquare className="w-5 h-5" />,
+    title: "Social and forum profiles",
   },
   {
-    icon: <Zap className="w-6 h-6" />,
-    title: "Automated Workflows",
-    description:
-      "No manual work required. Our system handles scanning, analysis, and removal requests automatically.",
+    icon: <ShieldAlert className="w-5 h-5" />,
+    title: "Breached credentials and exposure signals",
   },
   {
-    icon: <Users className="w-6 h-6" />,
-    title: "Identity Verification",
-    description:
-      "Verify real vs fake profiles with username correlation and behavioral analysis.",
+    icon: <Database className="w-5 h-5" />,
+    title: "Data broker and people-search listings",
   },
   {
-    icon: <Eye className="w-6 h-6" />,
-    title: "Continuous Monitoring",
-    description:
-      "24/7 monitoring ensures you're alerted immediately when new data exposures appear.",
+    icon: <Link2 className="w-5 h-5" />,
+    title: "Reused identifiers across platforms",
   },
   {
-    icon: <Target className="w-6 h-6" />,
-    title: "100+ Sources Covered",
-    description:
-      "We scan data brokers, people search sites, social media, and public records.",
+    icon: <BarChart3 className="w-5 h-5" />,
+    title: "Risk indicators and confidence scoring",
   },
 ];
 
 export const WhyChooseUs = () => {
   return (
     <section className="py-20 px-6 bg-background">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
+      <div className="max-w-4xl mx-auto">
+        <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-            Why Choose FootprintIQ
+            What we look for
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            The most comprehensive privacy protection platform available
-          </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {benefits.map((benefit, index) => (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          {scanItems.map((item, index) => (
             <div
               key={index}
-              className="p-6 rounded-xl bg-card border border-border shadow-sm hover:shadow-md transition-shadow"
+              className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border"
             >
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4 text-primary">
-                {benefit.icon}
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                {item.icon}
               </div>
-              <h3 className="text-lg font-semibold mb-2 text-foreground">
-                {benefit.title}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {benefit.description}
-              </p>
+              <span className="text-sm font-medium text-foreground">
+                {item.title}
+              </span>
             </div>
           ))}
         </div>
+
+        <p className="text-center text-sm text-muted-foreground">
+          All findings are sourced from publicly accessible information only.
+        </p>
       </div>
     </section>
   );
