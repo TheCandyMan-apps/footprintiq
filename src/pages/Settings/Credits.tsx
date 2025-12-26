@@ -149,7 +149,7 @@ export default function CreditsSettings() {
                   <h3 className="text-xl font-bold mb-2">{pack.name}</h3>
                   
                   <div className="mb-4">
-                    <p className="text-4xl font-bold">${pack.price}</p>
+                    <p className="text-4xl font-bold">£{pack.price}</p>
                     <p className="text-muted-foreground">
                       {pack.credits} credits
                     </p>

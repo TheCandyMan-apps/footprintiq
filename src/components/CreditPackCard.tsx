@@ -35,7 +35,7 @@ export function CreditPackCard({
         <div>
           <h3 className="text-xl font-bold">{name}</h3>
           <div className="flex items-baseline justify-center gap-1 mt-2">
-            <span className="text-4xl font-bold">${price}</span>
+            <span className="text-4xl font-bold">£{price}</span>
             <span className="text-muted-foreground text-sm">one-time</span>
           </div>
         </div>
@@ -46,7 +46,7 @@ export function CreditPackCard({
             <span>{credits.toLocaleString()} Credits</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            ${pricePerCredit} per credit
+            £{pricePerCredit} per credit
           </p>
         </div>
 
