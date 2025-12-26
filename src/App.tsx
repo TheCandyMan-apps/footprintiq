@@ -427,7 +427,8 @@ function RouterContent() {
           <Route path="/install" element={<InstallApp />} />
           
                 <Route path="/404" element={<NotFound />} />
-                <Route path="*" element={<Navigate to="/404" replace />} />
+                <Route path="/404" element={<NotFound />} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </PageTransition>
             </Suspense>
