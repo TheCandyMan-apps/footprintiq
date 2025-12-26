@@ -85,7 +85,7 @@ export default function BuyCreditsPage() {
     setLoading(pkg.priceId);
 
     try {
-      const { data, error } = await supabase.functions.invoke("billing/purchase-credits-checkout", {
+      const { data, error } = await supabase.functions.invoke("credits-checkout", {
         body: {
           priceId: pkg.priceId,
           credits: pkg.credits,

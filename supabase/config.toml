@@ -143,3 +143,6 @@ verify_jwt = true
 
 [functions.validate-share-link]
 verify_jwt = false
+
+[functions.credits-checkout]
+verify_jwt = true
