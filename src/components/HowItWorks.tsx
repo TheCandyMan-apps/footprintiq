@@ -1,50 +1,40 @@
-import { Search, Shield, Trash2, TrendingUp } from "lucide-react";
+import { Search, Globe, FileText } from "lucide-react";
 
 const steps = [
   {
     icon: <Search className="w-6 h-6" />,
-    title: "Comprehensive Scan",
-    description:
-      "Enter your personal information and we'll scan 100+ data broker sites, people search engines, and social media platforms.",
+    title: "Enter what you want to check",
+    description: "Start with a username, email address, or other identifier you've used online.",
     step: "1",
   },
   {
-    icon: <Shield className="w-6 h-6" />,
-    title: "AI Analysis",
-    description:
-      "Our system analyzes your digital footprint, detects fake profiles, and generates a comprehensive privacy score.",
+    icon: <Globe className="w-6 h-6" />,
+    title: "We scan public sources",
+    description: "FootprintIQ searches hundreds of open, publicly accessible sources — including social platforms, forums, breach indexes, and data brokers.",
     step: "2",
   },
   {
-    icon: <Trash2 className="w-6 h-6" />,
-    title: "Automated Removal",
-    description:
-      "We submit removal requests to data brokers on your behalf, handling the tedious paperwork and follow-ups.",
+    icon: <FileText className="w-6 h-6" />,
+    title: "Review your exposure",
+    description: "You receive a structured report highlighting where you appear online, what information is exposed, potential privacy risks, and recommended next steps.",
     step: "3",
-  },
-  {
-    icon: <TrendingUp className="w-6 h-6" />,
-    title: "Ongoing Monitoring",
-    description:
-      "Continuous monitoring catches new data exposures quickly. Get monthly reports showing your privacy improvement.",
-    step: "4",
   },
 ];
 
 export const HowItWorks = () => {
   return (
     <section id="how-it-works" className="py-20 px-6 bg-muted/30">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
             How It Works
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Four simple steps to take control of your online privacy
+            Three simple steps to understand your online visibility
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid md:grid-cols-3 gap-8">
           {steps.map((step, index) => (
             <div
               key={index}

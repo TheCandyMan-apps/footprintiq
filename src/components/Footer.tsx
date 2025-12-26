@@ -22,10 +22,7 @@ export const Footer = () => {
             />
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              Take control of your digital footprint with comprehensive privacy protection and automated data removal.
-            </p>
-            <p className="text-sm font-semibold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-accent">
-              Powered by AI-Driven OSINT
+              Understand your digital footprint with comprehensive OSINT-based visibility analysis.
             </p>
             <div className="flex gap-3 justify-center md:justify-start">
               <a href="https://twitter.com/footprintiq" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-transform hover:rotate-12">
@@ -52,18 +49,7 @@ export const Footer = () => {
                 }} className="hover:text-primary transition-colors">How It Works</Link>
               </li>
               <li>
-                <Link to="/" onClick={() => {
-                  setTimeout(() => {
-                    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-                  }, 100);
-                }} className="hover:text-primary transition-colors">Features</Link>
-              </li>
-              <li>
-                <Link to="/" onClick={() => {
-                  setTimeout(() => {
-                    document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-                  }, 100);
-                }} className="hover:text-primary transition-colors">Pricing</Link>
+                <Link to="/sample-report" className="hover:text-primary transition-colors">Sample Report</Link>
               </li>
               <li><Link to="/auth" className="hover:text-primary transition-colors">Get Started</Link></li>
             </ul>
@@ -75,35 +61,8 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/blog" className="hover:text-primary transition-colors">Blog</Link></li>
               <li><Link to="/api-docs" className="hover:text-primary transition-colors">API Docs</Link></li>
-              <li><Link to="/blog/persona-dna-and-evidence-packs" className="hover:text-primary transition-colors">Persona DNA Launch</Link></li>
               <li><Link to="/how-we-source-data" className="hover:text-primary transition-colors">How We Source Data</Link></li>
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h3 className="font-semibold mb-4">Company</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <Link to="/" onClick={() => {
-                  setTimeout(() => {
-                    document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-                  }, 100);
-                }} className="hover:text-primary transition-colors">About Us</Link>
-              </li>
               <li><Link to="/support" className="hover:text-primary transition-colors">Support</Link></li>
-              <li><a href="mailto:support@footprintiq.app" className="hover:text-primary transition-colors">Contact</a></li>
-            </ul>
-          </div>
-
-          {/* Account */}
-          <div>
-            <h3 className="font-semibold mb-4">Account</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/settings" className="hover:text-primary transition-colors">Settings</Link></li>
-              <li><Link to="/preferences" className="hover:text-primary transition-colors">Preferences</Link></li>
-              <li><Link to="/api-keys" className="hover:text-primary transition-colors">API Keys</Link></li>
-              <li><Link to="/referrals" className="hover:text-primary transition-colors">Referrals</Link></li>
             </ul>
           </div>
 
@@ -113,22 +72,26 @@ export const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
-              <li><Link to="/legal/dpa" className="hover:text-primary transition-colors">DPA</Link></li>
               <li><Link to="/responsible-use" className="hover:text-primary transition-colors">Responsible Use</Link></li>
               <li><Link to="/trust" className="hover:text-primary transition-colors">Trust & Security</Link></li>
             </ul>
           </div>
         </div>
 
-        {/* Trust Badges */}
-        <div className="pt-8 border-t border-border">
-          <TrustBadges />
+        {/* Disclaimer */}
+        <div className="py-6 border-t border-border text-center">
+          <p className="text-sm text-muted-foreground mb-2">
+            FootprintIQ analyses publicly available information only.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            We do not access private systems, protected databases, or restricted data.
+          </p>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-border mt-8">
+        <div className="pt-6 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-            <p>© 2025 footprintiq. All rights reserved.</p>
+            <p>© 2025 FootprintIQ. All rights reserved.</p>
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4" />
               <a href="mailto:support@footprintiq.app" className="hover:text-primary transition-colors">
