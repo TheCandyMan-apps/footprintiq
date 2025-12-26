@@ -187,6 +187,7 @@ const Referrals = lazy(() => import("./pages/Referrals"));
 const Research = lazy(() => import("./pages/Research"));
 const AdminScanHealth = lazy(() => import("./pages/admin/ScanHealth"));
 const SecuritySettings = lazy(() => import("./pages/admin/SecuritySettings"));
+const SampleReport = lazy(() => import("./pages/SampleReport"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -242,6 +243,8 @@ function RouterContent() {
         <PageTransition>
           <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/sample-report" element={<SampleReport />} />
+                <Route path="/auth" element={<Auth />} />
                 <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/scan" element={<ScanPage />} />
