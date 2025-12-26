@@ -12,6 +12,7 @@ import { SettingsBreadcrumb } from "@/components/settings/SettingsBreadcrumb";
 import { SettingsNav } from "@/components/settings/SettingsNav";
 import { trackPaymentError } from "@/lib/sentry";
 import { paymentMonitor } from "@/lib/monitoring/payment-monitor";
+import { CREDIT_PACKS } from "@/config/stripe";
 
 export default function CreditsSettings() {
   const { workspace } = useWorkspace();
@@ -43,48 +44,13 @@ export default function CreditsSettings() {
     }
   };
 
+  // Use centralized credit packs config with consistent shape
   const creditPackages = [
-    {
-      name: "Tiny Pack",
-      credits: 10,
-      price: 5,
-      priceId: "price_1SQtRIPNdM5SAyj7WIxLQDeq",
-      icon: Package,
-      popular: false,
-    },
-    {
-      name: "Small Pack",
-      credits: 50,
-      price: 20,
-      priceId: "price_1SQtTSPNdM5SAyj77N2cBl6B",
-      icon: Zap,
-      popular: false,
-    },
-    {
-      name: "Medium Pack",
-      credits: 100,
-      price: 35,
-      priceId: "price_1SQtTfPNdM5SAyj7jrfjyTL7",
-      icon: CreditCard,
-      popular: false,
-    },
-    {
-      name: "Starter Pack",
-      credits: 500,
-      price: 9,
-      priceId: "price_1SRP2KPNdM5SAyj7j99PagEP",
-      icon: Zap,
-      popular: true,
-    },
-    {
-      name: "Pro Pack",
-      credits: 2000,
-      price: 29,
-      priceId: "price_1SRP2WPNdM5SAyj7GLCvttAF",
-      icon: CreditCard,
-      popular: false,
-      savings: "Best Value",
-    },
+    { ...CREDIT_PACKS.tiny, icon: Package, popular: false, bestValue: false },
+    { ...CREDIT_PACKS.small, icon: Zap, popular: false, bestValue: false },
+    { ...CREDIT_PACKS.medium, icon: CreditCard, popular: false, bestValue: false },
+    { ...CREDIT_PACKS.starter, icon: Zap, popular: true, bestValue: false },
+    { ...CREDIT_PACKS.pro, icon: CreditCard, popular: false, bestValue: true },
   ];
 
   return (
@@ -153,9 +119,9 @@ export default function CreditsSettings() {
                     <p className="text-muted-foreground">
                       {pack.credits} credits
                     </p>
-                    {pack.savings && (
+                    {'bestValue' in pack && pack.bestValue && (
                       <p className="text-sm text-green-600 font-medium mt-1">
-                        {pack.savings}
+                        Best Value
                       </p>
                     )}
                   </div>

@@ -7,6 +7,17 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Server-side allowlist of valid credit pack price IDs
+// This prevents price ID tampering from the client
+const VALID_CREDIT_PACKS: Record<string, { credits: number; price: number; name: string }> = {
+  // GBP prices (current)
+  "price_1SiSphA3ptI9drLWm1pcbhil": { credits: 10, price: 500, name: "Tiny Pack" },
+  "price_1SiSqdA3ptI9drLWHxUPXCRL": { credits: 50, price: 2000, name: "Small Pack" },
+  "price_1SiSqpA3ptI9drLWZps53myc": { credits: 100, price: 3500, name: "Medium Pack" },
+  "price_1SiSrBA3ptI9drLWPRWHVCrG": { credits: 500, price: 900, name: "OSINT Starter Pack" },
+  "price_1SiSrNA3ptI9drLWyZjkEr4d": { credits: 2000, price: 2900, name: "Pro Pack" },
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -54,7 +65,7 @@ serve(async (req) => {
 
     // Parse and validate request body
     const body = await req.json();
-    const { priceId, credits, workspaceId } = body;
+    const { priceId, workspaceId } = body;
     
     if (!priceId || typeof priceId !== 'string') {
       return new Response(JSON.stringify({ error: "Invalid priceId" }), {
@@ -62,9 +73,12 @@ serve(async (req) => {
         status: 400,
       });
     }
-    
-    if (!credits || typeof credits !== 'number' || credits <= 0) {
-      return new Response(JSON.stringify({ error: "Invalid credits amount" }), {
+
+    // Validate priceId against server-side allowlist (ignore client-sent credits)
+    const packInfo = VALID_CREDIT_PACKS[priceId];
+    if (!packInfo) {
+      console.error(`[Credits Checkout] Invalid/unknown priceId: ${priceId}`);
+      return new Response(JSON.stringify({ error: "Invalid or archived price ID. Please refresh the page and try again." }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 400,
       });
@@ -77,7 +91,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`[Credits Checkout] Processing - priceId: ${priceId}, credits: ${credits}, workspaceId: ${workspaceId}`);
+    console.log(`[Credits Checkout] Processing - priceId: ${priceId}, credits: ${packInfo.credits}, workspaceId: ${workspaceId}, pack: ${packInfo.name}`);
 
     // Initialize Stripe
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
@@ -131,8 +145,9 @@ serve(async (req) => {
       metadata: {
         user_id: user.id,
         workspace_id: workspaceId,
-        credits: credits.toString(),
+        credits: packInfo.credits.toString(), // Use server-side credits value
         price_id: priceId,
+        pack_name: packInfo.name,
       },
     });
 
