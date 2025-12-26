@@ -330,8 +330,36 @@ export default function SystemAudit() {
   };
 
   const canAutoFix = (component: string): boolean => {
-    const autoFixable = ['scan_flow', 'scan_success_rate', 'tier_sync', 'osint_worker', 'n8n_orchestration'];
+    const autoFixable = ['scan_flow', 'scan_success_rate', 'tier_sync', 'osint_worker', 'n8n_orchestration', 'maigret', 'gosearch', 'stuck_scans'];
     return autoFixable.includes(component);
+  };
+
+  const cleanupStuckScans = async () => {
+    setFixingComponent('stuck_scans');
+    toast.info('Cleaning up stuck scans...');
+
+    try {
+      const { data, error } = await supabase.functions.invoke('system-audit-fix', {
+        body: { component: 'scan_flow' }
+      });
+
+      if (error) throw error;
+
+      setFixResult(data as FixResult);
+      setShowFixDialog(true);
+
+      if (data.fixed) {
+        toast.success(data.message);
+        await loadAuditResults();
+      } else {
+        toast.info(data.message);
+      }
+    } catch (error) {
+      console.error('Cleanup failed:', error);
+      toast.error(error instanceof Error ? error.message : 'Cleanup failed');
+    } finally {
+      setFixingComponent(null);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -512,8 +540,22 @@ export default function SystemAudit() {
             {stats.failureRate > 2 && (
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Failure rate is above 2% threshold. Admin alert will be sent to admin@footprintiq.app
+                <AlertDescription className="flex items-center justify-between">
+                  <span>Failure rate is above 2% threshold. Admin alert will be sent to admin@footprintiq.app</span>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={cleanupStuckScans}
+                    disabled={fixingComponent === 'stuck_scans'}
+                    className="ml-4"
+                  >
+                    {fixingComponent === 'stuck_scans' ? (
+                      <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                    ) : (
+                      <Wrench className="w-3 h-3 mr-1" />
+                    )}
+                    Fix Now
+                  </Button>
                 </AlertDescription>
               </Alert>
             )}
@@ -575,6 +617,20 @@ export default function SystemAudit() {
                   >
                     <Activity className="w-4 h-4 mr-2" />
                     Scan Flow
+                  </Button>
+
+                  <Button
+                    onClick={cleanupStuckScans}
+                    disabled={isRunning || fixingComponent === 'stuck_scans'}
+                    variant="destructive"
+                    className="col-span-full lg:col-span-1"
+                  >
+                    {fixingComponent === 'stuck_scans' ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Wrench className="w-4 h-4 mr-2" />
+                    )}
+                    Clean Up Stuck Scans
                   </Button>
                 </div>
               </CardContent>
