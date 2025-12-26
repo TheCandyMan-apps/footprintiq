@@ -157,14 +157,14 @@ export default function BuyCreditsPage() {
                   </CardTitle>
                   <CardDescription>
                     <span className="text-3xl font-bold text-foreground">
-                      ${pkg.price}
+                      £{pkg.price}
                     </span>
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2 mb-4">
                     <p className="text-sm text-muted-foreground">
-                      ${(pkg.price / pkg.credits).toFixed(2)} per credit
+                      £{(pkg.price / pkg.credits).toFixed(2)} per credit
                     </p>
                     <p className="text-sm">
                       • {Math.floor(pkg.credits / 3)} Social Media scans
