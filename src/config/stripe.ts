@@ -80,43 +80,48 @@ export const SUBSCRIPTION_PLANS = {
   },
 } as const;
 
-// Credit Packs - One-Time Purchases
+// Credit Packs - One-Time Purchases (GBP)
 export const CREDIT_PACKS = {
   tiny: {
     name: 'Tiny Pack',
     credits: 10,
     price: 5,
-    priceId: 'price_1ShydfA3ptI9drLWl5uxm2aU',
-    productId: 'prod_TfJGXUplOCTUtM',
+    priceId: 'price_1SiSphA3ptI9drLWm1pcbhil',
+    productId: 'prod_TfoSt0BbRaMgSK',
+    currency: 'GBP',
   },
   small: {
     name: 'Small Pack',
     credits: 50,
     price: 20,
-    priceId: 'price_1ShydvA3ptI9drLWMBrldi24',
-    productId: 'prod_TfJGZUXovORBxq',
+    priceId: 'price_1SiSqdA3ptI9drLWHxUPXCRL',
+    productId: 'prod_TfoTW7qQKqnDTM',
+    currency: 'GBP',
   },
   medium: {
     name: 'Medium Pack',
     credits: 100,
     price: 35,
-    priceId: 'price_1Shyg9A3ptI9drLWLPSpihEi',
-    productId: 'prod_TfJITIABGgA3Fe',
+    priceId: 'price_1SiSqpA3ptI9drLWZps53myc',
+    productId: 'prod_TfoTaND6mr0dv0',
+    currency: 'GBP',
   },
   starter: {
     name: 'OSINT Starter Pack',
     credits: 500,
     price: 9,
-    priceId: 'price_1ShybzA3ptI9drLWWxLWAMYN',
-    productId: 'prod_TfJEFdAKyUzqTX',
+    priceId: 'price_1SiSrBA3ptI9drLWPRWHVCrG',
+    productId: 'prod_TfoUneSmcvZlLS',
+    currency: 'GBP',
     popular: true,
   },
   pro: {
     name: 'Pro Pack',
     credits: 2000,
     price: 29,
-    priceId: 'price_1ShycjA3ptI9drLW6zWBiEj4',
-    productId: 'prod_TfJFObINjrsLxO',
+    priceId: 'price_1SiSrNA3ptI9drLWyZjkEr4d',
+    productId: 'prod_TfoUB6XngvrCN5',
+    currency: 'GBP',
     bestValue: true,
   },
 } as const;

@@ -9,39 +9,15 @@ import { Coins, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
+import { CREDIT_PACKS } from "@/config/stripe";
 
-const CREDIT_PACKAGES = [
-  {
-    credits: 10,
-    price: 5,
-    priceId: "price_1SQtRIPNdM5SAyj7WIxLQDeq",
-    popular: false,
-  },
-  {
-    credits: 50,
-    price: 20,
-    priceId: "price_1SQtTSPNdM5SAyj77N2cBl6B",
-    popular: false,
-  },
-  {
-    credits: 100,
-    price: 35,
-    priceId: "price_1SQtTfPNdM5SAyj7jrfjyTL7",
-    popular: false,
-  },
-  {
-    credits: 500,
-    price: 9,
-    priceId: "price_1SRP2KPNdM5SAyj7j99PagEP",
-    popular: true,
-  },
-  {
-    credits: 2000,
-    price: 29,
-    priceId: "price_1SRP2WPNdM5SAyj7GLCvttAF",
-    popular: false,
-  },
-];
+// Use centralized credit packs config
+const CREDIT_PACKAGES = Object.values(CREDIT_PACKS).map(pack => ({
+  credits: pack.credits,
+  price: pack.price,
+  priceId: pack.priceId,
+  popular: 'popular' in pack ? pack.popular : false,
+}));
 
 export default function BuyCreditsPage() {
   const navigate = useNavigate();
