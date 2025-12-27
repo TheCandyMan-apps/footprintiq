@@ -1,5 +1,23 @@
 project_id = "byuzgvauaeldjqxlrjci"
 
+[functions.twitter-oauth-start]
+verify_jwt = false
+
+[functions.twitter-oauth-callback]
+verify_jwt = false
+
+[functions.linkedin-oauth-start]
+verify_jwt = false
+
+[functions.linkedin-oauth-callback]
+verify_jwt = false
+
+[functions.facebook-oauth-start]
+verify_jwt = false
+
+[functions.facebook-oauth-callback]
+verify_jwt = false
+
 [functions.recon-ng-scan]
 verify_jwt = true
 
