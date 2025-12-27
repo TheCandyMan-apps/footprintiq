@@ -1562,7 +1562,7 @@ const ResultsDetail = () => {
                           View Profile
                         </Button>
                         <Button 
-                          variant="accent"
+                          variant="destructive"
                           size="sm"
                           onClick={() => handleRemovalRequest(profile.id, profile.platform, 'social_media')}
                           disabled={isRemovalRequested(profile.id, 'social_media')}
@@ -1665,7 +1665,7 @@ const ResultsDetail = () => {
                       View Source
                     </Button>
                     <Button 
-                      variant="accent"
+                      variant="destructive"
                       size="sm"
                       onClick={() => handleRemovalRequest(source.id, source.name, 'data_broker')}
                       disabled={isRemovalRequested(source.id, 'data_broker')}

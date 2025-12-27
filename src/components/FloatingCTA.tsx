@@ -19,35 +19,25 @@ export const FloatingCTA = () => {
     >
       <Button
         size="lg"
-        variant="hero"
         onClick={() => navigate('/auth')}
-        className="group relative px-8 py-6 h-auto text-lg shadow-elevated hover:shadow-glow transition-all duration-300 hover:scale-105 animate-pulse-glow"
+        className="group relative px-6 py-4 h-auto shadow-elevated hover:shadow-soft transition-all duration-200"
       >
-        {/* Animated glow background */}
-        <div className="absolute inset-0 rounded-md bg-gradient-to-r from-primary via-accent to-primary opacity-75 blur-xl group-hover:opacity-100 transition-opacity duration-300" />
-        
-        {/* Button content */}
         <div className="relative flex items-center gap-3">
-          <Scan className="w-5 h-5 animate-pulse" />
+          <Scan className="w-5 h-5" />
           <span className="font-semibold">Start Free Scan</span>
-          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-        </div>
-
-        {/* Shine effect on hover */}
-        <div className="absolute inset-0 rounded-md overflow-hidden">
-          <div className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
         </div>
       </Button>
 
       {/* Tooltip hint */}
       <div
         className={cn(
-          "absolute -top-12 right-0 px-4 py-2 bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-lg text-sm whitespace-nowrap transition-all duration-300",
+          "absolute -top-10 right-0 px-3 py-1.5 bg-card border border-border rounded-lg shadow-card text-sm whitespace-nowrap transition-all duration-200",
           showCTA ? "opacity-100 delay-500" : "opacity-0"
         )}
       >
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+          <div className="w-2 h-2 rounded-full bg-primary" />
           <span className="text-muted-foreground">Get started in 30 seconds</span>
         </div>
         {/* Arrow pointing down to button */}

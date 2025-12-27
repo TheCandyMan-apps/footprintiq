@@ -447,7 +447,7 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                               <Flag className="w-4 h-4" />
                             </Button>
                             <Button 
-                              variant="accent"
+                              variant="destructive"
                               size="sm"
                               onClick={() => handleProfileRemoval(profile.id, profile.platform)}
                             >
@@ -549,7 +549,7 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                           <Flag className="w-4 h-4" />
                         </Button>
                         <Button 
-                          variant="accent"
+                          variant="destructive"
                           size="sm"
                           onClick={() => handleRemovalRequest(source.id, source.name)}
                         >
