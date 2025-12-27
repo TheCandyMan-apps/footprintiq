@@ -5,6 +5,31 @@ import { checkCredits, deductCredits } from '../_shared/credits.ts';
 
 const EXPORT_COST = 10;
 
+// HTML escaping function to prevent XSS
+function escapeHtml(unsafe: string | null | undefined): string {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// URL sanitization to prevent javascript: and other malicious protocols
+function sanitizeUrl(url: string | null | undefined): string {
+  if (!url) return '#';
+  try {
+    const parsed = new URL(url);
+    if (['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
+      return escapeHtml(url);
+    }
+  } catch {
+    // Invalid URL
+  }
+  return '#';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders() });
@@ -169,32 +194,32 @@ function generateHTMLReport(
       <div style="margin-bottom: 16px; padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 4px solid ${color};">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <h4 style="margin: 0; color: #111827; font-size: 16px; font-weight: 600;">
-            ${profile.platform || 'Unknown Platform'}
+            ${escapeHtml(profile.platform) || 'Unknown Platform'}
           </h4>
           <span style="background: ${color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">
             ${confidence}% confidence
           </span>
         </div>
         <div style="color: #4b5563; font-size: 14px; margin-bottom: 8px;">
-          <strong>Username:</strong> @${profile.username || 'N/A'}
+          <strong>Username:</strong> @${escapeHtml(profile.username) || 'N/A'}
         </div>
         ${profile.profile_url ? `
           <div style="color: #3b82f6; font-size: 13px; word-break: break-all;">
-            <a href="${profile.profile_url}" style="color: ${primaryColor};">${profile.profile_url}</a>
+            <a href="${sanitizeUrl(profile.profile_url)}" style="color: ${primaryColor};">${escapeHtml(profile.profile_url)}</a>
           </div>
         ` : ''}
         ${profile.bio ? `
           <div style="margin-top: 8px; color: #6b7280; font-size: 13px; font-style: italic;">
-            "${profile.bio}"
+            "${escapeHtml(profile.bio)}"
           </div>
         ` : ''}
         ${profile.full_name ? `
           <div style="margin-top: 4px; color: #374151; font-size: 13px;">
-            <strong>Name:</strong> ${profile.full_name}
+            <strong>Name:</strong> ${escapeHtml(profile.full_name)}
           </div>
         ` : ''}
         <div style="margin-top: 8px; color: #9ca3af; font-size: 12px;">
-          Source: ${profile.source || 'OSINT'} | First seen: ${new Date(profile.first_seen).toLocaleDateString()}
+          Source: ${escapeHtml(profile.source) || 'OSINT'} | First seen: ${new Date(profile.first_seen).toLocaleDateString()}
         </div>
       </div>
     `;
@@ -209,15 +234,15 @@ function generateHTMLReport(
         <div style="border-left: 4px solid ${color}; padding: 16px; background: #f9fafb; border-radius: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
             <h4 style="margin: 0; color: #111827; font-size: 16px;">
-              ${finding.kind || finding.provider_category || 'Finding'}
+              ${escapeHtml(finding.kind || finding.provider_category) || 'Finding'}
             </h4>
             <span style="background: ${color}; color: white; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 600;">
-              ${(finding.severity || 'info').toUpperCase()}
+              ${escapeHtml((finding.severity || 'info').toUpperCase())}
             </span>
           </div>
           
           <div style="color: #6b7280; font-size: 13px; margin-bottom: 12px;">
-            <strong>Provider:</strong> ${finding.provider || 'Unknown'} | 
+            <strong>Provider:</strong> ${escapeHtml(finding.provider) || 'Unknown'} | 
             <strong>Confidence:</strong> ${Math.round((finding.confidence || 0) * 100)}%
           </div>
 
@@ -226,7 +251,7 @@ function generateHTMLReport(
               <h5 style="color: #374151; font-size: 13px; margin-bottom: 6px;">Evidence:</h5>
               <div style="background: white; padding: 10px; border-radius: 6px; font-size: 12px;">
                 ${Object.entries(finding.evidence).map(([key, value]) => 
-                  `<div style="margin-bottom: 4px;"><strong>${key}:</strong> ${String(value)}</div>`
+                  `<div style="margin-bottom: 4px;"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(String(value))}</div>`
                 ).join('')}
               </div>
             </div>
@@ -239,7 +264,7 @@ function generateHTMLReport(
               ${enrichment.context ? `
                 <div style="margin-bottom: 12px;">
                   <h6 style="color: #374151; font-size: 13px; margin-bottom: 4px;">Context:</h6>
-                  <p style="color: #4b5563; font-size: 12px; line-height: 1.5;">${enrichment.context}</p>
+                  <p style="color: #4b5563; font-size: 12px; line-height: 1.5;">${escapeHtml(enrichment.context)}</p>
                 </div>
               ` : ''}
 
@@ -247,7 +272,7 @@ function generateHTMLReport(
                 <div style="margin-bottom: 12px;">
                   <h6 style="color: #374151; font-size: 13px; margin-bottom: 4px;">⚠️ Attack Vectors:</h6>
                   <ul style="margin: 0; padding-left: 18px; color: #4b5563; font-size: 12px;">
-                    ${enrichment.attack_vectors.map((v: string) => `<li style="margin-bottom: 2px;">${v}</li>`).join('')}
+                    ${enrichment.attack_vectors.map((v: string) => `<li style="margin-bottom: 2px;">${escapeHtml(v)}</li>`).join('')}
                   </ul>
                 </div>
               ` : ''}
@@ -256,7 +281,7 @@ function generateHTMLReport(
                 <div>
                   <h6 style="color: #374151; font-size: 13px; margin-bottom: 4px;">✅ Remediation Steps:</h6>
                   <ol style="margin: 0; padding-left: 18px; color: #4b5563; font-size: 12px;">
-                    ${enrichment.remediation_steps.map((s: string) => `<li style="margin-bottom: 2px;">${s}</li>`).join('')}
+                    ${enrichment.remediation_steps.map((s: string) => `<li style="margin-bottom: 2px;">${escapeHtml(s)}</li>`).join('')}
                   </ol>
                 </div>
               ` : ''}
@@ -267,14 +292,14 @@ function generateHTMLReport(
     `;
   }).join('');
 
-  const scanTarget = scan.email || scan.phone || scan.username || scan.first_name || 'N/A';
+  const scanTarget = escapeHtml(scan.email || scan.phone || scan.username || scan.first_name) || 'N/A';
 
   return `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="UTF-8">
-      <title>OSINT Report - ${scan.id}</title>
+      <title>OSINT Report - ${escapeHtml(scan.id)}</title>
       <style>
         @page { margin: 1cm; }
         body { 
@@ -292,12 +317,12 @@ function generateHTMLReport(
     <body>
       <!-- Header with Branding -->
       <div style="text-align: center; margin-bottom: 32px; padding-bottom: 20px; border-bottom: 3px solid ${primaryColor};">
-        <h1 style="color: ${primaryColor}; margin-bottom: 8px; font-size: 28px;">${companyName}</h1>
-        <p style="color: #6b7280; font-size: 14px; margin-bottom: 4px;">${tagline}</p>
+        <h1 style="color: ${primaryColor}; margin-bottom: 8px; font-size: 28px;">${escapeHtml(companyName)}</h1>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 4px;">${escapeHtml(tagline)}</p>
         <h2 style="color: #1f2937; margin-top: 16px; margin-bottom: 8px; font-size: 22px;">OSINT Intelligence Report</h2>
         <p style="color: #9ca3af; font-size: 12px;">
           Generated: ${new Date().toLocaleString()} | 
-          Scan ID: ${scan.id.slice(0, 8)}...
+          Scan ID: ${escapeHtml(scan.id.slice(0, 8))}...
         </p>
       </div>
 
@@ -381,15 +406,15 @@ function generateHTMLReport(
 
       <!-- Footer -->
       <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb; text-align: center; color: #9ca3af; font-size: 11px;">
-        <p style="margin-bottom: 8px;">${footerText}</p>
+        <p style="margin-bottom: 8px;">${escapeHtml(footerText)}</p>
         ${contactEmail || websiteUrl ? `
           <p style="margin-bottom: 4px;">
-            ${contactEmail ? `Contact: ${contactEmail}` : ''}
+            ${contactEmail ? `Contact: ${escapeHtml(contactEmail)}` : ''}
             ${contactEmail && websiteUrl ? ' | ' : ''}
-            ${websiteUrl ? `<a href="${websiteUrl}" style="color: ${primaryColor};">${websiteUrl}</a>` : ''}
+            ${websiteUrl ? `<a href="${sanitizeUrl(websiteUrl)}" style="color: ${primaryColor};">${escapeHtml(websiteUrl)}</a>` : ''}
           </p>
         ` : ''}
-        <p style="color: #d1d5db;">Generated by ${companyName}</p>
+        <p style="color: #d1d5db;">Generated by ${escapeHtml(companyName)}</p>
       </div>
     </body>
     </html>
