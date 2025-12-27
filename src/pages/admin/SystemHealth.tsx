@@ -10,19 +10,32 @@ export default function SystemHealth() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['system-health'],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('health-check');
-      // The health-check returns non-2xx for degraded/unhealthy states,
-      // but still includes valid health data in the response
-      if (error) {
-        // Check if we still got data back (degraded/unhealthy response)
-        if (data && typeof data === 'object' && 'status' in data) {
-          return data;
+      // Use fetch directly to handle non-2xx responses with valid data
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/health-check`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          },
         }
-        throw error;
+      );
+      
+      const data = await response.json();
+      
+      // Accept 200, 207 (degraded), 503 (unhealthy) - all contain valid health data
+      if (data && 'status' in data) {
+        return data;
       }
-      return data;
+      
+      throw new Error(data?.error || 'Failed to fetch health status');
     },
     refetchInterval: 30000, // Auto-refresh every 30 seconds
+    retry: 1,
   });
 
   const getStatusIcon = (status: string) => {
