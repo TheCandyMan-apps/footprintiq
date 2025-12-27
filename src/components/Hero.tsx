@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Search, FileText, CheckCircle } from "lucide-react";
+import { Search, Eye, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface HeroProps {
@@ -19,18 +19,18 @@ export const Hero = ({
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-24 text-center">
         {/* Main headline */}
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight tracking-tight text-foreground">
-          See what the internet knows about you
-          <span className="block text-primary mt-2"> before someone else does.</span>
+          Understand Your Digital Exposure
+          <span className="block text-primary mt-2">Before It Becomes a Problem</span>
         </h1>
         
         {/* Subheading */}
         <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-4 max-w-3xl mx-auto leading-relaxed">
-          FootprintIQ scans hundreds of public sources to reveal exposed usernames, profiles, breached data, and digital risks linked to your online identity.
+          FootprintIQ surfaces publicly observable digital exposure across the web — without assumptions, accusations, or automation of harm.
         </p>
         
         {/* Transparency line */}
         <p className="text-base text-muted-foreground/80 mb-10 max-w-2xl mx-auto">
-          No hacking. No private databases. Just publicly available information — combined.
+          We provide visibility. You make the decisions.
         </p>
         
         {/* CTAs */}
@@ -43,7 +43,7 @@ export const Hero = ({
           >
             <Link to="/auth">
               <Search className="w-5 h-5 mr-2" />
-              Run a Free Scan
+              Run a Free Exposure Scan
             </Link>
           </Button>
           <Button 
@@ -52,9 +52,9 @@ export const Hero = ({
             className="w-full sm:w-auto text-lg px-8 py-6 h-auto border-2 hover:bg-muted" 
             asChild
           >
-            <Link to="/sample-report">
-              <FileText className="w-5 h-5 mr-2" />
-              View Sample Report
+            <Link to="/dashboard">
+              <Eye className="w-5 h-5 mr-2" />
+              Explore Investigator Mode
             </Link>
           </Button>
         </div>
@@ -67,11 +67,11 @@ export const Hero = ({
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-primary" />
-            <span>Results in minutes</span>
+            <span>Human-led interpretation</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-primary" />
-            <span>100+ public sources scanned</span>
+            <span>Public sources only</span>
           </div>
         </div>
       </div>

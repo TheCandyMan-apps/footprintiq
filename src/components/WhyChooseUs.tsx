@@ -1,29 +1,29 @@
-import { User, MessageSquare, ShieldAlert, Database, Link2, BarChart3 } from "lucide-react";
+import { User, MessageSquare, Database, Link2, BarChart3, Globe } from "lucide-react";
 
 const scanItems = [
   {
     icon: <User className="w-5 h-5" />,
-    title: "Public usernames and aliases",
+    title: "Identifier correlation",
   },
   {
     icon: <MessageSquare className="w-5 h-5" />,
-    title: "Social and forum profiles",
-  },
-  {
-    icon: <ShieldAlert className="w-5 h-5" />,
-    title: "Breached credentials and exposure signals",
+    title: "Platform crossover",
   },
   {
     icon: <Database className="w-5 h-5" />,
-    title: "Data broker and people-search listings",
+    title: "Exposure density",
   },
   {
     icon: <Link2 className="w-5 h-5" />,
-    title: "Reused identifiers across platforms",
+    title: "Temporal clustering",
   },
   {
     icon: <BarChart3 className="w-5 h-5" />,
-    title: "Risk indicators and confidence scoring",
+    title: "Anonymity degradation",
+  },
+  {
+    icon: <Globe className="w-5 h-5" />,
+    title: "Public data correlation",
   },
 ];
 
@@ -33,8 +33,11 @@ export const WhyChooseUs = () => {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-            What we look for
+            What We Analyze
           </h2>
+          <p className="text-muted-foreground">
+            Exposure signals derived from publicly accessible sources
+          </p>
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -54,7 +57,7 @@ export const WhyChooseUs = () => {
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          All findings are sourced from publicly accessible information only.
+          All findings require independent verification.
         </p>
       </div>
     </section>

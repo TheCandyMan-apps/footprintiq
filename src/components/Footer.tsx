@@ -81,10 +81,13 @@ export const Footer = () => {
         {/* Disclaimer */}
         <div className="py-6 border-t border-border text-center">
           <p className="text-sm text-muted-foreground mb-2">
-            FootprintIQ analyses publicly available information only.
+            FootprintIQ provides visibility into publicly available information only.
           </p>
-          <p className="text-sm text-muted-foreground">
-            We do not access private systems, protected databases, or restricted data.
+          <p className="text-sm text-muted-foreground mb-2">
+            It does not identify criminal activity, victims, or perpetrators.
+          </p>
+          <p className="text-sm text-muted-foreground font-medium">
+            All findings require independent verification.
           </p>
         </div>
 

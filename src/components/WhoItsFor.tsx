@@ -1,25 +1,25 @@
-import { User, Briefcase, Newspaper, Shield, Users } from "lucide-react";
+import { User, Search, Shield, Newspaper, Briefcase } from "lucide-react";
 
 const personas = [
   {
     icon: <User className="w-5 h-5" />,
-    label: "Individuals concerned about online privacy",
+    label: "Privacy-conscious individuals",
   },
   {
-    icon: <Briefcase className="w-5 h-5" />,
-    label: "Professionals managing their public presence",
-  },
-  {
-    icon: <Newspaper className="w-5 h-5" />,
-    label: "Journalists and researchers",
+    icon: <Search className="w-5 h-5" />,
+    label: "OSINT analysts & researchers",
   },
   {
     icon: <Shield className="w-5 h-5" />,
-    label: "Security-aware users",
+    label: "Safeguarding & harm-prevention professionals",
   },
   {
-    icon: <Users className="w-5 h-5" />,
-    label: "Anyone who wants to know what's out there — before it's misused",
+    icon: <Newspaper className="w-5 h-5" />,
+    label: "Journalists & investigators",
+  },
+  {
+    icon: <Briefcase className="w-5 h-5" />,
+    label: "Compliance & risk teams",
   },
 ];
 
@@ -28,7 +28,7 @@ export const WhoItsFor = () => {
     <section className="py-20 px-6 bg-background">
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
-          Who uses FootprintIQ
+          Who It's For
         </h2>
         
         <div className="mt-10 space-y-4">
@@ -46,7 +46,7 @@ export const WhoItsFor = () => {
         </div>
 
         <p className="text-sm text-muted-foreground mt-8">
-          No technical background required.
+          No technical background required. Human interpretation always included.
         </p>
       </div>
     </section>
