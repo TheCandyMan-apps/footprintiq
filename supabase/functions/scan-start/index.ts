@@ -39,19 +39,32 @@ Deno.serve(async (req) => {
     const OSINT_WORKER_URL = Deno.env.get('OSINT_WORKER_URL')!;
     const OSINT_WORKER_TOKEN = Deno.env.get('OSINT_WORKER_TOKEN')!;
     const SELFTEST_KEY = Deno.env.get('SELFTEST_KEY') ?? '';
+    const ENVIRONMENT = Deno.env.get('ENVIRONMENT') ?? 'production';
 
-    // Check for self-test bypass - strict validation only
+    // Check for self-test bypass - ONLY allowed in non-production environments
     const selftestKey = req.headers.get('X-Selftest-Key');
-    const isSelfTest = selftestKey && selftestKey === SELFTEST_KEY;
+    const isSelfTest = selftestKey && selftestKey === SELFTEST_KEY && ENVIRONMENT !== 'production';
     
-    console.log('[scan-start] Self-test check:', {
-      headerValue: selftestKey,
-      isSelfTest,
-      headerPresent: !!selftestKey
-    });
+    // Log self-test attempt (without revealing key)
+    if (selftestKey) {
+      console.log('[scan-start] Self-test attempt:', {
+        environment: ENVIRONMENT,
+        keyProvided: true,
+        allowed: isSelfTest
+      });
+    }
 
-    // Enhanced error for selftest key mismatch
-    if (selftestKey && !isSelfTest) {
+    // Reject self-test in production with generic error
+    if (selftestKey && ENVIRONMENT === 'production') {
+      console.warn('[scan-start] Self-test rejected in production environment');
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+      );
+    }
+
+    // Enhanced error for selftest key mismatch (non-production only)
+    if (selftestKey && !isSelfTest && ENVIRONMENT !== 'production') {
       console.error('[scan-start] SELFTEST_KEY mismatch detected');
       return new Response(
         JSON.stringify({ 
@@ -66,9 +79,9 @@ Deno.serve(async (req) => {
     let workspaceId: string | null = null;
 
     if (isSelfTest) {
-      // Self-test mode - use valid zero UUID
+      // Self-test mode (non-production only) - use valid zero UUID
       userId = '00000000-0000-0000-0000-000000000000';
-      console.log('[scan-start] Self-test mode activated');
+      console.log('[scan-start] Self-test mode activated (non-production)');
     } else {
       // Authentication
       const authResult = await validateAuth(req);
