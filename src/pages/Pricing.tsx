@@ -103,6 +103,22 @@ const PricingPage = () => {
     }
   ];
 
+  const faqStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": faq.q,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.a
+      }
+    }))
+  };
+
+  // Combine structured data into an array for the SEO component
+  const combinedStructuredData = [pricingStructuredData, faqStructuredData];
+
   const freeIncludes = [
     "Single digital footprint scan",
     "Username and alias discovery",
@@ -166,7 +182,7 @@ const PricingPage = () => {
         title="Pricing — FootprintIQ"
         description="Simple pricing. No surprises. Understand your online exposure before it's used against you."
         canonical="https://footprintiq.app/pricing"
-        structuredData={pricingStructuredData}
+        structuredData={combinedStructuredData}
       />
       <div className="min-h-screen bg-background">
         <Header />
