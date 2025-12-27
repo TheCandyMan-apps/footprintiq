@@ -1,27 +1,38 @@
-import { Globe } from "lucide-react";
+import { Eye, UserCheck, Scale, Brain } from "lucide-react";
 
 export const WhatWeDoSection = () => {
   return (
     <section className="py-20 px-6 bg-background">
-      <div className="max-w-3xl mx-auto text-center">
+      <div className="max-w-4xl mx-auto text-center">
         <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 mb-6">
-          <Globe className="w-7 h-7 text-primary" />
+          <Eye className="w-7 h-7 text-primary" />
         </div>
         
         <h2 className="text-3xl md:text-4xl font-bold mb-6 text-foreground">
-          Understand your digital footprint
+          Built for Clarity — Not Conclusions
         </h2>
         
-        <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-          FootprintIQ helps you understand what information about you is publicly accessible online — and how it can be connected.
+        <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-3xl mx-auto">
+          FootprintIQ helps individuals, professionals, and investigators understand where digital exposure exists across public platforms.
         </p>
         
-        <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-          We analyse usernames, profiles, breaches, and exposure signals across a wide range of open sources to build a clear picture of your online visibility.
-        </p>
+        <div className="grid sm:grid-cols-3 gap-6 mb-8">
+          <div className="p-6 rounded-xl bg-card border border-border">
+            <UserCheck className="w-6 h-6 text-primary mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">We don't label people</p>
+          </div>
+          <div className="p-6 rounded-xl bg-card border border-border">
+            <Scale className="w-6 h-6 text-primary mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">We don't predict intent</p>
+          </div>
+          <div className="p-6 rounded-xl bg-card border border-border">
+            <Brain className="w-6 h-6 text-primary mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">We don't replace human judgment</p>
+          </div>
+        </div>
         
-        <p className="text-base text-muted-foreground/80 italic">
-          This is the same approach used in professional OSINT investigations — applied to personal digital privacy.
+        <p className="text-base text-muted-foreground/80 italic max-w-2xl mx-auto">
+          We surface exposure signals so informed decisions can be made responsibly.
         </p>
       </div>
     </section>

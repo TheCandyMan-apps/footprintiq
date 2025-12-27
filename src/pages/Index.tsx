@@ -14,6 +14,7 @@ import { WhatWeAre } from "@/components/WhatWeAre";
 import { WhoItsFor } from "@/components/WhoItsFor";
 import { SampleReportPreview } from "@/components/SampleReportPreview";
 import { WhyItMatters } from "@/components/WhyItMatters";
+import { TrustTransparency } from "@/components/TrustTransparency";
 import { FinalCTA } from "@/components/FinalCTA";
 import { FAQ } from "@/components/FAQ";
 import { OrganizationSchema } from "@/components/OrganizationSchema";
@@ -141,6 +142,9 @@ export default function Home() {
       
       {/* Sample Report Preview */}
       <SampleReportPreview />
+      
+      {/* Trust & Transparency */}
+      <TrustTransparency />
       
       {/* Why It Matters */}
       <WhyItMatters />

@@ -1,16 +1,23 @@
+import { Shield } from "lucide-react";
+
 export const TrustSignals = () => {
   const items = [
-    "Old usernames",
-    "Forgotten accounts",
-    "Data broker listings",
-    "Breached credentials"
+    "Public sources only",
+    "Human verification required",
+    "False positive handling",
+    "Ethical workflows"
   ];
 
   return (
     <section className="py-16 px-6 bg-muted/30 border-y border-border">
       <div className="max-w-4xl mx-auto text-center">
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <Shield className="w-5 h-5 text-primary" />
+          <span className="text-sm font-medium text-primary">Human-Verified Workflow</span>
+        </div>
+        
         <p className="text-xl md:text-2xl font-medium text-foreground mb-8">
-          "Most people don't realise how visible they are online."
+          "Exposure signals require interpretation — not automation."
         </p>
         
         <div className="flex flex-wrap justify-center gap-3 mb-8">
@@ -24,8 +31,8 @@ export const TrustSignals = () => {
           ))}
         </div>
         
-        <p className="text-lg text-muted-foreground">
-          Individually harmless. <span className="text-foreground font-medium">Combined — risky.</span>
+        <p className="text-base text-muted-foreground">
+          All findings represent publicly observable information. <span className="text-foreground font-medium">Verification is always required.</span>
         </p>
       </div>
     </section>

@@ -7,11 +7,11 @@ export const FinalCTA = () => {
     <section className="py-24 px-6 bg-gradient-to-b from-muted/50 to-background">
       <div className="max-w-3xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
-          Know what's visible. Reduce the risk.
+          Understand Your Exposure Today
         </h2>
         
         <p className="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
-          Start with a free scan and see what public information is connected to you online.
+          Start with a free scan and see what publicly observable information is connected to your digital identity.
         </p>
 
         <Button 
@@ -21,12 +21,12 @@ export const FinalCTA = () => {
         >
           <Link to="/auth">
             <Search className="w-5 h-5 mr-2" />
-            Run a Free Scan
+            Run a Free Exposure Scan
           </Link>
         </Button>
 
         <p className="text-sm text-muted-foreground mt-6">
-          No credit card required · Results in minutes
+          No credit card required · Human-led interpretation · Public sources only
         </p>
       </div>
     </section>
