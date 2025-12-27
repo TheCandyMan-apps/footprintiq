@@ -10,9 +10,9 @@ const Card = React.forwardRef<HTMLDivElement, CardProps>(({ className, disableHo
   <div 
     ref={ref} 
     className={cn(
-      "rounded-2xl border border-border/60 bg-white text-card-foreground shadow-sm",
-      "transition-shadow duration-200",
-      !disableHover && "hover:shadow-md",
+      "rounded-xl border border-border bg-card text-card-foreground shadow-card",
+      "transition-all duration-150",
+      !disableHover && "hover:shadow-elevated",
       className
     )} 
     {...props} 

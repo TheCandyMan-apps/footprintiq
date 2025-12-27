@@ -202,9 +202,8 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
             <Button 
               type="submit" 
               size="lg" 
-              variant="hero"
               data-tour="scan-button"
-              className="w-full text-lg"
+              className="w-full"
             >
               Begin Scan
               <ArrowRight className="w-5 h-5" />
