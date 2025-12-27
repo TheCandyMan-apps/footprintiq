@@ -42,8 +42,21 @@ interface StructuredDataProps {
   organization?: OrganizationSchema;
   breadcrumbs?: BreadcrumbListSchema;
   faq?: FAQPageSchema;
-  custom?: any;
+  custom?: Record<string, unknown>;
 }
+
+/**
+ * Safely serialize JSON for embedding in script tags.
+ * Escapes HTML-breaking characters to prevent XSS via JSON injection.
+ */
+const safeJSONStringify = (data: unknown): string => {
+  return JSON.stringify(data)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/'/g, '\\u0027')
+    .replace(/"/g, '\\u0022');
+};
 
 export const StructuredData = ({ organization, breadcrumbs, faq, custom }: StructuredDataProps) => {
   return (
@@ -51,25 +64,25 @@ export const StructuredData = ({ organization, breadcrumbs, faq, custom }: Struc
       {organization && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organization) }}
+          dangerouslySetInnerHTML={{ __html: safeJSONStringify(organization) }}
         />
       )}
       {breadcrumbs && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+          dangerouslySetInnerHTML={{ __html: safeJSONStringify(breadcrumbs) }}
         />
       )}
       {faq && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faq) }}
+          dangerouslySetInnerHTML={{ __html: safeJSONStringify(faq) }}
         />
       )}
       {custom && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(custom) }}
+          dangerouslySetInnerHTML={{ __html: safeJSONStringify(custom) }}
         />
       )}
     </>
