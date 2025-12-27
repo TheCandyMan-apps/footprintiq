@@ -1,6 +1,9 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
+// Re-export professional styles for convenience
+export * from './pdfStyles';
+
 export interface BrandingSettings {
   company_name: string | null;
   logo_url: string | null;
@@ -11,7 +14,7 @@ export interface BrandingSettings {
 }
 
 /**
- * Convert hex color to RGB array for jsPDF
+ * Convert hex color to RGB array for jsPDF (legacy format)
  */
 export function hexToRgb(hex: string): [number, number, number] {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -21,11 +24,11 @@ export function hexToRgb(hex: string): [number, number, number] {
         parseInt(result[2], 16),
         parseInt(result[3], 16),
       ]
-    : [0, 0, 0];
+    : [37, 99, 235]; // Default to professional blue
 }
 
 /**
- * Add page numbers to all pages in the PDF
+ * Add page numbers to all pages in the PDF (professional style)
  */
 export function addPageNumbers(doc: jsPDF, branding?: BrandingSettings) {
   const pageCount = doc.getNumberOfPages();
@@ -34,39 +37,34 @@ export function addPageNumbers(doc: jsPDF, branding?: BrandingSettings) {
 
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFontSize(9);
-    doc.setTextColor(128, 128, 128);
     
-    // Page number
-    doc.text(
-      `Page ${i} of ${pageCount}`,
-      pageWidth / 2,
-      pageHeight - 10,
-      { align: 'center' }
-    );
-
-    // Company name in footer if configured
+    // Footer line
+    doc.setDrawColor(226, 232, 240); // slate-200
+    doc.setLineWidth(0.5);
+    doc.line(20, pageHeight - 25, pageWidth - 20, pageHeight - 25);
+    
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(148, 163, 184); // slate-400
+    
+    // Company name (left)
     if (branding?.company_name && !branding?.remove_branding) {
-      doc.text(
-        branding.company_name,
-        15,
-        pageHeight - 10
-      );
+      doc.text(branding.company_name, 20, pageHeight - 15);
+    } else {
+      doc.text('FootprintIQ', 20, pageHeight - 15);
     }
+    
+    // Page number (center)
+    doc.text(`Page ${i} of ${pageCount}`, pageWidth / 2, pageHeight - 15, { align: 'center' });
 
-    // Generation date
+    // Generation date (right)
     const date = new Date().toLocaleDateString();
-    doc.text(
-      `Generated: ${date}`,
-      pageWidth - 15,
-      pageHeight - 10,
-      { align: 'right' }
-    );
+    doc.text(date, pageWidth - 20, pageHeight - 15, { align: 'right' });
   }
 }
 
 /**
- * Add branded header to current page
+ * Add branded header to current page (professional style)
  */
 export function addBrandedHeader(
   doc: jsPDF,
@@ -74,19 +72,31 @@ export function addBrandedHeader(
   title: string
 ) {
   const pageWidth = doc.internal.pageSize.getWidth();
+  const [r, g, b] = branding.primary_color 
+    ? hexToRgb(branding.primary_color) 
+    : [37, 99, 235]; // Professional blue default
   
-  // Header background
-  if (branding.primary_color) {
-    const [r, g, b] = hexToRgb(branding.primary_color);
-    doc.setFillColor(r, g, b);
-    doc.rect(0, 0, pageWidth, 30, 'F');
-  }
+  // Top accent bar (subtle)
+  doc.setFillColor(r, g, b);
+  doc.rect(0, 0, pageWidth, 4, 'F');
 
-  // Title
-  doc.setFontSize(18);
-  doc.setTextColor(255, 255, 255);
-  doc.text(title, pageWidth / 2, 20, { align: 'center' });
-
+  // Title with professional styling
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(51, 65, 85); // slate-700
+  doc.text(title, 20, 24);
+  
+  // Company name (right aligned)
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(148, 163, 184); // slate-400
+  doc.text(branding.company_name || 'FootprintIQ', pageWidth - 20, 24, { align: 'right' });
+  
+  // Header line
+  doc.setDrawColor(226, 232, 240); // slate-200
+  doc.setLineWidth(0.5);
+  doc.line(20, 32, pageWidth - 20, 32);
+  
   // Reset colors
   doc.setTextColor(0, 0, 0);
 }
@@ -176,10 +186,42 @@ export function formatProviderTimeline(events: ProviderEvent[]): any[] {
 export function checkAddPage(doc: jsPDF, currentY: number, requiredSpace: number = 50): number {
   const pageHeight = doc.internal.pageSize.getHeight();
   
-  if (currentY + requiredSpace > pageHeight - 30) {
+  if (currentY + requiredSpace > pageHeight - 35) {
     doc.addPage();
-    return 40; // Start position for new page
+    return 45; // Start position for new page (accounting for header space)
   }
   
   return currentY;
+}
+
+/**
+ * Get professional table styles for autoTable
+ */
+export function getProfessionalTableStyles(primaryColor?: string) {
+  const [r, g, b] = primaryColor ? hexToRgb(primaryColor) : [37, 99, 235];
+  
+  return {
+    theme: 'plain' as const,
+    headStyles: {
+      fillColor: [r, g, b] as [number, number, number],
+      textColor: [255, 255, 255] as [number, number, number],
+      fontStyle: 'bold' as const,
+      fontSize: 9,
+      cellPadding: 5,
+    },
+    bodyStyles: {
+      fontSize: 9,
+      cellPadding: 5,
+      textColor: [51, 65, 85] as [number, number, number],
+    },
+    alternateRowStyles: {
+      fillColor: [248, 250, 252] as [number, number, number],
+    },
+    styles: {
+      lineColor: [226, 232, 240] as [number, number, number],
+      lineWidth: 0.25,
+      font: 'helvetica',
+    },
+    margin: { left: 20, right: 20 },
+  };
 }

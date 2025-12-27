@@ -6,12 +6,25 @@ import { supabase } from "@/integrations/supabase/client";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { 
-  hexToRgb, 
-  addPageNumbers, 
-  addBrandedHeader, 
+  addCoverPage,
+  addSectionHeader,
+  addSubsectionHeader,
+  addStatCard,
+  addPageFooters,
+  addPageHeader,
+  checkPageBreak,
+  getTableStyles,
+  addSeverityBadge,
+  PDF_COLORS,
+  SEVERITY_COLORS,
+  setFont,
+  setColor,
+  PDF_SPACING,
+  type PDFBranding,
+} from "@/lib/pdfStyles";
+import { 
   wrapText, 
   formatProviderTimeline,
-  checkAddPage,
   type BrandingSettings 
 } from "@/lib/pdfHelpers";
 
@@ -39,205 +52,143 @@ export function ComprehensivePDFReport({ scanId }: ComprehensivePDFReportProps) 
 
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
-      let yPos = 40;
 
-      const branding: BrandingSettings = data.branding || {};
-      const primaryColor = branding.primary_color || "#8b5cf6";
-      const secondaryColor = branding.secondary_color || "#ec4899";
+      const branding: PDFBranding = {
+        companyName: data.branding?.company_name || 'FootprintIQ',
+        primaryColor: data.branding?.primary_color || '#2563eb',
+        secondaryColor: data.branding?.secondary_color || '#0891b2',
+        tagline: 'Open Source Intelligence Platform',
+      };
+      
+      const target = data.scan.username || data.scan.email || data.scan.phone || 'N/A';
 
       // ========== COVER PAGE ==========
       setProgress("Creating cover page...");
-
-      // Header background
-      const [r, g, b] = hexToRgb(primaryColor);
-      doc.setFillColor(r, g, b);
-      doc.rect(0, 0, pageWidth, 80, "F");
-
-      // Company name/logo
-      doc.setFontSize(24);
-      doc.setTextColor(255, 255, 255);
-      doc.text(
-        branding.company_name || "FootprintIQ",
-        pageWidth / 2,
-        30,
-        { align: "center" }
-      );
-
-      // Report title
-      doc.setFontSize(32);
-      doc.text("OSINT Intelligence Report", pageWidth / 2, 55, { align: "center" });
-
-      // Reset colors
-      doc.setTextColor(0, 0, 0);
-      yPos = 100;
-
-      // Scan metadata
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Scan Details", 20, yPos);
-      yPos += 10;
-
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Target: ${data.scan.username || data.scan.email || data.scan.phone || "N/A"}`, 20, yPos);
-      yPos += 7;
-      doc.text(`Scan Type: ${data.scan.scan_type}`, 20, yPos);
-      yPos += 7;
-      doc.text(`Scan ID: ${data.scan.id}`, 20, yPos);
-      yPos += 7;
-      doc.text(`Generated: ${new Date(data.generatedAt).toLocaleString()}`, 20, yPos);
-      yPos += 15;
-
-      // Confidential watermark
-      doc.setFontSize(10);
-      doc.setTextColor(128, 128, 128);
-      doc.text("CONFIDENTIAL - For Internal Use Only", pageWidth / 2, 280, { align: "center" });
+      
+      addCoverPage(doc, {
+        title: 'OSINT Intelligence Report',
+        subtitle: 'Comprehensive Analysis',
+        target: target,
+        scanId: data.scan.id,
+        date: new Date(data.generatedAt),
+        branding,
+      });
 
       // ========== EXECUTIVE SUMMARY PAGE ==========
       doc.addPage();
-      yPos = 40;
+      let yPos = addPageHeader(doc, 'Executive Summary', branding);
 
       setProgress("Adding executive summary...");
 
-      doc.setFontSize(18);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont("helvetica", "bold");
-      doc.text("Executive Summary", 20, yPos);
-      yPos += 12;
+      // Statistics cards
+      yPos += 5;
+      yPos = addStatCard(doc, [
+        { label: 'Total Findings', value: data.stats.totalFindings },
+        { label: 'Critical', value: data.stats.critical, color: PDF_COLORS.danger },
+        { label: 'High', value: data.stats.high, color: SEVERITY_COLORS.high },
+        { label: 'Medium', value: data.stats.medium, color: PDF_COLORS.warning },
+      ], yPos);
+
+      yPos = addStatCard(doc, [
+        { label: 'Low', value: data.stats.low, color: PDF_COLORS.info },
+        { label: 'Providers', value: data.stats.providersExecuted },
+        { label: 'False Positive Rate', value: `${data.stats.falsePositiveRate}%` },
+      ], yPos + 5);
 
       // AI Summary
-      doc.setFontSize(11);
-      doc.setFont("helvetica", "normal");
-      const summaryLines = wrapText(doc, data.aiSummary, pageWidth - 40);
+      yPos = checkPageBreak(doc, yPos, 60);
+      yPos = addSectionHeader(doc, 'Analysis Summary', yPos + 10, { primaryColor: PDF_COLORS.primary });
+      
+      setFont(doc, 'body');
+      setColor(doc, PDF_COLORS.slate700);
+      const summaryLines = wrapText(doc, data.aiSummary || 'No summary available.', pageWidth - 40);
       summaryLines.forEach((line: string) => {
-        doc.text(line, 20, yPos);
+        yPos = checkPageBreak(doc, yPos, 8);
+        doc.text(line, PDF_SPACING.margin, yPos);
         yPos += 6;
-      });
-      yPos += 10;
-
-      // Statistics grid
-      doc.setFont("helvetica", "bold");
-      doc.text("Key Statistics", 20, yPos);
-      yPos += 10;
-
-      const stats = [
-        ["Total Findings", data.stats.totalFindings.toString()],
-        ["Critical", data.stats.critical.toString()],
-        ["High", data.stats.high.toString()],
-        ["Medium", data.stats.medium.toString()],
-        ["Low", data.stats.low.toString()],
-        ["Providers Executed", data.stats.providersExecuted.toString()],
-        ["False Positive Rate", `${data.stats.falsePositiveRate}%`],
-      ];
-
-      autoTable(doc, {
-        startY: yPos,
-        head: [["Metric", "Value"]],
-        body: stats,
-        theme: "striped",
-        headStyles: { fillColor: hexToRgb(primaryColor) },
-        margin: { left: 20, right: 20 },
       });
 
       // ========== KEY FINDINGS SECTION ==========
       doc.addPage();
-      yPos = 40;
+      yPos = addPageHeader(doc, 'Key Findings', branding);
 
       setProgress("Organizing findings...");
 
-      doc.setFontSize(18);
-      doc.setFont("helvetica", "bold");
-      doc.text("Key Findings", 20, yPos);
-      yPos += 15;
-
       // Group findings by severity
-      const severityOrder = ["critical", "high", "medium", "low", "info"];
+      const severityOrder = ["critical", "high", "medium", "low", "info"] as const;
       
       for (const severity of severityOrder) {
         const severityFindings = data.findings.filter((f: any) => f.severity === severity);
         
         if (severityFindings.length === 0) continue;
 
-        yPos = checkAddPage(doc, yPos, 40);
-
-        doc.setFontSize(14);
-        doc.setFont("helvetica", "bold");
-        const severityColors: Record<string, string> = {
-          critical: "#ef4444",
-          high: "#f97316",
-          medium: "#eab308",
-          low: "#3b82f6",
-          info: "#64748b",
-        };
-        const [sr, sg, sb] = hexToRgb(severityColors[severity]);
-        doc.setTextColor(sr, sg, sb);
-        doc.text(`${severity.toUpperCase()} (${severityFindings.length})`, 20, yPos);
-        doc.setTextColor(0, 0, 0);
-        yPos += 10;
+        yPos = checkPageBreak(doc, yPos, 50);
+        
+        // Severity header with badge
+        const severityColor = SEVERITY_COLORS[severity] || PDF_COLORS.slate500;
+        doc.setFillColor(severityColor.r, severityColor.g, severityColor.b);
+        doc.rect(PDF_SPACING.margin, yPos - 2, 4, 12, 'F');
+        
+        setFont(doc, 'heading3');
+        setColor(doc, PDF_COLORS.slate900);
+        doc.text(`${severity.charAt(0).toUpperCase() + severity.slice(1)} Findings`, PDF_SPACING.margin + 10, yPos + 6);
+        
+        setFont(doc, 'small');
+        setColor(doc, PDF_COLORS.slate500);
+        doc.text(`(${severityFindings.length})`, PDF_SPACING.margin + 10 + doc.getTextWidth(`${severity.charAt(0).toUpperCase() + severity.slice(1)} Findings `) + 5, yPos + 6);
+        
+        yPos += 20;
 
         // Show top 10 findings per severity
         const topFindings = severityFindings.slice(0, 10);
         
         topFindings.forEach((finding: any, index: number) => {
-          yPos = checkAddPage(doc, yPos, 30);
+          yPos = checkPageBreak(doc, yPos, 35);
 
-          doc.setFontSize(11);
-          doc.setFont("helvetica", "bold");
-          doc.text(`${index + 1}. ${finding.provider} - ${finding.kind}`, 25, yPos);
-          yPos += 6;
-
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(10);
+          // Finding card background
+          doc.setFillColor(248, 250, 252); // slate-50
+          doc.roundedRect(PDF_SPACING.margin, yPos - 3, pageWidth - 40, 25, 2, 2, 'F');
           
+          setFont(doc, 'bodyBold');
+          setColor(doc, PDF_COLORS.slate900);
+          doc.text(`${index + 1}. ${finding.provider || 'Unknown'} — ${finding.kind || 'Finding'}`, PDF_SPACING.margin + 5, yPos + 5);
+
           if (finding.description) {
-            const descLines = wrapText(doc, finding.description, pageWidth - 50);
-            descLines.forEach((line: string) => {
-              yPos = checkAddPage(doc, yPos, 6);
-              doc.text(line, 25, yPos);
-              yPos += 5;
-            });
+            setFont(doc, 'small');
+            setColor(doc, PDF_COLORS.slate600);
+            const descLines = wrapText(doc, finding.description, pageWidth - 55);
+            doc.text(descLines[0] + (descLines.length > 1 ? '...' : ''), PDF_SPACING.margin + 5, yPos + 14);
           }
 
           // AI annotations
           if (finding.meta?.ai) {
-            doc.setFontSize(9);
-            doc.setTextColor(128, 128, 128);
+            setFont(doc, 'caption');
+            setColor(doc, PDF_COLORS.slate400);
             const annotations: string[] = [];
-            if (finding.meta.ai.falsePositive) annotations.push("False Positive");
-            if (finding.meta.ai.priority) annotations.push(`Priority: ${finding.meta.ai.priority}`);
-            if (finding.meta.ai.confidenceOverride) annotations.push(`Confidence: ${finding.meta.ai.confidenceOverride}%`);
-            
+            if (finding.meta.ai.falsePositive) annotations.push("FP");
+            if (finding.meta.ai.priority) annotations.push(`P: ${finding.meta.ai.priority}`);
             if (annotations.length > 0) {
-              yPos = checkAddPage(doc, yPos, 5);
-              doc.text(`AI: ${annotations.join(", ")}`, 25, yPos);
-              yPos += 5;
+              doc.text(`AI: ${annotations.join(", ")}`, pageWidth - PDF_SPACING.margin - 5, yPos + 5, { align: 'right' });
             }
-            doc.setTextColor(0, 0, 0);
           }
 
-          yPos += 5;
+          yPos += 30;
         });
 
         if (severityFindings.length > 10) {
-          doc.setFontSize(10);
-          doc.setTextColor(128, 128, 128);
-          doc.text(`... and ${severityFindings.length - 10} more ${severity} findings`, 25, yPos);
-          doc.setTextColor(0, 0, 0);
-          yPos += 10;
+          setFont(doc, 'small');
+          setColor(doc, PDF_COLORS.slate400);
+          doc.text(`+ ${severityFindings.length - 10} more ${severity} findings`, PDF_SPACING.margin + 10, yPos);
+          yPos += 15;
         }
       }
 
       // ========== PROVIDER TIMELINE APPENDIX ==========
       if (data.providerEvents && data.providerEvents.length > 0) {
         doc.addPage();
-        yPos = 40;
+        yPos = addPageHeader(doc, 'Appendix A: Provider Timeline', branding);
 
         setProgress("Adding provider timeline...");
-
-        doc.setFontSize(18);
-        doc.setFont("helvetica", "bold");
-        doc.text("Appendix A: Provider Timeline", 20, yPos);
-        yPos += 15;
 
         const timelineData = formatProviderTimeline(data.providerEvents);
         
@@ -246,27 +197,20 @@ export function ComprehensivePDFReport({ scanId }: ComprehensivePDFReportProps) 
           head: [["Provider", "Status", "Duration", "Results"]],
           body: timelineData.map((row: any) => [
             row.provider,
-            row.status,
+            row.status.charAt(0).toUpperCase() + row.status.slice(1),
             row.duration,
             row.results.toString(),
           ]),
-          theme: "striped",
-          headStyles: { fillColor: hexToRgb(secondaryColor) },
-          margin: { left: 20, right: 20 },
+          ...getTableStyles(PDF_COLORS.primary),
         });
       }
 
       // ========== ACTIVITY LOGS APPENDIX ==========
       if (data.activityLogs && data.activityLogs.length > 0) {
         doc.addPage();
-        yPos = 40;
+        yPos = addPageHeader(doc, 'Appendix B: Activity Logs', branding);
 
         setProgress("Adding activity logs...");
-
-        doc.setFontSize(18);
-        doc.setFont("helvetica", "bold");
-        doc.text("Appendix B: Activity Logs", 20, yPos);
-        yPos += 15;
 
         autoTable(doc, {
           startY: yPos,
@@ -275,21 +219,18 @@ export function ComprehensivePDFReport({ scanId }: ComprehensivePDFReportProps) 
             new Date(log.created_at).toLocaleString(),
             log.action,
             `${log.entity_type}${log.entity_id ? `: ${log.entity_id.substring(0, 8)}...` : ""}`,
-            log.profiles?.email || log.user_id.substring(0, 8) + "...",
+            log.profiles?.email || log.user_id?.substring(0, 8) + "..." || "—",
           ]),
-          theme: "striped",
-          headStyles: { fillColor: hexToRgb(secondaryColor) },
-          margin: { left: 20, right: 20 },
-          styles: { fontSize: 8 },
+          ...getTableStyles(PDF_COLORS.primary),
         });
       }
 
-      // ========== ADD PAGE NUMBERS ==========
+      // ========== ADD PAGE FOOTERS ==========
       setProgress("Finalizing PDF...");
-      addPageNumbers(doc, branding);
+      addPageFooters(doc, branding);
 
       // ========== SAVE PDF ==========
-      const fileName = `OSINT_Report_${data.scan.username || "scan"}_${new Date().toISOString().split("T")[0]}.pdf`;
+      const fileName = `OSINT_Report_${target.replace(/[^a-zA-Z0-9]/g, '_')}_${new Date().toISOString().split("T")[0]}.pdf`;
       doc.save(fileName);
 
       toast.success("Comprehensive report generated successfully!");
