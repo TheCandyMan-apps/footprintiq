@@ -9,15 +9,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Key, Copy, Trash2, Plus, Eye, EyeOff, RefreshCw } from "lucide-react";
+import { Key, Copy, Trash2, Plus, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { SettingsBreadcrumb } from "@/components/settings/SettingsBreadcrumb";
 import { SettingsNav } from "@/components/settings/SettingsNav";
 
 export default function APIKeys() {
   const queryClient = useQueryClient();
-  const [showKey, setShowKey] = useState<Record<string, boolean>>({});
   const [newKeyName, setNewKeyName] = useState("");
+  // Store the newly created key temporarily (only shown once)
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<{ id: string; key: string } | null>(null);
 
   // Fetch API keys
   const { data: keys, isLoading } = useQuery({
@@ -37,38 +38,27 @@ export default function APIKeys() {
     },
   });
 
-  // Create key mutation
+  // Create key mutation - uses secure Edge Function
   const createMutation = useMutation({
     mutationFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      // Generate a random API key
-      const keyValue = `fiq_${Array.from(crypto.getRandomValues(new Uint8Array(32)))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('')}`;
-
-      const { data, error } = await supabase
-        .from("api_keys")
-        .insert({
-          user_id: user.id,
-          name: newKeyName || "API Key",
-          key_hash: keyValue, // Store full key for now (in production, hash this)
-          key_prefix: keyValue.substring(0, 12),
-          is_active: true,
-        })
-        .select()
-        .single();
+      // Call the secure Edge Function that generates and hashes the key server-side
+      const { data, error } = await supabase.functions.invoke('create-api-key', {
+        body: { name: newKeyName || 'API Key' }
+      });
 
       if (error) throw error;
-      return data;
+      if (!data || !data.key || !data.id) {
+        throw new Error('Invalid response from server');
+      }
+      
+      return { id: data.id, key: data.key };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["api-keys"] });
-      toast.success("API key created");
+      toast.success("API key created - copy it now, it won't be shown again!");
       setNewKeyName("");
-      // Auto-show the newly created key
-      setShowKey({ ...showKey, [data.id]: true });
+      // Store the newly created key for one-time display
+      setNewlyCreatedKey({ id: data.id, key: data.key });
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to create API key");
@@ -112,9 +102,6 @@ export default function APIKeys() {
     toast.success("Copied to clipboard");
   };
 
-  const toggleKeyVisibility = (id: string) => {
-    setShowKey({ ...showKey, [id]: !showKey[id] });
-  };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,6 +163,42 @@ export default function APIKeys() {
             </form>
           </Card>
 
+          {/* Newly Created Key Alert - Show once */}
+          {newlyCreatedKey && (
+            <Card className="p-6 border-2 border-primary bg-primary/5">
+              <div className="flex items-center gap-2 mb-3">
+                <Key className="w-5 h-5 text-primary" />
+                <h3 className="text-lg font-semibold text-primary">New API Key Created</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                <strong>Copy this key now!</strong> It will not be shown again. Keys are securely hashed on our servers.
+              </p>
+              <div className="flex items-center gap-2 mb-3">
+                <code className="text-sm font-mono bg-muted px-3 py-2 rounded flex-1 break-all">
+                  {newlyCreatedKey.key}
+                </code>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => {
+                    copyToClipboard(newlyCreatedKey.key);
+                    toast.success("API key copied! Store it securely.");
+                  }}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy
+                </Button>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setNewlyCreatedKey(null)}
+              >
+                I've saved my key
+              </Button>
+            </Card>
+          )}
+
           {/* Existing Keys */}
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">Your API Keys</h2>
@@ -204,22 +227,9 @@ export default function APIKeys() {
                       
                       <div className="flex items-center gap-2 mb-3">
                         <code className="text-sm font-mono bg-muted px-3 py-1 rounded">
-                          {showKey[key.id] ? key.key_hash : `${key.key_prefix}${"•".repeat(48)}`}
+                          {key.key_prefix}{"•".repeat(48)}
                         </code>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => toggleKeyVisibility(key.id)}
-                        >
-                          {showKey[key.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => copyToClipboard(key.key_hash)}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
+                        <span className="text-xs text-muted-foreground">(Key is securely hashed)</span>
                       </div>
                       
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
