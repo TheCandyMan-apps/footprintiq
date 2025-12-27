@@ -239,35 +239,39 @@ function generateEnhancedLogs(startTime: Date, endTime: Date, auditLogs: any, sc
         status_code: 200,
         execution_time_ms: Math.floor(Math.random() * 300) + 50,
         event_message: `Audit: ${audit.action}`,
+        isReal: true,
       });
     });
   }
 
-  // Add scan activity
+  // Add scan activity - REAL errors from failed scans
   if (scans && scans.length > 0) {
     scans.forEach((scan: any) => {
+      const isFailed = scan.status === 'failed';
       logs.push({
         timestamp: scan.created_at,
         function_id: 'scan-orchestrate',
-        status_code: scan.status === 'failed' ? 500 : 200,
+        status_code: isFailed ? 500 : 200,
         execution_time_ms: Math.floor(Math.random() * 1000) + 100,
-        event_message: `Scan ${scan.status}`,
+        event_message: isFailed ? `Scan failed: ${scan.error_message || 'Unknown error'}` : `Scan ${scan.status}`,
+        isReal: true,
       });
     });
   }
 
-  // Fill in with mock data for demonstration
-  const targetCount = Math.max(200, logs.length);
+  // Fill in with successful mock data for baseline metrics only
+  // DO NOT generate mock errors - they mislead admins
+  const targetCount = Math.max(100, logs.length);
   for (let i = logs.length; i < targetCount; i++) {
     const timestamp = new Date(startTime.getTime() + Math.random() * duration);
-    const statusCode = Math.random() > 0.95 ? (Math.random() > 0.5 ? 500 : 400) : 200;
     
     logs.push({
       timestamp: timestamp.toISOString(),
       function_id: functions[Math.floor(Math.random() * functions.length)],
-      status_code: statusCode,
+      status_code: 200, // Only successful mock logs - no fake errors
       execution_time_ms: Math.floor(Math.random() * 500) + 50,
-      event_message: statusCode >= 400 ? 'Error processing request' : 'Success',
+      event_message: 'Success',
+      isReal: false,
     });
   }
   
@@ -279,17 +283,17 @@ function generateMockLogs(startTime: Date, endTime: Date) {
   const functions = ['scan-orchestrate', 'ai-analyst', 'dashboard-kpis', 'providers-hibp', 'api-scan'];
   const duration = endTime.getTime() - startTime.getTime();
   
-  // Generate ~200 logs over the time period
+  // Generate ~200 successful logs over the time period (no mock errors)
   for (let i = 0; i < 200; i++) {
     const timestamp = new Date(startTime.getTime() + Math.random() * duration);
-    const statusCode = Math.random() > 0.95 ? (Math.random() > 0.5 ? 500 : 400) : 200;
     
     logs.push({
       timestamp: timestamp.toISOString(),
       function_id: functions[Math.floor(Math.random() * functions.length)],
-      status_code: statusCode,
+      status_code: 200, // Only successful logs
       execution_time_ms: Math.floor(Math.random() * 500) + 50,
-      event_message: statusCode >= 400 ? 'Error processing request' : 'Success',
+      event_message: 'Success',
+      isReal: false,
     });
   }
   
@@ -297,22 +301,7 @@ function generateMockLogs(startTime: Date, endTime: Date) {
 }
 
 function generateMockPgLogs(startTime: Date, endTime: Date) {
-  const logs = [];
-  const duration = endTime.getTime() - startTime.getTime();
-  
-  // Generate ~20 postgres logs (mostly warnings, few errors)
-  for (let i = 0; i < 20; i++) {
-    const timestamp = new Date(startTime.getTime() + Math.random() * duration);
-    const severity = Math.random() > 0.8 ? 'ERROR' : 'WARNING';
-    
-    logs.push({
-      timestamp: timestamp.toISOString(),
-      error_severity: severity,
-      event_message: severity === 'ERROR' 
-        ? 'Connection pool exhausted' 
-        : 'Slow query detected',
-    });
-  }
-  
-  return logs;
+  // Return empty array - no mock postgres errors
+  // Real postgres errors will come from actual database monitoring
+  return [];
 }
