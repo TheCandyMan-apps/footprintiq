@@ -6,7 +6,7 @@ import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { useTwitterAuth } from '@/hooks/useTwitterAuth';
+
 import { useLinkedInAuth } from '@/hooks/useLinkedInAuth';
 import { useFacebookAuth } from '@/hooks/useFacebookAuth';
 import { useSocialIntegrations } from '@/hooks/useSocialIntegrations';
@@ -64,7 +64,7 @@ function formatTimeAgo(date: Date): string {
 export function SocialIntegrations() {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { signInWithTwitter, isLoading: twitterLoading } = useTwitterAuth();
+  
   const { signInWithLinkedIn, isLoading: linkedinLoading } = useLinkedInAuth();
   const { signInWithFacebook, isLoading: facebookLoading } = useFacebookAuth();
   const { integrations, isLoading, isConnected, getIntegration, disconnect } = useSocialIntegrations();
@@ -72,14 +72,17 @@ export function SocialIntegrations() {
 
   const handleConnect = async (platformName: string) => {
     switch (platformName) {
-      case 'Twitter':
-        await signInWithTwitter();
-        break;
       case 'LinkedIn':
         await signInWithLinkedIn();
         break;
       case 'Facebook':
         await signInWithFacebook();
+        break;
+      case 'Twitter':
+        toast({
+          title: "Coming Soon",
+          description: "Twitter/X integration is temporarily unavailable. Check back soon!",
+        });
         break;
       default:
         toast({
@@ -222,13 +225,11 @@ export function SocialIntegrations() {
                     className="flex-1"
                     onClick={() => handleConnect(platformConfig.name)}
                     disabled={
-                      (twitterLoading && platformConfig.name === 'Twitter') ||
                       (linkedinLoading && platformConfig.name === 'LinkedIn') ||
                       (facebookLoading && platformConfig.name === 'Facebook')
                     }
                   >
-                    {((twitterLoading && platformConfig.name === 'Twitter') ||
-                      (linkedinLoading && platformConfig.name === 'LinkedIn') ||
+                    {((linkedinLoading && platformConfig.name === 'LinkedIn') ||
                       (facebookLoading && platformConfig.name === 'Facebook'))
                       ? 'Connecting...'
                       : 'Connect'}
