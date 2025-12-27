@@ -74,6 +74,16 @@ export const analytics = {
     });
   },
 
+  // Core Web Vitals tracking
+  webVital: (metric: string, value: number, rating: string) => {
+    trackEvent("web_vital", { metric, value, rating });
+  },
+
+  // Page performance tracking
+  pagePerformance: (page: string, loadTime: number) => {
+    trackEvent("page_performance", { page, loadTime });
+  },
+
   trackEvent: (eventName: string, props?: Record<string, string | number>) => {
     trackEvent(eventName, props);
   },
