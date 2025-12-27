@@ -6,6 +6,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
+import DOMPurify from "dompurify";
 
 interface ExportEnrichedButtonProps {
   scanId: string;
@@ -44,9 +45,14 @@ export function ExportEnrichedButton({ scanId, variant = "default", size = "defa
         return;
       }
 
-      // Create a temporary container for HTML rendering
+      // Create a temporary container for HTML rendering with DOMPurify sanitization
       const container = document.createElement('div');
-      container.innerHTML = data.html;
+      // Sanitize HTML to prevent XSS - allow only safe tags for PDF rendering
+      container.innerHTML = DOMPurify.sanitize(data.html, {
+        ALLOWED_TAGS: ['html', 'head', 'body', 'meta', 'title', 'style', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'br'],
+        ALLOWED_ATTR: ['style', 'href', 'class', 'id', 'charset'],
+        ALLOW_DATA_ATTR: false
+      });
       container.style.position = 'absolute';
       container.style.left = '-9999px';
       container.style.width = '210mm'; // A4 width
