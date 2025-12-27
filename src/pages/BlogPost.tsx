@@ -1146,22 +1146,30 @@ const BlogPost = () => {
     "@type": "BlogPosting",
     "headline": post.title,
     "datePublished": new Date(post.date).toISOString(),
+    "dateModified": new Date(post.date).toISOString(),
+    "description": post.content.substring(0, 160).replace(/<[^>]*>/g, '').trim(),
+    "image": heroImage || "https://footprintiq.app/og-image.jpg",
     "author": {
       "@type": "Organization",
       "name": "FootprintIQ",
+      "url": "https://footprintiq.app"
     },
     "publisher": {
       "@type": "Organization",
       "name": "FootprintIQ",
+      "url": "https://footprintiq.app",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://footprintiq.com/logo.png",
-      },
+        "url": "https://footprintiq.app/logo-social.png"
+      }
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": `https://footprintiq.com/blog/${slug}`,
+      "@id": `https://footprintiq.app/blog/${slug}`
     },
+    "articleSection": post.category,
+    "wordCount": post.content.replace(/<[^>]*>/g, '').split(/\s+/).length,
+    "keywords": [post.category, "digital privacy", "OSINT", "online security", "data protection"]
   };
 
   return (
@@ -1169,7 +1177,7 @@ const BlogPost = () => {
       <SEO
         title={`${post.title} | FootprintIQ Blog`}
         description={post.content.substring(0, 160).replace(/<[^>]*>/g, '')}
-        canonical={`https://footprintiq.com/blog/${slug}`}
+        canonical={`https://footprintiq.app/blog/${slug}`}
         ogType="article"
         article={{
           publishedTime: new Date(post.date).toISOString(),

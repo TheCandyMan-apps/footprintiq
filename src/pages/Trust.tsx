@@ -60,6 +60,7 @@ export default function Trust() {
       <SEO 
         title="Trust & Security - FootprintIQ"
         description="Learn about our security measures, privacy practices, and compliance certifications. Your data security is our top priority."
+        canonical="https://footprintiq.app/trust"
       />
       
       <Header />
