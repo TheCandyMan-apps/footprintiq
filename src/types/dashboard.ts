@@ -52,6 +52,11 @@ export const AlertRowSchema = z.object({
   category: z.string(),
   description: z.string(),
   evidence: z.array(z.any()).optional(),
+  // URL fields for context enrichment - any of these can be used
+  url: z.string().optional(),
+  profile_url: z.string().optional(),
+  source_url: z.string().optional(),
+  link: z.string().optional(),
 });
 
 export type AlertRow = z.infer<typeof AlertRowSchema>;
