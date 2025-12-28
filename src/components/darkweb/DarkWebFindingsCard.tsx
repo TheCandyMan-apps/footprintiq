@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, ExternalLink, Eye, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -14,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ContextEnrichmentPanel } from "@/components/ContextEnrichmentPanel";
 
 interface DarkWebFindingsCardProps {
   targetId: string;
@@ -172,46 +174,65 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
                 format(new Date(selectedFinding.observed_at), "MMM d, yyyy h:mm a")}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex gap-2">
-              <Badge variant={getSeverityColor(selectedFinding?.severity)}>
-                {selectedFinding?.severity}
-              </Badge>
-              {selectedFinding?.is_new && (
-                <Badge variant="default" className="bg-blue-500">
-                  New
+          <Tabs defaultValue="overview" className="space-y-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="context" disabled={!selectedFinding?.url}>
+                Context
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="overview" className="space-y-4">
+              <div className="flex gap-2">
+                <Badge variant={getSeverityColor(selectedFinding?.severity)}>
+                  {selectedFinding?.severity}
                 </Badge>
-              )}
-            </div>
-
-            {selectedFinding?.meta && (
-              <div className="space-y-2">
-                {Object.entries(selectedFinding.meta).map(([key, value]) => (
-                  <div key={key} className="grid grid-cols-3 gap-2 text-sm">
-                    <span className="font-medium capitalize">
-                      {key.replace(/_/g, " ")}:
-                    </span>
-                    <span className="col-span-2 text-muted-foreground break-all">
-                      {typeof value === "object"
-                        ? JSON.stringify(value, null, 2)
-                        : String(value)}
-                    </span>
-                  </div>
-                ))}
+                {selectedFinding?.is_new && (
+                  <Badge variant="default" className="bg-blue-500">
+                    New
+                  </Badge>
+                )}
               </div>
-            )}
 
-            {selectedFinding?.url && (
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => window.open(selectedFinding.url, "_blank")}
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                View Source
-              </Button>
-            )}
-          </div>
+              {selectedFinding?.meta && (
+                <div className="space-y-2">
+                  {Object.entries(selectedFinding.meta).map(([key, value]) => (
+                    <div key={key} className="grid grid-cols-3 gap-2 text-sm">
+                      <span className="font-medium capitalize">
+                        {key.replace(/_/g, " ")}:
+                      </span>
+                      <span className="col-span-2 text-muted-foreground break-all">
+                        {typeof value === "object"
+                          ? JSON.stringify(value, null, 2)
+                          : String(value)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {selectedFinding?.url && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => window.open(selectedFinding.url, "_blank")}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View Source
+                </Button>
+              )}
+            </TabsContent>
+
+            <TabsContent value="context">
+              {selectedFinding?.url ? (
+                <ContextEnrichmentPanel url={selectedFinding.url} />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No URL available for this finding.
+                </p>
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </>
