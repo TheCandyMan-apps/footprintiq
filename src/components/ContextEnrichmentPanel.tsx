@@ -4,6 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   ExternalLink, 
   Globe, 
@@ -11,14 +18,23 @@ import {
   Loader2, 
   AlertCircle,
   RefreshCw,
-  CheckCircle2
+  CheckCircle2,
+  ChevronDown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ReactMarkdown from "react-markdown";
 
-interface ContextEnrichmentPanelProps {
+export interface UrlOption {
+  label: string;
   url: string;
+}
+
+interface ContextEnrichmentPanelProps {
+  /** Single URL (backward compatible) */
+  url?: string;
+  /** Multiple URL options for user selection */
+  urls?: UrlOption[];
   onEnrichmentComplete?: (data: EnrichmentData) => void;
 }
 
@@ -35,23 +51,33 @@ export interface EnrichmentData {
 
 type PanelState = 'idle' | 'loading' | 'success' | 'error';
 
-export function ContextEnrichmentPanel({ url, onEnrichmentComplete }: ContextEnrichmentPanelProps) {
+export function ContextEnrichmentPanel({ url, urls, onEnrichmentComplete }: ContextEnrichmentPanelProps) {
+  // Build URL options from props
+  const urlOptions: UrlOption[] = urls?.length 
+    ? urls 
+    : url 
+      ? [{ label: 'Source URL', url }] 
+      : [];
+  
+  const [selectedUrl, setSelectedUrl] = useState<string>(urlOptions[0]?.url || '');
   const [state, setState] = useState<PanelState>('idle');
   const [enrichmentData, setEnrichmentData] = useState<EnrichmentData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'summary' | 'raw'>('summary');
   const { toast } = useToast();
 
-  // Don't render if no URL provided
-  if (!url) return null;
+  // Don't render if no URLs available
+  if (urlOptions.length === 0) return null;
 
   const handleEnrich = async () => {
+    if (!selectedUrl) return;
+    
     setState('loading');
     setError(null);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('firecrawl-enrich', {
-        body: { url },
+        body: { url: selectedUrl },
       });
 
       if (fnError) {
@@ -101,98 +127,106 @@ export function ContextEnrichmentPanel({ url, onEnrichmentComplete }: ContextEnr
     return sentences.slice(0, 3).join(' ').trim() || cleanText.slice(0, 300) + '...';
   };
 
-  const getButtonContent = () => {
-    switch (state) {
-      case 'loading':
-        return (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Fetching…
-          </>
-        );
-      case 'success':
-        return (
-          <>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh context
-          </>
-        );
-      case 'error':
-        return (
-          <>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Try again
-          </>
-        );
-      default:
-        return (
-          <>
-            <Globe className="mr-2 h-4 w-4" />
-            Fetch public context
-          </>
-        );
-    }
-  };
+  const hasMultipleUrls = urlOptions.length > 1;
 
   return (
-    <Card className="border-border">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
+    <Card className="border-border bg-card">
+      <CardHeader className="pb-4 space-y-3">
+        {/* Header row with title and actions */}
+        <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             <Globe className="h-5 w-5 text-muted-foreground" />
             <CardTitle className="text-base font-medium">
               Context (Public Web)
             </CardTitle>
           </div>
-          <Badge variant="outline" className="text-xs font-normal text-muted-foreground border-border">
-            Fetched on demand
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => window.open(selectedUrl, '_blank')}
+              disabled={!selectedUrl}
+            >
+              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+              Open page
+            </Button>
+            <Button
+              variant={state === 'success' ? 'outline' : 'default'}
+              size="sm"
+              className="h-8"
+              onClick={handleEnrich}
+              disabled={state === 'loading' || !selectedUrl}
+            >
+              {state === 'loading' ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  Fetching…
+                </>
+              ) : state === 'success' ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                  Refresh context
+                </>
+              ) : (
+                <>
+                  <Globe className="h-3.5 w-3.5 mr-1.5" />
+                  Fetch context
+                </>
+              )}
+            </Button>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          Fetch public page context to validate the result and reduce false positives.
+
+        {/* Explainer text */}
+        <p className="text-sm text-muted-foreground">
+          Use this to validate a match and reduce false positives.
         </p>
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Source URL Display */}
-        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
-          <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-          <span className="text-sm text-muted-foreground truncate flex-1">{url}</span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2"
-            onClick={() => window.open(url, '_blank')}
-          >
-            Open
-          </Button>
-        </div>
-
-        {/* Fetch Button - Always visible for retry/refresh */}
-        {state !== 'success' && (
-          <>
-            <Button 
-              onClick={handleEnrich} 
-              disabled={state === 'loading'}
-              className="w-full"
-              variant={state === 'error' ? 'destructive' : 'outline'}
-            >
-              {getButtonContent()}
-            </Button>
-            
-            {/* Safety/clarity text */}
-            <p className="text-xs text-muted-foreground text-center">
-              Only runs when you click. FootprintIQ fetches content only from the URL you provide and does not crawl beyond it.
-            </p>
-          </>
+        {/* URL Selector or Display */}
+        {hasMultipleUrls ? (
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground">
+              Select URL to enrich
+            </label>
+            <Select value={selectedUrl} onValueChange={setSelectedUrl}>
+              <SelectTrigger className="w-full bg-muted/30 border-border">
+                <SelectValue placeholder="Choose a URL" />
+              </SelectTrigger>
+              <SelectContent>
+                {urlOptions.map((option, idx) => (
+                  <SelectItem key={idx} value={option.url}>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium">{option.label}</span>
+                      <span className="text-xs text-muted-foreground truncate max-w-[280px]">
+                        {option.url}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 p-3 bg-muted/30 rounded-lg border border-border">
+            <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm text-muted-foreground truncate flex-1">{selectedUrl}</span>
+          </div>
         )}
+
+        {/* Usage microcopy */}
+        <p className="text-xs text-muted-foreground">
+          Counts toward usage. Only runs when you click.
+        </p>
 
         {/* Error State */}
         {state === 'error' && error && (
-          <div className="flex items-start gap-3 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+          <div className="flex items-start gap-3 p-4 bg-destructive/5 rounded-lg border border-destructive/20">
             <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-destructive">Couldn't fetch that page</p>
+              <p className="text-sm font-medium text-foreground">Couldn't fetch that page</p>
               <p className="text-sm text-muted-foreground mt-1">
                 This site may block automated access, require login, or be temporarily unavailable.
               </p>
@@ -207,7 +241,7 @@ export function ContextEnrichmentPanel({ url, onEnrichmentComplete }: ContextEnr
                 <Button
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => window.open(url, '_blank')}
+                  onClick={() => window.open(selectedUrl, '_blank')}
                 >
                   <ExternalLink className="h-3.5 w-3.5 mr-1" />
                   Open URL
@@ -220,42 +254,33 @@ export function ContextEnrichmentPanel({ url, onEnrichmentComplete }: ContextEnr
         {/* Success State - Enrichment Results */}
         {state === 'success' && enrichmentData && (
           <div className="space-y-4">
-            {/* Fetch Indicator */}
-            <div className="flex items-center justify-between p-3 bg-accent/10 rounded-lg border border-accent/30">
+            {/* Last Fetched - Prominent display */}
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-accent" />
-                <span className="text-sm font-medium">Fetched on demand</span>
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-medium text-foreground">Fetched on demand</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Clock className="h-3.5 w-3.5" />
-                Fetched: {formatDate(enrichmentData.fetchedAt)}
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">
+                  {formatDate(enrichmentData.fetchedAt)}
+                </span>
               </div>
             </div>
 
             {/* Page Title & Description */}
             {enrichmentData.title && (
               <div className="space-y-1">
-                <h4 className="font-medium">{enrichmentData.title}</h4>
+                <h4 className="font-medium text-foreground">{enrichmentData.title}</h4>
                 {enrichmentData.description && (
                   <p className="text-sm text-muted-foreground">{enrichmentData.description}</p>
                 )}
               </div>
             )}
 
-            {/* Refresh button */}
-            <Button 
-              onClick={handleEnrich} 
-              variant="outline"
-              size="sm"
-              className="w-full"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh context
-            </Button>
-
             {/* Summary / Raw Toggle Tabs */}
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'summary' | 'raw')}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-2 bg-muted/50">
                 <TabsTrigger value="summary">Summary</TabsTrigger>
                 <TabsTrigger value="raw">Raw</TabsTrigger>
               </TabsList>
@@ -271,7 +296,7 @@ export function ContextEnrichmentPanel({ url, onEnrichmentComplete }: ContextEnr
               </TabsContent>
               
               <TabsContent value="raw" className="mt-3">
-                <ScrollArea className="h-48 rounded-lg border border-border bg-muted/30">
+                <ScrollArea className="h-48 rounded-lg border border-border bg-muted/20">
                   <div className="p-4">
                     <div className="prose prose-sm max-w-none dark:prose-invert text-xs font-mono">
                       <ReactMarkdown>{enrichmentData.markdown || "No content available."}</ReactMarkdown>
@@ -280,12 +305,14 @@ export function ContextEnrichmentPanel({ url, onEnrichmentComplete }: ContextEnr
                 </ScrollArea>
               </TabsContent>
             </Tabs>
-
-            {/* Safety text */}
-            <p className="text-xs text-muted-foreground text-center">
-              Only runs when you click. FootprintIQ fetches content only from the URL you provide and does not crawl beyond it.
-            </p>
           </div>
+        )}
+
+        {/* Idle state hint */}
+        {state === 'idle' && (
+          <p className="text-xs text-muted-foreground text-center py-2">
+            Click "Fetch context" to retrieve public content from this page.
+          </p>
         )}
       </CardContent>
     </Card>

@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertRow, Severity } from '@/types/dashboard';
 import { formatTimestamp, formatConfidence } from '@/lib/format';
 import { FileText, UserPlus, AlertCircle } from 'lucide-react';
-import { ContextEnrichmentPanel } from '@/components/ContextEnrichmentPanel';
+import { ContextEnrichmentPanel, UrlOption } from '@/components/ContextEnrichmentPanel';
 
 interface AlertDrawerProps {
   alert: AlertRow | null;
@@ -27,19 +27,35 @@ interface AlertDrawerProps {
 }
 
 const SEVERITY_COLORS: Record<Severity, string> = {
-  low: 'bg-accent/20 text-accent border-accent/30',
-  medium: 'bg-primary/20 text-primary border-primary/30',
-  high: 'bg-destructive/20 text-destructive border-destructive/30',
-  critical: 'bg-destructive text-destructive-foreground border-destructive',
+  low: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
+  medium: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+  high: 'bg-red-500/10 text-red-700 border-red-500/20',
+  critical: 'bg-red-600/20 text-red-800 border-red-600/30',
 };
 
 /**
- * Helper to extract the relevant URL from an alert.
- * Checks: url, profile_url, source_url, link fields.
+ * Helper to extract all available URLs from an alert.
+ * Returns an array of UrlOption for the dropdown.
  */
-function getAlertUrl(alert: AlertRow | null): string | null {
-  if (!alert) return null;
-  return alert.url || alert.profile_url || alert.source_url || alert.link || null;
+function getAlertUrls(alert: AlertRow | null): UrlOption[] {
+  if (!alert) return [];
+  
+  const urls: UrlOption[] = [];
+  
+  if (alert.url) {
+    urls.push({ label: 'Primary URL', url: alert.url });
+  }
+  if (alert.profile_url && alert.profile_url !== alert.url) {
+    urls.push({ label: 'Profile URL', url: alert.profile_url });
+  }
+  if (alert.source_url && alert.source_url !== alert.url && alert.source_url !== alert.profile_url) {
+    urls.push({ label: 'Source URL', url: alert.source_url });
+  }
+  if (alert.link && alert.link !== alert.url && alert.link !== alert.profile_url && alert.link !== alert.source_url) {
+    urls.push({ label: 'Link', url: alert.link });
+  }
+  
+  return urls;
 }
 
 export function AlertDrawer({
@@ -53,14 +69,15 @@ export function AlertDrawer({
 }: AlertDrawerProps) {
   if (!alert) return null;
 
-  const alertUrl = getAlertUrl(alert);
+  const urls = getAlertUrls(alert);
+  const hasUrls = urls.length > 0;
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent className="w-[600px] sm:max-w-[600px]">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-primary" />
+            <AlertCircle className="w-5 h-5 text-muted-foreground" />
             Alert Details
           </SheetTitle>
           <SheetDescription>
@@ -69,9 +86,9 @@ export function AlertDrawer({
         </SheetHeader>
 
         <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 bg-muted/50">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="context" disabled={!alertUrl}>
+            <TabsTrigger value="context" disabled={!hasUrls}>
               Context
             </TabsTrigger>
           </TabsList>
@@ -79,7 +96,7 @@ export function AlertDrawer({
           <ScrollArea className="h-[calc(100vh-180px)] pr-4 mt-4">
             <TabsContent value="overview" className="mt-0 space-y-6">
               {/* Summary Card */}
-              <Card className="p-4">
+              <Card className="p-4 bg-card">
                 <div className="space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
@@ -120,8 +137,8 @@ export function AlertDrawer({
                   <h3 className="font-semibold mb-3">Evidence</h3>
                   <div className="space-y-2">
                     {alert.evidence.map((item, idx) => (
-                      <Card key={idx} className="p-3 bg-muted/30">
-                        <pre className="text-xs overflow-x-auto">
+                      <Card key={idx} className="p-3 bg-muted/20">
+                        <pre className="text-xs overflow-x-auto text-foreground">
                           {JSON.stringify(item, null, 2)}
                         </pre>
                       </Card>
@@ -168,8 +185,8 @@ export function AlertDrawer({
             </TabsContent>
 
             <TabsContent value="context" className="mt-0">
-              {alertUrl ? (
-                <ContextEnrichmentPanel url={alertUrl} />
+              {hasUrls ? (
+                <ContextEnrichmentPanel urls={urls} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No URL available for this alert.
