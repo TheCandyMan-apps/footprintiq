@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { FileDown, Loader2 } from "lucide-react";
+import { FileDown, Loader2, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import DOMPurify from "dompurify";
+import { useResultsGating } from "@/components/billing/GatedContent";
+import { useNavigate } from "react-router-dom";
 
 interface ExportEnrichedButtonProps {
   scanId: string;
@@ -17,8 +19,20 @@ interface ExportEnrichedButtonProps {
 export function ExportEnrichedButton({ scanId, variant = "default", size = "default" }: ExportEnrichedButtonProps) {
   const { workspace } = useWorkspace();
   const [isExporting, setIsExporting] = useState(false);
+  const { canExportDetails } = useResultsGating();
+  const navigate = useNavigate();
 
   const handleExport = async () => {
+    if (!canExportDetails) {
+      toast.error("Export requires Pro plan", {
+        action: {
+          label: "Upgrade",
+          onClick: () => navigate("/settings/billing"),
+        },
+      });
+      return;
+    }
+
     if (!workspace?.id) {
       toast.error("No workspace selected");
       return;
@@ -124,6 +138,22 @@ export function ExportEnrichedButton({ scanId, variant = "default", size = "defa
       setIsExporting(false);
     }
   };
+
+  // Show gated state for free users
+  if (!canExportDetails) {
+    return (
+      <Button
+        variant="outline"
+        size={size}
+        onClick={() => navigate("/settings/billing")}
+        className="gap-2 text-muted-foreground"
+      >
+        <Lock className="h-4 w-4" />
+        Export Report
+        <span className="text-xs text-primary ml-1">Pro</span>
+      </Button>
+    );
+  }
 
   return (
     <Button

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Package, Loader2 } from "lucide-react";
+import { Package, Loader2, Lock, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useResultsGating } from "@/components/billing/GatedContent";
+import { useNavigate } from "react-router-dom";
 
 interface QuickExportButtonProps {
   scanId: string;
@@ -20,8 +22,20 @@ export function QuickExportButton({
 }: QuickExportButtonProps) {
   const [isExporting, setIsExporting] = useState(false);
   const { workspace } = useWorkspace();
+  const { canExportDetails } = useResultsGating();
+  const navigate = useNavigate();
 
   const handleExport = async () => {
+    if (!canExportDetails) {
+      toast.error("Export requires Pro plan", {
+        action: {
+          label: "Upgrade",
+          onClick: () => navigate("/settings/billing"),
+        },
+      });
+      return;
+    }
+
     if (!workspace) {
       toast.error("Please select a workspace first");
       return;
@@ -73,6 +87,22 @@ export function QuickExportButton({
       setIsExporting(false);
     }
   };
+
+  // Show gated state for free users
+  if (!canExportDetails) {
+    return (
+      <Button
+        variant="outline"
+        size={size}
+        onClick={() => navigate("/settings/billing")}
+        className="gap-2 text-muted-foreground"
+      >
+        <Lock className="h-4 w-4" />
+        Export Evidence
+        <span className="text-xs text-primary ml-1">Pro</span>
+      </Button>
+    );
+  }
 
   return (
     <Button

@@ -20,10 +20,12 @@ import {
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Clock } from "lucide-react";
+import { CalendarIcon, Clock, Lock } from "lucide-react";
 import { format as formatDate } from "date-fns";
 import { cn } from "@/lib/utils";
 import { notify } from "@/lib/notifications";
+import { useResultsGating } from "@/components/billing/GatedContent";
+import { useNavigate } from "react-router-dom";
 
 interface ScheduledExportDialogProps {
   onSchedule?: (config: ScheduleConfig) => void;
@@ -46,6 +48,8 @@ export function ScheduledExportDialog({ onSchedule, open: externalOpen, onOpenCh
   const [format, setFormat] = useState<"json" | "csv" | "pdf">("pdf");
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [email, setEmail] = useState("");
+  const { canExportDetails } = useResultsGating();
+  const navigate = useNavigate();
 
   // Use external state if provided, otherwise use internal state
   const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
@@ -76,6 +80,22 @@ export function ScheduledExportDialog({ onSchedule, open: externalOpen, onOpenCh
     onSchedule?.(config);
     setIsOpen(false);
   };
+
+  // Show gated button for free users
+  if (!canExportDetails) {
+    return (
+      <Button 
+        variant="outline" 
+        size="sm"
+        onClick={() => navigate("/settings/billing")}
+        className="gap-2 text-muted-foreground"
+      >
+        <Lock className="h-4 w-4" />
+        Schedule Export
+        <span className="text-xs text-primary ml-1">Pro</span>
+      </Button>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Download } from "lucide-react";
+import { Download, Lock } from "lucide-react";
+import { useResultsGating } from "@/components/billing/GatedContent";
+import { useNavigate } from "react-router-dom";
 
 export function ExportDataDialog() {
   const [open, setOpen] = useState(false);
@@ -16,6 +18,8 @@ export function ExportDataDialog() {
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { canExportDetails } = useResultsGating();
+  const navigate = useNavigate();
 
   const handleExport = async () => {
     if (!startDate || !endDate) {
@@ -50,6 +54,21 @@ export function ExportDataDialog() {
       setLoading(false);
     }
   };
+
+  // Show gated button for free users
+  if (!canExportDetails) {
+    return (
+      <Button 
+        variant="outline" 
+        onClick={() => navigate("/settings/billing")}
+        className="gap-2 text-muted-foreground"
+      >
+        <Lock className="h-4 w-4" />
+        Export Data
+        <span className="text-xs text-primary ml-1">Pro</span>
+      </Button>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
