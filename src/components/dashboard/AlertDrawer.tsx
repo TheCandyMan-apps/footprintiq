@@ -13,8 +13,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertRow, Severity } from '@/types/dashboard';
 import { formatTimestamp, formatConfidence } from '@/lib/format';
-import { FileText, UserPlus, AlertCircle } from 'lucide-react';
+import { FileText, UserPlus, AlertCircle, Lock } from 'lucide-react';
 import { ContextEnrichmentPanel, UrlOption } from '@/components/ContextEnrichmentPanel';
+import { GatedContent, useResultsGating } from '@/components/billing/GatedContent';
 
 interface AlertDrawerProps {
   alert: AlertRow | null;
@@ -58,6 +59,16 @@ function getAlertUrls(alert: AlertRow | null): UrlOption[] {
   return urls;
 }
 
+/** Mask URL for free users - show domain only */
+function maskUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.hostname}/••••••`;
+  } catch {
+    return '••••••••••••';
+  }
+}
+
 export function AlertDrawer({
   alert,
   open,
@@ -67,6 +78,8 @@ export function AlertDrawer({
   onAddToReport,
   canAssign = false,
 }: AlertDrawerProps) {
+  const { canSeeSourceUrls, canSeeEvidence, canSeeConfidenceExplanation, canSeeContextEnrichment } = useResultsGating();
+
   if (!alert) return null;
 
   const urls = getAlertUrls(alert);
@@ -88,8 +101,9 @@ export function AlertDrawer({
         <Tabs defaultValue="overview" className="mt-6">
           <TabsList className="grid w-full grid-cols-2 bg-muted/50">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="context" disabled={!hasUrls}>
+            <TabsTrigger value="context" disabled={!hasUrls || !canSeeContextEnrichment}>
               Context
+              {!canSeeContextEnrichment && <Lock className="w-3 h-3 ml-1.5 opacity-50" />}
             </TabsTrigger>
           </TabsList>
 
@@ -118,12 +132,23 @@ export function AlertDrawer({
                     <div>
                       <div className="text-muted-foreground">Confidence</div>
                       <div className="font-medium">{formatConfidence(alert.confidence)}</div>
+                      {/* Confidence explanation gated */}
+                      <GatedContent 
+                        isGated={!canSeeConfidenceExplanation} 
+                        contentType="confidence"
+                        compact
+                        className="mt-1"
+                      >
+                        <span className="text-xs text-muted-foreground">
+                          Based on source reliability and data freshness
+                        </span>
+                      </GatedContent>
                     </div>
                   </div>
                 </div>
               </Card>
 
-              {/* Description */}
+              {/* Description - allowed for all */}
               <div>
                 <h3 className="font-semibold mb-2">Description</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -131,19 +156,33 @@ export function AlertDrawer({
                 </p>
               </div>
 
-              {/* Evidence */}
+              {/* Evidence - gated for free users */}
               {alert.evidence && alert.evidence.length > 0 && (
                 <div>
                   <h3 className="font-semibold mb-3">Evidence</h3>
-                  <div className="space-y-2">
-                    {alert.evidence.map((item, idx) => (
-                      <Card key={idx} className="p-3 bg-muted/20">
-                        <pre className="text-xs overflow-x-auto text-foreground">
-                          {JSON.stringify(item, null, 2)}
-                        </pre>
-                      </Card>
-                    ))}
-                  </div>
+                  <GatedContent 
+                    isGated={!canSeeEvidence} 
+                    contentType="evidence"
+                    fallback={
+                      <div className="space-y-2">
+                        {alert.evidence.slice(0, 2).map((_, idx) => (
+                          <Card key={idx} className="p-3 bg-muted/20">
+                            <div className="h-16 bg-muted/50 rounded animate-pulse" />
+                          </Card>
+                        ))}
+                      </div>
+                    }
+                  >
+                    <div className="space-y-2">
+                      {alert.evidence.map((item, idx) => (
+                        <Card key={idx} className="p-3 bg-muted/20">
+                          <pre className="text-xs overflow-x-auto text-foreground">
+                            {JSON.stringify(item, null, 2)}
+                          </pre>
+                        </Card>
+                      ))}
+                    </div>
+                  </GatedContent>
                 </div>
               )}
 
@@ -185,7 +224,11 @@ export function AlertDrawer({
             </TabsContent>
 
             <TabsContent value="context" className="mt-0">
-              {hasUrls ? (
+              {!canSeeContextEnrichment ? (
+                <GatedContent isGated contentType="context">
+                  <div />
+                </GatedContent>
+              ) : hasUrls ? (
                 <ContextEnrichmentPanel urls={urls} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">

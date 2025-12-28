@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, ExternalLink, Eye, Shield } from "lucide-react";
+import { AlertTriangle, ExternalLink, Eye, Shield, Lock } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ContextEnrichmentPanel, UrlOption } from "@/components/ContextEnrichmentPanel";
+import { GatedContent, useResultsGating } from "@/components/billing/GatedContent";
 
 interface DarkWebFindingsCardProps {
   targetId: string;
@@ -50,8 +51,25 @@ function getFindingUrls(finding: any): UrlOption[] {
   return urls;
 }
 
+/** Mask URL for free users - show domain only */
+function maskUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.hostname}/••••••`;
+  } catch {
+    return '••••••••••••';
+  }
+}
+
+/** Get category/title only from finding for summary */
+function getFindingSummary(finding: any): string {
+  const meta = finding.meta as any;
+  return meta?.title || meta?.platform || meta?.type || "Exposure Detected";
+}
+
 export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
   const [selectedFinding, setSelectedFinding] = useState<any>(null);
+  const { canSeeSourceUrls, canSeeEvidence, canSeeContextEnrichment } = useResultsGating();
 
   const { data: findings, isLoading } = useQuery({
     queryKey: ["darkweb-findings", targetId],
@@ -122,6 +140,7 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
     );
   }
 
+  // Category-level summaries (allowed for free)
   const criticalCount = findings.filter((f) => f.severity === "critical").length;
   const highCount = findings.filter((f) => f.severity === "high").length;
 
@@ -137,6 +156,7 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
             Dark Web Findings
           </CardTitle>
           <CardDescription>
+            {/* Total count and category summaries allowed for free */}
             {findings.length} finding{findings.length !== 1 ? "s" : ""} detected
             {criticalCount > 0 && (
               <span className="text-red-600 ml-2">
@@ -172,11 +192,9 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
                           </Badge>
                         )}
                       </div>
+                      {/* Category/title summary allowed */}
                       <p className="text-sm font-medium">
-                        {(finding.meta as any)?.title ||
-                          (finding.meta as any)?.platform ||
-                          (finding.meta as any)?.type ||
-                          "Exposure Detected"}
+                        {getFindingSummary(finding)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Found: {format(new Date(finding.observed_at), "MMM d, yyyy")}
@@ -209,8 +227,9 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2 bg-muted/50">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="context" disabled={!hasUrls}>
+              <TabsTrigger value="context" disabled={!hasUrls || !canSeeContextEnrichment}>
                 Context
+                {!canSeeContextEnrichment && <Lock className="w-3 h-3 ml-1.5 opacity-50" />}
               </TabsTrigger>
             </TabsList>
 
@@ -231,37 +250,78 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
                 Review the metadata below. Use the Context tab to validate this match.
               </p>
 
+              {/* Full metadata - gated for free users */}
               {selectedFinding?.meta && (
-                <div className="space-y-2">
-                  {Object.entries(selectedFinding.meta).map(([key, value]) => (
-                    <div key={key} className="grid grid-cols-3 gap-2 text-sm">
-                      <span className="font-medium capitalize text-foreground">
-                        {key.replace(/_/g, " ")}:
-                      </span>
-                      <span className="col-span-2 text-muted-foreground break-all">
-                        {typeof value === "object"
-                          ? JSON.stringify(value, null, 2)
-                          : String(value)}
-                      </span>
+                <GatedContent
+                  isGated={!canSeeEvidence}
+                  contentType="evidence"
+                  fallback={
+                    <div className="space-y-2">
+                      {/* Show category-level info only */}
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <span className="font-medium text-foreground">Type:</span>
+                        <span className="col-span-2 text-muted-foreground">
+                          {(selectedFinding.meta as any)?.type || 'Exposure'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <span className="font-medium text-foreground">Platform:</span>
+                        <span className="col-span-2 text-muted-foreground">
+                          {(selectedFinding.meta as any)?.platform || 'Unknown'}
+                        </span>
+                      </div>
+                      <div className="h-24 bg-muted/30 rounded animate-pulse" />
                     </div>
-                  ))}
-                </div>
+                  }
+                >
+                  <div className="space-y-2">
+                    {Object.entries(selectedFinding.meta).map(([key, value]) => (
+                      <div key={key} className="grid grid-cols-3 gap-2 text-sm">
+                        <span className="font-medium capitalize text-foreground">
+                          {key.replace(/_/g, " ")}:
+                        </span>
+                        <span className="col-span-2 text-muted-foreground break-all">
+                          {typeof value === "object"
+                            ? JSON.stringify(value, null, 2)
+                            : String(value)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </GatedContent>
               )}
 
+              {/* Source URL - gated for free users */}
               {selectedFinding?.url && (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => window.open(selectedFinding.url, "_blank")}
+                <GatedContent
+                  isGated={!canSeeSourceUrls}
+                  contentType="url"
+                  compact
+                  fallback={
+                    <Button variant="outline" className="w-full" disabled>
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      {maskUrl(selectedFinding.url)}
+                    </Button>
+                  }
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  View Source
-                </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => window.open(selectedFinding.url, "_blank")}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Source
+                  </Button>
+                </GatedContent>
               )}
             </TabsContent>
 
             <TabsContent value="context">
-              {hasUrls ? (
+              {!canSeeContextEnrichment ? (
+                <GatedContent isGated contentType="context">
+                  <div />
+                </GatedContent>
+              ) : hasUrls ? (
                 <ContextEnrichmentPanel urls={selectedUrls} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
