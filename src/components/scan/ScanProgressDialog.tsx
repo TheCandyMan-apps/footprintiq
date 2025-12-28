@@ -198,6 +198,16 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   const getProviderDisplayMessage = useCallback((provider: ProviderStatus): string => {
     switch (provider.status) {
       case 'success':
+        // If we have results > 0, show the count
+        if (provider.resultCount !== undefined && provider.resultCount > 0) {
+          return `Complete - ${provider.resultCount} results`;
+        }
+        // During running/finalising phase, show "syncing" if count is 0
+        // (actual count may arrive later via findings table sync)
+        if (phase === 'running' || phase === 'finalising') {
+          return 'Complete - syncing results...';
+        }
+        // After completion, if still 0, show it
         return provider.resultCount !== undefined 
           ? `Complete - ${provider.resultCount} results` 
           : 'Complete';
@@ -215,7 +225,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
       default:
         return 'Waiting to start...';
     }
-  }, []);
+  }, [phase]);
 
   // Cache scan_type and results_route on dialog open for deterministic routing
   useEffect(() => {
