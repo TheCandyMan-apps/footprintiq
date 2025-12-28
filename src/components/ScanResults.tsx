@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users, Flag, Filter } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users, Flag, Filter, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsSkeleton } from "@/components/skeletons/ResultsSkeleton";
@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AIFilteringBadge } from "@/components/AIFilteringBadge";
 import { ConfidenceScoreBadge } from "@/components/ConfidenceScoreBadge";
 import { ConfidenceScoreIndicator } from "@/components/ConfidenceScoreIndicator";
+import { ResultDetailDrawer } from "@/components/scan/ResultDetailDrawer";
 import type { ScanFormData } from "./ScanForm";
 
 interface ScanResultsProps {
@@ -56,6 +57,23 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
     confidenceImprovement: number;
     provider: string;
   } | null>(null);
+  
+  // Detail drawer state
+  type ResultItem = 
+    | { type: 'data_source'; data: DataSource }
+    | { type: 'social_profile'; data: SocialMediaProfile };
+  const [selectedItem, setSelectedItem] = useState<ResultItem | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  const handleOpenDetail = (item: ResultItem) => {
+    setSelectedItem(item);
+    setDrawerOpen(true);
+  };
+
+  const handleCloseDrawer = () => {
+    setDrawerOpen(false);
+    setSelectedItem(null);
+  };
 
   useEffect(() => {
     const fetchScanResults = async () => {
@@ -409,7 +427,10 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                       exit={{ opacity: 0, scale: 0.8, height: 0 }}
                       transition={{ duration: 0.3 }}
                     >
-                       <Card className="p-4 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
+                       <Card 
+                          className="p-4 bg-gradient-card border-border hover:shadow-glow transition-all duration-300 cursor-pointer"
+                          onClick={() => handleOpenDetail({ type: 'social_profile', data: profile })}
+                        >
                         <div className="flex items-start justify-between gap-3 mb-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
@@ -427,7 +448,7 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                               <p className="text-xs text-muted-foreground">Last active: {profile.lastActive}</p>
                             )}
                           </div>
-                          <div className="flex gap-2 flex-wrap">
+                          <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                             <Button 
                               variant="outline" 
                               size="sm"
@@ -456,12 +477,16 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                           </div>
                         </div>
                         
-                        {/* Confidence Score Indicator */}
-                        <div className="pt-3 border-t border-border">
+                        {/* Confidence Score + View Details */}
+                        <div className="pt-3 border-t border-border flex items-center justify-between">
                           <ConfidenceScoreBadge 
                             score={profile.confidenceScore || 85}
                             size="sm"
                           />
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <span>View Details</span>
+                            <ChevronRight className="w-3 h-3" />
+                          </div>
                         </div>
                       </Card>
                     </motion.div>
@@ -506,7 +531,10 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                   exit={{ opacity: 0, x: -100, height: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="p-6 bg-gradient-card border-border hover:shadow-glow transition-all duration-300">
+                  <Card 
+                    className="p-6 bg-gradient-card border-border hover:shadow-glow transition-all duration-300 cursor-pointer"
+                    onClick={() => handleOpenDetail({ type: 'data_source', data: source })}
+                  >
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2 flex-wrap">
@@ -528,7 +556,7 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                         </div>
                       </div>
                       
-                      <div className="flex gap-2 flex-wrap">
+                      <div className="flex gap-2 flex-wrap" onClick={(e) => e.stopPropagation()}>
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -559,12 +587,16 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                       </div>
                     </div>
                     
-                    {/* Confidence Score Indicator */}
-                    <div className="pt-4 border-t border-border">
+                    {/* Confidence Score + View Details */}
+                    <div className="pt-4 border-t border-border flex items-center justify-between">
                       <ConfidenceScoreBadge 
                         score={source.confidenceScore || 75}
                         size="sm"
                       />
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <span>View Details</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </div>
                     </div>
                   </Card>
                 </motion.div>
@@ -588,6 +620,27 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           )}
         </div>
       </div>
+
+      {/* Result Detail Drawer with Context Enrichment */}
+      <ResultDetailDrawer
+        item={selectedItem}
+        open={drawerOpen}
+        onClose={handleCloseDrawer}
+        onRemovalRequest={(id, name) => {
+          if (selectedItem?.type === 'data_source') {
+            handleRemovalRequest(id, name);
+          } else {
+            handleProfileRemoval(id, name);
+          }
+          handleCloseDrawer();
+        }}
+        onFlagFalsePositive={(id, type, name, score) => {
+          handleFalsePositive(id, type, name, score);
+        }}
+        isFlagged={selectedItem ? flaggedItems.has(
+          selectedItem.type === 'data_source' ? selectedItem.data.id : selectedItem.data.id
+        ) : false}
+      />
     </div>
   );
 };

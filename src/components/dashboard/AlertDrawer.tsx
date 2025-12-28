@@ -12,7 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertRow, Severity } from '@/types/dashboard';
 import { formatTimestamp, formatConfidence } from '@/lib/format';
-import { FileText, UserPlus, AlertCircle } from 'lucide-react';
+import { FileText, UserPlus, AlertCircle, Info } from 'lucide-react';
+import { ContextEnrichmentPanel } from '@/components/ContextEnrichmentPanel';
 
 interface AlertDrawerProps {
   alert: AlertRow | null;
@@ -31,6 +32,15 @@ const SEVERITY_COLORS: Record<Severity, string> = {
   critical: 'bg-destructive text-destructive-foreground border-destructive',
 };
 
+/**
+ * Helper to extract the relevant URL from an alert.
+ * Checks: url, profile_url, source_url, link fields.
+ */
+function getAlertUrl(alert: AlertRow | null): string | null {
+  if (!alert) return null;
+  return alert.url || alert.profile_url || alert.source_url || alert.link || null;
+}
+
 export function AlertDrawer({
   alert,
   open,
@@ -41,6 +51,8 @@ export function AlertDrawer({
   canAssign = false,
 }: AlertDrawerProps) {
   if (!alert) return null;
+
+  const alertUrl = getAlertUrl(alert);
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
@@ -92,6 +104,19 @@ export function AlertDrawer({
                 {alert.description}
               </p>
             </div>
+
+            {/* Context Enrichment Section - Only shown if URL exists */}
+            {alertUrl && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Info className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">
+                    Fetch publicly available content from this source to help interpretation and reduce false positives.
+                  </span>
+                </div>
+                <ContextEnrichmentPanel url={alertUrl} />
+              </div>
+            )}
 
             {/* Evidence */}
             {alert.evidence && alert.evidence.length > 0 && (
