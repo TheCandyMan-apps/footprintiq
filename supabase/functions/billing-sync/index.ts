@@ -22,8 +22,8 @@ const PLANS = {
 };
 
 const PRICE_TO_PLAN: Record<string, 'pro' | 'business'> = {
-  'price_1SIbjiA3ptI9drLWsG0noPeX': 'pro',
-  'price_1SN3uIA3ptI9drLWMCDo1mAT': 'business',
+  'price_1ShgNPA3ptI9drLW40rbWMjq': 'pro',
+  'price_1ShdxJA3ptI9drLWjndMjptw': 'business',
 };
 
 serve(async (req) => {
