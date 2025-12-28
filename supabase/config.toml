@@ -167,3 +167,9 @@ verify_jwt = true
 
 [functions.firecrawl-enrich]
 verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.billing-check-subscription]
+verify_jwt = true

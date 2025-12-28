@@ -66,10 +66,16 @@ serve(async (req) => {
     const subscription = subscriptions.data[0];
     const priceId = subscription.items.data[0].price.id;
     
-    // Map price IDs to tiers
+    // Map price IDs to tiers (matches src/config/stripe.ts)
     const tierMap: Record<string, string> = {
-      'price_1ShdnEA3ptI9drLWLFG8qPyk': 'pro',
+      // Pro Monthly
+      'price_1ShgNPA3ptI9drLW40rbWMjq': 'pro',
+      // Pro Annual
+      'price_1Si2vkA3ptI9drLWCQrxU4Dc': 'pro',
+      // Business
       'price_1ShdxJA3ptI9drLWjndMjptw': 'business',
+      // Enterprise
+      'price_1SQh9JPNdM5SAyj722p376Qh': 'enterprise',
     };
 
     const tier = tierMap[priceId] || 'free';
