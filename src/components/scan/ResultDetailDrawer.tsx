@@ -13,12 +13,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfidenceScoreBadge } from '@/components/ConfidenceScoreBadge';
 import { ContextEnrichmentPanel, UrlOption } from '@/components/ContextEnrichmentPanel';
+import { GatedContent, useResultsGating } from '@/components/billing/GatedContent';
 import { 
   ExternalLink, 
   Globe, 
   User, 
   Trash2, 
-  Flag
+  Flag,
+  Lock
 } from 'lucide-react';
 
 interface DataSourceItem {
@@ -100,6 +102,16 @@ function getItemConfidence(item: ResultItem): number {
   return item.data.confidenceScore || 85;
 }
 
+/** Mask URL for free users - show domain only */
+function maskUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.hostname}/••••••`;
+  } catch {
+    return '••••••••••••';
+  }
+}
+
 export function ResultDetailDrawer({
   item,
   open,
@@ -108,6 +120,8 @@ export function ResultDetailDrawer({
   onFlagFalsePositive,
   isFlagged = false,
 }: ResultDetailDrawerProps) {
+  const { canSeeSourceUrls, canSeeConfidenceExplanation, canSeeContextEnrichment, isFree } = useResultsGating();
+
   if (!item) return null;
 
   const urls = getItemUrls(item);
@@ -139,8 +153,9 @@ export function ResultDetailDrawer({
         <Tabs defaultValue="overview" className="mt-6">
           <TabsList className="grid w-full grid-cols-2 bg-muted/50">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="context" disabled={!hasUrls}>
+            <TabsTrigger value="context" disabled={!hasUrls || !canSeeContextEnrichment}>
               Context
+              {!canSeeContextEnrichment && <Lock className="w-3 h-3 ml-1.5 opacity-50" />}
             </TabsTrigger>
           </TabsList>
 
@@ -171,7 +186,7 @@ export function ResultDetailDrawer({
 
                   <Separator />
 
-                  {/* Data found (for data sources) */}
+                  {/* Data found (for data sources) - category summary is allowed */}
                   {item.type === 'data_source' && item.data.dataFound.length > 0 && (
                     <div>
                       <div className="text-sm text-muted-foreground mb-2">Data Found</div>
@@ -206,24 +221,47 @@ export function ResultDetailDrawer({
                     </div>
                   )}
 
-                  {/* Confidence Score */}
+                  {/* Confidence Score - numeric only for free, explanation for Pro */}
                   <div className="pt-3 border-t border-border">
                     <ConfidenceScoreBadge score={confidence} size="sm" />
+                    {/* Confidence explanation gated */}
+                    <GatedContent 
+                      isGated={!canSeeConfidenceExplanation} 
+                      contentType="confidence"
+                      compact
+                      className="mt-2"
+                    >
+                      <p className="text-xs text-muted-foreground">
+                        Score based on profile completeness, activity patterns, and cross-reference validation.
+                      </p>
+                    </GatedContent>
                   </div>
                 </div>
               </Card>
 
-              {/* Actions */}
+              {/* Actions - Source URL gated for free users */}
               <div className="space-y-2 pt-4">
                 {primaryUrl && (
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => window.open(primaryUrl, '_blank')}
+                  <GatedContent 
+                    isGated={!canSeeSourceUrls} 
+                    contentType="url"
+                    compact
+                    fallback={
+                      <Button variant="outline" className="w-full justify-start" disabled>
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        {maskUrl(primaryUrl)}
+                      </Button>
+                    }
                   >
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    View Original Source
-                  </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => window.open(primaryUrl, '_blank')}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      View Original Source
+                    </Button>
+                  </GatedContent>
                 )}
 
                 {onFlagFalsePositive && (
@@ -260,7 +298,11 @@ export function ResultDetailDrawer({
             </TabsContent>
 
             <TabsContent value="context" className="mt-0">
-              {hasUrls ? (
+              {!canSeeContextEnrichment ? (
+                <GatedContent isGated contentType="context">
+                  <div />
+                </GatedContent>
+              ) : hasUrls ? (
                 <ContextEnrichmentPanel urls={urls} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
