@@ -169,7 +169,7 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      success_url: `${frontendUrl}/settings/billing?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${frontendUrl}/settings/billing?session_id={CHECKOUT_SESSION_ID}&plan=${plan}`,
       cancel_url: `${frontendUrl}/settings/billing`,
       metadata: {
         workspace_id: workspaceId,

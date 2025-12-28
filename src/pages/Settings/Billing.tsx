@@ -13,8 +13,9 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { StripePaymentForm } from '@/components/billing/StripePaymentForm';
 import { TestModeToggle } from '@/components/billing/TestModeToggle';
 import { PaymentErrorBoundary } from '@/components/billing/PaymentErrorBoundary';
+import { PurchaseVerification } from '@/components/billing/PurchaseVerification';
 import { CreditPackCard } from '@/components/CreditPackCard';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SUBSCRIPTION_PLANS, CREDIT_PACKS } from '@/config/stripe';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import {
@@ -59,9 +60,22 @@ export default function BillingSettings() {
   const [pollingAttempts, setPollingAttempts] = useState(0);
   const MAX_POLLING_ATTEMPTS = 6; // 30 seconds with 5s intervals
   const { subscriptionTier, isPremium, refreshSubscription } = useSubscription();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [purchasingPack, setPurchasingPack] = useState<string | null>(null);
   const { workspace } = useWorkspace();
+
+  // Post-checkout verification state
+  const sessionId = searchParams.get('session_id');
+  const checkoutPlan = searchParams.get('plan');
+  const [showVerification, setShowVerification] = useState(false);
+
+  // Show verification modal if returning from Stripe checkout
+  useEffect(() => {
+    if (sessionId && checkoutPlan) {
+      setShowVerification(true);
+    }
+  }, [sessionId, checkoutPlan]);
 
   // Handle credit purchase success/cancel
   useEffect(() => {
@@ -85,6 +99,25 @@ export default function BillingSettings() {
       window.history.replaceState({}, '', '/settings/billing');
     }
   }, [searchParams]);
+
+  const handleVerificationComplete = () => {
+    setShowVerification(false);
+    // Clear query params
+    setSearchParams({});
+    // Refresh subscription data
+    refreshSubscription();
+    refetchSubscription();
+    toast({
+      title: '✅ Subscription Active!',
+      description: 'Your premium features are now unlocked.',
+    });
+    navigate('/settings/billing');
+  };
+
+  const handleVerificationClose = () => {
+    setShowVerification(false);
+    setSearchParams({});
+  };
 
   const { data: subscriptionData, refetch: refetchSubscription } = useQuery({
     queryKey: ['subscription-details'],
@@ -650,6 +683,26 @@ export default function BillingSettings() {
                 amount={PRICING_TIERS[selectedPlan].price}
                 onSuccess={handlePaymentSuccess}
                 onCancel={handlePaymentCancel}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Post-Checkout Verification Dialog */}
+        <Dialog open={showVerification} onOpenChange={(open) => !open && handleVerificationClose()}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Purchase Verification</DialogTitle>
+              <DialogDescription>
+                Confirming your subscription
+              </DialogDescription>
+            </DialogHeader>
+            {sessionId && checkoutPlan && (
+              <PurchaseVerification
+                sessionId={sessionId}
+                expectedPlan={checkoutPlan}
+                onComplete={handleVerificationComplete}
+                onClose={handleVerificationClose}
               />
             )}
           </DialogContent>
