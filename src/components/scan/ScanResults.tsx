@@ -10,6 +10,7 @@ import { exportResultsToJSON, exportResultsToCSV, groupByStatus } from '@/utils/
 import { ScanProgress } from './ScanProgress';
 import { FootprintDNACard } from '@/components/FootprintDNACard';
 import AIInsightsPanel from '@/components/AIInsightsPanel';
+import { LockedInsightsGrid } from '@/components/billing/LockedInsightBlock';
 import { Loader2, FileJson, FileSpreadsheet, ExternalLink, Shield } from 'lucide-react';
 import {
   Table,
@@ -408,6 +409,9 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Locked Insights for Free users */}
+            <LockedInsightsGrid className="mt-6" />
 
             {/* AI Insights Panel */}
             <AIInsightsPanel 
