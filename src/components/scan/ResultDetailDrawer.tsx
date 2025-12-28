@@ -17,8 +17,7 @@ import {
   Globe, 
   User, 
   Trash2, 
-  Flag, 
-  Info 
+  Flag
 } from 'lucide-react';
 
 interface DataSourceItem {
@@ -199,15 +198,7 @@ export function ResultDetailDrawer({
 
             {/* Context Enrichment Section - Only shown if URL exists */}
             {url && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Info className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    Fetch publicly available content from this source to help interpretation and reduce false positives.
-                  </span>
-                </div>
-                <ContextEnrichmentPanel url={url} />
-              </div>
+              <ContextEnrichmentPanel url={url} />
             )}
 
             {/* Actions */}

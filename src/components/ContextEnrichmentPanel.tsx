@@ -2,16 +2,15 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   ExternalLink, 
-  FileText, 
+  Globe, 
   Clock, 
   Loader2, 
   AlertCircle,
-  Eye,
+  RefreshCw,
   CheckCircle2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,24 +33,20 @@ export interface EnrichmentData {
   metadata: Record<string, unknown>;
 }
 
+type PanelState = 'idle' | 'loading' | 'success' | 'error';
+
 export function ContextEnrichmentPanel({ url, onEnrichmentComplete }: ContextEnrichmentPanelProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [state, setState] = useState<PanelState>('idle');
   const [enrichmentData, setEnrichmentData] = useState<EnrichmentData | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showRawContent, setShowRawContent] = useState(false);
+  const [activeTab, setActiveTab] = useState<'summary' | 'raw'>('summary');
   const { toast } = useToast();
 
-  const handleEnrich = async () => {
-    if (!url) {
-      toast({
-        title: "URL Required",
-        description: "Please provide a URL to retrieve context from.",
-        variant: "destructive",
-      });
-      return;
-    }
+  // Don't render if no URL provided
+  if (!url) return null;
 
-    setIsLoading(true);
+  const handleEnrich = async () => {
+    setState('loading');
     setError(null);
 
     try {
@@ -68,22 +63,22 @@ export function ContextEnrichmentPanel({ url, onEnrichmentComplete }: ContextEnr
       }
 
       setEnrichmentData(data);
+      setState('success');
       onEnrichmentComplete?.(data);
       
       toast({
         title: "Context Retrieved",
-        description: "Public content has been retrieved for review.",
+        description: "Public content has been fetched for review.",
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to retrieve context';
       setError(errorMessage);
+      setState('error');
       toast({
         title: "Retrieval Failed",
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -106,132 +101,189 @@ export function ContextEnrichmentPanel({ url, onEnrichmentComplete }: ContextEnr
     return sentences.slice(0, 3).join(' ').trim() || cleanText.slice(0, 300) + '...';
   };
 
+  const getButtonContent = () => {
+    switch (state) {
+      case 'loading':
+        return (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Fetching…
+          </>
+        );
+      case 'success':
+        return (
+          <>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh context
+          </>
+        );
+      case 'error':
+        return (
+          <>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Try again
+          </>
+        );
+      default:
+        return (
+          <>
+            <Globe className="mr-2 h-4 w-4" />
+            Fetch public context
+          </>
+        );
+    }
+  };
+
   return (
-    <Card className="border-slate-200">
+    <Card className="border-border">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-slate-500" />
-            <CardTitle className="text-base font-medium text-slate-900">
-              Contextual Enrichment
+            <Globe className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-base font-medium">
+              Context (Public Web)
             </CardTitle>
           </div>
-          <Badge variant="outline" className="text-xs font-normal text-slate-500 border-slate-200">
-            User-Initiated
+          <Badge variant="outline" className="text-xs font-normal text-muted-foreground border-border">
+            Fetched on demand
           </Badge>
         </div>
-        <p className="text-sm text-slate-500 mt-1">
-          Retrieve publicly available content to support interpretation
+        <p className="text-sm text-muted-foreground mt-1">
+          Fetch public page context to validate the result and reduce false positives.
         </p>
       </CardHeader>
       
       <CardContent className="space-y-4">
         {/* Source URL Display */}
-        <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
-          <ExternalLink className="h-4 w-4 text-slate-400 flex-shrink-0" />
-          <span className="text-sm text-slate-600 truncate flex-1">{url}</span>
+        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border">
+          <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          <span className="text-sm text-muted-foreground truncate flex-1">{url}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-2"
+            onClick={() => window.open(url, '_blank')}
+          >
+            Open
+          </Button>
         </div>
 
-        {/* Fetch Button */}
-        {!enrichmentData && !error && (
-          <Button 
-            onClick={handleEnrich} 
-            disabled={isLoading}
-            className="w-full"
-            variant="outline"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Retrieving Public Content...
-              </>
-            ) : (
-              <>
-                <Eye className="mr-2 h-4 w-4" />
-                Retrieve Context
-              </>
-            )}
-          </Button>
+        {/* Fetch Button - Always visible for retry/refresh */}
+        {state !== 'success' && (
+          <>
+            <Button 
+              onClick={handleEnrich} 
+              disabled={state === 'loading'}
+              className="w-full"
+              variant={state === 'error' ? 'destructive' : 'outline'}
+            >
+              {getButtonContent()}
+            </Button>
+            
+            {/* Safety/clarity text */}
+            <p className="text-xs text-muted-foreground text-center">
+              Only runs when you click. FootprintIQ fetches content only from the URL you provide and does not crawl beyond it.
+            </p>
+          </>
         )}
 
         {/* Error State */}
-        {error && (
-          <div className="flex items-start gap-3 p-4 bg-red-50 rounded-lg border border-red-100">
-            <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-red-800">Unable to retrieve content</p>
-              <p className="text-sm text-red-600 mt-1">{error}</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleEnrich}
-                className="mt-3"
-                disabled={isLoading}
-              >
-                Try Again
-              </Button>
+        {state === 'error' && error && (
+          <div className="flex items-start gap-3 p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+            <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-destructive">Couldn't fetch that page</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                This site may block automated access, require login, or be temporarily unavailable.
+              </p>
+              <div className="flex gap-2 mt-3">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleEnrich}
+                >
+                  Try again
+                </Button>
+                <Button
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => window.open(url, '_blank')}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                  Open URL
+                </Button>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Enrichment Results */}
-        {enrichmentData && (
+        {/* Success State - Enrichment Results */}
+        {state === 'success' && enrichmentData && (
           <div className="space-y-4">
             {/* Fetch Indicator */}
-            <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
+            <div className="flex items-center justify-between p-3 bg-accent/10 rounded-lg border border-accent/30">
               <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800">Fetched on demand</span>
+                <CheckCircle2 className="h-4 w-4 text-accent" />
+                <span className="text-sm font-medium">Fetched on demand</span>
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-green-600">
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Clock className="h-3.5 w-3.5" />
-                {formatDate(enrichmentData.fetchedAt)}
+                Fetched: {formatDate(enrichmentData.fetchedAt)}
               </div>
             </div>
 
             {/* Page Title & Description */}
             {enrichmentData.title && (
               <div className="space-y-1">
-                <h4 className="font-medium text-slate-900">{enrichmentData.title}</h4>
+                <h4 className="font-medium">{enrichmentData.title}</h4>
                 {enrichmentData.description && (
-                  <p className="text-sm text-slate-500">{enrichmentData.description}</p>
+                  <p className="text-sm text-muted-foreground">{enrichmentData.description}</p>
                 )}
               </div>
             )}
 
-            {/* View Toggle */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="content-view"
-                  checked={showRawContent}
-                  onCheckedChange={setShowRawContent}
-                />
-                <Label htmlFor="content-view" className="text-sm text-slate-600">
-                  {showRawContent ? "Raw Content" : "Summary View"}
-                </Label>
-              </div>
-            </div>
+            {/* Refresh button */}
+            <Button 
+              onClick={handleEnrich} 
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh context
+            </Button>
 
-            {/* Content Display */}
-            <ScrollArea className="h-64 rounded-lg border border-slate-200 bg-white">
-              <div className="p-4">
-                {showRawContent ? (
-                  <div className="prose prose-sm max-w-none prose-slate">
-                    <ReactMarkdown>{enrichmentData.markdown || "No content available."}</ReactMarkdown>
+            {/* Summary / Raw Toggle Tabs */}
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'summary' | 'raw')}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="summary">Summary</TabsTrigger>
+                <TabsTrigger value="raw">Raw</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="summary" className="mt-3">
+                <ScrollArea className="h-48 rounded-lg border border-border bg-background">
+                  <div className="p-4">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {generateSummary(enrichmentData.markdown)}
+                    </p>
                   </div>
-                ) : (
-                  <div className="text-sm text-slate-600 leading-relaxed">
-                    <p className="font-medium text-slate-700 mb-2">Content Summary</p>
-                    <p>{generateSummary(enrichmentData.markdown)}</p>
+                </ScrollArea>
+              </TabsContent>
+              
+              <TabsContent value="raw" className="mt-3">
+                <ScrollArea className="h-48 rounded-lg border border-border bg-muted/30">
+                  <div className="p-4">
+                    <div className="prose prose-sm max-w-none dark:prose-invert text-xs font-mono">
+                      <ReactMarkdown>{enrichmentData.markdown || "No content available."}</ReactMarkdown>
+                    </div>
                   </div>
-                )}
-              </div>
-            </ScrollArea>
+                </ScrollArea>
+              </TabsContent>
+            </Tabs>
 
-            {/* Disclaimer */}
-            <p className="text-xs text-slate-400 text-center">
-              This content was retrieved from a publicly accessible source at the user's request.
+            {/* Safety text */}
+            <p className="text-xs text-muted-foreground text-center">
+              Only runs when you click. FootprintIQ fetches content only from the URL you provide and does not crawl beyond it.
             </p>
           </div>
         )}
