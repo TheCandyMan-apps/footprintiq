@@ -15,10 +15,39 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ContextEnrichmentPanel } from "@/components/ContextEnrichmentPanel";
+import { ContextEnrichmentPanel, UrlOption } from "@/components/ContextEnrichmentPanel";
 
 interface DarkWebFindingsCardProps {
   targetId: string;
+}
+
+/**
+ * Extract all available URLs from a finding's metadata.
+ */
+function getFindingUrls(finding: any): UrlOption[] {
+  if (!finding) return [];
+  
+  const urls: UrlOption[] = [];
+  
+  if (finding.url) {
+    urls.push({ label: 'Source URL', url: finding.url });
+  }
+  
+  // Check meta for additional URLs
+  const meta = finding.meta as any;
+  if (meta) {
+    if (meta.profile_url && meta.profile_url !== finding.url) {
+      urls.push({ label: 'Profile URL', url: meta.profile_url });
+    }
+    if (meta.source_url && meta.source_url !== finding.url && meta.source_url !== meta.profile_url) {
+      urls.push({ label: 'Evidence URL', url: meta.source_url });
+    }
+    if (meta.link && meta.link !== finding.url && meta.link !== meta.profile_url && meta.link !== meta.source_url) {
+      urls.push({ label: 'Link', url: meta.link });
+    }
+  }
+  
+  return urls;
 }
 
 export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
@@ -82,7 +111,7 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-green-500" />
+            <Shield className="h-5 w-5 text-emerald-600" />
             No Dark Web Findings
           </CardTitle>
           <CardDescription>
@@ -96,23 +125,26 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
   const criticalCount = findings.filter((f) => f.severity === "critical").length;
   const highCount = findings.filter((f) => f.severity === "high").length;
 
+  const selectedUrls = getFindingUrls(selectedFinding);
+  const hasUrls = selectedUrls.length > 0;
+
   return (
     <>
-      <Card className="border-destructive/50">
+      <Card className="border-red-500/20">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <AlertTriangle className="h-5 w-5 text-red-600" />
             Dark Web Findings
           </CardTitle>
           <CardDescription>
             {findings.length} finding{findings.length !== 1 ? "s" : ""} detected
             {criticalCount > 0 && (
-              <span className="text-destructive ml-2">
+              <span className="text-red-600 ml-2">
                 • {criticalCount} critical
               </span>
             )}
             {highCount > 0 && (
-              <span className="text-orange-500 ml-2">• {highCount} high</span>
+              <span className="text-amber-600 ml-2">• {highCount} high</span>
             )}
           </CardDescription>
         </CardHeader>
@@ -122,7 +154,7 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
               {findings.map((finding) => (
                 <div
                   key={finding.id}
-                  className="p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                  className="p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => setSelectedFinding(finding)}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -135,7 +167,7 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
                           {getProviderName(finding.provider)}
                         </Badge>
                         {finding.is_new && (
-                          <Badge variant="default" className="bg-blue-500">
+                          <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 border-blue-500/20">
                             New
                           </Badge>
                         )}
@@ -165,7 +197,7 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <AlertTriangle className="h-5 w-5 text-red-600" />
               Finding Details
             </DialogTitle>
             <DialogDescription>
@@ -175,9 +207,9 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
             </DialogDescription>
           </DialogHeader>
           <Tabs defaultValue="overview" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2 bg-muted/50">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="context" disabled={!selectedFinding?.url}>
+              <TabsTrigger value="context" disabled={!hasUrls}>
                 Context
               </TabsTrigger>
             </TabsList>
@@ -188,17 +220,22 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
                   {selectedFinding?.severity}
                 </Badge>
                 {selectedFinding?.is_new && (
-                  <Badge variant="default" className="bg-blue-500">
+                  <Badge variant="secondary" className="bg-blue-500/10 text-blue-700 border-blue-500/20">
                     New
                   </Badge>
                 )}
               </div>
 
+              {/* Explainer text */}
+              <p className="text-sm text-muted-foreground">
+                Review the metadata below. Use the Context tab to validate this match.
+              </p>
+
               {selectedFinding?.meta && (
                 <div className="space-y-2">
                   {Object.entries(selectedFinding.meta).map(([key, value]) => (
                     <div key={key} className="grid grid-cols-3 gap-2 text-sm">
-                      <span className="font-medium capitalize">
+                      <span className="font-medium capitalize text-foreground">
                         {key.replace(/_/g, " ")}:
                       </span>
                       <span className="col-span-2 text-muted-foreground break-all">
@@ -224,8 +261,8 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
             </TabsContent>
 
             <TabsContent value="context">
-              {selectedFinding?.url ? (
-                <ContextEnrichmentPanel url={selectedFinding.url} />
+              {hasUrls ? (
+                <ContextEnrichmentPanel urls={selectedUrls} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No URL available for this finding.

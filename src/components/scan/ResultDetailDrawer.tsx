@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfidenceScoreBadge } from '@/components/ConfidenceScoreBadge';
-import { ContextEnrichmentPanel } from '@/components/ContextEnrichmentPanel';
+import { ContextEnrichmentPanel, UrlOption } from '@/components/ContextEnrichmentPanel';
 import { 
   ExternalLink, 
   Globe, 
@@ -57,27 +57,33 @@ interface ResultDetailDrawerProps {
 }
 
 const RISK_COLORS: Record<string, string> = {
-  low: 'bg-accent/20 text-accent border-accent/30',
-  medium: 'bg-primary/20 text-primary border-primary/30',
-  high: 'bg-destructive/20 text-destructive border-destructive/30',
+  low: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
+  medium: 'bg-amber-500/10 text-amber-700 border-amber-500/20',
+  high: 'bg-red-500/10 text-red-700 border-red-500/20',
 };
 
 /**
- * Helper to extract the relevant URL from a result item.
- * Checks: url, profile_url, source_url, link fields.
+ * Helper to extract all available URLs from a result item.
+ * Returns an array of UrlOption for the dropdown.
  */
-function getItemUrl(item: ResultItem | null): string | null {
-  if (!item) return null;
+function getItemUrls(item: ResultItem | null): UrlOption[] {
+  if (!item) return [];
+  
+  const urls: UrlOption[] = [];
   
   if (item.type === 'data_source') {
-    return item.data.url || null;
+    if (item.data.url) {
+      urls.push({ label: 'Source URL', url: item.data.url });
+    }
   }
   
   if (item.type === 'social_profile') {
-    return item.data.profileUrl || null;
+    if (item.data.profileUrl) {
+      urls.push({ label: 'Profile URL', url: item.data.profileUrl });
+    }
   }
   
-  return null;
+  return urls;
 }
 
 function getItemName(item: ResultItem): string {
@@ -104,7 +110,9 @@ export function ResultDetailDrawer({
 }: ResultDetailDrawerProps) {
   if (!item) return null;
 
-  const url = getItemUrl(item);
+  const urls = getItemUrls(item);
+  const hasUrls = urls.length > 0;
+  const primaryUrl = urls[0]?.url;
   const name = getItemName(item);
   const confidence = getItemConfidence(item);
 
@@ -114,9 +122,9 @@ export function ResultDetailDrawer({
         <SheetHeader>
           <SheetTitle className="flex items-center gap-3">
             {item.type === 'data_source' ? (
-              <Globe className="w-5 h-5 text-primary" />
+              <Globe className="w-5 h-5 text-muted-foreground" />
             ) : (
-              <User className="w-5 h-5 text-primary" />
+              <User className="w-5 h-5 text-muted-foreground" />
             )}
             {item.type === 'data_source' ? 'Data Source Details' : 'Social Profile Details'}
           </SheetTitle>
@@ -129,9 +137,9 @@ export function ResultDetailDrawer({
         </SheetHeader>
 
         <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 bg-muted/50">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="context" disabled={!url}>
+            <TabsTrigger value="context" disabled={!hasUrls}>
               Context
             </TabsTrigger>
           </TabsList>
@@ -139,7 +147,7 @@ export function ResultDetailDrawer({
           <ScrollArea className="h-[calc(100vh-180px)] pr-4 mt-4">
             <TabsContent value="overview" className="mt-0 space-y-6">
               {/* Summary Card */}
-              <Card className="p-4">
+              <Card className="p-4 bg-card">
                 <div className="space-y-3">
                   <div className="flex items-start justify-between">
                     <div>
@@ -157,7 +165,7 @@ export function ResultDetailDrawer({
                       </Badge>
                     )}
                     {item.type === 'social_profile' && item.data.source === 'predicta' && (
-                      <Badge variant="default" className="bg-primary">Predicta Search</Badge>
+                      <Badge variant="secondary">Predicta Search</Badge>
                     )}
                   </div>
 
@@ -171,7 +179,7 @@ export function ResultDetailDrawer({
                         {item.data.dataFound.map((data, idx) => (
                           <span 
                             key={idx} 
-                            className="px-3 py-1 rounded-full bg-secondary text-xs"
+                            className="px-3 py-1 rounded-full bg-muted text-xs text-foreground"
                           >
                             {data}
                           </span>
@@ -207,11 +215,11 @@ export function ResultDetailDrawer({
 
               {/* Actions */}
               <div className="space-y-2 pt-4">
-                {url && (
+                {primaryUrl && (
                   <Button
                     variant="outline"
                     className="w-full justify-start"
-                    onClick={() => window.open(url, '_blank')}
+                    onClick={() => window.open(primaryUrl, '_blank')}
                   >
                     <ExternalLink className="w-4 h-4 mr-2" />
                     View Original Source
@@ -237,8 +245,8 @@ export function ResultDetailDrawer({
 
                 {onRemovalRequest && (
                   <Button
-                    variant="destructive"
-                    className="w-full justify-start"
+                    variant="ghost"
+                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={() => onRemovalRequest(
                       item.type === 'data_source' ? item.data.id : item.data.id,
                       name
@@ -252,8 +260,8 @@ export function ResultDetailDrawer({
             </TabsContent>
 
             <TabsContent value="context" className="mt-0">
-              {url ? (
-                <ContextEnrichmentPanel url={url} />
+              {hasUrls ? (
+                <ContextEnrichmentPanel urls={urls} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No URL available for this result.
