@@ -17,7 +17,7 @@ interface PlanQuotas {
 
 export const PLAN_QUOTAS: Record<SubscriptionTier, PlanQuotas> = {
   free: {
-    scansPerMonth: 5,
+    scansPerMonth: 10,
     monitorsPerWorkspace: 1,
     apiCallsPerHour: 0,
     teamMembers: 1,
@@ -39,7 +39,7 @@ export const PLAN_QUOTAS: Record<SubscriptionTier, PlanQuotas> = {
     prioritySupport: false,
   },
   business: {
-    scansPerMonth: 500,
+    scansPerMonth: -1, // unlimited
     monitorsPerWorkspace: 20,
     apiCallsPerHour: 5000,
     teamMembers: 5,

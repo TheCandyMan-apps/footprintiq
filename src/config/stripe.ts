@@ -51,7 +51,7 @@ export const SUBSCRIPTION_PLANS = {
     currency: 'GBP',
     period: 'month',
     features: [
-      '500 scans per month',
+      'Unlimited scans',
       'All multi-tool providers',
       '5 team seats',
       'Shared workspaces',

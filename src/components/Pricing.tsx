@@ -20,7 +20,7 @@ const pricingTiers = [
     description: "Get started with basic features",
     priceId: null,
     features: [
-      "5 scans per month",
+      "10 scans per month",
       "Basic username scanning",
       "Limited results view",
       "No multi-tool results",
@@ -295,15 +295,15 @@ export const Pricing = () => {
                 <tr className="border-b border-border">
                   <th className="text-left p-4 font-semibold">Feature</th>
                   <th className="text-center p-4 font-semibold">Free</th>
-                  <th className="text-center p-4 font-semibold bg-primary/5">Analyst</th>
-                  <th className="text-center p-4 font-semibold">Enterprise</th>
+                  <th className="text-center p-4 font-semibold bg-primary/5">Pro</th>
+                  <th className="text-center p-4 font-semibold">Business</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 <tr className="border-b border-border/50">
                   <td className="p-4 font-medium">Monthly Scans</td>
-                  <td className="text-center p-4 text-muted-foreground">1</td>
-                  <td className="text-center p-4 bg-primary/5 font-semibold">Unlimited</td>
+                  <td className="text-center p-4 text-muted-foreground">10</td>
+                  <td className="text-center p-4 bg-primary/5 font-semibold">100</td>
                   <td className="text-center p-4 font-semibold">Unlimited</td>
                 </tr>
                 <tr className="border-b border-border/50">

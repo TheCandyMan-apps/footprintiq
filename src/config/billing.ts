@@ -6,7 +6,7 @@ export interface PlanConfig {
   id: PlanId;
   name: string;
   description: string;
-  monthlyScanLimit: number;
+  monthlyScanLimit: number | null; // null = unlimited
   allowedProviders: string[];
   stripePriceId?: string;
   features: string[];
@@ -26,10 +26,10 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
     id: 'free',
     name: 'Free',
     description: 'Perfect for trying out FootprintIQ',
-    monthlyScanLimit: 5,
+    monthlyScanLimit: 10,
     allowedProviders: ['maigret'], // Only basic username scanning
     features: [
-      '5 scans per month',
+      '10 scans per month',
       'Basic username scanning',
       'Limited results view',
     ],
@@ -58,12 +58,12 @@ export const PLAN_CONFIGS: Record<PlanId, PlanConfig> = {
     id: 'business',
     name: 'Business',
     description: 'For teams requiring advanced features',
-    monthlyScanLimit: 500,
+    monthlyScanLimit: null, // unlimited
     allowedProviders: ['maigret', 'sherlock', 'gosearch', 'holehe', 'spiderfoot'], // All providers
     stripePriceId: STRIPE_PRICE_IDS.business,
     priceMonthly: 49.99,
     features: [
-      '500 scans per month',
+      'Unlimited scans',
       'All multi-tool providers',
       '5 team seats',
       'Shared workspaces',
