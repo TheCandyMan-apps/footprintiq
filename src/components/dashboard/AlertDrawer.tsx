@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertRow, Severity } from '@/types/dashboard';
 import { formatTimestamp, formatConfidence } from '@/lib/format';
 import { FileText, UserPlus, AlertCircle } from 'lucide-react';
@@ -67,102 +68,116 @@ export function AlertDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="h-[calc(100vh-120px)] pr-4 mt-6">
-          <div className="space-y-6">
-            {/* Summary Card */}
-            <Card className="p-4">
-              <div className="space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="font-semibold text-lg mb-1">{alert.entity}</div>
-                    <div className="text-sm text-muted-foreground">{alert.category}</div>
+        <Tabs defaultValue="overview" className="mt-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="context" disabled={!alertUrl}>
+              Context
+            </TabsTrigger>
+          </TabsList>
+
+          <ScrollArea className="h-[calc(100vh-180px)] pr-4 mt-4">
+            <TabsContent value="overview" className="mt-0 space-y-6">
+              {/* Summary Card */}
+              <Card className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="font-semibold text-lg mb-1">{alert.entity}</div>
+                      <div className="text-sm text-muted-foreground">{alert.category}</div>
+                    </div>
+                    <Badge className={SEVERITY_COLORS[alert.severity]}>
+                      {alert.severity}
+                    </Badge>
                   </div>
-                  <Badge className={SEVERITY_COLORS[alert.severity]}>
-                    {alert.severity}
-                  </Badge>
+
+                  <Separator />
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <div className="text-muted-foreground">Provider</div>
+                      <div className="font-medium">{alert.provider}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Confidence</div>
+                      <div className="font-medium">{formatConfidence(alert.confidence)}</div>
+                    </div>
+                  </div>
                 </div>
+              </Card>
 
-                <Separator />
-
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <div className="text-muted-foreground">Provider</div>
-                    <div className="font-medium">{alert.provider}</div>
-                  </div>
-                  <div>
-                    <div className="text-muted-foreground">Confidence</div>
-                    <div className="font-medium">{formatConfidence(alert.confidence)}</div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Description */}
-            <div>
-              <h3 className="font-semibold mb-2">Description</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {alert.description}
-              </p>
-            </div>
-
-            {/* Context Enrichment Section - Only shown if URL exists */}
-            {alertUrl && (
-              <ContextEnrichmentPanel url={alertUrl} />
-            )}
-
-            {/* Evidence */}
-            {alert.evidence && alert.evidence.length > 0 && (
+              {/* Description */}
               <div>
-                <h3 className="font-semibold mb-3">Evidence</h3>
-                <div className="space-y-2">
-                  {alert.evidence.map((item, idx) => (
-                    <Card key={idx} className="p-3 bg-muted/30">
-                      <pre className="text-xs overflow-x-auto">
-                        {JSON.stringify(item, null, 2)}
-                      </pre>
-                    </Card>
-                  ))}
-                </div>
+                <h3 className="font-semibold mb-2">Description</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {alert.description}
+                </p>
               </div>
-            )}
 
-            {/* Actions */}
-            <div className="space-y-2 pt-4">
-              {onExplain && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => onExplain(alert.id)}
-                >
-                  <AlertCircle className="w-4 h-4 mr-2" />
-                  Explain This Alert
-                </Button>
+              {/* Evidence */}
+              {alert.evidence && alert.evidence.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-3">Evidence</h3>
+                  <div className="space-y-2">
+                    {alert.evidence.map((item, idx) => (
+                      <Card key={idx} className="p-3 bg-muted/30">
+                        <pre className="text-xs overflow-x-auto">
+                          {JSON.stringify(item, null, 2)}
+                        </pre>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               )}
 
-              {canAssign && onAssign && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => onAssign(alert.id)}
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  Assign to Team Member
-                </Button>
-              )}
+              {/* Actions */}
+              <div className="space-y-2 pt-4">
+                {onExplain && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => onExplain(alert.id)}
+                  >
+                    <AlertCircle className="w-4 h-4 mr-2" />
+                    Explain This Alert
+                  </Button>
+                )}
 
-              {onAddToReport && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => onAddToReport(alert.id)}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Add to Report
-                </Button>
+                {canAssign && onAssign && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => onAssign(alert.id)}
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Assign to Team Member
+                  </Button>
+                )}
+
+                {onAddToReport && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => onAddToReport(alert.id)}
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Add to Report
+                  </Button>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="context" className="mt-0">
+              {alertUrl ? (
+                <ContextEnrichmentPanel url={alertUrl} />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No URL available for this alert.
+                </p>
               )}
-            </div>
-          </div>
-        </ScrollArea>
+            </TabsContent>
+          </ScrollArea>
+        </Tabs>
       </SheetContent>
     </Sheet>
   );

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfidenceScoreBadge } from '@/components/ConfidenceScoreBadge';
 import { ContextEnrichmentPanel } from '@/components/ContextEnrichmentPanel';
 import { 
@@ -127,126 +128,140 @@ export function ResultDetailDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="h-[calc(100vh-120px)] pr-4 mt-6">
-          <div className="space-y-6">
-            {/* Summary Card */}
-            <Card className="p-4">
-              <div className="space-y-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="font-semibold text-lg mb-1">{name}</div>
-                    {item.type === 'data_source' && (
-                      <div className="text-sm text-muted-foreground">{item.data.category}</div>
-                    )}
-                    {item.type === 'social_profile' && item.data.username && (
-                      <div className="text-sm text-muted-foreground">@{item.data.username}</div>
-                    )}
-                  </div>
-                  {item.type === 'data_source' && (
-                    <Badge className={RISK_COLORS[item.data.riskLevel] || RISK_COLORS.low}>
-                      {item.data.riskLevel.toUpperCase()} RISK
-                    </Badge>
-                  )}
-                  {item.type === 'social_profile' && item.data.source === 'predicta' && (
-                    <Badge variant="default" className="bg-primary">Predicta Search</Badge>
-                  )}
-                </div>
+        <Tabs defaultValue="overview" className="mt-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="context" disabled={!url}>
+              Context
+            </TabsTrigger>
+          </TabsList>
 
-                <Separator />
-
-                {/* Data found (for data sources) */}
-                {item.type === 'data_source' && item.data.dataFound.length > 0 && (
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-2">Data Found</div>
-                    <div className="flex flex-wrap gap-2">
-                      {item.data.dataFound.map((data, idx) => (
-                        <span 
-                          key={idx} 
-                          className="px-3 py-1 rounded-full bg-secondary text-xs"
-                        >
-                          {data}
-                        </span>
-                      ))}
+          <ScrollArea className="h-[calc(100vh-180px)] pr-4 mt-4">
+            <TabsContent value="overview" className="mt-0 space-y-6">
+              {/* Summary Card */}
+              <Card className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="font-semibold text-lg mb-1">{name}</div>
+                      {item.type === 'data_source' && (
+                        <div className="text-sm text-muted-foreground">{item.data.category}</div>
+                      )}
+                      {item.type === 'social_profile' && item.data.username && (
+                        <div className="text-sm text-muted-foreground">@{item.data.username}</div>
+                      )}
                     </div>
-                  </div>
-                )}
-
-                {/* Profile details (for social profiles) */}
-                {item.type === 'social_profile' && (
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    {item.data.followers && (
-                      <div>
-                        <div className="text-muted-foreground">Followers</div>
-                        <div className="font-medium">{item.data.followers}</div>
-                      </div>
+                    {item.type === 'data_source' && (
+                      <Badge className={RISK_COLORS[item.data.riskLevel] || RISK_COLORS.low}>
+                        {item.data.riskLevel.toUpperCase()} RISK
+                      </Badge>
                     )}
-                    {item.data.lastActive && (
-                      <div>
-                        <div className="text-muted-foreground">Last Active</div>
-                        <div className="font-medium">{item.data.lastActive}</div>
-                      </div>
+                    {item.type === 'social_profile' && item.data.source === 'predicta' && (
+                      <Badge variant="default" className="bg-primary">Predicta Search</Badge>
                     )}
                   </div>
-                )}
 
-                {/* Confidence Score */}
-                <div className="pt-3 border-t border-border">
-                  <ConfidenceScoreBadge score={confidence} size="sm" />
+                  <Separator />
+
+                  {/* Data found (for data sources) */}
+                  {item.type === 'data_source' && item.data.dataFound.length > 0 && (
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-2">Data Found</div>
+                      <div className="flex flex-wrap gap-2">
+                        {item.data.dataFound.map((data, idx) => (
+                          <span 
+                            key={idx} 
+                            className="px-3 py-1 rounded-full bg-secondary text-xs"
+                          >
+                            {data}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Profile details (for social profiles) */}
+                  {item.type === 'social_profile' && (
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {item.data.followers && (
+                        <div>
+                          <div className="text-muted-foreground">Followers</div>
+                          <div className="font-medium">{item.data.followers}</div>
+                        </div>
+                      )}
+                      {item.data.lastActive && (
+                        <div>
+                          <div className="text-muted-foreground">Last Active</div>
+                          <div className="font-medium">{item.data.lastActive}</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Confidence Score */}
+                  <div className="pt-3 border-t border-border">
+                    <ConfidenceScoreBadge score={confidence} size="sm" />
+                  </div>
                 </div>
+              </Card>
+
+              {/* Actions */}
+              <div className="space-y-2 pt-4">
+                {url && (
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => window.open(url, '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View Original Source
+                  </Button>
+                )}
+
+                {onFlagFalsePositive && (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-muted-foreground hover:text-foreground"
+                    onClick={() => onFlagFalsePositive(
+                      item.type === 'data_source' ? item.data.id : item.data.id,
+                      item.type,
+                      name,
+                      confidence
+                    )}
+                    disabled={isFlagged}
+                  >
+                    <Flag className="w-4 h-4 mr-2" />
+                    {isFlagged ? 'Flagged as False Positive' : 'Flag as False Positive'}
+                  </Button>
+                )}
+
+                {onRemovalRequest && (
+                  <Button
+                    variant="destructive"
+                    className="w-full justify-start"
+                    onClick={() => onRemovalRequest(
+                      item.type === 'data_source' ? item.data.id : item.data.id,
+                      name
+                    )}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Request Removal
+                  </Button>
+                )}
               </div>
-            </Card>
+            </TabsContent>
 
-            {/* Context Enrichment Section - Only shown if URL exists */}
-            {url && (
-              <ContextEnrichmentPanel url={url} />
-            )}
-
-            {/* Actions */}
-            <div className="space-y-2 pt-4">
-              {url && (
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => window.open(url, '_blank')}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  View Original Source
-                </Button>
+            <TabsContent value="context" className="mt-0">
+              {url ? (
+                <ContextEnrichmentPanel url={url} />
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  No URL available for this result.
+                </p>
               )}
-
-              {onFlagFalsePositive && (
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground hover:text-foreground"
-                  onClick={() => onFlagFalsePositive(
-                    item.type === 'data_source' ? item.data.id : item.data.id,
-                    item.type,
-                    name,
-                    confidence
-                  )}
-                  disabled={isFlagged}
-                >
-                  <Flag className="w-4 h-4 mr-2" />
-                  {isFlagged ? 'Flagged as False Positive' : 'Flag as False Positive'}
-                </Button>
-              )}
-
-              {onRemovalRequest && (
-                <Button
-                  variant="destructive"
-                  className="w-full justify-start"
-                  onClick={() => onRemovalRequest(
-                    item.type === 'data_source' ? item.data.id : item.data.id,
-                    name
-                  )}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Request Removal
-                </Button>
-              )}
-            </div>
-          </div>
-        </ScrollArea>
+            </TabsContent>
+          </ScrollArea>
+        </Tabs>
       </SheetContent>
     </Sheet>
   );
