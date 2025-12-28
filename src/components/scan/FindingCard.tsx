@@ -27,6 +27,8 @@ import { EnrichmentDialog } from './EnrichmentDialog';
 import { QuickAnalysisDialog } from './QuickAnalysisDialog';
 import { getPlatformCategory, getCategoryColor } from '@/lib/categoryMapping';
 import { getProviderIcon } from '@/lib/providerIcons';
+import { LockedInsightBlock } from '@/components/billing/LockedInsightBlock';
+import { useResultsGating } from '@/components/billing/GatedContent';
 
 interface Evidence {
   key?: string;
@@ -139,6 +141,7 @@ const getRemediationSteps = (kind: string, severity: string): string[] => {
 
 export function FindingCard({ finding }: FindingCardProps) {
   const { workspace } = useWorkspace();
+  const { isFree } = useResultsGating();
   const [isEvidenceOpen, setIsEvidenceOpen] = useState(false);
   const [isRemediationOpen, setIsRemediationOpen] = useState(false);
   const [isEnriching, setIsEnriching] = useState(false);
@@ -549,6 +552,14 @@ export function FindingCard({ finding }: FindingCardProps) {
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Locked insight hints for Free users */}
+      {isFree && shouldShowEnrichment && (
+        <div className="mt-4 space-y-2">
+          <LockedInsightBlock type="confidence" />
+          <LockedInsightBlock type="context" />
+        </div>
+      )}
 
       {/* Additional Metadata */}
       {finding.meta && Object.keys(finding.meta).length > 0 && (
