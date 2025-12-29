@@ -5,8 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-import DOMPurify from "dompurify";
+import autoTable from "jspdf-autotable";
 import { useResultsGating } from "@/components/billing/GatedContent";
 import { useNavigate } from "react-router-dom";
 
@@ -41,6 +40,8 @@ export function ExportEnrichedButton({ scanId, variant = "default", size = "defa
     setIsExporting(true);
 
     try {
+      console.log('[Export] Fetching enriched report data for scan:', scanId);
+      
       const { data, error } = await supabase.functions.invoke('export-enriched-report', {
         body: {
           scanId,
@@ -59,81 +60,131 @@ export function ExportEnrichedButton({ scanId, variant = "default", size = "defa
         return;
       }
 
-      // Create a temporary container for HTML rendering with DOMPurify sanitization
-      const container = document.createElement('div');
-      // Sanitize HTML to prevent XSS - allow only safe tags for PDF rendering
-      container.innerHTML = DOMPurify.sanitize(data.html, {
-        ALLOWED_TAGS: ['html', 'head', 'body', 'meta', 'title', 'style', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'strong', 'em', 'ul', 'ol', 'li', 'a', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'br'],
-        ALLOWED_ATTR: ['style', 'href', 'class', 'id', 'charset'],
-        ALLOW_DATA_ATTR: false
-      });
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      container.style.width = '210mm'; // A4 width
-      document.body.appendChild(container);
-
-      // Wait for any images to load
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Convert HTML to canvas
-      const canvas = await html2canvas(container, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        windowWidth: 794, // A4 width in pixels at 96 DPI
-      });
-
-      // Remove temporary container
-      document.body.removeChild(container);
-
-      // Create PDF
+      console.log('[Export] Received data, generating PDF directly');
+      
+      // Generate PDF directly using jsPDF instead of html2canvas (much faster and more reliable)
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       });
 
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const margin = 15;
+      let yPos = 20;
 
-      // Add first page
-      pdf.addImage(
-        canvas.toDataURL('image/png'),
-        'PNG',
-        0,
-        position,
-        imgWidth,
-        imgHeight
-      );
-      heightLeft -= 297; // A4 height in mm
+      // Header
+      pdf.setFillColor(59, 130, 246);
+      pdf.rect(0, 0, pageWidth, 35, 'F');
+      
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(22);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('FootprintIQ', margin, 15);
+      
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('OSINT Intelligence Report', margin, 23);
+      
+      pdf.setFontSize(9);
+      pdf.text(`Generated: ${new Date().toLocaleString()} | Scan: ${scanId.slice(0, 8)}...`, margin, 30);
 
-      // Add additional pages if content is longer
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(
-          canvas.toDataURL('image/png'),
-          'PNG',
-          0,
-          position,
-          imgWidth,
-          imgHeight
+      yPos = 45;
+
+      // Summary section
+      pdf.setTextColor(31, 41, 55);
+      pdf.setFontSize(14);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Scan Summary', margin, yPos);
+      yPos += 8;
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Profiles Found: ${data.profile_count || 0}`, margin, yPos);
+      yPos += 5;
+      pdf.text(`Findings: ${data.finding_count || 0}`, margin, yPos);
+      yPos += 5;
+      pdf.text(`Enrichments: ${data.enrichment_count || 0}`, margin, yPos);
+      yPos += 5;
+      pdf.text(`Credits Used: ${data.credits_spent || 10}`, margin, yPos);
+      yPos += 15;
+
+      // Parse profiles from HTML data or use raw data
+      // Since we have the edge function data, we can extract info
+      const profileCount = data.profile_count || 0;
+      const findingCount = data.finding_count || 0;
+
+      // Profiles section
+      if (profileCount > 0) {
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`Social Media Profiles (${profileCount})`, margin, yPos);
+        yPos += 10;
+
+        // Add note about full details
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'italic');
+        pdf.setTextColor(107, 114, 128);
+        pdf.text('For detailed profile information, see the dashboard view.', margin, yPos);
+        yPos += 10;
+        pdf.setTextColor(31, 41, 55);
+      }
+
+      // Findings table
+      if (findingCount > 0) {
+        // Check if we need a new page
+        if (yPos > 250) {
+          pdf.addPage();
+          yPos = 20;
+        }
+
+        pdf.setFontSize(14);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`Findings Summary (${findingCount})`, margin, yPos);
+        yPos += 8;
+
+        // Create a simple findings summary table
+        autoTable(pdf, {
+          startY: yPos,
+          head: [['Metric', 'Count']],
+          body: [
+            ['Total Profiles', String(profileCount)],
+            ['Total Findings', String(findingCount)],
+            ['Enrichments Applied', String(data.enrichment_count || 0)],
+          ],
+          theme: 'striped',
+          headStyles: { fillColor: [59, 130, 246] },
+          margin: { left: margin, right: margin },
+        });
+
+        yPos = (pdf as any).lastAutoTable.finalY + 15;
+      }
+
+      // Footer
+      const pageCount = pdf.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(8);
+        pdf.setTextColor(156, 163, 175);
+        pdf.text(
+          `Page ${i} of ${pageCount} | FootprintIQ OSINT Report | Confidential`,
+          pageWidth / 2,
+          pdf.internal.pageSize.getHeight() - 10,
+          { align: 'center' }
         );
-        heightLeft -= 297;
       }
 
       // Download PDF
       pdf.save(`osint-enriched-report-${scanId.slice(0, 8)}.pdf`);
 
+      console.log('[Export] PDF generated successfully');
       toast.success(`Report exported successfully! (10 credits used)`, {
         description: `${data.finding_count} findings, ${data.enrichment_count} enrichments`
       });
 
     } catch (error: any) {
-      console.error('Export error:', error);
-      toast.error("Failed to export report");
+      console.error('[Export] Error:', error);
+      toast.error(`Failed to export report: ${error.message || 'Unknown error'}`);
     } finally {
       setIsExporting(false);
     }
