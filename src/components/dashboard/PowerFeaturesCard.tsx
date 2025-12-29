@@ -16,7 +16,8 @@ import {
   Eye, 
   Users, 
   Target,
-  Sparkles
+  Sparkles,
+  Globe
 } from "lucide-react";
 
 const POWER_FEATURES = [
@@ -99,6 +100,14 @@ const POWER_FEATURES = [
     href: "/threat-forecast",
     badge: "Prediction",
     color: "text-red-500"
+  },
+  {
+    icon: Globe,
+    title: "Context Enrichment",
+    description: "Extract intelligence from any URL",
+    href: "/context-enrichment",
+    badge: "Pro",
+    color: "text-emerald-500"
   }
 ];
 
