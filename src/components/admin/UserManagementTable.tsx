@@ -39,11 +39,13 @@ import {
   Eye,
   ShieldAlert,
   Bot,
-  Gift
+  Gift,
+  History
 } from 'lucide-react';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { EditUserDialog } from './EditUserDialog';
 import { UserFlagDialog } from './UserFlagDialog';
+import { UserAuditTimelineDialog } from './UserAuditTimeline';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -548,6 +550,25 @@ export function UserManagementTable() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            {/* Audit Timeline Button */}
+                            <UserAuditTimelineDialog
+                              userId={user.user_id}
+                              userEmail={user.email}
+                              trigger={
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="sm">
+                                        <History className="w-4 h-4" />
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>View audit timeline</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              }
+                            />
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
