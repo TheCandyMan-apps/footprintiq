@@ -14,12 +14,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfidenceScoreBadge } from '@/components/ConfidenceScoreBadge';
 import { ContextEnrichmentPanel, UrlOption } from '@/components/ContextEnrichmentPanel';
 import { GatedContent, useResultsGating } from '@/components/billing/GatedContent';
+import { PartiallyLockedSection } from '@/components/results/PartiallyLockedSection';
 import { 
   ExternalLink, 
   Globe, 
   User, 
   Trash2, 
-  Flag
+  Flag,
+  Brain
 } from 'lucide-react';
 
 interface DataSourceItem {
@@ -302,7 +304,22 @@ export function ResultDetailDrawer({
 
             <TabsContent value="context" className="mt-0">
               {hasUrls ? (
-                <ContextEnrichmentPanel urls={urls} />
+                <PartiallyLockedSection
+                  title="Context Enrichment"
+                  icon={Brain}
+                  isGated={isFree}
+                  lockedReason="Unlock full context"
+                  blurredPreview={
+                    <div className="space-y-3 p-4">
+                      <div className="h-4 bg-muted rounded w-3/4" />
+                      <div className="h-4 bg-muted rounded w-1/2" />
+                      <div className="h-20 bg-muted rounded" />
+                      <div className="h-4 bg-muted rounded w-2/3" />
+                    </div>
+                  }
+                >
+                  <ContextEnrichmentPanel urls={urls} />
+                </PartiallyLockedSection>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
                   No URL available for this result.

@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users, Flag, Filter, ChevronRight, Brain, Link2, Shield, Globe } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users, Flag, Filter, ChevronRight, Brain, Link2, Shield, Globe, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsSkeleton } from "@/components/skeletons/ResultsSkeleton";
@@ -14,7 +14,7 @@ import { ConfidenceScoreBadge } from "@/components/ConfidenceScoreBadge";
 import { ConfidenceScoreIndicator } from "@/components/ConfidenceScoreIndicator";
 import { ResultDetailDrawer } from "@/components/scan/ResultDetailDrawer";
 import { PostScanUpgradeBanner } from "@/components/upsell/PostScanUpgradeBanner";
-import { LockedResultSection } from "@/components/results/LockedResultSection";
+import { PartiallyLockedSection, InlineLockBadge } from "@/components/results/PartiallyLockedSection";
 import { useResultsGating } from "@/components/billing/GatedContent";
 import type { ScanFormData } from "./ScanForm";
 
@@ -344,18 +344,7 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           highRiskCount={dataSources.filter(r => r.riskLevel === "high").length}
         />
 
-        {/* Pro-only Sections - Gated for Free Users */}
-        {isFree && (
-          <div className="space-y-4 mb-6">
-            <h3 className="text-lg font-semibold text-muted-foreground">Pro Analysis Features</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <LockedResultSection type="confidence" icon={Shield} />
-              <LockedResultSection type="context" icon={Brain} />
-              <LockedResultSection type="correlation" icon={Link2} />
-              <LockedResultSection type="darkweb" icon={Globe} />
-            </div>
-          </div>
-        )}
+        {/* Pro Analysis Features - Inline locks now shown within result cards */}
 
         {/* Overall Confidence Score Summary - Only for Pro users */}
         {canSeeConfidenceExplanation ? (
@@ -516,10 +505,13 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                         
                         {/* Confidence Score + View Details */}
                         <div className="pt-3 border-t border-border flex items-center justify-between">
-                          <ConfidenceScoreBadge 
-                            score={profile.confidenceScore || 85}
-                            size="sm"
-                          />
+                          <div className="flex items-center gap-2">
+                            <ConfidenceScoreBadge 
+                              score={profile.confidenceScore || 85}
+                              size="sm"
+                            />
+                            {isFree && <InlineLockBadge label="Details" />}
+                          </div>
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <span>View Details</span>
                             <ChevronRight className="w-3 h-3" />
@@ -626,10 +618,13 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                     
                     {/* Confidence Score + View Details */}
                     <div className="pt-4 border-t border-border flex items-center justify-between">
-                      <ConfidenceScoreBadge 
-                        score={source.confidenceScore || 75}
-                        size="sm"
-                      />
+                      <div className="flex items-center gap-2">
+                        <ConfidenceScoreBadge 
+                          score={source.confidenceScore || 75}
+                          size="sm"
+                        />
+                        {isFree && <InlineLockBadge label="Context" />}
+                      </div>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <span>View Details</span>
                         <ChevronRight className="w-3 h-3" />
@@ -657,10 +652,25 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           )}
         </div>
 
-        {/* AI Analysis Section - Gated for Free Users */}
+        {/* AI Analysis - shown inline with Pro lock for Free users */}
         {isFree && (
           <div className="mt-8">
-            <LockedResultSection type="ai_analysis" icon={Brain} />
+            <PartiallyLockedSection
+              title="AI Analysis & Interpretation"
+              icon={Brain}
+              isGated={isFree}
+              lockedReason="Unlock full context"
+              blurredPreview={
+                <div className="space-y-2">
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                  <div className="h-4 bg-muted rounded w-1/2" />
+                  <div className="h-4 bg-muted rounded w-2/3" />
+                </div>
+              }
+            >
+              {/* Pro content would go here */}
+              <div />
+            </PartiallyLockedSection>
           </div>
         )}
       </div>
