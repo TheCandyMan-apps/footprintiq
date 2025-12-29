@@ -83,7 +83,7 @@ serve(async (req) => {
 
     console.log('[generate-pdf-report] Generating PDF for scan:', { scanId, userId });
 
-    // Fetch scan data with findings
+    // Fetch scan data
     const { data: scan, error } = await supabaseClient
       .from("scans")
       .select(`
@@ -95,15 +95,7 @@ serve(async (req) => {
         scan_type,
         status,
         created_at,
-        privacy_score,
-        findings(
-          id,
-          provider,
-          kind,
-          title,
-          confidence,
-          evidence
-        )
+        privacy_score
       `)
       .eq("id", scanId)
       .eq("user_id", userId)
@@ -114,8 +106,24 @@ serve(async (req) => {
       throw new Error("Scan not found or access denied");
     }
 
+    // Fetch findings separately (more reliable than relation query)
+    const { data: findings, error: findingsError } = await supabaseClient
+      .from("findings")
+      .select("id, provider, kind, title, confidence, evidence, severity, meta")
+      .eq("scan_id", scanId)
+      .order("confidence", { ascending: false });
+
+    if (findingsError) {
+      console.error('[generate-pdf-report] Findings query error:', findingsError);
+    }
+
+    console.log('[generate-pdf-report] Found', findings?.length || 0, 'findings for scan', scanId);
+
+    // Attach findings to scan object
+    const scanWithFindings = { ...scan, findings: findings || [] };
+
     // Generate HTML report
-    const html = generateHTMLReport(scan);
+    const html = generateHTMLReport(scanWithFindings);
 
     const duration = Date.now() - startTime;
     console.log('[generate-pdf-report] PDF HTML generated in', duration, 'ms');

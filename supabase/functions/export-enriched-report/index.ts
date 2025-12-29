@@ -78,18 +78,7 @@ serve(async (req) => {
 
     if (scanError || !scan) return bad(404, 'scan_not_found');
 
-    // Fetch social profiles for this scan (this is where the actual results are stored)
-    const { data: socialProfiles, error: profilesError } = await supabase
-      .from('social_profiles')
-      .select('*')
-      .eq('scan_id', scanId)
-      .order('platform', { ascending: true });
-
-    if (profilesError) {
-      console.error('[export-enriched] Social profiles error:', profilesError);
-    }
-
-    // Fetch from findings table as well (for enrichments)
+    // Fetch from findings table (primary data source)
     const { data: findings, error: findingsError } = await supabase
       .from('findings')
       .select('*')
@@ -99,6 +88,37 @@ serve(async (req) => {
     if (findingsError) {
       console.error('[export-enriched] Findings error:', findingsError);
     }
+
+    console.log('[export-enriched] Found', findings?.length || 0, 'findings for scan', scanId);
+
+    // Synthesize social profiles from findings evidence
+    // Findings store evidence as: [{key: 'site', value: '[+] Spotify'}, {key: 'url', value: '...'}, ...]
+    const synthesizedProfiles = (findings || []).map((f: any) => {
+      const evidence = Array.isArray(f.evidence) ? f.evidence : [];
+      const getEvidenceValue = (key: string) => {
+        const item = evidence.find((e: any) => e.key === key);
+        return item?.value || null;
+      };
+
+      // Extract site name from evidence (may have format "[+] SiteName" or just "SiteName")
+      let siteName = getEvidenceValue('site') || getEvidenceValue('platform') || f.provider || 'Unknown';
+      // Clean up site name if it has [+] prefix
+      siteName = siteName.replace(/^\[\+\]\s*/, '').replace(/^\[-\]\s*/, '');
+
+      return {
+        platform: siteName,
+        username: getEvidenceValue('username') || scan.username || 'N/A',
+        profile_url: getEvidenceValue('url') || null,
+        bio: getEvidenceValue('bio') || null,
+        full_name: getEvidenceValue('name') || getEvidenceValue('full_name') || null,
+        confidence_score: Math.round((f.confidence || 0.5) * 100),
+        source: f.provider || 'OSINT',
+        first_seen: f.created_at || new Date().toISOString(),
+        severity: f.severity || 'info'
+      };
+    });
+
+    console.log('[export-enriched] Synthesized', synthesizedProfiles.length, 'profiles from findings');
 
     // Fetch enrichments for all findings
     const findingIds = findings?.map(f => f.id) || [];
@@ -114,8 +134,8 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
-    // Generate HTML report with social profiles as primary data
-    const htmlContent = generateHTMLReport(scan, socialProfiles || [], findings || [], enrichments || [], branding);
+    // Generate HTML report with synthesized profiles from findings
+    const htmlContent = generateHTMLReport(scan, synthesizedProfiles, findings || [], enrichments || [], branding);
 
     // Deduct credits
     const deductResult = await deductCredits(
@@ -141,7 +161,7 @@ serve(async (req) => {
       credits_spent: EXPORT_COST,
       new_balance: deductResult.balance,
       scan_id: scanId,
-      profile_count: socialProfiles?.length || 0,
+      profile_count: synthesizedProfiles.length,
       finding_count: findings?.length || 0,
       enrichment_count: enrichments?.length || 0
     });
