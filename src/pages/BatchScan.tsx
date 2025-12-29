@@ -123,14 +123,14 @@ export default function BatchScan() {
           throw new Error(`No providers configured for ${target.type}`);
         }
 
-        const scanPayload: any = {
-          workspace_id: workspace.id,
+        const scanPayload = {
+          workspaceId: workspace.id,
           type: target.type,
-          providers,
+          value: target.value,
+          options: {
+            providers,
+          },
         };
-
-        // Set the target based on type
-        scanPayload[target.type] = target.value;
 
         const { data, error } = await invokeWithRetry(() =>
           supabase.functions.invoke('scan-orchestrate', {
