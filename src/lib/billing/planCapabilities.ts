@@ -32,6 +32,7 @@ export interface PlanCapabilities {
   priorityQueue: boolean;
   riskScoring: boolean;
   caseNotes: boolean;
+  contextEnrichment: boolean;
   
   // Numeric limits (-1 = unlimited)
   phoneProvidersMax: number;
@@ -62,6 +63,7 @@ export const CAPABILITIES_BY_PLAN: Record<PlanTier, PlanCapabilities> = {
     priorityQueue: false,
     riskScoring: false,
     caseNotes: false,
+    contextEnrichment: false,
     
     // Limits
     phoneProvidersMax: 2,
@@ -88,6 +90,7 @@ export const CAPABILITIES_BY_PLAN: Record<PlanTier, PlanCapabilities> = {
     priorityQueue: true,
     riskScoring: true,
     caseNotes: false,
+    contextEnrichment: true,
     
     // Limits
     phoneProvidersMax: 6,
@@ -114,6 +117,7 @@ export const CAPABILITIES_BY_PLAN: Record<PlanTier, PlanCapabilities> = {
     priorityQueue: true,
     riskScoring: true,
     caseNotes: true,
+    contextEnrichment: true,
     
     // Limits (-1 = unlimited)
     phoneProvidersMax: -1,
