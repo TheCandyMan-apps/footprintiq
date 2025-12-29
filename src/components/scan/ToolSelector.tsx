@@ -10,7 +10,7 @@ interface Tool {
   name: string;
   description: string;
   icon: any;
-  tier: 'free' | 'pro' | 'enterprise';
+  tier: 'free' | 'pro' | 'business';
   features: string[];
   scanTypes: string[];
 }
@@ -66,7 +66,7 @@ const TOOLS: Tool[] = [
     name: 'GoSearch',
     description: 'Digital footprint discovery across 300+ websites with deep OSINT capabilities',
     icon: Globe,
-    tier: 'enterprise',
+    tier: 'business',
     features: [
       'Deep web scanning',
       'Profile aggregation',
@@ -97,7 +97,7 @@ interface ToolSelectorProps {
   selectedTool: string;
   onToolChange: (tool: string) => void;
   scanType: string;
-  userTier: 'free' | 'pro' | 'enterprise';
+  userTier: 'free' | 'pro' | 'business';
   disabled?: boolean;
 }
 
@@ -105,14 +105,14 @@ export function ToolSelector({ selectedTool, onToolChange, scanType, userTier, d
   const compatibleTools = TOOLS.filter(tool => tool.scanTypes.includes(scanType));
 
   const getTierIcon = (tier: string) => {
-    if (tier === 'enterprise') return <Zap className="w-3 h-3" />;
+    if (tier === 'business') return <Zap className="w-3 h-3" />;
     if (tier === 'pro') return <Shield className="w-3 h-3" />;
     return null;
   };
 
   const canAccessTool = (tool: Tool) => {
-    if (userTier === 'enterprise') return true;
-    if (userTier === 'pro') return tool.tier !== 'enterprise';
+    if (userTier === 'business') return true;
+    if (userTier === 'pro') return tool.tier !== 'business';
     return tool.tier === 'free';
   };
 
@@ -147,11 +147,11 @@ export function ToolSelector({ selectedTool, onToolChange, scanType, userTier, d
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-medium">{selectedToolData.name}</span>
                     <Badge 
-                      variant={selectedToolData.tier === 'enterprise' ? 'default' : selectedToolData.tier === 'pro' ? 'secondary' : 'outline'}
+                      variant={selectedToolData.tier === 'business' ? 'default' : selectedToolData.tier === 'pro' ? 'secondary' : 'outline'}
                       className="text-xs"
                     >
                       {getTierIcon(selectedToolData.tier)}
-                      <span className="ml-1">{selectedToolData.tier}</span>
+                      <span className="ml-1 capitalize">{selectedToolData.tier}</span>
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
@@ -180,11 +180,11 @@ export function ToolSelector({ selectedTool, onToolChange, scanType, userTier, d
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium">{tool.name}</span>
                       <Badge 
-                        variant={tool.tier === 'enterprise' ? 'default' : tool.tier === 'pro' ? 'secondary' : 'outline'}
+                        variant={tool.tier === 'business' ? 'default' : tool.tier === 'pro' ? 'secondary' : 'outline'}
                         className="text-xs"
                       >
                         {getTierIcon(tool.tier)}
-                        <span className="ml-1">{tool.tier}</span>
+                        <span className="ml-1 capitalize">{tool.tier}</span>
                       </Badge>
                       {!accessible && (
                         <Badge variant="outline" className="text-xs">

@@ -756,7 +756,7 @@ export default function AdvancedScan() {
               selectedTool={selectedTool}
               onToolChange={setSelectedTool}
               scanType={scanType}
-              userTier={(actualSubscriptionTier || 'free') as 'free' | 'pro' | 'enterprise'}
+              userTier={(actualSubscriptionTier || 'free') as 'free' | 'pro' | 'business'}
               disabled={isScanning}
             />
 
