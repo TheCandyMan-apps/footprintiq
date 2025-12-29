@@ -193,17 +193,74 @@ serve(async (req) => {
       return bad(401, 'invalid_or_expired_token');
     }
 
-    // Parse and validate request body
+    // Parse, normalize (backwards compatibility), and validate request body
     const rawBody = await req.json();
-    const parseResult = ScanRequestSchema.safeParse(rawBody);
-    
+
+    // Backwards compatibility for older clients:
+    // - workspace_id -> workspaceId
+    // - username/email/phone/domain -> value
+    // - providers (root) -> options.providers
+    const normalizeLegacyPayload = (body: Record<string, unknown>) => {
+      const normalized: Record<string, unknown> = { ...body };
+      const normalizedFields: string[] = [];
+
+      if (normalized.workspaceId == null && normalized.workspace_id != null) {
+        normalized.workspaceId = normalized.workspace_id;
+        normalizedFields.push('workspace_id -> workspaceId');
+      }
+
+      if (normalized.value == null) {
+        const legacyValueKeys = ['username', 'email', 'phone', 'domain'] as const;
+        for (const key of legacyValueKeys) {
+          const v = (normalized as any)[key];
+          if (typeof v === 'string' && v.trim().length > 0) {
+            normalized.value = v;
+            normalizedFields.push(`${key} -> value`);
+            break;
+          }
+        }
+      }
+
+      const hasOptions = typeof normalized.options === 'object' && normalized.options !== null;
+      if (!hasOptions) normalized.options = {};
+
+      const options = normalized.options as Record<string, unknown>;
+      if (options.providers == null && normalized.providers != null) {
+        options.providers = normalized.providers;
+        normalizedFields.push('providers -> options.providers');
+      }
+
+      // Clean up obvious legacy keys to reduce noise downstream
+      if (normalizedFields.length) {
+        delete (normalized as any).workspace_id;
+        delete (normalized as any).providers;
+        // keep username/email/phone/domain as-is (safe), but not needed after mapping
+      }
+
+      return { normalized, normalizedFields };
+    };
+
+    const { normalized: normalizedBody, normalizedFields } = normalizeLegacyPayload(
+      rawBody as Record<string, unknown>
+    );
+
+    if (normalizedFields.length) {
+      console.warn('[orchestrate] ⚠️ Legacy payload detected; normalized:', {
+        normalizedFields,
+        receivedFields: Object.keys(rawBody),
+      });
+    }
+
+    const parseResult = ScanRequestSchema.safeParse(normalizedBody);
+
     if (!parseResult.success) {
       const errors = parseResult.error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
       console.error('[orchestrate] ❌ Validation failed:', {
         errors,
         receivedFields: Object.keys(rawBody),
         expectedFields: ['type', 'value', 'workspaceId'],
-        receivedBody: rawBody
+        receivedBody: rawBody,
+        normalizedFields,
       });
       return bad(400, `Invalid request: ${errors}`);
     }
