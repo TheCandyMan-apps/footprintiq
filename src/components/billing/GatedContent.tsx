@@ -44,6 +44,18 @@ const CONTENT_MICROCOPY: Record<string, string> = {
   details: 'Understanding exposure is the first step to protection.',
 };
 
+/** CTA copy variations for different content types */
+const CTA_COPY: Record<string, { primary: string; secondary: string }> = {
+  url: { primary: 'See why this result exists', secondary: 'Unlock source URLs to verify findings' },
+  evidence: { primary: 'Unlock full exposure details', secondary: 'View evidence to understand your risk' },
+  timeline: { primary: 'See why this result exists', secondary: 'Track changes in your digital footprint' },
+  correlation: { primary: 'Unlock full exposure details', secondary: 'See how your data connects' },
+  confidence: { primary: 'Reduce false positives with Pro', secondary: 'Understand confidence scoring' },
+  context: { primary: 'Reduce false positives with Pro', secondary: 'Fetch context to validate matches' },
+  export: { primary: 'Unlock full exposure details', secondary: 'Export detailed reports' },
+  details: { primary: 'See why this result exists', secondary: 'Get the full picture' },
+};
+
 /**
  * GatedContent - Wraps content that should be hidden/blurred for Free users.
  * Shows blurred placeholder with inline upgrade prompt.
@@ -111,6 +123,7 @@ export function GatedContent({
   }
 
   const microcopy = CONTENT_MICROCOPY[contentType] || CONTENT_MICROCOPY.details;
+  const ctaCopy = CTA_COPY[contentType] || CTA_COPY.details;
 
   return (
     <div className={cn('relative', className)}>
@@ -131,9 +144,9 @@ export function GatedContent({
             <Lock className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="font-medium text-sm">{label} are Pro-only</p>
+            <p className="font-medium text-sm">{ctaCopy.primary}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Upgrade to see full investigation details
+              {ctaCopy.secondary}
             </p>
           </div>
           {/* Educational microcopy */}
@@ -142,7 +155,7 @@ export function GatedContent({
           </p>
           <Button
             size="sm"
-            onClick={() => navigate('/settings/billing')}
+            onClick={() => navigate('/pricing')}
             className="mt-1"
           >
             <TrendingUp className="h-4 w-4 mr-1.5" />

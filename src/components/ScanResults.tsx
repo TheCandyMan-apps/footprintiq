@@ -13,6 +13,7 @@ import { AIFilteringBadge } from "@/components/AIFilteringBadge";
 import { ConfidenceScoreBadge } from "@/components/ConfidenceScoreBadge";
 import { ConfidenceScoreIndicator } from "@/components/ConfidenceScoreIndicator";
 import { ResultDetailDrawer } from "@/components/scan/ResultDetailDrawer";
+import { PostScanUpgradeBanner } from "@/components/upsell/PostScanUpgradeBanner";
 import type { ScanFormData } from "./ScanForm";
 
 interface ScanResultsProps {
@@ -333,6 +334,12 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
             </p>
           </div>
         </Card>
+
+        {/* Post-scan upgrade banner for free users */}
+        <PostScanUpgradeBanner 
+          totalFindings={dataSources.length + foundProfiles.length}
+          highRiskCount={dataSources.filter(r => r.riskLevel === "high").length}
+        />
 
         {/* Overall Confidence Score Summary */}
         <Card className="p-6 mb-6 bg-gradient-card border-border">
