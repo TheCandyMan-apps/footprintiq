@@ -122,20 +122,25 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
   const handleCreateWorkspace = async () => {
     setCreating(true);
     try {
-      // Create a personal workspace for this user
-      const { data, error } = await supabase
-        .from('workspaces')
-        .insert({
-          name: `${userEmail.split('@')[0]}'s Workspace`,
-          owner_id: userId,
-        })
-        .select('id')
-        .single();
+      // Use admin RPC function to create workspace (bypasses RLS)
+      const { data, error } = await supabase.rpc('admin_create_workspace_for_user', {
+        _user_id: userId,
+        _workspace_name: `${userEmail.split('@')[0]}'s Workspace`
+      });
 
       if (error) throw error;
       
-      setWorkspaceId(data.id);
-      toast.success(`Workspace created for ${userEmail}`);
+      const result = data as { success: boolean; workspace_id: string; already_exists: boolean; message: string };
+      
+      if (result.success) {
+        setWorkspaceId(result.workspace_id);
+        toast.success(result.already_exists 
+          ? `User already has a workspace` 
+          : `Workspace created for ${userEmail} with 10 starter credits`
+        );
+      } else {
+        throw new Error('Failed to create workspace');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Failed to create workspace');
     } finally {
