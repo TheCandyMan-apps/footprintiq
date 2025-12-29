@@ -14,6 +14,7 @@ import { ConfidenceScoreBadge } from "@/components/ConfidenceScoreBadge";
 import { ConfidenceScoreIndicator } from "@/components/ConfidenceScoreIndicator";
 import { ResultDetailDrawer } from "@/components/scan/ResultDetailDrawer";
 import { PostScanUpgradeBanner } from "@/components/upsell/PostScanUpgradeBanner";
+import { ViralSharePrompt } from "@/components/growth/ViralSharePrompt";
 import { PartiallyLockedSection, InlineLockBadge } from "@/components/results/PartiallyLockedSection";
 import { CorrelationGraph } from "@/components/results/CorrelationGraph";
 import { useResultsGating } from "@/components/billing/GatedContent";
@@ -338,6 +339,11 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
             </p>
           </div>
         </Card>
+
+        {/* Viral share prompt for free users */}
+        {isFree && (
+          <ViralSharePrompt className="mb-6" />
+        )}
 
         {/* Post-scan upgrade banner for free users */}
         <PostScanUpgradeBanner 
