@@ -27,6 +27,7 @@ import { ScrollProgressBar } from '@/components/ScrollProgressBar';
 import { ScrollToTop } from '@/components/ScrollToTop';
 import { AnnouncementBar } from '@/components/AnnouncementBar';
 import { PremiumUpgradeCTA } from '@/components/upsell/PremiumUpgradeCTA';
+import { DashboardUpgradeHeader } from '@/components/upsell/DashboardUpgradeHeader';
 import { ScheduledScansManager } from '@/components/ScheduledScansManager';
 import { WebhookIntegrations } from '@/components/WebhookIntegrations';
 import { ArchivedScans } from '@/components/ArchivedScans';
@@ -653,6 +654,9 @@ const Dashboard = () => {
         {/* Hero Section */}
         <div data-tour="dashboard-hero" className="bg-white border border-border/60 p-8 rounded-2xl shadow-sm mx-6 mt-6 animate-fade-in">
           <div className="max-w-7xl mx-auto">
+            {/* Upgrade header for free users with ≥1 scan */}
+            <DashboardUpgradeHeader scanCount={stats.totalScans} />
+            
             <div className="text-center">
               <h1 className="font-bold text-foreground text-3xl">
                 Dashboard

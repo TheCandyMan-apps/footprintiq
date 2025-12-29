@@ -1,10 +1,12 @@
-import { Check, X } from 'lucide-react';
+import { Check, X, Star } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { TierBadge } from './FeatureGate';
 import { Link } from 'react-router-dom';
 import { useTierGating, type PlanTier } from '@/hooks/useTierGating';
 import { CAPABILITIES_BY_PLAN } from '@/lib/billing/planCapabilities';
+import { cn } from '@/lib/utils';
 
 export function TierComparisonTable() {
   const { subscriptionTier } = useTierGating();
@@ -28,15 +30,33 @@ export function TierComparisonTable() {
 
   const tiers: PlanTier[] = ['free', 'pro', 'business'];
 
+  const isPro = (tier: PlanTier) => tier === 'pro';
+
   return (
     <div className="space-y-6">
       <div className="grid md:grid-cols-3 gap-6">
         {tiers.map((tier) => {
           const quotas = CAPABILITIES_BY_PLAN[tier];
           const isCurrentTier = subscriptionTier === tier;
+          const isRecommended = isPro(tier);
 
           return (
-            <Card key={tier} className={isCurrentTier ? 'border-2 border-primary' : ''}>
+            <Card 
+              key={tier} 
+              className={cn(
+                'relative transition-all duration-200',
+                isCurrentTier && 'border-2 border-primary',
+                isRecommended && !isCurrentTier && 'border-primary/50 shadow-lg shadow-primary/10 scale-[1.02]'
+              )}
+            >
+              {/* Pro recommended badge */}
+              {isRecommended && !isCurrentTier && (
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
+                  <Star className="w-3 h-3 mr-1" />
+                  Recommended
+                </Badge>
+              )}
+
               <CardHeader>
                 <div className="flex items-center justify-between mb-2">
                   <TierBadge tier={tier} />
@@ -47,7 +67,7 @@ export function TierComparisonTable() {
                 <CardTitle className="text-2xl capitalize">{tier}</CardTitle>
                 <CardDescription>
                   {tier === 'free' && 'Perfect for getting started'}
-                  {tier === 'pro' && 'Advanced OSINT capabilities'}
+                  {tier === 'pro' && 'Reduce false positives & unlock full insights'}
                   {tier === 'business' && 'Unlimited power for teams'}
                 </CardDescription>
               </CardHeader>
@@ -76,10 +96,28 @@ export function TierComparisonTable() {
                   })}
                 </div>
 
+                {/* Pro-specific CTA messaging */}
+                {isRecommended && !isCurrentTier && (
+                  <div className="text-xs text-muted-foreground bg-primary/5 rounded-md p-2 mt-2">
+                    <p className="font-medium text-foreground mb-1">Pro includes:</p>
+                    <ul className="space-y-0.5">
+                      <li>• Full source URLs & evidence</li>
+                      <li>• Context enrichment</li>
+                      <li>• Correlation insights</li>
+                    </ul>
+                  </div>
+                )}
+
                 {!isCurrentTier && (
-                  <Link to="/settings/billing" className="block">
-                    <Button className="w-full">
-                      Upgrade to {tier.charAt(0).toUpperCase() + tier.slice(1)}
+                  <Link to="/pricing" className="block mt-4">
+                    <Button 
+                      className={cn(
+                        'w-full',
+                        isRecommended && 'bg-primary hover:bg-primary/90'
+                      )}
+                      variant={isRecommended ? 'default' : 'secondary'}
+                    >
+                      {isRecommended ? 'Upgrade to Pro' : `Choose ${tier.charAt(0).toUpperCase() + tier.slice(1)}`}
                     </Button>
                   </Link>
                 )}
