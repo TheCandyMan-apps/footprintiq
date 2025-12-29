@@ -9454,6 +9454,10 @@ export type Database = {
         }
         Returns: Json
       }
+      admin_create_workspace_for_user: {
+        Args: { _user_id: string; _workspace_name?: string }
+        Returns: Json
+      }
       admin_delete_user: {
         Args: { _reason?: string; _user_id: string }
         Returns: Json
