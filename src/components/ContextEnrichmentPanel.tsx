@@ -19,11 +19,14 @@ import {
   AlertCircle,
   RefreshCw,
   CheckCircle2,
-  ChevronDown
+  Lock,
+  Sparkles
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useTierGating } from "@/hooks/useTierGating";
 import ReactMarkdown from "react-markdown";
+import { Link } from "react-router-dom";
 
 export interface UrlOption {
   label: string;
@@ -52,6 +55,8 @@ export interface EnrichmentData {
 type PanelState = 'idle' | 'loading' | 'success' | 'error';
 
 export function ContextEnrichmentPanel({ url, urls, onEnrichmentComplete }: ContextEnrichmentPanelProps) {
+  const { isFree, isLoading: tierLoading } = useTierGating();
+  
   // Build URL options from props
   const urlOptions: UrlOption[] = urls?.length 
     ? urls 
@@ -70,7 +75,7 @@ export function ContextEnrichmentPanel({ url, urls, onEnrichmentComplete }: Cont
   if (urlOptions.length === 0) return null;
 
   const handleEnrich = async () => {
-    if (!selectedUrl) return;
+    if (!selectedUrl || isFree) return;
     
     setState('loading');
     setError(null);
@@ -151,30 +156,38 @@ export function ContextEnrichmentPanel({ url, urls, onEnrichmentComplete }: Cont
               <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
               Open page
             </Button>
-            <Button
-              variant={state === 'success' ? 'outline' : 'default'}
-              size="sm"
-              className="h-8"
-              onClick={handleEnrich}
-              disabled={state === 'loading' || !selectedUrl}
-            >
-              {state === 'loading' ? (
-                <>
-                  <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  Fetching…
-                </>
-              ) : state === 'success' ? (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                  Refresh context
-                </>
-              ) : (
-                <>
-                  <Globe className="h-3.5 w-3.5 mr-1.5" />
-                  Fetch context
-                </>
-              )}
-            </Button>
+            {/* Fetch button - disabled for free users */}
+            {!isFree ? (
+              <Button
+                variant={state === 'success' ? 'outline' : 'default'}
+                size="sm"
+                className="h-8"
+                onClick={handleEnrich}
+                disabled={state === 'loading' || !selectedUrl || tierLoading}
+              >
+                {state === 'loading' ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Fetching…
+                  </>
+                ) : state === 'success' ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                    Refresh context
+                  </>
+                ) : (
+                  <>
+                    <Globe className="h-3.5 w-3.5 mr-1.5" />
+                    Fetch context
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Badge variant="secondary" className="h-8 px-3 flex items-center gap-1.5 text-xs">
+                <Lock className="h-3 w-3" />
+                Pro Feature
+              </Badge>
+            )}
           </div>
         </div>
 
@@ -216,10 +229,45 @@ export function ContextEnrichmentPanel({ url, urls, onEnrichmentComplete }: Cont
           </div>
         )}
 
-        {/* Usage microcopy */}
-        <p className="text-xs text-muted-foreground">
-          Counts toward usage. Only runs when you click.
-        </p>
+        {/* Pro upgrade prompt for free users */}
+        {isFree && (
+          <div className="p-4 rounded-lg border border-primary/20 bg-primary/5 space-y-3">
+            <div className="flex items-start gap-3">
+              <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+              <div className="flex-1 space-y-2">
+                <p className="text-sm font-medium text-foreground">
+                  Fetch public page context to reduce false positives
+                </p>
+                <ul className="text-xs text-muted-foreground space-y-1">
+                  <li className="flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                    User-initiated only
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                    No monitoring or automated scraping
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-muted-foreground" />
+                    Used to validate findings, not discover new targets
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <Button asChild size="sm" className="w-full">
+              <Link to="/settings/billing">
+                Upgrade to Pro
+              </Link>
+            </Button>
+          </div>
+        )}
+
+        {/* Usage microcopy for Pro users */}
+        {!isFree && state === 'idle' && (
+          <p className="text-xs text-muted-foreground">
+            Counts toward usage. Only runs when you click.
+          </p>
+        )}
 
         {/* Error State */}
         {state === 'error' && error && (
@@ -305,11 +353,16 @@ export function ContextEnrichmentPanel({ url, urls, onEnrichmentComplete }: Cont
                 </ScrollArea>
               </TabsContent>
             </Tabs>
+
+            {/* Ethical use footer for Pro users */}
+            <p className="text-xs text-muted-foreground text-center pt-2">
+              User-initiated retrieval • Public sources only • Evidence validation
+            </p>
           </div>
         )}
 
-        {/* Idle state hint */}
-        {state === 'idle' && (
+        {/* Idle state hint for Pro users */}
+        {!isFree && state === 'idle' && (
           <p className="text-xs text-muted-foreground text-center py-2">
             Click "Fetch context" to retrieve public content from this page.
           </p>

@@ -19,8 +19,7 @@ import {
   Globe, 
   User, 
   Trash2, 
-  Flag,
-  Lock
+  Flag
 } from 'lucide-react';
 
 interface DataSourceItem {
@@ -120,7 +119,7 @@ export function ResultDetailDrawer({
   onFlagFalsePositive,
   isFlagged = false,
 }: ResultDetailDrawerProps) {
-  const { canSeeSourceUrls, canSeeConfidenceExplanation, canSeeContextEnrichment, isFree } = useResultsGating();
+  const { canSeeSourceUrls, canSeeConfidenceExplanation, isFree } = useResultsGating();
 
   if (!item) return null;
 
@@ -153,9 +152,8 @@ export function ResultDetailDrawer({
         <Tabs defaultValue="overview" className="mt-6">
           <TabsList className="grid w-full grid-cols-2 bg-muted/50">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="context" disabled={!hasUrls || !canSeeContextEnrichment}>
+            <TabsTrigger value="context" disabled={!hasUrls}>
               Context
-              {!canSeeContextEnrichment && <Lock className="w-3 h-3 ml-1.5 opacity-50" />}
             </TabsTrigger>
           </TabsList>
 
@@ -298,11 +296,7 @@ export function ResultDetailDrawer({
             </TabsContent>
 
             <TabsContent value="context" className="mt-0">
-              {!canSeeContextEnrichment ? (
-                <GatedContent isGated contentType="context">
-                  <div />
-                </GatedContent>
-              ) : hasUrls ? (
+              {hasUrls ? (
                 <ContextEnrichmentPanel urls={urls} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">

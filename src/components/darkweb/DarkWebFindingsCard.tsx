@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertTriangle, ExternalLink, Eye, Shield, Lock } from "lucide-react";
+import { AlertTriangle, ExternalLink, Eye, Shield } from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
 import {
@@ -69,7 +69,7 @@ function getFindingSummary(finding: any): string {
 
 export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
   const [selectedFinding, setSelectedFinding] = useState<any>(null);
-  const { canSeeSourceUrls, canSeeEvidence, canSeeContextEnrichment } = useResultsGating();
+  const { canSeeSourceUrls, canSeeEvidence } = useResultsGating();
 
   const { data: findings, isLoading } = useQuery({
     queryKey: ["darkweb-findings", targetId],
@@ -227,9 +227,8 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2 bg-muted/50">
               <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="context" disabled={!hasUrls || !canSeeContextEnrichment}>
+              <TabsTrigger value="context" disabled={!hasUrls}>
                 Context
-                {!canSeeContextEnrichment && <Lock className="w-3 h-3 ml-1.5 opacity-50" />}
               </TabsTrigger>
             </TabsList>
 
@@ -317,11 +316,7 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
             </TabsContent>
 
             <TabsContent value="context">
-              {!canSeeContextEnrichment ? (
-                <GatedContent isGated contentType="context">
-                  <div />
-                </GatedContent>
-              ) : hasUrls ? (
+              {hasUrls ? (
                 <ContextEnrichmentPanel urls={selectedUrls} />
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-8">
