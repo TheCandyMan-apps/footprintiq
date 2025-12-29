@@ -38,7 +38,8 @@ import {
   AlertTriangle,
   Eye,
   ShieldAlert,
-  Bot
+  Bot,
+  Gift
 } from 'lucide-react';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { EditUserDialog } from './EditUserDialog';
@@ -74,6 +75,17 @@ const flagIcons = {
 
 const CREDIT_PRESETS = [50, 100, 500];
 
+/**
+ * STRATEGIC DECISION: Goodwill Credits for Upgrade Issues
+ * 
+ * When users encounter problems during upgrades (payment failures, tier not updating, etc.),
+ * we grant goodwill credits as a trust-building measure. This aligns with our monetization
+ * strategy of NOT forcing scan scarcity but instead gating on insights, context, and validation.
+ * 
+ * See: src/lib/billing/tiers.ts for the full strategy documentation.
+ */
+const GOODWILL_CREDITS_AMOUNT = 100;
+
 interface QuickCreditButtonsProps {
   userId: string;
   userEmail: string;
@@ -88,6 +100,7 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
 
   useEffect(() => {
     // Fetch user's workspace - check owned first, then memberships
+    // Using .maybeSingle() to avoid 406 errors when no rows are found
     const fetchWorkspace = async () => {
       // First try owned workspaces
       const { data: ownedWorkspace } = await supabase
@@ -95,7 +108,7 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
         .select('id')
         .eq('owner_id', userId)
         .limit(1)
-        .single();
+        .maybeSingle();
       
       if (ownedWorkspace) {
         setWorkspaceId(ownedWorkspace.id);
@@ -109,7 +122,7 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
         .select('workspace_id')
         .eq('user_id', userId)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (membership) {
         setWorkspaceId(membership.workspace_id);
@@ -148,7 +161,7 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
     }
   };
 
-  const handleGrantCredits = async (amount: number) => {
+  const handleGrantCredits = async (amount: number, description?: string) => {
     if (!workspaceId) {
       toast.error('No workspace found for this user');
       return;
@@ -159,7 +172,7 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
       const { error } = await supabase.rpc('admin_grant_credits', {
         _workspace_id: workspaceId,
         _amount: amount,
-        _description: `Quick grant for ${userEmail}`
+        _description: description || `Quick grant for ${userEmail}`
       });
 
       if (error) throw error;
@@ -169,6 +182,49 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
     } finally {
       setGranting(null);
     }
+  };
+
+  /**
+   * Grant goodwill credits for upgrade issues - trust-building measure
+   * per our monetization strategy (see src/lib/billing/tiers.ts)
+   */
+  const handleGoodwillGrant = async () => {
+    // If no workspace, create one first
+    if (!workspaceId) {
+      setCreating(true);
+      try {
+        const { data, error } = await supabase.rpc('admin_create_workspace_for_user', {
+          _user_id: userId,
+          _workspace_name: `${userEmail.split('@')[0]}'s Workspace`
+        });
+
+        if (error) throw error;
+        
+        const result = data as { success: boolean; workspace_id: string; already_exists: boolean; message: string };
+        
+        if (result.success) {
+          setWorkspaceId(result.workspace_id);
+          // Now grant the goodwill credits to the newly created workspace
+          const { error: grantError } = await supabase.rpc('admin_grant_credits', {
+            _workspace_id: result.workspace_id,
+            _amount: GOODWILL_CREDITS_AMOUNT,
+            _description: `Goodwill credits – Upgrade issue compensation for ${userEmail}`
+          });
+          
+          if (grantError) throw grantError;
+          
+          toast.success(`Workspace created + ${GOODWILL_CREDITS_AMOUNT} goodwill credits granted to ${userEmail}`);
+        }
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to grant goodwill credits');
+      } finally {
+        setCreating(false);
+      }
+      return;
+    }
+
+    // Workspace exists, just grant credits
+    await handleGrantCredits(GOODWILL_CREDITS_AMOUNT, `Goodwill credits – Upgrade issue compensation for ${userEmail}`);
   };
 
   const handleCustomGrant = async () => {
@@ -273,6 +329,29 @@ function QuickCreditButtons({ userId, userEmail }: QuickCreditButtonsProps) {
             </TooltipContent>
           </Tooltip>
         </div>
+        
+        {/* Goodwill Credits button - for upgrade issue compensation */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2 text-xs ml-1 border-amber-500/30 text-amber-600 hover:bg-amber-500/10"
+              onClick={handleGoodwillGrant}
+              disabled={granting !== null || creating}
+            >
+              {creating ? (
+                <Loader2 className="h-3 w-3 animate-spin mr-1" />
+              ) : (
+                <Gift className="h-3 w-3 mr-1" />
+              )}
+              Goodwill
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Grant {GOODWILL_CREDITS_AMOUNT} credits for upgrade issues (creates workspace if needed)</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </TooltipProvider>
   );
