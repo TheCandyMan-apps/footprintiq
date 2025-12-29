@@ -47,7 +47,31 @@ serve(async (req) => {
     const body = await req.text();
     const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
 
-    console.log(`[stripe-credit-webhook] Event received: ${event.type}`);
+    console.log(`[stripe-credit-webhook] Event received: ${event.type}, ID: ${event.id}`);
+
+    // Create Supabase admin client
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Check for duplicate event (replay protection)
+    const { data: existingEvent } = await supabase
+      .from('stripe_events_processed')
+      .select('event_id')
+      .eq('event_id', event.id)
+      .single();
+
+    if (existingEvent) {
+      console.log(`[stripe-credit-webhook] Duplicate event detected: ${event.id}, skipping`);
+      return new Response(
+        JSON.stringify({ received: true, duplicate: true }),
+        { 
+          status: 200,
+          headers: addSecurityHeaders({ "Content-Type": "application/json" }),
+        }
+      );
+    }
 
     // Handle checkout.session.completed event
     if (event.type === "checkout.session.completed") {
@@ -70,12 +94,6 @@ serve(async (req) => {
       const { user_id: userId, workspace_id: workspaceId, credits: creditsStr, pack_type: packType } = validation.data;
       const credits = parseInt(creditsStr);
 
-      // Create Supabase admin client
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-      );
-
       console.log(`[stripe-credit-webhook] Adding ${credits} credits to workspace ${workspaceId}`);
 
       // Add credits to the workspace
@@ -87,6 +105,7 @@ serve(async (req) => {
           reason: `Credit pack purchase: ${packType}`,
           meta: {
             stripe_session_id: session.id,
+            stripe_event_id: event.id,
             pack_type: packType,
             payment_intent: session.payment_intent,
           },
@@ -110,12 +129,25 @@ serve(async (req) => {
           meta: {
             pack_type: packType,
             stripe_session_id: session.id,
+            stripe_event_id: event.id,
             amount: session.amount_total,
             currency: session.currency,
           },
         });
 
       console.log(`[stripe-credit-webhook] Audit log created`);
+    }
+
+    // Mark event as processed (after successful handling)
+    const { error: insertError } = await supabase
+      .from('stripe_events_processed')
+      .insert({ event_id: event.id });
+
+    if (insertError) {
+      console.error('[stripe-credit-webhook] Failed to mark event as processed:', insertError);
+      // Don't throw - event was processed, just logging failed
+    } else {
+      console.log(`[stripe-credit-webhook] Event ${event.id} marked as processed`);
     }
 
     return new Response(JSON.stringify({ received: true }), {
