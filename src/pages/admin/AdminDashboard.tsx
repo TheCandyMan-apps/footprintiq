@@ -271,13 +271,18 @@ export default function AdminDashboard() {
 
   const handleResetPassword = async (userEmail: string) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
+      const { data, error } = await supabase.functions.invoke('send-auth-email', {
+        body: {
+          type: 'password_reset',
+          email: userEmail,
+          redirectUrl: window.location.origin,
+        },
       });
 
       if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to send email');
 
-      toast.success('Password reset email sent');
+      toast.success('Password reset email sent via Resend');
     } catch (error) {
       console.error('Error sending password reset:', error);
       toast.error('Failed to send password reset email');
