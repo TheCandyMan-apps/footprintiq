@@ -592,6 +592,7 @@ const ResultsDetail = () => {
   };
 
   // Build findings array for exports and graph
+  // Combine: unified findings (from public.findings) + data sources + social profiles
   const extractDomain = (urlStr?: string) => {
     if (!urlStr) return '';
     try {
@@ -602,48 +603,69 @@ const ResultsDetail = () => {
     }
   };
 
+  // Create a Set of IDs from unified findings to avoid duplicates
+  const unifiedFindingIds = new Set(findings.map(f => f.id));
+
   const findingsForExport: Finding[] = [
-    ...dataSources.map(source => ({
-      id: source.id,
-      type: 'breach' as const,
-      title: source.name,
-      description: source.category,
-      severity: source.risk_level as any,
-      confidence: 0.9,
-      provider: 'OSINT Scan',
-      providerCategory: source.category,
-      evidence: [
-        ...source.data_found.map(d => ({ key: 'data', value: d })),
-        ...(source.url ? [{ key: 'domain', value: extractDomain(source.url) }] : []),
-      ],
-      impact: `Found on ${source.name}`,
-      remediation: ['Request removal from this source'],
-      tags: [source.category],
-      observedAt: new Date().toISOString(),
-      url: source.url
-    } as Finding)),
-    ...socialProfiles.map(profile => ({
-      id: profile.id,
-      type: 'social_media' as const,
-      title: `${profile.platform}: @${profile.username}`,
-      description: profile.profile_url,
-      severity: 'low' as const,
-      confidence: 0.8,
-      provider: 'Social Profile',
-      providerCategory: profile.platform,
-      evidence: [
-        { key: 'username', value: profile.username },
-        { key: 'url', value: profile.profile_url },
-        ...(profile.profile_url ? [{ key: 'domain', value: extractDomain(profile.profile_url) }] : []),
-        ...(profile.full_name ? [{ key: 'name', value: profile.full_name }] : []),
-      ],
-      impact: `Profile found on ${profile.platform}`,
-      remediation: [],
-      tags: [profile.platform],
-      observedAt: new Date().toISOString(),
-      url: profile.profile_url
-    } as Finding))
+    // Include all unified findings from public.findings table (primary source)
+    ...findings,
+    // Add data sources that aren't already in unified findings
+    ...dataSources
+      .filter(source => !unifiedFindingIds.has(source.id) && !unifiedFindingIds.has(`source_${source.id}`))
+      .map(source => ({
+        id: source.id,
+        type: 'breach' as const,
+        title: source.name,
+        description: source.category,
+        severity: source.risk_level as any,
+        confidence: 0.9,
+        provider: 'OSINT Scan',
+        providerCategory: source.category,
+        evidence: [
+          ...source.data_found.map(d => ({ key: 'data', value: d })),
+          ...(source.url ? [{ key: 'domain', value: extractDomain(source.url) }] : []),
+        ],
+        impact: `Found on ${source.name}`,
+        remediation: ['Request removal from this source'],
+        tags: [source.category],
+        observedAt: new Date().toISOString(),
+        url: source.url
+      } as Finding)),
+    // Add social profiles that aren't already in unified findings
+    ...socialProfiles
+      .filter(profile => !unifiedFindingIds.has(profile.id) && !unifiedFindingIds.has(`profile_${profile.id}`))
+      .map(profile => ({
+        id: profile.id,
+        type: 'social_media' as const,
+        title: `${profile.platform}: @${profile.username}`,
+        description: profile.profile_url,
+        severity: 'low' as const,
+        confidence: 0.8,
+        provider: 'Social Profile',
+        providerCategory: profile.platform,
+        evidence: [
+          { key: 'username', value: profile.username },
+          { key: 'url', value: profile.profile_url },
+          ...(profile.profile_url ? [{ key: 'domain', value: extractDomain(profile.profile_url) }] : []),
+          ...(profile.full_name ? [{ key: 'name', value: profile.full_name }] : []),
+        ],
+        impact: `Profile found on ${profile.platform}`,
+        remediation: [],
+        tags: [profile.platform],
+        observedAt: new Date().toISOString(),
+        url: profile.profile_url
+      } as Finding))
   ];
+
+  // Dev logging to verify data population
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[ResultsDetail] findingsForExport:', {
+      unifiedFindings: findings.length,
+      dataSources: dataSources.length,
+      socialProfiles: socialProfiles.length,
+      totalExport: findingsForExport.length
+    });
+  }
 
   if (loading || !scan) {
     return (

@@ -122,15 +122,28 @@ serve(async (req) => {
     // Attach findings to scan object
     const scanWithFindings = { ...scan, findings: findings || [] };
 
+    // Compute stats from findings for PDF generation
+    const totalFindings = findings?.length || 0;
+    const highRiskCount = findings?.filter((f: any) => f.severity === 'high' || f.severity === 'critical').length || 0;
+    const mediumRiskCount = findings?.filter((f: any) => f.severity === 'medium').length || 0;
+    const lowRiskCount = findings?.filter((f: any) => f.severity === 'low' || f.severity === 'info').length || 0;
+
+    const stats = {
+      totalFindings,
+      highRiskCount,
+      mediumRiskCount,
+      lowRiskCount,
+      providers: [...new Set(findings?.map((f: any) => f.provider) || [])],
+    };
+
     // Generate HTML report
     const html = generateHTMLReport(scanWithFindings);
 
     const duration = Date.now() - startTime;
-    console.log('[generate-pdf-report] PDF HTML generated in', duration, 'ms');
+    console.log('[generate-pdf-report] PDF HTML generated in', duration, 'ms', { stats });
 
-    // Note: For production, integrate with a PDF generation service
-    // For now, return HTML that can be converted client-side
-    return new Response(JSON.stringify({ html, scan, duration }), {
+    // Return scanWithFindings (includes findings) and stats for client-side PDF generation
+    return new Response(JSON.stringify({ html, scan: scanWithFindings, stats, duration }), {
       headers: addSecurityHeaders({ "Content-Type": "application/json" }),
     });
   } catch (error: any) {
