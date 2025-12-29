@@ -15,6 +15,7 @@ import { ConfidenceScoreIndicator } from "@/components/ConfidenceScoreIndicator"
 import { ResultDetailDrawer } from "@/components/scan/ResultDetailDrawer";
 import { PostScanUpgradeBanner } from "@/components/upsell/PostScanUpgradeBanner";
 import { PartiallyLockedSection, InlineLockBadge } from "@/components/results/PartiallyLockedSection";
+import { CorrelationGraph } from "@/components/results/CorrelationGraph";
 import { useResultsGating } from "@/components/billing/GatedContent";
 import type { ScanFormData } from "./ScanForm";
 
@@ -425,6 +426,32 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
               />
             </div>
           </Card>
+        )}
+
+        {/* Identity Correlation Graph - Pro gated */}
+        {(foundProfiles.length > 0 || dataSources.length > 0) && (
+          <div className="mb-8">
+            <PartiallyLockedSection
+              title="Identity Connections"
+              icon={Link2}
+              isGated={isFree}
+              lockedReason="Unlock correlation graph"
+              blurredPreview={
+                <CorrelationGraph
+                  profiles={activeProfiles}
+                  dataSources={activeResults}
+                  searchQuery={searchData?.username || searchData?.email}
+                  compact
+                />
+              }
+            >
+              <CorrelationGraph
+                profiles={activeProfiles}
+                dataSources={activeResults}
+                searchQuery={searchData?.username || searchData?.email}
+              />
+            </PartiallyLockedSection>
+          </div>
         )}
 
         {/* Social Media Results */}
