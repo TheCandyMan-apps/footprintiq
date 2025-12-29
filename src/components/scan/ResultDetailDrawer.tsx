@@ -229,9 +229,14 @@ export function ResultDetailDrawer({
                       compact
                       className="mt-2"
                     >
-                      <p className="text-xs text-muted-foreground">
-                        Score based on profile completeness, activity patterns, and cross-reference validation.
-                      </p>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground">
+                          Score based on profile completeness, activity patterns, and cross-reference validation.
+                        </p>
+                        <p className="text-[10px] text-muted-foreground/60 italic">
+                          False positives happen — validation matters.
+                        </p>
+                      </div>
                     </GatedContent>
                   </div>
                 </div>

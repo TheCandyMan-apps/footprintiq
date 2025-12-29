@@ -138,9 +138,14 @@ export function AlertDrawer({
                         compact
                         className="mt-1"
                       >
-                        <span className="text-xs text-muted-foreground">
-                          Based on source reliability and data freshness
-                        </span>
+                        <div className="space-y-0.5">
+                          <span className="text-xs text-muted-foreground">
+                            Based on source reliability and data freshness
+                          </span>
+                          <p className="text-[10px] text-muted-foreground/60 italic">
+                            False positives happen — validation matters.
+                          </p>
+                        </div>
                       </GatedContent>
                     </div>
                   </div>

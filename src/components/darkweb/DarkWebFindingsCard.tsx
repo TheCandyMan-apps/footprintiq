@@ -166,6 +166,9 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
             {highCount > 0 && (
               <span className="text-amber-600 ml-2">• {highCount} high</span>
             )}
+            <span className="block text-[10px] text-muted-foreground/60 mt-1 italic">
+              Most people don't realise this information is publicly accessible.
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -245,9 +248,14 @@ export function DarkWebFindingsCard({ targetId }: DarkWebFindingsCardProps) {
               </div>
 
               {/* Explainer text */}
-              <p className="text-sm text-muted-foreground">
-                Review the metadata below. Use the Context tab to validate this match.
-              </p>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">
+                  Review the metadata below. Use the Context tab to validate this match.
+                </p>
+                <p className="text-[10px] text-muted-foreground/60 italic">
+                  Public data becomes risky when combined. Attackers rely on correlation, not hacking.
+                </p>
+              </div>
 
               {/* Full metadata - gated for free users */}
               {selectedFinding?.meta && (

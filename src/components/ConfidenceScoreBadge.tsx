@@ -1,19 +1,34 @@
 import { Badge } from "@/components/ui/badge";
 import { Shield, AlertTriangle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ConfidenceScoreBadgeProps {
   score: number;
   showIcon?: boolean;
   size?: "sm" | "md" | "lg";
   className?: string;
+  /** Show educational microcopy below the badge */
+  showMicrocopy?: boolean;
 }
+
+const EDUCATIONAL_TIPS = [
+  "False positives happen — validation matters.",
+  "Confidence reflects match quality, not threat level.",
+  "Lower scores may still be genuine matches.",
+];
 
 export function ConfidenceScoreBadge({ 
   score, 
   showIcon = true, 
   size = "md",
-  className 
+  className,
+  showMicrocopy = false,
 }: ConfidenceScoreBadgeProps) {
   const getConfidenceLevel = () => {
     if (score >= 85) return { label: "Very High", variant: "default" as const, icon: Shield, color: "text-emerald-600" };
@@ -32,7 +47,14 @@ export function ConfidenceScoreBadge({
     lg: "text-base px-3 py-1.5"
   };
 
-  return (
+  // Select tip based on score range
+  const getTip = () => {
+    if (score < 50) return EDUCATIONAL_TIPS[2];
+    if (score < 70) return EDUCATIONAL_TIPS[0];
+    return EDUCATIONAL_TIPS[1];
+  };
+
+  const badge = (
     <Badge 
       variant={level.variant}
       className={cn(
@@ -46,5 +68,38 @@ export function ConfidenceScoreBadge({
       <span className="text-muted-foreground">•</span>
       <span>{level.label}</span>
     </Badge>
+  );
+
+  if (showMicrocopy) {
+    return (
+      <div className="space-y-1.5">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {badge}
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[200px] text-center">
+              <p className="text-xs">{getTip()}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <p className="text-[10px] text-muted-foreground leading-tight">
+          {getTip()}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {badge}
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[200px] text-center">
+          <p className="text-xs">{getTip()}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
