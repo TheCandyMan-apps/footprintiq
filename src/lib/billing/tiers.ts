@@ -1,6 +1,30 @@
 /**
  * Central tier definitions for FootprintIQ subscription system
  * Single source of truth for all plan configurations
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * STRATEGIC DECISION: FREE TIER SCAN LIMITS (Dec 2024)
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * DO NOT reduce Free plan scans to 1 per month at this stage.
+ * 
+ * Rationale:
+ * - Early-stage trust building: Users need to experience value before converting
+ * - Organic adoption: Word-of-mouth requires multiple scan opportunities
+ * - Feedback loop quality: More scans = better product insights
+ * 
+ * Monetisation strategy focuses on GATING, not LIMITING:
+ * - Insight gating: Full source URLs, evidence details locked to Pro
+ * - Context gating: Firecrawl enrichment, correlation explanations locked to Pro
+ * - Validation gating: Advanced confidence scoring, false positive tools locked to Pro
+ * 
+ * Free users see THAT exposures exist. Pro users understand WHY and HOW to act.
+ * 
+ * Review this decision when:
+ * - Monthly active users exceed 10,000
+ * - Free-to-Pro conversion rate drops below 3%
+ * - Infrastructure costs become unsustainable
+ * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 export type PlanId = 'free' | 'pro' | 'business';
@@ -17,18 +41,24 @@ export interface PlanDefinition {
 }
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
+  /**
+   * Free tier: Discovery • Awareness • Preview
+   * 
+   * Generous scan limits intentional (see strategic decision above).
+   * Conversion driven by insight/context/validation gating, not scan scarcity.
+   */
   free: {
     id: 'free',
     label: 'Free',
     description: 'Perfect for quick checks and trying FootprintIQ.',
     priceMonthly: 0,
     stripePriceId: null,
-    monthlyScanLimit: 10,
+    monthlyScanLimit: 10, // Keep generous - see strategic decision comment above
     allowedProviders: ['maigret'],
     features: [
       '10 scans per month',
       'Basic username scanning (Maigret)',
-      'Limited results view',
+      'Limited results view', // Insight gating applied
     ],
   },
   pro: {
