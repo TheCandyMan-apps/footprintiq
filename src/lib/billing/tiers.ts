@@ -3,27 +3,20 @@
  * Single source of truth for all plan configurations
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
- * STRATEGIC DECISION: FREE TIER SCAN LIMITS (Dec 2024)
+ * MONETISATION STRATEGY (Dec 2024)
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
- * DO NOT reduce Free plan scans to 1 per month at this stage.
+ * Free plan: 1 scan/month with partial results
+ * - Free users see THAT exposures exist (count, categories, basic presence)
+ * - Pro users see WHY and HOW (context, evidence, confidence, correlation)
  * 
- * Rationale:
- * - Early-stage trust building: Users need to experience value before converting
- * - Organic adoption: Word-of-mouth requires multiple scan opportunities
- * - Feedback loop quality: More scans = better product insights
- * 
- * Monetisation strategy focuses on GATING, not LIMITING:
- * - Insight gating: Full source URLs, evidence details locked to Pro
- * - Context gating: Firecrawl enrichment, correlation explanations locked to Pro
- * - Validation gating: Advanced confidence scoring, false positive tools locked to Pro
- * 
- * Free users see THAT exposures exist. Pro users understand WHY and HOW to act.
- * 
- * Review this decision when:
- * - Monthly active users exceed 10,000
- * - Free-to-Pro conversion rate drops below 3%
- * - Infrastructure costs become unsustainable
+ * Gated sections for Free users:
+ * - Context enrichment
+ * - Evidence / source detail  
+ * - Confidence scoring
+ * - Correlation depth
+ * - Dark web indicators
+ * - AI interpretation
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
@@ -42,23 +35,21 @@ export interface PlanDefinition {
 
 export const PLANS: Record<PlanId, PlanDefinition> = {
   /**
-   * Free tier: Discovery • Awareness • Preview
-   * 
-   * Generous scan limits intentional (see strategic decision above).
-   * Conversion driven by insight/context/validation gating, not scan scarcity.
+   * Free tier: Discovery • Preview
+   * 1 scan/month with partial results - conversion via insight gating
    */
   free: {
     id: 'free',
     label: 'Free',
-    description: 'Perfect for quick checks and trying FootprintIQ.',
+    description: 'Perfect for a quick check of your digital footprint.',
     priceMonthly: 0,
     stripePriceId: null,
-    monthlyScanLimit: 10, // Keep generous - see strategic decision comment above
+    monthlyScanLimit: 1, // 1 scan per month - upgrade for more
     allowedProviders: ['maigret'],
     features: [
-      '10 scans per month',
-      'Basic username scanning (Maigret)',
-      'Limited results view', // Insight gating applied
+      '1 scan per month',
+      'Basic username scanning',
+      'High-level exposure summary',
     ],
   },
   pro: {

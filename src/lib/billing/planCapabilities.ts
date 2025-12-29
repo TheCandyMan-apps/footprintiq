@@ -69,7 +69,7 @@ export const CAPABILITIES_BY_PLAN: Record<PlanTier, PlanCapabilities> = {
     phoneProvidersMax: 2,
     usernameProvidersMax: 1,
     emailProvidersMax: 1,
-    scansPerMonth: 10,
+    scansPerMonth: 1,
     monitorsPerWorkspace: 1,
     teamMembers: 1,
     aiQueriesPerMonth: 0,

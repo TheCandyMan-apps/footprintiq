@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users, Flag, Filter, ChevronRight } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Trash2, Users, Flag, Filter, ChevronRight, Brain, Link2, Shield, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ResultsSkeleton } from "@/components/skeletons/ResultsSkeleton";
@@ -14,6 +14,8 @@ import { ConfidenceScoreBadge } from "@/components/ConfidenceScoreBadge";
 import { ConfidenceScoreIndicator } from "@/components/ConfidenceScoreIndicator";
 import { ResultDetailDrawer } from "@/components/scan/ResultDetailDrawer";
 import { PostScanUpgradeBanner } from "@/components/upsell/PostScanUpgradeBanner";
+import { LockedResultSection } from "@/components/results/LockedResultSection";
+import { useResultsGating } from "@/components/billing/GatedContent";
 import type { ScanFormData } from "./ScanForm";
 
 interface ScanResultsProps {
@@ -45,6 +47,7 @@ interface SocialMediaProfile {
 
 export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
   const { toast } = useToast();
+  const { isFree, canSeeConfidenceExplanation, canSeeContextEnrichment, canSeeCorrelation, canSeeEvidence } = useResultsGating();
   const [removedSources, setRemovedSources] = useState<Set<string>>(new Set());
   const [removedProfiles, setRemovedProfiles] = useState<Set<string>>(new Set());
   const [flaggedItems, setFlaggedItems] = useState<Set<string>>(new Set());
@@ -341,51 +344,66 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           highRiskCount={dataSources.filter(r => r.riskLevel === "high").length}
         />
 
-        {/* Overall Confidence Score Summary */}
-        <Card className="p-6 mb-6 bg-gradient-card border-border">
-          <h3 className="text-lg font-semibold mb-4">Data Quality Overview</h3>
-          <div className="grid md:grid-cols-2 gap-6">
-            <ConfidenceScoreIndicator
-              score={Math.round(
-                [...dataSources, ...foundProfiles].reduce((sum, item) => sum + (item.confidenceScore || 75), 0) / 
-                (dataSources.length + foundProfiles.length)
-              )}
-              label="Average Confidence"
-              showDetails={true}
-              providerCount={new Set([...dataSources.map(d => d.category), ...foundProfiles.map(p => p.platform)]).size}
-            />
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">High Confidence</span>
-                <span className="font-semibold">
-                  {[...dataSources, ...foundProfiles].filter(item => (item.confidenceScore || 75) >= 85).length}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Medium Confidence</span>
-                <span className="font-semibold">
-                  {[...dataSources, ...foundProfiles].filter(item => {
-                    const score = item.confidenceScore || 75;
-                    return score >= 50 && score < 85;
-                  }).length}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-muted-foreground">Low Confidence</span>
-                <span className="font-semibold text-orange-600">
-                  {lowConfidenceCount}
-                </span>
-              </div>
-              {/* Educational microcopy */}
-              <p className="text-[10px] text-muted-foreground/70 pt-2 border-t border-border/50">
-                Public data becomes risky when combined. Confidence reflects match quality, not threat level.
-              </p>
+        {/* Pro-only Sections - Gated for Free Users */}
+        {isFree && (
+          <div className="space-y-4 mb-6">
+            <h3 className="text-lg font-semibold text-muted-foreground">Pro Analysis Features</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <LockedResultSection type="confidence" icon={Shield} />
+              <LockedResultSection type="context" icon={Brain} />
+              <LockedResultSection type="correlation" icon={Link2} />
+              <LockedResultSection type="darkweb" icon={Globe} />
             </div>
           </div>
-        </Card>
+        )}
 
-        {/* AI Filtering Badge */}
-        {aiFilterStats && (
+        {/* Overall Confidence Score Summary - Only for Pro users */}
+        {canSeeConfidenceExplanation ? (
+          <Card className="p-6 mb-6 bg-gradient-card border-border">
+            <h3 className="text-lg font-semibold mb-4">Data Quality Overview</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              <ConfidenceScoreIndicator
+                score={Math.round(
+                  [...dataSources, ...foundProfiles].reduce((sum, item) => sum + (item.confidenceScore || 75), 0) / 
+                  (dataSources.length + foundProfiles.length)
+                )}
+                label="Average Confidence"
+                showDetails={true}
+                providerCount={new Set([...dataSources.map(d => d.category), ...foundProfiles.map(p => p.platform)]).size}
+              />
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">High Confidence</span>
+                  <span className="font-semibold">
+                    {[...dataSources, ...foundProfiles].filter(item => (item.confidenceScore || 75) >= 85).length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Medium Confidence</span>
+                  <span className="font-semibold">
+                    {[...dataSources, ...foundProfiles].filter(item => {
+                      const score = item.confidenceScore || 75;
+                      return score >= 50 && score < 85;
+                    }).length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Low Confidence</span>
+                  <span className="font-semibold text-orange-600">
+                    {lowConfidenceCount}
+                  </span>
+                </div>
+                {/* Educational microcopy */}
+                <p className="text-[10px] text-muted-foreground/70 pt-2 border-t border-border/50">
+                  Public data becomes risky when combined. Confidence reflects match quality, not threat level.
+                </p>
+              </div>
+            </div>
+          </Card>
+        ) : null}
+
+        {/* AI Filtering Badge - Only for Pro users */}
+        {aiFilterStats && canSeeConfidenceExplanation && (
           <AIFilteringBadge
             removedCount={aiFilterStats.removedCount}
             confidenceImprovement={aiFilterStats.confidenceImprovement}
@@ -393,8 +411,8 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           />
         )}
 
-        {/* Confidence Filter Toggle */}
-        {lowConfidenceCount > 0 && (
+        {/* Confidence Filter Toggle - Only for Pro users */}
+        {lowConfidenceCount > 0 && canSeeConfidenceExplanation && (
           <Card className="p-4 mb-6 bg-muted/30 border-border/50">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -638,6 +656,13 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
             </Card>
           )}
         </div>
+
+        {/* AI Analysis Section - Gated for Free Users */}
+        {isFree && (
+          <div className="mt-8">
+            <LockedResultSection type="ai_analysis" icon={Brain} />
+          </div>
+        )}
       </div>
 
       {/* Result Detail Drawer with Context Enrichment */}
