@@ -188,6 +188,7 @@ const Research = lazy(() => import("./pages/Research"));
 const AdminScanHealth = lazy(() => import("./pages/admin/ScanHealth"));
 const SecuritySettings = lazy(() => import("./pages/admin/SecuritySettings"));
 const SampleReport = lazy(() => import("./pages/SampleReport"));
+const ContextEnrichment = lazy(() => import("./pages/ContextEnrichment"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -318,6 +319,7 @@ function RouterContent() {
           <Route path="/analytics/ai" element={<AIAnalytics />} />
           <Route path="/analytics/scans" element={<ScanAnalytics />} />
           <Route path="/api-docs" element={<ApiDocs />} />
+          <Route path="/context-enrichment" element={<ContextEnrichment />} />
           <Route path="/legal/dpa" element={<DPA />} />
           <Route path="/scan/advanced" element={<AdvancedScan />} />
           <Route path="/evidence-pack" element={<EvidencePack />} />

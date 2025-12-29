@@ -15,6 +15,7 @@ import {
   Eye,
   Globe,
   GitBranch,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "New Scan", href: "/scan", icon: Search },
   { label: "Cases", href: "/cases", icon: FileText },
+  { label: "Context Enrichment", href: "/context-enrichment", icon: Sparkles },
   { label: "Watchlists", href: "/watchlists", icon: Eye },
   { label: "Dark Web Monitoring", href: "/dark-web-monitoring", icon: Globe },
   { label: "Workflows", href: "/workflows", icon: GitBranch },
