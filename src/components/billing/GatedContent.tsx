@@ -32,6 +32,18 @@ const CONTENT_LABELS: Record<string, string> = {
   details: 'Full details',
 };
 
+/** Educational microcopy for different content types */
+const CONTENT_MICROCOPY: Record<string, string> = {
+  url: 'Most people don\'t realise this information is publicly accessible.',
+  evidence: 'Public data becomes risky when combined.',
+  timeline: 'Patterns reveal more than individual data points.',
+  correlation: 'Attackers rely on correlation, not hacking.',
+  confidence: 'False positives happen — validation matters.',
+  context: 'Context helps distinguish real matches from noise.',
+  export: 'Documentation supports informed decision-making.',
+  details: 'Understanding exposure is the first step to protection.',
+};
+
 /**
  * GatedContent - Wraps content that should be hidden/blurred for Free users.
  * Shows blurred placeholder with inline upgrade prompt.
@@ -98,6 +110,8 @@ export function GatedContent({
     );
   }
 
+  const microcopy = CONTENT_MICROCOPY[contentType] || CONTENT_MICROCOPY.details;
+
   return (
     <div className={cn('relative', className)}>
       {/* Blurred fallback content */}
@@ -122,6 +136,10 @@ export function GatedContent({
               Upgrade to see full investigation details
             </p>
           </div>
+          {/* Educational microcopy */}
+          <p className="text-[10px] text-muted-foreground/70 italic max-w-[200px]">
+            {microcopy}
+          </p>
           <Button
             size="sm"
             onClick={() => navigate('/settings/billing')}

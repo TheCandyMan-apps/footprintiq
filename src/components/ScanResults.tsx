@@ -326,6 +326,11 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                 <div className="text-sm text-muted-foreground">Removal Requested</div>
               </div>
             </div>
+            
+            {/* Educational microcopy */}
+            <p className="text-xs text-muted-foreground mt-6 max-w-lg mx-auto">
+              Most people don't realise this information is publicly accessible. Attackers rely on correlation, not hacking.
+            </p>
           </div>
         </Card>
 
@@ -364,6 +369,10 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                   {lowConfidenceCount}
                 </span>
               </div>
+              {/* Educational microcopy */}
+              <p className="text-[10px] text-muted-foreground/70 pt-2 border-t border-border/50">
+                Public data becomes risky when combined. Confidence reflects match quality, not threat level.
+              </p>
             </div>
           </div>
         </Card>
@@ -389,6 +398,9 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                   </Label>
                   <p className="text-xs text-muted-foreground">
                     {lowConfidenceCount} findings below 30% confidence hidden
+                  </p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                    False positives happen — validation matters.
                   </p>
                 </div>
               </div>
