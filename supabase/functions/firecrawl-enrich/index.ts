@@ -5,6 +5,39 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Known domains that typically block automated access
+const KNOWN_BLOCKED_DOMAINS = [
+  'reddit.com', 'twitter.com', 'x.com', 'linkedin.com', 'facebook.com', 
+  'instagram.com', 'tiktok.com', 'pinterest.com', 'snapchat.com'
+];
+
+function getErrorCode(status: number, errorMessage: string): string {
+  const lowerMsg = errorMessage.toLowerCase();
+  
+  if (lowerMsg.includes('not currently supported') || lowerMsg.includes('not supported')) {
+    return 'UNSUPPORTED_SITE';
+  }
+  if (status === 403 || status === 401 || lowerMsg.includes('blocked') || lowerMsg.includes('forbidden')) {
+    return 'ACCESS_DENIED';
+  }
+  if (status === 404 || lowerMsg.includes('not found')) {
+    return 'NOT_FOUND';
+  }
+  if (lowerMsg.includes('timeout') || lowerMsg.includes('timed out')) {
+    return 'TIMEOUT';
+  }
+  return 'GENERIC';
+}
+
+function getDomainFromUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.replace('www.', '');
+  } catch {
+    return '';
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -15,7 +48,7 @@ serve(async (req) => {
 
     if (!url) {
       return new Response(
-        JSON.stringify({ success: false, error: 'URL is required' }),
+        JSON.stringify({ success: false, error: 'URL is required', errorCode: 'INVALID_INPUT' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -24,7 +57,7 @@ serve(async (req) => {
     if (!apiKey) {
       console.error('FIRECRAWL_API_KEY not configured');
       return new Response(
-        JSON.stringify({ success: false, error: 'Context enrichment service not configured' }),
+        JSON.stringify({ success: false, error: 'Context enrichment service not configured', errorCode: 'CONFIG_ERROR' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -35,7 +68,10 @@ serve(async (req) => {
       formattedUrl = `https://${formattedUrl}`;
     }
 
-    console.log('Enriching context for URL:', formattedUrl);
+    const domain = getDomainFromUrl(formattedUrl);
+    const isKnownBlocked = KNOWN_BLOCKED_DOMAINS.some(d => domain.includes(d));
+
+    console.log('Enriching context for URL:', formattedUrl, isKnownBlocked ? '(known blocked domain)' : '');
 
     const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
       method: 'POST',
@@ -54,8 +90,17 @@ serve(async (req) => {
 
     if (!response.ok) {
       console.error('Firecrawl API error:', data);
+      const errorMessage = data.error || `Request failed with status ${response.status}`;
+      const errorCode = getErrorCode(response.status, errorMessage);
+      
       return new Response(
-        JSON.stringify({ success: false, error: data.error || `Request failed with status ${response.status}` }),
+        JSON.stringify({ 
+          success: false, 
+          error: errorMessage,
+          errorCode,
+          domain,
+          isKnownBlocked
+        }),
         { status: response.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -82,7 +127,7 @@ serve(async (req) => {
     console.error('Error enriching context:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to enrich context';
     return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
+      JSON.stringify({ success: false, error: errorMessage, errorCode: 'GENERIC' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

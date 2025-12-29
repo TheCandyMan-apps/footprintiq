@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   Globe, 
   Clock, 
@@ -19,7 +20,12 @@ import {
   Sparkles,
   ExternalLink,
   Copy,
-  FileText
+  FileText,
+  Info,
+  ShieldAlert,
+  Ban,
+  FileQuestion,
+  Timer
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -38,23 +44,58 @@ interface EnrichmentData {
   metadata: Record<string, unknown>;
 }
 
+interface ErrorData {
+  message: string;
+  code: string;
+  domain?: string;
+  isKnownBlocked?: boolean;
+}
+
 type PageState = 'idle' | 'loading' | 'success' | 'error';
+
+const ERROR_MESSAGES: Record<string, { title: string; description: string; icon: typeof AlertCircle }> = {
+  UNSUPPORTED_SITE: {
+    title: "Site Not Supported",
+    description: "This website is not supported by our content extraction service. Social media platforms (Reddit, Twitter, LinkedIn, Facebook) and some other sites block automated access.",
+    icon: Ban
+  },
+  ACCESS_DENIED: {
+    title: "Access Denied",
+    description: "This page requires login, is protected by a paywall, or actively blocks content extraction. Try a publicly accessible page instead.",
+    icon: ShieldAlert
+  },
+  NOT_FOUND: {
+    title: "Page Not Found",
+    description: "This page doesn't exist or has been removed. Double-check the URL and try again.",
+    icon: FileQuestion
+  },
+  TIMEOUT: {
+    title: "Request Timed Out",
+    description: "The page took too long to respond. This might be a temporary issue—try again in a moment.",
+    icon: Timer
+  },
+  GENERIC: {
+    title: "Couldn't Fetch Page",
+    description: "Something went wrong while fetching this page. The site may be temporarily unavailable or blocking automated access.",
+    icon: AlertCircle
+  }
+};
 
 export default function ContextEnrichment() {
   const { isFree, isLoading: tierLoading } = useTierGating();
   const [url, setUrl] = useState("");
   const [state, setState] = useState<PageState>('idle');
   const [enrichmentData, setEnrichmentData] = useState<EnrichmentData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [errorData, setErrorData] = useState<ErrorData | null>(null);
   const [activeTab, setActiveTab] = useState<'summary' | 'raw'>('summary');
   const { toast } = useToast();
 
-  const handleEnrich = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleEnrich = async (e?: React.FormEvent) => {
+    e?.preventDefault();
     if (!url.trim() || isFree) return;
     
     setState('loading');
-    setError(null);
+    setErrorData(null);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('firecrawl-enrich', {
@@ -66,7 +107,14 @@ export default function ContextEnrichment() {
       }
 
       if (!data.success) {
-        throw new Error(data.error || 'Failed to retrieve context');
+        setErrorData({
+          message: data.error || 'Failed to retrieve context',
+          code: data.errorCode || 'GENERIC',
+          domain: data.domain,
+          isKnownBlocked: data.isKnownBlocked
+        });
+        setState('error');
+        return;
       }
 
       setEnrichmentData(data);
@@ -78,7 +126,10 @@ export default function ContextEnrichment() {
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to retrieve context';
-      setError(errorMessage);
+      setErrorData({
+        message: errorMessage,
+        code: 'GENERIC'
+      });
       setState('error');
       toast({
         title: "Retrieval Failed",
@@ -116,8 +167,11 @@ export default function ContextEnrichment() {
     setUrl("");
     setState('idle');
     setEnrichmentData(null);
-    setError(null);
+    setErrorData(null);
   };
+
+  const errorInfo = errorData ? ERROR_MESSAGES[errorData.code] || ERROR_MESSAGES.GENERIC : null;
+  const ErrorIcon = errorInfo?.icon || AlertCircle;
 
   return (
     <>
@@ -155,6 +209,24 @@ export default function ContextEnrichment() {
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-muted-foreground" />
                   Fetch URL Content
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-5 w-5 ml-1">
+                          <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-xs p-3">
+                        <div className="space-y-2 text-xs">
+                          <p className="font-medium text-foreground">Supported Sites</p>
+                          <div className="space-y-1">
+                            <p className="text-emerald-600 dark:text-emerald-400">✓ Works well: News articles, blogs, documentation, company pages, portfolio sites</p>
+                            <p className="text-destructive">✗ Often blocked: Reddit, Twitter/X, LinkedIn, Facebook, Instagram</p>
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </CardTitle>
                 <CardDescription>
                   Enter any public URL to extract its content for analysis
@@ -239,22 +311,26 @@ export default function ContextEnrichment() {
             </Card>
 
             {/* Error State */}
-            {state === 'error' && error && (
+            {state === 'error' && errorData && errorInfo && (
               <Card className="border-destructive/30 bg-destructive/5">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                    <ErrorIcon className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-foreground">Couldn't fetch that page</p>
+                      <p className="text-sm font-medium text-foreground">{errorInfo.title}</p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        This site may block automated access, require login, or be temporarily unavailable.
+                        {errorData.domain && errorData.isKnownBlocked 
+                          ? `${errorData.domain} is known to block automated access. ${errorInfo.description}`
+                          : errorInfo.description
+                        }
                       </p>
-                      <div className="flex gap-2 mt-3">
-                        <Button variant="outline" size="sm" onClick={handleEnrich}>
-                          Try again
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        <Button variant="outline" size="sm" onClick={() => handleEnrich()}>
+                          <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                          Try Again
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => window.open(url, '_blank')}>
-                          <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                          <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
                           Open URL
                         </Button>
                         <Button variant="ghost" size="sm" onClick={handleReset}>
@@ -287,7 +363,7 @@ export default function ContextEnrichment() {
                         <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
                         Open
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={handleEnrich}>
+                      <Button variant="ghost" size="sm" onClick={() => handleEnrich()}>
                         <RefreshCw className="h-3.5 w-3.5" />
                       </Button>
                     </div>
