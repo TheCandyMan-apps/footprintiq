@@ -1,8 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Lock, Calendar } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { ProUpgradeModal } from "@/components/results/ProUpgradeModal";
 
 interface ScanLimitReachedProps {
   scansUsed: number;
@@ -19,9 +20,11 @@ export function ScanLimitReached({
   scansLimit, 
   className 
 }: ScanLimitReachedProps) {
-  const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
 
   return (
+    <>
+      <ProUpgradeModal open={showModal} onOpenChange={setShowModal} />
     <Card className={cn(
       "p-6 bg-gradient-to-br from-muted/30 via-background to-muted/20 border-border",
       className
@@ -49,7 +52,7 @@ export function ScanLimitReached({
 
         {/* Upgrade CTA */}
         <Button 
-          onClick={() => navigate('/pricing')}
+          onClick={() => setShowModal(true)}
           size="lg"
           className="w-full max-w-xs"
         >
@@ -75,6 +78,7 @@ export function ScanLimitReached({
         </p>
       </div>
     </Card>
+    </>
   );
 }
 
@@ -86,10 +90,12 @@ export function ScanLimitReachedInline({
   scansLimit,
   className 
 }: ScanLimitReachedProps) {
-  const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
 
   return (
-    <div className={cn(
+    <>
+      <ProUpgradeModal open={showModal} onOpenChange={setShowModal} />
+      <div className={cn(
       "flex items-center justify-between gap-4 p-4 rounded-lg bg-muted/30 border border-border/50",
       className
     )}>
@@ -104,13 +110,14 @@ export function ScanLimitReachedInline({
           </p>
         </div>
       </div>
-      <Button 
-        onClick={() => navigate('/pricing')}
-        size="sm"
-      >
-        <TrendingUp className="h-4 w-4 mr-1.5" />
-        Unlock Full Analysis
-      </Button>
-    </div>
+        <Button 
+          onClick={() => setShowModal(true)}
+          size="sm"
+        >
+          <TrendingUp className="h-4 w-4 mr-1.5" />
+          Unlock Full Analysis
+        </Button>
+      </div>
+    </>
   );
 }

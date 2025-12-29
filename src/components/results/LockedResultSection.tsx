@@ -1,8 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Lock, TrendingUp, type LucideIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { ProUpgradeModal } from "./ProUpgradeModal";
 
 export type LockedSectionType = 
   | 'context'
@@ -79,11 +80,11 @@ export function LockedResultSection({
   children,
   compact = false,
 }: LockedResultSectionProps) {
-  const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
   const config = SECTION_CONFIG[type];
 
   const handleUpgrade = () => {
-    navigate('/pricing');
+    setShowModal(true);
   };
 
   if (compact) {
@@ -118,6 +119,7 @@ export function LockedResultSection({
             Unlock Full Analysis
           </Button>
         </div>
+        <ProUpgradeModal open={showModal} onOpenChange={setShowModal} />
       </div>
     );
   }
@@ -186,6 +188,7 @@ export function LockedResultSection({
           </p>
         </div>
       </div>
+      <ProUpgradeModal open={showModal} onOpenChange={setShowModal} />
     </Card>
   );
 }
