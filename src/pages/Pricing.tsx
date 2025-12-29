@@ -213,11 +213,12 @@ const PricingPage = () => {
           <div className="container mx-auto">
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               
-              {/* Free Plan */}
+              {/* Free Plan - De-emphasised */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0 }}
+                className="opacity-90"
               >
                 <Card className={`relative h-full ${currentPlan === 'free' ? 'ring-2 ring-primary' : ''}`}>
                   {currentPlan === 'free' && (
@@ -226,11 +227,14 @@ const PricingPage = () => {
                   
                   <CardHeader>
                     <div className="flex items-center gap-2 mb-2">
-                      <Search className="w-5 h-5 text-muted-foreground" />
+                      <Search className="w-5 h-5 text-muted-foreground/70" />
                       <CardTitle className="text-2xl">Free Scan</CardTitle>
                     </div>
+                    <p className="text-xs text-muted-foreground/80 font-medium tracking-wide">
+                      Discovery • Awareness • Preview
+                    </p>
                     <div className="pt-2">
-                      <span className="text-4xl font-bold">£0</span>
+                      <span className="text-3xl font-bold text-muted-foreground">£0</span>
                     </div>
                     <CardDescription className="pt-4">
                       A fast way to see what's publicly visible.
@@ -243,7 +247,7 @@ const PricingPage = () => {
                       <ul className="space-y-2">
                         {freeIncludes.map((item, i) => (
                           <li key={i} className="flex items-start gap-2 text-sm">
-                            <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                            <Check className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                             <span>{item}</span>
                           </li>
                         ))}
@@ -266,27 +270,28 @@ const PricingPage = () => {
                   <CardFooter className="flex flex-col gap-2">
                     <Button 
                       className="w-full" 
-                      variant="outline"
+                      variant="ghost"
                       onClick={() => handleSelectPlan('free')}
                       disabled={currentPlan === 'free'}
                     >
-                      {currentPlan === 'free' ? 'Current Plan' : 'Run Free Scan'}
+                      {currentPlan === 'free' ? 'Current Plan' : 'Try Free Scan'}
                     </Button>
                     <p className="text-xs text-muted-foreground text-center">No credit card required</p>
                   </CardFooter>
                 </Card>
               </motion.div>
 
-              {/* Pro Plan */}
+              {/* Pro Plan - Highlighted as Recommended */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.1 }}
+                className="scale-[1.02]"
               >
-                <Card className={`relative h-full border-primary shadow-md ${currentPlan === 'pro' ? 'ring-2 ring-primary' : ''}`}>
+                <Card className={`relative h-full border-primary shadow-xl ${currentPlan === 'pro' ? 'ring-2 ring-primary' : ''}`}>
                   <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
                     <Star className="w-3 h-3 mr-1" />
-                    Most Popular
+                    Recommended
                   </Badge>
                   {currentPlan === 'pro' && (
                     <Badge variant="secondary" className="absolute -top-3 right-4">Current Plan</Badge>
@@ -297,6 +302,9 @@ const PricingPage = () => {
                       <Star className="w-5 h-5 text-primary" />
                       <CardTitle className="text-2xl">Pro</CardTitle>
                     </div>
+                    <p className="text-xs text-primary font-medium tracking-wide">
+                      Validation • Investigation • Action
+                    </p>
                     <div className="pt-2">
                       <span className="text-4xl font-bold">£{PLANS.pro.priceMonthly}</span>
                       <span className="text-muted-foreground">/month</span>
@@ -304,6 +312,13 @@ const PricingPage = () => {
                     <CardDescription className="pt-4">
                       For individuals who want ongoing visibility and control.
                     </CardDescription>
+                    
+                    {/* Pro Differentiator */}
+                    <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                      <p className="text-sm font-medium text-primary">
+                        Understand why results exist — not just that they do.
+                      </p>
+                    </div>
                   </CardHeader>
                   
                   <CardContent className="space-y-6">
@@ -360,6 +375,9 @@ const PricingPage = () => {
                       <Building2 className="w-5 h-5 text-muted-foreground" />
                       <CardTitle className="text-2xl">Business / Teams</CardTitle>
                     </div>
+                    <p className="text-xs text-muted-foreground/80 font-medium tracking-wide">
+                      Scale • Compliance • Collaboration
+                    </p>
                     <div className="pt-2">
                       <span className="text-2xl font-bold text-muted-foreground">Custom pricing</span>
                     </div>
