@@ -14,6 +14,8 @@ import { Loader2, Info, Bug } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUsernameScan } from '@/hooks/useUsernameScan';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { canRunScan } from '@/lib/billing/quotas';
+import { ScanLimitReachedInline } from './ScanLimitReached';
 import { UsernameScanDebug } from './UsernameScanDebug';
 import { ScanProgressDialog } from './ScanProgressDialog';
 import { checkAndRefreshSession } from '@/lib/auth/sessionRefresh';
@@ -472,16 +474,30 @@ export function UsernameScanForm() {
             </div>
           )}
 
-          <Button type="submit" disabled={submitting || isScanning || providers.length === 0} className="w-full h-11">
-            {(submitting || isScanning) ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Starting Multi-Tool Scan...
-              </>
-            ) : (
-              `Run Scan (${providers.length} ${providers.length === 1 ? 'Tool' : 'Tools'})`
-            )}
-          </Button>
+          {/* Scan Limit Check */}
+          {(() => {
+            const quotaCheck = canRunScan(workspace);
+            if (!quotaCheck.allowed && quotaCheck.reason === 'limit_reached') {
+              return (
+                <ScanLimitReachedInline 
+                  scansUsed={quotaCheck.scansUsed || 0} 
+                  scansLimit={quotaCheck.scansLimit || 1} 
+                />
+              );
+            }
+            return (
+              <Button type="submit" disabled={submitting || isScanning || providers.length === 0} className="w-full h-11">
+                {(submitting || isScanning) ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Starting Multi-Tool Scan...
+                  </>
+                ) : (
+                  `Run Scan (${providers.length} ${providers.length === 1 ? 'Tool' : 'Tools'})`
+                )}
+              </Button>
+            );
+          })()}
         </form>
       </CardContent>
     </Card>
