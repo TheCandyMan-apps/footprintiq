@@ -30,7 +30,6 @@ import { CatfishDetection } from '@/components/CatfishDetection';
 import { TimelineChart } from "@/components/TimelineChart";
 import { ShareReportDialog } from "@/components/ShareReportDialog";
 import { PDFReportButton } from "@/components/PDFReportButton";
-import { ComprehensiveReportExport } from "@/components/ComprehensiveReportExport";
 import { GraphExplorer } from "@/components/GraphExplorer";
 import { MonitoringToggle } from "@/components/MonitoringToggle";
 import { ScanSummary } from "@/components/ScanSummary";
@@ -668,15 +667,10 @@ const ResultsDetail = () => {
               Back to Scanner
             </Button>
             <div className="flex gap-2">
-              <ComprehensiveReportExport
-                scanId={scanId!}
-                scan={scan}
-                dataSources={dataSources}
-                socialProfiles={socialProfiles}
-              />
+              <ShareReportDialog scanId={scanId!} />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline">
+                  <Button className="bg-gradient-to-r from-primary to-accent hover:opacity-90">
                     <Download className="w-4 h-4 mr-2" />
                     Export Report
                   </Button>

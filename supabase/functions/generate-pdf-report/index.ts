@@ -109,7 +109,7 @@ serve(async (req) => {
     // Fetch findings separately (more reliable than relation query)
     const { data: findings, error: findingsError } = await supabaseClient
       .from("findings")
-      .select("id, provider, kind, title, confidence, evidence, severity, meta")
+      .select("id, provider, kind, confidence, evidence, severity, meta, observed_at")
       .eq("scan_id", scanId)
       .order("confidence", { ascending: false });
 
