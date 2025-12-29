@@ -46,6 +46,8 @@ export function PDFReportButton({ scanId }: PDFReportButtonProps) {
       if (error) throw error;
 
       const scan = data.scan;
+      const stats = data.stats || {};
+      const findings = scan.findings || [];
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       
@@ -69,9 +71,13 @@ export function PDFReportButton({ scanId }: PDFReportButtonProps) {
       doc.addPage();
       let yPos = addPageHeader(doc, 'Executive Summary');
       
-      // Privacy Score Card
+      // Privacy Score Card - use stats from edge function
       yPos += 10;
       const privacyScore = scan.privacy_score || 0;
+      const totalFindings = stats.totalFindings || findings.length || 0;
+      const highRiskCount = stats.highRiskCount || 0;
+      const mediumRiskCount = stats.mediumRiskCount || 0;
+      
       const scoreColor = privacyScore < 40 
         ? PDF_COLORS.success 
         : privacyScore <= 70 
@@ -80,9 +86,9 @@ export function PDFReportButton({ scanId }: PDFReportButtonProps) {
       
       yPos = addStatCard(doc, [
         { label: 'Privacy Score', value: `${privacyScore}/100`, color: scoreColor },
-        { label: 'Total Sources', value: scan.total_sources_found || 0 },
-        { label: 'High Risk', value: scan.high_risk_count || 0, color: PDF_COLORS.danger },
-        { label: 'Medium Risk', value: scan.medium_risk_count || 0, color: { r: 202, g: 138, b: 4 } },
+        { label: 'Total Findings', value: totalFindings },
+        { label: 'High Risk', value: highRiskCount, color: PDF_COLORS.danger },
+        { label: 'Medium Risk', value: mediumRiskCount, color: { r: 202, g: 138, b: 4 } },
       ], yPos);
       
       // Risk Assessment
@@ -103,32 +109,49 @@ export function PDFReportButton({ scanId }: PDFReportButtonProps) {
         yPos += 6;
       });
       
-      // Data Sources Table
-      if (scan.data_sources && scan.data_sources.length > 0) {
+      // Findings Table - use actual findings from response
+      if (findings.length > 0) {
         yPos = checkPageBreak(doc, yPos, 80);
-        yPos = addSectionHeader(doc, 'Data Sources Found', yPos + 15);
+        yPos = addSectionHeader(doc, 'Findings Detail', yPos + 15);
         
-        const tableData = scan.data_sources.slice(0, 20).map((source: any) => [
-          source.name || 'Unknown',
-          source.category || 'General',
-          source.risk_level || 'Unknown',
-          (source.data_found?.join(", ") || "—").substring(0, 40),
-        ]);
+        // Group findings by provider for better organization
+        const tableData = findings.slice(0, 30).map((finding: any) => {
+          // Extract site/platform from evidence if available
+          const evidence = Array.isArray(finding.evidence) ? finding.evidence : [];
+          const siteEvidence = evidence.find((e: any) => e.key === 'site' || e.key === 'platform');
+          const urlEvidence = evidence.find((e: any) => e.key === 'url');
+          
+          const displayName = siteEvidence?.value || finding.kind || 'Finding';
+          const displayUrl = urlEvidence?.value || '';
+          
+          return [
+            finding.provider || 'Unknown',
+            displayName.substring(0, 25),
+            finding.severity || 'unknown',
+            `${Math.round((finding.confidence || 0) * 100)}%`,
+            displayUrl.substring(0, 30) || '—',
+          ];
+        });
 
         autoTable(doc, {
           startY: yPos,
-          head: [["Source", "Category", "Risk Level", "Data Found"]],
+          head: [["Provider", "Finding", "Severity", "Confidence", "URL"]],
           body: tableData,
           ...getTableStyles(),
         });
         
-        // Show count if more sources exist
-        if (scan.data_sources.length > 20) {
+        // Show count if more findings exist
+        if (findings.length > 30) {
           const finalY = (doc as any).lastAutoTable.finalY;
           setFont(doc, 'small');
           setColor(doc, PDF_COLORS.slate500);
-          doc.text(`... and ${scan.data_sources.length - 20} more sources`, PDF_SPACING.margin, finalY + 10);
+          doc.text(`... and ${findings.length - 30} more findings`, PDF_SPACING.margin, finalY + 10);
         }
+      } else {
+        yPos += 20;
+        setFont(doc, 'body');
+        setColor(doc, PDF_COLORS.slate500);
+        doc.text('No findings data available for this scan.', PDF_SPACING.margin, yPos);
       }
       
       // Add professional footers
