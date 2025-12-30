@@ -682,7 +682,7 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
 
         {/* Viral share prompt - positioned before locked AI Analysis */}
         {isFree && (
-          <ViralSharePrompt className="mt-8" placement="scan_results_before_ai" />
+          <ViralSharePrompt className="mt-8" placement="pre_locked" scanId={scanId} />
         )}
 
         {/* AI Analysis - shown inline with Pro lock for Free users */}

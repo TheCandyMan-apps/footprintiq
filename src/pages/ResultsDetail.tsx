@@ -854,7 +854,7 @@ const ResultsDetail = () => {
 
         {/* Viral share prompt - positioned before FootprintDNA (locked section) */}
         {!subscriptionLoading && userPlan === 'free' && (
-          <ViralSharePrompt className="mb-6" placement="results_before_dna" />
+          <ViralSharePrompt className="mb-6" placement="pre_locked" scanId={scanId} />
         )}
 
         {/* Footprint DNA Card */}
@@ -966,7 +966,7 @@ const ResultsDetail = () => {
 
         {/* Viral share prompt - positioned before AI Analysis (locked section) */}
         {!subscriptionLoading && userPlan === 'free' && (scan.scan_type === 'username' || scan.scan_type === 'email') && (
-          <ViralSharePrompt className="mb-6" placement="results_before_ai" />
+          <ViralSharePrompt className="mb-6" placement="pre_locked" scanId={scanId} />
         )}
 
         {/* AI Analysis - only show for username/email scans (not phone) */}
