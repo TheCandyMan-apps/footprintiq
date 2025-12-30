@@ -340,11 +340,6 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           </div>
         </Card>
 
-        {/* Viral share prompt for free users */}
-        {isFree && (
-          <ViralSharePrompt className="mb-6" />
-        )}
-
         {/* Post-scan upgrade banner for free users */}
         <PostScanUpgradeBanner 
           totalFindings={dataSources.length + foundProfiles.length}
@@ -685,9 +680,14 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
           )}
         </div>
 
+        {/* Viral share prompt - positioned before locked AI Analysis */}
+        {isFree && (
+          <ViralSharePrompt className="mt-8" />
+        )}
+
         {/* AI Analysis - shown inline with Pro lock for Free users */}
         {isFree && (
-          <div className="mt-8">
+          <div className="mt-6">
             <PartiallyLockedSection
               title="AI Analysis & Interpretation"
               icon={Brain}

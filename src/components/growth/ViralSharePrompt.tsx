@@ -94,7 +94,7 @@ export function ViralSharePrompt({ className, compact = false, onDismiss }: Vira
 
   return (
     <Card className={cn(
-      "relative p-6 bg-gradient-to-br from-primary/5 via-background to-accent/5 border-primary/20",
+      "relative p-6 bg-gradient-to-br from-primary/10 via-background to-accent/10 border-primary/40 ring-1 ring-primary/20 shadow-md",
       className
     )}>
       {/* Dismiss button */}
@@ -111,6 +111,11 @@ export function ViralSharePrompt({ className, compact = false, onDismiss }: Vira
         <h3 className="text-lg font-semibold mb-2">
           😳 Think this is bad? Check what's public about your friends.
         </h3>
+
+        {/* Social proof line */}
+        <p className="text-sm font-medium text-primary mb-2">
+          Most people share this with a friend before upgrading.
+        </p>
 
         {/* Body */}
         <p className="text-sm text-muted-foreground mb-5">
