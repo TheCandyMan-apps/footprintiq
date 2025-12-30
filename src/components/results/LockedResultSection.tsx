@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { ProUpgradeModal } from "./ProUpgradeModal";
 import { ViralSharePrompt } from "@/components/growth/ViralSharePrompt";
+import { useEmailVerification } from "@/hooks/useEmailVerification";
+import { EmailVerificationBanner } from "@/components/auth/EmailVerificationBanner";
 
 export type LockedSectionType = 
   | 'context'
@@ -85,7 +87,11 @@ export function LockedResultSection({
   scanId,
 }: LockedResultSectionProps) {
   const [showModal, setShowModal] = useState(false);
+  const { isVerified, isLoading: verificationLoading } = useEmailVerification();
   const config = SECTION_CONFIG[type];
+
+  // Show verification banner instead of Pro upgrade if not verified
+  const shouldShowVerification = !verificationLoading && !isVerified;
 
   const handleUpgrade = () => {
     setShowModal(true);
@@ -156,48 +162,54 @@ export function LockedResultSection({
         </div>
       )}
       
-      {/* Overlay with upgrade CTA */}
+      {/* Overlay with upgrade CTA or verification banner */}
       <div className="absolute inset-0 flex items-center justify-center bg-background/75 backdrop-blur-[2px]">
-        <div className="text-center p-6 max-w-[280px]">
-          {/* Lock icon */}
-          <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Lock className="h-6 w-6 text-primary" />
+        {shouldShowVerification ? (
+          <div className="p-4 max-w-[320px]">
+            <EmailVerificationBanner placement="locked_section" />
           </div>
-          
-          {/* Section title */}
-          <p className="font-semibold text-base mb-1">{config.title}</p>
-          
-          {/* Value proposition */}
-          <p className="text-sm text-muted-foreground mb-2">
-            {config.valueProposition}
-          </p>
-          
-          {/* Description */}
-          <p className="text-xs text-muted-foreground/80 mb-4">
-            {config.description}
-          </p>
-          
-          {/* CTA Button */}
-          <Button 
-            onClick={handleUpgrade}
-            className="w-full"
-          >
-            <TrendingUp className="h-4 w-4 mr-2" />
-            Unlock Full Analysis
-          </Button>
-          
-          {/* Viral share prompt - compact variant inside locked overlay */}
-          <ViralSharePrompt 
-            compact 
-            placement="locked_overlay" 
-            scanId={scanId}
-          />
-          
-          {/* Educational microcopy */}
-          <p className="text-[10px] text-muted-foreground/60 mt-4 italic">
-            {config.microcopy}
-          </p>
-        </div>
+        ) : (
+          <div className="text-center p-6 max-w-[280px]">
+            {/* Lock icon */}
+            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Lock className="h-6 w-6 text-primary" />
+            </div>
+            
+            {/* Section title */}
+            <p className="font-semibold text-base mb-1">{config.title}</p>
+            
+            {/* Value proposition */}
+            <p className="text-sm text-muted-foreground mb-2">
+              {config.valueProposition}
+            </p>
+            
+            {/* Description */}
+            <p className="text-xs text-muted-foreground/80 mb-4">
+              {config.description}
+            </p>
+            
+            {/* CTA Button */}
+            <Button 
+              onClick={handleUpgrade}
+              className="w-full"
+            >
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Unlock Full Analysis
+            </Button>
+            
+            {/* Viral share prompt - compact variant inside locked overlay */}
+            <ViralSharePrompt 
+              compact 
+              placement="locked_overlay" 
+              scanId={scanId}
+            />
+            
+            {/* Educational microcopy */}
+            <p className="text-[10px] text-muted-foreground/60 mt-4 italic">
+              {config.microcopy}
+            </p>
+          </div>
+        )}
       </div>
       <ProUpgradeModal open={showModal} onOpenChange={setShowModal} />
     </Card>

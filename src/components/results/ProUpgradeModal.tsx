@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useState } from "react";
+import { useEmailVerification } from "@/hooks/useEmailVerification";
+import { VerificationBlockedMessage } from "@/components/auth/EmailVerificationBanner";
 
 interface ProUpgradeModalProps {
   open: boolean;
@@ -26,6 +28,10 @@ export function ProUpgradeModal({ open, onOpenChange }: ProUpgradeModalProps) {
   const { toast } = useToast();
   const { workspace } = useWorkspace();
   const [loading, setLoading] = useState(false);
+  const { isVerified, isLoading: verificationLoading } = useEmailVerification();
+
+  // Show verification prompt if not verified
+  const shouldShowVerification = !verificationLoading && !isVerified;
 
   const handleUpgrade = async () => {
     if (!workspace?.id) {
@@ -78,64 +84,85 @@ export function ProUpgradeModal({ open, onOpenChange }: ProUpgradeModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
-        <DialogHeader className="text-center pb-2">
-          {/* Lock icon header */}
-          <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-            <Lock className="h-7 w-7 text-primary" />
-          </div>
+        {shouldShowVerification ? (
+          <>
+            <DialogHeader className="text-center pb-2">
+              <DialogTitle className="text-xl font-semibold leading-tight">
+                Verify your email first
+              </DialogTitle>
+            </DialogHeader>
+            <VerificationBlockedMessage />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onOpenChange(false)}
+              className="text-muted-foreground hover:text-foreground"
+            >
+              Close
+            </Button>
+          </>
+        ) : (
+          <>
+            <DialogHeader className="text-center pb-2">
+              {/* Lock icon header */}
+              <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <Lock className="h-7 w-7 text-primary" />
+              </div>
 
-          <DialogTitle className="text-xl font-semibold leading-tight">
-            Unlock the full picture of your digital footprint
-          </DialogTitle>
+              <DialogTitle className="text-xl font-semibold leading-tight">
+                Unlock the full picture of your digital footprint
+              </DialogTitle>
 
-          <DialogDescription className="pt-4 text-base text-muted-foreground">
-            <span className="block mb-1">Free scans show what exists.</span>
-            <span className="block font-medium text-foreground">
-              Pro explains what it means.
-            </span>
-          </DialogDescription>
-        </DialogHeader>
+              <DialogDescription className="pt-4 text-base text-muted-foreground">
+                <span className="block mb-1">Free scans show what exists.</span>
+                <span className="block font-medium text-foreground">
+                  Pro explains what it means.
+                </span>
+              </DialogDescription>
+            </DialogHeader>
 
-        {/* Benefits list */}
-        <div className="py-4">
-          <p className="text-sm font-medium mb-3">
-            Upgrade to FootprintIQ Pro to:
-          </p>
-          <ul className="space-y-2.5">
-            {benefits.map((benefit, index) => (
-              <li key={index} className="flex items-start gap-2.5">
-                <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-muted-foreground">{benefit}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+            {/* Benefits list */}
+            <div className="py-4">
+              <p className="text-sm font-medium mb-3">
+                Upgrade to FootprintIQ Pro to:
+              </p>
+              <ul className="space-y-2.5">
+                {benefits.map((benefit, index) => (
+                  <li key={index} className="flex items-start gap-2.5">
+                    <Check className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-sm text-muted-foreground">{benefit}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-        {/* CTA buttons */}
-        <div className="flex flex-col gap-2 pt-2">
-          <Button
-            onClick={handleUpgrade}
-            disabled={loading}
-            size="lg"
-            className="w-full"
-          >
-            {loading ? "Processing..." : "Upgrade to Pro"}
-          </Button>
+            {/* CTA buttons */}
+            <div className="flex flex-col gap-2 pt-2">
+              <Button
+                onClick={handleUpgrade}
+                disabled={loading}
+                size="lg"
+                className="w-full"
+              >
+                {loading ? "Processing..." : "Upgrade to Pro"}
+              </Button>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onOpenChange(false)}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            Continue with limited results
-          </Button>
-        </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Continue with limited results
+              </Button>
+            </div>
 
-        {/* Trust line */}
-        <p className="text-[11px] text-muted-foreground/60 text-center pt-2">
-          Ethical OSINT only • Public data sources • No monitoring • Cancel anytime
-        </p>
+            {/* Trust line */}
+            <p className="text-[11px] text-muted-foreground/60 text-center pt-2">
+              Ethical OSINT only • Public data sources • No monitoring • Cancel anytime
+            </p>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
