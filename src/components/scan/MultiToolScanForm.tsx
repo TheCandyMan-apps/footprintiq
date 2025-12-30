@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,9 @@ import {
   Info,
   Lightbulb
 } from 'lucide-react';
+import { useEmailVerification } from '@/hooks/useEmailVerification';
+import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
+import { analytics } from '@/lib/analytics';
 
 interface ToolConfig {
   id: string;
@@ -48,10 +51,44 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
   const [showRescanSuggestions, setShowRescanSuggestions] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [loadingAI, setLoadingAI] = useState(false);
+  const [userScanCount, setUserScanCount] = useState<number>(0);
+  const [loadingScanCount, setLoadingScanCount] = useState(true);
   const { isStandard } = useUserPersona();
   const { isScanning, startMultiToolScan, progress } = useMultiToolScan();
+  const { isVerified, isLoading: verificationLoading } = useEmailVerification();
   
   const navigate = useNavigate();
+
+  // Check if user needs verification for second scan
+  const requiresVerificationForScan = !verificationLoading && !isVerified && userScanCount >= 1;
+
+  // Fetch user's scan count on mount
+  useEffect(() => {
+    async function fetchScanCount() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) {
+          setLoadingScanCount(false);
+          return;
+        }
+
+        const { count, error } = await supabase
+          .from('scans')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', session.user.id);
+
+        if (!error && count !== null) {
+          setUserScanCount(count);
+        }
+      } catch (error) {
+        console.error('Error fetching scan count:', error);
+      } finally {
+        setLoadingScanCount(false);
+      }
+    }
+
+    fetchScanCount();
+  }, []);
   
   const tools: ToolConfig[] = [
     {
@@ -138,6 +175,13 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
   };
 
   const handleStartScan = async () => {
+    // Check verification requirement for second scan
+    if (requiresVerificationForScan) {
+      analytics.trackEvent('email_verification_blocked_action', { action: 'second_scan' });
+      toast.error('Please verify your email to run additional scans');
+      return;
+    }
+
     if (!target.trim()) {
       toast.error('Please enter a target');
       return;
@@ -273,6 +317,11 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
 
   return (
     <Card className="p-6 space-y-6">
+      {/* Verification banner for second scan */}
+      {requiresVerificationForScan && (
+        <EmailVerificationBanner placement="scan_page" />
+      )}
+
       <div>
         <h3 className="text-lg font-semibold mb-2">Multi-Tool OSINT Scan</h3>
         <p className="text-sm text-muted-foreground">
