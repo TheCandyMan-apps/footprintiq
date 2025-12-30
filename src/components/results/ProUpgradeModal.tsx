@@ -6,13 +6,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Lock, Check } from "lucide-react";
+import { Lock, Check, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useState } from "react";
 import { useEmailVerification } from "@/hooks/useEmailVerification";
 import { VerificationBlockedMessage } from "@/components/auth/EmailVerificationBanner";
+import { useProPreview } from "@/hooks/useProPreview";
 
 interface ProUpgradeModalProps {
   open: boolean;
@@ -21,14 +22,14 @@ interface ProUpgradeModalProps {
 
 /**
  * ProUpgradeModal - Modal shown when free users try to access locked sections.
- * Uses exact copy provided for Pro conversions.
- * Tone: calm, professional, investigative (not salesy or fear-based).
+ * Shows trial option if eligible, otherwise upgrade to Pro.
  */
 export function ProUpgradeModal({ open, onOpenChange }: ProUpgradeModalProps) {
   const { toast } = useToast();
   const { workspace } = useWorkspace();
   const [loading, setLoading] = useState(false);
   const { isVerified, isLoading: verificationLoading } = useEmailVerification();
+  const { isTrialEligible, isTrialActive, startTrialCheckout, loading: trialLoading } = useProPreview();
 
   // Show verification prompt if not verified
   const shouldShowVerification = !verificationLoading && !isVerified;
@@ -69,6 +70,15 @@ export function ProUpgradeModal({ open, onOpenChange }: ProUpgradeModalProps) {
         description: err?.message || "Failed to start checkout",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartTrial = async () => {
+    setLoading(true);
+    try {
+      await startTrialCheckout();
     } finally {
       setLoading(false);
     }
@@ -138,14 +148,37 @@ export function ProUpgradeModal({ open, onOpenChange }: ProUpgradeModalProps) {
 
             {/* CTA buttons */}
             <div className="flex flex-col gap-2 pt-2">
-              <Button
-                onClick={handleUpgrade}
-                disabled={loading}
-                size="lg"
-                className="w-full"
-              >
-                {loading ? "Processing..." : "Upgrade to Pro"}
-              </Button>
+              {isTrialEligible && !isTrialActive ? (
+                <>
+                  <Button
+                    onClick={handleStartTrial}
+                    disabled={loading || trialLoading}
+                    size="lg"
+                    className="w-full"
+                  >
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    {loading ? "Processing..." : "Start Pro Preview"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleUpgrade}
+                    disabled={loading}
+                    size="sm"
+                    className="w-full"
+                  >
+                    {loading ? "Processing..." : "Upgrade to Pro"}
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={handleUpgrade}
+                  disabled={loading}
+                  size="lg"
+                  className="w-full"
+                >
+                  {loading ? "Processing..." : "Upgrade to Pro"}
+                </Button>
+              )}
 
               <Button
                 variant="ghost"
