@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { X, Link2, Share2 } from "lucide-react";
@@ -13,32 +13,71 @@ Didn't expect this 😬
 Check yours:
 https://footprintiq.app`;
 
+export type ViralPlacement = "top" | "pre_locked" | "locked_overlay";
+
 interface ViralSharePromptProps {
   className?: string;
   compact?: boolean;
-  placement?: string; // For tracking which placement converted
+  placement?: ViralPlacement;
+  scanId?: string;
   onDismiss?: () => void;
 }
 
-export function ViralSharePrompt({ className, compact = false, placement = 'unknown', onDismiss }: ViralSharePromptProps) {
+export function ViralSharePrompt({ 
+  className, 
+  compact = false, 
+  placement = 'pre_locked', 
+  scanId,
+  onDismiss 
+}: ViralSharePromptProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isFree, isLoading } = useTierGating();
   const [dismissed, setDismissed] = useState(false);
+  const hasTrackedView = useRef(false);
+
+  // Track view once on mount
+  useEffect(() => {
+    if (!isLoading && !dismissed && !hasTrackedView.current) {
+      hasTrackedView.current = true;
+      const userTier = isFree ? 'free' : 'pro';
+      analytics.trackEvent('viral_share_prompt_view', { 
+        scan_id: scanId || 'unknown',
+        user_tier: userTier,
+        placement 
+      });
+    }
+  }, [isLoading, dismissed, isFree, scanId, placement]);
 
   // Only show for free users
   if (isLoading || !isFree || dismissed) return null;
 
   const handleShare = async () => {
-    analytics.trackEvent('viral_share_clicked', { placement, compact: compact ? 1 : 0, method: navigator.share ? 'native' : 'clipboard' });
+    const userTier = isFree ? 'free' : 'pro';
+    const method = navigator.share ? 'web_share' : 'clipboard';
+    
+    analytics.trackEvent('viral_share_click', { 
+      scan_id: scanId || 'unknown',
+      user_tier: userTier,
+      placement, 
+      method 
+    });
     
     try {
       if (navigator.share) {
         await navigator.share({ text: SHARE_TEXT });
-        analytics.trackEvent('viral_share_completed', { placement, method: 'native' });
+        analytics.trackEvent('viral_share_success', { 
+          scan_id: scanId || 'unknown',
+          placement, 
+          method: 'web_share' 
+        });
       } else {
         await navigator.clipboard.writeText(SHARE_TEXT);
-        analytics.trackEvent('viral_share_completed', { placement, method: 'clipboard' });
+        analytics.trackEvent('viral_share_success', { 
+          scan_id: scanId || 'unknown',
+          placement, 
+          method: 'clipboard' 
+        });
         toast({
           title: "Copied to clipboard!",
           description: "Share text copied. Paste it anywhere to share.",
@@ -48,24 +87,28 @@ export function ViralSharePrompt({ className, compact = false, placement = 'unkn
       // User cancelled or error
       if ((error as Error).name !== 'AbortError') {
         await navigator.clipboard.writeText(SHARE_TEXT);
-        analytics.trackEvent('viral_share_completed', { placement, method: 'clipboard_fallback' });
+        analytics.trackEvent('viral_share_success', { 
+          scan_id: scanId || 'unknown',
+          placement, 
+          method: 'clipboard' 
+        });
         toast({
           title: "Copied to clipboard!",
           description: "Share text copied. Paste it anywhere to share.",
         });
-      } else {
-        analytics.trackEvent('viral_share_cancelled', { placement });
       }
     }
   };
 
   const handleNewScan = () => {
-    analytics.trackEvent('viral_new_scan_clicked', { placement, compact: compact ? 1 : 0 });
+    analytics.trackEvent('viral_check_exposure_click', { 
+      scan_id: scanId || 'unknown',
+      placement 
+    });
     navigate('/scan');
   };
 
   const handleDismiss = () => {
-    analytics.trackEvent('viral_prompt_dismissed', { placement, compact: compact ? 1 : 0 });
     setDismissed(true);
     onDismiss?.();
   };

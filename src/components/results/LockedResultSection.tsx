@@ -1,16 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Lock, TrendingUp, Link2, Share2, type LucideIcon } from "lucide-react";
+import { Lock, TrendingUp, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 import { ProUpgradeModal } from "./ProUpgradeModal";
-
-const SHARE_TEXT = `I just checked my digital footprint.
-Didn't expect this 😬
-Check yours:
-https://footprintiq.app`;
+import { ViralSharePrompt } from "@/components/growth/ViralSharePrompt";
 
 export type LockedSectionType = 
   | 'context'
@@ -74,75 +68,21 @@ interface LockedResultSectionProps {
   children?: React.ReactNode;
   /** Compact mode for inline sections */
   compact?: boolean;
+  /** Scan ID for analytics tracking */
+  scanId?: string;
 }
 
 /**
  * LockedResultSection - Shows blurred/collapsed content with Pro upgrade CTA.
  * Used for gating advanced result sections for free users.
  */
-// Compact viral share component for locked sections
-function ViralShareCompact() {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const handleShare = async () => {
-    try {
-      if (navigator.share) {
-        await navigator.share({ text: SHARE_TEXT });
-      } else {
-        await navigator.clipboard.writeText(SHARE_TEXT);
-        toast({
-          title: "Copied to clipboard!",
-          description: "Share text copied. Paste it anywhere to share.",
-        });
-      }
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        await navigator.clipboard.writeText(SHARE_TEXT);
-        toast({
-          title: "Copied to clipboard!",
-          description: "Share text copied. Paste it anywhere to share.",
-        });
-      }
-    }
-  };
-
-  return (
-    <div className="pt-3 mt-3 border-t border-border/30">
-      <p className="text-xs text-muted-foreground/80 text-center mb-2">— or —</p>
-      <p className="text-xs text-center mb-2">
-        😳 Think this is bad? Check what's public about your friends.
-      </p>
-      <div className="flex gap-2 justify-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => navigate('/scan')}
-          className="text-xs h-7"
-        >
-          <Link2 className="h-3 w-3 mr-1" />
-          Check exposure
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleShare}
-          className="text-xs h-7"
-        >
-          <Share2 className="h-3 w-3 mr-1" />
-          Share
-        </Button>
-      </div>
-    </div>
-  );
-}
-
 export function LockedResultSection({
   type,
   icon: IconComponent,
   className,
   children,
   compact = false,
+  scanId,
 }: LockedResultSectionProps) {
   const [showModal, setShowModal] = useState(false);
   const config = SECTION_CONFIG[type];
@@ -246,8 +186,12 @@ export function LockedResultSection({
             Unlock Full Analysis
           </Button>
           
-          {/* Viral share prompt */}
-          <ViralShareCompact />
+          {/* Viral share prompt - compact variant inside locked overlay */}
+          <ViralSharePrompt 
+            compact 
+            placement="locked_overlay" 
+            scanId={scanId}
+          />
           
           {/* Educational microcopy */}
           <p className="text-[10px] text-muted-foreground/60 mt-4 italic">
