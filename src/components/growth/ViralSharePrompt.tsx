@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useTierGating } from "@/hooks/useTierGating";
 import { cn } from "@/lib/utils";
+import { analytics } from "@/lib/analytics";
 
 const SHARE_TEXT = `I just checked my digital footprint.
 Didn't expect this 😬
@@ -15,10 +16,11 @@ https://footprintiq.app`;
 interface ViralSharePromptProps {
   className?: string;
   compact?: boolean;
+  placement?: string; // For tracking which placement converted
   onDismiss?: () => void;
 }
 
-export function ViralSharePrompt({ className, compact = false, onDismiss }: ViralSharePromptProps) {
+export function ViralSharePrompt({ className, compact = false, placement = 'unknown', onDismiss }: ViralSharePromptProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { isFree, isLoading } = useTierGating();
@@ -28,11 +30,15 @@ export function ViralSharePrompt({ className, compact = false, onDismiss }: Vira
   if (isLoading || !isFree || dismissed) return null;
 
   const handleShare = async () => {
+    analytics.trackEvent('viral_share_clicked', { placement, compact: compact ? 1 : 0, method: navigator.share ? 'native' : 'clipboard' });
+    
     try {
       if (navigator.share) {
         await navigator.share({ text: SHARE_TEXT });
+        analytics.trackEvent('viral_share_completed', { placement, method: 'native' });
       } else {
         await navigator.clipboard.writeText(SHARE_TEXT);
+        analytics.trackEvent('viral_share_completed', { placement, method: 'clipboard' });
         toast({
           title: "Copied to clipboard!",
           description: "Share text copied. Paste it anywhere to share.",
@@ -42,19 +48,24 @@ export function ViralSharePrompt({ className, compact = false, onDismiss }: Vira
       // User cancelled or error
       if ((error as Error).name !== 'AbortError') {
         await navigator.clipboard.writeText(SHARE_TEXT);
+        analytics.trackEvent('viral_share_completed', { placement, method: 'clipboard_fallback' });
         toast({
           title: "Copied to clipboard!",
           description: "Share text copied. Paste it anywhere to share.",
         });
+      } else {
+        analytics.trackEvent('viral_share_cancelled', { placement });
       }
     }
   };
 
   const handleNewScan = () => {
+    analytics.trackEvent('viral_new_scan_clicked', { placement, compact: compact ? 1 : 0 });
     navigate('/scan');
   };
 
   const handleDismiss = () => {
+    analytics.trackEvent('viral_prompt_dismissed', { placement, compact: compact ? 1 : 0 });
     setDismissed(true);
     onDismiss?.();
   };
