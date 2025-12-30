@@ -72,6 +72,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import type { User } from "@supabase/supabase-js";
 import { AddToCaseButton } from "@/components/case/AddToCaseButton";
 import { ExportEnrichedButton } from "@/components/scan/ExportEnrichedButton";
+import { ViralSharePrompt } from "@/components/growth/ViralSharePrompt";
 
 interface DataSource {
   id: string;
@@ -851,6 +852,11 @@ const ResultsDetail = () => {
           </div>
         )}
 
+        {/* Viral share prompt - positioned before FootprintDNA (locked section) */}
+        {!subscriptionLoading && userPlan === 'free' && (
+          <ViralSharePrompt className="mb-6" />
+        )}
+
         {/* Footprint DNA Card */}
         <div className="mb-8">
           <FootprintDNACard scanId={scanId!} />
@@ -956,6 +962,11 @@ const ResultsDetail = () => {
               hasUsername={!!scan.username}
             />
           </div>
+        )}
+
+        {/* Viral share prompt - positioned before AI Analysis (locked section) */}
+        {!subscriptionLoading && userPlan === 'free' && (scan.scan_type === 'username' || scan.scan_type === 'email') && (
+          <ViralSharePrompt className="mb-6" />
         )}
 
         {/* AI Analysis - only show for username/email scans (not phone) */}
