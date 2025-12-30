@@ -7119,6 +7119,7 @@ export type Database = {
           gosearch_pending: boolean
           high_risk_count: number | null
           id: string
+          is_trial_scan: boolean | null
           last_name: string | null
           low_risk_count: number | null
           medium_risk_count: number | null
@@ -7144,6 +7145,7 @@ export type Database = {
           gosearch_pending?: boolean
           high_risk_count?: number | null
           id?: string
+          is_trial_scan?: boolean | null
           last_name?: string | null
           low_risk_count?: number | null
           medium_risk_count?: number | null
@@ -7169,6 +7171,7 @@ export type Database = {
           gosearch_pending?: boolean
           high_risk_count?: number | null
           id?: string
+          is_trial_scan?: boolean | null
           last_name?: string | null
           low_risk_count?: number | null
           medium_risk_count?: number | null
@@ -9402,6 +9405,10 @@ export type Database = {
           stripe_subscription_id: string | null
           subscription_expires_at: string | null
           subscription_tier: string | null
+          trial_ends_at: string | null
+          trial_scans_used: number | null
+          trial_started_at: string | null
+          trial_status: string | null
           updated_at: string
         }
         Insert: {
@@ -9419,6 +9426,10 @@ export type Database = {
           stripe_subscription_id?: string | null
           subscription_expires_at?: string | null
           subscription_tier?: string | null
+          trial_ends_at?: string | null
+          trial_scans_used?: number | null
+          trial_started_at?: string | null
+          trial_status?: string | null
           updated_at?: string
         }
         Update: {
@@ -9436,6 +9447,10 @@ export type Database = {
           stripe_subscription_id?: string | null
           subscription_expires_at?: string | null
           subscription_tier?: string | null
+          trial_ends_at?: string | null
+          trial_scans_used?: number | null
+          trial_started_at?: string | null
+          trial_status?: string | null
           updated_at?: string
         }
         Relationships: []

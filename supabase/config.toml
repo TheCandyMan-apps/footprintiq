@@ -179,3 +179,9 @@ verify_jwt = true
 
 [functions.send-verification-email]
 verify_jwt = true
+
+[functions.stripe-trial-checkout]
+verify_jwt = true
+
+[functions.send-trial-email]
+verify_jwt = false
