@@ -120,7 +120,7 @@ export function ViralSharePrompt({
           — or —
         </p>
         <p className="text-xs text-center mb-2">
-          😳 Think this is bad? Check what's public about your friends.
+          😳 This is what strangers can find about you in seconds.
         </p>
         <div className="flex gap-2 justify-center">
           <Button
@@ -163,7 +163,7 @@ export function ViralSharePrompt({
       <div className="text-center max-w-md mx-auto">
         {/* Headline */}
         <h3 className="text-lg font-semibold mb-2">
-          😳 Think this is bad? Check what's public about your friends.
+          😳 This is what strangers can find about you in seconds.
         </h3>
 
         {/* Social proof line */}
