@@ -67,5 +67,8 @@ verify_jwt = false
 [functions.send-growth-report]
 verify_jwt = false
 
+[functions.results-webhook]
+verify_jwt = false
+
 [functions.n8n-scan-progress]
 verify_jwt = false
