@@ -8,9 +8,10 @@ import { SupportTickets } from '@/components/admin/SupportTickets';
 import { SystemHealth } from '@/components/admin/SystemHealth';
 import { ErrorLogs } from '@/components/admin/ErrorLogs';
 import { DataVerificationPanel } from '@/components/admin/DataVerificationPanel';
+import { GrowthAnalyticsTabs } from '@/components/admin/GrowthAnalyticsTabs';
 import { AdminNav } from '@/components/admin/AdminNav';
 import { Header } from '@/components/Header';
-import { Shield, Crown } from 'lucide-react';
+import { Shield, Crown, TrendingUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { toast } from 'sonner';
@@ -90,6 +91,10 @@ export default function Admin() {
           <Tabs defaultValue="overview" className="space-y-8">
             <TabsList>
               <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="growth" className="flex items-center gap-1">
+                <TrendingUp className="h-3.5 w-3.5" />
+                Growth
+              </TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="support">Support</TabsTrigger>
               <TabsTrigger value="system">System</TabsTrigger>
@@ -99,6 +104,10 @@ export default function Admin() {
             
             <TabsContent value="overview">
               <AdminAnalytics />
+            </TabsContent>
+
+            <TabsContent value="growth">
+              <GrowthAnalyticsTabs />
             </TabsContent>
             
             <TabsContent value="users">
