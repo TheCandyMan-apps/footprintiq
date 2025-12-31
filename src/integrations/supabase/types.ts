@@ -3152,29 +3152,47 @@ export type Database = {
       }
       email_notifications: {
         Row: {
+          bounced_at: string | null
+          clicked_at: string | null
           created_at: string
+          delivered_at: string | null
           id: string
           metadata: Json | null
+          opened_at: string | null
           recipient: string
+          resend_id: string | null
           sent_at: string
+          subject: string | null
           type: string
           workspace_id: string | null
         }
         Insert: {
+          bounced_at?: string | null
+          clicked_at?: string | null
           created_at?: string
+          delivered_at?: string | null
           id?: string
           metadata?: Json | null
+          opened_at?: string | null
           recipient: string
+          resend_id?: string | null
           sent_at?: string
+          subject?: string | null
           type: string
           workspace_id?: string | null
         }
         Update: {
+          bounced_at?: string | null
+          clicked_at?: string | null
           created_at?: string
+          delivered_at?: string | null
           id?: string
           metadata?: Json | null
+          opened_at?: string | null
           recipient?: string
+          resend_id?: string | null
           sent_at?: string
+          subject?: string | null
           type?: string
           workspace_id?: string | null
         }

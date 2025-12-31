@@ -303,14 +303,15 @@ const handler = async (req: Request): Promise<Response> => {
       html,
     });
 
-    const emailId = (emailResponse as any)?.data?.id || (emailResponse as any)?.id || 'sent';
-    logStep('Email sent successfully', { type: data.type, emailId });
+    const resendId = (emailResponse as any)?.data?.id || (emailResponse as any)?.id || null;
+    logStep('Email sent successfully', { type: data.type, resendId });
 
-    // Log the email
+    // Log the email with resend_id for webhook tracking
     await supabase.from('email_notifications').insert({
       recipient: data.email,
-      notification_type: data.type,
+      type: data.type,
       subject,
+      resend_id: resendId,
       metadata: {
         workspace_id: data.workspaceId,
         trial_ends_at: data.trialEndsAt,
@@ -318,7 +319,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
 
-    return new Response(JSON.stringify({ success: true, emailId }), {
+    return new Response(JSON.stringify({ success: true, resendId }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
