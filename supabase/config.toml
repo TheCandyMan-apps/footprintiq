@@ -72,3 +72,6 @@ verify_jwt = false
 
 [functions.n8n-scan-progress]
 verify_jwt = false
+
+[functions.n8n-scan-results]
+verify_jwt = false
