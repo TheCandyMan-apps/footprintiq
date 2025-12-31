@@ -11,7 +11,7 @@ import { analytics } from "@/lib/analytics";
 const SHARE_TEXT = `I just checked my digital footprint.
 Didn't expect this 😬
 Check yours:
-https://footprintiq.app`;
+https://footprintiq.app/?utm_source=inapp&utm_medium=share&utm_campaign=viral_prompt`;
 
 export type ViralPlacement = "top" | "pre_locked" | "locked_overlay";
 
