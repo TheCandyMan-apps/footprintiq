@@ -66,3 +66,6 @@ verify_jwt = false
 
 [functions.send-growth-report]
 verify_jwt = false
+
+[functions.n8n-scan-progress]
+verify_jwt = false
