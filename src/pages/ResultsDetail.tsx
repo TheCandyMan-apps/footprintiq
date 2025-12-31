@@ -839,6 +839,16 @@ const ResultsDetail = () => {
           </div>
         </Card>
 
+        {/* Light viral share prompt - shown at top of completed results */}
+        {!subscriptionLoading && userPlan === 'free' && scan.status !== 'pending' && scan.status !== 'processing' && (
+          <ViralSharePrompt 
+            className="mb-6" 
+            placement="results_top" 
+            scanId={scanId} 
+            variant="light" 
+          />
+        )}
+
         {/* Real-time Status Indicator - shown if scan is active */}
         {(scan.status === 'pending' || scan.status === 'processing') && scanId && (
           <div className="mb-8">
