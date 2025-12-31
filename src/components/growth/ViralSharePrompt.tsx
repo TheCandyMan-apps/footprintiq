@@ -13,7 +13,7 @@ Didn't expect this 😬
 Check yours:
 https://footprintiq.app/?utm_source=inapp&utm_medium=share&utm_campaign=viral_prompt`;
 
-export type ViralPlacement = "top" | "pre_locked" | "locked_overlay";
+export type ViralPlacement = "top" | "pre_locked" | "locked_overlay" | "results_top";
 
 interface ViralSharePromptProps {
   className?: string;
@@ -21,6 +21,8 @@ interface ViralSharePromptProps {
   placement?: ViralPlacement;
   scanId?: string;
   onDismiss?: () => void;
+  /** Lighter inline variant for top of results */
+  variant?: "default" | "light";
 }
 
 export function ViralSharePrompt({ 
@@ -28,7 +30,8 @@ export function ViralSharePrompt({
   compact = false, 
   placement = 'pre_locked', 
   scanId,
-  onDismiss 
+  onDismiss,
+  variant = 'default'
 }: ViralSharePromptProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -112,6 +115,30 @@ export function ViralSharePrompt({
     setDismissed(true);
     onDismiss?.();
   };
+
+  // Light variant - visually lighter inline prompt
+  if (variant === 'light') {
+    return (
+      <div className={cn(
+        "flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-lg bg-muted/50 border border-border/50",
+        className
+      )}>
+        <p className="text-sm text-muted-foreground">
+          👀 Want to see what this looks like for someone else?
+        </p>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={handleNewScan} className="gap-1.5">
+            <Link2 className="h-3.5 w-3.5" />
+            🔗 Check another exposure
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleShare} className="gap-1.5">
+            <Share2 className="h-3.5 w-3.5" />
+            📤 Share this scan
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (compact) {
     return (
