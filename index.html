@@ -45,15 +45,11 @@
     <meta http-equiv="x-dns-prefetch-control" content="on" />
     <link rel="preconnect" href="https://plausible.io" crossorigin />
     
-    <!-- Analytics - Privacy-friendly Plausible (loaded after page render to prevent forced reflows) -->
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script async src="https://plausible.io/js/pa-0A3M4Q9GLRmfRuk2LDGh6.js"></script>
     <script>
-      window.addEventListener('load', function() {
-        var script = document.createElement('script');
-        script.defer = true;
-        script.setAttribute('data-domain', 'footprintiq.app');
-        script.src = 'https://plausible.io/js/script.js';
-        document.head.appendChild(script);
-      });
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+      plausible.init()
     </script>
 
     <!-- Open Graph / Facebook -->
