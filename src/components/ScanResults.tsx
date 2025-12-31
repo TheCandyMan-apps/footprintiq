@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { ConfidenceScoreBadge } from "@/components/ConfidenceScoreBadge";
 import { ConfidenceScoreIndicator } from "@/components/ConfidenceScoreIndicator";
 import { ResultDetailDrawer } from "@/components/scan/ResultDetailDrawer";
 import { PostScanUpgradeBanner } from "@/components/upsell/PostScanUpgradeBanner";
+import { PostScanUpgradeModal } from "@/components/upsell/PostScanUpgradeModal";
 import { ViralSharePrompt } from "@/components/growth/ViralSharePrompt";
 import { PartiallyLockedSection, InlineLockBadge } from "@/components/results/PartiallyLockedSection";
 import { CorrelationGraph } from "@/components/results/CorrelationGraph";
@@ -70,6 +71,10 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
     | { type: 'social_profile'; data: SocialMediaProfile };
   const [selectedItem, setSelectedItem] = useState<ResultItem | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Post-scan upgrade modal state
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const hasShownModalRef = useRef(false);
 
   const handleOpenDetail = (item: ResultItem) => {
     setSelectedItem(item);
@@ -215,6 +220,28 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
 
     fetchScanResults();
   }, [scanId, toast]);
+
+  // Trigger upgrade modal after scan loads for free users with locked content
+  useEffect(() => {
+    // Only trigger once per session, when loading is complete
+    if (loading || hasShownModalRef.current) return;
+    
+    // Only show for free users
+    if (!isFree) return;
+    
+    // Check if there are locked sections (Pro features user can't access)
+    const hasLockedContent = !canSeeConfidenceExplanation || !canSeeContextEnrichment || !canSeeCorrelation || !canSeeEvidence;
+    
+    if (hasLockedContent) {
+      // Small delay to let user glimpse results first
+      const timer = setTimeout(() => {
+        setShowUpgradeModal(true);
+        hasShownModalRef.current = true;
+      }, 1500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loading, isFree, canSeeConfidenceExplanation, canSeeContextEnrichment, canSeeCorrelation, canSeeEvidence]);
 
   const handleRemovalRequest = (sourceId: string, sourceName: string) => {
     setRemovedSources(prev => new Set(prev).add(sourceId));
@@ -727,6 +754,14 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
         isFlagged={selectedItem ? flaggedItems.has(
           selectedItem.type === 'data_source' ? selectedItem.data.id : selectedItem.data.id
         ) : false}
+      />
+
+      {/* Post-Scan Upgrade Modal */}
+      <PostScanUpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        lockedSectionsCount={[canSeeConfidenceExplanation, canSeeContextEnrichment, canSeeCorrelation, canSeeEvidence].filter(v => !v).length}
+        highRiskCount={dataSources.filter(r => r.riskLevel === "high").length}
       />
     </div>
   );
