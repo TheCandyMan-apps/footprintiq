@@ -5,6 +5,7 @@
 
 import { retrieveChunksForEntities, buildContextFromChunks, getProvenanceInfo } from "./retriever";
 import { supabase } from "@/integrations/supabase/client";
+import { invokeWithRetry } from "@/lib/supabaseRetry";
 
 export interface AnalystRequest {
   entityIds: string[];
@@ -43,6 +44,44 @@ export interface ExplainLinkResponse {
 }
 
 /**
+ * Retry options for AI Analyst edge function calls
+ * More aggressive retries for network issues
+ */
+const AI_ANALYST_RETRY_OPTIONS = {
+  maxAttempts: 3,
+  baseDelay: 2000, // 2 seconds
+  maxDelay: 10000, // 10 seconds max
+  shouldRetry: (error: any) => {
+    if (!error) return false;
+    
+    const message = error?.message?.toLowerCase() || '';
+    const status = error?.status || error?.code;
+    
+    // Retry on network errors
+    if (message.includes('network') || 
+        message.includes('fetch') || 
+        message.includes('timeout') ||
+        message.includes('failed to send') ||
+        message.includes('connection')) {
+      return true;
+    }
+    
+    // Retry on server errors (5xx) and rate limits (429)
+    if (status >= 500 || status === 429) {
+      return true;
+    }
+    
+    // Don't retry client errors (4xx) except 429
+    if (status >= 400 && status < 500) {
+      return false;
+    }
+    
+    // Default: retry for unknown errors (likely network issues)
+    return true;
+  }
+};
+
+/**
  * Generate investigation summary via AI
  */
 export async function summarizeInvestigation(
@@ -77,17 +116,28 @@ Please analyze the above context and provide:
 
 Remember: Cite finding IDs when referencing specific intelligence. Do not expose raw PII or credentials.`;
 
-  // Call AI via edge function with full context
-  const { data, error } = await supabase.functions.invoke("ai-analyst", {
-    body: { 
-      action: "summarize",
-      prompt,
-      context, // Pass the full context to the edge function
-      entityIds: request.entityIds,
-    },
-  });
+  // Call AI via edge function with retry logic
+  const { data, error } = await invokeWithRetry(
+    () => supabase.functions.invoke("ai-analyst", {
+      body: { 
+        action: "summarize",
+        prompt,
+        context,
+        entityIds: request.entityIds,
+      },
+    }),
+    AI_ANALYST_RETRY_OPTIONS
+  );
 
-  if (error) throw error;
+  if (error) {
+    const errorMessage = error?.message || 'Unknown error';
+    if (errorMessage.toLowerCase().includes('network') || 
+        errorMessage.toLowerCase().includes('fetch') ||
+        errorMessage.toLowerCase().includes('timeout')) {
+      throw new Error(`Network error connecting to AI service. Please check your connection and try again.`);
+    }
+    throw error;
+  }
 
   return {
     overview: data.overview || "",
@@ -131,18 +181,29 @@ Provide:
 
 Cite specific finding IDs as evidence. Do not speculate beyond available data.`;
 
-  // Call AI via edge function with full context
-  const { data, error } = await supabase.functions.invoke("ai-analyst", {
-    body: {
-      action: "explain_link",
-      prompt,
-      context, // Pass the full context to the edge function
-      sourceEntityId: request.sourceEntityId,
-      targetEntityId: request.targetEntityId,
-    },
-  });
+  // Call AI via edge function with retry logic
+  const { data, error } = await invokeWithRetry(
+    () => supabase.functions.invoke("ai-analyst", {
+      body: {
+        action: "explain_link",
+        prompt,
+        context,
+        sourceEntityId: request.sourceEntityId,
+        targetEntityId: request.targetEntityId,
+      },
+    }),
+    AI_ANALYST_RETRY_OPTIONS
+  );
 
-  if (error) throw error;
+  if (error) {
+    const errorMessage = error?.message || 'Unknown error';
+    if (errorMessage.toLowerCase().includes('network') || 
+        errorMessage.toLowerCase().includes('fetch') ||
+        errorMessage.toLowerCase().includes('timeout')) {
+      throw new Error(`Network error connecting to AI service. Please check your connection and try again.`);
+    }
+    throw error;
+  }
 
   return {
     narrative: data.narrative || "",
