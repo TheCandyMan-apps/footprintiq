@@ -73,6 +73,7 @@ import type { User } from "@supabase/supabase-js";
 import { AddToCaseButton } from "@/components/case/AddToCaseButton";
 import { ExportEnrichedButton } from "@/components/scan/ExportEnrichedButton";
 import { ViralSharePrompt } from "@/components/growth/ViralSharePrompt";
+import { DigitalExposureScore } from "@/components/exposure/DigitalExposureScore";
 
 interface DataSource {
   id: string;
@@ -838,6 +839,18 @@ const ResultsDetail = () => {
             </div>
           </div>
         </Card>
+
+        {/* Digital Exposure Score - shown at top of completed results for all users */}
+        {scan.status !== 'pending' && scan.status !== 'processing' && findings.length > 0 && (
+          <ScanErrorBoundary context="results">
+            <DigitalExposureScore 
+              scanId={scanId!}
+              findings={findings}
+              userPlan={userPlan}
+              className="mb-6"
+            />
+          </ScanErrorBoundary>
+        )}
 
         {/* Light viral share prompt - shown at top of completed results */}
         {!subscriptionLoading && userPlan === 'free' && scan.status !== 'pending' && scan.status !== 'processing' && (
