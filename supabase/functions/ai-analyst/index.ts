@@ -3,8 +3,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { authenticateRequest } from "../_shared/auth-utils.ts";
 import { rateLimitMiddleware } from "../_shared/enhanced-rate-limiter.ts";
-// Security validation import removed - using direct Zod parsing for context field
-import { secureJsonResponse } from "../_shared/security-headers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,9 +56,9 @@ serve(async (req) => {
     } catch (error: any) {
       const message = error.errors?.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ') || 'Invalid request body';
       console.error("[ai-analyst] Validation failed:", message);
-      return secureJsonResponse(
-        { error: "Invalid request", message },
-        400
+      return new Response(
+        JSON.stringify({ error: "Invalid request", message }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -68,9 +66,9 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return secureJsonResponse(
-        { error: "AI service not configured" },
-        500
+      return new Response(
+        JSON.stringify({ error: "AI service not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -178,17 +176,15 @@ Response format:
       });
     }
 
-    return secureJsonResponse({ 
-      success: true,
-      action,
-      result,
-      rawContent: content,
-    }, 200);
+    return new Response(
+      JSON.stringify({ success: true, action, result, rawContent: content }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (error: any) {
     console.error("[ai-analyst] Error:", error);
-    return secureJsonResponse(
-      { error: "Analysis failed", message: error.message },
-      500
+    return new Response(
+      JSON.stringify({ error: "Analysis failed", message: error.message }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
