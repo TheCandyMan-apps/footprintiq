@@ -44,41 +44,45 @@ export interface ExplainLinkResponse {
 }
 
 /**
+ * Detect transient network-style failures (browser fetch / edge invoke)
+ */
+function isNetworkLikeError(error: any): boolean {
+  const message = (error?.message || error?.error_description || "").toString().toLowerCase();
+
+  return (
+    message.includes("failed to fetch") ||
+    message.includes("load failed") ||
+    message.includes("networkerror") ||
+    message.includes("network") ||
+    message.includes("fetch") ||
+    message.includes("timeout") ||
+    message.includes("connection") ||
+    message.includes("failed to send")
+  );
+}
+
+/**
  * Retry options for AI Analyst edge function calls
- * More aggressive retries for network issues
+ * Retries only on transient failures (network, 5xx, 429)
  */
 const AI_ANALYST_RETRY_OPTIONS = {
   maxAttempts: 3,
-  baseDelay: 2000, // 2 seconds
-  maxDelay: 10000, // 10 seconds max
+  baseDelay: 1500,
+  maxDelay: 8000,
   shouldRetry: (error: any) => {
     if (!error) return false;
-    
-    const message = error?.message?.toLowerCase() || '';
-    const status = error?.status || error?.code;
-    
-    // Retry on network errors
-    if (message.includes('network') || 
-        message.includes('fetch') || 
-        message.includes('timeout') ||
-        message.includes('failed to send') ||
-        message.includes('connection')) {
-      return true;
-    }
-    
-    // Retry on server errors (5xx) and rate limits (429)
-    if (status >= 500 || status === 429) {
-      return true;
-    }
-    
-    // Don't retry client errors (4xx) except 429
-    if (status >= 400 && status < 500) {
-      return false;
-    }
-    
-    // Default: retry for unknown errors (likely network issues)
-    return true;
-  }
+
+    const status = error?.status ?? error?.code;
+
+    // Retry on network-like errors (most common for "Failed to send a request")
+    if (isNetworkLikeError(error)) return true;
+
+    // Retry on rate limit + server errors
+    if (status === 429) return true;
+    if (typeof status === "number" && status >= 500) return true;
+
+    return false;
+  },
 };
 
 /**
@@ -130,12 +134,12 @@ Remember: Cite finding IDs when referencing specific intelligence. Do not expose
   );
 
   if (error) {
-    const errorMessage = error?.message || 'Unknown error';
-    if (errorMessage.toLowerCase().includes('network') || 
-        errorMessage.toLowerCase().includes('fetch') ||
-        errorMessage.toLowerCase().includes('timeout')) {
-      throw new Error(`Network error connecting to AI service. Please check your connection and try again.`);
+    if (isNetworkLikeError(error)) {
+      throw new Error(
+        "Temporary network issue while generating the AI analysis. We retried automatically—please try again in a moment."
+      );
     }
+
     throw error;
   }
 
@@ -196,12 +200,12 @@ Cite specific finding IDs as evidence. Do not speculate beyond available data.`;
   );
 
   if (error) {
-    const errorMessage = error?.message || 'Unknown error';
-    if (errorMessage.toLowerCase().includes('network') || 
-        errorMessage.toLowerCase().includes('fetch') ||
-        errorMessage.toLowerCase().includes('timeout')) {
-      throw new Error(`Network error connecting to AI service. Please check your connection and try again.`);
+    if (isNetworkLikeError(error)) {
+      throw new Error(
+        "Temporary network issue while generating the AI explanation. We retried automatically—please try again in a moment."
+      );
     }
+
     throw error;
   }
 
