@@ -87,15 +87,35 @@ export function classifyPageType(url: string): PageType {
   
   const lowered = url.toLowerCase();
   
-  // Search patterns - lowest priority
+  // OP.GG special case - any URL containing /search MUST be 'search'
   if (
-    /[?&](q|query|search|s|keyword)=/.test(lowered) ||
+    /op\.gg.*\/search/i.test(lowered) ||
+    /op\.gg.*\/summoners\/search/i.test(lowered)
+  ) {
+    return 'search';
+  }
+  
+  // Search patterns - lowest priority
+  // Includes: /search, /results, /find, query params like ?q=, gaming platform search patterns
+  if (
+    // Query parameter patterns (including gaming platforms like OP.GG)
+    /[?&](q|query|search|s|keyword|userName|summonerName)=/.test(lowered) ||
+    // Path-based search patterns
     /\/search[/?#]/.test(lowered) ||
+    /\/search$/.test(lowered) ||
+    /\/summoners\/search/.test(lowered) ||
     /\/results[/?#]/.test(lowered) ||
     /\/find[/?#]/.test(lowered) ||
+    /\/lookup[/?#]/.test(lowered) ||
+    // Search engine patterns
     /google\.com\/search/.test(lowered) ||
     /bing\.com\/search/.test(lowered) ||
-    /duckduckgo\.com\//.test(lowered)
+    /duckduckgo\.com\//.test(lowered) ||
+    /yahoo\.com\/search/.test(lowered) ||
+    // Social/Gaming platform search patterns
+    /tracker\.gg.*\/search/.test(lowered) ||
+    /u\.gg.*\/search/.test(lowered) ||
+    /blitz\.gg.*\/search/.test(lowered)
   ) {
     return 'search';
   }
@@ -137,12 +157,34 @@ export function classifyPageType(url: string): PageType {
   }
   
   // Default to profile for simple username URLs (e.g., platform.com/username)
-  const pathParts = new URL(url).pathname.split('/').filter(Boolean);
-  if (pathParts.length === 1) {
-    return 'profile';
+  try {
+    const pathParts = new URL(url).pathname.split('/').filter(Boolean);
+    if (pathParts.length === 1) {
+      return 'profile';
+    }
+  } catch {
+    // Invalid URL, continue to default
   }
   
   return 'profile'; // Default assumption
+}
+
+/**
+ * Cap confidence and severity for search results
+ * Search results should never have high confidence or severity
+ */
+export function adjustForSearchPageType(
+  pageType: PageType,
+  confidence: number,
+  severity: string
+): { confidence: number; severity: string } {
+  if (pageType === 'search') {
+    return {
+      confidence: Math.min(confidence, 0.3),
+      severity: 'info',
+    };
+  }
+  return { confidence, severity };
 }
 
 /**
