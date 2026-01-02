@@ -70,10 +70,14 @@ import {
   Brain,
   EyeOff,
   Eye,
-  Search
+  Search,
+  HelpCircle,
+  Focus
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { filterFindings, countSearchResults } from "@/lib/findingFilters";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { User } from "@supabase/supabase-js";
 import { AddToCaseButton } from "@/components/case/AddToCaseButton";
@@ -167,6 +171,7 @@ const ResultsDetail = () => {
   const [trendData, setTrendData] = useState<any[]>([]);
   const [findings, setFindings] = useState<Finding[]>([]);
   const [hideSearchResults, setHideSearchResults] = useState(true); // Default to hide search results
+  const [focusMode, setFocusMode] = useState(false); // Default OFF - shows all quality levels
   const pollTriesRef = useRef(0);
   const pollTimeoutRef = useRef<number | null>(null);
   
@@ -1469,18 +1474,13 @@ const ResultsDetail = () => {
 
         {/* Findings Section - Enhanced detailed cards */}
         {findings.length > 0 && (() => {
-          // Count search results
-          const searchResultCount = findings.filter((f: any) => 
-            (f as CanonicalFinding).pageType === 'search' || f.tags?.includes('search-result')
-          ).length;
-          
-          // Filter based on toggle
-          const displayedFindings = hideSearchResults 
-            ? findings.filter((f: any) => {
-                const cf = f as CanonicalFinding;
-                return cf.pageType !== 'search' && !f.tags?.includes('search-result');
-              })
-            : findings;
+          // Use centralized filter utility
+          const searchResultCount = countSearchResults(findings);
+          const displayedFindings = filterFindings(findings, { 
+            hideSearch: hideSearchResults, 
+            focusMode: focusMode 
+          });
+          const filteredCount = findings.length - displayedFindings.length;
           
           return (
           <div className="mb-8">
@@ -1491,10 +1491,10 @@ const ResultsDetail = () => {
                   <div>
                     <h3 className="text-2xl font-bold">Scan Findings</h3>
                     <p className="text-sm text-muted-foreground">
-                      {displayedFindings.length} {displayedFindings.length === 1 ? 'finding' : 'findings'} discovered across {new Set(displayedFindings.map(f => f.provider)).size} providers
-                      {hideSearchResults && searchResultCount > 0 && (
+                      Showing {displayedFindings.length} of {findings.length} results
+                      {filteredCount > 0 && (
                         <span className="ml-1 text-muted-foreground/70">
-                          ({searchResultCount} search results hidden)
+                          ({filteredCount} filtered)
                         </span>
                       )}
                     </p>
@@ -1502,9 +1502,9 @@ const ResultsDetail = () => {
                 </div>
                 
                 {/* Severity Summary */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {['critical', 'high', 'medium', 'low', 'info'].map(severity => {
-                    const count = displayedFindings.filter((f: any) => f.raw?.severity === severity).length;
+                    const count = displayedFindings.filter((f: any) => f.raw?.severity === severity || f.severity === severity).length;
                     if (count === 0) return null;
                     return (
                       <Badge 
@@ -1524,39 +1524,85 @@ const ResultsDetail = () => {
                 </div>
               </div>
               
-              {/* Search Results Toggle */}
-              {searchResultCount > 0 && (
+              {/* Filter Toggles */}
+              <div className="flex flex-col gap-2">
+                {/* Search Results Toggle */}
+                {searchResultCount > 0 && (
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Search className="w-4 h-4" />
+                      <span>
+                        {searchResultCount} search/lookup result{searchResultCount !== 1 ? 's' : ''} found
+                      </span>
+                      <span className="text-xs">(lower confidence)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="hide-search-toggle" className="text-sm cursor-pointer flex items-center gap-2">
+                        {hideSearchResults ? (
+                          <>
+                            <EyeOff className="w-4 h-4" />
+                            Hidden
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="w-4 h-4" />
+                            Showing
+                          </>
+                        )}
+                      </Label>
+                      <Switch
+                        id="hide-search-toggle"
+                        checked={!hideSearchResults}
+                        onCheckedChange={(checked) => setHideSearchResults(!checked)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Focus Mode Toggle */}
                 <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Search className="w-4 h-4" />
-                    <span>
-                      {searchResultCount} search/lookup result{searchResultCount !== 1 ? 's' : ''} found
-                    </span>
-                    <span className="text-xs">(lower confidence)</span>
+                    <Focus className="w-4 h-4" />
+                    <span>Focus mode</span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="w-3.5 h-3.5 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs">
+                          <p className="text-xs">
+                            Show only likely + possible matches (confidence ≥65% or severity high/medium). 
+                            Excludes search results and low-confidence findings.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <span className="text-xs text-muted-foreground/70">Show only likely + possible matches</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Label htmlFor="hide-search-toggle" className="text-sm cursor-pointer flex items-center gap-2">
-                      {hideSearchResults ? (
-                        <>
-                          <EyeOff className="w-4 h-4" />
-                          Hidden
-                        </>
-                      ) : (
-                        <>
-                          <Eye className="w-4 h-4" />
-                          Showing
-                        </>
-                      )}
+                    <Label htmlFor="focus-mode-toggle" className="text-sm cursor-pointer">
+                      {focusMode ? 'On' : 'Off'}
                     </Label>
                     <Switch
-                      id="hide-search-toggle"
-                      checked={!hideSearchResults}
-                      onCheckedChange={(checked) => setHideSearchResults(!checked)}
+                      id="focus-mode-toggle"
+                      checked={focusMode}
+                      onCheckedChange={setFocusMode}
                     />
                   </div>
                 </div>
-              )}
+
+                {/* Pro Verification Hint - shown when many results filtered */}
+                {focusMode && filteredCount > 50 && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground/70 px-3 py-2">
+                    <Info className="w-3 h-3 flex-shrink-0" />
+                    <span>
+                      Too much noise? Pro Verification helps surface only verified identities.
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
+
 
             <div className="space-y-4">
               {displayedFindings.map((finding) => {
