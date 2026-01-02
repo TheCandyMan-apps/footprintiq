@@ -1669,6 +1669,102 @@ export type Database = {
         }
         Relationships: []
       }
+      canonical_results: {
+        Row: {
+          ai_summary: string | null
+          canonical_key: string
+          canonical_username: string
+          confidence: number
+          created_at: string
+          id: string
+          is_verified: boolean | null
+          last_verified_at: string | null
+          observed_at: string
+          page_type: string
+          platform_category: string | null
+          platform_name: string
+          primary_url: string | null
+          processing_pipeline: string | null
+          remediation_priority: string | null
+          risk_score: number | null
+          scan_id: string
+          severity: string
+          source_finding_ids: string[] | null
+          source_providers: string[] | null
+          updated_at: string
+          url_variants: Json
+          verification_status: string | null
+          workspace_id: string
+        }
+        Insert: {
+          ai_summary?: string | null
+          canonical_key: string
+          canonical_username: string
+          confidence?: number
+          created_at?: string
+          id?: string
+          is_verified?: boolean | null
+          last_verified_at?: string | null
+          observed_at?: string
+          page_type?: string
+          platform_category?: string | null
+          platform_name: string
+          primary_url?: string | null
+          processing_pipeline?: string | null
+          remediation_priority?: string | null
+          risk_score?: number | null
+          scan_id: string
+          severity?: string
+          source_finding_ids?: string[] | null
+          source_providers?: string[] | null
+          updated_at?: string
+          url_variants?: Json
+          verification_status?: string | null
+          workspace_id: string
+        }
+        Update: {
+          ai_summary?: string | null
+          canonical_key?: string
+          canonical_username?: string
+          confidence?: number
+          created_at?: string
+          id?: string
+          is_verified?: boolean | null
+          last_verified_at?: string | null
+          observed_at?: string
+          page_type?: string
+          platform_category?: string | null
+          platform_name?: string
+          primary_url?: string | null
+          processing_pipeline?: string | null
+          remediation_priority?: string | null
+          risk_score?: number | null
+          scan_id?: string
+          severity?: string
+          source_finding_ids?: string[] | null
+          source_providers?: string[] | null
+          updated_at?: string
+          url_variants?: Json
+          verification_status?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "canonical_results_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "canonical_results_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       case_comment_reactions: {
         Row: {
           comment_id: string
