@@ -9,6 +9,7 @@ import {
   aggregateConfidence,
   categorizePlatform,
   extractUsernameFromUrl,
+  adjustForSearchPageType,
   type UrlVariant,
   type CanonicalResult,
   type PageType,
@@ -172,8 +173,12 @@ Deno.serve(async (req) => {
         const pageType = primaryVariant?.page_type || 'unknown';
 
         // Aggregate values
-        const severity = aggregateSeverity(group.severities);
-        const confidence = aggregateConfidence(group.confidences);
+        const rawSeverity = aggregateSeverity(group.severities);
+        const rawConfidence = aggregateConfidence(group.confidences);
+        
+        // Adjust confidence/severity for search pages
+        const { confidence, severity } = adjustForSearchPageType(pageType, rawConfidence, rawSeverity);
+        
         const riskScore = group.riskScores.length > 0 ? Math.max(...group.riskScores) : null;
         const aiSummary = group.aiSummaries[0] || null;
         const remediationPriority = group.remediationPriorities[0] || null;
