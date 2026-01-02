@@ -43,7 +43,7 @@ import { PieChart, Pie, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cell, Resp
 import { clusterFindingsByDate } from "@/lib/timeline";
 import { buildGraph, buildGraphFromFindings, detectEntityType } from "@/lib/graph";
 import { Finding } from "@/lib/ufm";
-import { fetchCanonicalResults, canonicalToFinding, sortByPageType, type CanonicalFinding } from "@/lib/canonical";
+import { fetchCanonicalResults, canonicalToFinding, sortByPageType, filterOutSearchResults, isSearchResult, getPageTypeLabel, type CanonicalFinding } from "@/lib/canonical";
 import { ExportControls } from "@/components/ExportControls";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { exportAsJSON, exportAsCSV, exportAsPDF } from "@/lib/exports";
@@ -67,8 +67,13 @@ import {
   FileText,
   Network,
   Zap,
-  Brain
+  Brain,
+  EyeOff,
+  Eye,
+  Search
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { User } from "@supabase/supabase-js";
 import { AddToCaseButton } from "@/components/case/AddToCaseButton";
@@ -161,6 +166,7 @@ const ResultsDetail = () => {
   const [isDNAModalOpen, setIsDNAModalOpen] = useState(false);
   const [trendData, setTrendData] = useState<any[]>([]);
   const [findings, setFindings] = useState<Finding[]>([]);
+  const [hideSearchResults, setHideSearchResults] = useState(true); // Default to hide search results
   const pollTriesRef = useRef(0);
   const pollTimeoutRef = useRef<number | null>(null);
   
@@ -1462,45 +1468,103 @@ const ResultsDetail = () => {
 
 
         {/* Findings Section - Enhanced detailed cards */}
-        {findings.length > 0 && (
+        {findings.length > 0 && (() => {
+          // Count search results
+          const searchResultCount = findings.filter((f: any) => 
+            (f as CanonicalFinding).pageType === 'search' || f.tags?.includes('search-result')
+          ).length;
+          
+          // Filter based on toggle
+          const displayedFindings = hideSearchResults 
+            ? findings.filter((f: any) => {
+                const cf = f as CanonicalFinding;
+                return cf.pageType !== 'search' && !f.tags?.includes('search-result');
+              })
+            : findings;
+          
+          return (
           <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <Shield className="w-6 h-6 text-primary" />
-                <div>
-                  <h3 className="text-2xl font-bold">Scan Findings</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {findings.length} {findings.length === 1 ? 'finding' : 'findings'} discovered across {new Set(findings.map(f => f.provider)).size} providers
-                  </p>
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Shield className="w-6 h-6 text-primary" />
+                  <div>
+                    <h3 className="text-2xl font-bold">Scan Findings</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {displayedFindings.length} {displayedFindings.length === 1 ? 'finding' : 'findings'} discovered across {new Set(displayedFindings.map(f => f.provider)).size} providers
+                      {hideSearchResults && searchResultCount > 0 && (
+                        <span className="ml-1 text-muted-foreground/70">
+                          ({searchResultCount} search results hidden)
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Severity Summary */}
+                <div className="flex gap-2">
+                  {['critical', 'high', 'medium', 'low', 'info'].map(severity => {
+                    const count = displayedFindings.filter((f: any) => f.raw?.severity === severity).length;
+                    if (count === 0) return null;
+                    return (
+                      <Badge 
+                        key={severity}
+                        variant={
+                          severity === 'critical' || severity === 'high' 
+                            ? 'destructive' 
+                            : severity === 'medium' 
+                            ? 'default' 
+                            : 'secondary'
+                        }
+                      >
+                        {count} {severity}
+                      </Badge>
+                    );
+                  })}
                 </div>
               </div>
               
-              {/* Severity Summary */}
-              <div className="flex gap-2">
-                {['critical', 'high', 'medium', 'low', 'info'].map(severity => {
-                  const count = findings.filter((f: any) => f.raw?.severity === severity).length;
-                  if (count === 0) return null;
-                  return (
-                    <Badge 
-                      key={severity}
-                      variant={
-                        severity === 'critical' || severity === 'high' 
-                          ? 'destructive' 
-                          : severity === 'medium' 
-                          ? 'default' 
-                          : 'secondary'
-                      }
-                    >
-                      {count} {severity}
-                    </Badge>
-                  );
-                })}
-              </div>
+              {/* Search Results Toggle */}
+              {searchResultCount > 0 && (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Search className="w-4 h-4" />
+                    <span>
+                      {searchResultCount} search/lookup result{searchResultCount !== 1 ? 's' : ''} found
+                    </span>
+                    <span className="text-xs">(lower confidence)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="hide-search-toggle" className="text-sm cursor-pointer flex items-center gap-2">
+                      {hideSearchResults ? (
+                        <>
+                          <EyeOff className="w-4 h-4" />
+                          Hidden
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-4 h-4" />
+                          Showing
+                        </>
+                      )}
+                    </Label>
+                    <Switch
+                      id="hide-search-toggle"
+                      checked={!hideSearchResults}
+                      onCheckedChange={(checked) => setHideSearchResults(!checked)}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-4">
-              {findings.map((finding) => (
-                <div key={finding.id} className="space-y-2">
+              {displayedFindings.map((finding) => {
+                const cf = finding as CanonicalFinding;
+                const isSearch = cf.pageType === 'search' || finding.tags?.includes('search-result');
+                
+                return (
+                <div key={finding.id} className={cn("space-y-2", isSearch && "opacity-70")}>
                   <FindingCard 
                     finding={{
                       id: finding.id,
@@ -1513,7 +1577,14 @@ const ResultsDetail = () => {
                       meta: (finding.raw as any)?.meta || {},
                     }}
                   />
-                  <div className="flex justify-end">
+                  <div className="flex items-center justify-between">
+                    {/* Page Type Badge for canonical results */}
+                    {cf.isCanonical && cf.pageType && (
+                      <Badge variant={cf.pageType === 'profile' ? 'default' : cf.pageType === 'search' ? 'outline' : 'secondary'} className="text-xs">
+                        {getPageTypeLabel(cf.pageType)}
+                      </Badge>
+                    )}
+                    {!cf.isCanonical && <div />}
                     <AddToCaseButton
                       itemType="finding"
                       itemId={String((finding as any).id)}
@@ -1522,10 +1593,10 @@ const ResultsDetail = () => {
                     />
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </div>
-        )}
+        )})()}
 
         {/* Monitoring Toggle */}
         {user && scanId && (
