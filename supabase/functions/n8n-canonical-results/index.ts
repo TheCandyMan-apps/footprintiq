@@ -20,26 +20,102 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-callback-token",
 };
 
-interface IncomingResult {
+/**
+ * Normalize incoming result from various payload formats (n8n vs documented)
+ * 
+ * n8n sends:      platform_name, canonical_username, primary_url, source_providers
+ * Documented:     platform, username, url, provider
+ */
+interface NormalizedResult {
   platform: string;
   username: string;
   url: string;
   provider: string;
-  severity?: string;
-  confidence?: number;
-  is_verified?: boolean;
-  verification_status?: string;
-  finding_id?: string;
-  risk_score?: number;
-  ai_summary?: string;
-  remediation_priority?: string;
-  observed_at?: string;
+  severity: string;
+  confidence: number;
+  is_verified: boolean;
+  verification_status: string | null;
+  finding_id: string | null;
+  risk_score: number | null;
+  ai_summary: string | null;
+  remediation_priority: string | null;
+  observed_at: string;
+  page_type: string | null; // Preserve if n8n already classified
+  url_variants: UrlVariant[];
 }
 
-interface RequestBody {
-  scanId: string;
-  workspaceId: string;
-  results: IncomingResult[];
+function normalizeIncomingResult(item: Record<string, unknown>): NormalizedResult | null {
+  // Map platform: accept platform, platform_name
+  const platform = (item.platform || item.platform_name) as string | undefined;
+  
+  // Map URL: accept url, primary_url
+  const url = (item.url || item.primary_url) as string | undefined;
+  
+  // Map username: accept username, canonical_username, or extract from URL
+  let username = (item.username || item.canonical_username) as string | undefined;
+  if (!username && url && platform) {
+    username = extractUsernameFromUrl(url, platform) || undefined;
+  }
+  
+  // Determine provider from multiple sources:
+  // 1. Direct provider field
+  // 2. source_providers array (first element)
+  // 3. url_variants array (first element's provider)
+  // 4. Default to 'ai'
+  let provider = item.provider as string | undefined;
+  if (!provider) {
+    const sourceProviders = item.source_providers as string[] | undefined;
+    if (sourceProviders && sourceProviders.length > 0) {
+      provider = sourceProviders[0];
+    }
+  }
+  if (!provider) {
+    const urlVariants = item.url_variants as Array<{ provider?: string }> | undefined;
+    if (urlVariants && urlVariants.length > 0 && urlVariants[0].provider) {
+      provider = urlVariants[0].provider;
+    }
+  }
+  if (!provider) {
+    provider = 'ai';
+  }
+  
+  // Validate required fields
+  if (!platform || !url) {
+    return null; // Invalid item - missing required fields
+  }
+  
+  // Handle url_variants - could be already structured or need parsing
+  let urlVariants: UrlVariant[] = [];
+  if (Array.isArray(item.url_variants)) {
+    urlVariants = (item.url_variants as Array<Record<string, unknown>>).map((v) => ({
+      url: (v.url as string) || '',
+      page_type: (v.page_type as PageType) || 'unknown',
+      provider: (v.provider as string) || provider,
+      is_verified: (v.is_verified as boolean) || false,
+      verification_status: (v.verification_status as string) || null,
+      last_verified_at: (v.last_verified_at as string) || null,
+      source_finding_id: (v.source_finding_id as string) || null,
+      priority: (v.priority as number) || 5,
+    }));
+  }
+  
+  return {
+    platform,
+    username: username || 'unknown',
+    url,
+    provider,
+    severity: (item.severity as string) || 'info',
+    confidence: (item.confidence as number) ?? 0.5,
+    is_verified: (item.is_verified as boolean) || false,
+    verification_status: (item.verification_status as string) || null,
+    finding_id: (item.finding_id as string) || null,
+    risk_score: (item.risk_score as number) || null,
+    ai_summary: (item.ai_summary as string) || null,
+    remediation_priority: (item.remediation_priority as string) || null,
+    observed_at: (item.observed_at as string) || new Date().toISOString(),
+    page_type: (item.page_type as string) || null, // Preserve if n8n already classified
+    url_variants: urlVariants,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -69,26 +145,78 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Parse request body
-    const body: RequestBody = await req.json();
-    const { scanId, workspaceId, results } = body;
+    // Parse request body - accept BOTH payload formats
+    const body = await req.json();
+    const { scanId, workspaceId } = body;
+    
+    // Detailed logging for debugging
+    console.log(`[n8n-canonical-results] Received payload keys: ${Object.keys(body).join(', ')}`);
+    console.log(`[n8n-canonical-results] scanId: ${scanId}, workspaceId: ${workspaceId}`);
+    
+    // Accept BOTH 'results' (documented) and 'canonicalResults' (n8n sends)
+    const rawResults: Record<string, unknown>[] = body.results || body.canonicalResults || [];
+    
+    console.log(`[n8n-canonical-results] Incoming results count: ${rawResults.length}`);
 
     if (!scanId || !workspaceId) {
+      console.error("[n8n-canonical-results] Missing scanId or workspaceId");
       return new Response(
         JSON.stringify({ error: "Missing scanId or workspaceId" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!results || !Array.isArray(results) || results.length === 0) {
+    if (!rawResults || rawResults.length === 0) {
       console.log("[n8n-canonical-results] No results to process");
       return new Response(
-        JSON.stringify({ success: true, processed: 0 }),
+        JSON.stringify({ success: true, processed: 0, inserted: 0, invalid: 0 }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[n8n-canonical-results] Processing ${results.length} results for scan ${scanId}`);
+    // Normalize all incoming results and track validation failures
+    const invalidItems: Array<{ index: number; preview: string; reason: string }> = [];
+    const normalizedResults: NormalizedResult[] = [];
+    
+    for (let i = 0; i < rawResults.length; i++) {
+      const item = rawResults[i];
+      const normalized = normalizeIncomingResult(item);
+      
+      if (!normalized) {
+        // Log first 3 invalid items for debugging
+        if (invalidItems.length < 3) {
+          const preview = JSON.stringify(item).slice(0, 200);
+          const hasPlatform = !!(item.platform || item.platform_name);
+          const hasUrl = !!(item.url || item.primary_url);
+          invalidItems.push({ 
+            index: i, 
+            preview,
+            reason: `Missing: ${!hasPlatform ? 'platform ' : ''}${!hasUrl ? 'url' : ''}`.trim()
+          });
+        }
+      } else {
+        normalizedResults.push(normalized);
+      }
+    }
+    
+    console.log(`[n8n-canonical-results] Validation: ${normalizedResults.length} valid, ${rawResults.length - normalizedResults.length} invalid`);
+    if (invalidItems.length > 0) {
+      console.warn(`[n8n-canonical-results] First invalid items:`, JSON.stringify(invalidItems));
+    }
+    
+    if (normalizedResults.length === 0) {
+      console.warn("[n8n-canonical-results] All items failed validation");
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          processed: rawResults.length, 
+          inserted: 0, 
+          invalid: rawResults.length,
+          invalidSamples: invalidItems 
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Initialize Supabase client with service role
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -108,33 +236,39 @@ Deno.serve(async (req) => {
       aiSummaries: string[];
       remediationPriorities: string[];
       observedAt: string;
+      preClassifiedPageType: string | null;
     }>();
 
-    for (const result of results) {
-      // Normalize platform and username
+    for (const result of normalizedResults) {
+      // Normalize platform name
       const platform = normalizePlatformName(result.platform);
-      const username = result.username || extractUsernameFromUrl(result.url, platform) || 'unknown';
+      const username = result.username;
       const canonicalKey = generateCanonicalKey(platform, username);
 
-      // Classify page type
-      const pageType = classifyPageType(result.url);
+      // Use pre-classified page_type if provided by n8n, otherwise classify
+      const pageType = (result.page_type as PageType) || classifyPageType(result.url);
 
-      // Create URL variant
+      // Create URL variant from result
       const variant: UrlVariant = {
         url: result.url,
         page_type: pageType,
-        provider: result.provider || 'unknown',
-        is_verified: result.is_verified || false,
-        verification_status: result.verification_status || null,
+        provider: result.provider,
+        is_verified: result.is_verified,
+        verification_status: result.verification_status,
         last_verified_at: result.is_verified ? new Date().toISOString() : null,
-        source_finding_id: result.finding_id || null,
+        source_finding_id: result.finding_id,
         priority: pageType === 'profile' ? 1 : pageType === 'directory' ? 2 : pageType === 'api' ? 3 : pageType === 'search' ? 4 : 5,
       };
+      
+      // Also include any pre-existing url_variants from the payload
+      const allVariants = [variant, ...result.url_variants];
 
       // Group or create entry
       if (groupedResults.has(canonicalKey)) {
         const group = groupedResults.get(canonicalKey)!;
-        group.variants = mergeUrlVariants(group.variants, variant);
+        for (const v of allVariants) {
+          group.variants = mergeUrlVariants(group.variants, v);
+        }
         if (result.severity) group.severities.push(result.severity);
         if (result.confidence) group.confidences.push(result.confidence);
         if (result.finding_id) group.findingIds.push(result.finding_id);
@@ -142,11 +276,15 @@ Deno.serve(async (req) => {
         if (result.risk_score) group.riskScores.push(result.risk_score);
         if (result.ai_summary) group.aiSummaries.push(result.ai_summary);
         if (result.remediation_priority) group.remediationPriorities.push(result.remediation_priority);
+        // Keep pre-classified page type if we don't have one yet
+        if (!group.preClassifiedPageType && result.page_type) {
+          group.preClassifiedPageType = result.page_type;
+        }
       } else {
         groupedResults.set(canonicalKey, {
           platform,
           username,
-          variants: [variant],
+          variants: allVariants,
           severities: result.severity ? [result.severity] : [],
           confidences: result.confidence ? [result.confidence] : [],
           findingIds: result.finding_id ? [result.finding_id] : [],
@@ -154,7 +292,8 @@ Deno.serve(async (req) => {
           riskScores: result.risk_score ? [result.risk_score] : [],
           aiSummaries: result.ai_summary ? [result.ai_summary] : [],
           remediationPriorities: result.remediation_priority ? [result.remediation_priority] : [],
-          observedAt: result.observed_at || new Date().toISOString(),
+          observedAt: result.observed_at,
+          preClassifiedPageType: result.page_type,
         });
       }
     }
@@ -170,7 +309,8 @@ Deno.serve(async (req) => {
         // Select primary URL
         const primaryVariant = selectPrimaryUrl(group.variants);
         const primaryUrl = primaryVariant?.url || null;
-        const pageType = primaryVariant?.page_type || 'unknown';
+        // Use pre-classified page type if available, otherwise use from primary variant
+        const pageType = (group.preClassifiedPageType as PageType) || primaryVariant?.page_type || 'unknown';
 
         // Aggregate values
         const rawSeverity = aggregateSeverity(group.severities);
@@ -213,7 +353,7 @@ Deno.serve(async (req) => {
         // Reselect primary after merge
         const finalPrimaryVariant = selectPrimaryUrl(mergedVariants);
         const finalPrimaryUrl = finalPrimaryVariant?.url || null;
-        const finalPageType = finalPrimaryVariant?.page_type || 'unknown';
+        const finalPageType = (group.preClassifiedPageType as PageType) || finalPrimaryVariant?.page_type || 'unknown';
         const finalIsVerified = finalPrimaryVariant?.is_verified || false;
         const finalVerificationStatus = finalPrimaryVariant?.verification_status || null;
 
@@ -262,8 +402,9 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        processed: results.length,
-        canonicalResults: upsertedCount,
+        processed: rawResults.length,
+        inserted: upsertedCount,
+        invalid: rawResults.length - normalizedResults.length,
         errors: errorCount,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
