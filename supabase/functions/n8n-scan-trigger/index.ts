@@ -56,8 +56,38 @@ serve(async (req) => {
     const body = await req.json();
     const { scanId: providedScanId, username, workspaceId, scanType = "username", mode = "lean" } = body;
 
-    if (!username) {
-      return new Response(JSON.stringify({ error: "Username is required" }), {
+    // ✅ STRICT USERNAME VALIDATION - Prevent "true", "false", empty, or invalid values
+    if (!username || typeof username !== 'string') {
+      console.error(`[n8n-scan-trigger] Invalid username type: ${typeof username}, value: ${username}`);
+      return new Response(JSON.stringify({ error: "Username must be a non-empty string" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const trimmedUsername = username.trim();
+    if (trimmedUsername.length === 0) {
+      console.error("[n8n-scan-trigger] Empty username after trim");
+      return new Response(JSON.stringify({ error: "Username cannot be empty" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Reject boolean-like and obviously invalid values
+    const invalidUsernames = ['true', 'false', 'null', 'undefined', 'nan', '0', '1'];
+    if (invalidUsernames.includes(trimmedUsername.toLowerCase())) {
+      console.error(`[n8n-scan-trigger] Rejected invalid username: "${trimmedUsername}"`);
+      return new Response(JSON.stringify({ error: `Invalid username: "${trimmedUsername}" is not a valid target` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Reject very short usernames (likely accidental)
+    if (trimmedUsername.length < 2) {
+      console.error(`[n8n-scan-trigger] Username too short: "${trimmedUsername}"`);
+      return new Response(JSON.stringify({ error: "Username must be at least 2 characters" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

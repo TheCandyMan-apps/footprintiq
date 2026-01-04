@@ -116,6 +116,7 @@ export default function AdvancedScan() {
   const [phoneProviders, setPhoneProviders] = useState<string[]>([]);
   const [inputError, setInputError] = useState<string | null>(null);
   const [inputTouched, setInputTouched] = useState(false);
+  const [lastSubmitTime, setLastSubmitTime] = useState<number>(0); // ✅ Debounce protection
 
   const { saveTemplate } = useScanTemplates();
   const { startScan: startUsernameScan } = useUsernameScan();
@@ -340,6 +341,14 @@ export default function AdvancedScan() {
   }
 
   const handleScan = async () => {
+    // ✅ DEBOUNCE: Prevent rapid resubmissions (3-second cooldown)
+    const now = Date.now();
+    if (now - lastSubmitTime < 3000) {
+      toast.info("Please wait a moment before submitting again");
+      return;
+    }
+    setLastSubmitTime(now);
+    
     // Validate input before scanning
     const validation = validateScanInput(scanType as ScanType, target);
     if (!validation.isValid) {
@@ -354,8 +363,17 @@ export default function AdvancedScan() {
     
     // Handle username scans with progress dialog
     if (scanType === 'username') {
-      if (!normalizedTarget) {
-        toast.error("Please enter a username to scan");
+      // ✅ STRICT VALIDATION: Prevent empty or boolean-like values
+      if (!normalizedTarget || normalizedTarget.length < 2) {
+        toast.error("Please enter a valid username (at least 2 characters)");
+        return;
+      }
+      
+      // ✅ Reject boolean-like values that may have been accidentally serialized
+      const invalidValues = ['true', 'false', 'null', 'undefined'];
+      if (invalidValues.includes(normalizedTarget.toLowerCase())) {
+        toast.error("Please enter a valid username");
+        console.error('[AdvancedScan] Rejected invalid username value:', normalizedTarget);
         return;
       }
 
