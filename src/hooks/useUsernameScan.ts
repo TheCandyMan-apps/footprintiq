@@ -45,7 +45,38 @@ export const useUsernameScan = () => {
     setDebugLogs([]);
     
     try {
-      addLog({ level: 'info', message: 'Starting username scan', data: { username: options.username } });
+      // ✅ STRICT USERNAME VALIDATION - Prevent "true", "false", empty, or invalid values
+      const username = options.username;
+      
+      if (!username || typeof username !== 'string') {
+        const error = 'Invalid username - must be a non-empty string';
+        addLog({ level: 'error', message: error, data: { received: username, type: typeof username } });
+        throw new Error(error);
+      }
+      
+      const trimmedUsername = username.trim();
+      if (trimmedUsername.length === 0) {
+        const error = 'Username cannot be empty';
+        addLog({ level: 'error', message: error });
+        throw new Error(error);
+      }
+      
+      // Reject obvious invalid/boolean-like values
+      const invalidValues = ['true', 'false', 'null', 'undefined', 'nan', '0', '1'];
+      if (invalidValues.includes(trimmedUsername.toLowerCase())) {
+        const error = `Invalid username: "${trimmedUsername}" is not a valid target`;
+        addLog({ level: 'error', message: error, data: { received: trimmedUsername } });
+        throw new Error(error);
+      }
+      
+      // Reject usernames that are too short (likely accidental)
+      if (trimmedUsername.length < 2) {
+        const error = 'Username must be at least 2 characters';
+        addLog({ level: 'error', message: error });
+        throw new Error(error);
+      }
+      
+      addLog({ level: 'info', message: 'Starting username scan', data: { username: trimmedUsername } });
       
       // ✅ Check quota BEFORE starting scan
       const { canRunScan } = await import('@/lib/billing/quotas');
