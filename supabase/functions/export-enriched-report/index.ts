@@ -155,15 +155,67 @@ serve(async (req) => {
       });
     }
 
-    // Return HTML content for client-side PDF generation
+    // Return structured data for client-side PDF generation
     return ok({
-      html: htmlContent,
       credits_spent: EXPORT_COST,
       new_balance: deductResult.balance,
       scan_id: scanId,
+      // Scan metadata
+      scan: {
+        id: scan.id,
+        target: scan.email || scan.phone || scan.username || scan.first_name || 'Unknown',
+        scan_type: scan.scan_type || 'username',
+        status: scan.status || 'completed',
+        privacy_score: scan.privacy_score || 0,
+        high_risk_count: scan.high_risk_count || 0,
+        medium_risk_count: scan.medium_risk_count || 0,
+        low_risk_count: scan.low_risk_count || 0,
+        created_at: scan.created_at,
+        completed_at: scan.completed_at || scan.updated_at
+      },
+      // Full findings array with all details
+      findings: (findings || []).map((f: any) => {
+        const evidence = Array.isArray(f.evidence) ? f.evidence : [];
+        const getEv = (key: string) => evidence.find((e: any) => e.key === key)?.value || null;
+        let siteName = getEv('site') || getEv('platform') || f.provider || 'Unknown';
+        siteName = siteName.replace(/^\[\+\]\s*/, '').replace(/^\[-\]\s*/, '');
+        
+        return {
+          id: f.id,
+          platform: siteName,
+          username: getEv('username') || scan.username || 'N/A',
+          url: getEv('url') || null,
+          confidence: Math.round((f.confidence || 0.5) * 100),
+          severity: f.severity || 'info',
+          page_type: f.page_type || 'profile',
+          provider: f.provider || 'OSINT',
+          kind: f.kind || f.provider_category || 'Finding',
+          bio: getEv('bio') || null,
+          full_name: getEv('name') || getEv('full_name') || null,
+          created_at: f.created_at
+        };
+      }),
+      // Enrichments mapped by finding_id
+      enrichments: (enrichments || []).reduce((acc: any, e: any) => {
+        acc[e.finding_id] = {
+          context: e.context || null,
+          attack_vectors: e.attack_vectors || [],
+          remediation_steps: e.remediation_steps || []
+        };
+        return acc;
+      }, {}),
+      // Summary counts
       profile_count: synthesizedProfiles.length,
       finding_count: findings?.length || 0,
-      enrichment_count: enrichments?.length || 0
+      enrichment_count: enrichments?.length || 0,
+      // Branding settings
+      branding: branding ? {
+        company_name: branding.company_name || 'FootprintIQ',
+        primary_color: branding.primary_color || '#3b82f6',
+        secondary_color: branding.secondary_color || '#6366f1',
+        tagline: branding.tagline || 'OSINT Intelligence Platform',
+        footer_text: branding.footer_text || ''
+      } : null
     });
 
   } catch (error) {
