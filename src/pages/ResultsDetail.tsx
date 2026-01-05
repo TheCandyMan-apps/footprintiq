@@ -77,7 +77,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { filterFindings, countSearchResults } from "@/lib/findingFilters";
+import { filterFindings, countSearchResults, isSearchResult as isSearchResultFilter } from "@/lib/findingFilters";
+import { normalizeFindings } from "@/lib/normalizeFinding";
 import { useSubscription } from "@/hooks/useSubscription";
 import type { User } from "@supabase/supabase-js";
 import { AddToCaseButton } from "@/components/case/AddToCaseButton";
@@ -395,8 +396,10 @@ const ResultsDetail = () => {
         }
       }
 
-      setFindings(convertedFindings);
-      console.log(`[ResultsDetail] Loaded ${convertedFindings.length} findings for scan ${scanId}`);
+      // Normalize findings for consistent filtering
+      const normalizedFindings = normalizeFindings(convertedFindings);
+      setFindings(normalizedFindings as any);
+      console.log(`[ResultsDetail] Loaded and normalized ${normalizedFindings.length} findings for scan ${scanId}`);
 
       // Fetch removal requests
       const { data: requests, error: requestsError } = await supabase
@@ -1571,8 +1574,8 @@ const ResultsDetail = () => {
                         </TooltipTrigger>
                         <TooltipContent side="top" className="max-w-xs">
                           <p className="text-xs">
-                            Show only likely + possible matches (confidence ≥65% or severity high/medium). 
-                            Excludes search results and low-confidence findings.
+                            Shows higher-confidence matches (≥90%) and multi-provider confirmed results. 
+                            Hides search/lookup noise and low-signal findings.
                           </p>
                         </TooltipContent>
                       </Tooltip>

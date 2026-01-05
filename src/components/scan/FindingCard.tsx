@@ -27,6 +27,7 @@ import { EnrichmentDialog } from './EnrichmentDialog';
 import { QuickAnalysisDialog } from './QuickAnalysisDialog';
 import { getPlatformCategory, getCategoryColor } from '@/lib/categoryMapping';
 import { getProviderIcon } from '@/lib/providerIcons';
+import { prettySiteNameFromUrl } from '@/lib/normalizeFinding';
 import { LockedInsightBlock } from '@/components/billing/LockedInsightBlock';
 import { useResultsGating } from '@/components/billing/GatedContent';
 
@@ -195,7 +196,17 @@ export function FindingCard({ finding }: FindingCardProps) {
     // For username hits (profile_presence, presence.hit, account.profile), show platform name
     if (kind === 'profile_presence' || kind === 'presence.hit' || kind === 'account.profile') {
       const platformName = extractPlatformName(evidence, meta);
-      if (platformName) return platformName;
+      
+      // If platformName is missing or "Other", derive from URL
+      if (!platformName || platformName.toLowerCase() === 'other' || platformName.toLowerCase() === 'unknown') {
+        const urlEvidence = evidence.find(e => e.key === 'url' || e.key === 'primary_url');
+        const url = urlEvidence?.value ? String(urlEvidence.value) : (meta?.url ?? meta?.primary_url ?? meta?.platform_url);
+        if (url) {
+          return prettySiteNameFromUrl(url);
+        }
+        return 'Unknown Site';
+      }
+      return platformName;
     }
     
     // For system findings, show human-readable provider status
