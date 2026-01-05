@@ -1,6 +1,7 @@
 /**
  * Centralized filter logic for OSINT findings
  * Supports canonical_results, findings, and scan_findings data sources
+ * Works with both raw and normalized findings
  */
 
 export interface FilterOptions {
@@ -9,22 +10,33 @@ export interface FilterOptions {
 }
 
 export interface FilterableItem {
+  // Normalized fields (preferred)
+  platformName?: string;
+  platformUrl?: string;
   pageType?: string;
-  page_type?: string;           // snake_case variant for canonical_results
+  sourceProviders?: string[];
+  
+  // Legacy snake_case variants
+  page_type?: string;
+  platform_name?: string;
+  platform_url?: string;
+  primary_url?: string;
+  source_providers?: string[];
+  providers?: string[];
+  
+  // Common fields
   tags?: string[];
   confidence?: number;
   severity?: string;
   verdict?: string;
-  primary_url?: string;         // For URL analysis
-  platform_url?: string;        // Legacy variant
-  source_providers?: string[];  // Multi-provider detection
-  providers?: string[];         // Legacy variant
+  
   raw?: {
     severity?: string;
     verdict?: string;
     source_providers?: string[];
     page_type?: string;
     primary_url?: string;
+    platform_name?: string;
   };
 }
 
@@ -32,9 +44,23 @@ export interface FilterableItem {
  * Check if an item is a search/lookup result
  * Supports both pageType and page_type schemas
  */
-function isSearchResult(item: FilterableItem): boolean {
-  const pageType = item.pageType ?? item.page_type ?? (item as any).raw?.page_type;
-  return pageType === 'search' || item.tags?.includes('search-result') || false;
+export function isSearchResult(item: FilterableItem): boolean {
+  const pageType = (
+    item.pageType ?? 
+    item.page_type ?? 
+    (item as any).raw?.page_type ?? 
+    (item as any).raw?.pageType ?? 
+    ''
+  ).toLowerCase();
+  
+  const tags = item.tags ?? [];
+  
+  return (
+    pageType === 'search' ||
+    pageType === 'lookup' ||
+    tags.includes('search-result') ||
+    tags.includes('lookup')
+  );
 }
 
 /**
@@ -68,21 +94,42 @@ function isGenericUrl(url: string | undefined | null): boolean {
  * Check if item has provider agreement (2+ sources confirmed)
  */
 function hasProviderAgreement(item: FilterableItem): boolean {
-  const providers = item.source_providers ?? item.providers ?? (item as any).raw?.source_providers ?? [];
+  const providers = (
+    item.sourceProviders ?? 
+    item.source_providers ?? 
+    item.providers ?? 
+    (item as any).raw?.source_providers ?? 
+    []
+  );
   return Array.isArray(providers) && providers.length >= 2;
+}
+
+/**
+ * Get platform name with fallbacks
+ */
+function getPlatformName(item: FilterableItem): string {
+  return (
+    item.platformName ??
+    item.platform_name ??
+    (item as any).raw?.platform_name ??
+    (item as any).raw?.platformName ??
+    ''
+  ).toLowerCase();
 }
 
 /**
  * Check if an item passes the focus mode filter
  * 
- * NEW STRICTER RULES:
+ * FOCUS MODE RULES (in order):
  * 1. Always exclude search/lookup results
- * 2. If verdict exists → include only 'high' or 'medium' (future-proof)
- * 3. Always include critical/high/medium severity (important findings)
- * 4. Exclude generic/low-signal URLs
- * 5. Include if confidence >= 0.90 OR has 2+ provider agreement
- * 6. Legacy safety: no verdict, no confidence, no severity → include
- * 7. Default: exclude (info severity with moderate confidence = noise)
+ * 2. If verdict exists → include only 'high' or 'medium'
+ * 3. If severity is critical/high → include
+ * 4. If confidence >= 0.90 → include
+ * 5. If multi-provider (2+) AND confidence >= 0.80 → include
+ * 6. If platformName is NOT "other" AND confidence >= 0.85 → include
+ * 7. If platformName IS "other" AND confidence < 0.90 → exclude (noise)
+ * 8. Legacy safety: no verdict, no confidence, no severity → include
+ * 9. Default: exclude (info severity with moderate confidence = noise)
  */
 function passesFocusModeFilter(item: FilterableItem): boolean {
   // Rule 1: Always exclude search/lookup results
@@ -91,43 +138,58 @@ function passesFocusModeFilter(item: FilterableItem): boolean {
   }
 
   // Rule 2: If verdict exists, use it (future-proof)
-  const verdict = item.verdict ?? item.raw?.verdict;
-  if (verdict !== undefined && verdict !== null && verdict !== '') {
-    return ['high', 'medium'].includes(verdict.toLowerCase());
+  const verdict = (item.verdict ?? (item as any).raw?.verdict ?? '').toLowerCase();
+  if (verdict && verdict !== '') {
+    return ['high', 'medium'].includes(verdict);
   }
 
   // Get fields with defensive access
   const confidence = item.confidence;
-  const severity = (item.severity ?? item.raw?.severity)?.toLowerCase();
-  const url = item.primary_url ?? item.platform_url ?? (item as any).raw?.primary_url;
+  const severity = (item.severity ?? (item as any).raw?.severity ?? '').toLowerCase();
+  const platformName = getPlatformName(item);
+  const url = item.platformUrl ?? item.platform_url ?? item.primary_url ?? (item as any).raw?.primary_url;
+  const isOther = platformName === 'other' || platformName === 'unknown' || platformName === '';
+  const multiProvider = hasProviderAgreement(item);
 
-  // Rule 3: Always include critical/high/medium severity
-  if (severity && ['critical', 'high', 'medium'].includes(severity)) {
+  // Rule 3: Always include critical/high severity
+  if (severity && ['critical', 'high'].includes(severity)) {
     return true;
   }
 
-  // Rule 4: Exclude generic/low-signal URLs
+  // Rule 4: Very high confidence always passes
+  if (confidence !== undefined && confidence !== null && confidence >= 0.90) {
+    return true;
+  }
+
+  // Rule 5: Multi-provider with good confidence
+  if (multiProvider && confidence !== undefined && confidence !== null && confidence >= 0.80) {
+    return true;
+  }
+
+  // Rule 6: Non-"Other" platform with high-ish confidence
+  if (!isOther && confidence !== undefined && confidence !== null && confidence >= 0.85) {
+    return true;
+  }
+
+  // Rule 7: "Other" platforms need very high confidence
+  if (isOther && (confidence === undefined || confidence === null || confidence < 0.90)) {
+    return false;
+  }
+
+  // Rule 8: Exclude generic URLs
   if (isGenericUrl(url)) {
     return false;
   }
 
-  // Rule 5: Include if strong signals exist
-  const hasStrongConfidence = confidence !== undefined && confidence >= 0.90;
-  const hasMultiProvider = hasProviderAgreement(item);
-  
-  if (hasStrongConfidence || hasMultiProvider) {
-    return true;
-  }
-
-  // Rule 6: Legacy safety - no confidence AND no severity = include
+  // Rule 9: Legacy safety - no confidence AND no severity = include
   const hasConfidence = confidence !== undefined && confidence !== null;
-  const hasSeverity = severity !== undefined && severity !== '';
+  const hasSeverity = severity !== '';
   
   if (!hasConfidence && !hasSeverity) {
     return true; // Don't hide legacy data
   }
 
-  // Rule 7: Default exclude (info severity with moderate confidence = noise)
+  // Rule 10: Default exclude (info severity with moderate confidence = noise)
   return false;
 }
 
