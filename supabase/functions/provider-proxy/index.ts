@@ -702,9 +702,51 @@ async function callProvider(name: string, body: any) {
   }
 }
 
+// Helper to create unconfigured provider finding
+function createUnconfiguredFinding(provider: string, configKey: string) {
+  const now = new Date().toISOString();
+  return {
+    findings: [{
+      provider,
+      kind: 'provider.unconfigured',
+      severity: 'info' as const,
+      confidence: 1.0,
+      observedAt: now,
+      evidence: [
+        { key: 'message', value: `${provider} API key not configured` },
+        { key: 'config_required', value: configKey },
+      ],
+      meta: { unconfigured: true, timestamp: now }
+    }]
+  };
+}
+
+// Helper to create provider error finding
+function createProviderErrorFinding(provider: string, error: any, target: string) {
+  const now = new Date().toISOString();
+  const message = error?.message || String(error);
+  return {
+    findings: [{
+      provider,
+      kind: 'provider.error',
+      severity: 'warning' as const,
+      confidence: 0.5,
+      observedAt: now,
+      evidence: [
+        { key: 'error', value: message.slice(0, 200) },
+        { key: 'target', value: target },
+      ],
+      meta: { error: true, timestamp: now }
+    }]
+  };
+}
+
 async function callFullContact(target: string, type: string) {
   const API_KEY = Deno.env.get('FULLCONTACT_API_KEY');
-  if (!API_KEY) return { findings: [] };
+  if (!API_KEY) {
+    console.log('[fullcontact] API key not configured');
+    return createUnconfiguredFinding('fullcontact', 'FULLCONTACT_API_KEY');
+  }
 
   try {
     const endpoint = type === 'email' ? 'person.enrich' : 'company.enrich';
@@ -736,13 +778,16 @@ async function callFullContact(target: string, type: string) {
     };
   } catch (e) {
     console.error('[fullcontact] Error:', e);
-    return { findings: [] };
+    return createProviderErrorFinding('fullcontact', e, target);
   }
 }
 
 async function callPipl(target: string, type: string) {
   const API_KEY = Deno.env.get('PIPL_API_KEY');
-  if (!API_KEY) return { findings: [] };
+  if (!API_KEY) {
+    console.log('[pipl] API key not configured');
+    return createUnconfiguredFinding('pipl', 'PIPL_API_KEY');
+  }
 
   try {
     // Build query parameters based on type
@@ -776,13 +821,16 @@ async function callPipl(target: string, type: string) {
     };
   } catch (e) {
     console.error('[pipl] Error:', e);
-    return { findings: [] };
+    return createProviderErrorFinding('pipl', e, target);
   }
 }
 
 async function callClearbit(target: string, type: string) {
   const API_KEY = Deno.env.get('CLEARBIT_API_KEY');
-  if (!API_KEY) return { findings: [] };
+  if (!API_KEY) {
+    console.log('[clearbit] API key not configured');
+    return createUnconfiguredFinding('clearbit', 'CLEARBIT_API_KEY');
+  }
 
   try {
     const endpoint = type === 'email' 
@@ -812,13 +860,16 @@ async function callClearbit(target: string, type: string) {
     };
   } catch (e) {
     console.error('[clearbit] Error:', e);
-    return { findings: [] };
+    return createProviderErrorFinding('clearbit', e, target);
   }
 }
 
 async function callShodan(target: string) {
   const API_KEY = Deno.env.get('SHODAN_API_KEY');
-  if (!API_KEY) return { findings: [] };
+  if (!API_KEY) {
+    console.log('[shodan] API key not configured');
+    return createUnconfiguredFinding('shodan', 'SHODAN_API_KEY');
+  }
 
   try {
     const response = await fetch(`https://api.shodan.io/shodan/host/${target}?key=${API_KEY}`);
@@ -842,13 +893,16 @@ async function callShodan(target: string) {
     };
   } catch (e) {
     console.error('[shodan] Error:', e);
-    return { findings: [] };
+    return createProviderErrorFinding('shodan', e, target);
   }
 }
 
 async function callHIBP(email: string) {
   const API_KEY = Deno.env.get('HIBP_API_KEY');
-  if (!API_KEY) return { findings: [] };
+  if (!API_KEY) {
+    console.log('[hibp] API key not configured');
+    return createUnconfiguredFinding('hibp', 'HIBP_API_KEY');
+  }
 
   try {
     const response = await fetch(
@@ -890,7 +944,7 @@ async function callHIBP(email: string) {
     return { findings };
   } catch (e) {
     console.error('[hibp] Error:', e);
-    return { findings: [] };
+    return createProviderErrorFinding('hibp', e, email);
   }
 }
 

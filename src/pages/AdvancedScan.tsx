@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { invokeWithRetry } from "@/lib/supabaseRetry";
+import { invokeWithRetry, classifyError, getUserFriendlyMessage } from "@/lib/supabaseRetry";
 import { Header } from "@/components/Header";
 import { SEO } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
@@ -456,11 +456,35 @@ export default function AdvancedScan() {
         setIsScanning(false);
       } catch (error) {
         console.error("[AdvancedScan] Username scan error:", error);
-        const errorMessage = error instanceof Error ? error.message : "Scan failed";
-        toast.error(errorMessage, {
-          description: "Check console (F12) for details",
-          duration: 5000
-        });
+        
+        // Classify the error
+        const classified = classifyError(error);
+        
+        // Show appropriate error message
+        if (classified.type === 'timeout') {
+          toast.warning("Scan taking longer than expected", {
+            description: "The scan is still running. Check your dashboard shortly.",
+            duration: 8000
+          });
+        } else if (classified.type === 'rate_limit') {
+          toast.error("Too many scans", {
+            description: "Please wait a few minutes before trying again."
+          });
+        } else if (classified.type === 'network_error') {
+          toast.error("Connection issue", {
+            description: "Please check your network and try again.",
+            action: {
+              label: 'Retry',
+              onClick: () => handleScan()
+            }
+          });
+        } else {
+          toast.error(getUserFriendlyMessage(classified), {
+            description: "Check console (F12) for details",
+            duration: 5000
+          });
+        }
+        
         setIsScanning(false);
         setProgressOpen(false);
         setModalScanId(null);
@@ -555,11 +579,16 @@ export default function AdvancedScan() {
           );
 
           if (error) {
+            // Classify the error for better handling
+            const classified = classifyError(error);
+            console.error('[AdvancedScan] Scan error:', { error, classified });
+            
             // Log failed scan attempt
             ActivityLogger.scanFailed(preScanId, {
               scan_type: scanType,
               target: targetValue,
               error: error.message,
+              error_type: classified.type,
               workspace_id: workspace.id,
             }).catch(console.error);
             
@@ -569,26 +598,80 @@ export default function AdvancedScan() {
               setCurrentScanId(null);
               setIsScanning(false);
               
-              const errorMessage = error.message || 'Unknown error';
-              let description = 'Unable to initiate scan';
-              
-              // Check for specific monetization/plan errors
-              if (errorMessage.includes('insufficient') || errorMessage.includes('credits')) {
-                setUpgradeReason('insufficient_credits');
-                setShowUpgradeModal(true);
-                description = 'Insufficient credits to start scan';
-              } else if (errorMessage.includes('no_providers_available_for_tier') || 
-                         errorMessage.includes('requires') || 
-                         errorMessage.includes('blocked')) {
-                setUpgradeReason('provider_blocked');
-                setShowUpgradeModal(true);
-                description = 'Some selected providers require plan upgrade';
-              } else if (errorMessage.includes('limit reached') || errorMessage.includes('quota')) {
-                setUpgradeReason('insufficient_credits');
-                setShowUpgradeModal(true);
-                description = 'Monthly scan quota exceeded - consider upgrading';
-              } else {
-                toast.error('Scan failed to start', { description });
+              // Handle specific error types
+              switch (classified.type) {
+                case 'rate_limit':
+                  toast.error('Too many scans', { 
+                    description: 'Please wait a few minutes before trying again.',
+                    duration: 6000
+                  });
+                  break;
+                  
+                case 'auth_error':
+                  toast.error('Session expired', { 
+                    description: 'Please log in again to continue scanning.',
+                    action: {
+                      label: 'Log in',
+                      onClick: () => navigate('/auth')
+                    }
+                  });
+                  break;
+                  
+                case 'timeout':
+                  toast.error('Scan taking longer than expected', { 
+                    description: 'The scan is still running in the background. Check your dashboard in a few minutes.',
+                    duration: 8000
+                  });
+                  break;
+                  
+                case 'network_error':
+                  toast.error('Connection issue', { 
+                    description: 'Please check your network and try again.',
+                    action: {
+                      label: 'Retry',
+                      onClick: () => handleScan()
+                    }
+                  });
+                  break;
+                  
+                case 'provider_unconfigured':
+                  toast.warning('Partial scan available', { 
+                    description: 'Some providers are not configured. Results may be limited.',
+                    duration: 6000
+                  });
+                  // Don't throw - let partial results through
+                  return { scanId: preScanId, partial: true };
+                  
+                case 'server_error':
+                  toast.error('Server temporarily unavailable', { 
+                    description: 'Our team has been notified. Please try again in a moment.',
+                    action: {
+                      label: 'Retry',
+                      onClick: () => handleScan()
+                    }
+                  });
+                  break;
+                  
+                default:
+                  // Check for specific monetization/plan errors in message
+                  const errorMessage = error.message || '';
+                  if (errorMessage.includes('insufficient') || errorMessage.includes('credits')) {
+                    setUpgradeReason('insufficient_credits');
+                    setShowUpgradeModal(true);
+                  } else if (errorMessage.includes('no_providers_available_for_tier') || 
+                             errorMessage.includes('requires') || 
+                             errorMessage.includes('blocked')) {
+                    setUpgradeReason('provider_blocked');
+                    setShowUpgradeModal(true);
+                  } else if (errorMessage.includes('limit reached') || errorMessage.includes('quota')) {
+                    setUpgradeReason('insufficient_credits');
+                    setShowUpgradeModal(true);
+                  } else {
+                    toast.error('Scan failed', { 
+                      description: getUserFriendlyMessage(classified),
+                      duration: 5000
+                    });
+                  }
               }
             }
             throw error;
