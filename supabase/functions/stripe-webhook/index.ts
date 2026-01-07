@@ -100,7 +100,7 @@ serve(async (req) => {
     // Validate webhook signature (Stripe's own security mechanism)
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     } catch (err: unknown) {
       const errMessage = err instanceof Error ? err.message : String(err);
       logStep("ERROR: Signature verification failed", { error: errMessage });
