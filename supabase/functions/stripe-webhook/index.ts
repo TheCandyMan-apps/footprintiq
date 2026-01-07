@@ -271,71 +271,117 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
     logStep("WARNING: Price ID not found in mapping, defaulting to free", { priceId, knownPrices: Object.keys(PRICE_TO_TIER) });
   }
   
-  // Update user_roles
+  // UPSERT user_roles (create if missing, update if exists)
   const { error: roleError } = await supabase
     .from("user_roles")
-    .update({
+    .upsert({
+      user_id: user.id,
+      role: 'user',
       subscription_tier: tier,
       subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
-    })
-    .eq("user_id", user.id);
+    }, {
+      onConflict: 'user_id',
+    });
   
   if (roleError) {
-    logStep("ERROR: Failed to update user_roles", { error: roleError.message, userId: user.id });
+    logStep("ERROR: Failed to upsert user_roles", { error: roleError.message, userId: user.id });
   } else {
-    logStep("Updated user_roles", { userId: user.id, tier });
+    logStep("Upserted user_roles", { userId: user.id, tier });
   }
   
-  // Find user's workspace
-  const { data: workspace, error: wsError } = await supabase
+  // Find or CREATE user's workspace
+  let workspace = await supabase
     .from("workspaces")
     .select("id")
     .eq("owner_id", user.id)
     .limit(1)
     .maybeSingle();
   
-  if (wsError) {
-    logStep("ERROR: Failed to find workspace", { error: wsError.message, userId: user.id });
+  if (workspace.error) {
+    logStep("ERROR: Failed to find workspace", { error: workspace.error.message, userId: user.id });
     return;
   }
   
-  if (!workspace) {
-    logStep("WARNING: No workspace found for user", { userId: user.id });
-    return;
-  }
+  let workspaceId = workspace.data?.id;
   
-  logStep("Found workspace", { workspaceId: workspace.id });
-  
-  // Update workspace with Stripe IDs and tier
-  const { error: wsUpdateError } = await supabase
-    .from("workspaces")
-    .update({
-      stripe_customer_id: customerId,
-      stripe_subscription_id: subscriptionId,
-      subscription_tier: tier,
-      plan: plan,
-      scan_limit_monthly: scanLimit,
-      subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
-    })
-    .eq("id", workspace.id);
-  
-  if (wsUpdateError) {
-    logStep("ERROR: Failed to update workspace", { error: wsUpdateError.message, workspaceId: workspace.id });
+  // If no workspace exists, CREATE one
+  if (!workspaceId) {
+    logStep("No workspace found, creating one for user", { userId: user.id, email });
+    
+    const emailPrefix = email.split('@')[0];
+    const workspaceName = `${emailPrefix} Workspace`;
+    const workspaceSlug = `personal-${user.id.substring(0, 8)}`;
+    
+    const { data: newWorkspace, error: createError } = await supabase
+      .from("workspaces")
+      .insert({
+        name: workspaceName,
+        slug: workspaceSlug,
+        owner_id: user.id,
+        subscription_tier: tier,
+        plan: plan,
+        scan_limit_monthly: scanLimit,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
+        subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+      })
+      .select("id")
+      .single();
+    
+    if (createError) {
+      logStep("ERROR: Failed to create workspace", { error: createError.message, userId: user.id });
+      return;
+    }
+    
+    workspaceId = newWorkspace.id;
+    logStep("Created workspace", { workspaceId, workspaceName });
+    
+    // Add user as admin member (trigger should handle this, but ensure it)
+    await supabase
+      .from("workspace_members")
+      .upsert({
+        workspace_id: workspaceId,
+        user_id: user.id,
+        role: 'admin',
+      }, {
+        onConflict: 'workspace_id,user_id',
+      });
+    
+    logStep("Added user as workspace admin", { workspaceId, userId: user.id });
   } else {
-    logStep("Updated workspace with subscription", { 
-      workspaceId: workspace.id, 
-      customerId, 
-      subscriptionId,
-      tier,
-      plan 
-    });
+    logStep("Found workspace", { workspaceId });
+    
+    // Update existing workspace with Stripe IDs and tier
+    const { error: wsUpdateError } = await supabase
+      .from("workspaces")
+      .update({
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
+        subscription_tier: tier,
+        plan: plan,
+        scan_limit_monthly: scanLimit,
+        subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+      })
+      .eq("id", workspaceId);
+    
+    if (wsUpdateError) {
+      logStep("ERROR: Failed to update workspace", { error: wsUpdateError.message, workspaceId });
+    } else {
+      logStep("Updated workspace with subscription", { 
+        workspaceId, 
+        customerId, 
+        subscriptionId,
+        tier,
+        plan 
+      });
+    }
   }
   
   // Create or update subscriptions table record
   const { error: subError } = await supabase
     .from("subscriptions")
     .upsert({
-      workspace_id: workspace.id,
+      workspace_id: workspaceId,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscriptionId,
       plan: plan,
@@ -349,14 +395,14 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
     });
   
   if (subError) {
-    logStep("ERROR: Failed to upsert subscription record", { error: subError.message, workspaceId: workspace.id });
+    logStep("ERROR: Failed to upsert subscription record", { error: subError.message, workspaceId });
   } else {
-    logStep("Upserted subscription record", { workspaceId: workspace.id, status: subscription.status });
+    logStep("Upserted subscription record", { workspaceId, status: subscription.status });
   }
   
   // Log to audit
   await supabase.from("audit_log").insert({
-    workspace_id: workspace.id,
+    workspace_id: workspaceId,
     user_id: user.id,
     action: "subscription_created",
     target: subscriptionId,
@@ -410,32 +456,79 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
     });
   }
 
-  // Update user subscription in user_roles
+  // UPSERT user subscription in user_roles (create if missing)
   const { error: updateError } = await supabase
     .from("user_roles")
-    .update({
+    .upsert({
+      user_id: user.id,
+      role: 'user',
       subscription_tier: tier,
       subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
-    })
-    .eq("user_id", user.id);
+    }, {
+      onConflict: 'user_id',
+    });
 
   if (updateError) {
-    logStep("ERROR: Failed to update user_roles", { error: updateError.message, userId: user.id });
+    logStep("ERROR: Failed to upsert user_roles", { error: updateError.message, userId: user.id });
     throw updateError;
   }
   
-  logStep("Updated user_roles", { userId: user.id, email, tier });
+  logStep("Upserted user_roles", { userId: user.id, email, tier });
 
-  // Find user's workspace
-  const { data: workspace } = await supabase
+  // Find or CREATE user's workspace
+  let workspace = await supabase
     .from("workspaces")
     .select("id")
     .eq("owner_id", user.id)
     .limit(1)
     .maybeSingle();
 
-  if (workspace) {
-    // Update workspace
+  let workspaceId = workspace.data?.id;
+
+  // If no workspace exists, CREATE one
+  if (!workspaceId) {
+    logStep("No workspace found, creating one for user", { userId: user.id, email });
+    
+    const emailPrefix = email.split('@')[0];
+    const workspaceName = `${emailPrefix} Workspace`;
+    const workspaceSlug = `personal-${user.id.substring(0, 8)}`;
+    
+    const { data: newWorkspace, error: createError } = await supabase
+      .from("workspaces")
+      .insert({
+        name: workspaceName,
+        slug: workspaceSlug,
+        owner_id: user.id,
+        subscription_tier: tier,
+        plan: plan,
+        scan_limit_monthly: scanLimit,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscription.id,
+        subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+      })
+      .select("id")
+      .single();
+    
+    if (createError) {
+      logStep("ERROR: Failed to create workspace", { error: createError.message, userId: user.id });
+      return;
+    }
+    
+    workspaceId = newWorkspace.id;
+    logStep("Created workspace", { workspaceId, workspaceName });
+    
+    // Add user as admin member
+    await supabase
+      .from("workspace_members")
+      .upsert({
+        workspace_id: workspaceId,
+        user_id: user.id,
+        role: 'admin',
+      }, {
+        onConflict: 'workspace_id,user_id',
+      });
+  } else {
+    // Update existing workspace
     const { error: wsError } = await supabase
       .from("workspaces")
       .update({
@@ -446,35 +539,35 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
         scan_limit_monthly: scanLimit,
         subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
       })
-      .eq("id", workspace.id);
+      .eq("id", workspaceId);
     
     if (wsError) {
-      logStep("ERROR: Failed to update workspace", { error: wsError.message, workspaceId: workspace.id });
+      logStep("ERROR: Failed to update workspace", { error: wsError.message, workspaceId });
     } else {
-      logStep("Updated workspace", { workspaceId: workspace.id, tier, plan });
+      logStep("Updated workspace", { workspaceId, tier, plan });
     }
+  }
 
-    // Upsert subscription record
-    const { error: subError } = await supabase
-      .from("subscriptions")
-      .upsert({
-        workspace_id: workspace.id,
-        stripe_customer_id: customerId,
-        stripe_subscription_id: subscription.id,
-        plan: plan,
-        status: subscription.status,
-        scan_limit_monthly: scanLimit,
-        current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-        current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      }, {
-        onConflict: 'workspace_id',
-      });
-    
-    if (subError) {
-      logStep("ERROR: Failed to upsert subscription record", { error: subError.message });
-    } else {
-      logStep("Upserted subscription record", { workspaceId: workspace.id });
-    }
+  // Upsert subscription record
+  const { error: subError } = await supabase
+    .from("subscriptions")
+    .upsert({
+      workspace_id: workspaceId,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscription.id,
+      plan: plan,
+      status: subscription.status,
+      scan_limit_monthly: scanLimit,
+      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+    }, {
+      onConflict: 'workspace_id',
+    });
+  
+  if (subError) {
+    logStep("ERROR: Failed to upsert subscription record", { error: subError.message });
+  } else {
+    logStep("Upserted subscription record", { workspaceId });
   }
 
   logStep("✅ Subscription change processed", { email, tier, eventType });
