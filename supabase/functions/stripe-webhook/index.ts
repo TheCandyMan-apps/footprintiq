@@ -361,6 +361,7 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
         plan: plan,
         scan_limit_monthly: scanLimit,
         subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+        trial_status: 'converted', // Mark trial as converted when they subscribe
       })
       .eq("id", workspaceId);
     
@@ -372,7 +373,8 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
         customerId, 
         subscriptionId,
         tier,
-        plan 
+        plan,
+        trial_status: 'converted'
       });
     }
   }
@@ -538,13 +540,14 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
         plan: plan,
         scan_limit_monthly: scanLimit,
         subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+        trial_status: 'converted', // Mark trial as converted
       })
       .eq("id", workspaceId);
     
     if (wsError) {
       logStep("ERROR: Failed to update workspace", { error: wsError.message, workspaceId });
     } else {
-      logStep("Updated workspace", { workspaceId, tier, plan });
+      logStep("Updated workspace", { workspaceId, tier, plan, trial_status: 'converted' });
     }
   }
 

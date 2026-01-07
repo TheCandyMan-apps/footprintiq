@@ -9,6 +9,7 @@ import { SystemHealth } from '@/components/admin/SystemHealth';
 import { ErrorLogs } from '@/components/admin/ErrorLogs';
 import { DataVerificationPanel } from '@/components/admin/DataVerificationPanel';
 import { GrowthAnalyticsTabs } from '@/components/admin/GrowthAnalyticsTabs';
+import { BillingSyncPanel } from '@/components/admin/BillingSyncPanel';
 import { AdminNav } from '@/components/admin/AdminNav';
 import { Header } from '@/components/Header';
 import { Shield, Crown, TrendingUp } from 'lucide-react';
@@ -121,6 +122,7 @@ export default function Admin() {
             <TabsContent value="system">
               <div className="space-y-6">
                 <SystemHealth />
+                <BillingSyncPanel />
                 <DataVerificationPanel />
               </div>
             </TabsContent>
