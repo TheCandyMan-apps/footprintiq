@@ -130,11 +130,11 @@ export const FindingCard = ({ finding, redactPII = true }: FindingCardProps) => 
         )}
 
         {/* Remediation Checklist */}
-        {finding.remediation.length > 0 && (
+        {(finding.remediation || []).length > 0 && (
           <div>
             <h4 className="text-sm font-semibold mb-2">Remediation Steps</h4>
             <div className="space-y-2">
-              {finding.remediation.map((step, idx) => (
+              {(finding.remediation || []).map((step, idx) => (
                 <div key={idx} className="flex items-start gap-2">
                   <Checkbox
                     id={`remediation-${finding.id}-${idx}`}
@@ -179,9 +179,9 @@ export const FindingCard = ({ finding, redactPII = true }: FindingCardProps) => 
         </div>
 
         {/* Tags */}
-        {finding.tags.length > 0 && (
+        {(finding.tags || []).length > 0 && (
           <div className="flex flex-wrap gap-1 pt-2">
-            {finding.tags.map((tag, idx) => (
+            {(finding.tags || []).map((tag, idx) => (
               <Badge key={idx} variant="outline" className="text-xs">
                 {tag}
               </Badge>
