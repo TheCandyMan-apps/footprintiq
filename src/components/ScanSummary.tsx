@@ -168,7 +168,8 @@ export const ScanSummary = ({ findings, scanId, isPro = false }: ScanSummaryProp
     
     if (enabled && scanId) {
       // Add to watchlist - extract primary identifier
-      const primaryIdentifier = findings[0]?.evidence.find(
+      const evidence = findings[0]?.evidence || [];
+      const primaryIdentifier = evidence.find(
         (e) => e.key === "username" || e.key === "email"
       );
       
