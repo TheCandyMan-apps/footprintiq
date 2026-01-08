@@ -59,7 +59,7 @@ export const CaseNotes = ({ caseData, onUpdate }: CaseNotesProps) => {
   };
 
   const getFindingTitle = (findingId: string): string => {
-    const finding = caseData.findings.find((f) => f.id === findingId);
+    const finding = (caseData.findings || []).find((f) => f.id === findingId);
     return finding ? finding.title : "Unknown Finding";
   };
 
@@ -79,7 +79,7 @@ export const CaseNotes = ({ caseData, onUpdate }: CaseNotesProps) => {
               onChange={(e) => setSelectedFindingId(e.target.value)}
             >
               <option value="">-- Select a finding --</option>
-              {caseData.findings.map((finding) => (
+              {(caseData.findings || []).map((finding) => (
                 <option key={finding.id} value={finding.id}>
                   {finding.title}
                 </option>

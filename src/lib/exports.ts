@@ -51,7 +51,7 @@ export function exportAsCSV(findings: Finding[], redactPII: boolean = true): voi
         finding.observedAt,
         '',
         '',
-        finding.tags.join('; '),
+        (finding.tags || []).join('; '),
       ]);
     } else {
       // Multiple evidence items - one row per evidence
@@ -66,9 +66,9 @@ export function exportAsCSV(findings: Finding[], redactPII: boolean = true): voi
           finding.providerCategory,
           finding.impact,
           finding.observedAt,
-          ev.key,
+        ev.key,
           typeof ev.value === 'string' ? ev.value : JSON.stringify(ev.value),
-          finding.tags.join('; '),
+          (finding.tags || []).join('; '),
         ]);
       });
     }
@@ -310,8 +310,9 @@ export async function exportAsPDFLegacy(findings: Finding[], redactPII: boolean 
         doc.text(`Confidence: ${finding.confidence.toFixed(1)}%`, 16, detailYPos + 15);
         doc.text(`Observed: ${new Date(finding.observedAt).toLocaleString()}`, 100, detailYPos + 5);
         doc.text(`Category: ${finding.providerCategory}`, 100, detailYPos + 10);
-        if (finding.tags.length > 0) {
-          doc.text(`Tags: ${finding.tags.slice(0, 3).join(', ')}`, 100, detailYPos + 15);
+        const tags = finding.tags || [];
+        if (tags.length > 0) {
+          doc.text(`Tags: ${tags.slice(0, 3).join(', ')}`, 100, detailYPos + 15);
         }
         detailYPos += 23;
 
@@ -361,13 +362,14 @@ export async function exportAsPDFLegacy(findings: Finding[], redactPII: boolean 
         }
 
         // Remediation
-        if (finding.remediation.length > 0) {
+        const remediation = finding.remediation || [];
+        if (remediation.length > 0) {
           doc.setFont(undefined, 'bold');
           doc.text('Recommended Actions:', 16, detailYPos);
           detailYPos += 5;
           doc.setFont(undefined, 'normal');
           
-          finding.remediation.forEach((step, stepIndex) => {
+          remediation.forEach((step, stepIndex) => {
             const stepText = `${stepIndex + 1}. ${step}`;
             const splitStep = doc.splitTextToSize(stepText, 174);
             doc.text(splitStep, 18, detailYPos);
