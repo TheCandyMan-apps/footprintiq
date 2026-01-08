@@ -31,7 +31,7 @@ export function extractPersonaFeatures(findings: Finding[]): PersonaFeatures {
   findings.forEach((finding) => {
     // Extract username patterns
     if (finding.type === "social_media" || finding.type === "identity") {
-      finding.evidence.forEach((e) => {
+      (finding.evidence || []).forEach((e) => {
         if (e.key === "username" && typeof e.value === "string") {
           const tokens = tokenizeUsername(e.value);
           tokens.forEach((t) => usernameTokens.add(t));

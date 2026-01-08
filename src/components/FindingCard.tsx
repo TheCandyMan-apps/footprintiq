@@ -92,14 +92,14 @@ export const FindingCard = ({ finding, redactPII = true }: FindingCardProps) => 
 
       <CardContent className="space-y-4">
         {/* Evidence Section */}
-        {finding.evidence.length > 0 && (
+        {(finding.evidence || []).length > 0 && (
           <div>
             <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
               <Info className="w-4 h-4" />
               Evidence
             </h4>
             <div className="space-y-2">
-              {finding.evidence.map((evidence, idx) => (
+              {(finding.evidence || []).map((evidence, idx) => (
                 <div key={idx} className="flex items-start justify-between gap-2 p-2 rounded bg-muted/50">
                   <div className="flex-1 min-w-0">
                     <div className="text-xs font-medium text-muted-foreground">{evidence.key}</div>
