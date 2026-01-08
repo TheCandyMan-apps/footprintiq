@@ -132,6 +132,12 @@ serve(async (req) => {
             contentType = 'application/pdf';
             break;
 
+          case 'xmind':
+            content = generateXMind(scan, findings || []);
+            fileName = `scan-${scanId}-mindmap.xmind`;
+            contentType = 'application/zip';
+            break;
+
           default:
             console.log(`Skipping unsupported artifact type: ${artifactType}`);
             continue;
@@ -731,4 +737,324 @@ function generatePDF(scan: any, findings: any[], branding: BrandingSettings | nu
   pdf += '%%EOF\n';
   
   return pdf;
+}
+
+// Generate XMind 8 format mindmap (ZIP containing XML files)
+function generateXMind(scan: any, findings: any[]): string {
+  // Group findings by provider, then by category/kind
+  const byProvider: Record<string, Record<string, any[]>> = {};
+  
+  findings.forEach(f => {
+    const provider = f.provider || 'unknown';
+    const category = f.kind || f.category || 'uncategorized';
+    
+    if (!byProvider[provider]) byProvider[provider] = {};
+    if (!byProvider[provider][category]) byProvider[provider][category] = [];
+    byProvider[provider][category].push(f);
+  });
+
+  const target = scan.username || scan.email || scan.phone || 'Target';
+  const scanType = scan.scan_type || 'OSINT';
+  const timestamp = new Date().toISOString();
+  
+  // Generate unique IDs for XMind elements
+  const generateId = () => Math.random().toString(36).substring(2, 15);
+  
+  // Build topic hierarchy
+  const rootId = generateId();
+  const sheetId = generateId();
+  
+  // Build child topics for providers
+  const providerTopics: string[] = [];
+  let topicCounter = 0;
+  
+  Object.entries(byProvider).forEach(([provider, categories]) => {
+    const providerId = generateId();
+    const providerCount = Object.values(categories).reduce((sum, arr) => sum + arr.length, 0);
+    
+    // Category children for this provider
+    const categoryTopics: string[] = [];
+    
+    Object.entries(categories).forEach(([category, categoryFindings]) => {
+      const categoryId = generateId();
+      
+      // Finding children for this category
+      const findingTopics: string[] = [];
+      
+      categoryFindings.forEach((f) => {
+        const findingId = generateId();
+        const siteName = escapeXml(f.site || f.platform || extractSiteName(f) || 'Unknown');
+        const confidence = f.confidence || 'unknown';
+        const url = f.url || '';
+        
+        // Marker for confidence level
+        const markers = [];
+        if (confidence === 'high') markers.push('<marker marker-id="priority-1"/>');
+        else if (confidence === 'medium') markers.push('<marker marker-id="priority-2"/>');
+        else markers.push('<marker marker-id="priority-3"/>');
+        
+        if (f.nsfw) markers.push('<marker marker-id="flag-red"/>');
+        
+        const markerXml = markers.length > 0 ? `<marker-refs>${markers.join('')}</marker-refs>` : '';
+        
+        // Notes with URL and details
+        const notesContent = url ? `URL: ${escapeXml(url)}\nConfidence: ${confidence}${f.nsfw ? '\nNSFW: Yes' : ''}` : `Confidence: ${confidence}`;
+        const notesXml = `<notes><plain>${escapeXml(notesContent)}</plain></notes>`;
+        
+        findingTopics.push(`
+          <topic id="${findingId}">
+            <title>${siteName}</title>
+            ${markerXml}
+            ${notesXml}
+          </topic>
+        `);
+        topicCounter++;
+      });
+      
+      categoryTopics.push(`
+        <topic id="${categoryId}" branch="folded">
+          <title>${escapeXml(category.toUpperCase())} (${categoryFindings.length})</title>
+          <children>
+            <topics type="attached">
+              ${findingTopics.join('\n')}
+            </topics>
+          </children>
+        </topic>
+      `);
+    });
+    
+    providerTopics.push(`
+      <topic id="${providerId}">
+        <title>${escapeXml(provider.toUpperCase())} (${providerCount})</title>
+        <children>
+          <topics type="attached">
+            ${categoryTopics.join('\n')}
+          </topics>
+        </children>
+      </topic>
+    `);
+  });
+
+  // Calculate stats for summary topic
+  const highConfidence = findings.filter(f => f.confidence === 'high').length;
+  const mediumConfidence = findings.filter(f => f.confidence === 'medium').length;
+  const nsfwCount = findings.filter(f => f.nsfw).length;
+  const summaryId = generateId();
+  
+  const summaryTopic = `
+    <topic id="${summaryId}">
+      <title>Summary</title>
+      <children>
+        <topics type="attached">
+          <topic id="${generateId()}">
+            <title>Total Findings: ${findings.length}</title>
+            <marker-refs><marker marker-id="symbol-info"/></marker-refs>
+          </topic>
+          <topic id="${generateId()}">
+            <title>High Confidence: ${highConfidence}</title>
+            <marker-refs><marker marker-id="priority-1"/></marker-refs>
+          </topic>
+          <topic id="${generateId()}">
+            <title>Medium Confidence: ${mediumConfidence}</title>
+            <marker-refs><marker marker-id="priority-2"/></marker-refs>
+          </topic>
+          ${nsfwCount > 0 ? `
+          <topic id="${generateId()}">
+            <title>NSFW Flagged: ${nsfwCount}</title>
+            <marker-refs><marker marker-id="flag-red"/></marker-refs>
+          </topic>
+          ` : ''}
+        </topics>
+      </children>
+    </topic>
+  `;
+
+  // Main content.xml for XMind
+  const contentXml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<xmap-content xmlns="urn:xmind:xmap:xmlns:content:2.0" xmlns:fo="http://www.w3.org/1999/XSL/Format" xmlns:svg="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:xlink="http://www.w3.org/1999/xlink" timestamp="${timestamp}" version="2.0">
+  <sheet id="${sheetId}" timestamp="${timestamp}">
+    <topic id="${rootId}" structure-class="org.xmind.ui.map.clockwise" timestamp="${timestamp}">
+      <title>${escapeXml(target)} - ${escapeXml(scanType)} Scan</title>
+      <children>
+        <topics type="attached">
+          ${summaryTopic}
+          ${providerTopics.join('\n')}
+        </topics>
+      </children>
+    </topic>
+    <title>OSINT Findings</title>
+  </sheet>
+</xmap-content>`;
+
+  // meta.xml
+  const metaXml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<meta xmlns="urn:xmind:xmap:xmlns:meta:2.0" version="2.0">
+  <Author>
+    <Name>FootprintIQ</Name>
+  </Author>
+  <Create>
+    <Time>${timestamp}</Time>
+  </Create>
+</meta>`;
+
+  // manifest.xml
+  const manifestXml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<manifest xmlns="urn:xmind:xmap:xmlns:manifest:1.0">
+  <file-entry full-path="content.xml" media-type="text/xml"/>
+  <file-entry full-path="meta.xml" media-type="text/xml"/>
+  <file-entry full-path="META-INF/" media-type=""/>
+  <file-entry full-path="META-INF/manifest.xml" media-type="text/xml"/>
+</manifest>`;
+
+  // Build ZIP file manually (simplified ZIP format)
+  // XMind 8 files are just ZIP archives with specific XML files
+  const files = [
+    { name: 'content.xml', content: contentXml },
+    { name: 'meta.xml', content: metaXml },
+    { name: 'META-INF/manifest.xml', content: manifestXml }
+  ];
+  
+  return buildSimpleZip(files);
+}
+
+// Escape XML special characters
+function escapeXml(text: string): string {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
+
+// Build a simple ZIP file containing text files
+function buildSimpleZip(files: Array<{ name: string; content: string }>): string {
+  const encoder = new TextEncoder();
+  const parts: Uint8Array[] = [];
+  const centralDirectory: Uint8Array[] = [];
+  let offset = 0;
+  
+  // Helper to create a data view for numbers
+  const writeUint16 = (val: number): Uint8Array => {
+    const buf = new Uint8Array(2);
+    buf[0] = val & 0xff;
+    buf[1] = (val >> 8) & 0xff;
+    return buf;
+  };
+  
+  const writeUint32 = (val: number): Uint8Array => {
+    const buf = new Uint8Array(4);
+    buf[0] = val & 0xff;
+    buf[1] = (val >> 8) & 0xff;
+    buf[2] = (val >> 16) & 0xff;
+    buf[3] = (val >> 24) & 0xff;
+    return buf;
+  };
+  
+  // Simple CRC32 implementation
+  const crc32 = (data: Uint8Array): number => {
+    let crc = 0xffffffff;
+    const table = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) {
+        c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      table[i] = c;
+    }
+    for (let i = 0; i < data.length; i++) {
+      crc = table[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
+    }
+    return (crc ^ 0xffffffff) >>> 0;
+  };
+  
+  // Process each file
+  for (const file of files) {
+    const nameBytes = encoder.encode(file.name);
+    const contentBytes = encoder.encode(file.content);
+    const crc = crc32(contentBytes);
+    
+    // Local file header
+    const localHeader = new Uint8Array([
+      0x50, 0x4b, 0x03, 0x04, // signature
+      0x0a, 0x00,             // version needed (1.0)
+      0x00, 0x00,             // general purpose flag
+      0x00, 0x00,             // compression method (none)
+      0x00, 0x00,             // file time
+      0x00, 0x00,             // file date
+    ]);
+    
+    const localHeaderFull = concatUint8Arrays([
+      localHeader,
+      writeUint32(crc),
+      writeUint32(contentBytes.length),
+      writeUint32(contentBytes.length),
+      writeUint16(nameBytes.length),
+      writeUint16(0), // extra field length
+      nameBytes,
+      contentBytes
+    ]);
+    
+    parts.push(localHeaderFull);
+    
+    // Central directory entry
+    const centralEntry = concatUint8Arrays([
+      new Uint8Array([0x50, 0x4b, 0x01, 0x02]), // signature
+      writeUint16(0x0014), // version made by
+      writeUint16(0x000a), // version needed
+      writeUint16(0),      // flags
+      writeUint16(0),      // compression
+      writeUint16(0),      // mod time
+      writeUint16(0),      // mod date
+      writeUint32(crc),
+      writeUint32(contentBytes.length),
+      writeUint32(contentBytes.length),
+      writeUint16(nameBytes.length),
+      writeUint16(0),      // extra length
+      writeUint16(0),      // comment length
+      writeUint16(0),      // disk start
+      writeUint16(0),      // internal attr
+      writeUint32(0),      // external attr
+      writeUint32(offset), // local header offset
+      nameBytes
+    ]);
+    
+    centralDirectory.push(centralEntry);
+    offset += localHeaderFull.length;
+  }
+  
+  // End of central directory
+  const centralDirSize = centralDirectory.reduce((sum, arr) => sum + arr.length, 0);
+  const endRecord = concatUint8Arrays([
+    new Uint8Array([0x50, 0x4b, 0x05, 0x06]), // signature
+    writeUint16(0),                            // disk number
+    writeUint16(0),                            // disk with cd
+    writeUint16(files.length),                 // entries on disk
+    writeUint16(files.length),                 // total entries
+    writeUint32(centralDirSize),               // cd size
+    writeUint32(offset),                       // cd offset
+    writeUint16(0)                             // comment length
+  ]);
+  
+  // Combine all parts
+  const zipData = concatUint8Arrays([
+    ...parts,
+    ...centralDirectory,
+    endRecord
+  ]);
+  
+  // Convert to binary string for storage
+  return Array.from(zipData).map(b => String.fromCharCode(b)).join('');
+}
+
+// Helper to concatenate Uint8Arrays
+function concatUint8Arrays(arrays: Uint8Array[]): Uint8Array {
+  const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const arr of arrays) {
+    result.set(arr, offset);
+    offset += arr.length;
+  }
+  return result;
 }
