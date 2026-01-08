@@ -19,7 +19,8 @@ export const mapFindingsToRiskChips = (findings: Finding[]): RiskChip[] => {
         break;
       case "ip_exposure":
         // Check for critical ports
-        const criticalPorts = finding.evidence.find(e => 
+        const ipEvidence = finding.evidence || [];
+        const criticalPorts = ipEvidence.find(e => 
           e.key.toLowerCase().includes('port') && 
           [23, 3389, 445, 21, 22].includes(Number(e.value))
         );
