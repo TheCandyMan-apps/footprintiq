@@ -137,6 +137,15 @@ serve(async (req) => {
       case 'ipqs_phone':
         result = await callIPQSPhone(target);
         break;
+      case 'ipqs_ip':
+        result = await callIPQSIP(target);
+        break;
+      case 'ipqs_url':
+        result = await callIPQSURL(target);
+        break;
+      case 'ipqs_darkweb':
+        result = await callIPQSDarkWeb(target);
+        break;
       case 'perplexity_osint':
         result = await callPerplexityOSINT(target, type, options);
         break;
@@ -1858,6 +1867,576 @@ async function callIPQSPhone(phone: string) {
     return { findings };
   } catch (error) {
     console.error('[IPQS Phone] Exception:', error);
+    return { findings: [] };
+  }
+}
+
+async function callIPQSIP(ip: string) {
+  const API_KEY = Deno.env.get('IPQS_API_KEY');
+  if (!API_KEY) {
+    console.log('[IPQS IP] No API key configured');
+    return { 
+      findings: [{
+        provider: 'ipqs_ip',
+        kind: 'provider.unconfigured',
+        severity: 'info' as const,
+        confidence: 1.0,
+        observedAt: new Date().toISOString(),
+        evidence: [
+          { key: 'message', value: 'IPQS API key not configured' },
+          { key: 'config_required', value: 'IPQS_API_KEY' }
+        ],
+        meta: { unconfigured: true }
+      }]
+    };
+  }
+
+  try {
+    console.log(`[IPQS IP] Checking IP: ${ip}`);
+    
+    const response = await fetch(
+      `https://ipqualityscore.com/api/json/ip/${API_KEY}/${encodeURIComponent(ip)}?strictness=1&allow_public_access_points=true&fast=false&lighter_penalties=false&mobile=true`,
+      { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[IPQS IP] API error: ${response.status} - ${errorText}`);
+      const now = new Date().toISOString();
+      return { 
+        findings: [{
+          provider: 'ipqs_ip',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: `IPQS IP API error: ${response.status}` },
+            { key: 'ip', value: ip }
+          ],
+          meta: { error: errorText.slice(0, 200), status: response.status }
+        }]
+      };
+    }
+
+    const data = await response.json();
+    console.log(`[IPQS IP] Response:`, JSON.stringify(data).substring(0, 500));
+    
+    if (data.success === false || data.message) {
+      console.error(`[IPQS IP] API returned error:`, data.message || 'Unknown error');
+      const now = new Date().toISOString();
+      return { 
+        findings: [{
+          provider: 'ipqs_ip',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: data.message || 'Unknown API error' },
+            { key: 'ip', value: ip }
+          ],
+          meta: { apiError: data.message, request_id: data.request_id }
+        }]
+      };
+    }
+    
+    const now = new Date().toISOString();
+    const findings: any[] = [];
+
+    // Main IP intelligence finding
+    const riskLevel = data.fraud_score > 85 ? 'high' : data.fraud_score > 50 ? 'medium' : data.fraud_score > 25 ? 'low' : 'info';
+    
+    const locationParts = [data.city, data.region, data.country_code].filter(Boolean);
+    const location = locationParts.length > 0 ? locationParts.join(', ') : 'Unknown';
+    
+    findings.push({
+      provider: 'ipqs_ip',
+      kind: 'ip.intelligence',
+      severity: riskLevel,
+      confidence: 0.85,
+      observedAt: now,
+      evidence: [
+        { key: 'IP Address', value: ip },
+        { key: 'Fraud Score', value: `${data.fraud_score}/100` },
+        { key: 'Country', value: data.country_code || 'Unknown' },
+        { key: 'Region', value: data.region || 'Unknown' },
+        { key: 'City', value: data.city || 'Unknown' },
+        { key: 'ISP', value: data.ISP || 'Unknown' },
+        { key: 'Organization', value: data.organization || 'Unknown' },
+        { key: 'ASN', value: String(data.ASN || 'Unknown') },
+        { key: 'Connection Type', value: data.connection_type || 'Unknown' },
+        { key: 'Timezone', value: data.timezone || 'Unknown' },
+      ],
+      meta: {
+        fraud_score: data.fraud_score,
+        country_code: data.country_code,
+        region: data.region,
+        city: data.city,
+        isp: data.ISP,
+        organization: data.organization,
+        asn: data.ASN,
+        connection_type: data.connection_type,
+        mobile: data.mobile,
+        host: data.host,
+      }
+    });
+
+    // VPN detection
+    if (data.vpn || data.active_vpn) {
+      findings.push({
+        provider: 'ipqs_ip',
+        kind: 'ip.vpn',
+        severity: 'low' as const,
+        confidence: data.active_vpn ? 0.95 : 0.8,
+        observedAt: now,
+        evidence: [
+          { key: 'IP Address', value: ip },
+          { key: 'VPN', value: 'true' },
+          { key: 'Active VPN', value: String(data.active_vpn || false) },
+          { key: 'ISP', value: data.ISP || 'Unknown' },
+        ],
+        meta: { vpn: true, active_vpn: data.active_vpn }
+      });
+    }
+
+    // Proxy detection
+    if (data.proxy) {
+      findings.push({
+        provider: 'ipqs_ip',
+        kind: 'ip.proxy',
+        severity: 'medium' as const,
+        confidence: 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'IP Address', value: ip },
+          { key: 'Proxy', value: 'true' },
+          { key: 'Connection Type', value: data.connection_type || 'Unknown' },
+        ],
+        meta: { proxy: true, connection_type: data.connection_type }
+      });
+    }
+
+    // Tor detection
+    if (data.tor || data.active_tor) {
+      findings.push({
+        provider: 'ipqs_ip',
+        kind: 'ip.tor',
+        severity: 'high' as const,
+        confidence: data.active_tor ? 0.95 : 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'IP Address', value: ip },
+          { key: 'Tor', value: 'true' },
+          { key: 'Active Tor', value: String(data.active_tor || false) },
+        ],
+        meta: { tor: true, active_tor: data.active_tor }
+      });
+    }
+
+    // Bot detection
+    if (data.bot_status || data.is_crawler) {
+      findings.push({
+        provider: 'ipqs_ip',
+        kind: 'ip.bot',
+        severity: 'low' as const,
+        confidence: 0.8,
+        observedAt: now,
+        evidence: [
+          { key: 'IP Address', value: ip },
+          { key: 'Bot Status', value: String(data.bot_status || false) },
+          { key: 'Crawler', value: String(data.is_crawler || false) },
+          { key: 'Organization', value: data.organization || 'Unknown' },
+        ],
+        meta: { bot: data.bot_status, crawler: data.is_crawler }
+      });
+    }
+
+    // Recent abuse
+    if (data.recent_abuse) {
+      findings.push({
+        provider: 'ipqs_ip',
+        kind: 'ip.abuse',
+        severity: 'high' as const,
+        confidence: 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'IP Address', value: ip },
+          { key: 'Recent Abuse', value: 'true' },
+          { key: 'Abuse Velocity', value: data.abuse_velocity || 'none' },
+          { key: 'Fraud Score', value: `${data.fraud_score}/100` },
+        ],
+        meta: { recent_abuse: true, abuse_velocity: data.abuse_velocity }
+      });
+    }
+
+    console.log(`[IPQS IP] Generated ${findings.length} findings for ${ip}`);
+    return { findings };
+  } catch (error) {
+    console.error('[IPQS IP] Exception:', error);
+    return { findings: [] };
+  }
+}
+
+async function callIPQSURL(url: string) {
+  const API_KEY = Deno.env.get('IPQS_API_KEY');
+  if (!API_KEY) {
+    console.log('[IPQS URL] No API key configured');
+    return { 
+      findings: [{
+        provider: 'ipqs_url',
+        kind: 'provider.unconfigured',
+        severity: 'info' as const,
+        confidence: 1.0,
+        observedAt: new Date().toISOString(),
+        evidence: [
+          { key: 'message', value: 'IPQS API key not configured' },
+          { key: 'config_required', value: 'IPQS_API_KEY' }
+        ],
+        meta: { unconfigured: true }
+      }]
+    };
+  }
+
+  try {
+    // Base64 encode the URL as required by IPQS API for URL scanning
+    const encodedUrl = btoa(url);
+    console.log(`[IPQS URL] Scanning URL: ${url}`);
+    
+    const response = await fetch(
+      `https://ipqualityscore.com/api/json/url/${API_KEY}/${encodeURIComponent(encodedUrl)}`,
+      { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[IPQS URL] API error: ${response.status} - ${errorText}`);
+      const now = new Date().toISOString();
+      return { 
+        findings: [{
+          provider: 'ipqs_url',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: `IPQS URL API error: ${response.status}` },
+            { key: 'url', value: url }
+          ],
+          meta: { error: errorText.slice(0, 200), status: response.status }
+        }]
+      };
+    }
+
+    const data = await response.json();
+    console.log(`[IPQS URL] Response:`, JSON.stringify(data).substring(0, 500));
+    
+    if (data.success === false) {
+      console.error(`[IPQS URL] API returned error:`, data.message || 'Unknown error');
+      const now = new Date().toISOString();
+      return { 
+        findings: [{
+          provider: 'ipqs_url',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: data.message || 'Unknown API error' },
+            { key: 'url', value: url }
+          ],
+          meta: { apiError: data.message, request_id: data.request_id }
+        }]
+      };
+    }
+    
+    const now = new Date().toISOString();
+    const findings: any[] = [];
+
+    // Main URL analysis finding
+    const riskLevel = data.risk_score > 85 ? 'high' : data.risk_score > 50 ? 'medium' : data.risk_score > 25 ? 'low' : 'info';
+    
+    findings.push({
+      provider: 'ipqs_url',
+      kind: 'url.analysis',
+      severity: riskLevel,
+      confidence: 0.85,
+      observedAt: now,
+      evidence: [
+        { key: 'URL', value: url },
+        { key: 'Domain', value: data.domain || 'Unknown' },
+        { key: 'Risk Score', value: `${data.risk_score}/100` },
+        { key: 'Category', value: data.category || 'Unknown' },
+        { key: 'Domain Age', value: data.domain_age?.human || 'Unknown' },
+        { key: 'Domain Rank', value: String(data.domain_rank || 'Unknown') },
+        { key: 'IP Address', value: data.ip_address || 'Unknown' },
+        { key: 'Status Code', value: String(data.status_code || 'Unknown') },
+        { key: 'DNS Valid', value: String(data.dns_valid) },
+        { key: 'Unsafe', value: String(data.unsafe || false) },
+      ],
+      meta: {
+        risk_score: data.risk_score,
+        domain: data.domain,
+        category: data.category,
+        domain_age: data.domain_age,
+        domain_rank: data.domain_rank,
+        ip_address: data.ip_address,
+        server: data.server,
+        content_type: data.content_type,
+      }
+    });
+
+    // Phishing detection
+    if (data.phishing) {
+      findings.push({
+        provider: 'ipqs_url',
+        kind: 'url.phishing',
+        severity: 'high' as const,
+        confidence: 0.9,
+        observedAt: now,
+        evidence: [
+          { key: 'URL', value: url },
+          { key: 'Domain', value: data.domain || 'Unknown' },
+          { key: 'Phishing', value: 'true' },
+          { key: 'Risk Score', value: `${data.risk_score}/100` },
+        ],
+        meta: { phishing: true, risk_score: data.risk_score }
+      });
+    }
+
+    // Malware detection
+    if (data.malware) {
+      findings.push({
+        provider: 'ipqs_url',
+        kind: 'url.malware',
+        severity: 'high' as const,
+        confidence: 0.9,
+        observedAt: now,
+        evidence: [
+          { key: 'URL', value: url },
+          { key: 'Domain', value: data.domain || 'Unknown' },
+          { key: 'Malware', value: 'true' },
+          { key: 'Risk Score', value: `${data.risk_score}/100` },
+        ],
+        meta: { malware: true, risk_score: data.risk_score }
+      });
+    }
+
+    // Suspicious detection
+    if (data.suspicious) {
+      findings.push({
+        provider: 'ipqs_url',
+        kind: 'url.suspicious',
+        severity: 'medium' as const,
+        confidence: 0.75,
+        observedAt: now,
+        evidence: [
+          { key: 'URL', value: url },
+          { key: 'Domain', value: data.domain || 'Unknown' },
+          { key: 'Suspicious', value: 'true' },
+          { key: 'Risk Score', value: `${data.risk_score}/100` },
+        ],
+        meta: { suspicious: true, risk_score: data.risk_score }
+      });
+    }
+
+    // Spam detection
+    if (data.spamming) {
+      findings.push({
+        provider: 'ipqs_url',
+        kind: 'url.spam',
+        severity: 'medium' as const,
+        confidence: 0.8,
+        observedAt: now,
+        evidence: [
+          { key: 'URL', value: url },
+          { key: 'Domain', value: data.domain || 'Unknown' },
+          { key: 'Spamming', value: 'true' },
+        ],
+        meta: { spamming: true }
+      });
+    }
+
+    // Parking detection
+    if (data.parking) {
+      findings.push({
+        provider: 'ipqs_url',
+        kind: 'url.parking',
+        severity: 'low' as const,
+        confidence: 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'URL', value: url },
+          { key: 'Domain', value: data.domain || 'Unknown' },
+          { key: 'Parking', value: 'true' },
+        ],
+        meta: { parking: true }
+      });
+    }
+
+    // Adult content detection
+    if (data.adult) {
+      findings.push({
+        provider: 'ipqs_url',
+        kind: 'url.adult',
+        severity: 'info' as const,
+        confidence: 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'URL', value: url },
+          { key: 'Domain', value: data.domain || 'Unknown' },
+          { key: 'Adult', value: 'true' },
+          { key: 'Category', value: data.category || 'Adult' },
+        ],
+        meta: { adult: true, category: data.category }
+      });
+    }
+
+    console.log(`[IPQS URL] Generated ${findings.length} findings for ${url}`);
+    return { findings };
+  } catch (error) {
+    console.error('[IPQS URL] Exception:', error);
+    return { findings: [] };
+  }
+}
+
+async function callIPQSDarkWeb(email: string) {
+  const API_KEY = Deno.env.get('IPQS_API_KEY');
+  if (!API_KEY) {
+    console.log('[IPQS DarkWeb] No API key configured');
+    return { 
+      findings: [{
+        provider: 'ipqs_darkweb',
+        kind: 'provider.unconfigured',
+        severity: 'info' as const,
+        confidence: 1.0,
+        observedAt: new Date().toISOString(),
+        evidence: [
+          { key: 'message', value: 'IPQS API key not configured' },
+          { key: 'config_required', value: 'IPQS_API_KEY' }
+        ],
+        meta: { unconfigured: true }
+      }]
+    };
+  }
+
+  try {
+    console.log(`[IPQS DarkWeb] Checking email: ${email}`);
+    
+    const response = await fetch(
+      `https://ipqualityscore.com/api/json/leaked/email/${API_KEY}/${encodeURIComponent(email)}`,
+      { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[IPQS DarkWeb] API error: ${response.status} - ${errorText}`);
+      const now = new Date().toISOString();
+      return { 
+        findings: [{
+          provider: 'ipqs_darkweb',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: `IPQS DarkWeb API error: ${response.status}` },
+            { key: 'email', value: email }
+          ],
+          meta: { error: errorText.slice(0, 200), status: response.status }
+        }]
+      };
+    }
+
+    const data = await response.json();
+    console.log(`[IPQS DarkWeb] Response:`, JSON.stringify(data).substring(0, 500));
+    
+    if (data.success === false) {
+      console.error(`[IPQS DarkWeb] API returned error:`, data.message || 'Unknown error');
+      const now = new Date().toISOString();
+      return { 
+        findings: [{
+          provider: 'ipqs_darkweb',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: data.message || 'Unknown API error' },
+            { key: 'email', value: email }
+          ],
+          meta: { apiError: data.message, request_id: data.request_id }
+        }]
+      };
+    }
+    
+    const now = new Date().toISOString();
+    const findings: any[] = [];
+
+    if (!data.found) {
+      // No exposure found
+      findings.push({
+        provider: 'ipqs_darkweb',
+        kind: 'darkweb.clear',
+        severity: 'info' as const,
+        confidence: 0.8,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Dark Web Found', value: 'false' },
+          { key: 'Scan Date', value: now },
+        ],
+        meta: { found: false }
+      });
+    } else {
+      // Email found in dark web / breaches
+      const severity = data.plain_text ? 'high' : 'medium';
+      
+      findings.push({
+        provider: 'ipqs_darkweb',
+        kind: 'darkweb.exposure',
+        severity: severity as 'high' | 'medium',
+        confidence: 0.9,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Dark Web Found', value: 'true' },
+          { key: 'Source', value: data.source || 'Unknown' },
+          { key: 'First Seen', value: data.first_seen?.human || 'Unknown' },
+          { key: 'Last Seen', value: data.last_seen?.human || 'Unknown' },
+          { key: 'Plain Text Password', value: String(data.plain_text || false) },
+        ],
+        meta: {
+          found: true,
+          source: data.source,
+          first_seen: data.first_seen,
+          last_seen: data.last_seen,
+          plain_text: data.plain_text,
+        }
+      });
+
+      // Plain text password exposure - critical finding
+      if (data.plain_text) {
+        findings.push({
+          provider: 'ipqs_darkweb',
+          kind: 'darkweb.plaintext',
+          severity: 'high' as const,
+          confidence: 0.95,
+          observedAt: now,
+          evidence: [
+            { key: 'Email', value: email },
+            { key: 'Plain Text Exposure', value: 'true' },
+            { key: 'Source', value: data.source || 'Unknown' },
+          ],
+          meta: { plain_text: true, source: data.source }
+        });
+      }
+    }
+
+    console.log(`[IPQS DarkWeb] Generated ${findings.length} findings for ${email}`);
+    return { findings };
+  } catch (error) {
+    console.error('[IPQS DarkWeb] Exception:', error);
     return { findings: [] };
   }
 }
