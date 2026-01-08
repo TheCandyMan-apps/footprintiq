@@ -36,7 +36,8 @@ export function exportAsCSV(findings: Finding[], redactPII: boolean = true): voi
   const rows: string[][] = [];
   
   data.forEach((finding) => {
-    if (finding.evidence.length === 0) {
+    const evidence = finding.evidence || [];
+    if (evidence.length === 0) {
       // No evidence - single row
       rows.push([
         finding.id,
@@ -54,7 +55,7 @@ export function exportAsCSV(findings: Finding[], redactPII: boolean = true): voi
       ]);
     } else {
       // Multiple evidence items - one row per evidence
-      finding.evidence.forEach((evidence) => {
+      evidence.forEach((ev) => {
         rows.push([
           finding.id,
           finding.type,
@@ -65,8 +66,8 @@ export function exportAsCSV(findings: Finding[], redactPII: boolean = true): voi
           finding.providerCategory,
           finding.impact,
           finding.observedAt,
-          evidence.key,
-          typeof evidence.value === 'string' ? evidence.value : JSON.stringify(evidence.value),
+          ev.key,
+          typeof ev.value === 'string' ? ev.value : JSON.stringify(ev.value),
           finding.tags.join('; '),
         ]);
       });
@@ -336,22 +337,23 @@ export async function exportAsPDFLegacy(findings: Finding[], redactPII: boolean 
         }
 
         // Evidence
-        if (finding.evidence.length > 0) {
+        const evidenceItems = finding.evidence || [];
+        if (evidenceItems.length > 0) {
           doc.setFont(undefined, 'bold');
           doc.text('Evidence:', 16, detailYPos);
           detailYPos += 5;
           doc.setFont(undefined, 'normal');
           doc.setFontSize(8);
           
-          finding.evidence.slice(0, 5).forEach(evidence => {
-            const evidenceText = `• ${evidence.key}: ${typeof evidence.value === 'string' ? evidence.value : JSON.stringify(evidence.value)}`;
+          evidenceItems.slice(0, 5).forEach(ev => {
+            const evidenceText = `• ${ev.key}: ${typeof ev.value === 'string' ? ev.value : JSON.stringify(ev.value)}`;
             const splitEvidence = doc.splitTextToSize(evidenceText, 174);
             doc.text(splitEvidence, 18, detailYPos);
             detailYPos += splitEvidence.length * 4 + 1;
           });
           
-          if (finding.evidence.length > 5) {
-            doc.text(`... and ${finding.evidence.length - 5} more evidence items`, 18, detailYPos);
+          if (evidenceItems.length > 5) {
+            doc.text(`... and ${evidenceItems.length - 5} more evidence items`, 18, detailYPos);
             detailYPos += 5;
           }
           detailYPos += 3;

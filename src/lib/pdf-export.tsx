@@ -303,16 +303,16 @@ const PDFReport: React.FC<PDFReportProps> = ({ findings, reportDate }) => {
               {finding.impact}
             </Text>
 
-            {finding.evidence.length > 0 && (
+            {(finding.evidence || []).length > 0 && (
               <View style={styles.evidenceList}>
                 <Text style={[styles.text, { fontFamily: 'Helvetica-Bold' }]}>Evidence:</Text>
-                {finding.evidence.slice(0, 3).map((ev, evIdx) => (
+                {(finding.evidence || []).slice(0, 3).map((ev, evIdx) => (
                   <Text key={evIdx} style={styles.evidenceItem}>
                     • {ev.key}: {typeof ev.value === 'string' ? ev.value : JSON.stringify(ev.value)}
                   </Text>
                 ))}
-                {finding.evidence.length > 3 && (
-                  <Text style={styles.evidenceItem}>... and {finding.evidence.length - 3} more</Text>
+                {(finding.evidence || []).length > 3 && (
+                  <Text style={styles.evidenceItem}>... and {(finding.evidence || []).length - 3} more</Text>
                 )}
               </View>
             )}

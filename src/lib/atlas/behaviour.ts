@@ -39,7 +39,7 @@ export function extractBehaviour(findings: Finding[]): BehavioralProfile {
   const emojis: string[] = [];
 
   findings.forEach((finding) => {
-    finding.evidence.forEach((e) => {
+    (finding.evidence || []).forEach((e) => {
       if (e.key === "bio" || e.key === "description" || e.key === "post") {
         if (typeof e.value === "string") {
           textSamples.push(e.value);
