@@ -33,6 +33,11 @@ export const PROVIDER_COSTS: Record<string, number> = {
   
   // Email intelligence (IPQS)
   ipqs_email: 2,
+  
+  // IP/URL/DarkWeb intelligence (IPQS)
+  ipqs_ip: 1,
+  ipqs_url: 1,
+  ipqs_darkweb: 1,
 
   // Phone intelligence providers (higher cost due to premium APIs)
   abstract_phone: 2,

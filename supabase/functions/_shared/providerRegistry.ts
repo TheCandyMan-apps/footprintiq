@@ -26,6 +26,9 @@ export const IMPLEMENTED_PROVIDERS = new Set([
   
   // IPQualityScore
   'ipqs_email',  // Email fraud + disposable + breach detection
+  'ipqs_ip',     // IP/Proxy/VPN/Tor detection
+  'ipqs_url',    // Malicious URL scanning
+  'ipqs_darkweb', // Dark web breach intelligence
   
   // Person search (feature-flagged)
   'pipl',
