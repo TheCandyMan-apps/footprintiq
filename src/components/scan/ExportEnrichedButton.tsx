@@ -28,6 +28,14 @@ interface Finding {
   bio: string | null;
   full_name: string | null;
   created_at: string;
+  // Breach-specific fields
+  breach_name: string | null;
+  breach_date: string | null;
+  breach_description: string | null;
+  affected_count: number | null;
+  data_classes: string[];
+  domain: string | null;
+  compromised_data: string | null;
 }
 
 interface ScanData {
@@ -77,6 +85,51 @@ const severityColors: Record<string, { r: number; g: number; b: number; hex: str
 
 function getSeverityColor(severity: string) {
   return severityColors[severity?.toLowerCase()] || severityColors.info;
+}
+
+// Format large numbers for display (e.g., 164611595 -> "164.6 million")
+function formatAffectedCount(count: number): string {
+  if (count >= 1_000_000_000) {
+    return `${(count / 1_000_000_000).toFixed(1)} billion`;
+  } else if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(1)} million`;
+  } else if (count >= 1_000) {
+    return `${(count / 1_000).toFixed(1)}K`;
+  }
+  return count.toLocaleString();
+}
+
+// Generate breach-specific action recommendation
+function generateBreachAction(breachName: string, breachDate: string | null, dataClasses: string[]): string {
+  const hasPasswords = dataClasses.some(d => d.toLowerCase().includes('password'));
+  const hasEmail = dataClasses.some(d => d.toLowerCase().includes('email'));
+  const hasPhone = dataClasses.some(d => d.toLowerCase().includes('phone'));
+  const hasAddress = dataClasses.some(d => d.toLowerCase().includes('address') || d.toLowerCase().includes('location'));
+  
+  const yearMatch = breachDate?.match(/(\d{4})/);
+  const breachYear = yearMatch ? parseInt(yearMatch[1]) : null;
+  const yearsSince = breachYear ? new Date().getFullYear() - breachYear : null;
+  
+  if (hasPasswords) {
+    const timeNote = yearsSince && yearsSince > 2 
+      ? `if not changed since ${breachYear}` 
+      : 'immediately';
+    return `Change your ${breachName} password ${timeNote} and enable 2FA.`;
+  }
+  
+  if (hasEmail) {
+    return `Monitor for phishing attempts using your ${breachName} email address.`;
+  }
+  
+  if (hasPhone) {
+    return `Be aware of potential SMS phishing (smishing) attempts.`;
+  }
+  
+  if (hasAddress) {
+    return `Consider identity monitoring services for address-based fraud.`;
+  }
+  
+  return `Review your ${breachName} account security settings.`;
 }
 
 export function ExportEnrichedButton({ scanId, variant = "default", size = "default" }: ExportEnrichedButtonProps) {
@@ -413,6 +466,117 @@ export function ExportEnrichedButton({ scanId, variant = "default", size = "defa
       yPos += 20;
     }
 
+    // ========== DETAILED BREACH ANALYSIS SECTION ==========
+    const breachFindings = data.findings.filter(f => f.kind?.includes('breach') || f.provider === 'hibp');
+    
+    if (breachFindings.length > 0) {
+      pdf.addPage();
+      
+      // Header
+      pdf.setFillColor(220, 38, 38);
+      pdf.rect(0, 0, pageWidth, 25, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Data Breach Analysis', margin, 16);
+      
+      yPos = 35;
+      
+      // Summary text
+      pdf.setTextColor(71, 85, 105);
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(`Your email was found in ${breachFindings.length} data breach${breachFindings.length > 1 ? 'es' : ''}.`, margin, yPos);
+      yPos += 10;
+      
+      breachFindings.forEach((finding, idx) => {
+        yPos = checkPageBreak(yPos, 60);
+        
+        const sevColor = getSeverityColor(finding.severity);
+        const breachName = finding.breach_name || finding.platform || 'Unknown Breach';
+        const affectedCount = finding.affected_count;
+        const dataClasses = finding.data_classes || [];
+        const compromisedData = finding.compromised_data || dataClasses.join(', ');
+        
+        // Breach card background
+        pdf.setFillColor(254, 242, 242);
+        pdf.setDrawColor(sevColor.r, sevColor.g, sevColor.b);
+        pdf.setLineWidth(0.5);
+        pdf.roundedRect(margin, yPos - 3, contentWidth, 50, 3, 3, 'FD');
+        
+        // Breach name header
+        pdf.setTextColor(sevColor.r, sevColor.g, sevColor.b);
+        pdf.setFontSize(13);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text(`${idx + 1}. ${breachName}`, margin + 4, yPos + 6);
+        
+        // Severity badge
+        pdf.setFillColor(sevColor.r, sevColor.g, sevColor.b);
+        pdf.roundedRect(pageWidth - margin - 25, yPos - 1, 22, 8, 2, 2, 'F');
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFontSize(7);
+        pdf.text(finding.severity.toUpperCase(), pageWidth - margin - 14, yPos + 4, { align: 'center' });
+        
+        // Breach date
+        if (finding.breach_date) {
+          pdf.setTextColor(100, 116, 139);
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'normal');
+          const formattedDate = new Date(finding.breach_date).toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          });
+          pdf.text(`Breach Date: ${formattedDate}`, margin + 4, yPos + 14);
+        }
+        
+        // Affected count
+        if (affectedCount) {
+          pdf.setTextColor(220, 38, 38);
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'bold');
+          const formatted = formatAffectedCount(affectedCount);
+          pdf.text(`${formatted} accounts affected`, margin + 80, yPos + 14);
+        }
+        
+        // Compromised data types
+        if (compromisedData) {
+          pdf.setTextColor(71, 85, 105);
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text('Exposed Data:', margin + 4, yPos + 23);
+          
+          pdf.setTextColor(31, 41, 55);
+          const dataText = pdf.splitTextToSize(compromisedData, contentWidth - 35);
+          pdf.text(dataText[0] || '', margin + 30, yPos + 23);
+        }
+        
+        // Action recommendation
+        pdf.setTextColor(22, 163, 74);
+        pdf.setFontSize(8);
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('✓ Recommended Action:', margin + 4, yPos + 34);
+        
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(34, 87, 54);
+        const actionText = generateBreachAction(breachName, finding.breach_date, dataClasses);
+        const actionLines = pdf.splitTextToSize(actionText, contentWidth - 45);
+        pdf.text(actionLines[0] || '', margin + 40, yPos + 34);
+        if (actionLines[1]) {
+          pdf.text(actionLines[1], margin + 4, yPos + 41);
+        }
+        
+        // Domain info if available
+        if (finding.domain) {
+          pdf.setTextColor(100, 116, 139);
+          pdf.setFontSize(7);
+          pdf.text(`Source: ${finding.domain}`, pageWidth - margin - 4, yPos + 44, { align: 'right' });
+        }
+        
+        yPos += 56;
+      });
+    }
+
     // ========== AI ENRICHMENTS SECTION ==========
     const enrichedFindings = data.findings.filter(f => data.enrichments[f.id]);
     
@@ -617,9 +781,29 @@ export function ExportEnrichedButton({ scanId, variant = "default", size = "defa
 function generateRecommendations(data: ExportData): { title: string; description: string }[] {
   const recs: { title: string; description: string }[] = [];
   
+  const breachFindings = data.findings.filter(f => f.kind?.includes('breach') || f.provider === 'hibp');
+  const passwordBreaches = breachFindings.filter(f => 
+    f.data_classes?.some(d => d.toLowerCase().includes('password'))
+  );
   const highConfidenceCount = data.findings.filter(f => f.confidence >= 80).length;
   const searchResults = data.findings.filter(f => f.page_type === 'search').length;
   const socialPlatforms = new Set(data.findings.map(f => f.platform.toLowerCase()));
+  
+  // Breach-specific recommendations (highest priority)
+  if (passwordBreaches.length > 0) {
+    const breachNames = passwordBreaches.slice(0, 3).map(f => f.breach_name || f.platform).join(', ');
+    recs.push({
+      title: 'Change Compromised Passwords Immediately',
+      description: `${passwordBreaches.length} breach${passwordBreaches.length > 1 ? 'es' : ''} exposed passwords (${breachNames}). Change these passwords and enable 2FA on all affected accounts.`
+    });
+  }
+  
+  if (breachFindings.length > 5) {
+    recs.push({
+      title: 'Consider Identity Protection Services',
+      description: `Your email was found in ${breachFindings.length} data breaches. Consider enrolling in an identity theft protection service for ongoing monitoring.`
+    });
+  }
   
   if (highConfidenceCount > 5) {
     recs.push({

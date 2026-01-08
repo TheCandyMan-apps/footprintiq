@@ -173,11 +173,12 @@ serve(async (req) => {
         created_at: scan.created_at,
         completed_at: scan.completed_at || scan.updated_at
       },
-      // Full findings array with all details
+      // Full findings array with all details including meta for breach data
       findings: (findings || []).map((f: any) => {
         const evidence = Array.isArray(f.evidence) ? f.evidence : [];
+        const meta = f.meta || {};
         const getEv = (key: string) => evidence.find((e: any) => e.key === key)?.value || null;
-        let siteName = getEv('site') || getEv('platform') || f.provider || 'Unknown';
+        let siteName = getEv('site') || getEv('platform') || meta.title || f.provider || 'Unknown';
         siteName = siteName.replace(/^\[\+\]\s*/, '').replace(/^\[-\]\s*/, '');
         
         return {
@@ -192,7 +193,15 @@ serve(async (req) => {
           kind: f.kind || f.provider_category || 'Finding',
           bio: getEv('bio') || null,
           full_name: getEv('name') || getEv('full_name') || null,
-          created_at: f.created_at
+          created_at: f.created_at,
+          // Breach-specific fields from meta
+          breach_name: meta.title || getEv('breach') || null,
+          breach_date: getEv('date') || null,
+          breach_description: meta.description || null,
+          affected_count: meta.pwnCount || null,
+          data_classes: meta.dataClasses || [],
+          domain: meta.domain || null,
+          compromised_data: getEv('compromised') || null
         };
       }),
       // Enrichments mapped by finding_id
