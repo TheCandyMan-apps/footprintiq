@@ -31,6 +31,10 @@ export const PROVIDER_COSTS: Record<string, number> = {
   abstract_ipgeo: 1,
   abstract_company: 1,
   
+  // Abstract Email APIs
+  abstract_email: 1,           // Email validation
+  abstract_email_reputation: 2, // Email reputation (premium)
+  
   // Email intelligence (IPQS)
   ipqs_email: 2,
   

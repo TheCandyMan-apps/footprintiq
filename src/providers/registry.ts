@@ -106,6 +106,22 @@ export const REGISTRY: ProviderMeta[] = [
     unitCost: 0.002,
     description: "Company profile enrichment",
   },
+  {
+    id: "abstract_email",
+    title: "AbstractAPI Email Validation",
+    supports: ["email"],
+    ttlMs: 30 * 24 * 3600e3,
+    unitCost: 0.001,
+    description: "Email validation, deliverability, and disposable detection",
+  },
+  {
+    id: "abstract_email_reputation",
+    title: "AbstractAPI Email Reputation",
+    supports: ["email"],
+    ttlMs: 24 * 3600e3,
+    unitCost: 0.002,
+    description: "Email quality scoring and sender reputation",
+  },
   
   // Enterprise wave
   {

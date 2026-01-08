@@ -131,6 +131,12 @@ serve(async (req) => {
       case 'abstract_company':
         result = await callAbstractCompany(target);
         break;
+      case 'abstract_email':
+        result = await callAbstractEmail(target);
+        break;
+      case 'abstract_email_reputation':
+        result = await callAbstractEmailReputation(target);
+        break;
       case 'ipqs_email':
         result = await callIPQSEmail(target);
         break;
@@ -1503,6 +1509,337 @@ async function callAbstractCompany(domain: string) {
 
   if (!response.ok) throw new Error(`Abstract Company API error: ${response.status}`);
   return await response.json();
+}
+
+// =================== Abstract Email Validation Provider ===================
+
+async function callAbstractEmail(email: string) {
+  const API_KEY = Deno.env.get('ABSTRACTAPI_EMAIL_VERIFICATION_KEY');
+  const now = new Date().toISOString();
+  
+  if (!API_KEY) {
+    console.log('[abstract_email] API key not configured');
+    return {
+      findings: [{
+        provider: 'abstract_email',
+        kind: 'provider.unconfigured',
+        severity: 'info' as const,
+        confidence: 1.0,
+        observedAt: now,
+        evidence: [
+          { key: 'message', value: 'Abstract Email Validation API key not configured' },
+          { key: 'config_required', value: 'ABSTRACTAPI_EMAIL_VERIFICATION_KEY' }
+        ],
+        meta: { unconfigured: true }
+      }]
+    };
+  }
+
+  try {
+    console.log(`[abstract_email] Validating email: ${email}`);
+    
+    const response = await fetch(
+      `https://emailvalidation.abstractapi.com/v1/?api_key=${API_KEY}&email=${encodeURIComponent(email)}`,
+      { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[abstract_email] API error: ${response.status} - ${errorText}`);
+      return {
+        findings: [{
+          provider: 'abstract_email',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: `Abstract Email API error: ${response.status}` },
+            { key: 'email', value: email }
+          ],
+          meta: { error: errorText.slice(0, 200), status: response.status }
+        }]
+      };
+    }
+
+    const data = await response.json();
+    console.log(`[abstract_email] Response:`, JSON.stringify(data).substring(0, 500));
+    
+    const findings: any[] = [];
+
+    // Main email validation finding
+    const deliverabilityStatus = data.deliverability || 'UNKNOWN';
+    const isDeliverable = deliverabilityStatus === 'DELIVERABLE';
+    
+    const severity = data.is_disposable_email?.value ? 'medium' :
+                     !isDeliverable ? 'low' : 'info';
+
+    findings.push({
+      provider: 'abstract_email',
+      kind: 'email.validation',
+      severity: severity as 'info' | 'low' | 'medium',
+      confidence: data.quality_score ? data.quality_score : 0.8,
+      observedAt: now,
+      evidence: [
+        { key: 'Email', value: email },
+        { key: 'Deliverability', value: deliverabilityStatus },
+        { key: 'Quality Score', value: data.quality_score ? `${(data.quality_score * 100).toFixed(0)}%` : 'N/A' },
+        { key: 'Valid Format', value: String(data.is_valid_format?.value ?? 'unknown') },
+        { key: 'Free Email', value: String(data.is_free_email?.value ?? 'unknown') },
+        { key: 'Disposable', value: String(data.is_disposable_email?.value ?? 'unknown') },
+        { key: 'Role Email', value: String(data.is_role_email?.value ?? 'unknown') },
+        { key: 'Catchall', value: String(data.is_catchall_email?.value ?? 'unknown') },
+        { key: 'MX Found', value: String(data.is_mx_found?.value ?? 'unknown') },
+        { key: 'SMTP Valid', value: String(data.is_smtp_valid?.value ?? 'unknown') },
+      ],
+      meta: {
+        deliverability: deliverabilityStatus,
+        quality_score: data.quality_score,
+        is_valid_format: data.is_valid_format?.value,
+        is_free_email: data.is_free_email?.value,
+        is_disposable_email: data.is_disposable_email?.value,
+        is_role_email: data.is_role_email?.value,
+        is_catchall_email: data.is_catchall_email?.value,
+        is_mx_found: data.is_mx_found?.value,
+        is_smtp_valid: data.is_smtp_valid?.value,
+        autocorrect: data.autocorrect,
+      }
+    });
+
+    // Disposable email detection
+    if (data.is_disposable_email?.value === true) {
+      findings.push({
+        provider: 'abstract_email',
+        kind: 'email.disposable',
+        severity: 'medium' as const,
+        confidence: 0.95,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Disposable', value: 'true' },
+          { key: 'Provider Text', value: data.is_disposable_email?.text || 'Disposable email detected' },
+        ],
+        meta: { disposable: true, text: data.is_disposable_email?.text }
+      });
+    }
+
+    // Role-based email detection
+    if (data.is_role_email?.value === true) {
+      findings.push({
+        provider: 'abstract_email',
+        kind: 'email.role_based',
+        severity: 'low' as const,
+        confidence: 0.9,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Role Email', value: 'true' },
+          { key: 'Description', value: 'Email appears to be a role-based address (e.g., info@, support@, admin@)' },
+        ],
+        meta: { role_email: true, text: data.is_role_email?.text }
+      });
+    }
+
+    // Autocorrect suggestion
+    if (data.autocorrect && data.autocorrect !== '' && data.autocorrect !== email) {
+      findings.push({
+        provider: 'abstract_email',
+        kind: 'email.autocorrect',
+        severity: 'info' as const,
+        confidence: 0.7,
+        observedAt: now,
+        evidence: [
+          { key: 'Original Email', value: email },
+          { key: 'Suggested Correction', value: data.autocorrect },
+          { key: 'Description', value: 'Possible typo detected in email address' },
+        ],
+        meta: { autocorrect: data.autocorrect }
+      });
+    }
+
+    // Undeliverable email warning
+    if (deliverabilityStatus === 'UNDELIVERABLE') {
+      findings.push({
+        provider: 'abstract_email',
+        kind: 'email.undeliverable',
+        severity: 'medium' as const,
+        confidence: 0.85,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Deliverability', value: 'UNDELIVERABLE' },
+          { key: 'SMTP Valid', value: String(data.is_smtp_valid?.value ?? false) },
+          { key: 'MX Found', value: String(data.is_mx_found?.value ?? false) },
+        ],
+        meta: { deliverability: 'UNDELIVERABLE' }
+      });
+    }
+
+    console.log(`[abstract_email] Generated ${findings.length} findings for ${email}`);
+    return { findings };
+
+  } catch (error: any) {
+    console.error('[abstract_email] Exception:', error);
+    return {
+      findings: [{
+        provider: 'abstract_email',
+        kind: 'provider_error',
+        severity: 'warn' as const,
+        confidence: 0.5,
+        observedAt: now,
+        evidence: [
+          { key: 'error', value: error.message || 'Unknown error' },
+          { key: 'email', value: email }
+        ],
+        meta: { error: String(error) }
+      }]
+    };
+  }
+}
+
+// =================== Abstract Email Reputation Provider (Premium) ===================
+
+async function callAbstractEmailReputation(email: string) {
+  const API_KEY = Deno.env.get('ABSTRACTAPI_EMAIL_REPUTATION_KEY');
+  const now = new Date().toISOString();
+  
+  if (!API_KEY) {
+    // Silent skip - expected until user subscribes
+    console.log('[abstract_email_reputation] API key not configured (premium feature)');
+    return {
+      findings: [{
+        provider: 'abstract_email_reputation',
+        kind: 'provider.unconfigured',
+        severity: 'info' as const,
+        confidence: 1.0,
+        observedAt: now,
+        evidence: [
+          { key: 'message', value: 'Abstract Email Reputation API key not configured' },
+          { key: 'note', value: 'This is a premium feature - subscribe to enable' },
+          { key: 'config_required', value: 'ABSTRACTAPI_EMAIL_REPUTATION_KEY' }
+        ],
+        meta: { unconfigured: true, premium: true }
+      }]
+    };
+  }
+
+  try {
+    console.log(`[abstract_email_reputation] Checking reputation for: ${email}`);
+    
+    const response = await fetch(
+      `https://emailreputation.abstractapi.com/v1/?api_key=${API_KEY}&email=${encodeURIComponent(email)}`,
+      { headers: { 'User-Agent': 'FootprintIQ-Server' } }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[abstract_email_reputation] API error: ${response.status} - ${errorText}`);
+      return {
+        findings: [{
+          provider: 'abstract_email_reputation',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: `Abstract Email Reputation API error: ${response.status}` },
+            { key: 'email', value: email }
+          ],
+          meta: { error: errorText.slice(0, 200), status: response.status }
+        }]
+      };
+    }
+
+    const data = await response.json();
+    console.log(`[abstract_email_reputation] Response:`, JSON.stringify(data).substring(0, 500));
+    
+    const findings: any[] = [];
+
+    // Main reputation score finding
+    const score = data.score ?? data.quality_score ?? data.reputation_score ?? 0;
+    const normalizedScore = score > 1 ? score / 100 : score;
+    
+    const severity = normalizedScore < 0.3 ? 'high' :
+                     normalizedScore < 0.5 ? 'medium' :
+                     normalizedScore < 0.7 ? 'low' : 'info';
+
+    findings.push({
+      provider: 'abstract_email_reputation',
+      kind: 'email.reputation',
+      severity: severity as 'info' | 'low' | 'medium' | 'high',
+      confidence: 0.85,
+      observedAt: now,
+      evidence: [
+        { key: 'Email', value: email },
+        { key: 'Reputation Score', value: `${(normalizedScore * 100).toFixed(0)}%` },
+        { key: 'Abuse Detected', value: String(data.abuse || data.is_abuse || false) },
+        { key: 'Spam Trap', value: String(data.spam_trap || data.is_spam_trap || false) },
+        { key: 'Recent Activity', value: data.recent_activity || 'Unknown' },
+      ],
+      meta: {
+        score: normalizedScore,
+        raw_score: score,
+        abuse: data.abuse || data.is_abuse,
+        spam_trap: data.spam_trap || data.is_spam_trap,
+        engagement_level: data.engagement_level,
+        recent_activity: data.recent_activity,
+      }
+    });
+
+    // Abuse detection
+    if (data.abuse === true || data.is_abuse === true) {
+      findings.push({
+        provider: 'abstract_email_reputation',
+        kind: 'email.abuse_detected',
+        severity: 'high' as const,
+        confidence: 0.9,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Abuse Detected', value: 'true' },
+          { key: 'Description', value: 'This email address has been associated with abusive behavior' },
+        ],
+        meta: { abuse: true }
+      });
+    }
+
+    // Spam trap detection
+    if (data.spam_trap === true || data.is_spam_trap === true) {
+      findings.push({
+        provider: 'abstract_email_reputation',
+        kind: 'email.spam_trap',
+        severity: 'high' as const,
+        confidence: 0.95,
+        observedAt: now,
+        evidence: [
+          { key: 'Email', value: email },
+          { key: 'Spam Trap', value: 'true' },
+          { key: 'Description', value: 'This email address appears to be a spam trap' },
+        ],
+        meta: { spam_trap: true }
+      });
+    }
+
+    console.log(`[abstract_email_reputation] Generated ${findings.length} findings for ${email}`);
+    return { findings };
+
+  } catch (error: any) {
+    console.error('[abstract_email_reputation] Exception:', error);
+    return {
+      findings: [{
+        provider: 'abstract_email_reputation',
+        kind: 'provider_error',
+        severity: 'warn' as const,
+        confidence: 0.5,
+        observedAt: now,
+        evidence: [
+          { key: 'error', value: error.message || 'Unknown error' },
+          { key: 'email', value: email }
+        ],
+        meta: { error: String(error) }
+      }]
+    };
+  }
 }
 
 async function callIPQSEmail(email: string) {

@@ -23,6 +23,8 @@ export const IMPLEMENTED_PROVIDERS = new Set([
 
   // Abstract / enrichment
   'abstract_ipgeo', 'abstract_company',
+  'abstract_email',           // Email validation (syntax, deliverability, disposable)
+  'abstract_email_reputation', // Email reputation scoring (premium)
   
   // IPQualityScore
   'ipqs_email',  // Email fraud + disposable + breach detection
