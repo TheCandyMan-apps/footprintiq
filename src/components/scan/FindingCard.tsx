@@ -389,7 +389,7 @@ export function FindingCard({ finding }: FindingCardProps) {
                     : 'secondary'
                 }
               >
-                {finding.severity.toUpperCase()}
+                {(finding.severity || 'info').toUpperCase()}
               </Badge>
               <span className="text-sm font-semibold text-foreground">
                 {finding.provider}
