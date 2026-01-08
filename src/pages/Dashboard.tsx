@@ -52,6 +52,7 @@ import { shouldAutoStartTour, getTourAutoStartDelay, markTourTriggered, markOnbo
 import { useTour } from '@/hooks/useTour';
 import { TourHighlight } from '@/components/tour/TourHighlight';
 import { TOURS } from '@/lib/tour/steps';
+import { useWelcomeEmail } from '@/hooks/useWelcomeEmail';
 import { Play, Network, AlertTriangle, CheckCircle2, Clock, Eye, FileSearch, Zap, Shield, FileStack, TrendingUp, Activity, Users, Target, Webhook, Archive, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { BarChart, Bar, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from 'recharts';
@@ -71,6 +72,9 @@ const Dashboard = () => {
 
   // Show low-credit toasts for free users
   useLowCreditToast();
+
+  // Send welcome email on first verified visit
+  useWelcomeEmail();
 
   // Tour system
   const tour = useTour(TOURS.onboarding);
