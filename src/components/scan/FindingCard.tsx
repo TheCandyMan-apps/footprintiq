@@ -41,7 +41,7 @@ interface FindingCardProps {
   finding: {
     id: string;
     provider: string;
-    kind: string;
+    kind?: string;
     severity: 'critical' | 'high' | 'medium' | 'low' | 'info';
     confidence: number;
     observed_at: string;
@@ -120,7 +120,9 @@ const getSeverityColor = (severity: string) => {
   }
 };
 
-const getRemediationSteps = (kind: string, severity: string): string[] => {
+const getRemediationSteps = (kind: string | undefined, severity: string): string[] => {
+  if (!kind) return REMEDIATION_SUGGESTIONS.default;
+  
   // Try exact match first
   if (REMEDIATION_SUGGESTIONS[kind]) {
     return REMEDIATION_SUGGESTIONS[kind];
@@ -183,7 +185,8 @@ export function FindingCard({ finding }: FindingCardProps) {
     return null;
   };
 
-  const isSystemFinding = (kind: string, severity: string) => {
+  const isSystemFinding = (kind: string | undefined, severity: string) => {
+    if (!kind) return false;
     // System findings: provider errors, timeouts, not_run, disabled
     return (
       kind.startsWith('provider.') || 
@@ -192,7 +195,9 @@ export function FindingCard({ finding }: FindingCardProps) {
     );
   };
 
-  const getSmartTitle = (kind: string, evidence: Evidence[], meta?: Record<string, any>) => {
+  const getSmartTitle = (kind: string | undefined, evidence: Evidence[], meta?: Record<string, any>) => {
+    if (!kind) return 'Finding';
+    
     // For username hits (profile_presence, presence.hit, account.profile), show platform name
     if (kind === 'profile_presence' || kind === 'presence.hit' || kind === 'account.profile') {
       const platformName = extractPlatformName(evidence, meta);
