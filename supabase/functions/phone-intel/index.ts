@@ -49,6 +49,113 @@ interface ProviderResult {
   terminal?: boolean;
 }
 
+// Carrier data for merging
+interface CarrierData {
+  carrier: string | null;
+  lineType: string | null;
+  country: string | null;
+  countryCode: string | null;
+  location: string | null;
+  internationalFormat: string | null;
+  localFormat: string | null;
+  provider: string;
+  confidence: number;
+  timestamp: string;
+}
+
+// Risk data from IPQS
+interface RiskData {
+  fraudScore: number;
+  isVoip: boolean;
+  isRisky: boolean;
+  leaked: boolean;
+  recentAbuse: boolean;
+  spammer: boolean;
+  active: boolean;
+  prepaid: boolean;
+}
+
+// Provider priority for conflict resolution
+const PROVIDER_PRIORITY: Record<string, Record<string, number>> = {
+  carrier: {
+    numverify: 95,
+    twilio_lookup: 90,
+    ipqs_phone: 80,
+    abstract_phone: 75,
+  },
+  lineType: {
+    numverify: 90,
+    twilio_lookup: 95,
+    ipqs_phone: 85,
+    abstract_phone: 80,
+  },
+  location: {
+    numverify: 95,
+    ipqs_phone: 85,
+    abstract_phone: 80,
+    twilio_lookup: 75,
+  },
+};
+
+// Calculate merged confidence based on provider agreement
+function calculateMergedConfidence(sources: CarrierData[], field: keyof CarrierData): number {
+  if (sources.length === 0) return 0;
+  if (sources.length === 1) return sources[0].confidence;
+
+  const values = sources
+    .filter(s => s[field] != null)
+    .map(s => ({
+      value: String(s[field]).toLowerCase().trim(),
+      confidence: s.confidence,
+    }));
+
+  if (values.length === 0) return 0;
+
+  const grouped = new Map<string, typeof values>();
+  for (const v of values) {
+    const group = grouped.get(v.value) || [];
+    group.push(v);
+    grouped.set(v.value, group);
+  }
+
+  const largestGroup = [...grouped.values()].sort((a, b) => b.length - a.length)[0];
+  const agreementRatio = largestGroup.length / values.length;
+  const avgConfidence = largestGroup.reduce((sum, v) => sum + v.confidence, 0) / largestGroup.length;
+  const agreementBoost = agreementRatio === 1 ? 0.1 : agreementRatio >= 0.67 ? 0.05 : -0.1;
+
+  return Math.min(1, Math.max(0, avgConfidence + agreementBoost));
+}
+
+// Resolve field conflict using priority
+function resolveFieldConflict(sources: CarrierData[], field: keyof CarrierData): { value: string | null; provider: string; hasConflict: boolean } {
+  const fieldKey = field as string;
+  const priorities = PROVIDER_PRIORITY[fieldKey] || PROVIDER_PRIORITY.carrier;
+
+  const values = sources
+    .filter(s => s[field] != null && s[field] !== '' && s[field] !== 'Unknown')
+    .map(s => ({
+      value: s[field] as string | null,
+      provider: s.provider,
+      confidence: s.confidence,
+      priority: priorities[s.provider] || 50,
+    }));
+
+  if (values.length === 0) {
+    return { value: null, provider: 'none', hasConflict: false };
+  }
+
+  const normalizedValues = values.map(v => v.value?.toLowerCase().trim());
+  const uniqueValues = new Set(normalizedValues);
+  const hasConflict = uniqueValues.size > 1;
+
+  const sorted = values.sort((a, b) => {
+    if (a.priority !== b.priority) return b.priority - a.priority;
+    return b.confidence - a.confidence;
+  });
+
+  return { value: sorted[0].value, provider: sorted[0].provider, hasConflict };
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: addSecurityHeaders(corsHeaders) });
@@ -101,6 +208,8 @@ serve(async (req) => {
 
     const findings: any[] = [];
     const providerResults: Record<string, ProviderResult> = {};
+    const carrierDataSources: CarrierData[] = [];
+    let riskData: RiskData | null = null;
 
     // Get max providers limit from plan capabilities
     const maxProviders = getCapabilityLimit(userPlan, 'phoneProvidersMax');
@@ -322,6 +431,20 @@ serve(async (req) => {
               };
               await logScanEvent('numverify', 'execution', 'failed', data.error.info || 'Numverify API error');
             } else if (data.valid) {
+              // Extract carrier data for merging
+              carrierDataSources.push({
+                carrier: data.carrier || null,
+                lineType: data.line_type || null,
+                country: data.country_name || null,
+                countryCode: data.country_code || null,
+                location: data.location || null,
+                internationalFormat: data.international_format || normalizedPhone,
+                localFormat: data.local_format || null,
+                provider: 'numverify',
+                confidence: 0.9,
+                timestamp: new Date().toISOString(),
+              });
+
               // Create findings from Numverify data
               findings.push({
                 id: generateFindingId('numverify', 'carrier_intel', normalizedPhone),
@@ -407,6 +530,34 @@ serve(async (req) => {
             const latency = Date.now() - startTime;
             
             if (data.valid) {
+              // Extract carrier data for merging
+              carrierDataSources.push({
+                carrier: data.carrier || null,
+                lineType: data.line_type || null,
+                country: data.country || null,
+                countryCode: null,
+                location: data.city && data.region 
+                  ? `${data.city}, ${data.region}` 
+                  : data.city || data.region || null,
+                internationalFormat: data.formatted || normalizedPhone,
+                localFormat: null,
+                provider: 'ipqs_phone',
+                confidence: 0.85,
+                timestamp: new Date().toISOString(),
+              });
+
+              // Extract risk data from IPQS (primary source)
+              riskData = {
+                fraudScore: data.fraud_score || 0,
+                isVoip: data.VOIP || false,
+                isRisky: data.risky || false,
+                leaked: data.leaked || false,
+                recentAbuse: data.recent_abuse || false,
+                spammer: data.spammer || false,
+                active: data.active || false,
+                prepaid: data.prepaid || false,
+              };
+
               // Carrier finding
               findings.push({
                 id: generateFindingId('ipqs_phone', 'carrier_intel', normalizedPhone),
@@ -576,6 +727,65 @@ serve(async (req) => {
           await logScanEvent(providerId, 'execution', 'skipped', 'Provider not yet implemented');
         }
       }
+    }
+
+    // Create merged carrier intelligence finding if we have multiple sources
+    if (carrierDataSources.length >= 2) {
+      console.log(`[phone-intel] Merging carrier data from ${carrierDataSources.length} sources: ${carrierDataSources.map(s => s.provider).join(', ')}`);
+      
+      const carrierResolution = resolveFieldConflict(carrierDataSources, 'carrier');
+      const lineTypeResolution = resolveFieldConflict(carrierDataSources, 'lineType');
+      const countryResolution = resolveFieldConflict(carrierDataSources, 'country');
+      const locationResolution = resolveFieldConflict(carrierDataSources, 'location');
+
+      const overallConfidence = (
+        calculateMergedConfidence(carrierDataSources, 'carrier') +
+        calculateMergedConfidence(carrierDataSources, 'lineType') +
+        calculateMergedConfidence(carrierDataSources, 'country')
+      ) / 3;
+
+      const conflicts = [carrierResolution, lineTypeResolution, countryResolution, locationResolution]
+        .filter(r => r.hasConflict);
+      
+      const conflictNote = conflicts.length > 0 
+        ? ` (${conflicts.length} conflict(s) resolved via priority)`
+        : '';
+
+      findings.push({
+        id: generateFindingId('merged', 'unified_carrier', normalizedPhone),
+        kind: 'phone.carrier.merged',
+        type: 'phone_intelligence',
+        title: `Verified: ${carrierResolution.value || 'Unknown'} (${lineTypeResolution.value || 'unknown'})`,
+        description: `Carrier intelligence corroborated by ${carrierDataSources.length} providers${conflictNote}.`,
+        severity: 'info',
+        confidence: overallConfidence,
+        provider: 'Merged Intelligence',
+        providerCategory: 'Carrier Intelligence',
+        evidence: [
+          { key: 'Phone', value: normalizedPhone },
+          { key: 'Carrier', value: carrierResolution.value || 'Unknown' },
+          { key: 'Line Type', value: lineTypeResolution.value || 'unknown' },
+          { key: 'Country', value: countryResolution.value || 'Unknown' },
+          { key: 'Location', value: locationResolution.value || 'Unknown' },
+          { key: 'Sources', value: carrierDataSources.map(s => s.provider).join(', ') },
+          { key: 'Source Count', value: String(carrierDataSources.length) },
+          { key: 'Confidence', value: `${Math.round(overallConfidence * 100)}%` },
+          { key: 'Conflicts Resolved', value: String(conflicts.length) },
+          { key: 'Is VoIP', value: String(riskData?.isVoip || false) },
+          { key: 'Fraud Score', value: riskData ? String(riskData.fraudScore) : 'N/A' },
+        ],
+        impact: 'High-confidence carrier data from multiple corroborating sources',
+        remediation: [],
+        tags: ['phone', 'carrier', 'merged', 'verified', ...carrierDataSources.map(s => s.provider)],
+        observedAt: new Date().toISOString(),
+        raw: {
+          sources: carrierDataSources,
+          conflicts,
+          riskData,
+        },
+      });
+
+      console.log(`[phone-intel] Created merged carrier finding with ${Math.round(overallConfidence * 100)}% confidence`);
     }
 
     // Calculate total credits

@@ -1,5 +1,6 @@
 import type { Finding } from "../ufm";
 import { generateFindingId } from "../ufm";
+import type { CarrierData } from "./numverify";
 
 export interface IPQSPhoneResult {
   phone_number: string;
@@ -17,6 +18,57 @@ export interface IPQSPhoneResult {
   leaked: boolean;
   spammer: boolean;
   voip: boolean;
+  VOIP?: boolean; // Alternative field name from API
+  prepaid?: boolean;
+}
+
+/**
+ * Extract carrier data from IPQS result for merging
+ */
+export function extractIPQSCarrierData(result: IPQSPhoneResult, phone: string): CarrierData | null {
+  if (!result.valid) return null;
+
+  return {
+    carrier: result.carrier || null,
+    lineType: result.line_type || null,
+    country: result.country || null,
+    countryCode: null, // IPQS doesn't provide country code
+    location: result.city && result.region 
+      ? `${result.city}, ${result.region}` 
+      : result.city || result.region || null,
+    internationalFormat: result.phone_number || phone,
+    localFormat: null,
+    provider: 'ipqs_phone',
+    confidence: 0.85,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+/**
+ * Extract risk data from IPQS result
+ */
+export interface IPQSRiskData {
+  fraudScore: number;
+  isVoip: boolean;
+  isRisky: boolean;
+  leaked: boolean;
+  recentAbuse: boolean;
+  spammer: boolean;
+  active: boolean;
+  prepaid: boolean;
+}
+
+export function extractIPQSRiskData(result: IPQSPhoneResult): IPQSRiskData {
+  return {
+    fraudScore: result.fraud_score || 0,
+    isVoip: result.voip || result.VOIP || false,
+    isRisky: result.risky || false,
+    leaked: result.leaked || false,
+    recentAbuse: result.recent_abuse || false,
+    spammer: result.spammer || false,
+    active: result.active || false,
+    prepaid: result.prepaid || false,
+  };
 }
 
 export function normalizeIPQS(result: IPQSPhoneResult, phone: string): Finding[] {
@@ -42,7 +94,7 @@ export function normalizeIPQS(result: IPQSPhoneResult, phone: string): Finding[]
         { key: "Fraud Score", value: `${result.fraud_score}/100` },
         { key: "Leaked in Database", value: result.leaked },
         { key: "Recent Abuse", value: result.recent_abuse },
-        { key: "VoIP", value: result.voip },
+        { key: "VoIP", value: result.voip || result.VOIP || false },
       ],
       impact: result.leaked
         ? "Phone number exposed in data breaches and may be targeted"
@@ -56,13 +108,13 @@ export function normalizeIPQS(result: IPQSPhoneResult, phone: string): Finding[]
         "Use alternate numbers for online registrations",
         "Monitor carrier account for unauthorized changes",
       ],
-      tags: ["phone", "fraud", "leak", result.line_type.toLowerCase()],
+      tags: ["phone", "fraud", "leak", result.line_type?.toLowerCase() || "unknown"],
       observedAt: new Date().toISOString(),
       raw: result,
     });
   }
   
-  if (result.voip) {
+  if (result.voip || result.VOIP) {
     findings.push({
       id: generateFindingId("ipqs", "phone_intelligence", `${phone}_voip`),
       type: "phone_intelligence" as const,
