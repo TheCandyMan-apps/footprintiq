@@ -49,7 +49,7 @@ export function calculateDarkWebSignal(findings: Finding[]): DarkWebSignal {
   // Group by provider
   const byProvider = new Map<string, Finding[]>();
   darkwebFindings.forEach(f => {
-    const key = f.provider.toLowerCase();
+    const key = (f.provider || 'unknown').toLowerCase();
     if (!byProvider.has(key)) byProvider.set(key, []);
     byProvider.get(key)!.push(f);
   });

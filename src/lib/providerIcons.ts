@@ -33,5 +33,5 @@ export const PROVIDER_ICONS: Record<string, LucideIcon> = {
 };
 
 export function getProviderIcon(provider: string): LucideIcon {
-  return PROVIDER_ICONS[provider.toLowerCase()] || PROVIDER_ICONS.default;
+  return PROVIDER_ICONS[(provider || '').toLowerCase()] || PROVIDER_ICONS.default;
 }
