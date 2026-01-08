@@ -218,7 +218,9 @@ export function FindingCard({ finding }: FindingCardProps) {
     // For system findings, show human-readable provider status
     if (kind.startsWith('provider.')) {
       const status = kind.split('.')[1];
-      const providerName = finding.provider.charAt(0).toUpperCase() + finding.provider.slice(1);
+      const providerName = finding.provider 
+        ? finding.provider.charAt(0).toUpperCase() + finding.provider.slice(1) 
+        : 'Unknown Provider';
       
       switch (status) {
         case 'timeout':
