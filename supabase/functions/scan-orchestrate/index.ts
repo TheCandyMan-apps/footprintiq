@@ -732,6 +732,8 @@ serve(async (req) => {
       dehashed: ['email', 'username'],
       holehe: ['email'],
       ipqs_email: ['email'],
+      abstract_email: ['email'],
+      abstract_email_reputation: ['email'],
       
       // Phone providers
       ipqs_phone: ['phone'],
