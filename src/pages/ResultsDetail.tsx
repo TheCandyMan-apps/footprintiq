@@ -1618,7 +1618,7 @@ const ResultsDetail = () => {
                     finding={{
                       id: finding.id,
                       provider: finding.provider,
-                      kind: finding.providerCategory,
+                      kind: finding.providerCategory || (finding.raw as any)?.providerCategory || (finding.raw as any)?.kind || 'unknown',
                       severity: (finding.raw as any)?.severity || finding.severity,
                       confidence: finding.confidence,
                       observed_at: finding.observedAt,
