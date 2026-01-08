@@ -76,7 +76,7 @@ function calculateCategoryScores(findings: Finding[]): Record<string, { score: n
         providersByType.identity.add(finding.provider);
         
         // Check for data broker indicators
-        if (finding.provider.toLowerCase().includes('broker') || 
+        if ((finding.provider || '').toLowerCase().includes('broker') || 
             finding.tags?.some(t => t.includes('data_broker'))) {
           categories.data_broker.score += baseScore;
           categories.data_broker.evidence.push(finding);
