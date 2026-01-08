@@ -20,7 +20,8 @@ export const getPlaybookForFinding = (finding: Finding): Playbook | null => {
       return BREACH_PLAYBOOK;
     
     case "ip_exposure":
-      const port = finding.evidence.find(e => e.key.toLowerCase().includes('port'));
+      const evidence = finding.evidence || [];
+      const port = evidence.find(e => e.key.toLowerCase().includes('port'));
       if (port) {
         const portNum = Number(port.value);
         if (portNum === 23) return TELNET_PLAYBOOK;

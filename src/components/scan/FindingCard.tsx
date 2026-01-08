@@ -249,7 +249,7 @@ export function FindingCard({ finding }: FindingCardProps) {
   const safeEvidence = finding.evidence || [];
   const urlEvidence = safeEvidence.find(e => e.key === 'url');
   const profileUrl = urlEvidence?.value ? String(urlEvidence.value) : finding.meta?.url;
-  const platformName = extractPlatformName(finding.evidence, finding.meta);
+  const platformName = extractPlatformName(safeEvidence, finding.meta);
   const category = platformName ? getPlatformCategory(platformName) : null;
   
   // Get favicon URL
