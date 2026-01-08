@@ -24,6 +24,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { ScanErrorBoundary } from "@/components/ScanErrorBoundary";
+import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 import { AIAnalysis } from "@/components/AIAnalysis";
 import { AIInsightsCard } from "@/components/AIInsightsCard";
 import { CatfishDetection } from '@/components/CatfishDetection';
@@ -1050,6 +1051,7 @@ const ResultsDetail = () => {
 
         {/* Visualizations Section */}
         {(dataSources.length > 0 || socialProfiles.length > 0) && (
+          <SectionErrorBoundary section="Data Analytics">
           <Card className="bg-[hsl(var(--card))] p-6 rounded-lg shadow-[var(--shadow-card)] mb-8 hover:shadow-[var(--shadow-glow)] transition-[var(--transition-smooth)]">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
               <TrendingUp className="w-6 h-6 text-primary" />
@@ -1119,9 +1121,9 @@ const ResultsDetail = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={[
-                        { name: 'High', count: scan.high_risk_count, fill: 'hsl(var(--destructive))' },
-                        { name: 'Medium', count: scan.medium_risk_count, fill: 'hsl(var(--primary))' },
-                        { name: 'Low', count: scan.low_risk_count, fill: 'hsl(var(--accent))' },
+                        { name: 'High', count: Number(scan?.high_risk_count ?? 0), fill: 'hsl(var(--destructive))' },
+                        { name: 'Medium', count: Number(scan?.medium_risk_count ?? 0), fill: 'hsl(var(--primary))' },
+                        { name: 'Low', count: Number(scan?.low_risk_count ?? 0), fill: 'hsl(var(--accent))' },
                       ]}
                     >
                       <XAxis dataKey="name" />
@@ -1129,9 +1131,9 @@ const ResultsDetail = () => {
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Bar dataKey="count" radius={[8, 8, 0, 0]}>
                         {[
-                          { name: 'High', count: scan.high_risk_count, fill: 'hsl(var(--destructive))' },
-                          { name: 'Medium', count: scan.medium_risk_count, fill: 'hsl(var(--primary))' },
-                          { name: 'Low', count: scan.low_risk_count, fill: 'hsl(var(--accent))' },
+                          { name: 'High', count: Number(scan?.high_risk_count ?? 0), fill: 'hsl(var(--destructive))' },
+                          { name: 'Medium', count: Number(scan?.medium_risk_count ?? 0), fill: 'hsl(var(--primary))' },
+                          { name: 'Low', count: Number(scan?.low_risk_count ?? 0), fill: 'hsl(var(--accent))' },
                         ].map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
@@ -1179,6 +1181,7 @@ const ResultsDetail = () => {
               </div>
             </div>
           </Card>
+          </SectionErrorBoundary>
         )}
 
         {/* Confidence & Provider Match Analysis */}

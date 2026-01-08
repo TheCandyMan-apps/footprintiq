@@ -19,11 +19,15 @@ type ChartContextProps = {
 
 const ChartContext = React.createContext<ChartContextProps | null>(null);
 
+// Default config to use when chart context is unavailable
+const DEFAULT_CHART_CONFIG: ChartConfig = {};
+
 function useChart() {
   const context = React.useContext(ChartContext);
 
+  // Return a safe fallback instead of throwing to prevent chart crashes
   if (!context) {
-    throw new Error("useChart must be used within a <ChartContainer />");
+    return { config: DEFAULT_CHART_CONFIG };
   }
 
   return context;
@@ -163,7 +167,8 @@ const ChartTooltipContent = React.forwardRef<
           {payload.map((item, index) => {
             const key = `${nameKey || item.name || item.dataKey || "value"}`;
             const itemConfig = getPayloadConfigFromPayload(config, item, key);
-            const indicatorColor = color || item.payload.fill || item.color;
+            // Safe access to item.payload - it may be undefined in some edge cases
+            const indicatorColor = color || item?.payload?.fill || item.color;
 
             return (
               <div
