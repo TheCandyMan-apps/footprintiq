@@ -187,11 +187,12 @@ export function FindingCard({ finding }: FindingCardProps) {
 
   const isSystemFinding = (kind: string | undefined, severity: string) => {
     if (!kind) return false;
+    const evidence = finding.evidence || [];
     // System findings: provider errors, timeouts, not_run, disabled
     return (
       kind.startsWith('provider.') || 
       kind === 'provider_error' ||
-      (severity === 'info' && !finding.evidence.find(e => e.key === 'url'))
+      (severity === 'info' && !evidence.find(e => e.key === 'url'))
     );
   };
 
@@ -245,7 +246,8 @@ export function FindingCard({ finding }: FindingCardProps) {
   const shouldShowEnrichment = !isSystemError && (finding.kind === 'profile_presence' || finding.kind === 'presence.hit' || finding.kind === 'account.profile');
   
   // Extract URL and platform for UI enhancements
-  const urlEvidence = finding.evidence.find(e => e.key === 'url');
+  const safeEvidence = finding.evidence || [];
+  const urlEvidence = safeEvidence.find(e => e.key === 'url');
   const profileUrl = urlEvidence?.value ? String(urlEvidence.value) : finding.meta?.url;
   const platformName = extractPlatformName(finding.evidence, finding.meta);
   const category = platformName ? getPlatformCategory(platformName) : null;
@@ -493,7 +495,7 @@ export function FindingCard({ finding }: FindingCardProps) {
       )}
 
       {/* Evidence Section */}
-      {finding.evidence && finding.evidence.length > 0 && (
+      {Array.isArray(finding.evidence) && finding.evidence.length > 0 && (
         <Collapsible open={isEvidenceOpen} onOpenChange={setIsEvidenceOpen}>
           <CollapsibleTrigger asChild>
             <Button 
