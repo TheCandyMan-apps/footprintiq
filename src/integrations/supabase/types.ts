@@ -9265,6 +9265,45 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_health_logs: {
+        Row: {
+          checked_at: string
+          created_at: string
+          error_message: string | null
+          healthy: boolean
+          id: string
+          response_time_ms: number | null
+          status: string
+          tools_status: Json | null
+          worker_name: string
+          worker_url: string | null
+        }
+        Insert: {
+          checked_at?: string
+          created_at?: string
+          error_message?: string | null
+          healthy?: boolean
+          id?: string
+          response_time_ms?: number | null
+          status: string
+          tools_status?: Json | null
+          worker_name: string
+          worker_url?: string | null
+        }
+        Update: {
+          checked_at?: string
+          created_at?: string
+          error_message?: string | null
+          healthy?: boolean
+          id?: string
+          response_time_ms?: number | null
+          status?: string
+          tools_status?: Json | null
+          worker_name?: string
+          worker_url?: string | null
+        }
+        Relationships: []
+      }
       worker_status: {
         Row: {
           created_at: string | null
