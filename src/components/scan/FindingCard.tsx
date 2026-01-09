@@ -418,10 +418,12 @@ export function FindingCard({ finding }: FindingCardProps) {
               <p className="text-xs text-muted-foreground truncate mb-2">{profileUrl}</p>
             )}
             <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {new Date(finding.observed_at).toLocaleDateString()} {new Date(finding.observed_at).toLocaleTimeString()}
-              </div>
+              {finding.observed_at && !isNaN(new Date(finding.observed_at).getTime()) && (
+                <div className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {new Date(finding.observed_at).toLocaleDateString()} {new Date(finding.observed_at).toLocaleTimeString()}
+                </div>
+              )}
               <div className="flex items-center gap-1">
                 <Shield className="w-3 h-3" />
                 {Math.round(finding.confidence * 100)}% confidence
