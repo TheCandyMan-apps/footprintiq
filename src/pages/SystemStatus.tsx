@@ -1,4 +1,5 @@
 import { WorkerHealthDashboard } from '@/components/monitoring/WorkerHealthDashboard';
+import { WorkerHealthHistory } from '@/components/monitoring/WorkerHealthHistory';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Activity, Server, Database, Cloud } from 'lucide-react';
@@ -61,6 +62,8 @@ export default function SystemStatus() {
       </div>
 
       <WorkerHealthDashboard />
+
+      <WorkerHealthHistory />
 
       <Card>
         <CardHeader>
