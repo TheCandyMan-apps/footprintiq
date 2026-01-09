@@ -60,7 +60,7 @@ serve(async (req: Request): Promise<Response> => {
     const { data: existingEmail } = await supabase
       .from("email_notifications")
       .select("id")
-      .eq("recipient_email", user.email)
+      .eq("recipient", user.email)
       .eq("type", "welcome_verified")
       .maybeSingle();
 
@@ -85,11 +85,10 @@ serve(async (req: Request): Promise<Response> => {
     const { data: notification, error: insertError } = await supabase
       .from("email_notifications")
       .insert({
-        user_id: user.id,
-        recipient_email: user.email,
+        recipient: user.email,
         type: "welcome_verified",
         subject: "Welcome to FootprintIQ – You're All Set!",
-        status: "pending",
+        metadata: { user_id: user.id, status: "pending" },
       })
       .select()
       .single();
@@ -249,9 +248,9 @@ serve(async (req: Request): Promise<Response> => {
     await supabase
       .from("email_notifications")
       .update({
-        status: "sent",
         sent_at: new Date().toISOString(),
         resend_id: emailResponse.id,
+        metadata: { user_id: user.id, status: "sent" },
       })
       .eq("id", notification.id);
 
