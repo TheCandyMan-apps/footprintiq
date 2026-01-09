@@ -119,6 +119,7 @@ function calculateUsernameReuseRisk(findings: Finding[]): RiskContribution {
   const usernames = new Map<string, number>();
 
   findings.forEach((f) => {
+    if (!f.evidence) return;
     f.evidence.forEach((e) => {
       if (e.key === "username" && typeof e.value === "string") {
         const username = e.value.toLowerCase();
@@ -163,8 +164,8 @@ function calculateAdjacencyRisk(findings: Finding[]): RiskContribution {
   
   let adjacencyScore = 0;
   findings.forEach((f) => {
-    const titleLower = f.title.toLowerCase();
-    const descLower = f.description.toLowerCase();
+    const titleLower = (f.title || '').toLowerCase();
+    const descLower = (f.description || '').toLowerCase();
     const hasSuspicious = suspiciousKeywords.some(
       (kw) => titleLower.includes(kw) || descLower.includes(kw)
     );
