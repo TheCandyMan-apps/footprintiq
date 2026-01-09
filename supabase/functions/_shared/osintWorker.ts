@@ -3,7 +3,7 @@
  * Single helper for all OSINT tool calls via the consolidated Cloud Run worker.
  * 
  * Worker: osint-multitool-worker
- * Base URL: https://osint-multitool-worker-iikvulknua-ew.a.run.app
+ * Base URL: https://osint-multitool-worker-312297078337.europe-west1.run.app
  * 
  * Supported tools: sherlock, whatsmyname, maigret, holehe, gosearch
  */

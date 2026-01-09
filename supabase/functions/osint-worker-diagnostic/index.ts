@@ -45,7 +45,7 @@ serve(async (req) => {
     timestamp: new Date().toISOString(),
     worker: {
       name: 'osint-multitool-worker',
-      url: 'https://osint-multitool-worker-iikvulknua-ew.a.run.app',
+      url: 'https://osint-multitool-worker-312297078337.europe-west1.run.app',
     },
     configuration: {
       workerUrl: { set: false },
