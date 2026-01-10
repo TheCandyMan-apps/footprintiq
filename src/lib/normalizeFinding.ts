@@ -75,6 +75,24 @@ const SITE_NAME_MAP: Record<string, string> = {
   'roblox.com': 'Roblox',
   'minecraft.net': 'Minecraft',
   
+  // Crypto / NFT
+  'opensea.io': 'OpenSea',
+  'rarible.com': 'Rarible',
+  'foundation.app': 'Foundation',
+  'niftygateway.com': 'Nifty Gateway',
+  'superrare.com': 'SuperRare',
+  'coinbase.com': 'Coinbase',
+  'binance.com': 'Binance',
+  'kraken.com': 'Kraken',
+  'metamask.io': 'MetaMask',
+  'etherscan.io': 'Etherscan',
+  
+  // Fandom / Wiki
+  'fandom.com': 'Fandom',
+  'wikia.com': 'Fandom',
+  'wikipedia.org': 'Wikipedia',
+  'fandom.wiki': 'Fandom',
+  
   // Writing / Creative
   'archiveofourown.org': 'Archive of Our Own',
   'ao3.org': 'Archive of Our Own',
