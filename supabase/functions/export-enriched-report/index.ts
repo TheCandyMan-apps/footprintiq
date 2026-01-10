@@ -91,9 +91,56 @@ serve(async (req) => {
 
     console.log('[export-enriched] Found', findings?.length || 0, 'findings for scan', scanId);
 
-    // Synthesize social profiles from findings evidence
-    // Findings store evidence as: [{key: 'site', value: '[+] Spotify'}, {key: 'url', value: '...'}, ...]
-    const synthesizedProfiles = (findings || []).map((f: any) => {
+    // Also fetch social profiles for username scans
+    const { data: socialProfiles, error: socialError } = await supabase
+      .from('social_profiles')
+      .select('*')
+      .eq('scan_id', scanId);
+
+    if (socialError) {
+      console.error('[export-enriched] Social profiles error:', socialError);
+    }
+
+    console.log('[export-enriched] Found', socialProfiles?.length || 0, 'social profiles for scan', scanId);
+
+    // Convert social profiles to findings format for unified export
+    const socialAsFindings = (socialProfiles || []).map((p: any) => ({
+      id: p.id,
+      platform: p.platform,
+      username: p.username,
+      url: p.profile_url,
+      confidence: (p.confidence_score || 60) / 100, // Convert to 0-1 scale
+      severity: 'low', // Social profile exposure
+      page_type: 'profile',
+      provider: p.source || 'OSINT',
+      kind: 'Social Profile',
+      bio: p.bio || null,
+      full_name: p.full_name || null,
+      created_at: p.first_seen || new Date().toISOString(),
+      evidence: [
+        { key: 'site', value: p.platform },
+        { key: 'username', value: p.username },
+        { key: 'url', value: p.profile_url },
+        ...(p.bio ? [{ key: 'bio', value: p.bio }] : []),
+        ...(p.full_name ? [{ key: 'full_name', value: p.full_name }] : [])
+      ],
+      meta: {},
+      // Breach fields not applicable
+      breach_name: null,
+      breach_date: null,
+      breach_description: null,
+      affected_count: null,
+      data_classes: [],
+      domain: null,
+      compromised_data: null
+    }));
+
+    // Merge findings and social profiles
+    const allFindings = [...(findings || []), ...socialAsFindings];
+    console.log('[export-enriched] Total combined findings:', allFindings.length);
+
+    // Synthesize social profiles from findings evidence (for display purposes)
+    const synthesizedProfiles = allFindings.map((f: any) => {
       const evidence = Array.isArray(f.evidence) ? f.evidence : [];
       const getEvidenceValue = (key: string) => {
         const item = evidence.find((e: any) => e.key === key);
@@ -101,16 +148,16 @@ serve(async (req) => {
       };
 
       // Extract site name from evidence (may have format "[+] SiteName" or just "SiteName")
-      let siteName = getEvidenceValue('site') || getEvidenceValue('platform') || f.provider || 'Unknown';
+      let siteName = getEvidenceValue('site') || getEvidenceValue('platform') || f.platform || f.provider || 'Unknown';
       // Clean up site name if it has [+] prefix
       siteName = siteName.replace(/^\[\+\]\s*/, '').replace(/^\[-\]\s*/, '');
 
       return {
         platform: siteName,
-        username: getEvidenceValue('username') || scan.username || 'N/A',
-        profile_url: getEvidenceValue('url') || null,
-        bio: getEvidenceValue('bio') || null,
-        full_name: getEvidenceValue('name') || getEvidenceValue('full_name') || null,
+        username: getEvidenceValue('username') || f.username || scan.username || 'N/A',
+        profile_url: getEvidenceValue('url') || f.url || null,
+        bio: getEvidenceValue('bio') || f.bio || null,
+        full_name: getEvidenceValue('name') || getEvidenceValue('full_name') || f.full_name || null,
         confidence_score: Math.round((f.confidence || 0.5) * 100),
         source: f.provider || 'OSINT',
         first_seen: f.created_at || new Date().toISOString(),
@@ -118,7 +165,7 @@ serve(async (req) => {
       };
     });
 
-    console.log('[export-enriched] Synthesized', synthesizedProfiles.length, 'profiles from findings');
+    console.log('[export-enriched] Synthesized', synthesizedProfiles.length, 'profiles from all findings');
 
     // Fetch enrichments for all findings
     const findingIds = findings?.map(f => f.id) || [];
@@ -174,25 +221,25 @@ serve(async (req) => {
         completed_at: scan.completed_at || scan.updated_at
       },
       // Full findings array with all details including meta for breach data
-      findings: (findings || []).map((f: any) => {
+      findings: allFindings.map((f: any) => {
         const evidence = Array.isArray(f.evidence) ? f.evidence : [];
         const meta = f.meta || {};
         const getEv = (key: string) => evidence.find((e: any) => e.key === key)?.value || null;
-        let siteName = getEv('site') || getEv('platform') || meta.title || f.provider || 'Unknown';
+        let siteName = getEv('site') || getEv('platform') || f.platform || meta.title || f.provider || 'Unknown';
         siteName = siteName.replace(/^\[\+\]\s*/, '').replace(/^\[-\]\s*/, '');
         
         return {
           id: f.id,
           platform: siteName,
-          username: getEv('username') || scan.username || 'N/A',
-          url: getEv('url') || null,
+          username: getEv('username') || f.username || scan.username || 'N/A',
+          url: getEv('url') || f.url || null,
           confidence: Math.round((f.confidence || 0.5) * 100),
           severity: f.severity || 'info',
           page_type: f.page_type || 'profile',
           provider: f.provider || 'OSINT',
-          kind: f.kind || f.provider_category || 'Finding',
-          bio: getEv('bio') || null,
-          full_name: getEv('name') || getEv('full_name') || null,
+          kind: f.kind || f.provider_category || 'Social Profile',
+          bio: getEv('bio') || f.bio || null,
+          full_name: getEv('name') || getEv('full_name') || f.full_name || null,
           created_at: f.created_at,
           // Breach-specific fields from meta
           breach_name: meta.title || getEv('breach') || null,
@@ -215,7 +262,7 @@ serve(async (req) => {
       }, {}),
       // Summary counts
       profile_count: synthesizedProfiles.length,
-      finding_count: findings?.length || 0,
+      finding_count: allFindings.length,
       enrichment_count: enrichments?.length || 0,
       // Branding settings
       branding: branding ? {
