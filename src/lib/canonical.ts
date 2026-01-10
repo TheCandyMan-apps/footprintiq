@@ -67,6 +67,7 @@ export interface CanonicalFinding extends Finding {
   urlVariants?: UrlVariant[];
   isCanonical?: boolean;
   platformCategory?: string;
+  platformName?: string;
   riskScore?: number | null;
   aiSummary?: string | null;
   remediationPriority?: string | null;
@@ -134,7 +135,8 @@ export function canonicalToFinding(result: CanonicalResult): CanonicalFinding {
     severity: severityMap[result.severity] || 'info',
     confidence: result.confidence,
     provider: result.source_providers[0] || 'canonical',
-    providerCategory: result.platform_category || 'unknown',
+    // Set kind to 'profile_presence' so title extraction works correctly
+    providerCategory: 'profile_presence',
     evidence: [
       { key: 'platform', value: result.platform_name },
       { key: 'username', value: result.canonical_username },
@@ -159,6 +161,8 @@ export function canonicalToFinding(result: CanonicalResult): CanonicalFinding {
     riskScore: result.risk_score,
     aiSummary: result.ai_summary,
     remediationPriority: result.remediation_priority,
+    // Store the actual platform_name in a way FindingCard can access
+    platformName: result.platform_name,
   };
 }
 

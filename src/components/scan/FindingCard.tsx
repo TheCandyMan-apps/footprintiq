@@ -154,6 +154,9 @@ export function FindingCard({ finding }: FindingCardProps) {
   const [analysisOpen, setAnalysisOpen] = useState(false);
   const [analysisData, setAnalysisData] = useState<any>(null);
 
+  // Generic category names that should be skipped when extracting platform names
+  const GENERIC_NAMES = ['other', 'unknown', 'crypto', 'social', 'gaming', 'forum', 'news', 'misc', 'entertainment', 'music', 'video', 'shopping', 'finance'];
+
   const extractPlatformName = (evidence: Evidence[], meta?: Record<string, any>) => {
     // Try evidence first
     const siteEvidence = evidence.find(e => e.key === 'site' || e.key === 'platform');
@@ -165,20 +168,26 @@ export function FindingCard({ finding }: FindingCardProps) {
         .replace(/^\[[\+\-]\]\s*/, '')
         .trim();
       // Skip generic category names
-      const genericNames = ['other', 'unknown', 'crypto', 'social', 'gaming', 'forum', 'news', 'misc', 'entertainment', 'music', 'video', 'shopping', 'finance'];
-      if (cleaned && !genericNames.includes(cleaned.toLowerCase())) {
+      if (cleaned && !GENERIC_NAMES.includes(cleaned.toLowerCase())) {
         return cleaned;
       }
     }
     
     // Try meta fields (but skip generic names)
-    const genericNames = ['other', 'unknown', 'crypto', 'social', 'gaming', 'forum', 'news', 'misc', 'entertainment', 'music', 'video', 'shopping', 'finance'];
-    if (meta?.site && !genericNames.includes(String(meta.site).toLowerCase())) return meta.site;
-    if (meta?.platform && !genericNames.includes(String(meta.platform).toLowerCase())) return meta.platform;
+    if (meta?.site && !GENERIC_NAMES.includes(String(meta.site).toLowerCase())) return meta.site;
+    if (meta?.platform && !GENERIC_NAMES.includes(String(meta.platform).toLowerCase())) return meta.platform;
+    
+    // Try to get platform name from normalized fields
+    if (meta?.platformName && !GENERIC_NAMES.includes(String(meta.platformName).toLowerCase())) {
+      return meta.platformName;
+    }
+    if (meta?.platform_name && !GENERIC_NAMES.includes(String(meta.platform_name).toLowerCase())) {
+      return meta.platform_name;
+    }
     
     // Extract pretty name from URL
     const urlEvidence = evidence.find(e => e.key === 'url' || e.key === 'primary_url');
-    const url = urlEvidence?.value ? String(urlEvidence.value) : (meta?.url ?? meta?.primary_url ?? meta?.platform_url);
+    const url = urlEvidence?.value ? String(urlEvidence.value) : (meta?.url ?? meta?.primary_url ?? meta?.platform_url ?? meta?.platformUrl);
     if (url) {
       return prettySiteNameFromUrl(url);
     }
@@ -204,13 +213,10 @@ export function FindingCard({ finding }: FindingCardProps) {
     if (kind === 'profile_presence' || kind === 'presence.hit' || kind === 'account.profile') {
       const platformName = extractPlatformName(evidence, meta);
       
-      // Generic/category names that should fallback to URL extraction
-      const genericNames = ['other', 'unknown', 'crypto', 'social', 'gaming', 'forum', 'news', 'misc', 'entertainment', 'music', 'video', 'shopping', 'finance'];
-      
       // If platformName is missing or is a generic category, derive from URL
-      if (!platformName || genericNames.includes(platformName.toLowerCase())) {
+      if (!platformName || GENERIC_NAMES.includes(platformName.toLowerCase())) {
         const urlEvidence = evidence.find(e => e.key === 'url' || e.key === 'primary_url');
-        const url = urlEvidence?.value ? String(urlEvidence.value) : (meta?.url ?? meta?.primary_url ?? meta?.platform_url);
+        const url = urlEvidence?.value ? String(urlEvidence.value) : (meta?.url ?? meta?.primary_url ?? meta?.platform_url ?? meta?.platformUrl);
         if (url) {
           return prettySiteNameFromUrl(url);
         }
