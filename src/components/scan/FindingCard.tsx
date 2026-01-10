@@ -164,22 +164,23 @@ export function FindingCard({ finding }: FindingCardProps) {
         .replace(/\[\d+m|\[0m/g, '')
         .replace(/^\[[\+\-]\]\s*/, '')
         .trim();
-      if (cleaned) return cleaned;
+      // Skip generic category names
+      const genericNames = ['other', 'unknown', 'crypto', 'social', 'gaming', 'forum', 'news', 'misc', 'entertainment', 'music', 'video', 'shopping', 'finance'];
+      if (cleaned && !genericNames.includes(cleaned.toLowerCase())) {
+        return cleaned;
+      }
     }
     
-    // Try meta fields
-    if (meta?.site) return meta.site;
-    if (meta?.platform) return meta.platform;
+    // Try meta fields (but skip generic names)
+    const genericNames = ['other', 'unknown', 'crypto', 'social', 'gaming', 'forum', 'news', 'misc', 'entertainment', 'music', 'video', 'shopping', 'finance'];
+    if (meta?.site && !genericNames.includes(String(meta.site).toLowerCase())) return meta.site;
+    if (meta?.platform && !genericNames.includes(String(meta.platform).toLowerCase())) return meta.platform;
     
-    // Last resort: extract from URL hostname
-    const urlEvidence = evidence.find(e => e.key === 'url');
-    if (urlEvidence) {
-      try {
-        const url = new URL(String(urlEvidence.value));
-        return url.hostname.replace(/^www\./, '');
-      } catch {
-        // Invalid URL, skip
-      }
+    // Extract pretty name from URL
+    const urlEvidence = evidence.find(e => e.key === 'url' || e.key === 'primary_url');
+    const url = urlEvidence?.value ? String(urlEvidence.value) : (meta?.url ?? meta?.primary_url ?? meta?.platform_url);
+    if (url) {
+      return prettySiteNameFromUrl(url);
     }
     
     return null;
