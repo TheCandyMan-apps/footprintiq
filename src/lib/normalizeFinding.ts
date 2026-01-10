@@ -143,12 +143,22 @@ const SITE_NAME_MAP: Record<string, string> = {
   'peekyou.com': 'PeekYou',
   'mylife.com': 'MyLife',
   
-  // Other
+  // Other / Social Apps
+  'clubhouse.com': 'Clubhouse',
+  'clubhouseapp.com': 'Clubhouse',
+  'codecademy.com': 'Codecademy',
+  'chaturbate.com': 'Chaturbate',
+  'onlyfans.com': 'OnlyFans',
+  'fansly.com': 'Fansly',
+  'manyvids.com': 'ManyVids',
+  'pornhub.com': 'Pornhub',
+  'xvideos.com': 'XVideos',
   'gravatar.com': 'Gravatar',
   'wordpress.com': 'WordPress',
   'blogger.com': 'Blogger',
   'substack.com': 'Substack',
   'linktree.com': 'Linktree',
+  'linktr.ee': 'Linktree',
   'buymeacoffee.com': 'Buy Me a Coffee',
   'patreon.com': 'Patreon',
   'ko-fi.com': 'Ko-fi',
