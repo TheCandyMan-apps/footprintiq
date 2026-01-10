@@ -5,13 +5,22 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { StructuredData, organizationSchema } from "@/components/StructuredData";
 const blogPosts = [{
+  slug: "osint-ai-era-2026",
+  title: "2026 OSINT and the Era of AI: The Future of Digital Intelligence",
+  excerpt: "Discover how AI is transforming Open Source Intelligence in 2026. From autonomous agents to predictive threat detection, explore the cutting-edge tools and ethical considerations shaping modern OSINT.",
+  date: "January 10, 2026",
+  readTime: "14 min read",
+  category: "AI & Technology",
+  featured: true,
+  image: "/blog-images/osint-ai-era-2026.webp"
+}, {
   slug: "ai-in-osint-2025",
   title: "The Evolution of AI in OSINT: Key Trends Shaping 2025",
   excerpt: "Explore how artificial intelligence is revolutionizing Open Source Intelligence in 2025, from booming market growth to real-world cybersecurity applications and privacy protection.",
   date: "November 7, 2025",
   readTime: "12 min read",
   category: "AI & Technology",
-  featured: true,
+  featured: false,
   image: "/blog-images/ai-osint-2025.webp"
 }, {
   slug: "what-is-osint-risk",
