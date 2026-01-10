@@ -3,6 +3,7 @@
  */
 
 export const blogHeroImages: Record<string, string> = {
+  "osint-ai-era-2026": "/blog-images/osint-ai-era-2026.webp",
   "what-is-digital-footprint": "/blog-images/digital-footprint.webp",
   "remove-data-brokers": "/blog-images/data-brokers.webp",
   "check-email-breach": "/blog-images/email-breach.webp",
