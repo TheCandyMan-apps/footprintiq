@@ -15,7 +15,7 @@ interface Tool {
   scanTypes: string[];
 }
 
-const TOOLS: Tool[] = [
+export const TOOLS: Tool[] = [
   {
     id: 'perplexity_osint',
     name: 'Perplexity Web Intel',
