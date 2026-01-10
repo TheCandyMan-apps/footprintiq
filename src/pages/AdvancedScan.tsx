@@ -49,7 +49,7 @@ import { validateScanInput, getFormatHint } from "@/lib/scan/inputValidation";
 import { type ScanType } from "@/lib/providers/registry";
 import { normalizePlanTier } from "@/lib/billing/planCapabilities";
 import { WhatsMyNameTab } from "@/components/scan/WhatsMyNameTab";
-import { ToolSelector } from "@/components/scan/ToolSelector";
+import { ToolSelector, TOOLS } from "@/components/scan/ToolSelector";
 import { UpgradeTeaser } from "@/components/upsell/UpgradeTeaser";
 import { PremiumUpgradeCTA } from "@/components/upsell/PremiumUpgradeCTA";
 import { TemplateManager } from "@/components/scan/TemplateManager";
@@ -105,7 +105,17 @@ export default function AdvancedScan() {
   const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
   const [progressOpen, setProgressOpen] = useState(false);
   const [modalScanId, setModalScanId] = useState<string | null>(null);
-  const [selectedTool, setSelectedTool] = useState<string>("maigret");
+  const [selectedTool, setSelectedToolState] = useState<string>("maigret");
+  
+  // Handler that auto-sets scan type when a tool is selected
+  const handleToolChange = useCallback((toolId: string) => {
+    setSelectedToolState(toolId);
+    const tool = TOOLS.find(t => t.id === toolId);
+    if (tool && tool.scanTypes.length > 0) {
+      // Set scan type to the first (primary) scan type for this tool
+      setScanType(tool.scanTypes[0]);
+    }
+  }, []);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
   const [maigretEnabled, setMaigretEnabled] = useState(true);
   const [usernameTags, setUsernameTags] = useState('');
@@ -727,7 +737,7 @@ export default function AdvancedScan() {
     setDarkwebDepth(config.darkwebDepth || 2);
     setPremiumOptions(config.premiumOptions || {});
     if (config.selectedTool) {
-      setSelectedTool(config.selectedTool);
+      setSelectedToolState(config.selectedTool);
     }
     toast.success(`Template "${template.name}" applied`);
   };
@@ -855,7 +865,7 @@ export default function AdvancedScan() {
             {/* Tool Selector */}
             <ToolSelector
               selectedTool={selectedTool}
-              onToolChange={setSelectedTool}
+              onToolChange={handleToolChange}
               scanType={scanType}
               userTier={(actualSubscriptionTier || 'free') as 'free' | 'pro' | 'business'}
               disabled={isScanning}
