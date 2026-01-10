@@ -1621,12 +1621,20 @@ const ResultsDetail = () => {
                     finding={{
                       id: finding.id,
                       provider: finding.provider,
-                      kind: finding.providerCategory || (finding.raw as any)?.providerCategory || (finding.raw as any)?.kind || 'unknown',
+                      kind: finding.providerCategory || (finding.raw as any)?.providerCategory || (finding.raw as any)?.kind || 'profile_presence',
                       severity: (finding.raw as any)?.severity || finding.severity,
                       confidence: finding.confidence,
                       observed_at: finding.observedAt,
-                      evidence: finding.evidence,
-                      meta: (finding.raw as any)?.meta || {},
+                      evidence: finding.evidence || [],
+                      meta: {
+                        ...(finding.raw as any)?.meta || {},
+                        // Pass normalized fields for title extraction
+                        platformName: (finding as any).platformName || (finding.raw as any)?.platform_name,
+                        platform_name: (finding.raw as any)?.platform_name,
+                        url: finding.url || (finding.raw as any)?.primary_url,
+                        primary_url: (finding.raw as any)?.primary_url,
+                        platformUrl: (finding as any).platformUrl || (finding.raw as any)?.primary_url,
+                      },
                     }}
                   />
                   <div className="flex items-center justify-between">
