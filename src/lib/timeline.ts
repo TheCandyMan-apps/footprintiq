@@ -8,9 +8,16 @@ export interface TimelineEvent {
 }
 
 export const clusterFindingsByDate = (findings: Finding[]): TimelineEvent[] => {
+  // Ensure findings is always an array
+  const safeFindings = Array.isArray(findings) ? findings : [];
   const grouped = new Map<string, Finding[]>();
   
-  for (const finding of findings) {
+  for (const finding of safeFindings) {
+    // Normalize evidence to array if missing
+    if (!Array.isArray(finding.evidence)) {
+      finding.evidence = [];
+    }
+    
     const date = new Date(finding.observedAt).toISOString().split('T')[0];
     if (!grouped.has(date)) {
       grouped.set(date, []);
