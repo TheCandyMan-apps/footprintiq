@@ -203,8 +203,11 @@ export function FindingCard({ finding }: FindingCardProps) {
     if (kind === 'profile_presence' || kind === 'presence.hit' || kind === 'account.profile') {
       const platformName = extractPlatformName(evidence, meta);
       
-      // If platformName is missing or "Other", derive from URL
-      if (!platformName || platformName.toLowerCase() === 'other' || platformName.toLowerCase() === 'unknown') {
+      // Generic/category names that should fallback to URL extraction
+      const genericNames = ['other', 'unknown', 'crypto', 'social', 'gaming', 'forum', 'news', 'misc', 'entertainment', 'music', 'video', 'shopping', 'finance'];
+      
+      // If platformName is missing or is a generic category, derive from URL
+      if (!platformName || genericNames.includes(platformName.toLowerCase())) {
         const urlEvidence = evidence.find(e => e.key === 'url' || e.key === 'primary_url');
         const url = urlEvidence?.value ? String(urlEvidence.value) : (meta?.url ?? meta?.primary_url ?? meta?.platform_url);
         if (url) {
