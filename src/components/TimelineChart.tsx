@@ -26,7 +26,7 @@ export const TimelineChart = ({ events }: TimelineChartProps) => {
     }
     
     const severityCounts = dateMap.get(date)!;
-    event.findings.forEach((finding) => {
+    (event.findings || []).forEach((finding) => {
       severityCounts[finding.severity] = (severityCounts[finding.severity] || 0) + 1;
     });
   });

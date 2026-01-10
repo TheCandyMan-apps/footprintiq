@@ -73,7 +73,7 @@ export const buildGraph = (findings: Finding[]): { nodes: GraphNode[]; edges: Gr
   
   // Extract entities from findings
   for (const finding of findings) {
-    for (const evidence of finding.evidence) {
+    for (const evidence of (finding.evidence || [])) {
       const value = String(evidence.value);
       const type = inferNodeType(evidence.key, value);
       

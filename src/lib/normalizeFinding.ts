@@ -13,6 +13,7 @@ export interface NormalizedFinding {
   severity: string | null;
   verdict: string | null;
   sourceProviders: string[];
+  evidence: any[];
   raw: any;
 }
 
@@ -213,6 +214,7 @@ export function normalizeFinding(input: any): NormalizedFinding {
       severity: null,
       verdict: null,
       sourceProviders: [],
+      evidence: [],
       raw: input,
     };
   }
@@ -310,6 +312,11 @@ export function normalizeFinding(input: any): NormalizedFinding {
     sourceProviders = rawProviders.filter((p: any) => typeof p === 'string');
   }
 
+  // Normalize evidence to always be an array
+  const evidence = Array.isArray(input.evidence) 
+    ? input.evidence 
+    : (Array.isArray(input.raw?.evidence) ? input.raw.evidence : []);
+
   return {
     id: input.id,
     platformName,
@@ -320,6 +327,7 @@ export function normalizeFinding(input: any): NormalizedFinding {
     severity: severity || null,
     verdict: verdict || null,
     sourceProviders,
+    evidence,
     raw: input,
   };
 }
