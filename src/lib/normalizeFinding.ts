@@ -5,6 +5,9 @@
 
 export interface NormalizedFinding {
   id?: string;
+  type?: string;
+  provider?: string;
+  providerCategory?: string;
   platformName: string;
   platformUrl: string;
   pageType: string;
@@ -345,8 +348,16 @@ export function normalizeFinding(input: any): NormalizedFinding {
     ? input.evidence 
     : (Array.isArray(input.raw?.evidence) ? input.raw.evidence : []);
 
+  // Extract type, provider, and providerCategory for filtering (e.g., phone_intelligence)
+  const type = input.type ?? input.raw?.type ?? undefined;
+  const provider = input.provider ?? input.raw?.provider ?? '';
+  const providerCategory = input.providerCategory ?? input.kind ?? input.raw?.providerCategory ?? '';
+
   return {
     id: input.id,
+    type,
+    provider,
+    providerCategory,
     platformName,
     platformUrl,
     pageType,
