@@ -238,7 +238,8 @@ export default function FreeUsernameSearch() {
             
             <p>
               Understanding your full digital exposure typically requires more than a single username 
-              scan. For a deeper look at this concept, see our guide on <Link to="/blog/what-is-digital-footprint" className="text-primary hover:underline">what is digital exposure</Link> and 
+              scan. <Link to="/blog/username-reuse" className="text-primary hover:underline">Reusing the same username across platforms can create unintended connections over time</Link>. 
+              For a deeper look at this concept, see our guide on <Link to="/blog/what-is-digital-footprint" className="text-primary hover:underline">what is digital exposure</Link> and 
               why it matters. Other dimensions of your online presence include:
             </p>
 
