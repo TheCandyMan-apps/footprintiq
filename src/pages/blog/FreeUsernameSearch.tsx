@@ -113,10 +113,10 @@ export default function FreeUsernameSearch() {
             prose-a:text-primary prose-a:no-underline prose-a:font-medium hover:prose-a:underline">
             
             <p className="text-xl leading-relaxed !text-foreground/80 !my-8">
-              Free username search tools have become a popular way for people to explore their online 
-              presence. These tools scan public platforms for accounts matching a given username, 
-              providing a snapshot of where that handle appears across the internet. But like any 
-              automated tool, they have both strengths and limitations worth understanding.
+              Free username search tools are a common starting point for people trying to understand 
+              their online presence. These tools scan public platforms for accounts matching a given 
+              username, providing a snapshot of where that handle appears across the internet. Like 
+              any automated system, they have strengths and limitations worth understanding.
             </p>
 
             <h2>What Username Search Tools Actually Do</h2>
