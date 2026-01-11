@@ -52,8 +52,8 @@ export default function FreeUsernameSearch() {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <SEO 
-        title="Free Username Search: What It Shows — and What It Misses | FootprintIQ"
-        description="Understand what free username search tools can reveal about your digital presence, their limitations, and how to interpret the results with proper context."
+        title="Free Username Search: What It Shows & What It Misses"
+        description="Learn what free username search tools reveal, where they fall short, and how to interpret results responsibly."
         canonical="https://footprintiq.app/blog/free-username-search"
         ogImage="https://footprintiq.app/blog-images/username-search.webp"
         article={{
