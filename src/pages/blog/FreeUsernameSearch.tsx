@@ -47,10 +47,10 @@ export default function FreeUsernameSearch() {
       name: "FootprintIQ"
     },
     publisher: organizationSchema,
-    keywords: "digital identity, username exposure, public data",
+    keywords: "digital identity, username searches, public data",
     about: [
       { "@type": "Thing", name: "Digital identity" },
-      { "@type": "Thing", name: "Username exposure" },
+      { "@type": "Thing", name: "Username searches" },
       { "@type": "Thing", name: "Public data" }
     ]
   };
