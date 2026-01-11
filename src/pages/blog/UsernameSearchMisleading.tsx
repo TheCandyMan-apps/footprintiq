@@ -47,11 +47,11 @@ export default function UsernameSearchMisleading() {
       name: "FootprintIQ"
     },
     publisher: organizationSchema,
-    keywords: "username search, false positives, search accuracy, digital identity",
+    keywords: "username searches, false positives, digital exposure",
     about: [
-      { "@type": "Thing", name: "Username search" },
-      { "@type": "Thing", name: "Search accuracy" },
-      { "@type": "Thing", name: "Digital identity" }
+      { "@type": "Thing", name: "Username searches" },
+      { "@type": "Thing", name: "False positives" },
+      { "@type": "Thing", name: "Digital exposure" }
     ]
   };
 
