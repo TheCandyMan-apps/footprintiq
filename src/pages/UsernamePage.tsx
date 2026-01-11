@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -96,8 +97,11 @@ export default function UsernamePage() {
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               Username Intelligence Search
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-4">
               Search for any username across 500+ platforms including social media, gaming, dev tools, and professional networks
+            </p>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              <Link to="/blog/free-username-search" className="text-primary hover:underline">Understanding how username searches work — and where they fall short</Link> — is an important part of assessing digital exposure.
             </p>
           </div>
 
