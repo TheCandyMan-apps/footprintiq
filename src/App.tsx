@@ -72,6 +72,7 @@ const PasswordSecurityGuide = lazy(() => import("./pages/blog/PasswordSecurityGu
 const VpnPrivacyGuide = lazy(() => import("./pages/blog/VpnPrivacyGuide"));
 const TwoFactorAuthentication = lazy(() => import("./pages/blog/TwoFactorAuthentication"));
 const SecureBrowsingGuide = lazy(() => import("./pages/blog/SecureBrowsingGuide"));
+const FreeUsernameSearch = lazy(() => import("./pages/blog/FreeUsernameSearch"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -279,6 +280,7 @@ function RouterContent() {
           <Route path="/blog/vpn-privacy-guide" element={<VpnPrivacyGuide />} />
           <Route path="/blog/two-factor-authentication" element={<TwoFactorAuthentication />} />
           <Route path="/blog/secure-browsing-guide" element={<SecureBrowsingGuide />} />
+          <Route path="/blog/free-username-search" element={<FreeUsernameSearch />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
