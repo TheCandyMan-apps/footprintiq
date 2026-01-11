@@ -278,7 +278,7 @@ export default function FreeUsernameSearch() {
 
           {/* CTA Section */}
           <div className="mt-16 p-8 bg-gradient-to-br from-primary/5 via-primary-glow/5 to-accent/5 rounded-3xl border-2 border-primary/20">
-            <h3 className="text-2xl font-bold mb-3">Check Your Digital Exposure</h3>
+            <h3 className="text-2xl font-bold mb-3">See how your public identifiers connect</h3>
             <p className="text-muted-foreground mb-6 text-lg">
               Our Exposure Score scan combines username discovery with breach monitoring and 
               data broker checks — giving you a more complete view of your online presence.
