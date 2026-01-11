@@ -47,11 +47,11 @@ export default function UsernameReuse() {
       name: "FootprintIQ"
     },
     publisher: organizationSchema,
-    keywords: "username reuse, digital exposure, online privacy, account correlation",
+    keywords: "username reuse, digital exposure, public identifiers",
     about: [
-      { "@type": "Thing", name: "Digital privacy" },
-      { "@type": "Thing", name: "Username patterns" },
-      { "@type": "Thing", name: "Account linkage" }
+      { "@type": "Thing", name: "Username reuse" },
+      { "@type": "Thing", name: "Digital exposure" },
+      { "@type": "Thing", name: "Public identifiers" }
     ]
   };
 
