@@ -184,7 +184,8 @@ export default function FreeUsernameSearch() {
             <p>
               A common username might match accounts belonging to different people. If your handle 
               is "alex_jones" or "sarah_smith," the tool may return results that have nothing to do 
-              with you. The search identifies that an account exists, but cannot verify who owns it.
+              with you. These kinds of <Link to="/blog/username-search-misleading" className="text-primary hover:underline">misleading username search results</Link> are 
+              common, since the search identifies that an account exists but cannot verify who owns it.
             </p>
 
             <h3>False Negatives</h3>
