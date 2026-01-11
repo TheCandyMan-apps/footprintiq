@@ -35,9 +35,10 @@ export default function FreeUsernameSearch() {
 
   const articleSchema = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: "Free Username Search: What It Shows — and What It Misses",
-    description: "Understand what free username search tools can reveal about your digital presence, their limitations, and how to interpret the results with proper context.",
+    "@type": "Article",
+    articleSection: "Educational",
+    headline: "Free Username Search: What It Shows & What It Misses",
+    description: "Learn what free username search tools reveal, where they fall short, and how to interpret results responsibly.",
     image: "https://footprintiq.app/blog-images/username-search.webp",
     datePublished: "2026-01-11T09:00:00Z",
     dateModified: "2026-01-11T09:00:00Z",
@@ -46,7 +47,12 @@ export default function FreeUsernameSearch() {
       name: "FootprintIQ"
     },
     publisher: organizationSchema,
-    keywords: "username search, digital footprint, online presence, OSINT, privacy, account discovery"
+    keywords: "digital identity, username exposure, public data",
+    about: [
+      { "@type": "Thing", name: "Digital identity" },
+      { "@type": "Thing", name: "Username exposure" },
+      { "@type": "Thing", name: "Public data" }
+    ]
   };
 
   return (
