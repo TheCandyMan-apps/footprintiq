@@ -74,6 +74,7 @@ const TwoFactorAuthentication = lazy(() => import("./pages/blog/TwoFactorAuthent
 const SecureBrowsingGuide = lazy(() => import("./pages/blog/SecureBrowsingGuide"));
 const FreeUsernameSearch = lazy(() => import("./pages/blog/FreeUsernameSearch"));
 const UsernameReuse = lazy(() => import("./pages/blog/UsernameReuse"));
+const WhatIsDigitalExposure = lazy(() => import("./pages/blog/WhatIsDigitalExposure"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -283,6 +284,7 @@ function RouterContent() {
           <Route path="/blog/secure-browsing-guide" element={<SecureBrowsingGuide />} />
           <Route path="/blog/free-username-search" element={<FreeUsernameSearch />} />
           <Route path="/blog/username-reuse" element={<UsernameReuse />} />
+          <Route path="/blog/what-is-digital-exposure" element={<WhatIsDigitalExposure />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
