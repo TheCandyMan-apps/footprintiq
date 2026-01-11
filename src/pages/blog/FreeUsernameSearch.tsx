@@ -87,18 +87,10 @@ export default function FreeUsernameSearch() {
             Back to Blog
           </Link>
 
-          {/* Header Meta */}
+          {/* Header Meta - date/read time hidden for evergreen appearance but kept in schema */}
           <div className="flex flex-wrap items-center gap-3 text-sm mb-6">
             <Badge className="bg-primary/10 text-primary hover:bg-primary/20">Privacy</Badge>
             <Badge variant="outline">Digital Footprint</Badge>
-            <span className="flex items-center gap-1.5 text-muted-foreground">
-              <Calendar className="w-4 h-4" />
-              January 11, 2026
-            </span>
-            <span className="flex items-center gap-1.5 text-muted-foreground">
-              <Clock className="w-4 h-4" />
-              7 min read
-            </span>
           </div>
 
           {/* Title */}
