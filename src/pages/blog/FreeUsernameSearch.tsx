@@ -151,7 +151,7 @@ export default function FreeUsernameSearch() {
             <ul>
               <li><strong>Platform Coverage:</strong> Which social networks, forums, and services have an account registered under your username</li>
               <li><strong>Profile URLs:</strong> Direct links to discovered profiles, making it easy to review or manage them</li>
-              <li><strong>Username Consistency:</strong> Whether you've used the same handle across multiple platforms or varied your approach</li>
+              <li><strong>Username Consistency:</strong> Whether you've used the same handle across multiple platforms or varied your approach — though as we explore in <Link to="/blog/username-security" className="text-primary hover:underline">why username reuse creates risk</Link>, consistency isn't always a good thing</li>
               <li><strong>Forgotten Accounts:</strong> Old registrations you may have created years ago and no longer remember</li>
             </ul>
 
@@ -235,7 +235,8 @@ export default function FreeUsernameSearch() {
             
             <p>
               Understanding your full digital exposure typically requires more than a single username 
-              scan. Other dimensions of your online presence include:
+              scan. For a deeper look at this concept, see our guide on <Link to="/blog/what-is-digital-footprint" className="text-primary hover:underline">what is digital exposure</Link> and 
+              why it matters. Other dimensions of your online presence include:
             </p>
 
             <ul>
