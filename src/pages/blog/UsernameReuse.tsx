@@ -144,8 +144,9 @@ export default function UsernameReuse() {
 
             <p>
               <Link to="/blog/free-username-search" className="text-primary hover:underline">Free username search tools</Link> automate 
-              this process, checking hundreds of sites in seconds. The results show everywhere 
-              that handle has been registered, creating an instant map of someone's platform presence.
+              this process, checking hundreds of sites in seconds. However, these results <Link to="/blog/username-search-misleading" className="text-primary hover:underline">can 
+              often be misleading</Link> without proper verification. Still, they create an instant map of 
+              where that handle has been registered.
             </p>
 
             <p>
