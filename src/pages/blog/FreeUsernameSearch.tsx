@@ -140,6 +140,11 @@ export default function FreeUsernameSearch() {
               individuals understand what someone might find when searching for them online.
             </p>
 
+            <p>
+              This guide focuses on helping readers interpret username search results responsibly, 
+              rather than promoting any specific tool.
+            </p>
+
             <h2>What These Tools Can Show</h2>
             
             <p>
