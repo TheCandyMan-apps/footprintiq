@@ -24,7 +24,7 @@ import "@/lib/config"; // Validate env at boot
 // Lazy load heavy pages for better performance
 const Index = lazy(() => import("./pages/Index"));
 const Auth = lazy(() => import("./pages/Auth"));
-import Dashboard from "./pages/Dashboard";
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 import NotFound from "./pages/NotFound";
 
 // Lazy-loaded pages (loaded on demand)
