@@ -137,7 +137,51 @@ export function useMultiToolScan() {
       if (error) {
         console.error('[useMultiToolScan] Edge function error:', error);
         
-        // Track error in Sentry
+        // Parse structured error response if available
+        let errorCode = '';
+        let errorMessage = error.message || 'Failed to start multi-tool scan';
+        let errorTitle = 'Scan Failed';
+        
+        // Try to extract error code from structured response
+        try {
+          if (typeof error === 'object' && error !== null) {
+            const errObj = error as Record<string, unknown>;
+            errorCode = (errObj.code || errObj.error || '') as string;
+            if (errObj.message) {
+              errorMessage = errObj.message as string;
+            }
+          }
+        } catch (e) {
+          // Parsing failed, use defaults
+        }
+        
+        // Handle tier restriction errors - Upgrade required, NOT a failure
+        if (errorCode === 'scan_blocked_by_tier' || errorCode === 'no_providers_available_for_tier' || errorCode === 'free_any_scan_exhausted') {
+          toast.error('Upgrade required', {
+            description: errorMessage || 'This scan type is available on Pro.',
+            action: {
+              label: 'Upgrade Now',
+              onClick: () => navigate('/settings/billing')
+            },
+            duration: 8000
+          });
+          progressChannel.unsubscribe();
+          setIsScanning(false);
+          return null;
+        }
+        
+        // Handle email verification requirement
+        if (errorCode === 'email_verification_required') {
+          toast.error('Verify your email', {
+            description: 'Please verify your email to use your free advanced scan.',
+            duration: 8000
+          });
+          progressChannel.unsubscribe();
+          setIsScanning(false);
+          return null;
+        }
+        
+        // Track error in Sentry (only for actual failures, not tier restrictions)
         Sentry.captureException(error, {
           tags: {
             category: 'multi_tool_scan',
@@ -154,17 +198,14 @@ export function useMultiToolScan() {
           level: 'error',
         });
 
-        // Provide specific error messages
-        let errorMessage = error.message || 'Failed to start multi-tool scan';
-        let errorTitle = 'Scan Failed';
-
-        if (error.message?.includes('Insufficient credits')) {
+        // Provide specific error messages for known error types
+        if (errorMessage?.includes('Insufficient credits')) {
           errorTitle = 'Insufficient Credits';
           errorMessage = 'You need more credits to run this scan. Please purchase additional credits.';
-        } else if (error.message?.includes('Not a member')) {
+        } else if (errorMessage?.includes('Not a member')) {
           errorTitle = 'Access Denied';
           errorMessage = 'You do not have access to this workspace.';
-        } else if (error.message?.includes('No tools available')) {
+        } else if (errorMessage?.includes('No tools available')) {
           errorTitle = 'Tools Unavailable';
           errorMessage = 'All selected tools are currently unavailable. Please try again later.';
         }
