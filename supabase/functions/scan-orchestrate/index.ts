@@ -557,6 +557,93 @@ serve(async (req) => {
       }
     }
 
+    // =====================================================
+    // TIER VALIDATION - MUST HAPPEN BEFORE SCAN CREATION
+    // =====================================================
+    // Build provider list and filter by tier BEFORE creating any records
+    const planEarly = getPlan(workspace.plan || workspace.subscription_tier);
+    const DEFAULT_PROVIDERS_BY_TIER_EARLY: Record<ScanRequest['type'], string[]> = {
+      email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
+      username: planEarly.allowedProviders.filter((p: string) => 
+        ['maigret', 'sherlock', 'gosearch'].includes(p)
+      ),
+      domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
+      phone: ['fullcontact']
+    };
+
+    let earlyProviders = options.providers && options.providers.length > 0 
+      ? options.providers 
+      : DEFAULT_PROVIDERS_BY_TIER_EARLY[type];
+
+    // Normalize legacy provider names
+    earlyProviders = earlyProviders.map(p => p === 'whatsmyname' ? 'sherlock' : p);
+
+    // Filter to known providers only
+    earlyProviders = earlyProviders.filter(p => IMPLEMENTED_PROVIDERS.has(p));
+
+    // Provider type compatibility
+    const providerTypeSupportEarly: Record<string, Array<ScanRequest['type']>> = {
+      hibp: ['email'], dehashed: ['email', 'username'], holehe: ['email'],
+      ipqs_email: ['email'], abstract_email: ['email'], abstract_email_reputation: ['email'],
+      ipqs_phone: ['phone'], abstract_phone: ['phone'], numverify: ['phone'],
+      twilio_lookup: ['phone'], whatsapp_check: ['phone'], telegram_check: ['phone'],
+      signal_check: ['phone'], phone_osint: ['phone'], truecaller: ['phone'], phone_reputation: ['phone'],
+      shodan: ['domain'], virustotal: ['domain'], securitytrails: ['domain'],
+      urlscan: ['domain'], censys: ['domain'], binaryedge: ['domain'], otx: ['domain'],
+      maigret: ['username'], sherlock: ['username'], whatsmyname: ['username'], gosearch: ['username'],
+      fullcontact: ['email', 'phone', 'domain'], clearbit: ['email', 'domain'],
+      perplexity_osint: ['email', 'username', 'phone'],
+      'apify-social': ['username'], 'apify-osint': ['email', 'username'], 'apify-darkweb': ['email', 'username'],
+    };
+    earlyProviders = earlyProviders.filter(p => providerTypeSupportEarly[p]?.includes(type));
+
+    // CRITICAL: Filter by tier allowance (admins bypass)
+    const { allowed: earlyAllowedProviders, blocked: earlyBlockedProviders } = isAdmin 
+      ? { allowed: earlyProviders, blocked: [] }
+      : filterProvidersForPlan(workspace.plan || workspace.subscription_tier, earlyProviders);
+
+    // =====================================================
+    // EARLY REJECTION: NO PROVIDERS = NO SCAN RECORD
+    // =====================================================
+    if (earlyAllowedProviders.length === 0) {
+      console.error('[orchestrate] TIER BLOCK: No providers available after tier filtering - NOT creating scan record');
+      
+      // Log as scan.blocked (NOT scan.failed since we never created a scan)
+      await logActivity({
+        userId: user.id,
+        action: 'scan.blocked',
+        entityType: 'scan',
+        metadata: {
+          error_code: 'scan_blocked_by_tier',
+          scan_type: type,
+          target_value: value,
+          blocked_providers: earlyBlockedProviders,
+          current_plan: workspace.plan || workspace.subscription_tier || 'free',
+          reason: 'tier_restriction',
+          message: 'Scan blocked - no providers available for current tier'
+        }
+      });
+      
+      // Return 403 - NO scan record created, NO credits consumed
+      return new Response(JSON.stringify({
+        error: 'scan_blocked_by_tier',
+        code: 'scan_blocked_by_tier',
+        blockedProviders: earlyBlockedProviders,
+        currentPlan: workspace.plan || workspace.subscription_tier || 'free',
+        scanType: type,
+        message: type === 'email' 
+          ? 'Email scans require Pro plan. Upgrade to access email intelligence.'
+          : type === 'phone'
+          ? 'Phone scans require Pro plan. Upgrade to access phone intelligence.'
+          : `${type} scans are not available on your current plan.`
+      }), {
+        status: 403,
+        headers: { ...corsHeaders(), "Content-Type": "application/json" }
+      });
+    }
+
+    console.log(`[orchestrate] Tier validation passed: ${earlyAllowedProviders.length} providers allowed`);
+
     // Use provided scanId or generate a new one
     const scanId = providedScanId || crypto.randomUUID();
     console.log(`[orchestrate] Using scanId: ${scanId}`);
@@ -788,23 +875,14 @@ serve(async (req) => {
     }
 
     // ============================================================================
-    // 🚀 ASYNC-FIRST ARCHITECTURE: Build provider list, then execute in background
+    // 🚀 ASYNC-FIRST ARCHITECTURE: Use pre-validated providers from early check
     // ============================================================================
     
-    // Build provider list with tier enforcement (do this BEFORE background execution)
+    // Providers were already validated in the early tier check (lines 564-640)
+    // At this point, earlyAllowedProviders is guaranteed to have at least 1 provider
+    let providers = [...earlyAllowedProviders];
+    const blocked = [...earlyBlockedProviders];
     const plan = getPlan(workspace.plan || workspace.subscription_tier);
-    const DEFAULT_PROVIDERS_BY_TIER: Record<ScanRequest['type'], string[]> = {
-      email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
-      username: plan.allowedProviders.filter((p: string) => 
-        ['maigret', 'sherlock', 'gosearch'].includes(p)
-      ),
-      domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],
-      phone: ['fullcontact']
-    };
-
-    let providers = options.providers && options.providers.length > 0 
-      ? options.providers 
-      : DEFAULT_PROVIDERS_BY_TIER[type];
 
     // Enforce max providers per scan guardrail (unless admin)
     if (!isAdmin) {
@@ -815,128 +893,12 @@ serve(async (req) => {
       }
     }
 
-    // Normalize legacy provider names (whatsmyname -> sherlock)
-    providers = providers.map(p => p === 'whatsmyname' ? 'sherlock' : p);
-    console.log('[orchestrate] Providers after normalization:', providers);
+    console.log('[orchestrate] Using pre-validated providers:', providers);
+    console.log('[orchestrate] Blocked by tier:', blocked);
 
-    // Split into known and unknown providers using the registry
-    const knownProviders = providers.filter(p => IMPLEMENTED_PROVIDERS.has(p));
-    const unknownProviders = providers.filter(p => !IMPLEMENTED_PROVIDERS.has(p));
-    
-    if (unknownProviders.length > 0) {
-      console.warn('[orchestrate] Unknown providers skipped:', unknownProviders);
-    }
-    
-    // Use only known providers for execution
-    providers = knownProviders;
-
-    // Enforce provider compatibility with scan type
-    const providerTypeSupport: Record<string, Array<ScanRequest['type']>> = {
-      // Email providers
-      hibp: ['email'],
-      dehashed: ['email', 'username'],
-      holehe: ['email'],
-      ipqs_email: ['email'],
-      abstract_email: ['email'],
-      abstract_email_reputation: ['email'],
-      
-      // Phone providers
-      ipqs_phone: ['phone'],
-      abstract_phone: ['phone'],
-      numverify: ['phone'],
-      twilio_lookup: ['phone'],
-      whatsapp_check: ['phone'],
-      telegram_check: ['phone'],
-      signal_check: ['phone'],
-      phone_osint: ['phone'],
-      truecaller: ['phone'],
-      phone_reputation: ['phone'],
-      
-      // Domain providers
-      shodan: ['domain'],
-      virustotal: ['domain'],
-      securitytrails: ['domain'],
-      urlscan: ['domain'],
-      censys: ['domain'],
-      binaryedge: ['domain'],
-      otx: ['domain'],
-      
-      // Username providers
-      maigret: ['username'],
-      sherlock: ['username'],
-      whatsmyname: ['username'], // Legacy alias
-      gosearch: ['username'],
-      
-      // Multi-type providers
-      fullcontact: ['email', 'phone', 'domain'],
-      clearbit: ['email', 'domain'],
-      perplexity_osint: ['email', 'username', 'phone'],
-      'apify-social': ['username'],
-      'apify-osint': ['email', 'username'],
-      'apify-darkweb': ['email', 'username'],
-    };
-    
-    const incompatible = providers.filter(p => !(providerTypeSupport[p]?.includes(type)));
-    if (incompatible.length) {
-      console.warn('[orchestrate] Dropping type-incompatible providers:', incompatible);
-    }
-    providers = providers.filter(p => providerTypeSupport[p]?.includes(type));
-    console.log('[orchestrate] Providers after type compatibility filter:', providers);
-
-    // CRITICAL: Filter requested providers by tier allowance UNLESS user is admin
-    const { allowed: allowedProviders, blocked } = isAdmin 
-      ? { allowed: providers, blocked: [] } // Admins get ALL providers
-      : filterProvidersForPlan(
-          workspace.plan || workspace.subscription_tier,
-          providers
-        );
-
-    providers = allowedProviders;
-
-    // Ensure we have at least one provider after tier filtering
-    if (providers.length === 0) {
-      console.error('[orchestrate] Critical: No providers available after tier filtering!');
-      
-      // Mark scan as failed BEFORE returning error to prevent stuck "running" scans
-      await supabaseService.from('scans').update({
-        status: 'failed',
-        completed_at: new Date().toISOString()
-      }).eq('id', scanId);
-      
-      console.log(`[orchestrate] Marked scan ${scanId} as failed due to no available providers`);
-      
-      // Log the specific error to activity logs for debugging
-      await logActivity({
-        userId: user.id,
-        action: 'scan.failed',
-        entityType: 'scan',
-        entityId: scanId,
-        metadata: {
-          error_code: 'no_providers_available_for_tier',
-          scan_type: type,
-          target_value: value,
-          blocked_providers: blocked,
-          current_plan: workspace.plan || workspace.subscription_tier || 'free',
-          message: 'Scan blocked due to tier restrictions - no available providers'
-        }
-      });
-      
-      const errorData = {
-        error: 'no_providers_available_for_tier',
-        code: 'no_providers_available_for_tier',
-        blockedProviders: blocked,
-        allowedProviders: allowedProviders,
-        currentPlan: workspace.plan || workspace.subscription_tier || 'free',
-        scanType: type,
-        message: type === 'email' 
-          ? 'Email scanning requires Pro or Business plan. Upgrade to access email intelligence tools.'
-          : 'The selected providers are not available on your current plan. Please select an allowed provider or upgrade your plan.'
-      };
-      return new Response(JSON.stringify(errorData), {
-        status: 400,
-        headers: { ...corsHeaders(), "Content-Type": "application/json" }
-      });
-    }
+    // NOTE: We no longer need to check providers.length === 0 here because
+    // that check happened BEFORE scan creation in the early tier validation block.
+    // If we reach this point, providers.length > 0 is guaranteed.
 
     console.log(`[orchestrate] ✅ Scan ${scanId} created with ${providers.length} providers - returning immediately to client`);
     
