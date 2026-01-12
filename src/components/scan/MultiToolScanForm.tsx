@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +10,7 @@ import { useMultiToolScan } from '@/hooks/useMultiToolScan';
 import { useUserPersona } from '@/hooks/useUserPersona';
 import { useNavigate } from 'react-router-dom';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { isScanTypeAvailable } from '@/hooks/useAdvancedScan';
 
 import { useWorkerStatus } from '@/hooks/useWorkerStatus';
 import { supabase } from '@/integrations/supabase/client';
@@ -73,6 +74,13 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
   const isFreeWorkspace = (workspace?.subscription_tier || 'free').toLowerCase() === 'free';
   const freeAnyScanCredits = (workspace as any)?.free_any_scan_credits || 0;
   const hasAnyScanCredit = freeAnyScanCredits > 0;
+
+  // Check scan type availability using the exported helper
+  const scanTypeAvailability = useMemo(() => {
+    return isScanTypeAvailable(targetType as 'email' | 'username' | 'domain' | 'phone', workspace?.subscription_tier, freeAnyScanCredits);
+  }, [targetType, workspace?.subscription_tier, freeAnyScanCredits]);
+  
+  const isScanBlocked = !scanTypeAvailability.available;
 
   // Check if user needs verification for second scan
   const requiresVerificationForScan = !verificationLoading && !isVerified && userScanCount >= 1;
@@ -197,6 +205,23 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
       return;
     }
 
+    // PRE-SCAN: Check tier restrictions BEFORE attempting scan
+    if (isScanBlocked) {
+      toast.error('Upgrade required', {
+        description: scanTypeAvailability.reason || `${targetType} scans are not available on your current plan.`,
+        action: {
+          label: 'Upgrade Now',
+          onClick: () => navigate('/settings/billing')
+        },
+        duration: 8000
+      });
+      analytics.trackEvent('scan_blocked_tier_restriction', { 
+        scan_type: targetType, 
+        reason: scanTypeAvailability.reason 
+      });
+      return;
+    }
+
     if (!target.trim()) {
       toast.error('Please enter a target');
       return;
@@ -241,6 +266,20 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
       }
     } catch (error: any) {
       console.error('Scan start error:', error);
+      
+      // Handle tier restriction errors with upgrade prompt
+      const errorCode = error?.code || '';
+      if (errorCode === 'no_providers_available_for_tier' || errorCode === 'free_any_scan_exhausted') {
+        toast.error('Upgrade required', {
+          description: error.message || `${targetType} scans require Pro plan.`,
+          action: {
+            label: 'Upgrade Now',
+            onClick: () => navigate('/settings/billing')
+          },
+          duration: 8000
+        });
+        return;
+      }
       
       // Handle specific error cases
       if (error.message?.includes('insufficient credits')) {
@@ -621,10 +660,32 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
         </Card>
       )}
 
+      {/* Tier restriction inline message */}
+      {isScanBlocked && (
+        <Alert variant="destructive" className="bg-destructive/10 border-destructive/30">
+          <Lock className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <div>
+              <strong>Upgrade required</strong>
+              <p className="text-sm opacity-90">{scanTypeAvailability.reason}</p>
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/settings/billing')}
+              className="ml-4 border-destructive/50 hover:bg-destructive/20"
+            >
+              <Crown className="h-3 w-3 mr-1" />
+              Upgrade
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Start Button */}
       <Button
         onClick={handleStartScan}
-        disabled={isScanning || !target.trim() || selectedTools.length === 0}
+        disabled={isScanning || !target.trim() || selectedTools.length === 0 || isScanBlocked}
         className="w-full"
         size="lg"
       >
@@ -632,6 +693,11 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Scanning...
+          </>
+        ) : isScanBlocked ? (
+          <>
+            <Lock className="mr-2 h-4 w-4" />
+            Upgrade to Scan
           </>
         ) : (
           <>
