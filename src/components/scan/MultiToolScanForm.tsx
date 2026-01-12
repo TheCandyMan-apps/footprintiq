@@ -397,74 +397,89 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
           />
         </div>
 
-        {/* Free tier credit indicator */}
-        {isFreeWorkspace && (
-          <Alert className={hasAnyScanCredit ? 'bg-green-500/10 border-green-500/30' : 'bg-amber-500/10 border-amber-500/30'}>
-            {hasAnyScanCredit ? (
-              <Gift className="h-4 w-4 text-green-500" />
-            ) : (
-              <Info className="h-4 w-4 text-amber-500" />
-            )}
-            <AlertDescription className="flex items-center justify-between">
-              <span>
-                {hasAnyScanCredit ? (
-                  <>
-                    <strong>You have 1 free advanced scan</strong> (email/phone/name) available.
-                  </>
-                ) : (
-                  <>
-                    Email/phone/name scans require Pro plan. <strong>Username scans remain free.</strong>
-                  </>
-                )}
-              </span>
-              {!hasAnyScanCredit && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => navigate('/settings/billing')}
-                  className="ml-2"
-                >
-                  <Crown className="h-3 w-3 mr-1" />
-                  Upgrade
-                </Button>
+        {/* Scan Type Selector */}
+        <div className="space-y-3">
+          <Label>Scan Type</Label>
+          <div className="grid grid-cols-4 gap-2">
+            <TooltipProvider delayDuration={100}>
+              {(['username', 'email', 'phone', 'name'] as const).map((type) => {
+                // Non-username types require Pro or free credit
+                const isAdvancedType = type !== 'username';
+                const isTypeDisabled = isFreeWorkspace && isAdvancedType && !hasAnyScanCredit;
+                const isSelected = targetType === type || (type === 'phone' && targetType === 'ip') || (type === 'name' && targetType === 'domain');
+                
+                // Map display types to internal types
+                const internalType = type === 'phone' ? 'ip' : type === 'name' ? 'domain' : type;
+                
+                return (
+                  <Tooltip key={type}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={isSelected ? 'default' : 'outline'}
+                        onClick={() => {
+                          if (isTypeDisabled) {
+                            // Show upgrade prompt on click when disabled
+                            toast.error('Upgrade required', {
+                              description: hasAnyScanCredit 
+                                ? `Use your free advanced scan for ${type} searches.`
+                                : `${type.charAt(0).toUpperCase() + type.slice(1)} scans require Pro plan.`,
+                              action: {
+                                label: 'Upgrade Now',
+                                onClick: () => navigate('/settings/billing')
+                              },
+                              duration: 6000
+                            });
+                          } else {
+                            setTargetType(internalType as 'username' | 'email' | 'ip' | 'domain');
+                            setSelectedTools([]);
+                          }
+                        }}
+                        disabled={isScanning}
+                        className={`capitalize relative ${isTypeDisabled ? 'opacity-70 hover:opacity-90' : ''}`}
+                      >
+                        {type}
+                        {isTypeDisabled && (
+                          <Badge 
+                            variant="secondary" 
+                            className="absolute -top-2 -right-2 text-[10px] px-1.5 py-0 h-4 bg-primary text-primary-foreground"
+                          >
+                            Pro
+                          </Badge>
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    {isTypeDisabled && (
+                      <TooltipContent side="bottom" className="max-w-[200px] text-center">
+                        <p className="text-xs">
+                          {hasAnyScanCredit 
+                            ? `Requires Pro plan, or use your 1 free advanced scan.`
+                            : `${type.charAt(0).toUpperCase() + type.slice(1)} scans require Pro plan.`
+                          }
+                        </p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                );
+              })}
+            </TooltipProvider>
+          </div>
+          
+          {/* Inline helper text below selector */}
+          {isFreeWorkspace && (
+            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+              {hasAnyScanCredit ? (
+                <>
+                  <Gift className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                  <span>You can run <strong>1 advanced scan free</strong>. After that, upgrade to continue.</span>
+                </>
+              ) : (
+                <>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span>Advanced scans require Pro. <strong>Username scans remain free.</strong></span>
+                </>
               )}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        <div className="grid grid-cols-4 gap-2">
-          <TooltipProvider>
-            {(['username', 'email', 'ip', 'domain'] as const).map((type) => {
-              // Disable non-username types for free users without credit
-              const isTypeDisabled = isFreeWorkspace && !hasAnyScanCredit && type !== 'username';
-              
-              return (
-                <Tooltip key={type}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={targetType === type ? 'default' : 'outline'}
-                      onClick={() => {
-                        if (!isTypeDisabled) {
-                          setTargetType(type);
-                          setSelectedTools([]);
-                        }
-                      }}
-                      disabled={isScanning || isTypeDisabled}
-                      className={`capitalize ${isTypeDisabled ? 'opacity-50' : ''}`}
-                    >
-                      {type}
-                      {isTypeDisabled && <Lock className="h-3 w-3 ml-1" />}
-                    </Button>
-                  </TooltipTrigger>
-                  {isTypeDisabled && (
-                    <TooltipContent>
-                      <p>Upgrade to Pro for {type} scans</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              );
-            })}
-          </TooltipProvider>
+            </p>
+          )}
         </div>
       </div>
 
