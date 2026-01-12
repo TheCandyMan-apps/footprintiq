@@ -9630,9 +9630,63 @@ export type Database = {
         Args: { _reason?: string; _user_id: string }
         Returns: Json
       }
+      admin_get_all_profiles: {
+        Args: never
+        Returns: {
+          anon_mode_enabled: boolean | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          persona: string | null
+          status: string
+          status_changed_at: string | null
+          status_changed_by: string | null
+          status_reason: string | null
+          updated_at: string
+          user_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_get_profile: {
+        Args: { target_user_id: string }
+        Returns: {
+          anon_mode_enabled: boolean | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          persona: string | null
+          status: string
+          status_changed_at: string | null
+          status_changed_by: string | null
+          status_reason: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       admin_grant_credits: {
         Args: { _amount: number; _description: string; _workspace_id: string }
         Returns: Json
+      }
+      can_access_support_message: {
+        Args: { message_is_internal: boolean; message_ticket_id: string }
+        Returns: boolean
+      }
+      can_access_support_ticket: {
+        Args: { ticket_id: string }
+        Returns: boolean
       }
       check_and_flag_rate_abuse: {
         Args: { _user_id: string }

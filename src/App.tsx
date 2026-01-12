@@ -210,7 +210,7 @@ function AppContent() {
     <ActiveScanProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <BrowserRouter>
         <RouterContent />
         <FloatingProgressTracker />
       </BrowserRouter>
