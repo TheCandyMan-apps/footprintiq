@@ -800,12 +800,32 @@ serve(async (req) => {
       
       console.log(`[orchestrate] Marked scan ${scanId} as failed due to no available providers`);
       
+      // Log the specific error to activity logs for debugging
+      await logActivity({
+        userId: user.id,
+        action: 'scan.failed',
+        entityType: 'scan',
+        entityId: scanId,
+        metadata: {
+          error_code: 'no_providers_available_for_tier',
+          scan_type: type,
+          target_value: value,
+          blocked_providers: blocked,
+          current_plan: workspace.plan || workspace.subscription_tier || 'free',
+          message: 'Scan blocked due to tier restrictions - no available providers'
+        }
+      });
+      
       const errorData = {
         error: 'no_providers_available_for_tier',
+        code: 'no_providers_available_for_tier',
         blockedProviders: blocked,
         allowedProviders: allowedProviders,
         currentPlan: workspace.plan || workspace.subscription_tier || 'free',
-        message: 'The selected providers are not available on your current plan. Please select an allowed provider or upgrade your plan.'
+        scanType: type,
+        message: type === 'email' 
+          ? 'Email scanning requires Pro or Business plan. Upgrade to access email intelligence tools.'
+          : 'The selected providers are not available on your current plan. Please select an allowed provider or upgrade your plan.'
       };
       return new Response(JSON.stringify(errorData), {
         status: 400,
