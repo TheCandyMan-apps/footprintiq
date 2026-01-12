@@ -27,23 +27,24 @@ function buildProvidersList(
   customProviders?: string[]
 ): string[] {
   const plan = getPlan(workspacePlan);
-  const allowedProviders = plan.allowedProviders;
+  const allowedProviders = plan.allowedProviders || [];
   
   let providers: string[] = [];
   
-  if (type === 'username') {
-    // Start with tier-allowed providers only
-    if (allowedProviders.includes('maigret')) providers.push('maigret');
-    if (allowedProviders.includes('sherlock')) {
-      providers.push('sherlock');
-    }
-    if (allowedProviders.includes('gosearch')) providers.push('gosearch');
-  }
+  // Define default providers per scan type - only add if allowed by plan
+  const defaultProvidersByType: Record<string, string[]> = {
+    username: ['maigret', 'sherlock', 'gosearch'],
+    email: ['holehe', 'hibp', 'dehashed'],
+    phone: ['phoneinfoga', 'truecaller', 'numverify'],
+    domain: ['shodan', 'virustotal', 'securitytrails'],
+  };
   
-  if (type === 'email') {
-    // Only add holehe if the plan allows it
-    if (allowedProviders.includes('holehe')) {
-      providers.push('holehe');
+  const typeProviders = defaultProvidersByType[type] || [];
+  
+  // Only add providers that are allowed by the plan
+  for (const provider of typeProviders) {
+    if (allowedProviders.includes(provider)) {
+      providers.push(provider);
     }
   }
 
@@ -56,6 +57,49 @@ function buildProvidersList(
   }
 
   return providers;
+}
+
+// Helper to check if a scan type is available for a workspace
+export function isScanTypeAvailable(
+  type: 'email' | 'username' | 'domain' | 'phone',
+  workspacePlan: string | null | undefined,
+  freeAnyScanCredits: number = 0
+): { available: boolean; reason?: string; blockedProviders?: string[] } {
+  const providers = buildProvidersList(type, workspacePlan);
+  const normalizedPlan = (workspacePlan || 'free').toLowerCase();
+  const isFree = normalizedPlan === 'free';
+  
+  // Username scans are always available
+  if (type === 'username') {
+    return { available: providers.length > 0 };
+  }
+  
+  // For non-username scans on free tier, check credits
+  if (isFree) {
+    if (freeAnyScanCredits > 0) {
+      return { available: true };
+    }
+    
+    // No credits left - blocked
+    const blockedProviders = type === 'email' ? ['holehe'] : 
+                             type === 'phone' ? ['phoneinfoga'] : [];
+    return {
+      available: false,
+      reason: `${type.charAt(0).toUpperCase() + type.slice(1)} scans require Pro plan. Your free advanced scan has been used.`,
+      blockedProviders
+    };
+  }
+  
+  // Check if plan has any providers for this type
+  if (providers.length === 0) {
+    return {
+      available: false,
+      reason: `No providers available for ${type} scans on your current plan.`,
+      blockedProviders: []
+    };
+  }
+  
+  return { available: true };
 }
 
 export interface AdvancedScanOptions {
@@ -160,30 +204,27 @@ export function useAdvancedScan() {
         // Use traditional scan-orchestrate for email/phone scans
         console.log(`[useAdvancedScan] Using scan-orchestrate for ${type} scan`);
         
-        // PRE-CHECK 1: Validate providers before making API call
-        const providersForScan = buildProvidersList(type, workspace?.subscription_tier, options.providers);
-        if (providersForScan.length === 0) {
+        // PRE-CHECK: Combined tier + credit validation
+        const freeCredits = ((workspace as any)?.free_any_scan_credits || 0);
+        const availability = isScanTypeAvailable(type, workspace?.subscription_tier, freeCredits);
+        
+        if (!availability.available) {
           throw new TierRestrictionError(
-            type === 'email' 
-              ? 'Email scanning requires Pro or Business plan. Upgrade to access email intelligence tools.'
-              : 'No providers available for this scan type on your current plan.',
+            availability.reason || 'This scan type is not available on your current plan.',
             type,
-            type === 'email' ? ['holehe'] : []
+            availability.blockedProviders || [],
+            freeCredits <= 0 ? 'free_any_scan_exhausted' : 'no_providers_available_for_tier'
           );
         }
         
-        // PRE-CHECK 2: Free tier onboarding credit check for non-username scans
-        // Note: We're in the else branch of type === 'username', so this is always a non-username scan
-        const workspacePlan = (workspace?.subscription_tier || 'free').toLowerCase();
-        const isFreeWorkspace = workspacePlan === 'free';
-        const hasAnyScanCredit = ((workspace as any)?.free_any_scan_credits || 0) > 0;
-        
-        if (isFreeWorkspace && !hasAnyScanCredit) {
+        // Build providers list for the API call
+        const providersForScan = buildProvidersList(type, workspace?.subscription_tier, options.providers);
+        if (providersForScan.length === 0) {
           throw new TierRestrictionError(
-            'Your free advanced scan has been used. Email/phone/name scans require Pro plan. Username scans remain free.',
+            `No providers available for ${type} scans on your current plan. Upgrade to Pro for access.`,
             type,
             [],
-            'free_any_scan_exhausted'
+            'no_providers_available_for_tier'
           );
         }
         
