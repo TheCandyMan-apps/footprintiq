@@ -343,7 +343,7 @@ serve(async (req) => {
     // Get workspace with quota info
     const { data: workspace, error: workspaceError } = await supabaseService
       .from('workspaces')
-      .select('id, subscription_tier, settings, plan, scans_used_monthly, scan_limit_monthly')
+      .select('id, subscription_tier, settings, plan, scans_used_monthly, scan_limit_monthly, free_any_scan_credits')
       .eq('id', workspaceId)
       .single();
 
@@ -461,6 +461,46 @@ serve(async (req) => {
       console.log(`[orchestrate] Credits check passed: required=${creditsRequired}, balance=${currentBalance}`);
     } else {
       console.log(`[orchestrate] ${isAdmin ? 'Admin' : 'Premium'} plan detected, bypassing credit check`);
+    }
+
+    // =====================================================
+    // FREE TIER ONBOARDING CREDIT CHECK
+    // =====================================================
+    const isFreeWorkspace = userTier === 'free';
+    const isNonUsernameScan = type !== 'username';
+    const freeAnyScanCredits = (workspace as any).free_any_scan_credits || 0;
+    
+    // Free workspaces attempting non-username scans need credit OR we block them
+    if (isFreeWorkspace && isNonUsernameScan && !isAdmin) {
+      if (freeAnyScanCredits <= 0) {
+        console.log(`[orchestrate] Free any-scan credit exhausted for workspace ${workspaceId}`);
+        
+        // Log the blocked scan
+        await logActivity({
+          userId: user.id,
+          action: 'scan.blocked',
+          entityType: 'scan',
+          metadata: {
+            error_code: 'free_any_scan_exhausted',
+            scan_type: type,
+            target_value: value,
+            plan: 'free',
+            message: 'Free any-scan credit exhausted. Username scans remain free.'
+          }
+        });
+        
+        return new Response(JSON.stringify({
+          error: 'free_any_scan_exhausted',
+          code: 'free_any_scan_exhausted',
+          message: 'Your free advanced scan credit has been used. Email/phone/name scans require Pro plan. Username scans remain free.',
+          scanType: type
+        }), {
+          status: 403,
+          headers: { ...corsHeaders(), "Content-Type": "application/json" }
+        });
+      }
+      
+      console.log(`[orchestrate] Free any-scan credit available: ${freeAnyScanCredits}`);
     }
 
     // Check consent for sensitive sources
@@ -682,6 +722,39 @@ serve(async (req) => {
       console.log(`[orchestrate] Incremented scan counter: ${scansUsed + 1}/${scanLimit || 'unlimited'}`);
     }
 
+    // =====================================================
+    // DECREMENT FREE ANY-SCAN CREDIT (atomic, idempotent)
+    // =====================================================
+    if (isFreeWorkspace && isNonUsernameScan && freeAnyScanCredits > 0 && !isAdmin) {
+      // Use RPC for atomic decrement with idempotency check
+      const { data: decrementResult, error: decrementError } = await supabaseService
+        .rpc('use_free_any_scan_credit', {
+          _workspace_id: workspaceId,
+          _scan_id: scanId
+        });
+      
+      if (decrementError) {
+        console.error('[orchestrate] Failed to decrement free any-scan credit:', decrementError);
+        // Don't fail the scan, just log
+      } else if (decrementResult) {
+        console.log(`[orchestrate] Decremented free any-scan credit for workspace ${workspaceId}`);
+        
+        await logActivity({
+          userId: user.id,
+          action: 'scan.credit_used',
+          entityType: 'scan',
+          entityId: scanId,
+          metadata: {
+            credit_type: 'free_any_scan',
+            remaining_credits: freeAnyScanCredits - 1,
+            scan_type: type
+          }
+        });
+      } else {
+        console.log(`[orchestrate] Free any-scan credit already used for scan ${scanId} (idempotent)`);
+      }
+    }
+
     // ============================================================================
     // 🚀 ASYNC-FIRST ARCHITECTURE: Build provider list, then execute in background
     // ============================================================================
@@ -690,7 +763,7 @@ serve(async (req) => {
     const plan = getPlan(workspace.plan || workspace.subscription_tier);
     const DEFAULT_PROVIDERS_BY_TIER: Record<ScanRequest['type'], string[]> = {
       email: ['hibp', 'dehashed', 'clearbit', 'fullcontact'],
-      username: plan.allowedProviders.filter(p => 
+      username: plan.allowedProviders.filter((p: string) => 
         ['maigret', 'sherlock', 'gosearch'].includes(p)
       ),
       domain: ['urlscan', 'securitytrails', 'shodan', 'virustotal'],

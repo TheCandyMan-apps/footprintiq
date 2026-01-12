@@ -14,6 +14,7 @@ type Workspace = {
   settings: any;
   created_at: string;
   updated_at: string;
+  free_any_scan_credits?: number; // Free-tier onboarding credit
 };
 
 type WorkspaceRole = 'owner' | 'admin' | 'analyst' | 'viewer';
@@ -77,7 +78,7 @@ export function useWorkspace(): WorkspaceContext {
       if (memberWorkspaceIds.length > 0) {
         const { data: wsByMembership, error: memberWsError } = await supabase
           .from('workspaces' as any)
-          .select('*')
+          .select('*, free_any_scan_credits')
           .in('id', memberWorkspaceIds);
         if (memberWsError) throw memberWsError;
         memberWorkspaces = (wsByMembership || []) as unknown as Workspace[];
@@ -86,7 +87,7 @@ export function useWorkspace(): WorkspaceContext {
       // Also fetch workspaces owned by the user (owner access is allowed by RLS)
       const { data: ownedWorkspaces, error: ownedError } = await supabase
         .from('workspaces' as any)
-        .select('*')
+        .select('*, free_any_scan_credits')
         .eq('owner_id', user.id);
       if (ownedError) {
         console.warn('Failed to fetch owned workspaces:', ownedError);
