@@ -31,15 +31,21 @@ export function TourHighlight({
       return;
     }
 
-    const rect = target.getBoundingClientRect();
-    setTargetRect(rect);
+    // Use requestAnimationFrame to avoid forced reflow
+    const rafId = requestAnimationFrame(() => {
+      const rect = target.getBoundingClientRect();
+      setTargetRect(rect);
+    });
 
     // Scroll target into view if needed
     target.scrollIntoView({ behavior: "smooth", block: "center" });
 
     // Add highlight class
     target.classList.add("tour-highlight");
-    return () => target.classList.remove("tour-highlight");
+    return () => {
+      target.classList.remove("tour-highlight");
+      cancelAnimationFrame(rafId);
+    };
   }, [step.sel]);
 
   if (!targetRect) {
