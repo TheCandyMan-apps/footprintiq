@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === 'development' && componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: null, // Defer SW registration to avoid blocking critical path
       includeAssets: ['favicon.ico', 'robots.txt'],
       manifest: {
         name: 'FootprintIQ - OSINT Intelligence Platform',

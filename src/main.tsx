@@ -19,6 +19,18 @@ if (import.meta.env.DEV) {
   });
 }
 
+// Defer service worker registration to avoid blocking critical path
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    // Wait for page to be fully interactive before registering SW
+    setTimeout(() => {
+      navigator.serviceWorker.register('/registerSW.js').catch(() => {
+        // SW registration failed silently - not critical for app functionality
+      });
+    }, 3000);
+  });
+}
+
 const helmetContext = {};
 
 createRoot(document.getElementById("root")!).render(
