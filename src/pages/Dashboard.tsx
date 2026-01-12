@@ -55,7 +55,7 @@ import { TOURS } from '@/lib/tour/steps';
 import { useWelcomeEmail } from '@/hooks/useWelcomeEmail';
 import { Play, Network, AlertTriangle, CheckCircle2, Clock, Eye, FileSearch, Zap, Shield, FileStack, TrendingUp, Activity, Users, Target, Webhook, Archive, X } from 'lucide-react';
 import { format } from 'date-fns';
-import { BarChart, Bar, ResponsiveContainer, LineChart, Line, XAxis, YAxis } from 'recharts';
+import { DashboardBarChart, DashboardLineChart } from '@/components/dashboard/DashboardCharts';
 import type { Database } from '@/integrations/supabase/types';
 type Scan = Database['public']['Tables']['scans']['Row'];
 const Dashboard = () => {
