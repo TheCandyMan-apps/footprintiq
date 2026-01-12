@@ -12,10 +12,10 @@ class TierRestrictionError extends Error {
   scanType: string;
   blockedProviders: string[];
   
-  constructor(message: string, scanType: string, blockedProviders: string[] = []) {
+  constructor(message: string, scanType: string, blockedProviders: string[] = [], code: string = 'no_providers_available_for_tier') {
     super(message);
     this.name = 'TierRestrictionError';
-    this.code = 'no_providers_available_for_tier';
+    this.code = code;
     this.scanType = scanType;
     this.blockedProviders = blockedProviders;
   }
@@ -160,7 +160,7 @@ export function useAdvancedScan() {
         // Use traditional scan-orchestrate for email/phone scans
         console.log(`[useAdvancedScan] Using scan-orchestrate for ${type} scan`);
         
-        // PRE-CHECK: Validate providers before making API call
+        // PRE-CHECK 1: Validate providers before making API call
         const providersForScan = buildProvidersList(type, workspace?.subscription_tier, options.providers);
         if (providersForScan.length === 0) {
           throw new TierRestrictionError(
@@ -169,6 +169,21 @@ export function useAdvancedScan() {
               : 'No providers available for this scan type on your current plan.',
             type,
             type === 'email' ? ['holehe'] : []
+          );
+        }
+        
+        // PRE-CHECK 2: Free tier onboarding credit check for non-username scans
+        // Note: We're in the else branch of type === 'username', so this is always a non-username scan
+        const workspacePlan = (workspace?.subscription_tier || 'free').toLowerCase();
+        const isFreeWorkspace = workspacePlan === 'free';
+        const hasAnyScanCredit = ((workspace as any)?.free_any_scan_credits || 0) > 0;
+        
+        if (isFreeWorkspace && !hasAnyScanCredit) {
+          throw new TierRestrictionError(
+            'Your free advanced scan has been used. Email/phone/name scans require Pro plan. Username scans remain free.',
+            type,
+            [],
+            'free_any_scan_exhausted'
           );
         }
         
@@ -317,14 +332,23 @@ export function useAdvancedScan() {
       console.error('Advanced scan error:', error);
       
       // Handle tier restriction errors with upgrade prompt
+      const errorCode = (error as any)?.code || '';
       if (error instanceof TierRestrictionError || 
-          (error as any)?.code === 'no_providers_available_for_tier') {
+          errorCode === 'no_providers_available_for_tier' ||
+          errorCode === 'free_any_scan_exhausted') {
+        
+        const isFreeAnyScanExhausted = errorCode === 'free_any_scan_exhausted';
+        
         toast.error(
-          (error as TierRestrictionError).scanType === 'email' 
-            ? 'Email scanning requires Pro plan'
-            : 'Upgrade required for this scan type',
+          isFreeAnyScanExhausted 
+            ? 'Free advanced scan credit used'
+            : (error as TierRestrictionError).scanType === 'email' 
+              ? 'Email scanning requires Pro plan'
+              : 'Upgrade required for this scan type',
           {
-            description: (error as Error).message,
+            description: isFreeAnyScanExhausted
+              ? 'Email/phone/name scans require Pro. Username scans remain free.'
+              : (error as Error).message,
             action: {
               label: 'Upgrade Now',
               onClick: () => window.location.href = '/settings/billing'

@@ -7244,6 +7244,7 @@ export type Database = {
           scan_type: Database["public"]["Enums"]["scan_type"]
           status: string | null
           total_sources_found: number | null
+          used_free_any_credit: boolean | null
           user_id: string
           username: string | null
           workspace_id: string | null
@@ -7270,6 +7271,7 @@ export type Database = {
           scan_type: Database["public"]["Enums"]["scan_type"]
           status?: string | null
           total_sources_found?: number | null
+          used_free_any_credit?: boolean | null
           user_id: string
           username?: string | null
           workspace_id?: string | null
@@ -7296,6 +7298,7 @@ export type Database = {
           scan_type?: Database["public"]["Enums"]["scan_type"]
           status?: string | null
           total_sources_found?: number | null
+          used_free_any_credit?: boolean | null
           user_id?: string
           username?: string | null
           workspace_id?: string | null
@@ -9546,6 +9549,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          free_any_scan_credits: number | null
           id: string
           name: string
           owner_id: string
@@ -9567,6 +9571,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          free_any_scan_credits?: number | null
           id?: string
           name: string
           owner_id: string
@@ -9588,6 +9593,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          free_any_scan_credits?: number | null
           id?: string
           name?: string
           owner_id?: string
@@ -9862,6 +9868,10 @@ export type Database = {
           _user_id: string
         }
         Returns: Json
+      }
+      use_free_any_scan_credit: {
+        Args: { _scan_id: string; _workspace_id: string }
+        Returns: boolean
       }
       user_is_workspace_member: {
         Args: { _user_id: string; _workspace_id: string }

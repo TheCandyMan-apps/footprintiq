@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMultiToolScan } from '@/hooks/useMultiToolScan';
 import { useUserPersona } from '@/hooks/useUserPersona';
 import { useNavigate } from 'react-router-dom';
+import { useWorkspace } from '@/hooks/useWorkspace';
 
 import { useWorkerStatus } from '@/hooks/useWorkerStatus';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,11 +24,19 @@ import {
   CheckCircle2,
   XCircle,
   Info,
-  Lightbulb
+  Lightbulb,
+  Lock,
+  Gift
 } from 'lucide-react';
 import { useEmailVerification } from '@/hooks/useEmailVerification';
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
 import { analytics } from '@/lib/analytics';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface ToolConfig {
   id: string;
@@ -56,8 +65,14 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
   const { isStandard } = useUserPersona();
   const { isScanning, startMultiToolScan, progress } = useMultiToolScan();
   const { isVerified, isLoading: verificationLoading } = useEmailVerification();
+  const { workspace } = useWorkspace();
   
   const navigate = useNavigate();
+
+  // Free tier onboarding credit check
+  const isFreeWorkspace = (workspace?.subscription_tier || 'free').toLowerCase() === 'free';
+  const freeAnyScanCredits = (workspace as any)?.free_any_scan_credits || 0;
+  const hasAnyScanCredit = freeAnyScanCredits > 0;
 
   // Check if user needs verification for second scan
   const requiresVerificationForScan = !verificationLoading && !isVerified && userScanCount >= 1;
@@ -343,21 +358,74 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
           />
         </div>
 
+        {/* Free tier credit indicator */}
+        {isFreeWorkspace && (
+          <Alert className={hasAnyScanCredit ? 'bg-green-500/10 border-green-500/30' : 'bg-amber-500/10 border-amber-500/30'}>
+            {hasAnyScanCredit ? (
+              <Gift className="h-4 w-4 text-green-500" />
+            ) : (
+              <Info className="h-4 w-4 text-amber-500" />
+            )}
+            <AlertDescription className="flex items-center justify-between">
+              <span>
+                {hasAnyScanCredit ? (
+                  <>
+                    <strong>You have 1 free advanced scan</strong> (email/phone/name) available.
+                  </>
+                ) : (
+                  <>
+                    Email/phone/name scans require Pro plan. <strong>Username scans remain free.</strong>
+                  </>
+                )}
+              </span>
+              {!hasAnyScanCredit && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/settings/billing')}
+                  className="ml-2"
+                >
+                  <Crown className="h-3 w-3 mr-1" />
+                  Upgrade
+                </Button>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="grid grid-cols-4 gap-2">
-          {(['username', 'email', 'ip', 'domain'] as const).map((type) => (
-            <Button
-              key={type}
-              variant={targetType === type ? 'default' : 'outline'}
-              onClick={() => {
-                setTargetType(type);
-                setSelectedTools([]);
-              }}
-              disabled={isScanning}
-              className="capitalize"
-            >
-              {type}
-            </Button>
-          ))}
+          <TooltipProvider>
+            {(['username', 'email', 'ip', 'domain'] as const).map((type) => {
+              // Disable non-username types for free users without credit
+              const isTypeDisabled = isFreeWorkspace && !hasAnyScanCredit && type !== 'username';
+              
+              return (
+                <Tooltip key={type}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={targetType === type ? 'default' : 'outline'}
+                      onClick={() => {
+                        if (!isTypeDisabled) {
+                          setTargetType(type);
+                          setSelectedTools([]);
+                        }
+                      }}
+                      disabled={isScanning || isTypeDisabled}
+                      className={`capitalize ${isTypeDisabled ? 'opacity-50' : ''}`}
+                    >
+                      {type}
+                      {isTypeDisabled && <Lock className="h-3 w-3 ml-1" />}
+                    </Button>
+                  </TooltipTrigger>
+                  {isTypeDisabled && (
+                    <TooltipContent>
+                      <p>Upgrade to Pro for {type} scans</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              );
+            })}
+          </TooltipProvider>
         </div>
       </div>
 
