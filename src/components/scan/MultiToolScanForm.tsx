@@ -27,7 +27,8 @@ import {
   Info,
   Lightbulb,
   Lock,
-  Gift
+  Gift,
+  Mail
 } from 'lucide-react';
 import { useEmailVerification } from '@/hooks/useEmailVerification';
 import { EmailVerificationBanner } from '@/components/auth/EmailVerificationBanner';
@@ -65,7 +66,7 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
   const [loadingScanCount, setLoadingScanCount] = useState(true);
   const { isStandard } = useUserPersona();
   const { isScanning, startMultiToolScan, progress } = useMultiToolScan();
-  const { isVerified, isLoading: verificationLoading } = useEmailVerification();
+  const { isVerified, isLoading: verificationLoading, resendVerificationEmail, isResending, canResend, cooldownSeconds } = useEmailVerification();
   const { workspace } = useWorkspace();
   
   const navigate = useNavigate();
@@ -82,8 +83,12 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
   
   const isScanBlocked = !scanTypeAvailability.available;
 
-  // Check if user needs verification for second scan
+  // Check if user needs verification for second scan (legacy) or for free advanced scans
   const requiresVerificationForScan = !verificationLoading && !isVerified && userScanCount >= 1;
+  
+  // Free users need email verification to use their free advanced scan
+  const isAdvancedScanType = targetType !== 'username';
+  const requiresVerificationForAdvancedScan = isFreeWorkspace && isAdvancedScanType && hasAnyScanCredit && !isVerified && !verificationLoading;
 
   // Fetch user's scan count on mount
   useEffect(() => {
@@ -198,10 +203,24 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
   };
 
   const handleStartScan = async () => {
-    // Check verification requirement for second scan
+    // Check verification requirement for second scan (legacy)
     if (requiresVerificationForScan) {
       analytics.trackEvent('email_verification_blocked_action', { action: 'second_scan' });
       toast.error('Please verify your email to run additional scans');
+      return;
+    }
+
+    // Check verification requirement for free advanced scans (new)
+    if (requiresVerificationForAdvancedScan) {
+      analytics.trackEvent('email_verification_blocked_action', { action: 'free_advanced_scan', scan_type: targetType });
+      toast.error('Verify your email first', {
+        description: 'Please verify your email to use your free advanced scan.',
+        action: {
+          label: isResending ? 'Sending...' : 'Resend Email',
+          onClick: () => resendVerificationEmail()
+        },
+        duration: 8000
+      });
       return;
     }
 
@@ -466,19 +485,51 @@ export function MultiToolScanForm({ workspaceId }: MultiToolScanFormProps) {
           
           {/* Inline helper text below selector */}
           {isFreeWorkspace && (
-            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
-              {hasAnyScanCredit ? (
-                <>
-                  <Gift className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                  <span>You can run <strong>1 advanced scan free</strong>. After that, upgrade to continue.</span>
-                </>
-              ) : (
-                <>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span>Advanced scans require Pro. <strong>Username scans remain free.</strong></span>
-                </>
+            <div className="mt-2 space-y-2">
+              {/* Verification required alert for advanced scans */}
+              {requiresVerificationForAdvancedScan && (
+                <Alert className="bg-amber-500/10 border-amber-500/30">
+                  <Mail className="h-4 w-4 text-amber-500" />
+                  <AlertDescription className="flex items-center justify-between">
+                    <span className="text-sm">
+                      <strong>Verify your email</strong> to use your free advanced scan.
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => resendVerificationEmail()}
+                      disabled={isResending || !canResend}
+                      className="ml-2"
+                    >
+                      {isResending ? (
+                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Sending...</>
+                      ) : !canResend ? (
+                        `Wait ${cooldownSeconds}s`
+                      ) : (
+                        <><Mail className="h-3 w-3 mr-1" /> Resend Email</>
+                      )}
+                    </Button>
+                  </AlertDescription>
+                </Alert>
               )}
-            </p>
+              
+              {/* Credit status helper text */}
+              {!requiresVerificationForAdvancedScan && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  {hasAnyScanCredit ? (
+                    <>
+                      <Gift className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                      <span>You can run <strong>1 advanced scan free</strong>. After that, upgrade to continue.</span>
+                    </>
+                  ) : (
+                    <>
+                      <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span>Advanced scans require Pro. <strong>Username scans remain free.</strong></span>
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </div>
