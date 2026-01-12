@@ -464,14 +464,46 @@ serve(async (req) => {
     }
 
     // =====================================================
-    // FREE TIER ONBOARDING CREDIT CHECK
+    // FREE TIER ONBOARDING CREDIT CHECK + EMAIL VERIFICATION
     // =====================================================
     const isFreeWorkspace = userTier === 'free';
     const isNonUsernameScan = type !== 'username';
     const freeAnyScanCredits = (workspace as any).free_any_scan_credits || 0;
+    const isEmailVerified = !!user.email_confirmed_at;
     
-    // Free workspaces attempting non-username scans need credit OR we block them
+    // Free workspaces attempting non-username scans need:
+    // 1. Email verification
+    // 2. Free any-scan credit available
     if (isFreeWorkspace && isNonUsernameScan && !isAdmin) {
+      // Check email verification FIRST for free advanced scans
+      if (!isEmailVerified) {
+        console.log(`[orchestrate] Email verification required for free advanced scan`);
+        
+        await logActivity({
+          userId: user.id,
+          action: 'scan.blocked',
+          entityType: 'scan',
+          metadata: {
+            error_code: 'email_verification_required',
+            scan_type: type,
+            target_value: value,
+            plan: 'free',
+            message: 'Email verification required for free advanced scans.'
+          }
+        });
+        
+        return new Response(JSON.stringify({
+          error: 'email_verification_required',
+          code: 'email_verification_required',
+          message: 'Please verify your email to use your free advanced scan credit.',
+          scanType: type
+        }), {
+          status: 403,
+          headers: { ...corsHeaders(), "Content-Type": "application/json" }
+        });
+      }
+      
+      // Then check if they have credit available
       if (freeAnyScanCredits <= 0) {
         console.log(`[orchestrate] Free any-scan credit exhausted for workspace ${workspaceId}`);
         
