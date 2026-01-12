@@ -2,8 +2,24 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useWorkspace } from '@/hooks/useWorkspace';
+import { useNavigate } from 'react-router-dom';
 
 import { getPlan } from '@/lib/billing/tiers';
+
+// Custom error class for tier-related errors
+class TierRestrictionError extends Error {
+  code: string;
+  scanType: string;
+  blockedProviders: string[];
+  
+  constructor(message: string, scanType: string, blockedProviders: string[] = []) {
+    super(message);
+    this.name = 'TierRestrictionError';
+    this.code = 'no_providers_available_for_tier';
+    this.scanType = scanType;
+    this.blockedProviders = blockedProviders;
+  }
+}
 
 function buildProvidersList(
   type: 'email' | 'username' | 'domain' | 'phone',
@@ -25,7 +41,10 @@ function buildProvidersList(
   }
   
   if (type === 'email') {
-    providers.push('holehe');
+    // Only add holehe if the plan allows it
+    if (allowedProviders.includes('holehe')) {
+      providers.push('holehe');
+    }
   }
 
   // If custom providers specified, filter by tier allowance
@@ -141,6 +160,18 @@ export function useAdvancedScan() {
         // Use traditional scan-orchestrate for email/phone scans
         console.log(`[useAdvancedScan] Using scan-orchestrate for ${type} scan`);
         
+        // PRE-CHECK: Validate providers before making API call
+        const providersForScan = buildProvidersList(type, workspace?.subscription_tier, options.providers);
+        if (providersForScan.length === 0) {
+          throw new TierRestrictionError(
+            type === 'email' 
+              ? 'Email scanning requires Pro or Business plan. Upgrade to access email intelligence tools.'
+              : 'No providers available for this scan type on your current plan.',
+            type,
+            type === 'email' ? ['holehe'] : []
+          );
+        }
+        
         const { data: orchestrateData, error: orchestrateError } = await supabase.functions.invoke('scan-orchestrate', {
           body: {
             type,
@@ -148,7 +179,7 @@ export function useAdvancedScan() {
             workspaceId: workspace.id,
             options: {
               includeDarkweb: !!options.deepWeb,
-              providers: buildProvidersList(type, workspace?.subscription_tier, options.providers),
+              providers: providersForScan,
               premium: {
                 socialMediaFinder: !!options.socialMedia,
                 osintScraper: !!options.osintScraper,
@@ -284,7 +315,27 @@ export function useAdvancedScan() {
 
     } catch (error) {
       console.error('Advanced scan error:', error);
-      toast.error('Advanced scan failed: ' + (error as Error).message);
+      
+      // Handle tier restriction errors with upgrade prompt
+      if (error instanceof TierRestrictionError || 
+          (error as any)?.code === 'no_providers_available_for_tier') {
+        toast.error(
+          (error as TierRestrictionError).scanType === 'email' 
+            ? 'Email scanning requires Pro plan'
+            : 'Upgrade required for this scan type',
+          {
+            description: (error as Error).message,
+            action: {
+              label: 'Upgrade Now',
+              onClick: () => window.location.href = '/settings/billing'
+            },
+            duration: 8000
+          }
+        );
+      } else {
+        toast.error('Advanced scan failed: ' + (error as Error).message);
+      }
+      
       setIsScanning(false);
       throw error;
     }
