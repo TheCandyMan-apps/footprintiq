@@ -1,4 +1,4 @@
-import { useEffect, useState, RefObject } from 'react';
+import { useEffect, useState, RefObject, useRef, useCallback } from 'react';
 
 interface ParallaxOptions {
   speed?: number;
@@ -17,16 +17,20 @@ export const useParallax = (
   } = options;
 
   const [offset, setOffset] = useState(0);
+  const rafRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    // Check if mobile and parallax is disabled on mobile
-    const isMobile = window.innerWidth < 768;
-    if (isMobile && !enableOnMobile) {
-      return;
+  const handleScroll = useCallback(() => {
+    // Cancel any pending animation frame
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
     }
 
-    const handleScroll = () => {
-      if (!ref.current) return;
+    // Schedule the layout read for the next frame
+    rafRef.current = requestAnimationFrame(() => {
+      if (!ref.current) {
+        rafRef.current = null;
+        return;
+      }
 
       const rect = ref.current.getBoundingClientRect();
       const scrollProgress = window.scrollY;
@@ -38,7 +42,16 @@ export const useParallax = (
         const parallaxOffset = (scrollProgress - elementTop + windowHeight) * speed;
         setOffset(parallaxOffset);
       }
-    };
+      rafRef.current = null;
+    });
+  }, [ref, speed]);
+
+  useEffect(() => {
+    // Check if mobile and parallax is disabled on mobile
+    const isMobile = window.innerWidth < 768;
+    if (isMobile && !enableOnMobile) {
+      return;
+    }
 
     handleScroll(); // Calculate initial position
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -47,8 +60,11 @@ export const useParallax = (
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('resize', handleScroll);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
-  }, [ref, speed, enableOnMobile]);
+  }, [handleScroll, enableOnMobile]);
 
   // Convert offset to transform based on direction
   const getTransform = () => {
@@ -75,10 +91,20 @@ export const useParallax = (
 // Simple hook for scroll-based opacity changes
 export const useScrollFade = (ref: RefObject<HTMLElement>) => {
   const [opacity, setOpacity] = useState(1);
+  const rafRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!ref.current) return;
+  const handleScroll = useCallback(() => {
+    // Cancel any pending animation frame
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+    }
+
+    // Schedule the layout read for the next frame
+    rafRef.current = requestAnimationFrame(() => {
+      if (!ref.current) {
+        rafRef.current = null;
+        return;
+      }
 
       const rect = ref.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;
@@ -95,15 +121,21 @@ export const useScrollFade = (ref: RefObject<HTMLElement>) => {
         const fadeProgress = (rect.top - fadeEnd) / (fadeStart - fadeEnd);
         setOpacity(fadeProgress);
       }
-    };
+      rafRef.current = null;
+    });
+  }, [ref]);
 
+  useEffect(() => {
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
-  }, [ref]);
+  }, [handleScroll]);
 
   return opacity;
 };
