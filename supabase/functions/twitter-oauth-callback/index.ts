@@ -7,11 +7,11 @@ const corsHeaders = {
 
 // Get the app URL for redirects - defaults to production URL
 function getAppUrl(): string {
-  const siteUrl = Deno.env.get('SITE_URL');
-  if (siteUrl) {
-    return siteUrl.replace(/\/$/, '');
+  const appUrl = Deno.env.get('APP_URL');
+  if (appUrl) {
+    return appUrl.replace(/\/$/, '');
   }
-  return 'https://footprintiq.lovable.app';
+  return 'https://footprintiq.app';
 }
 
 Deno.serve(async (req) => {

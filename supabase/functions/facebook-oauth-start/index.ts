@@ -11,11 +11,25 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const clientId = Deno.env.get('FACEBOOK_CLIENT_ID');
+    const clientId = Deno.env.get('FACEBOOK_APP_ID');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     
     if (!clientId || !supabaseUrl) {
-      throw new Error('Missing required environment variables');
+      console.error('Missing Facebook OAuth configuration:', { 
+        hasClientId: !!clientId, 
+        hasSupabaseUrl: !!supabaseUrl 
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Facebook integration not configured', 
+          code: 'INTEGRATION_NOT_CONFIGURED',
+          message: 'Facebook OAuth credentials have not been set up. Please contact the administrator.'
+        }),
+        { 
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Get the authenticated user from the Authorization header

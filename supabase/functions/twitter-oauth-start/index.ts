@@ -38,8 +38,21 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     
     if (!clientId || !supabaseUrl) {
-      console.error('Missing environment variables:', { clientId: !!clientId, supabaseUrl: !!supabaseUrl });
-      throw new Error('Missing required environment variables');
+      console.error('Missing Twitter OAuth configuration:', { 
+        hasClientId: !!clientId, 
+        hasSupabaseUrl: !!supabaseUrl 
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: 'Twitter integration not configured', 
+          code: 'INTEGRATION_NOT_CONFIGURED',
+          message: 'Twitter OAuth credentials have not been set up. Please contact the administrator.'
+        }),
+        { 
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Parse request body for flow type

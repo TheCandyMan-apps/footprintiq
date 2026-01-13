@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { useLinkedInAuth } from '@/hooks/useLinkedInAuth';
 import { useFacebookAuth } from '@/hooks/useFacebookAuth';
+import { useTwitterAuth } from '@/hooks/useTwitterAuth';
 import { useSocialIntegrations } from '@/hooks/useSocialIntegrations';
 import { useSocialMediaFindings } from '@/hooks/useSocialMediaFindings';
 import { SocialMediaFindings } from './SocialMediaFindings';
@@ -67,28 +68,43 @@ export function SocialIntegrations() {
   
   const { signInWithLinkedIn, isLoading: linkedinLoading } = useLinkedInAuth();
   const { signInWithFacebook, isLoading: facebookLoading } = useFacebookAuth();
+  const { linkAccount: linkTwitter, isLoading: twitterLoading } = useTwitterAuth();
   const { integrations, isLoading, isConnected, getIntegration, disconnect } = useSocialIntegrations();
   const { scanPlatform, isScanning } = useSocialMediaFindings();
 
   const handleConnect = async (platformName: string) => {
-    switch (platformName) {
-      case 'LinkedIn':
-        await signInWithLinkedIn();
-        break;
-      case 'Facebook':
-        await signInWithFacebook();
-        break;
-      case 'Twitter':
+    try {
+      switch (platformName) {
+        case 'LinkedIn':
+          await signInWithLinkedIn();
+          break;
+        case 'Facebook':
+          await signInWithFacebook();
+          break;
+        case 'Twitter':
+          await linkTwitter();
+          break;
+        default:
+          toast({
+            title: "Coming Soon",
+            description: `${platformName} integration will be available soon.`,
+          });
+      }
+    } catch (error: any) {
+      // Handle specific error codes from edge functions
+      if (error?.code === 'INTEGRATION_NOT_CONFIGURED') {
         toast({
-          title: "Coming Soon",
-          description: "Twitter/X integration is temporarily unavailable. Check back soon!",
+          title: "Integration Not Available",
+          description: `${platformName} integration is not yet configured. Please try again later.`,
+          variant: "destructive",
         });
-        break;
-      default:
+      } else {
         toast({
-          title: "Coming Soon",
-          description: `${platformName} integration will be available soon.`,
+          title: "Connection Failed",
+          description: error?.message || `Failed to connect to ${platformName}. Please try again.`,
+          variant: "destructive",
         });
+      }
     }
   };
 
@@ -226,11 +242,13 @@ export function SocialIntegrations() {
                     onClick={() => handleConnect(platformConfig.name)}
                     disabled={
                       (linkedinLoading && platformConfig.name === 'LinkedIn') ||
-                      (facebookLoading && platformConfig.name === 'Facebook')
+                      (facebookLoading && platformConfig.name === 'Facebook') ||
+                      (twitterLoading && platformConfig.name === 'Twitter')
                     }
                   >
                     {((linkedinLoading && platformConfig.name === 'LinkedIn') ||
-                      (facebookLoading && platformConfig.name === 'Facebook'))
+                      (facebookLoading && platformConfig.name === 'Facebook') ||
+                      (twitterLoading && platformConfig.name === 'Twitter'))
                       ? 'Connecting...'
                       : 'Connect'}
                   </Button>
