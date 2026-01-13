@@ -42,8 +42,8 @@ export function UnifiedResultsDisplay({
       // Filter by search query
       if (searchQuery) {
         const searchLower = searchQuery.toLowerCase();
-        const matchesPlatform = result.platform.toLowerCase().includes(searchLower);
-        const matchesUrl = result.url.toLowerCase().includes(searchLower);
+        const matchesPlatform = (result.platform || '').toLowerCase().includes(searchLower);
+        const matchesUrl = (result.url || '').toLowerCase().includes(searchLower);
         if (!matchesPlatform && !matchesUrl) return false;
       }
 

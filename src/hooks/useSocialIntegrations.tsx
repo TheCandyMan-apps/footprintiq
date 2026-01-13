@@ -42,13 +42,13 @@ export function useSocialIntegrations() {
 
   const isConnected = (platform: string) => {
     return integrations.some(
-      (integration) => integration.platform.toLowerCase() === platform.toLowerCase()
+      (integration) => (integration.platform || '').toLowerCase() === platform.toLowerCase()
     );
   };
 
   const getIntegration = (platform: string) => {
     return integrations.find(
-      (integration) => integration.platform.toLowerCase() === platform.toLowerCase()
+      (integration) => (integration.platform || '').toLowerCase() === platform.toLowerCase()
     );
   };
 
