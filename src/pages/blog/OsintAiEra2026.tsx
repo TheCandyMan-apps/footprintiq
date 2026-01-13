@@ -10,65 +10,75 @@ import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { getBlogHeroImage } from "@/lib/blogImages";
 import { Badge } from "@/components/ui/badge";
-
 export default function OsintAiEra2026() {
   const heroImage = getBlogHeroImage("osint-ai-era-2026");
-
   const breadcrumbSchema = {
     "@context": "https://schema.org" as const,
     "@type": "BreadcrumbList" as const,
-    itemListElement: [
-      { "@type": "ListItem" as const, position: 1, name: "Home", item: "https://footprintiq.app" },
-      { "@type": "ListItem" as const, position: 2, name: "Blog", item: "https://footprintiq.app/blog" },
-      { "@type": "ListItem" as const, position: 3, name: "2026 OSINT and the Era of AI" }
-    ]
+    itemListElement: [{
+      "@type": "ListItem" as const,
+      position: 1,
+      name: "Home",
+      item: "https://footprintiq.app"
+    }, {
+      "@type": "ListItem" as const,
+      position: 2,
+      name: "Blog",
+      item: "https://footprintiq.app/blog"
+    }, {
+      "@type": "ListItem" as const,
+      position: 3,
+      name: "2026 OSINT and the Era of AI"
+    }]
   };
-
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: "2026 OSINT and the Era of AI: The Future of Digital Intelligence",
     description: "Discover how AI is transforming Open Source Intelligence in 2026. From autonomous agents to predictive threat detection, explore the cutting-edge tools and ethical considerations shaping modern OSINT.",
-    author: { "@type": "Organization", name: "FootprintIQ" },
-    publisher: { "@type": "Organization", name: "FootprintIQ", logo: { "@type": "ImageObject", url: "https://footprintiq.app/logo-social.png" } },
+    author: {
+      "@type": "Organization",
+      name: "FootprintIQ"
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "FootprintIQ",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://footprintiq.app/logo-social.png"
+      }
+    },
     datePublished: "2026-01-10",
     dateModified: "2026-01-10",
     image: heroImage
   };
-
   const faqSchema = {
     "@context": "https://schema.org" as const,
     "@type": "FAQPage" as const,
-    mainEntity: [
-      {
-        "@type": "Question" as const,
-        name: "What is AI-powered OSINT?",
-        acceptedAnswer: {
-          "@type": "Answer" as const,
-          text: "AI-powered OSINT combines artificial intelligence with Open Source Intelligence gathering to automate data collection, analysis, and threat detection from publicly available sources. It uses machine learning to identify patterns, correlate information, and provide actionable insights faster than traditional manual methods."
-        }
-      },
-      {
-        "@type": "Question" as const,
-        name: "How is AI transforming OSINT in 2026?",
-        acceptedAnswer: {
-          "@type": "Answer" as const,
-          text: "The OSINT landscape in 2026 is defined by autonomous intelligence agents that gather and prioritize intelligence independently, multimodal analysis processing text, images, video, and audio simultaneously, and predictive threat detection using machine learning to identify emerging threats before they materialize."
-        }
-      },
-      {
-        "@type": "Question" as const,
-        name: "What are the ethical considerations for AI-OSINT?",
-        acceptedAnswer: {
-          "@type": "Answer" as const,
-          text: "Key ethical considerations include collecting only legally accessible public data, ensuring no system intrusion or authentication bypassing, understanding jurisdictional privacy laws, purpose limitation, data minimization, transparency about capabilities, and addressing AI-specific concerns like algorithmic bias and explainability."
-        }
+    mainEntity: [{
+      "@type": "Question" as const,
+      name: "What is AI-powered OSINT?",
+      acceptedAnswer: {
+        "@type": "Answer" as const,
+        text: "AI-powered OSINT combines artificial intelligence with Open Source Intelligence gathering to automate data collection, analysis, and threat detection from publicly available sources. It uses machine learning to identify patterns, correlate information, and provide actionable insights faster than traditional manual methods."
       }
-    ]
+    }, {
+      "@type": "Question" as const,
+      name: "How is AI transforming OSINT in 2026?",
+      acceptedAnswer: {
+        "@type": "Answer" as const,
+        text: "The OSINT landscape in 2026 is defined by autonomous intelligence agents that gather and prioritize intelligence independently, multimodal analysis processing text, images, video, and audio simultaneously, and predictive threat detection using machine learning to identify emerging threats before they materialize."
+      }
+    }, {
+      "@type": "Question" as const,
+      name: "What are the ethical considerations for AI-OSINT?",
+      acceptedAnswer: {
+        "@type": "Answer" as const,
+        text: "Key ethical considerations include collecting only legally accessible public data, ensuring no system intrusion or authentication bypassing, understanding jurisdictional privacy laws, purpose limitation, data minimization, transparency about capabilities, and addressing AI-specific concerns like algorithmic bias and explainability."
+      }
+    }]
   };
-
-  return (
-    <>
+  return <>
       <Helmet>
         <title>2026 OSINT and the Era of AI: The Future of Digital Intelligence | FootprintIQ</title>
         <meta name="description" content="Discover how AI is transforming Open Source Intelligence in 2026. From autonomous agents to predictive threat detection, explore the cutting-edge tools and ethical considerations shaping modern OSINT." />
@@ -87,16 +97,9 @@ export default function OsintAiEra2026() {
               Back to Blog
             </Link>
 
-            {heroImage && (
-              <div className="mb-8 rounded-2xl overflow-hidden shadow-2xl">
-                <img 
-                  src={heroImage} 
-                  alt="AI and OSINT convergence - futuristic digital intelligence visualization"
-                  className="w-full h-[400px] object-cover"
-                  loading="eager"
-                />
-              </div>
-            )}
+            {heroImage && <div className="mb-8 rounded-2xl overflow-hidden shadow-2xl">
+                <img src={heroImage} alt="AI and OSINT convergence - futuristic digital intelligence visualization" className="w-full h-[400px] object-cover" loading="eager" />
+              </div>}
 
             <header className="mb-12">
               <div className="flex items-center gap-2 mb-4">
@@ -104,9 +107,9 @@ export default function OsintAiEra2026() {
                 <Badge variant="outline">OSINT</Badge>
                 <Badge variant="outline">Featured</Badge>
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent leading-tight">
-                2026 OSINT and the Era of AI: The Future of Digital Intelligence
-              </h1>
+              <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent leading-tight">2026 OSINT and the Era of AI: The Future of Digital Intelligence
+
+            </h1>
               <div className="flex items-center gap-4 text-muted-foreground">
                 <time dateTime="2026-01-10">January 10, 2026</time>
                 <span>•</span>
@@ -541,6 +544,5 @@ export default function OsintAiEra2026() {
 
         <Footer />
       </div>
-    </>
-  );
+    </>;
 }
