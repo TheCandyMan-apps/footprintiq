@@ -79,9 +79,9 @@ export function SupportTickets() {
       const lower = searchTerm.toLowerCase();
       filtered = filtered.filter(
         t =>
-          t.ticket_number.toLowerCase().includes(lower) ||
-          t.subject.toLowerCase().includes(lower) ||
-          t.description.toLowerCase().includes(lower)
+          (t.ticket_number || '').toLowerCase().includes(lower) ||
+          (t.subject || '').toLowerCase().includes(lower) ||
+          (t.description || '').toLowerCase().includes(lower)
       );
     }
 

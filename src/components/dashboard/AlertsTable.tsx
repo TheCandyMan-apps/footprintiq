@@ -59,10 +59,10 @@ export function AlertsTable({
     const query = searchQuery.toLowerCase();
     return data.filter(
       (row) =>
-        row.entity.toLowerCase().includes(query) ||
-        row.provider.toLowerCase().includes(query) ||
-        row.category.toLowerCase().includes(query) ||
-        row.description.toLowerCase().includes(query)
+        (row.entity || '').toLowerCase().includes(query) ||
+        (row.provider || '').toLowerCase().includes(query) ||
+        (row.category || '').toLowerCase().includes(query) ||
+        (row.description || '').toLowerCase().includes(query)
     );
   }, [data, searchQuery]);
 

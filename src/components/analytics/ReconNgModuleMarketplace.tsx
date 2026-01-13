@@ -69,8 +69,8 @@ export function ReconNgModuleMarketplace() {
 
     if (searchQuery) {
       filtered = filtered.filter(m =>
-        m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        m.category.toLowerCase().includes(searchQuery.toLowerCase())
+        (m.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (m.category || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 

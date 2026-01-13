@@ -290,7 +290,7 @@ export default function AdminDashboard() {
   };
 
   const filteredUsers = users.filter(user =>
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    (user.email || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const getStatusBadge = (status: 'healthy' | 'unhealthy' | 'unknown') => {

@@ -217,8 +217,8 @@ export function UserAuditTimeline({ userId, userEmail }: UserAuditTimelineProps)
     return events.filter(event => {
       const matchesType = selectedTypes.includes(event.type);
       const matchesSearch = searchQuery === '' || 
-        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.description.toLowerCase().includes(searchQuery.toLowerCase());
+        (event.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (event.description || '').toLowerCase().includes(searchQuery.toLowerCase());
       return matchesType && matchesSearch;
     });
   }, [events, selectedTypes, searchQuery]);
