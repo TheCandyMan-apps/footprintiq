@@ -5,10 +5,21 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Get the app URL for redirects
+function getAppUrl(): string {
+  const appUrl = Deno.env.get('APP_URL');
+  if (appUrl) {
+    return appUrl.replace(/\/$/, '');
+  }
+  return 'https://footprintiq.app';
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const appUrl = getAppUrl();
 
   try {
     const url = new URL(req.url);
@@ -25,8 +36,8 @@ Deno.serve(async (req) => {
     }
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const clientId = Deno.env.get('FACEBOOK_CLIENT_ID')!;
-    const clientSecret = Deno.env.get('FACEBOOK_CLIENT_SECRET')!;
+    const clientId = Deno.env.get('FACEBOOK_APP_ID')!;
+    const clientSecret = Deno.env.get('FACEBOOK_APP_SECRET')!;
 
     const supabase = createClient(
       supabaseUrl,
@@ -113,7 +124,6 @@ Deno.serve(async (req) => {
       console.error('Failed to store integration:', integrationError);
     }
 
-    const appUrl = url.origin;
     const redirectUrl = `${appUrl}/dashboard?facebook_auth=success`;
     
     return new Response(null, {
@@ -126,8 +136,6 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error in facebook-oauth-callback:', error);
     
-    const url = new URL(req.url);
-    const appUrl = url.origin;
     const errorMessage = error instanceof Error ? error.message : 'Authentication failed';
     return new Response(null, {
       status: 302,

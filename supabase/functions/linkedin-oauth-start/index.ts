@@ -15,7 +15,21 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     
     if (!clientId || !supabaseUrl) {
-      throw new Error('Missing required environment variables');
+      console.error('Missing LinkedIn OAuth configuration:', { 
+        hasClientId: !!clientId, 
+        hasSupabaseUrl: !!supabaseUrl 
+      });
+      return new Response(
+        JSON.stringify({ 
+          error: 'LinkedIn integration not configured', 
+          code: 'INTEGRATION_NOT_CONFIGURED',
+          message: 'LinkedIn OAuth credentials have not been set up. Please contact the administrator.'
+        }),
+        { 
+          status: 503,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     // Get the authenticated user from the Authorization header
