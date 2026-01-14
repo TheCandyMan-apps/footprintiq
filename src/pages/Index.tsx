@@ -6,11 +6,14 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
 import { TrustSignals } from "@/components/TrustSignals";
+import { WhatYouCanDiscover } from "@/components/WhatYouCanDiscover";
 import { WhatWeDoSection } from "@/components/WhatWeDoSection";
 import { HowItWorks } from "@/components/HowItWorks";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
 import { WhatWeAre } from "@/components/WhatWeAre";
 import { WhoItsFor } from "@/components/WhoItsFor";
+import { ProductEntryPoints } from "@/components/ProductEntryPoints";
+import { FreeVsPro } from "@/components/FreeVsPro";
 import { SampleReportPreview } from "@/components/SampleReportPreview";
 import { WhyItMatters } from "@/components/WhyItMatters";
 import { TrustTransparency } from "@/components/TrustTransparency";
@@ -57,7 +60,7 @@ export default function Home() {
     "name": "FootprintIQ",
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Web",
-    "description": "See what the internet knows about you. FootprintIQ scans hundreds of public sources to reveal exposed usernames, profiles, breached data, and digital risks linked to your online identity.",
+    "description": "FootprintIQ helps individuals discover username reuse, email exposure, and data broker listings using ethical OSINT techniques — so you can understand and reduce your digital footprint.",
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -76,7 +79,7 @@ export default function Home() {
         name: "Is my data private when using FootprintIQ?",
         acceptedAnswer: {
           "@type": "Answer" as const,
-          text: "Yes — we analyse publicly available information only and never store or sell your personal data. Your privacy is our top priority."
+          text: "Yes — we analyse publicly available information only and never store or sell your personal data. All scans are user-initiated, and we don't monitor or track your activity."
         }
       },
       {
@@ -84,7 +87,7 @@ export default function Home() {
         name: "Is FootprintIQ free to use?",
         acceptedAnswer: {
           "@type": "Answer" as const,
-          text: "Yes! The free tier runs comprehensive checks across public sources including social platforms, forums, breach indexes, and data brokers."
+          text: "Yes! Free scans show where exposure exists across public sources. Pro scans provide deeper analysis and evidence for data removal requests."
         }
       },
       {
@@ -92,7 +95,15 @@ export default function Home() {
         name: "What does FootprintIQ scan?",
         acceptedAnswer: {
           "@type": "Answer" as const,
-          text: "FootprintIQ scans publicly accessible sources including social platforms, forums, breach indexes, data broker listings, and people-search sites to build a clear picture of your online visibility."
+          text: "FootprintIQ scans publicly accessible sources including social platforms, forums, breach indexes, data broker listings, and people-search sites for username reuse, email exposure, and data broker listings."
+        }
+      },
+      {
+        "@type": "Question" as const,
+        name: "Is this legal and ethical?",
+        acceptedAnswer: {
+          "@type": "Answer" as const,
+          text: "Yes. FootprintIQ only accesses publicly available information using ethical OSINT techniques. We never access private accounts or bypass authentication."
         }
       }
     ]
@@ -114,8 +125,8 @@ export default function Home() {
   return (
     <>
       <SEO
-        title="FootprintIQ — See What The Internet Knows About You"
-        description="FootprintIQ scans hundreds of public sources to reveal exposed usernames, profiles, breached data, and digital risks linked to your online identity. No hacking. No private databases."
+        title="FootprintIQ — See What the Internet Knows About You"
+        description="FootprintIQ helps you discover username reuse, email exposure, and data broker listings using ethical OSINT techniques. Run a free scan to understand your digital footprint."
         canonical="https://footprintiq.app/"
         ogImage="https://footprintiq.app/og-image.jpg"
         schema={{
@@ -132,6 +143,10 @@ export default function Home() {
       <Hero onStartScan={handleStartScan} onAdvancedScan={handleAdvancedScan} />
       
       {/* Below fold sections - use content-visibility for LCP optimization */}
+      <div className="below-fold">
+        <WhatYouCanDiscover />
+      </div>
+      
       <div className="below-fold">
         <TrustSignals />
       </div>
@@ -154,6 +169,14 @@ export default function Home() {
       
       <div className="below-fold">
         <WhoItsFor />
+      </div>
+      
+      <div className="below-fold">
+        <ProductEntryPoints />
+      </div>
+      
+      <div className="below-fold">
+        <FreeVsPro />
       </div>
       
       <div className="below-fold">

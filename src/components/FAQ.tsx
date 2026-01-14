@@ -9,35 +9,35 @@ import { HelpCircle } from "lucide-react";
 const faqs = [
   {
     question: "What is a digital footprint?",
-    answer: "Your digital footprint is the trail of data you leave behind when using the internet. This includes your personal information on data broker sites, social media profiles, search results, and public records. Data brokers collect and sell this information without your consent."
+    answer: "Your digital footprint is the trail of data you leave behind when using the internet. This includes your personal information on data broker sites, social media profiles, search results, and public records. FootprintIQ helps you see what's publicly visible about you."
   },
   {
-    question: "How does footprintiq remove my data?",
-    answer: "footprintiq scans over 100+ data broker and people search sites to find your personal information. We then submit removal requests on your behalf and follow up until your data is removed. Our automated system continuously monitors for new appearances of your data."
+    question: "What does FootprintIQ scan?",
+    answer: "FootprintIQ scans publicly accessible sources including social platforms, forums, breach indexes, data broker listings, and people-search sites. We check for username reuse, email exposure, and data broker listings to build a clear picture of your online visibility."
   },
   {
-    question: "How long does the removal process take?",
-    answer: "Initial removal requests are submitted within 24 hours of your scan. Most data brokers respond within 7-45 days. Some sites have faster removal processes, while others may take longer. We handle all follow-ups and keep you updated on the progress."
+    question: "Is my data private when using FootprintIQ?",
+    answer: "Yes — we analyse publicly available information only and never store or sell your personal data. All scans are user-initiated, and we don't monitor or track your activity. Your privacy is our top priority."
   },
   {
-    question: "Is my information safe with footprintiq?",
-    answer: "Yes, we take security seriously. All data is encrypted in transit and at rest. We only use your information to submit removal requests to data brokers. We never sell or share your information with third parties. Your privacy is our top priority."
+    question: "Is FootprintIQ free to use?",
+    answer: "Yes! Free scans show where exposure exists across public sources. Pro scans provide deeper analysis, explain how identifiers connect, and provide evidence you can use for data removal requests."
   },
   {
-    question: "What types of information can be removed?",
-    answer: "We can help remove various types of personal information including your name, address, phone number, email, age, relatives, property records, and more from data broker sites. However, some public records maintained by government agencies cannot be removed."
+    question: "Is this the same as Have I Been Pwned?",
+    answer: "FootprintIQ and Have I Been Pwned serve different purposes. HIBP focuses specifically on breach data for emails. FootprintIQ provides broader digital footprint analysis including username reuse, data broker listings, and connections between public identifiers."
   },
   {
-    question: "Do I need to stay subscribed for protection?",
-    answer: "While you can use our service for a one-time cleanup, staying subscribed provides ongoing protection. Data brokers continuously collect new information, so continuous monitoring ensures your data stays removed and alerts you to new exposures."
+    question: "Is this legal and ethical?",
+    answer: "Yes. FootprintIQ only accesses publicly available information — the same data anyone can find through search engines and public databases. We use ethical OSINT techniques and never access private accounts or bypass authentication."
   },
   {
     question: "What is OSINT and why does it matter?",
-    answer: "OSINT (Open Source Intelligence) refers to information collected from publicly available sources. Malicious actors use OSINT techniques to gather information about individuals. Our service identifies what information about you is available through OSINT methods and helps remove it."
+    answer: "OSINT (Open Source Intelligence) refers to information collected from publicly available sources. Understanding what's publicly visible about you is the first step to managing your digital privacy and reducing potential risks."
   },
   {
-    question: "Can I cancel my subscription anytime?",
-    answer: "Yes, you can cancel your subscription at any time. There are no long-term contracts or cancellation fees. If you cancel, you'll continue to have access to your account until the end of your current billing period."
+    question: "Can FootprintIQ remove my data?",
+    answer: "Free scans identify where your information is exposed. Pro provides detailed evidence and guidance you can use to submit removal requests to data brokers and platforms. We help you understand what exists so you can take action."
   }
 ];
 
