@@ -1,4 +1,4 @@
-import { SEO } from "@/components/SEO";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,26 +7,36 @@ import { Share2, Twitter, Linkedin, Link as LinkIcon, Sparkles, Shield, Zap, Fil
 import { toast } from "sonner";
 
 const PersonaDnaLaunch = () => {
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    "headline": "Introducing Persona DNA and Evidence Packs: The Future of OSINT Intelligence",
-    "description": "Discover Persona DNA, Predictive Risk Index, and Evidence Packs — the next generation of OSINT intelligence from FootprintIQ.",
-    "image": "https://footprintiq.app/og/persona-dna.webp",
-    "author": {
-      "@type": "Organization",
-      "name": "FootprintIQ Team"
+  const articleSchema = {
+    "@context": "https://schema.org" as const,
+    "@type": "Article" as const,
+    headline: "Introducing Persona DNA and Evidence Packs: The Future of OSINT Intelligence",
+    description: "Discover Persona DNA, Predictive Risk Index, and Evidence Packs — the next generation of OSINT intelligence from FootprintIQ.",
+    image: "https://footprintiq.app/og/persona-dna.webp",
+    author: {
+      "@type": "Organization" as const,
+      name: "FootprintIQ Team"
     },
-    "publisher": {
-      "@type": "Organization",
-      "name": "FootprintIQ",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://footprintiq.app/logo.png"
+    publisher: {
+      "@type": "Organization" as const,
+      name: "FootprintIQ",
+      logo: {
+        "@type": "ImageObject" as const,
+        url: "https://footprintiq.app/logo.png"
       }
     },
-    "datePublished": "2025-01-15T09:00:00Z",
-    "dateModified": "2025-01-15T09:00:00Z"
+    datePublished: "2025-01-15T09:00:00Z",
+    dateModified: "2025-01-15T09:00:00Z"
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org" as const,
+    "@type": "BreadcrumbList" as const,
+    itemListElement: [
+      { "@type": "ListItem" as const, position: 1, name: "Home", item: "https://footprintiq.app" },
+      { "@type": "ListItem" as const, position: 2, name: "Blog", item: "https://footprintiq.app/blog" },
+      { "@type": "ListItem" as const, position: 3, name: "Persona DNA and Evidence Packs" }
+    ]
   };
 
   const shareUrl = "https://footprintiq.app/blog/persona-dna-and-evidence-packs";
@@ -63,7 +73,11 @@ const PersonaDnaLaunch = () => {
           author: "FootprintIQ Team",
           tags: ["OSINT", "Privacy", "Security", "AI", "Product Launch"]
         }}
-        structuredData={structuredData}
+        schema={{
+          article: articleSchema,
+          breadcrumbs: breadcrumbSchema,
+          organization: organizationSchema
+        }}
       />
 
       <article className="min-h-screen bg-background">

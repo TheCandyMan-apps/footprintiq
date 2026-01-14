@@ -1,11 +1,10 @@
-import { Helmet } from "react-helmet-async";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, User, Shield, Search, AlertTriangle, CheckCircle2, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
-import { StructuredData } from "@/components/StructuredData";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { getBlogHeroImage } from "@/lib/blogImages";
@@ -24,12 +23,12 @@ export default function UsernameSecurity() {
   };
 
   const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
+    "@context": "https://schema.org" as const,
+    "@type": "Article" as const,
     headline: "Username Security: Protect Your Online Identity in 2024",
     description: "Complete guide to securing your usernames across platforms. Learn best practices for unique identifiers and privacy protection.",
-    author: { "@type": "Organization", name: "FootprintIQ" },
-    publisher: { "@type": "Organization", name: "FootprintIQ", logo: { "@type": "ImageObject", url: "https://footprintiq.app/logo-social.png" } },
+    author: { "@type": "Organization" as const, name: "FootprintIQ" },
+    publisher: { "@type": "Organization" as const, name: "FootprintIQ", logo: { "@type": "ImageObject" as const, url: "https://footprintiq.app/logo-social.png" } },
     datePublished: "2024-01-15",
     dateModified: "2024-01-15",
     image: heroImage
@@ -37,13 +36,18 @@ export default function UsernameSecurity() {
 
   return (
     <>
-      <Helmet>
-        <title>Username Security Guide 2024 | Protect Your Online Identity</title>
-        <meta name="description" content="Learn how to create secure usernames that protect your privacy. Best practices for unique identifiers, OSINT protection, and account security." />
-        <link rel="canonical" href="https://footprintiq.app/blog/username-security" />
-      </Helmet>
-
-      <StructuredData breadcrumbs={breadcrumbSchema} custom={articleSchema} />
+      <SEO
+        title="Username Security Guide 2024 | Protect Your Online Identity"
+        description="Learn how to create secure usernames that protect your privacy. Best practices for unique identifiers, OSINT protection, and account security."
+        canonical="https://footprintiq.app/blog/username-security"
+        ogImage={heroImage}
+        article={{ publishedTime: "2024-01-15", modifiedTime: "2024-01-15", author: "FootprintIQ" }}
+        schema={{
+          article: articleSchema,
+          breadcrumbs: breadcrumbSchema,
+          organization: organizationSchema
+        }}
+      />
 
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-primary/5">
         <Header />

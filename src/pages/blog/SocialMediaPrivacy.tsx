@@ -1,11 +1,10 @@
-import { Helmet } from "react-helmet-async";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Lock, Eye, UserX, Shield, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { StructuredData } from "@/components/StructuredData";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { getBlogHeroImage } from "@/lib/blogImages";
@@ -24,12 +23,12 @@ export default function SocialMediaPrivacy() {
   };
 
   const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
+    "@context": "https://schema.org" as const,
+    "@type": "Article" as const,
     headline: "Social Media Privacy: Complete Security Guide for 2024",
     description: "Comprehensive guide to protecting your privacy on Facebook, Instagram, Twitter, LinkedIn, and other social platforms.",
-    author: { "@type": "Organization", name: "FootprintIQ" },
-    publisher: { "@type": "Organization", name: "FootprintIQ", logo: { "@type": "ImageObject", url: "https://footprintiq.app/logo-social.png" } },
+    author: { "@type": "Organization" as const, name: "FootprintIQ" },
+    publisher: { "@type": "Organization" as const, name: "FootprintIQ", logo: { "@type": "ImageObject" as const, url: "https://footprintiq.app/logo-social.png" } },
     datePublished: "2024-01-15",
     dateModified: "2024-01-15",
     image: heroImage
@@ -37,13 +36,18 @@ export default function SocialMediaPrivacy() {
 
   return (
     <>
-      <Helmet>
-        <title>Social Media Privacy Guide 2024 | Protect Your Data</title>
-        <meta name="description" content="Learn how to secure your social media accounts on Facebook, Instagram, Twitter, and LinkedIn. Complete privacy settings guide with actionable steps." />
-        <link rel="canonical" href="https://footprintiq.app/blog/social-media-privacy" />
-      </Helmet>
-
-      <StructuredData breadcrumbs={breadcrumbSchema} custom={articleSchema} />
+      <SEO
+        title="Social Media Privacy Guide 2024 | Protect Your Data"
+        description="Learn how to secure your social media accounts on Facebook, Instagram, Twitter, and LinkedIn. Complete privacy settings guide with actionable steps."
+        canonical="https://footprintiq.app/blog/social-media-privacy"
+        ogImage={heroImage}
+        article={{ publishedTime: "2024-01-15", modifiedTime: "2024-01-15", author: "FootprintIQ" }}
+        schema={{
+          article: articleSchema,
+          breadcrumbs: breadcrumbSchema,
+          organization: organizationSchema
+        }}
+      />
 
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-primary/5">
         <Header />
