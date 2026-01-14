@@ -188,23 +188,15 @@ export default function Organization() {
         title="Team & Organization Management — FootprintIQ Enterprise"
         description="Manage your team and organization with role-based access, collaboration tools, and centralized privacy management for enterprises."
         canonical="https://footprintiq.app/organization"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://footprintiq.app/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Organization",
-              "item": "https://footprintiq.app/organization"
-            }
-          ]
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Organization", item: "https://footprintiq.app/organization" }
+            ]
+          }
         }}
       />
       <div className="container mx-auto py-8 px-4">

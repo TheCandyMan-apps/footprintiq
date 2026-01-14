@@ -4,32 +4,22 @@ import { Footer } from "@/components/Footer";
 import { Shield, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 const ResponsibleUse = () => {
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://footprintiq.app/"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Responsible Use & Ethics",
-        "item": "https://footprintiq.app/responsible-use"
-      }
-    ]
-  };
-
   return (
     <>
       <SEO
         title="Responsible Use & OSINT Ethics — FootprintIQ"
         description="Guidance on ethical, lawful, and proportionate use of OSINT results. UK law-compliant guidelines for responsible digital footprint scanning."
         canonical="https://footprintiq.app/responsible-use"
-        structuredData={structuredData}
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Responsible Use & Ethics", item: "https://footprintiq.app/responsible-use" }
+            ]
+          }
+        }}
       />
       <Header />
       

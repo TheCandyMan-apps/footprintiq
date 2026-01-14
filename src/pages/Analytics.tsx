@@ -151,23 +151,15 @@ export default function Analytics() {
         title="Advanced Analytics & ML Insights — FootprintIQ"
         description="ML-powered analytics and predictive insights for your digital footprint. Identify trends, anomalies, and risk patterns with AI."
         canonical="https://footprintiq.app/analytics"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://footprintiq.app/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Analytics",
-              "item": "https://footprintiq.app/analytics"
-            }
-          ]
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Analytics", item: "https://footprintiq.app/analytics" }
+            ]
+          }
         }}
       />
       <Header />

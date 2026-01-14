@@ -71,23 +71,15 @@ export default function UsernamePage() {
         title="Username Search — Find Social Media Profiles Across 500+ Platforms"
         description="Search usernames across Instagram, Twitter, TikTok, Reddit, GitHub and 500+ platforms. OSINT username intelligence for investigators and privacy researchers."
         canonical="https://footprintiq.app/usernames"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://footprintiq.app/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Username Search",
-              "item": "https://footprintiq.app/usernames"
-            }
-          ]
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Username Search", item: "https://footprintiq.app/usernames" }
+            ]
+          }
         }}
       />
       <Header />

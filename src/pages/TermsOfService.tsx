@@ -4,32 +4,22 @@ import { Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const TermsOfService = () => {
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://footprintiq.app/"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Terms of Service",
-        "item": "https://footprintiq.app/terms"
-      }
-    ]
-  };
-
   return (
     <>
       <SEO
         title="Terms of Use — FootprintIQ"
         description="The rules for using FootprintIQ. Acceptable use, disclaimers, limitations, and jurisdiction under UK law."
         canonical="https://footprintiq.app/terms"
-        structuredData={structuredData}
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Terms of Service", item: "https://footprintiq.app/terms" }
+            ]
+          }
+        }}
       />
       
       <div className="min-h-screen bg-background">

@@ -435,7 +435,7 @@ const Features = () => {
     }
   ];
 
-  const structuredData = {
+  const featuresSchema = {
     "@context": "https://schema.org",
     "@type": "WebPage",
     "name": "Premium Features — FootprintIQ",
@@ -449,7 +449,7 @@ const Features = () => {
         title="Premium Features — FootprintIQ OSINT Platform"
         description="Explore advanced OSINT capabilities: 20+ APIs, dark web monitoring, unlimited scans, AI analyst, team collaboration, white-label reports, and enterprise security."
         canonical="https://footprintiq.app/features"
-        structuredData={structuredData}
+        schema={{ custom: featuresSchema }}
       />
       <div className="min-h-screen">
         <Header />

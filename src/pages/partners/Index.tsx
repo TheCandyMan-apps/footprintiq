@@ -62,23 +62,15 @@ const PartnersIndex = () => {
         title="Partner Program — Earn with FootprintIQ Referrals"
         description="Join FootprintIQ's partner network. Earn up to 30% recurring commissions, access exclusive resources, and help protect digital privacy worldwide."
         canonical="https://footprintiq.app/partners"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://footprintiq.app/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Partners",
-              "item": "https://footprintiq.app/partners"
-            }
-          ]
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Partners", item: "https://footprintiq.app/partners" }
+            ]
+          }
         }}
       />
       <div className="min-h-screen flex flex-col">

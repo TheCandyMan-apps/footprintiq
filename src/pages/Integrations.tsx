@@ -218,23 +218,15 @@ const Integrations = () => {
         title="Enterprise Integrations — Connect FootprintIQ to Your Tools"
         description="Connect FootprintIQ with Slack, Teams, Discord, Splunk, Salesforce, and more. Seamless integration with your existing security stack."
         canonical="https://footprintiq.app/integrations"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://footprintiq.app/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Integrations",
-              "item": "https://footprintiq.app/integrations"
-            }
-          ]
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Integrations", item: "https://footprintiq.app/integrations" }
+            ]
+          }
         }}
       />
         <Header />
