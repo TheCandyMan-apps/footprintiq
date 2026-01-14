@@ -1,9 +1,10 @@
 import { useState, useMemo, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Shield } from "lucide-react";
+import { ArrowRight, Shield, User, Mail } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { PhoneInput } from "@/components/scan/PhoneInput";
@@ -218,6 +219,27 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
           <p className="text-xs text-muted-foreground text-center">
             Provide at least a username or your basic information. We respect your privacy - data is only used for the scan.
           </p>
+
+          {/* Related Tools Links */}
+          <div className="pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground text-center mb-3">
+              Or try our focused search tools:
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              <Button asChild variant="ghost" size="sm" className="text-xs">
+                <Link to="/username-search">
+                  <User className="w-3 h-3 mr-1" />
+                  Username Search
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm" className="text-xs">
+                <Link to="/email-breach-check">
+                  <Mail className="w-3 h-3 mr-1" />
+                  Email Breach Check
+                </Link>
+              </Button>
+            </div>
+          </div>
         </form>
       </Card>
     </div>
