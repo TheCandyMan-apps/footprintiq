@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 import {
   Menu,
   LayoutDashboard,
@@ -16,8 +17,11 @@ import {
   Globe,
   GitBranch,
   Sparkles,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -37,6 +41,18 @@ const navItems = [
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      setOpen(false);
+      toast.success("Signed out successfully");
+      navigate("/");
+    } catch (error) {
+      toast.error("Failed to sign out");
+    }
+  };
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -64,6 +80,16 @@ export function MobileNav() {
               {item.label}
             </Link>
           ))}
+          
+          <Separator className="my-2" />
+          
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-destructive hover:bg-destructive/10"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </button>
         </nav>
       </SheetContent>
     </Sheet>
