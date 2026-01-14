@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Trash2, XCircle, Eye, Filter, RefreshCw, StopCircle, Ban } from "lucide-react";
+import { Search, Trash2, XCircle, Eye, Filter, RefreshCw, StopCircle, Ban, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
@@ -100,6 +100,29 @@ export default function ScanManagement() {
     },
     onError: (err: any) => {
       toast.error(err?.message || 'Failed to force-cancel scan');
+    }
+  });
+
+  // Cleanup stuck scans mutation
+  const cleanupStuckMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('cleanup-stuck-scans', {
+        body: { timeoutMinutes: 2 }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      const count = data?.timedOutScans || 0;
+      if (count > 0) {
+        toast.success(`Cleaned up ${count} stuck scan(s)`);
+      } else {
+        toast.info("No stuck scans found");
+      }
+      refetch();
+    },
+    onError: (err: any) => {
+      toast.error(err?.message || 'Failed to cleanup stuck scans');
     }
   });
 
@@ -281,10 +304,21 @@ export default function ScanManagement() {
                 Monitor and manage all scans across workspaces
               </p>
             </div>
-            <Button onClick={() => refetch()} variant="outline" className="gap-2">
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => cleanupStuckMutation.mutate()} 
+                variant="outline" 
+                className="gap-2"
+                disabled={cleanupStuckMutation.isPending}
+              >
+                <Zap className="h-4 w-4" />
+                {cleanupStuckMutation.isPending ? "Cleaning..." : "Cleanup Stuck"}
+              </Button>
+              <Button onClick={() => refetch()} variant="outline" className="gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {/* Filters */}
