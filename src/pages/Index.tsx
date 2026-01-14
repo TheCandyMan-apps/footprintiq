@@ -125,8 +125,8 @@ export default function Home() {
   return (
     <>
       <SEO
-        title="FootprintIQ — See What the Internet Knows About You"
-        description="FootprintIQ helps you discover username reuse, email exposure, and data broker listings using ethical OSINT techniques. Run a free scan to understand your digital footprint."
+        title="See What the Internet Knows About You — Free Digital Footprint Scan"
+        description="See where your username, email, and personal data appear online. Free scan reveals breach exposure, data broker listings, and public profiles — using public data only."
         canonical="https://footprintiq.app/"
         ogImage="https://footprintiq.app/og-image.jpg"
         schema={{

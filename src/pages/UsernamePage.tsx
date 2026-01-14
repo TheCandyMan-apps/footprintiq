@@ -148,8 +148,8 @@ export default function UsernamePage() {
   return (
     <>
       <SEO
-        title="Free Username Search — Find Profiles Across 500+ Platforms | FootprintIQ"
-        description="Run a free username search to discover public profiles across social media, gaming, dev tools, and professional networks. Ethical OSINT using publicly accessible data only."
+        title="Free Username Search — See Where Your Username Appears Online"
+        description="Check where your username appears across 500+ platforms including social media, gaming, and forums. Free search — no login required, public data only."
         canonical="https://footprintiq.app/username-search"
         schema={{
           breadcrumbs: {
