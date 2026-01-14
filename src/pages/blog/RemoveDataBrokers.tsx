@@ -215,7 +215,8 @@ export default function RemoveDataBrokers() {
                       <h3 className="text-2xl font-semibold mb-4">Step 1: Find Your Records</h3>
                       <ul className="space-y-2 ml-4">
                         <li>• Search each data broker site using your name, email, and phone</li>
-                        <li>• Use variations of your name and past addresses</li>
+                        <li>• Run a <Link to="/username-search" className="text-primary hover:underline">username search</Link> to find accounts you may have forgotten</li>
+                        <li>• Check your <Link to="/email-breach-check" className="text-primary hover:underline">email for breaches</Link> that may have exposed your data to brokers</li>
                         <li>• Take screenshots of all records found</li>
                         <li>• Document profile URLs for each listing</li>
                       </ul>

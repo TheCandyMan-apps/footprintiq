@@ -284,7 +284,9 @@ export default function WhatIsDigitalFootprint() {
                         <h3 className="text-xl font-semibold mb-2">Audit Your Online Presence</h3>
                         <p className="text-muted-foreground">
                           Use OSINT tools like FootprintIQ to scan what information is publicly available about you. 
-                          Search for your name, email addresses, phone numbers, and usernames across multiple platforms.
+                          Start with a <Link to="/username-search" className="text-primary hover:underline">username search</Link> to 
+                          see where your handles appear, then run an <Link to="/email-breach-check" className="text-primary hover:underline">email breach check</Link> to 
+                          identify compromised credentials.
                         </p>
                       </div>
                     </div>

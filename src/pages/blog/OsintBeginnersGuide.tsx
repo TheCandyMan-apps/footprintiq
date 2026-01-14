@@ -228,6 +228,10 @@ export default function OsintBeginnersGuide() {
                         <span className="font-semibold text-primary">•</span>
                         <span><strong>EmailRep</strong> - Reputation scoring based on online presence</span>
                       </li>
+                      <li className="flex items-start gap-3">
+                        <span className="font-semibold text-primary">•</span>
+                        <span><strong><Link to="/email-breach-check" className="text-primary hover:underline">FootprintIQ Email Breach Check</Link></strong> - Check if your email was exposed in breaches</span>
+                      </li>
                     </ul>
                   </Card>
 
@@ -250,7 +254,7 @@ export default function OsintBeginnersGuide() {
                   </Card>
 
                   <Card className="p-6">
-                    <h3 className="text-xl font-semibold mb-4">For Social Media</h3>
+                    <h3 className="text-xl font-semibold mb-4">For Social Media & Usernames</h3>
                     <ul className="space-y-3">
                       <li className="flex items-start gap-3">
                         <span className="font-semibold text-primary">•</span>
@@ -263,6 +267,10 @@ export default function OsintBeginnersGuide() {
                       <li className="flex items-start gap-3">
                         <span className="font-semibold text-primary">•</span>
                         <span><strong>IntelTechniques</strong> - Comprehensive social media tools</span>
+                      </li>
+                      <li className="flex items-start gap-3">
+                        <span className="font-semibold text-primary">•</span>
+                        <span><strong><Link to="/username-search" className="text-primary hover:underline">FootprintIQ Username Search</Link></strong> - Find where your handles appear online</span>
                       </li>
                     </ul>
                   </Card>

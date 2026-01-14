@@ -185,10 +185,12 @@ export default function CheckEmailBreach() {
                         <h3 className="text-lg font-semibold mb-2">Run OSINT Scans</h3>
                         <p className="text-muted-foreground mb-4">
                           Tools like FootprintIQ aggregate data from multiple breach databases to give you comprehensive 
-                          results, showing not just breaches but also where your email appears in public forums and paste sites.
+                          results, showing not just breaches but also where your email appears in public forums and paste sites. 
+                          You can also run a <Link to="/username-search" className="text-primary hover:underline">username search</Link> to 
+                          see if the same credentials are reused across platforms.
                         </p>
-                        <Link to="/scan" className="text-primary hover:underline">
-                          Start a free scan →
+                        <Link to="/email-breach-check" className="text-primary hover:underline">
+                          Check your email for breaches →
                         </Link>
                       </div>
                     </div>
