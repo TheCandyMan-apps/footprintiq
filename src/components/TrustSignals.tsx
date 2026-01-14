@@ -2,10 +2,10 @@ import { Shield } from "lucide-react";
 
 export const TrustSignals = () => {
   const items = [
-    "Public sources only",
-    "Human verification required",
-    "False positive handling",
-    "Ethical workflows"
+    "Public data only",
+    "No monitoring or tracking",
+    "No private account access",
+    "User-initiated scans only"
   ];
 
   return (
@@ -13,12 +13,8 @@ export const TrustSignals = () => {
       <div className="max-w-4xl mx-auto text-center">
         <div className="flex items-center justify-center gap-2 mb-6">
           <Shield className="w-5 h-5 text-primary" />
-          <span className="text-sm font-medium text-primary">Human-Verified Workflow</span>
+          <span className="text-sm font-medium text-primary">Built for Privacy</span>
         </div>
-        
-        <p className="text-xl md:text-2xl font-medium text-foreground mb-8">
-          "Exposure signals require interpretation — not automation."
-        </p>
         
         <div className="flex flex-wrap justify-center gap-3 mb-8">
           {items.map((item, index) => (

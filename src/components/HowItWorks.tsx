@@ -4,19 +4,19 @@ const steps = [
   {
     icon: <Search className="w-6 h-6" />,
     title: "Scan",
-    description: "Analyze public identifiers (usernames, emails, aliases)",
+    description: "You run a free scan with your username, email, or name",
     step: "1",
   },
   {
     icon: <FileSearch className="w-6 h-6" />,
-    title: "Review",
-    description: "Exposure signals are grouped, explained, and contextualized",
+    title: "Analyse",
+    description: "We check publicly available data sources for matches",
     step: "2",
   },
   {
     icon: <UserCheck className="w-6 h-6" />,
-    title: "Decide",
-    description: "Human-led interpretation, verification, and action",
+    title: "Understand",
+    description: "You see what exists — and what matters",
     step: "3",
   },
 ];
@@ -30,7 +30,7 @@ export const HowItWorks = () => {
             How It Works
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            A structured approach to understanding digital exposure
+            A simple process to understand your digital exposure
           </p>
         </div>
 
@@ -58,6 +58,11 @@ export const HowItWorks = () => {
             </div>
           ))}
         </div>
+
+        {/* Key sentence for AI discoverability */}
+        <p className="text-center mt-12 text-base text-muted-foreground max-w-2xl mx-auto">
+          FootprintIQ uses public data only and applies confidence signals to reduce false positives.
+        </p>
       </div>
     </section>
   );
