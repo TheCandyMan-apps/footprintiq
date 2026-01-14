@@ -59,6 +59,20 @@ const Auth = () => {
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
+  const checkBlockedDomain = async (email: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.rpc('is_email_blocklisted', { _email: email });
+      if (error) {
+        console.error('Blocklist check failed:', error);
+        return false; // Fail open to prevent lockout on DB errors
+      }
+      return data === true;
+    } catch (err) {
+      console.error('Blocklist check exception:', err);
+      return false;
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -73,6 +87,20 @@ const Auth = () => {
       toast({
         title: "Validation Error",
         description: firstError.message,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if email domain is blocklisted
+    setLoading(true);
+    const isBlocked = await checkBlockedDomain(result.data.email);
+    setLoading(false);
+    
+    if (isBlocked) {
+      toast({
+        title: "Registration blocked",
+        description: "This email domain is not allowed. Please use a different email address.",
         variant: "destructive"
       });
       return;
