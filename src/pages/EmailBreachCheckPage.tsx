@@ -125,8 +125,8 @@ export default function EmailBreachCheckPage() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Check Email Breach & Exposure — Free OSINT Scan | FootprintIQ"
-        description="Check if your email appears in data breaches or public exposure using ethical OSINT techniques. Free email breach check — no inbox access, no monitoring, no login required."
+        title="Free Email Breach Check — See If Your Email Was Exposed"
+        description="Check if your email appears in known data breaches or public exposure. Free email breach check — no inbox access, no account required."
         canonical="https://footprintiq.app/email-breach-check"
       />
       
