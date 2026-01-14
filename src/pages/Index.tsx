@@ -25,11 +25,22 @@ export default function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/dashboard");
-      }
-    });
+    // Defer auth check to avoid blocking LCP
+    const checkAuth = () => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          navigate("/dashboard");
+        }
+      });
+    };
+    
+    // Use requestIdleCallback for non-blocking auth check
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(checkAuth, { timeout: 2000 });
+    } else {
+      // Fallback: defer with setTimeout
+      setTimeout(checkAuth, 100);
+    }
   }, [navigate]);
 
   const handleStartScan = () => {
@@ -117,45 +128,53 @@ export default function Home() {
       <ScrollProgressBar />
       <Header />
       
-      {/* Hero */}
+      {/* Hero - Above fold, priority render */}
       <Hero onStartScan={handleStartScan} onAdvancedScan={handleAdvancedScan} />
       
-      {/* Social Proof Strip */}
-      <TrustSignals />
+      {/* Below fold sections - use content-visibility for LCP optimization */}
+      <div className="below-fold">
+        <TrustSignals />
+      </div>
       
-      {/* What FootprintIQ Does */}
-      <WhatWeDoSection />
+      <div className="below-fold">
+        <WhatWeDoSection />
+      </div>
       
-      {/* How It Works - 3 Steps */}
-      <div id="how-it-works">
+      <div id="how-it-works" className="below-fold">
         <HowItWorks />
       </div>
       
-      {/* What We Scan */}
-      <div id="features">
+      <div id="features" className="below-fold">
         <WhyChooseUs />
       </div>
       
-      {/* What We Are / Aren't */}
-      <WhatWeAre />
+      <div className="below-fold">
+        <WhatWeAre />
+      </div>
       
-      {/* Who It's For */}
-      <WhoItsFor />
+      <div className="below-fold">
+        <WhoItsFor />
+      </div>
       
-      {/* Sample Report Preview */}
-      <SampleReportPreview />
+      <div className="below-fold">
+        <SampleReportPreview />
+      </div>
       
-      {/* Trust & Transparency */}
-      <TrustTransparency />
+      <div className="below-fold">
+        <TrustTransparency />
+      </div>
       
-      {/* Why It Matters */}
-      <WhyItMatters />
+      <div className="below-fold">
+        <WhyItMatters />
+      </div>
       
-      {/* Final CTA */}
-      <FinalCTA />
+      <div className="below-fold">
+        <FinalCTA />
+      </div>
       
-      {/* FAQ */}
-      <FAQ />
+      <div className="below-fold">
+        <FAQ />
+      </div>
       
       <FloatingCTA />
       <ScrollToTop />

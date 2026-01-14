@@ -17,7 +17,11 @@ export const Footer = () => {
             <div className="flex items-center gap-2 mb-4 justify-center md:justify-start">
             <img 
               src="/logo-dark.png" 
-              alt="FootprintIQ Logo" 
+              alt="FootprintIQ Logo"
+              width={180}
+              height={51}
+              loading="lazy"
+              decoding="async"
               className="h-16 w-auto object-contain max-w-[180px] drop-shadow-sm"
             />
             </div>

@@ -141,6 +141,12 @@ DESIGN PHILOSOPHY:
     animation: shimmer 2s infinite;
   }
 
+  /* Content visibility optimization for below-fold sections */
+  .below-fold {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+  }
+
   /* Touch-friendly targets - minimum 44x44px */
   .touch-target {
     @apply min-h-[44px] min-w-[44px];
