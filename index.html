@@ -22,6 +22,9 @@
     <link rel="preconnect" href="https://byuzgvauaeldjqxlrjci.supabase.co" crossorigin />
     <link rel="preload" href="https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2" as="font" type="font/woff2" crossorigin />
     
+    <!-- Preload LCP image (logo) -->
+    <link rel="preload" as="image" href="/logo-dark.png" fetchpriority="high" />
+    
     <!-- Critical CSS -->
     <style>
       @font-face {
@@ -47,8 +50,8 @@
     <meta http-equiv="x-dns-prefetch-control" content="on" />
     <link rel="preconnect" href="https://plausible.io" crossorigin />
     
-    <!-- Privacy-friendly analytics by Plausible -->
-    <script async src="https://plausible.io/js/pa-0A3M4Q9GLRmfRuk2LDGh6.js"></script>
+    <!-- Privacy-friendly analytics by Plausible (deferred for LCP) -->
+    <script defer src="https://plausible.io/js/pa-0A3M4Q9GLRmfRuk2LDGh6.js"></script>
     <script>
       window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
       plausible.init()

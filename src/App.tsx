@@ -20,9 +20,8 @@ import { FloatingProgressTracker } from "@/components/FloatingProgressTracker";
 import { ActiveScanProvider } from "@/contexts/ActiveScanContext";
 import "@/lib/config"; // Validate env at boot
 
-// Critical pages (loaded immediately)
-// Lazy load heavy pages for better performance
-const Index = lazy(() => import("./pages/Index"));
+// Critical pages (loaded immediately for LCP optimization)
+import Index from "./pages/Index";
 const Auth = lazy(() => import("./pages/Auth"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 import NotFound from "./pages/NotFound";
