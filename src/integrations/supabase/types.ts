@@ -9736,6 +9736,14 @@ export type Database = {
       cleanup_expired_oauth_states: { Args: never; Returns: undefined }
       cleanup_expired_rate_limits: { Args: never; Returns: undefined }
       cleanup_scan_pii: { Args: never; Returns: undefined }
+      cleanup_stuck_scans: {
+        Args: { timeout_minutes?: number }
+        Returns: {
+          new_status: string
+          old_status: string
+          scan_id: string
+        }[]
+      }
       generate_case_number: { Args: never; Returns: string }
       generate_incident_number: { Args: never; Returns: string }
       generate_referral_code: { Args: { _user_id: string }; Returns: string }
