@@ -520,7 +520,17 @@ export default function UsernamePage() {
         <section className="py-16 px-6">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold mb-8 text-center">Learn More</h2>
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Link to="/username-search-tools" className="group">
+                <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
+                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">
+                    Username Search Tools Explained
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Compare Sherlock, Maigret, and other username lookup tools
+                  </p>
+                </Card>
+              </Link>
               <Link to="/blog/free-username-search" className="group">
                 <Card className="p-6 h-full hover:shadow-lg transition-shadow">
                   <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors">

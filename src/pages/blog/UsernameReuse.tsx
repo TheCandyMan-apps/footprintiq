@@ -303,7 +303,16 @@ export default function UsernameReuse() {
           {/* Related Articles */}
           <div className="mt-16 pt-8 border-t border-border">
             <h2 className="text-2xl font-bold mb-6">Related Articles</h2>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-3 gap-6">
+              <Link to="/username-search-tools" className="group">
+                <Card className="p-6 hover:shadow-lg hover:border-primary/30 transition-all h-full">
+                  <Badge className="mb-3 bg-primary/10 text-primary">Tools</Badge>
+                  <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">Username Search Tools Explained</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Compare Sherlock, Maigret, and other username lookup tools — pros, cons, and when to use each.
+                  </p>
+                </Card>
+              </Link>
               <Link to="/blog/free-username-search" className="group">
                 <Card className="p-6 hover:shadow-lg hover:border-primary/30 transition-all h-full">
                   <Badge className="mb-3 bg-primary/10 text-primary">Related</Badge>

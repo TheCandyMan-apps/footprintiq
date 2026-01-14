@@ -272,6 +272,10 @@ export default function OsintBeginnersGuide() {
                         <span className="font-semibold text-primary">•</span>
                         <span><strong><Link to="/username-search" className="text-primary hover:underline">FootprintIQ Username Search</Link></strong> - Find where your handles appear online</span>
                       </li>
+                      <li className="flex items-start gap-3">
+                        <span className="font-semibold text-primary">•</span>
+                        <span><strong><Link to="/username-search-tools" className="text-primary hover:underline">Username Tools Comparison</Link></strong> - Pros & cons of Sherlock, Maigret, and more</span>
+                      </li>
                     </ul>
                   </Card>
                 </div>
