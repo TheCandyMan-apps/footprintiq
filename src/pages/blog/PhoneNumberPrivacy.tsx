@@ -1,11 +1,10 @@
-import { Helmet } from "react-helmet-async";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Phone, Shield, AlertTriangle, CheckCircle2, Ban } from "lucide-react";
 import { Link } from "react-router-dom";
-import { StructuredData } from "@/components/StructuredData";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { getBlogHeroImage } from "@/lib/blogImages";
@@ -24,12 +23,12 @@ export default function PhoneNumberPrivacy() {
   };
 
   const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
+    "@context": "https://schema.org" as const,
+    "@type": "Article" as const,
     headline: "Phone Number Privacy: Complete Protection Guide 2024",
     description: "Learn how to protect your phone number from spam, scams, and data brokers. Comprehensive guide with actionable privacy strategies.",
-    author: { "@type": "Organization", name: "FootprintIQ" },
-    publisher: { "@type": "Organization", name: "FootprintIQ", logo: { "@type": "ImageObject", url: "https://footprintiq.app/logo-social.png" } },
+    author: { "@type": "Organization" as const, name: "FootprintIQ" },
+    publisher: { "@type": "Organization" as const, name: "FootprintIQ", logo: { "@type": "ImageObject" as const, url: "https://footprintiq.app/logo-social.png" } },
     datePublished: "2024-01-15",
     dateModified: "2024-01-15",
     image: heroImage
@@ -37,13 +36,18 @@ export default function PhoneNumberPrivacy() {
 
   return (
     <>
-      <Helmet>
-        <title>Phone Number Privacy Guide 2024 | Stop Spam & Protect Your Number</title>
-        <meta name="description" content="Protect your phone number from spam calls, scams, and data brokers. Learn strategies for securing your mobile privacy with virtual numbers and call blocking." />
-        <link rel="canonical" href="https://footprintiq.app/blog/phone-number-privacy" />
-      </Helmet>
-
-      <StructuredData breadcrumbs={breadcrumbSchema} custom={articleSchema} />
+      <SEO
+        title="Phone Number Privacy Guide 2024 | Stop Spam & Protect Your Number"
+        description="Protect your phone number from spam calls, scams, and data brokers. Learn strategies for securing your mobile privacy with virtual numbers and call blocking."
+        canonical="https://footprintiq.app/blog/phone-number-privacy"
+        ogImage={heroImage}
+        article={{ publishedTime: "2024-01-15", modifiedTime: "2024-01-15", author: "FootprintIQ" }}
+        schema={{
+          article: articleSchema,
+          breadcrumbs: breadcrumbSchema,
+          organization: organizationSchema
+        }}
+      />
 
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-primary/5">
         <Header />

@@ -1,11 +1,10 @@
-import { Helmet } from "react-helmet-async";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Globe, Shield, MapPin, Eye, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { StructuredData } from "@/components/StructuredData";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { getBlogHeroImage } from "@/lib/blogImages";
@@ -24,12 +23,12 @@ export default function IpAddressSecurity() {
   };
 
   const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
+    "@context": "https://schema.org" as const,
+    "@type": "Article" as const,
     headline: "IP Address Security: Complete Privacy & Protection Guide 2024",
     description: "Comprehensive guide to protecting your IP address, understanding privacy risks, and using VPNs effectively for online security.",
-    author: { "@type": "Organization", name: "FootprintIQ" },
-    publisher: { "@type": "Organization", name: "FootprintIQ", logo: { "@type": "ImageObject", url: "https://footprintiq.app/logo-social.png" } },
+    author: { "@type": "Organization" as const, name: "FootprintIQ" },
+    publisher: { "@type": "Organization" as const, name: "FootprintIQ", logo: { "@type": "ImageObject" as const, url: "https://footprintiq.app/logo-social.png" } },
     datePublished: "2024-01-15",
     dateModified: "2024-01-15",
     image: heroImage
@@ -37,13 +36,18 @@ export default function IpAddressSecurity() {
 
   return (
     <>
-      <Helmet>
-        <title>IP Address Security Guide 2024 | VPN Privacy Protection</title>
-        <meta name="description" content="Learn how to protect your IP address from tracking and cyberattacks. Complete guide to VPNs, proxies, and IP privacy best practices." />
-        <link rel="canonical" href="https://footprintiq.app/blog/ip-address-security" />
-      </Helmet>
-
-      <StructuredData breadcrumbs={breadcrumbSchema} custom={articleSchema} />
+      <SEO
+        title="IP Address Security Guide 2024 | VPN Privacy Protection"
+        description="Learn how to protect your IP address from tracking and cyberattacks. Complete guide to VPNs, proxies, and IP privacy best practices."
+        canonical="https://footprintiq.app/blog/ip-address-security"
+        ogImage={heroImage}
+        article={{ publishedTime: "2024-01-15", modifiedTime: "2024-01-15", author: "FootprintIQ" }}
+        schema={{
+          article: articleSchema,
+          breadcrumbs: breadcrumbSchema,
+          organization: organizationSchema
+        }}
+      />
 
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-primary/5">
         <Header />

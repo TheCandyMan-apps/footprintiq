@@ -16,7 +16,7 @@ import { WhyItMatters } from "@/components/WhyItMatters";
 import { TrustTransparency } from "@/components/TrustTransparency";
 import { FinalCTA } from "@/components/FinalCTA";
 import { FAQ } from "@/components/FAQ";
-import { OrganizationSchema } from "@/components/OrganizationSchema";
+
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { FloatingCTA } from "@/components/FloatingCTA";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -114,7 +114,6 @@ export default function Home() {
           custom: softwareAppSchema
         }}
       />
-      <OrganizationSchema />
       <ScrollProgressBar />
       <Header />
       

@@ -1,11 +1,10 @@
-import { Helmet } from "react-helmet-async";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Shield, AlertTriangle, CheckCircle2, FileText, Phone, Lock } from "lucide-react";
 import { Link } from "react-router-dom";
-import { StructuredData } from "@/components/StructuredData";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { getBlogHeroImage } from "@/lib/blogImages";
@@ -24,12 +23,12 @@ export default function IdentityTheftResponse() {
   };
 
   const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
+    "@context": "https://schema.org" as const,
+    "@type": "Article" as const,
     headline: "Identity Theft Response: Complete Recovery Guide 2024",
     description: "Step-by-step guide to responding to identity theft. Learn how to freeze credit, report fraud, and recover your stolen identity.",
-    author: { "@type": "Organization", name: "FootprintIQ" },
-    publisher: { "@type": "Organization", name: "FootprintIQ", logo: { "@type": "ImageObject", url: "https://footprintiq.app/logo-social.png" } },
+    author: { "@type": "Organization" as const, name: "FootprintIQ" },
+    publisher: { "@type": "Organization" as const, name: "FootprintIQ", logo: { "@type": "ImageObject" as const, url: "https://footprintiq.app/logo-social.png" } },
     datePublished: "2024-01-15",
     dateModified: "2024-01-15",
     image: heroImage
@@ -37,13 +36,18 @@ export default function IdentityTheftResponse() {
 
   return (
     <>
-      <Helmet>
-        <title>Identity Theft Response Guide 2024 | Recovery Steps & Prevention</title>
-        <meta name="description" content="Victim of identity theft? Follow this complete recovery guide with immediate actions, credit freezes, fraud reports, and long-term protection strategies." />
-        <link rel="canonical" href="https://footprintiq.app/blog/identity-theft-response" />
-      </Helmet>
-
-      <StructuredData breadcrumbs={breadcrumbSchema} custom={articleSchema} />
+      <SEO
+        title="Identity Theft Response Guide 2024 | Recovery Steps & Prevention"
+        description="Victim of identity theft? Follow this complete recovery guide with immediate actions, credit freezes, fraud reports, and long-term protection strategies."
+        canonical="https://footprintiq.app/blog/identity-theft-response"
+        ogImage={heroImage}
+        article={{ publishedTime: "2024-01-15", modifiedTime: "2024-01-15", author: "FootprintIQ" }}
+        schema={{
+          article: articleSchema,
+          breadcrumbs: breadcrumbSchema,
+          organization: organizationSchema
+        }}
+      />
 
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-primary/5">
         <Header />

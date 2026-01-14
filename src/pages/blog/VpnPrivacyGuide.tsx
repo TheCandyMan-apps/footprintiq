@@ -1,11 +1,10 @@
-import { Helmet } from "react-helmet-async";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Shield, Globe, Lock, CheckCircle2, AlertTriangle, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
-import { StructuredData } from "@/components/StructuredData";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { getBlogHeroImage } from "@/lib/blogImages";
@@ -24,12 +23,12 @@ export default function VpnPrivacyGuide() {
   };
 
   const articleSchema = {
-    "@context": "https://schema.org",
-    "@type": "Article",
+    "@context": "https://schema.org" as const,
+    "@type": "Article" as const,
     headline: "VPN Guide 2024: Complete Privacy & Security Explained",
     description: "Everything you need to know about VPNs. Learn how VPNs work, which one to choose, and how to use them for maximum privacy protection.",
-    author: { "@type": "Organization", name: "FootprintIQ" },
-    publisher: { "@type": "Organization", name: "FootprintIQ", logo: { "@type": "ImageObject", url: "https://footprintiq.app/logo-social.png" } },
+    author: { "@type": "Organization" as const, name: "FootprintIQ" },
+    publisher: { "@type": "Organization" as const, name: "FootprintIQ", logo: { "@type": "ImageObject" as const, url: "https://footprintiq.app/logo-social.png" } },
     datePublished: "2024-01-15",
     dateModified: "2024-01-15",
     image: heroImage
@@ -37,13 +36,18 @@ export default function VpnPrivacyGuide() {
 
   return (
     <>
-      <Helmet>
-        <title>VPN Guide 2024 | Best VPN for Privacy & Security Explained</title>
-        <meta name="description" content="Complete VPN guide for 2024. Learn how VPNs work, compare top providers, and choose the best VPN for privacy, security, and streaming." />
-        <link rel="canonical" href="https://footprintiq.app/blog/vpn-privacy-guide" />
-      </Helmet>
-
-      <StructuredData breadcrumbs={breadcrumbSchema} custom={articleSchema} />
+      <SEO
+        title="VPN Guide 2024 | Best VPN for Privacy & Security Explained"
+        description="Complete VPN guide for 2024. Learn how VPNs work, compare top providers, and choose the best VPN for privacy, security, and streaming."
+        canonical="https://footprintiq.app/blog/vpn-privacy-guide"
+        ogImage={heroImage}
+        article={{ publishedTime: "2024-01-15", modifiedTime: "2024-01-15", author: "FootprintIQ" }}
+        schema={{
+          article: articleSchema,
+          breadcrumbs: breadcrumbSchema,
+          organization: organizationSchema
+        }}
+      />
 
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-primary/5">
         <Header />
