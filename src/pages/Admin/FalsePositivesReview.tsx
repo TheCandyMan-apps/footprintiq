@@ -170,7 +170,7 @@ export default function FalsePositivesReview() {
       setTrainingResult(data as MLTrainingResult);
       toast({
         title: "ML Training Complete",
-        description: `Processed ${data.samplesProcessed} samples. Model accuracy: ${data.accuracy?.toFixed(2)}%`,
+        description: `Processed ${data.samplesProcessed} samples.${data.accuracy != null ? ` Model accuracy: ${data.accuracy.toFixed(2)}%` : ''}`
       });
     } catch (error) {
       console.error('ML training error:', error);
@@ -280,7 +280,7 @@ export default function FalsePositivesReview() {
                   <p className="text-sm text-muted-foreground">Samples Processed</p>
                   <p className="font-semibold">{trainingResult.samplesProcessed}</p>
                 </div>
-                {trainingResult.accuracy !== undefined && (
+                {trainingResult.accuracy != null && (
                   <div>
                     <p className="text-sm text-muted-foreground">Model Accuracy</p>
                     <p className="font-semibold text-green-600">{trainingResult.accuracy.toFixed(2)}%</p>
