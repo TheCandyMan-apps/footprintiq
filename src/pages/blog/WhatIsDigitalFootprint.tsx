@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { SEO } from "@/components/SEO";
-import { StructuredData, organizationSchema } from "@/components/StructuredData";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,11 +63,11 @@ export default function WhatIsDigitalFootprint() {
           author: "FootprintIQ",
           tags: ["Privacy", "Digital Footprint", "Online Security"]
         }}
-      />
-      <StructuredData 
-        organization={organizationSchema}
-        breadcrumbs={breadcrumbs}
-        custom={articleSchema}
+        schema={{
+          organization: organizationSchema,
+          breadcrumbs: breadcrumbs,
+          custom: articleSchema
+        }}
       />
       <Header />
       

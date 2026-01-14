@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { SEO } from "@/components/SEO";
-import { StructuredData, organizationSchema } from "@/components/StructuredData";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Shield, AlertCircle, Database, Bell, Lock, CheckCircle } from "lucide-react";
@@ -100,12 +99,12 @@ export default function DarkWebMonitoringExplained() {
           author: "FootprintIQ",
           tags: ["Dark Web", "Cybersecurity", "Data Protection"]
         }}
-      />
-      <StructuredData 
-        organization={organizationSchema}
-        breadcrumbs={breadcrumbs}
-        faq={faqSchema}
-        custom={articleSchema}
+        schema={{
+          organization: organizationSchema,
+          breadcrumbs: breadcrumbs,
+          faq: faqSchema,
+          custom: articleSchema
+        }}
       />
       <Header />
       

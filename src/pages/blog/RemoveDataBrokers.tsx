@@ -1,11 +1,10 @@
-import { Helmet } from "react-helmet-async";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Shield, Search, Ban, CheckCircle2, AlertTriangle, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { StructuredData } from "@/components/StructuredData";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { getBlogHeroImage } from "@/lib/blogImages";
@@ -37,13 +36,21 @@ export default function RemoveDataBrokers() {
 
   return (
     <>
-      <Helmet>
-        <title>Remove Your Data from Data Brokers | Complete 2024 Guide</title>
-        <meta name="description" content="Learn how to remove your personal information from data broker sites. Step-by-step guide with proven methods to protect your privacy." />
-        <link rel="canonical" href="https://footprintiq.app/blog/remove-data-brokers" />
-      </Helmet>
-
-      <StructuredData breadcrumbs={breadcrumbSchema} custom={articleSchema} />
+      <SEO
+        title="Remove Your Data from Data Brokers | Complete 2024 Guide"
+        description="Learn how to remove your personal information from data broker sites. Step-by-step guide with proven methods to protect your privacy."
+        canonical="https://footprintiq.app/blog/remove-data-brokers"
+        article={{
+          publishedTime: "2024-01-15",
+          modifiedTime: "2024-01-15",
+          author: "FootprintIQ",
+          tags: ["Privacy", "Data Brokers", "Security"]
+        }}
+        schema={{
+          breadcrumbs: breadcrumbSchema,
+          custom: articleSchema
+        }}
+      />
 
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-primary/5">
         <Header />
