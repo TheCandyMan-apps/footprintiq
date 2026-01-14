@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { SEO } from "@/components/SEO";
-import { StructuredData, organizationSchema } from "@/components/StructuredData";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Brain, TrendingUp, Shield, AlertTriangle, Zap, Globe, Lock, Target } from "lucide-react";
@@ -92,12 +91,12 @@ export default function AiInOsint2025() {
           author: "FootprintIQ Team",
           tags: ["AI", "OSINT", "Cybersecurity", "Privacy"]
         }}
-      />
-      <StructuredData 
-        organization={organizationSchema}
-        breadcrumbs={breadcrumbs}
-        faq={faqSchema}
-        custom={articleSchema}
+        schema={{
+          organization: organizationSchema,
+          breadcrumbs: breadcrumbs,
+          faq: faqSchema,
+          custom: articleSchema
+        }}
       />
       <Header />
       

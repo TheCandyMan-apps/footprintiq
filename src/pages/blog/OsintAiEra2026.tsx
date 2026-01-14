@@ -1,15 +1,15 @@
-import { Helmet } from "react-helmet-async";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Brain, TrendingUp, Shield, AlertTriangle, Zap, Globe, Lock, Target, Eye, Bot, Network, Cpu, Scale, Workflow, BookOpen, Lightbulb } from "lucide-react";
 import { Link } from "react-router-dom";
-import { StructuredData, organizationSchema } from "@/components/StructuredData";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { getBlogHeroImage } from "@/lib/blogImages";
 import { Badge } from "@/components/ui/badge";
+
 export default function OsintAiEra2026() {
   const heroImage = getBlogHeroImage("osint-ai-era-2026");
   const breadcrumbSchema = {
@@ -79,13 +79,23 @@ export default function OsintAiEra2026() {
     }]
   };
   return <>
-      <Helmet>
-        <title>2026 OSINT and the Era of AI: The Future of Digital Intelligence | FootprintIQ</title>
-        <meta name="description" content="Discover how AI is transforming Open Source Intelligence in 2026. From autonomous agents to predictive threat detection, explore the cutting-edge tools and ethical considerations shaping modern OSINT." />
-        <link rel="canonical" href="https://footprintiq.app/blog/osint-ai-era-2026" />
-      </Helmet>
-
-      <StructuredData breadcrumbs={breadcrumbSchema} custom={articleSchema} faq={faqSchema} organization={organizationSchema} />
+      <SEO
+        title="2026 OSINT and the Era of AI: The Future of Digital Intelligence | FootprintIQ"
+        description="Discover how AI is transforming Open Source Intelligence in 2026. From autonomous agents to predictive threat detection, explore the cutting-edge tools and ethical considerations shaping modern OSINT."
+        canonical="https://footprintiq.app/blog/osint-ai-era-2026"
+        article={{
+          publishedTime: "2026-01-10",
+          modifiedTime: "2026-01-10",
+          author: "FootprintIQ",
+          tags: ["AI", "OSINT", "Technology"]
+        }}
+        schema={{
+          organization: organizationSchema,
+          breadcrumbs: breadcrumbSchema,
+          faq: faqSchema,
+          custom: articleSchema
+        }}
+      />
 
       <div className="min-h-screen flex flex-col bg-gradient-to-b from-background via-background to-primary/5">
         <Header />

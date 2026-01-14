@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { SEO } from "@/components/SEO";
-import { StructuredData, organizationSchema } from "@/components/StructuredData";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Database, Globe, Code, Shield, Eye } from "lucide-react";
@@ -63,11 +62,11 @@ export default function OsintBeginnersGuide() {
           author: "FootprintIQ",
           tags: ["OSINT", "Cybersecurity", "Privacy"]
         }}
-      />
-      <StructuredData 
-        organization={organizationSchema}
-        breadcrumbs={breadcrumbs}
-        custom={articleSchema}
+        schema={{
+          organization: organizationSchema,
+          breadcrumbs: breadcrumbs,
+          custom: articleSchema
+        }}
       />
       <Header />
       

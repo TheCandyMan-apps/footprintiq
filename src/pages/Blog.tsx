@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom";
 import { Calendar, Clock, ArrowRight } from "lucide-react";
-import { SEO } from "@/components/SEO";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { StructuredData, organizationSchema } from "@/components/StructuredData";
 const blogPosts = [{
   slug: "osint-ai-era-2026",
   title: "2026 OSINT and the Era of AI: The Future of Digital Intelligence",
@@ -128,8 +127,15 @@ const Blog = () => {
     }))
   };
   return <>
-      <SEO title="Blog - Digital Privacy & OSINT Guides | FootprintIQ" description="Learn about digital footprints, OSINT, data breaches, and online privacy protection. Expert guides and tutorials for staying safe online." canonical="https://footprintiq.app/blog" structuredData={structuredData} />
-      <StructuredData organization={organizationSchema} />
+      <SEO 
+        title="Blog - Digital Privacy & OSINT Guides | FootprintIQ" 
+        description="Learn about digital footprints, OSINT, data breaches, and online privacy protection. Expert guides and tutorials for staying safe online." 
+        canonical="https://footprintiq.app/blog" 
+        schema={{
+          organization: organizationSchema,
+          custom: structuredData
+        }}
+      />
       
       <Header />
       

@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { SEO } from "@/components/SEO";
-import { StructuredData, organizationSchema } from "@/components/StructuredData";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -68,11 +67,11 @@ export default function FreeUsernameSearch() {
           author: "FootprintIQ",
           tags: ["Username Search", "Digital Footprint", "Privacy", "OSINT"]
         }}
-      />
-      <StructuredData 
-        organization={organizationSchema}
-        breadcrumbs={breadcrumbs}
-        custom={articleSchema}
+        schema={{
+          organization: organizationSchema,
+          breadcrumbs: breadcrumbs,
+          custom: articleSchema
+        }}
       />
       <Header />
       

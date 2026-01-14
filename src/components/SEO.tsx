@@ -1,5 +1,81 @@
 import { Helmet } from "react-helmet-async";
 
+/**
+ * Safely serialize JSON for embedding in script tags.
+ * Escapes HTML-breaking characters to prevent XSS via JSON injection.
+ * Only escapes <, >, and & (NOT double quotes).
+ */
+const safeJSONStringify = (data: unknown): string => {
+  return JSON.stringify(data)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026');
+};
+
+// Schema type definitions
+interface OrganizationSchema {
+  "@context": "https://schema.org";
+  "@type": "Organization";
+  name: string;
+  url: string;
+  logo: string;
+  description: string;
+  sameAs?: string[];
+  contactPoint?: {
+    "@type": "ContactPoint";
+    email: string;
+    contactType: string;
+    areaServed: string;
+  };
+}
+
+interface BreadcrumbListSchema {
+  "@context": "https://schema.org";
+  "@type": "BreadcrumbList";
+  itemListElement: Array<{
+    "@type": "ListItem";
+    position: number;
+    name: string;
+    item?: string;
+  }>;
+}
+
+interface FAQPageSchema {
+  "@context": "https://schema.org";
+  "@type": "FAQPage";
+  mainEntity: Array<{
+    "@type": "Question";
+    name: string;
+    acceptedAnswer: {
+      "@type": "Answer";
+      text: string;
+    };
+  }>;
+}
+
+interface ArticleSchema {
+  "@context": "https://schema.org";
+  "@type": "Article" | "BlogPosting";
+  headline: string;
+  description?: string;
+  author?: {
+    "@type": "Organization" | "Person";
+    name: string;
+  };
+  publisher?: OrganizationSchema | {
+    "@type": "Organization";
+    name: string;
+    logo?: {
+      "@type": "ImageObject";
+      url: string;
+    };
+  };
+  datePublished?: string;
+  dateModified?: string;
+  image?: string;
+  keywords?: string;
+}
+
 interface SEOProps {
   title?: string;
   description?: string;
@@ -12,8 +88,38 @@ interface SEOProps {
     author?: string;
     tags?: string[];
   };
+  // Unified schema prop - all JSON-LD injected via dangerouslySetInnerHTML
+  schema?: {
+    article?: ArticleSchema;
+    breadcrumbs?: BreadcrumbListSchema;
+    faq?: FAQPageSchema;
+    organization?: OrganizationSchema;
+    custom?: Record<string, unknown> | Record<string, unknown>[];
+  };
+  // Legacy prop - kept for backward compatibility
   structuredData?: object;
 }
+
+// Reusable organization schema
+export const organizationSchema: OrganizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "FootprintIQ",
+  url: "https://footprintiq.app",
+  logo: "https://footprintiq.app/logo-social.png",
+  description: "Enterprise OSINT platform for digital footprint analysis and threat intelligence",
+  sameAs: [
+    "https://twitter.com/footprintiq",
+    "https://linkedin.com/company/footprintiq",
+    "https://github.com/footprintiq"
+  ],
+  contactPoint: {
+    "@type": "ContactPoint",
+    email: "support@footprintiq.app",
+    contactType: "Customer Support",
+    areaServed: "Worldwide"
+  }
+};
 
 export const SEO = ({
   title = "FootprintIQ - Find & Remove Your Exposed Personal Information Online",
@@ -22,8 +128,10 @@ export const SEO = ({
   ogImage = "https://footprintiq.app/og-image.jpg",
   ogType = "website",
   article,
+  schema,
   structuredData,
 }: SEOProps) => {
+  // Default structured data - only used if no schema or structuredData is provided
   const defaultStructuredData = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -60,6 +168,9 @@ export const SEO = ({
       "Works Across Hundreds of Sites"
     ]
   };
+
+  // Determine if we should show default schema
+  const hasExplicitSchema = schema || structuredData;
 
   return (
     <Helmet>
@@ -107,10 +218,73 @@ export const SEO = ({
       <meta name="twitter:image:alt" content="FootprintIQ Digital Footprint Scanner" />
       <meta name="twitter:site" content="@FootprintIQ" />
 
-      {/* Structured Data */}
-      <script type="application/ld+json">
-        {JSON.stringify(structuredData || defaultStructuredData)}
-      </script>
+      {/* Schema.org JSON-LD - All injected via dangerouslySetInnerHTML with XSS protection */}
+      
+      {/* Organization schema */}
+      {schema?.organization && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJSONStringify(schema.organization) }}
+        />
+      )}
+
+      {/* Article schema */}
+      {schema?.article && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJSONStringify(schema.article) }}
+        />
+      )}
+
+      {/* Breadcrumbs schema */}
+      {schema?.breadcrumbs && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJSONStringify(schema.breadcrumbs) }}
+        />
+      )}
+
+      {/* FAQ schema */}
+      {schema?.faq && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJSONStringify(schema.faq) }}
+        />
+      )}
+
+      {/* Custom schema(s) */}
+      {schema?.custom && (
+        Array.isArray(schema.custom)
+          ? schema.custom.map((item, i) => (
+              <script
+                key={`custom-schema-${i}`}
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: safeJSONStringify(item) }}
+              />
+            ))
+          : (
+              <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: safeJSONStringify(schema.custom) }}
+              />
+            )
+      )}
+
+      {/* Legacy structuredData prop support */}
+      {structuredData && !schema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJSONStringify(structuredData) }}
+        />
+      )}
+
+      {/* Default schema when no explicit schema is provided */}
+      {!hasExplicitSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: safeJSONStringify(defaultStructuredData) }}
+        />
+      )}
     </Helmet>
   );
 };

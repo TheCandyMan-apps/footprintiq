@@ -1,7 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { SEO } from "@/components/SEO";
-import { StructuredData, organizationSchema } from "@/components/StructuredData";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Mail, AlertTriangle, Shield, Lock, Search, CheckCircle } from "lucide-react";
@@ -63,11 +62,11 @@ export default function CheckEmailBreach() {
           author: "FootprintIQ",
           tags: ["Security", "Data Breach", "Email Security"]
         }}
-      />
-      <StructuredData 
-        organization={organizationSchema}
-        breadcrumbs={breadcrumbs}
-        custom={articleSchema}
+        schema={{
+          organization: organizationSchema,
+          breadcrumbs: breadcrumbs,
+          custom: articleSchema
+        }}
       />
       <Header />
       

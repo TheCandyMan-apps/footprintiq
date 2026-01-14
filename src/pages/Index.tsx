@@ -1,8 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { SEO } from "@/components/SEO";
-import { StructuredData, organizationSchema } from "@/components/StructuredData";
+import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
@@ -41,62 +40,62 @@ export default function Home() {
     navigate('/scan/advanced');
   };
 
-  const structuredData = {
+  const softwareAppSchema = {
     "@context": "https://schema.org",
-    "@graph": [
+    "@type": "SoftwareApplication",
+    "name": "FootprintIQ",
+    "applicationCategory": "SecurityApplication",
+    "operatingSystem": "Web",
+    "description": "See what the internet knows about you. FootprintIQ scans hundreds of public sources to reveal exposed usernames, profiles, breached data, and digital risks linked to your online identity.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "description": "Free scan available"
+    },
+    "url": "https://footprintiq.app/"
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org" as const,
+    "@type": "FAQPage" as const,
+    mainEntity: [
       {
-        "@type": "SoftwareApplication",
-        "name": "FootprintIQ",
-        "applicationCategory": "SecurityApplication",
-        "operatingSystem": "Web",
-        "description": "See what the internet knows about you. FootprintIQ scans hundreds of public sources to reveal exposed usernames, profiles, breached data, and digital risks linked to your online identity.",
-        "offers": {
-          "@type": "Offer",
-          "price": "0",
-          "priceCurrency": "USD",
-          "description": "Free scan available"
-        },
-        "url": "https://footprintiq.app/"
+        "@type": "Question" as const,
+        name: "Is my data private when using FootprintIQ?",
+        acceptedAnswer: {
+          "@type": "Answer" as const,
+          text: "Yes — we analyse publicly available information only and never store or sell your personal data. Your privacy is our top priority."
+        }
       },
       {
-        "@type": "FAQPage",
-        "mainEntity": [
-          {
-            "@type": "Question",
-            "name": "Is my data private when using FootprintIQ?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes — we analyse publicly available information only and never store or sell your personal data. Your privacy is our top priority."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "Is FootprintIQ free to use?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Yes! The free tier runs comprehensive checks across public sources including social platforms, forums, breach indexes, and data brokers."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What does FootprintIQ scan?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "FootprintIQ scans publicly accessible sources including social platforms, forums, breach indexes, data broker listings, and people-search sites to build a clear picture of your online visibility."
-            }
-          }
-        ]
+        "@type": "Question" as const,
+        name: "Is FootprintIQ free to use?",
+        acceptedAnswer: {
+          "@type": "Answer" as const,
+          text: "Yes! The free tier runs comprehensive checks across public sources including social platforms, forums, breach indexes, and data brokers."
+        }
       },
       {
-        "@type": "BreadcrumbList",
-        "itemListElement": [
-          {
-            "@type": "ListItem",
-            "position": 1,
-            "name": "Home",
-            "item": "https://footprintiq.app/"
-          }
-        ]
+        "@type": "Question" as const,
+        name: "What does FootprintIQ scan?",
+        acceptedAnswer: {
+          "@type": "Answer" as const,
+          text: "FootprintIQ scans publicly accessible sources including social platforms, forums, breach indexes, data broker listings, and people-search sites to build a clear picture of your online visibility."
+        }
+      }
+    ]
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org" as const,
+    "@type": "BreadcrumbList" as const,
+    itemListElement: [
+      {
+        "@type": "ListItem" as const,
+        position: 1,
+        name: "Home",
+        item: "https://footprintiq.app/"
       }
     ]
   };
@@ -108,10 +107,14 @@ export default function Home() {
         description="FootprintIQ scans hundreds of public sources to reveal exposed usernames, profiles, breached data, and digital risks linked to your online identity. No hacking. No private databases."
         canonical="https://footprintiq.app/"
         ogImage="https://footprintiq.app/og-image.jpg"
-        structuredData={structuredData}
+        schema={{
+          organization: organizationSchema,
+          faq: faqSchema,
+          breadcrumbs: breadcrumbSchema,
+          custom: softwareAppSchema
+        }}
       />
       <OrganizationSchema />
-      <StructuredData organization={organizationSchema} />
       <ScrollProgressBar />
       <Header />
       
