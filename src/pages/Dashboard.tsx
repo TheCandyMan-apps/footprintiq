@@ -705,33 +705,35 @@ const Dashboard = () => {
                   <PremiumUpgradeCTA variant="banner" message="Upgrade to Pro for unlimited scans" feature="unlimited scans, advanced tools, and AI analysis" />
                 </div>}
               
-              <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-6 mb-8">
-                  <TabsTrigger value="overview" className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
-                    <Activity className="h-4 w-4 mr-2" />
-                    Overview
-                  </TabsTrigger>
-                  <TabsTrigger value="analytics" className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Analytics
-                  </TabsTrigger>
-                  <TabsTrigger value="scans" className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
-                    <FileSearch className="h-4 w-4 mr-2" />
-                    Recent Scans
-                  </TabsTrigger>
-                  <TabsTrigger value="scheduled" className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
-                    <Clock className="h-4 w-4 mr-2" />
-                    Scheduled
-                  </TabsTrigger>
-                  <TabsTrigger value="webhooks" className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
-                    <Webhook className="h-4 w-4 mr-2" />
-                    Webhooks
-                  </TabsTrigger>
-                  <TabsTrigger value="archived" className="relative data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
-                    <Archive className="h-4 w-4 mr-2" />
-                    Archived
-                  </TabsTrigger>
-                </TabsList>
+<Tabs defaultValue="overview" className="w-full">
+                <div className="overflow-x-auto -mx-2 px-2 mb-8">
+                  <TabsList className="inline-flex w-max min-w-full md:grid md:w-full md:grid-cols-6 gap-1">
+                    <TabsTrigger value="overview" className="relative whitespace-nowrap px-3 py-2 data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
+                      <Activity className="h-4 w-4 mr-1.5 hidden sm:inline-block" />
+                      Overview
+                    </TabsTrigger>
+                    <TabsTrigger value="analytics" className="relative whitespace-nowrap px-3 py-2 data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
+                      <TrendingUp className="h-4 w-4 mr-1.5 hidden sm:inline-block" />
+                      Analytics
+                    </TabsTrigger>
+                    <TabsTrigger value="scans" className="relative whitespace-nowrap px-3 py-2 data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
+                      <FileSearch className="h-4 w-4 mr-1.5 hidden sm:inline-block" />
+                      Recent Scans
+                    </TabsTrigger>
+                    <TabsTrigger value="scheduled" className="relative whitespace-nowrap px-3 py-2 data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
+                      <Clock className="h-4 w-4 mr-1.5 hidden sm:inline-block" />
+                      Scheduled
+                    </TabsTrigger>
+                    <TabsTrigger value="webhooks" className="relative whitespace-nowrap px-3 py-2 data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
+                      <Webhook className="h-4 w-4 mr-1.5 hidden sm:inline-block" />
+                      Webhooks
+                    </TabsTrigger>
+                    <TabsTrigger value="archived" className="relative whitespace-nowrap px-3 py-2 data-[state=active]:text-primary transition-smooth hover:text-primary/80 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-primary after:scale-x-0 data-[state=active]:after:scale-x-100 after:transition-transform after:duration-300">
+                      <Archive className="h-4 w-4 mr-1.5 hidden sm:inline-block" />
+                      Archived
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
 
                 {/* Overview Tab */}
                 <TabsContent value="overview" className="space-y-8">
