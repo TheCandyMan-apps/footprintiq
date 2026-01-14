@@ -1367,21 +1367,21 @@ const BlogPost = () => {
     return <Navigate to="/blog" replace />;
   }
 
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "BlogPosting",
+  const articleSchema = {
+    "@context": "https://schema.org" as const,
+    "@type": "BlogPosting" as const,
     "headline": post.title,
     "datePublished": new Date(post.date).toISOString(),
     "dateModified": new Date(post.date).toISOString(),
     "description": post.content.substring(0, 160).replace(/<[^>]*>/g, '').trim(),
     "image": heroImage || "https://footprintiq.app/og-image.jpg",
     "author": {
-      "@type": "Organization",
+      "@type": "Organization" as const,
       "name": "FootprintIQ",
       "url": "https://footprintiq.app"
     },
     "publisher": {
-      "@type": "Organization",
+      "@type": "Organization" as const,
       "name": "FootprintIQ",
       "url": "https://footprintiq.app",
       "logo": {
@@ -1410,7 +1410,7 @@ const BlogPost = () => {
           author: "FootprintIQ",
           tags: [post.category, "digital privacy", "OSINT"],
         }}
-        structuredData={structuredData}
+        schema={{ custom: articleSchema }}
       />
 
       <Header />

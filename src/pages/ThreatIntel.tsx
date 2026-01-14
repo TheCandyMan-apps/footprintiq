@@ -75,23 +75,15 @@ export default function ThreatIntel() {
         title="Threat Intelligence — Real-Time Threat Monitoring | FootprintIQ"
         description="Real-time threat monitoring and intelligence. Track emerging threats, dark web mentions, and security vulnerabilities affecting your digital footprint."
         canonical="https://footprintiq.app/threat-intel"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://footprintiq.app/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Threat Intelligence",
-              "item": "https://footprintiq.app/threat-intel"
-            }
-          ]
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Threat Intelligence", item: "https://footprintiq.app/threat-intel" }
+            ]
+          }
         }}
       />
       <div className="container mx-auto py-8 px-4">

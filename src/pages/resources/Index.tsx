@@ -48,23 +48,15 @@ const ResourcesIndex = () => {
         title="Privacy Resources — FootprintIQ Blog, Webinars & Whitepapers"
         description="Access expert blogs, whitepapers, webinars, and guides on digital privacy, OSINT techniques, and data protection best practices."
         canonical="https://footprintiq.app/resources"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://footprintiq.app/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Resources",
-              "item": "https://footprintiq.app/resources"
-            }
-          ]
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Resources", item: "https://footprintiq.app/resources" }
+            ]
+          }
         }}
       />
       <div className="min-h-screen flex flex-col">

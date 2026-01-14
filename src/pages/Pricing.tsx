@@ -182,7 +182,7 @@ const PricingPage = () => {
         title="Pricing — FootprintIQ"
         description="Simple pricing. No surprises. Understand your online exposure before it's used against you."
         canonical="https://footprintiq.app/pricing"
-        structuredData={combinedStructuredData}
+        schema={{ custom: combinedStructuredData }}
       />
       <div className="min-h-screen bg-background">
         <Header />

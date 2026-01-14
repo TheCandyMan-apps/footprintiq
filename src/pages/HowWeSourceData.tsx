@@ -3,22 +3,22 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 
 export default function HowWeSourceData() {
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://footprintiq.app/" },
-      { "@type": "ListItem", "position": 2, "name": "How We Source Data", "item": "https://footprintiq.app/how-we-source-data" }
-    ]
-  };
-
   return (
     <>
       <SEO
         title="How We Source Data — FootprintIQ OSINT Provider Transparency"
         description="Learn about FootprintIQ's trusted OSINT data sources including Have I Been Pwned, Shodan, VirusTotal, and 100+ data brokers. Full transparency on our intelligence gathering."
         canonical="https://footprintiq.app/how-we-source-data"
-        structuredData={structuredData}
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "How We Source Data", item: "https://footprintiq.app/how-we-source-data" }
+            ]
+          }
+        }}
       />
       <Header />
       <main className="max-w-4xl mx-auto px-6 py-16">

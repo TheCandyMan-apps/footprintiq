@@ -4,32 +4,22 @@ import { Footer } from "@/components/Footer";
 import { Database, Shield, Lock, Search } from "lucide-react";
 
 const DataSources = () => {
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://footprintiq.app/"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "How We Source Data",
-        "item": "https://footprintiq.app/how-we-source-data"
-      }
-    ]
-  };
-
   return (
     <>
       <SEO
         title="How We Source Data — FootprintIQ"
         description="Our OSINT provider categories, what each reveals, and limitations. Trusted sources: Have I Been Pwned, Shodan, VirusTotal, and 100+ data broker databases."
         canonical="https://footprintiq.app/how-we-source-data"
-        structuredData={structuredData}
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "How We Source Data", item: "https://footprintiq.app/how-we-source-data" }
+            ]
+          }
+        }}
       />
       <Header />
       

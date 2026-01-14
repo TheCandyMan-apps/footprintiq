@@ -4,32 +4,22 @@ import { Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const PrivacyPolicy = () => {
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://footprintiq.app/"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Privacy Policy",
-        "item": "https://footprintiq.app/privacy"
-      }
-    ]
-  };
-
   return (
     <>
       <SEO
         title="Privacy Policy — FootprintIQ"
         description="How FootprintIQ handles your data: what we collect, why we collect it, retention, cookies, analytics, and your rights under UK GDPR."
         canonical="https://footprintiq.app/privacy"
-        structuredData={structuredData}
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Privacy Policy", item: "https://footprintiq.app/privacy" }
+            ]
+          }
+        }}
       />
       
       <div className="min-h-screen bg-background">

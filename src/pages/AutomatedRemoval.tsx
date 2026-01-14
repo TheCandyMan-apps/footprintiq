@@ -120,23 +120,15 @@ export default function AutomatedRemoval() {
         title="Automated Data Removal — Remove Personal Data from 100+ Sites | FootprintIQ"
         description="Automatically remove your personal information from data brokers and people search sites. Continuous monitoring and removal across 100+ platforms."
         canonical="https://footprintiq.app/automated-removal"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://footprintiq.app/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Automated Removal",
-              "item": "https://footprintiq.app/automated-removal"
-            }
-          ]
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Automated Removal", item: "https://footprintiq.app/automated-removal" }
+            ]
+          }
         }}
       />
       <div className="container mx-auto py-8 px-4">

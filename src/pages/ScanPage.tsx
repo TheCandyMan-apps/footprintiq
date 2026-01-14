@@ -109,23 +109,15 @@ const ScanPage = () => {
         title="Scan Your Digital Footprint — FootprintIQ OSINT Scanner"
         description="Free OSINT scanner for emails, usernames, domains, phones and IPs. Check data breaches with Have I Been Pwned, Shodan, VirusTotal and more."
         canonical="https://footprintiq.app/scan"
-        structuredData={{
-          "@context": "https://schema.org",
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Home",
-              "item": "https://footprintiq.app/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": "Scan",
-              "item": "https://footprintiq.app/scan"
-            }
-          ]
+        schema={{
+          breadcrumbs: {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
+              { "@type": "ListItem", position: 2, name: "Scan", item: "https://footprintiq.app/scan" }
+            ]
+          }
         }}
       />
       <main className="min-h-screen bg-background">

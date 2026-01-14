@@ -5,27 +5,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Lock, Zap, Shield, ArrowRight, Code, CheckCircle } from "lucide-react";
 
 const ApiDocs = () => {
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "TechArticle",
-    "headline": "FootprintIQ API Documentation (v1) — OSINT & Persona Intelligence",
-    "description": "Integrate FootprintIQ's OSINT, Persona DNA, and Predictive Risk Index via REST API.",
-    "author": {
-      "@type": "Organization",
-      "name": "FootprintIQ Team"
-    },
-    "publisher": {
-      "@type": "Organization",
-      "name": "FootprintIQ",
-      "logo": {
-        "@type": "ImageObject",
-        "url": "https://footprintiq.app/logo.png"
-      }
-    },
-    "datePublished": "2025-01-15",
-    "dateModified": "2025-01-15"
-  };
-
   return (
     <>
       <SEO
@@ -33,7 +12,28 @@ const ApiDocs = () => {
         description="Integrate FootprintIQ's OSINT, Persona DNA, and Predictive Risk Index via REST API. Complete developer documentation with authentication, endpoints, and examples."
         canonical="https://footprintiq.app/docs/api"
         ogImage="https://footprintiq.app/og/persona-dna.webp"
-        structuredData={structuredData}
+        schema={{
+          custom: {
+            "@context": "https://schema.org",
+            "@type": "TechArticle",
+            "headline": "FootprintIQ API Documentation (v1) — OSINT & Persona Intelligence",
+            "description": "Integrate FootprintIQ's OSINT, Persona DNA, and Predictive Risk Index via REST API.",
+            "author": {
+              "@type": "Organization",
+              "name": "FootprintIQ Team"
+            },
+            "publisher": {
+              "@type": "Organization",
+              "name": "FootprintIQ",
+              "logo": {
+                "@type": "ImageObject",
+                "url": "https://footprintiq.app/logo.png"
+              }
+            },
+            "datePublished": "2025-01-15",
+            "dateModified": "2025-01-15"
+          }
+        }}
       />
 
       <div className="min-h-screen bg-background">
