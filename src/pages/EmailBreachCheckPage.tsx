@@ -477,6 +477,40 @@ export default function EmailBreachCheckPage() {
         </div>
       </section>
 
+      {/* Related Tools Section */}
+      <section className="py-12 px-6 bg-muted/30 border-t">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-2xl font-bold mb-4 text-center">Explore More OSINT Tools</h2>
+          <p className="text-center text-muted-foreground mb-8">
+            Email breach check is just one piece of the puzzle. Explore your complete digital footprint.
+          </p>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Link to="/username-search" className="group">
+              <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
+                <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
+                  Username Search
+                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Find where any username appears across hundreds of public platforms
+                </p>
+              </Card>
+            </Link>
+            <Link to="/scan" className="group">
+              <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
+                <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
+                  Full Digital Footprint Scan
+                  <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Combine email, username, phone, and name searches for complete exposure analysis
+                </p>
+              </Card>
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Related Content */}
       <section className="py-12 px-6 border-t">
         <div className="max-w-4xl mx-auto">

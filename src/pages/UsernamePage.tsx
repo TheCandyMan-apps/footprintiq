@@ -482,6 +482,40 @@ export default function UsernamePage() {
           </div>
         </section>
 
+        {/* Related Tools Section */}
+        <section className="py-12 px-6 bg-muted/30">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold mb-4 text-center">Explore More OSINT Tools</h2>
+            <p className="text-center text-muted-foreground mb-8">
+              Username search is just one piece of the puzzle. Check your complete digital footprint.
+            </p>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Link to="/email-breach-check" className="group">
+                <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
+                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
+                    Email Breach Check
+                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Check if your email appears in public data breaches and exposure sources
+                  </p>
+                </Card>
+              </Link>
+              <Link to="/scan" className="group">
+                <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
+                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
+                    Full Digital Footprint Scan
+                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Combine username, email, phone, and name searches for complete exposure analysis
+                  </p>
+                </Card>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* Related Content */}
         <section className="py-16 px-6">
           <div className="max-w-4xl mx-auto">
