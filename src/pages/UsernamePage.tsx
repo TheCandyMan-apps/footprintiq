@@ -177,8 +177,12 @@ export default function UsernamePage() {
               Free Username Search
             </h1>
             
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              Discover where any username appears across 500+ public platforms — social media, gaming, forums, and professional networks.
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">
+              Discover where any username appears across hundreds of public platforms — including social media, gaming sites, forums, and professional networks.
+            </p>
+
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-8">
+              FootprintIQ is a username search tool that helps individuals discover where their usernames appear across public platforms using ethical OSINT techniques.
             </p>
             
             <Button size="lg" onClick={scrollToSearch} className="text-lg px-8 py-6">
@@ -364,6 +368,29 @@ export default function UsernamePage() {
           </section>
         )}
 
+        {/* Why Username Reuse Matters */}
+        <section className="py-12 px-6">
+          <div className="max-w-4xl mx-auto">
+            <Card className="p-6 md:p-8 border-l-4 border-l-primary">
+              <h2 className="text-2xl font-bold mb-4">Why Username Reuse Matters</h2>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                  <span>Usernames are often reused across platforms — creating a traceable pattern</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                  <span>This can link accounts together and reveal interests or identity patterns</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                  <span>Attackers and data brokers commonly use usernames as a starting point for investigations</span>
+                </li>
+              </ul>
+            </Card>
+          </div>
+        </section>
+
         {/* Differentiation Section */}
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-6xl mx-auto">
@@ -412,6 +439,21 @@ export default function UsernamePage() {
                 </Button>
               </div>
             </Card>
+          </div>
+        </section>
+
+        {/* Bridge CTA before FAQ */}
+        <section className="py-8 px-6">
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-lg text-muted-foreground mb-4">
+              Want to see how your username connects to email exposure or data brokers?
+            </p>
+            <Button asChild variant="outline" size="lg">
+              <Link to="/scan">
+                Run a Full Digital Footprint Scan
+                <ArrowRight className="ml-2 w-4 h-4" />
+              </Link>
+            </Button>
           </div>
         </section>
 
