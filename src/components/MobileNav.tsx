@@ -18,10 +18,12 @@ import {
   GitBranch,
   Sparkles,
   LogOut,
+  Crown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -42,6 +44,7 @@ export function MobileNav() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAdmin } = useIsAdmin();
 
   const handleSignOut = async () => {
     try {
@@ -80,6 +83,26 @@ export function MobileNav() {
               {item.label}
             </Link>
           ))}
+          
+          {/* Admin Dashboard - only visible to admins */}
+          {isAdmin && (
+            <>
+              <Separator className="my-2" />
+              <Link
+                to="/admin"
+                onClick={() => setOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  location.pathname === "/admin" || location.pathname.startsWith("/admin/")
+                    ? "bg-purple-600 text-white"
+                    : "text-purple-600 hover:bg-purple-100 dark:hover:bg-purple-900/20"
+                )}
+              >
+                <Crown className="h-4 w-4" />
+                Admin Dashboard
+              </Link>
+            </>
+          )}
           
           <Separator className="my-2" />
           
