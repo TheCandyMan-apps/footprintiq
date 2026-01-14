@@ -25,35 +25,49 @@ serve(async (req) => {
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    // Service role client for database operations
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     // Check if request is from cron (automated) or user (manual)
     const authHeader = req.headers.get('Authorization');
-    const isCronJob = authHeader === `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`;
+    const isCronJob = authHeader === `Bearer ${supabaseServiceKey}`;
+    
+    let userId: string | null = null;
     
     // If not cron, verify admin access
     if (!isCronJob) {
-      if (!authHeader) {
+      if (!authHeader?.startsWith('Bearer ')) {
         return new Response(
           JSON.stringify({ error: 'Authorization required' }),
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      const { data: { user } } = await supabase.auth.getUser(authHeader.split('Bearer ')[1]);
-      if (!user) {
+      // Create client with user's auth context to validate token
+      const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } }
+      });
+
+      const token = authHeader.replace('Bearer ', '');
+      const { data, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+      
+      if (claimsError || !data?.claims?.sub) {
         return new Response(
           JSON.stringify({ error: 'Invalid user' }),
           { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      // Check if user is admin
-      const { data: userRole } = await supabase
+      userId = data.claims.sub;
+
+      // Check if user is admin using service role client
+      const { data: userRole } = await supabaseAdmin
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .single();
 
       if (!userRole || userRole.role !== 'admin') {
@@ -63,6 +77,9 @@ serve(async (req) => {
         );
       }
     }
+    
+    // Use admin client for all subsequent operations
+    const supabase = supabaseAdmin;
 
     const body = req.method === 'POST' ? await req.json() : {};
     const { feedbackType } = body;
