@@ -150,8 +150,19 @@ export default function FalsePositivesReview() {
     setTrainingResult(null);
 
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error('You must be signed in to train the model.');
+      }
+
       const { data, error } = await supabase.functions.invoke('ml-train-feedback', {
-        body: { feedbackType: 'false_positive' }
+        body: { feedbackType: 'false_positive' },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
 
       if (error) throw error;
