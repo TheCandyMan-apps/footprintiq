@@ -143,7 +143,8 @@ export default function UsernameReuse() {
 
             <p>
               <Link to="/blog/free-username-search" className="text-primary hover:underline">Free username search tools</Link> automate 
-              this process, checking hundreds of sites in seconds. However, these results <Link to="/blog/username-search-misleading" className="text-primary hover:underline">can 
+              this process, checking hundreds of sites in seconds. You can try this yourself with our <Link to="/username-search" className="text-primary hover:underline">username search tool</Link> to 
+              see where your handles appear. However, these results <Link to="/blog/username-search-misleading" className="text-primary hover:underline">can 
               often be misleading</Link> without proper verification. Still, they create an instant map of 
               where that handle has been registered.
             </p>
@@ -259,6 +260,7 @@ export default function UsernameReuse() {
               <li>Which platforms contain information you'd prefer to keep separate from your professional identity?</li>
               <li>Are there accounts from earlier periods that you'd rather not have connected to your current presence?</li>
               <li>Do the platforms you use regularly share a username that makes them trivially linkable?</li>
+              <li>Has your email been exposed in breaches that could link your accounts? Check with an <Link to="/email-breach-check" className="text-primary hover:underline">email breach check</Link>.</li>
             </ul>
 
             <p>
