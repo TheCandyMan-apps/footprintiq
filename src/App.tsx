@@ -42,6 +42,7 @@ const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const UsernamePage = lazy(() => import("./pages/UsernamePage"));
 const EmailBreachCheckPage = lazy(() => import("./pages/EmailBreachCheckPage"));
+const UsernameSearchToolsPage = lazy(() => import("./pages/UsernameSearchToolsPage"));
 const ApiDocsOld = lazy(() => import("./pages/docs/ApiDocs"));
 const DeveloperPortal = lazy(() => import("./pages/DeveloperPortal"));
 const ExecutiveDashboard = lazy(() => import("./pages/ExecutiveDashboard"));
@@ -295,6 +296,7 @@ function RouterContent() {
           <Route path="/username-search" element={<UsernamePage />} />
           <Route path="/email-breach-check" element={<EmailBreachCheckPage />} />
           <Route path="/email-exposure" element={<EmailBreachCheckPage />} />
+          <Route path="/username-search-tools" element={<UsernameSearchToolsPage />} />
           <Route path="/maigret-scanner" element={<MaigretScanner />} />
           <Route path="/dashboard/maigret" element={<MaigretMonitoring />} />
           <Route path="/maigret/simple" element={<SimpleMaigretScan />} />
