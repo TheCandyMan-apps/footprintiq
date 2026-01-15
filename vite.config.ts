@@ -103,11 +103,32 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tabs'],
-          'chart-vendor': ['recharts'],
-          'pdf-vendor': ['jspdf', 'jspdf-autotable'],
+        manualChunks(id) {
+          // Core React - always needed
+          if (id.includes('node_modules/react/') || 
+              id.includes('node_modules/react-dom/') || 
+              id.includes('node_modules/react-router')) {
+            return 'react-vendor';
+          }
+          // UI components used across app
+          if (id.includes('@radix-ui/react-dialog') || 
+              id.includes('@radix-ui/react-dropdown-menu') || 
+              id.includes('@radix-ui/react-tabs') ||
+              id.includes('@radix-ui/react-tooltip')) {
+            return 'ui-vendor';
+          }
+          // Charts - lazy load only when needed
+          if (id.includes('recharts') || id.includes('d3-')) {
+            return 'chart-vendor';
+          }
+          // PDF generation - lazy load only when needed
+          if (id.includes('jspdf') || id.includes('html2canvas')) {
+            return 'pdf-vendor';
+          }
+          // Supabase client - needed for auth check but can be deferred
+          if (id.includes('@supabase/')) {
+            return 'supabase-vendor';
+          }
         },
       },
     },
