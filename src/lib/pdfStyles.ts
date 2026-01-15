@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf';
+import type jsPDF from 'jspdf';
 
 /**
  * Professional PDF styling constants and utilities
