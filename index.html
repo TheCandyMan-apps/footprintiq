@@ -22,8 +22,8 @@
     <link rel="preconnect" href="https://byuzgvauaeldjqxlrjci.supabase.co" crossorigin />
     <link rel="preload" href="https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2" as="font" type="font/woff2" crossorigin />
     
-    <!-- Preload LCP image (logo) with WebP format -->
-    <link rel="preload" as="image" href="/logo-dark-optimized.webp" type="image/webp" fetchpriority="high" />
+    <!-- Preload LCP image (logo) with WebP format and explicit size hint -->
+    <link rel="preload" as="image" href="/logo-dark-optimized.webp" type="image/webp" fetchpriority="high" imagesizes="250px" />
     
     <!-- Modulepreload critical JS chunks -->
     <link rel="modulepreload" href="/src/main.tsx" />
@@ -143,7 +143,9 @@
   <body>
     <div id="root">
       <!-- Inline skeleton for faster FCP - replaced by React -->
-      <div class="header-skeleton" aria-hidden="true"></div>
+      <div class="header-skeleton" aria-hidden="true">
+        <img src="/logo-dark-optimized.webp" alt="" width="250" height="80" style="height:80px;width:auto;object-fit:contain;opacity:0" fetchpriority="high" />
+      </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
