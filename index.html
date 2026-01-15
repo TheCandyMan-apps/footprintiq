@@ -33,7 +33,7 @@
     <!-- Preload LCP image (logo) with WebP format -->
     <link rel="preload" as="image" href="/logo-dark-optimized.webp" type="image/webp" fetchpriority="high" />
     
-    <!-- Critical CSS -->
+    <!-- Critical CSS - Above-the-fold styles inlined to reduce render-blocking -->
     <style>
       @font-face {
         font-family: 'Inter';
@@ -43,13 +43,43 @@
         src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2') format('woff2');
       }
       
-      /* Critical above-the-fold styles for faster FCP */
-      *,*::before,*::after{box-sizing:border-box}
-      body{margin:0;font-family:Inter,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;background:#0a0a0f}
+      /* Reset & Base - Critical for layout stability */
+      *,*::before,*::after{box-sizing:border-box;border:0 solid}
+      html{line-height:1.5;-webkit-text-size-adjust:100%;font-family:Inter,system-ui,-apple-system,sans-serif}
+      body{margin:0;line-height:inherit;-webkit-font-smoothing:antialiased;background:#0a0a0f;color:#e4e4e7}
       #root{min-height:100vh;display:flex;flex-direction:column}
-      /* Skeleton for header during load */
+      img,video{display:block;max-width:100%;height:auto}
+      
+      /* Header - Critical for LCP */
+      header{border-bottom:1px solid hsl(240 3.7% 15.9%);background:#0a0a0f;position:sticky;top:0;z-index:50}
       .header-skeleton{height:80px;background:linear-gradient(90deg,#1a1a2e 25%,#16162a 50%,#1a1a2e 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
       @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+      
+      /* Layout utilities - Critical for above-the-fold */
+      .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
+      .gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}
+      .px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0{padding-top:0;padding-bottom:0}
+      .max-w-7xl{max-width:80rem}.mx-auto{margin-left:auto;margin-right:auto}
+      .hidden{display:none}@media(min-width:768px){.md\\:flex{display:flex}}
+      
+      /* Typography - Critical */
+      .text-sm{font-size:.875rem;line-height:1.25rem}
+      .text-4xl{font-size:2.25rem;line-height:2.5rem}.font-bold{font-weight:700}
+      .text-muted-foreground{color:#a1a1aa}
+      
+      /* Button base - Critical for CTA */
+      button,[type=button]{appearance:none;cursor:pointer;background:transparent}
+      .bg-primary{background:hsl(262.1 83.3% 57.8%)}.text-primary-foreground{color:hsl(210 20% 98%)}
+      .rounded-md{border-radius:.375rem}.rounded-lg{border-radius:.5rem}
+      .h-10{height:2.5rem}.px-4{padding-left:1rem;padding-right:1rem}
+      
+      /* Object-contain for logo */
+      .object-contain{object-fit:contain}.h-20{height:5rem}.w-auto{width:auto}
+      .max-w-\\[250px\\]{max-width:250px}
+      
+      /* Transitions - keep smooth feel */
+      .transition-all{transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}
+      .duration-300{transition-duration:.3s}
     </style>
     
     <!-- Default meta (overridden by Helmet) -->
