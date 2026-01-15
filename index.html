@@ -15,18 +15,23 @@
     <link rel="icon" type="image/png" href="https://storage.googleapis.com/gpt-engineer-file-uploads/2uSl18P0SSfJLWqHu910xv9mZBj1/uploads/1762544667872-FPIQ-Logo-X.png">
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- Performance & Resource Hints -->
-    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
-    <link rel="dns-prefetch" href="https://byuzgvauaeldjqxlrjci.supabase.co" />
+    <!-- Performance & Resource Hints - placed early for browser to act on immediately -->
+    <!-- Preconnect to critical origins (with and without crossorigin for different request types) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://byuzgvauaeldjqxlrjci.supabase.co" />
     <link rel="preconnect" href="https://byuzgvauaeldjqxlrjci.supabase.co" crossorigin />
+    
+    <!-- DNS prefetch for less critical origins -->
+    <link rel="dns-prefetch" href="https://plausible.io" />
+    <link rel="dns-prefetch" href="https://www.clarity.ms" />
+    <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
+    
+    <!-- Preload critical font -->
     <link rel="preload" href="https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2" as="font" type="font/woff2" crossorigin />
     
-    <!-- Preload LCP image (logo) with WebP format and explicit size hint -->
-    <link rel="preload" as="image" href="/logo-dark-optimized.webp" type="image/webp" fetchpriority="high" imagesizes="250px" />
-    
-    <!-- Modulepreload critical JS chunks -->
-    <link rel="modulepreload" href="/src/main.tsx" />
+    <!-- Preload LCP image (logo) with WebP format -->
+    <link rel="preload" as="image" href="/logo-dark-optimized.webp" type="image/webp" fetchpriority="high" />
     
     <!-- Critical CSS -->
     <style>
@@ -55,16 +60,12 @@
     
     <!-- Performance Optimization -->
     <meta http-equiv="x-dns-prefetch-control" content="on" />
-    <link rel="preconnect" href="https://plausible.io" crossorigin />
     
-    <!-- Privacy-friendly analytics by Plausible (deferred for LCP) -->
+    <!-- Analytics scripts - async/defer to avoid blocking render -->
     <script defer src="https://plausible.io/js/pa-0A3M4Q9GLRmfRuk2LDGh6.js"></script>
-    <script>
-      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
-      plausible.init()
-    </script>
+    <script>window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)}</script>
 
-    <!-- Microsoft Clarity Analytics -->
+    <!-- Microsoft Clarity Analytics - loaded async -->
     <script>
       (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
