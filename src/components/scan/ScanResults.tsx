@@ -297,8 +297,14 @@ export function ScanResults({ jobId }: ScanResultsProps) {
       </CardHeader>
       <Separator />
       <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
-        {/* Footprint DNA Card */}
-        <FootprintDNACard scanId={jobId} userId={job?.requested_by || undefined} />
+        {/* Progress Indicator - shown first */}
+        <ScanProgress
+          startedAt={job.started_at}
+          finishedAt={job.finished_at}
+          status={job.status}
+          resultCount={Math.max(results.length, broadcastResultCount)}
+          allSites={job.all_sites || false}
+        />
 
         {job.status === 'pending' && job.started_at && Date.now() - new Date(job.started_at).getTime() > 120000 && (
           <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 animate-pulse">
@@ -310,15 +316,6 @@ export function ScanResults({ jobId }: ScanResultsProps) {
             </p>
           </div>
         )}
-
-        {/* Progress Indicator */}
-        <ScanProgress
-          startedAt={job.started_at}
-          finishedAt={job.finished_at}
-          status={job.status}
-          resultCount={Math.max(results.length, broadcastResultCount)}
-          allSites={job.all_sites || false}
-        />
 
         {resultsLoading && results.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -337,6 +334,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
           </div>
         ) : (
           <>
+            {/* Results count badges */}
             <div className="flex flex-wrap gap-2 sm:gap-3 mb-4 sm:mb-6">
               <Badge variant="default" className="bg-green-600 text-xs sm:text-sm">
                 Found: {foundCount}
@@ -355,6 +353,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
               </Badge>
             </div>
 
+            {/* Results table - shown before analysis cards */}
             <div className="border rounded-lg overflow-hidden overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -410,19 +409,29 @@ export function ScanResults({ jobId }: ScanResultsProps) {
               </Table>
             </div>
 
-            {/* Locked Insights for Free users */}
-            <LockedInsightsGrid className="mt-6" />
+            {/* Analysis section - moved below results */}
+            <Separator className="my-6" />
+            
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-muted-foreground">Analysis & Insights</h3>
+              
+              {/* Footprint DNA Card */}
+              <FootprintDNACard scanId={jobId} userId={job?.requested_by || undefined} />
 
-            {/* AI Insights Panel */}
-            <AIInsightsPanel 
-              scanData={{
-                jobId,
-                breaches: grouped.found.length,
-                exposures: results.length,
-                dataBrokers: grouped.claimed.length,
-                darkWeb: grouped.unknown.length,
-              }}
-            />
+              {/* Locked Insights for Free users */}
+              <LockedInsightsGrid />
+
+              {/* AI Insights Panel */}
+              <AIInsightsPanel 
+                scanData={{
+                  jobId,
+                  breaches: grouped.found.length,
+                  exposures: results.length,
+                  dataBrokers: grouped.claimed.length,
+                  darkWeb: grouped.unknown.length,
+                }}
+              />
+            </div>
           </>
         )}
       </CardContent>
