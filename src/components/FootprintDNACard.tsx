@@ -43,8 +43,11 @@ interface FootprintDNACardProps {
   scanId?: string; // Add scanId prop
 }
 
+const TERMINAL_STATES = ['completed', 'completed_empty', 'completed_partial', 'failed', 'timeout', 'error', 'cancelled'];
+
 export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [scanStatus, setScanStatus] = useState<string | null>(null);
   const { workspace } = useWorkspace();
 
   // Get current user ID
@@ -249,7 +252,73 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
     enabled: !!(workspace?.id || scanId || jobId),
   });
 
-  // Set up real-time subscription for updates - subscribe to scan_id if provided, else workspace
+  // Fetch scan status and subscribe to changes - triggers refetch when scan completes
+  useEffect(() => {
+    if (!scanId) return;
+
+    // Fetch initial scan status
+    const fetchScanStatus = async () => {
+      const { data } = await supabase
+        .from('scans')
+        .select('status')
+        .eq('id', scanId)
+        .maybeSingle();
+      
+      if (data?.status) {
+        setScanStatus(data.status);
+        // If scan is already completed, refetch metrics immediately
+        if (TERMINAL_STATES.includes(data.status)) {
+          console.log('[DNA] Scan already completed, fetching metrics...');
+          refetch();
+        }
+      }
+    };
+
+    fetchScanStatus();
+
+    // Subscribe to scan status changes
+    const channel = supabase
+      .channel(`dna-scan-status-${scanId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'scans',
+          filter: `id=eq.${scanId}`,
+        },
+        (payload) => {
+          const newStatus = (payload.new as any)?.status;
+          setScanStatus(newStatus);
+          if (TERMINAL_STATES.includes(newStatus)) {
+            console.log('[DNA] Scan completed, refetching metrics...');
+            refetch();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [scanId, refetch]);
+
+  // Poll for updates while scan is in progress
+  useEffect(() => {
+    if (!scanId) return;
+    
+    // If scan is not in a terminal state, poll every 5 seconds
+    if (scanStatus && !TERMINAL_STATES.includes(scanStatus)) {
+      const interval = setInterval(() => {
+        console.log('[DNA] Polling for metrics (scan in progress)...');
+        refetch();
+      }, 5000);
+
+      return () => clearInterval(interval);
+    }
+  }, [scanId, scanStatus, refetch]);
+
+  // Set up real-time subscription for finding inserts
   useEffect(() => {
     if (!workspace?.id && !scanId) return;
 
