@@ -1,6 +1,5 @@
 import { Card } from "@/components/ui/card";
 import { CircularProgress } from "@/components/CircularProgress";
-import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { AlertTriangle, Eye, Database, Shield, RefreshCw, Users, Gamepad, Briefcase, Globe } from "lucide-react";
 import { HelpIcon } from "@/components/ui/help-icon";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,42 @@ import { getAIResponse } from "@/lib/aiRouter";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { getPlatformCategory } from "@/lib/categoryMapping";
 import { parseEvidence, extractPlatform } from "@/lib/evidenceParser";
+
+// Lightweight SVG sparkline component - avoids heavy recharts dependency
+function SimpleSparkline({ data, className }: { data: number[]; className?: string }) {
+  if (!data || data.length === 0) return null;
+  
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  
+  const width = 100;
+  const height = 32;
+  const padding = 2;
+  
+  const points = data.map((value, i) => {
+    const x = padding + (i / (data.length - 1 || 1)) * (width - 2 * padding);
+    const y = height - padding - ((value - min) / range) * (height - 2 * padding);
+    return `${x},${y}`;
+  }).join(' ');
+  
+  return (
+    <svg 
+      viewBox={`0 0 ${width} ${height}`} 
+      className={cn("w-full h-full", className)}
+      preserveAspectRatio="none"
+    >
+      <polyline
+        points={points}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 async function aiScore(data: any, isUsernameScan: boolean) {
   if (isUsernameScan) {
@@ -529,10 +564,6 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {metrics.map((metric) => {
             const Icon = metric.icon;
-            const sparkData = metric.sparklineData.map((value, index) => ({ 
-              index, 
-              value 
-            }));
             
             return (
               <div
@@ -543,20 +574,9 @@ export function FootprintDNACard({ userId, jobId, scanId }: FootprintDNACardProp
                 <p className="text-2xl font-bold mb-1">{metric.value}</p>
                 <p className="text-xs text-muted-foreground mb-2">{metric.label}</p>
                 
-                {/* Sparkline */}
+                {/* Lightweight SVG Sparkline (no recharts dependency) */}
                 <div className="w-full h-8">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={sparkData}>
-                      <Line
-                        type="monotone"
-                        dataKey="value"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        dot={false}
-                        className={metric.color}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <SimpleSparkline data={metric.sparklineData} className={metric.color} />
                 </div>
               </div>
             );

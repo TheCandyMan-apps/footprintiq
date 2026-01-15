@@ -1,5 +1,4 @@
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import type { jsPDF as JsPDFType } from 'jspdf';
 import { TrendDataPoint } from './trends';
 
 export interface BrandingSettings {
@@ -49,6 +48,8 @@ export const exportDNAasPDF = async (
   template: PDFTemplate = 'technical'
 ) => {
   try {
+    const { jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
     const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
