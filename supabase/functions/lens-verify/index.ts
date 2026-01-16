@@ -11,7 +11,7 @@ interface LensRequest {
   url: string;
   platform: string;
   scanId: string;
-  findingId: string;
+  findingId?: string; // Optional - scan_findings may not have strict id
 }
 
 interface LensVerificationResponse {
@@ -61,21 +61,27 @@ serve(async (req) => {
     const body: LensRequest = await req.json();
     const { url, platform, scanId, findingId } = body;
 
-    // Validate required fields
-    if (!url || !platform || !scanId || !findingId) {
+    // Validate required fields (findingId is optional)
+    if (!url || !platform || !scanId) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: url, platform, scanId, findingId" }),
+        JSON.stringify({ error: "Missing required fields: url, platform, scanId" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Check if verification already exists for this finding
-    const { data: existingEntry } = await supabase
+    // Check if verification already exists for this scan/url combo
+    let existingQuery = supabase
       .from("evidence_ledger")
       .select("*")
-      .eq("finding_id", findingId)
-      .eq("user_id", user.id)
-      .maybeSingle();
+      .eq("scan_id", scanId)
+      .eq("user_id", user.id);
+    
+    // If findingId provided, also filter by it
+    if (findingId) {
+      existingQuery = existingQuery.eq("finding_id", findingId);
+    }
+    
+    const { data: existingEntry } = await existingQuery.maybeSingle();
 
     if (existingEntry) {
       // Return existing verification
@@ -131,20 +137,26 @@ serve(async (req) => {
     }
 
     // Persist verification to evidence_ledger
+    const insertData: Record<string, unknown> = {
+      scan_id: scanId,
+      user_id: user.id,
+      verification_hash: verificationResult.verificationHash,
+      confidence_score: verificationResult.confidenceScore,
+      hashed_content: verificationResult.hashedContent,
+      source_age: verificationResult.metadata.sourceAge,
+      ssl_status: verificationResult.metadata.sslStatus,
+      platform_consistency: verificationResult.metadata.platformConsistency,
+      raw_response: verificationResult,
+    };
+    
+    // Only include finding_id if provided
+    if (findingId) {
+      insertData.finding_id = findingId;
+    }
+
     const { data: ledgerEntry, error: insertError } = await supabase
       .from("evidence_ledger")
-      .insert({
-        finding_id: findingId,
-        scan_id: scanId,
-        user_id: user.id,
-        verification_hash: verificationResult.verificationHash,
-        confidence_score: verificationResult.confidenceScore,
-        hashed_content: verificationResult.hashedContent,
-        source_age: verificationResult.metadata.sourceAge,
-        ssl_status: verificationResult.metadata.sslStatus,
-        platform_consistency: verificationResult.metadata.platformConsistency,
-        raw_response: verificationResult,
-      })
+      .insert(insertData)
       .select()
       .single();
 

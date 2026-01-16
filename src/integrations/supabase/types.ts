@@ -3587,7 +3587,7 @@ export type Database = {
         Row: {
           confidence_score: number
           created_at: string
-          finding_id: string
+          finding_id: string | null
           hashed_content: string | null
           id: string
           platform_consistency: string | null
@@ -3602,7 +3602,7 @@ export type Database = {
         Insert: {
           confidence_score: number
           created_at?: string
-          finding_id: string
+          finding_id?: string | null
           hashed_content?: string | null
           id?: string
           platform_consistency?: string | null
@@ -3617,7 +3617,7 @@ export type Database = {
         Update: {
           confidence_score?: number
           created_at?: string
-          finding_id?: string
+          finding_id?: string | null
           hashed_content?: string | null
           id?: string
           platform_consistency?: string | null
@@ -3631,17 +3631,10 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "evidence_ledger_finding_id_fkey"
-            columns: ["finding_id"]
-            isOneToOne: false
-            referencedRelation: "findings"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "evidence_ledger_scan_id_fkey"
             columns: ["scan_id"]
             isOneToOne: false
-            referencedRelation: "scans"
+            referencedRelation: "scan_jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -7021,6 +7014,7 @@ export type Database = {
       }
       scan_findings: {
         Row: {
+          id: string | null
           job_id: string
           raw: Json | null
           site: string
@@ -7028,6 +7022,7 @@ export type Database = {
           url: string | null
         }
         Insert: {
+          id?: string | null
           job_id: string
           raw?: Json | null
           site: string
@@ -7035,6 +7030,7 @@ export type Database = {
           url?: string | null
         }
         Update: {
+          id?: string | null
           job_id?: string
           raw?: Json | null
           site?: string
