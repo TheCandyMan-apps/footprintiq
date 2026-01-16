@@ -5,7 +5,10 @@ Disallow: /my-tickets
 Disallow: /results/
 Disallow: /auth
 
-Sitemap: https://footprintiq.com/sitemap.xml
+Sitemap: https://footprintiq.app/sitemap.xml
+
+# IndexNow for instant search engine notifications
+# Key file: https://footprintiq.app/fpiq-indexnow-2024-a1b2c3d4e5f6.txt
 
 # Allow common search engine bots
 User-agent: Googlebot
