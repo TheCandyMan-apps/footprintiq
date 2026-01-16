@@ -1,0 +1,202 @@
+==========================================
+LENS SOCIAL COPY PACK
+==========================================
+
+==========================================
+X / TWITTER — SHORT FORMAT
+==========================================
+
+OPTION 1 (Direct)
+-----------------
+Finding profiles is easy.
+Knowing which ones matter is the hard part.
+
+That's why we built LENS.
+
+footprintiq.app/lens
+
+
+OPTION 2 (Problem-Solution)
+---------------------------
+OSINT tools return results.
+LENS explains reliability.
+
+Public data. No monitoring. No certainty theater.
+
+
+OPTION 3 (Privacy-First)
+------------------------
+LENS doesn't track people.
+It explains evidence.
+
+footprintiq.app/lens
+
+
+OPTION 4 (Credibility Focus)
+----------------------------
+Most OSINT tools tell you what they found.
+LENS tells you why you should care.
+
+Confidence scoring for investigators who need clarity, not volume.
+
+
+==========================================
+X / TWITTER — THREAD FORMAT
+==========================================
+
+1/ The hardest part of OSINT isn't finding data.
+
+It's knowing which results to trust.
+
+2/ Username matches across 47 platforms mean nothing if 40 are false positives.
+
+We built LENS to solve this.
+
+3/ LENS is a confidence-scoring layer that explains:
+• Why a result appears
+• How reliable the attribution is
+• What signals support or weaken it
+
+4/ It doesn't search. It analyzes.
+
+Takes raw OSINT output → returns confidence bands:
+Strong | Likely | Weak | Insufficient
+
+5/ No monitoring.
+No certainty theater.
+No black-box scores.
+
+Just transparent, explainable confidence.
+
+6/ We wrote up the methodology here:
+footprintiq.app/blog/lens-introduction
+
+And you can try it on any scan:
+footprintiq.app/scan
+
+
+==========================================
+LINKEDIN — PROFESSIONAL
+==========================================
+
+OPTION 1 (For Decision-Makers)
+------------------------------
+OSINT tools are excellent at finding data.
+
+They're less good at explaining which results actually matter.
+
+If you've ever reviewed a scan showing 50+ platform matches and wondered "how many of these are actually the same person?" — that's the problem we set out to solve.
+
+LENS is our answer. It's a confidence-scoring layer that analyzes public signals and explains:
+• Why a result appears
+• How reliable the attribution is
+• What evidence supports or weakens it
+
+No black-box scores. No certainty claims. Just transparent analysis for investigators who need clarity.
+
+We wrote up the methodology here:
+footprintiq.app/blog/lens-introduction
+
+#OSINT #CyberSecurity #Investigations
+
+
+OPTION 2 (Thought Leadership)
+-----------------------------
+The question isn't "did we find something?"
+
+The question is "should we trust it?"
+
+That's the gap we've been thinking about at FootprintIQ. Raw OSINT results are useful, but they require interpretation. Context. Judgment.
+
+Today we're introducing LENS — a confidence-scoring system that explains reliability, not just returns results.
+
+Public data only. No monitoring. No surveillance.
+
+The full methodology is here:
+footprintiq.app/blog/lens-introduction
+
+Curious what others in investigations and security think about confidence scoring in OSINT.
+
+
+==========================================
+REDDIT — r/OSINT
+==========================================
+
+TITLE: Built a confidence-scoring layer for OSINT results — looking for feedback
+
+I've been working on OSINT tooling for a while and kept running into the same problem: username searches return dozens of matches, but verifying which ones belong to the same person takes longer than the search itself.
+
+So we built something called LENS. It analyzes public signals across results and returns a confidence score with explanations — not just "match found" but "here's why we think this is or isn't the same person."
+
+Uses things like:
+- Username consistency patterns
+- Platform context (registration dates, activity patterns)
+- Cross-platform corroboration
+- Signal contradiction detection
+
+No monitoring, no login bypass, public data only.
+
+Wrote up the methodology here if anyone's interested in the technical approach:
+footprintiq.app/blog/lens-introduction
+
+Would love feedback from people who deal with false positive fatigue in their workflows.
+
+
+==========================================
+REDDIT — r/privacy
+==========================================
+
+TITLE: Question: How do you think about "ethical OSINT"?
+
+Working on OSINT tools and thinking a lot about the ethical boundaries.
+
+Our take: public data is fair game for analysis, but there's a big difference between "helping someone understand their own exposure" and "enabling surveillance."
+
+We built a confidence-scoring system that explains evidence quality without:
+- Monitoring capabilities
+- Login bypass or private data access
+- Certainty claims (we use probability bands, not definitive statements)
+
+Curious what this community thinks about where the ethical lines are. Is confidence scoring useful, or does any OSINT tooling feel problematic regardless of constraints?
+
+Not trying to promote anything — genuinely interested in the discussion.
+
+
+==========================================
+REDDIT — r/netsec / r/cybersecurity
+==========================================
+
+TITLE: Confidence scoring for OSINT — reducing false positive noise in investigations
+
+One of the more frustrating parts of OSINT workflows is the false positive rate. Username searches especially — you get 30-50 platform matches but maybe 5-10 are actually the same person.
+
+Built a confidence layer that tries to address this by scoring attribution strength based on:
+- Signal consistency
+- Platform metadata correlation
+- Contradiction detection
+- Evidence corroboration
+
+Returns confidence bands (Strong/Likely/Weak/Insufficient) with human-readable explanations instead of black-box scores.
+
+Technical writeup: footprintiq.app/blog/lens-introduction
+
+Anyone else working on similar problems? Curious how other teams handle result verification at scale.
+
+
+==========================================
+USAGE NOTES
+==========================================
+
+CONSTRAINTS APPLIED:
+- No hype (no superlatives, no urgency language)
+- No "AI magic" (methodology-focused, not AI claims)
+- No growth-hack language (no 🚀, no engagement bait)
+- Credible, not promotional (question-based Reddit posts)
+- Safe for founder account (professional, honest about limitations)
+
+PLATFORM APPROACH:
+- X/Twitter: Short, punchy, methodology-focused
+- LinkedIn: Professional, decision-maker positioned
+- r/OSINT: Technical, seeking genuine feedback
+- r/privacy: Discussion-framed, acknowledges ethical complexity
+- r/netsec: Technical problem statement, peer discussion
