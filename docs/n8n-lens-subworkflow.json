@@ -1,0 +1,293 @@
+{
+  "name": "FootprintIQ - LENS Forensic Verification",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lens-verify",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "🔬 LENS Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [320, 300],
+      "webhookId": "lens-verify-webhook",
+      "id": "lens-webhook-trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// LENS Configuration - Extract and validate input\nconst input = $input.first().json;\nconst body = input.body || input;\n\n// Required fields\nconst url = body.url || '';\nconst platform = body.platform || 'unknown';\nconst scanId = body.scanId || '';\nconst findingId = body.findingId || '';\nconst userId = body.userId || '';\n\n// Validation\nif (!url || !url.startsWith('http')) {\n  return {\n    json: {\n      error: true,\n      message: 'Invalid or missing URL',\n      url,\n      platform,\n      scanId\n    }\n  };\n}\n\n// Extract domain for analysis\nlet domain = '';\ntry {\n  const urlObj = new URL(url);\n  domain = urlObj.hostname.replace('www.', '');\n} catch (e) {\n  domain = url;\n}\n\nreturn {\n  json: {\n    url,\n    platform,\n    scanId,\n    findingId,\n    userId,\n    domain,\n    error: false\n  }\n};"
+      },
+      "name": "⚙️ LENS Config",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [540, 300],
+      "id": "lens-config"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "validation-check",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "name": "🔀 Validate Input",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [760, 300],
+      "id": "lens-validate"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('⚙️ LENS Config').first().json.url }}",
+        "options": {
+          "redirect": {
+            "redirect": {
+              "followRedirects": true,
+              "maxRedirects": 5
+            }
+          },
+          "response": {
+            "response": {
+              "neverError": true,
+              "fullResponse": true
+            }
+          },
+          "timeout": 15000
+        }
+      },
+      "name": "🌐 Fetch URL Content",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1000, 180],
+      "id": "lens-fetch-url"
+    },
+    {
+      "parameters": {
+        "jsCode": "// SSL/TLS Analysis\nconst config = $('⚙️ LENS Config').first().json;\nconst url = config.url;\n\nlet sslInfo = {\n  hasSSL: false,\n  isValid: false,\n  status: 'None',\n  score: 0\n};\n\ntry {\n  const urlObj = new URL(url);\n  sslInfo.hasSSL = urlObj.protocol === 'https:';\n  \n  if (sslInfo.hasSSL) {\n    // Basic SSL check - in production, use an SSL API\n    sslInfo.isValid = true;\n    sslInfo.status = 'Valid Certificate';\n    sslInfo.score = 100;\n  } else {\n    sslInfo.status = 'No SSL/TLS';\n    sslInfo.score = 0;\n  }\n} catch (e) {\n  sslInfo.status = 'Error checking SSL';\n  sslInfo.score = 0;\n}\n\nreturn { json: sslInfo };"
+      },
+      "name": "🔒 SSL Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 300],
+      "id": "lens-ssl-check"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Platform Consistency Analysis\nconst config = $('⚙️ LENS Config').first().json;\nconst url = config.url;\nconst platform = config.platform.toLowerCase();\nconst domain = config.domain;\n\n// Known platform domains\nconst platformDomains = {\n  'twitter': ['twitter.com', 'x.com'],\n  'x': ['twitter.com', 'x.com'],\n  'facebook': ['facebook.com', 'fb.com'],\n  'instagram': ['instagram.com'],\n  'linkedin': ['linkedin.com'],\n  'github': ['github.com'],\n  'reddit': ['reddit.com'],\n  'youtube': ['youtube.com', 'youtu.be'],\n  'tiktok': ['tiktok.com'],\n  'pinterest': ['pinterest.com'],\n  'tumblr': ['tumblr.com'],\n  'medium': ['medium.com'],\n  'discord': ['discord.com', 'discord.gg'],\n  'twitch': ['twitch.tv'],\n  'snapchat': ['snapchat.com'],\n  'telegram': ['t.me', 'telegram.org'],\n  'whatsapp': ['whatsapp.com'],\n  'spotify': ['spotify.com'],\n  'soundcloud': ['soundcloud.com'],\n  'behance': ['behance.net'],\n  'dribbble': ['dribbble.com'],\n  'flickr': ['flickr.com'],\n  'vimeo': ['vimeo.com'],\n  'patreon': ['patreon.com'],\n  'etsy': ['etsy.com'],\n  'ebay': ['ebay.com'],\n  'amazon': ['amazon.com', 'amazon.co.uk']\n};\n\nlet result = {\n  platform: platform,\n  expectedDomains: [],\n  actualDomain: domain,\n  isConsistent: false,\n  consistency: 'Unknown',\n  score: 50 // Default neutral score\n};\n\n// Check if platform is known\nif (platformDomains[platform]) {\n  result.expectedDomains = platformDomains[platform];\n  result.isConsistent = platformDomains[platform].some(d => domain.includes(d));\n  \n  if (result.isConsistent) {\n    result.consistency = 'High';\n    result.score = 100;\n  } else {\n    result.consistency = 'Low';\n    result.score = 20;\n  }\n} else {\n  // Unknown platform - neutral scoring\n  result.consistency = 'Unknown';\n  result.score = 60;\n}\n\nreturn { json: result };"
+      },
+      "name": "📊 Platform Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1000, 420],
+      "id": "lens-platform-check"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "name": "⏳ Merge Analysis",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [1240, 300],
+      "id": "lens-merge"
+    },
+    {
+      "parameters": {
+        "jsCode": "// LENS Score Calculator - Compute confidence score\nconst config = $('⚙️ LENS Config').first().json;\nconst urlFetch = $('🌐 Fetch URL Content').first().json;\nconst sslCheck = $('🔒 SSL Check').first().json;\nconst platformCheck = $('📊 Platform Check').first().json;\n\n// Initialize scores\nlet scores = {\n  contentScore: 0,\n  sslScore: sslCheck.score || 0,\n  platformScore: platformCheck.score || 50\n};\n\n// 1. Content Score - Based on HTTP response\nconst statusCode = urlFetch.statusCode || 0;\nif (statusCode === 200) {\n  scores.contentScore = 100;\n} else if (statusCode >= 300 && statusCode < 400) {\n  scores.contentScore = 70; // Redirect\n} else if (statusCode === 404) {\n  scores.contentScore = 15; // Page not found\n} else if (statusCode === 403) {\n  scores.contentScore = 40; // Forbidden (might still exist)\n} else if (statusCode >= 500) {\n  scores.contentScore = 30; // Server error\n} else {\n  scores.contentScore = 20; // Unknown/error\n}\n\n// Calculate weighted confidence score\nconst weights = {\n  content: 0.40,\n  ssl: 0.25,\n  platform: 0.35\n};\n\nconst confidenceScore = Math.round(\n  (scores.contentScore * weights.content) +\n  (scores.sslScore * weights.ssl) +\n  (scores.platformScore * weights.platform)\n);\n\n// Build metadata\nconst metadata = {\n  sourceAge: 'Unknown', // Would need WHOIS API for this\n  sslStatus: sslCheck.status,\n  platformConsistency: platformCheck.consistency,\n  httpStatus: statusCode,\n  scoreBreakdown: scores\n};\n\n// Determine verification status\nlet verificationStatus = 'unverified';\nif (confidenceScore >= 80) {\n  verificationStatus = 'verified';\n} else if (confidenceScore >= 50) {\n  verificationStatus = 'partial';\n} else {\n  verificationStatus = 'low_confidence';\n}\n\nreturn {\n  json: {\n    url: config.url,\n    platform: config.platform,\n    scanId: config.scanId,\n    findingId: config.findingId,\n    userId: config.userId,\n    confidenceScore,\n    metadata,\n    verificationStatus,\n    analysisTimestamp: new Date().toISOString()\n  }\n};"
+      },
+      "name": "🧮 Score Calculator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1460, 300],
+      "id": "lens-score-calc"
+    },
+    {
+      "parameters": {
+        "jsCode": "// LENS Hash Generator - Create cryptographic proof\nconst crypto = require('crypto');\nconst input = $input.first().json;\n\n// Create evidence snapshot for hashing\nconst evidenceContent = JSON.stringify({\n  url: input.url,\n  platform: input.platform,\n  scanId: input.scanId,\n  findingId: input.findingId,\n  confidenceScore: input.confidenceScore,\n  metadata: input.metadata,\n  verificationStatus: input.verificationStatus,\n  timestamp: input.analysisTimestamp\n}, null, 2);\n\n// Generate SHA-256 hash\nconst verificationHash = crypto\n  .createHash('sha256')\n  .update(evidenceContent)\n  .digest('hex');\n\n// Create content preview (for display)\nconst hashedContent = evidenceContent.length > 500 \n  ? evidenceContent.substring(0, 500) + '...'\n  : evidenceContent;\n\nreturn {\n  json: {\n    confidenceScore: input.confidenceScore,\n    hashedContent: hashedContent,\n    verificationHash: verificationHash,\n    metadata: input.metadata,\n    verificationStatus: input.verificationStatus,\n    // Pass through for Supabase callback\n    scanId: input.scanId,\n    findingId: input.findingId,\n    userId: input.userId,\n    url: input.url,\n    platform: input.platform\n  }\n};"
+      },
+      "name": "🔐 Hash Generator",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1680, 300],
+      "id": "lens-hash-gen"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "name": "✅ LENS Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1900, 300],
+      "id": "lens-respond-success"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: true, message: $json.message || 'Invalid input', confidenceScore: 0, hashedContent: null, verificationHash: null, metadata: { sourceAge: 'Unknown', sslStatus: 'Error', platformConsistency: 'Unknown' } }) }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "name": "❌ LENS Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [980, 480],
+      "id": "lens-respond-error"
+    }
+  ],
+  "connections": {
+    "🔬 LENS Webhook": {
+      "main": [
+        [
+          {
+            "node": "⚙️ LENS Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "⚙️ LENS Config": {
+      "main": [
+        [
+          {
+            "node": "🔀 Validate Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔀 Validate Input": {
+      "main": [
+        [
+          {
+            "node": "🌐 Fetch URL Content",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "🔒 SSL Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📊 Platform Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "❌ LENS Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🌐 Fetch URL Content": {
+      "main": [
+        [
+          {
+            "node": "⏳ Merge Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔒 SSL Check": {
+      "main": [
+        [
+          {
+            "node": "⏳ Merge Analysis",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "📊 Platform Check": {
+      "main": [
+        [
+          {
+            "node": "⏳ Merge Analysis",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "⏳ Merge Analysis": {
+      "main": [
+        [
+          {
+            "node": "🧮 Score Calculator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧮 Score Calculator": {
+      "main": [
+        [
+          {
+            "node": "🔐 Hash Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔐 Hash Generator": {
+      "main": [
+        [
+          {
+            "node": "✅ LENS Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": true
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
