@@ -150,12 +150,15 @@ interface PDFReportProps {
 }
 
 const PDFReport: React.FC<PDFReportProps> = ({ findings, reportDate }) => {
+  // Ensure findings is an array
+  const safeFindings = Array.isArray(findings) ? findings : [];
+  
   const severityCounts = {
-    critical: findings.filter(f => f.severity === 'critical').length,
-    high: findings.filter(f => f.severity === 'high').length,
-    medium: findings.filter(f => f.severity === 'medium').length,
-    low: findings.filter(f => f.severity === 'low').length,
-    info: findings.filter(f => f.severity === 'info').length,
+    critical: safeFindings.filter(f => f?.severity === 'critical').length,
+    high: safeFindings.filter(f => f?.severity === 'high').length,
+    medium: safeFindings.filter(f => f?.severity === 'medium').length,
+    low: safeFindings.filter(f => f?.severity === 'low').length,
+    info: safeFindings.filter(f => f?.severity === 'info').length,
   };
 
   const riskScore = Math.max(
@@ -176,7 +179,7 @@ const PDFReport: React.FC<PDFReportProps> = ({ findings, reportDate }) => {
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Total Findings:</Text>
-            <Text style={styles.summaryValue}>{findings.length}</Text>
+            <Text style={styles.summaryValue}>{safeFindings.length}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Risk Score:</Text>
@@ -236,30 +239,30 @@ const PDFReport: React.FC<PDFReportProps> = ({ findings, reportDate }) => {
             <Text style={[styles.tableHeaderText, { width: '15%' }]}>Confidence</Text>
           </View>
           
-          {findings.slice(0, 20).map((finding, idx) => (
+          {safeFindings.slice(0, 20).map((finding, idx) => (
             <View key={idx} style={styles.tableRow}>
               <View style={{ width: '15%' }}>
                 <Text
                   style={[
                     styles.severityBadge,
-                    styles[finding.severity as keyof typeof styles] || styles.info,
+                    styles[(finding?.severity || 'info') as keyof typeof styles] || styles.info,
                   ]}
                 >
-                  {finding.severity.toUpperCase()}
+                  {(finding?.severity || 'info').toUpperCase()}
                 </Text>
               </View>
-              <Text style={[styles.tableCell, { width: '20%' }]}>{finding.type}</Text>
+              <Text style={[styles.tableCell, { width: '20%' }]}>{finding?.type || 'Unknown'}</Text>
               <Text style={[styles.tableCell, { width: '30%' }]}>
-                {finding.title.length > 35 ? finding.title.substring(0, 35) + '...' : finding.title}
+                {(finding?.title || 'Untitled').length > 35 ? (finding?.title || 'Untitled').substring(0, 35) + '...' : (finding?.title || 'Untitled')}
               </Text>
-              <Text style={[styles.tableCell, { width: '20%' }]}>{finding.provider}</Text>
-              <Text style={[styles.tableCell, { width: '15%' }]}>{finding.confidence.toFixed(1)}%</Text>
+              <Text style={[styles.tableCell, { width: '20%' }]}>{finding?.provider || 'Unknown'}</Text>
+              <Text style={[styles.tableCell, { width: '15%' }]}>{(finding?.confidence ?? 0).toFixed(1)}%</Text>
             </View>
           ))}
         </View>
 
-        {findings.length > 20 && (
-          <Text style={styles.text}>... and {findings.length - 20} more findings</Text>
+        {safeFindings.length > 20 && (
+          <Text style={styles.text}>... and {safeFindings.length - 20} more findings</Text>
         )}
 
         <Text style={styles.footer}>
@@ -271,57 +274,60 @@ const PDFReport: React.FC<PDFReportProps> = ({ findings, reportDate }) => {
       <Page size="A4" style={styles.page}>
         <Text style={styles.header}>Detailed Findings</Text>
         
-        {findings.slice(0, 10).map((finding, idx) => (
-          <View key={idx} style={styles.findingCard}>
-            <Text style={styles.findingTitle}>
-              {idx + 1}. {finding.title}
-            </Text>
-            
-            <View style={{ marginBottom: 6 }}>
-              <Text
-                style={[
-                  styles.severityBadge,
-                  styles[finding.severity as keyof typeof styles] || styles.info,
-                ]}
-              >
-                {finding.severity.toUpperCase()}
+        {safeFindings.slice(0, 10).map((finding, idx) => {
+          const evidence = Array.isArray(finding?.evidence) ? finding.evidence : [];
+          return (
+            <View key={idx} style={styles.findingCard}>
+              <Text style={styles.findingTitle}>
+                {idx + 1}. {finding?.title || 'Untitled Finding'}
               </Text>
-            </View>
-
-            <Text style={styles.text}>
-              <Text style={{ fontFamily: 'Helvetica-Bold' }}>Provider: </Text>
-              {finding.provider} | {finding.providerCategory}
-            </Text>
-            
-            <Text style={styles.text}>
-              <Text style={{ fontFamily: 'Helvetica-Bold' }}>Confidence: </Text>
-              {finding.confidence.toFixed(1)}%
-            </Text>
-
-            <Text style={styles.text}>
-              <Text style={{ fontFamily: 'Helvetica-Bold' }}>Impact: </Text>
-              {finding.impact}
-            </Text>
-
-            {(finding.evidence || []).length > 0 && (
-              <View style={styles.evidenceList}>
-                <Text style={[styles.text, { fontFamily: 'Helvetica-Bold' }]}>Evidence:</Text>
-                {(finding.evidence || []).slice(0, 3).map((ev, evIdx) => (
-                  <Text key={evIdx} style={styles.evidenceItem}>
-                    • {ev.key}: {typeof ev.value === 'string' ? ev.value : JSON.stringify(ev.value)}
-                  </Text>
-                ))}
-                {(finding.evidence || []).length > 3 && (
-                  <Text style={styles.evidenceItem}>... and {(finding.evidence || []).length - 3} more</Text>
-                )}
+              
+              <View style={{ marginBottom: 6 }}>
+                <Text
+                  style={[
+                    styles.severityBadge,
+                    styles[(finding?.severity || 'info') as keyof typeof styles] || styles.info,
+                  ]}
+                >
+                  {(finding?.severity || 'info').toUpperCase()}
+                </Text>
               </View>
-            )}
-          </View>
-        ))}
 
-        {findings.length > 10 && (
+              <Text style={styles.text}>
+                <Text style={{ fontFamily: 'Helvetica-Bold' }}>Provider: </Text>
+                {finding?.provider || 'Unknown'} | {finding?.providerCategory || 'Unknown'}
+              </Text>
+              
+              <Text style={styles.text}>
+                <Text style={{ fontFamily: 'Helvetica-Bold' }}>Confidence: </Text>
+                {(finding?.confidence ?? 0).toFixed(1)}%
+              </Text>
+
+              <Text style={styles.text}>
+                <Text style={{ fontFamily: 'Helvetica-Bold' }}>Impact: </Text>
+                {finding?.impact || 'No impact data available'}
+              </Text>
+
+              {evidence.length > 0 && (
+                <View style={styles.evidenceList}>
+                  <Text style={[styles.text, { fontFamily: 'Helvetica-Bold' }]}>Evidence:</Text>
+                  {evidence.slice(0, 3).map((ev, evIdx) => (
+                    <Text key={evIdx} style={styles.evidenceItem}>
+                      • {ev?.key || 'unknown'}: {typeof ev?.value === 'string' ? ev.value : JSON.stringify(ev?.value ?? '')}
+                    </Text>
+                  ))}
+                  {evidence.length > 3 && (
+                    <Text style={styles.evidenceItem}>... and {evidence.length - 3} more</Text>
+                  )}
+                </View>
+              )}
+            </View>
+          );
+        })}
+
+        {safeFindings.length > 10 && (
           <Text style={styles.text}>
-            Note: Showing first 10 findings. Full report contains {findings.length} findings.
+            Note: Showing first 10 findings. Full report contains {safeFindings.length} findings.
           </Text>
         )}
 
@@ -338,13 +344,21 @@ const PDFReport: React.FC<PDFReportProps> = ({ findings, reportDate }) => {
  */
 export async function exportReactPDF(findings: Finding[], redactPII: boolean = true): Promise<void> {
   try {
-    const data = redactPII ? redactFindings(findings, true) : findings;
+    // Validate input
+    if (!findings || !Array.isArray(findings)) {
+      console.warn('[PDF Export] No findings provided, generating empty report');
+    }
+    
+    const safeFindings = Array.isArray(findings) ? findings : [];
+    const data = redactPII ? redactFindings(safeFindings, true) : safeFindings;
     const reportDate = new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
     });
 
+    console.log(`[PDF Export] Generating PDF with ${data.length} findings`);
+    
     const blob = await pdf(<PDFReport findings={data} reportDate={reportDate} />).toBlob();
     
     const url = URL.createObjectURL(blob);
@@ -355,8 +369,10 @@ export async function exportReactPDF(findings: Finding[], redactPII: boolean = t
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    
+    console.log('[PDF Export] PDF generated successfully');
   } catch (error) {
     console.error('Failed to generate PDF:', error);
-    throw new Error('Failed to generate PDF report');
+    throw new Error(`Failed to generate PDF report: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
