@@ -11,7 +11,7 @@ import { ScanProgress } from './ScanProgress';
 import { FootprintDNACard } from '@/components/FootprintDNACard';
 import AIInsightsPanel from '@/components/AIInsightsPanel';
 import { LockedInsightsGrid } from '@/components/billing/LockedInsightBlock';
-import { ForensicVerifyButton } from '@/components/forensic';
+import { ForensicVerifyButton, VerificationHistoryPanel } from '@/components/forensic';
 import { Loader2, FileJson, FileSpreadsheet, ExternalLink, Shield } from 'lucide-react';
 import {
   Table,
@@ -423,25 +423,33 @@ export function ScanResults({ jobId }: ScanResultsProps) {
             {/* Analysis section - moved below results */}
             <Separator className="my-6" />
             
-            <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-muted-foreground">Analysis & Insights</h3>
-              
-              {/* Footprint DNA Card */}
-              <FootprintDNACard scanId={jobId} userId={job?.requested_by || undefined} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Main analysis content */}
+              <div className="lg:col-span-2 space-y-6">
+                <h3 className="text-lg font-semibold text-muted-foreground">Analysis & Insights</h3>
+                
+                {/* Footprint DNA Card */}
+                <FootprintDNACard scanId={jobId} userId={job?.requested_by || undefined} />
 
-              {/* Locked Insights for Free users */}
-              <LockedInsightsGrid />
+                {/* Locked Insights for Free users */}
+                <LockedInsightsGrid />
 
-              {/* AI Insights Panel */}
-              <AIInsightsPanel 
-                scanData={{
-                  jobId,
-                  breaches: grouped.found.length,
-                  exposures: results.length,
-                  dataBrokers: grouped.claimed.length,
-                  darkWeb: grouped.unknown.length,
-                }}
-              />
+                {/* AI Insights Panel */}
+                <AIInsightsPanel 
+                  scanData={{
+                    jobId,
+                    breaches: grouped.found.length,
+                    exposures: results.length,
+                    dataBrokers: grouped.claimed.length,
+                    darkWeb: grouped.unknown.length,
+                  }}
+                />
+              </div>
+
+              {/* Verification History Sidebar */}
+              <div className="lg:col-span-1">
+                <VerificationHistoryPanel scanId={jobId} />
+              </div>
             </div>
           </>
         )}
