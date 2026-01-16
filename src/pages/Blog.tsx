@@ -4,13 +4,22 @@ import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 const blogPosts = [{
+  slug: "lens-case-study-false-positive",
+  title: "Case Study: How LENS Prevented a Costly Misidentification",
+  excerpt: "A security team nearly flagged the wrong person based on username matches alone. LENS confidence scoring revealed critical evidence gaps that traditional tools missed.",
+  date: "January 19, 2026",
+  readTime: "7 min read",
+  category: "LENS",
+  featured: true,
+  image: "/blog-images/lens-case-study.webp"
+}, {
   slug: "lens-osint-confidence-wrong",
   title: "Why Most OSINT Tools Get Confidence Wrong",
   excerpt: "Binary results mislead analysts. High match rates create noise. False positives waste time and damage trust. Learn why probabilistic thinking matters in OSINT.",
   date: "January 16, 2026",
   readTime: "10 min read",
   category: "LENS",
-  featured: true,
+  featured: false,
   image: "/blog-images/lens-confidence.webp"
 }, {
   slug: "lens-introduction",

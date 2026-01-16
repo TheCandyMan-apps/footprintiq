@@ -3,6 +3,7 @@
  */
 
 export const blogHeroImages: Record<string, string> = {
+  "lens-case-study-false-positive": "/blog-images/lens-case-study.webp",
   "lens-osint-confidence-wrong": "/blog-images/lens-confidence.webp",
   "lens-introduction": "/blog-images/lens-intro.webp",
   "lens-confidence-meaning": "/blog-images/lens-meaning.webp",

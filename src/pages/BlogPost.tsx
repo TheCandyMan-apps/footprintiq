@@ -8,6 +8,136 @@ import { getBlogHeroImage } from "@/lib/blogImages";
 import { sanitizeHtml } from "@/lib/sanitize";
 
 const blogPosts: Record<string, { title: string; date: string; readTime: string; category: string; content: string }> = {
+  "lens-case-study-false-positive": {
+    title: "Case Study: How LENS Prevented a Costly Misidentification",
+    date: "January 19, 2026",
+    readTime: "7 min read",
+    category: "LENS",
+    content: `
+      <h2>The Situation</h2>
+      <p>A mid-sized technology company was conducting pre-employment background screening for a senior engineering role. The candidate—we'll call them "Alex Chen"—had passed initial interviews and was progressing toward an offer.</p>
+
+      <p>Standard practice included an OSINT review of the candidate's digital presence. The security team ran username and email searches across public platforms.</p>
+
+      <p>What they found appeared alarming.</p>
+
+      <h2>The Initial Findings</h2>
+      <p>Traditional OSINT tools returned 34 username matches for "alexchen" and variations across different platforms. Most were unremarkable—common usernames appear everywhere.</p>
+
+      <p>But one result stood out: a forum account on a cybersecurity discussion board using "alex_chen_dev" that had posted about controversial hacking techniques. The posts weren't illegal, but they raised concerns about judgment and company culture fit.</p>
+
+      <p>The security team's initial assessment: this appeared to be their candidate. The username followed the same pattern as the candidate's known accounts. The forum profile mentioned software development. The timing aligned roughly with the candidate's career progression.</p>
+
+      <p>Based on these matches, the team prepared to flag the candidate for additional review—a process that would delay the hire and potentially damage the candidate's prospects.</p>
+
+      <h2>What LENS Revealed</h2>
+      <p>Before finalizing their assessment, the team ran the results through LENS for confidence analysis.</p>
+
+      <p>LENS returned a confidence score of <strong>38%</strong> for the forum account attribution—categorized as "Weak" confidence.</p>
+
+      <p>The explanation was specific:</p>
+
+      <h3>Signals That Supported the Attribution</h3>
+      <ul>
+        <li>Username pattern similarity (alex_chen_dev follows conventions seen in verified accounts)</li>
+        <li>Profile mentions software development background</li>
+        <li>Account active during timeframe consistent with candidate's career</li>
+      </ul>
+
+      <h3>Signals That Weakened the Attribution</h3>
+      <ul>
+        <li><strong>Geographic inconsistency:</strong> Forum posts referenced living in Seattle; candidate's verified history showed continuous residence in Boston</li>
+        <li><strong>Technical focus mismatch:</strong> Forum account discussed network security and penetration testing; candidate's verified work history is in frontend development with no security background</li>
+        <li><strong>Writing style analysis:</strong> Linguistic patterns in forum posts showed significant divergence from candidate's verified writing samples (LinkedIn posts, public code comments)</li>
+        <li><strong>No cross-platform corroboration:</strong> Despite 34 username matches, none of the verified candidate accounts linked to or referenced this forum</li>
+      </ul>
+
+      <h3>LENS Conclusion</h3>
+      <p>The evidence supported a connection based on username pattern alone. However, multiple independent signals contradicted the attribution. The most likely explanation: this forum account belongs to a different person who happens to share a common name and chose a similar username.</p>
+
+      <p>LENS recommendation: <em>"Do not rely on this finding without substantial additional evidence. The signals that weaken attribution are more specific than those that support it."</em></p>
+
+      <h2>The Verification</h2>
+      <p>The security team decided to investigate further rather than flag the candidate immediately.</p>
+
+      <p>Additional research confirmed LENS's analysis:</p>
+      <ul>
+        <li>The forum account had posted photos from Seattle-area locations</li>
+        <li>The account's email domain (visible in older posts) was associated with a Seattle-based company</li>
+        <li>The candidate, when asked about cybersecurity interests in a follow-up interview, expressed no familiarity with the specific topics discussed on the forum</li>
+      </ul>
+
+      <p>The forum account belonged to a different Alex Chen—a security researcher based in Seattle with no connection to the job candidate.</p>
+
+      <h2>What Would Have Happened Without LENS</h2>
+      <p>Without confidence scoring and evidence analysis, the security team would likely have:</p>
+
+      <h3>Best Case Scenario</h3>
+      <p>Flagged the candidate for additional review, delaying the hiring process by weeks. The candidate might have accepted another offer during this period. The company would have lost a qualified hire.</p>
+
+      <h3>Worse Case Scenario</h3>
+      <p>Included the forum findings in their report without verification. The candidate's offer might have been rescinded or downgraded based on incorrect information. If the candidate discovered the reason, legal and reputational consequences could follow.</p>
+
+      <h3>Systemic Impact</h3>
+      <p>The security team would have consumed significant time investigating a false lead. Trust in future OSINT findings would be diminished after the error was discovered. The process for handling similar situations would remain unchanged, allowing the same error to recur.</p>
+
+      <h2>Key Lessons</h2>
+
+      <h3>1. Username Matches Are Not Evidence</h3>
+      <p>Common names generate common usernames. "alexchen" appears on thousands of accounts worldwide. Without additional corroborating signals, a username match is nearly meaningless for identification purposes.</p>
+
+      <h3>2. Contradictory Evidence Matters More Than Confirming Evidence</h3>
+      <p>The signals that supported the attribution were generic: username pattern, profession category, general timing. The signals that contradicted it were specific: geographic location, technical specialty, writing style.</p>
+
+      <p>Specific contradictions outweigh general confirmations. LENS weights evidence accordingly.</p>
+
+      <h3>3. Confidence Scoring Prevents Premature Conclusions</h3>
+      <p>Traditional tools would have returned the forum account as a "match" without qualification. The security team would have needed to manually identify the contradictory evidence—if they noticed it at all.</p>
+
+      <p>LENS surfaced the contradictions automatically, preventing a hasty conclusion.</p>
+
+      <h3>4. The Cost of False Positives Is Real</h3>
+      <p>In this case, an innocent candidate nearly suffered professional harm based on misidentification. The company nearly lost a qualified hire. The security team nearly wasted resources on a false lead.</p>
+
+      <p>These costs are often invisible—organizations don't know what they lost when they acted on incorrect information. Confidence scoring makes the uncertainty visible before action is taken.</p>
+
+      <h2>How LENS Handles This Systematically</h2>
+      <p>This case study illustrates LENS's general approach:</p>
+
+      <h3>Signal Weighting</h3>
+      <p>Not all signals are equal. LENS assigns higher weight to specific, verifiable signals (geographic references, technical specialty) than to generic patterns (username format, general profession).</p>
+
+      <h3>Contradiction Detection</h3>
+      <p>LENS actively looks for signals that weaken attributions, not just signals that support them. This adversarial approach catches errors that confirmation-focused analysis misses.</p>
+
+      <h3>Explainable Outputs</h3>
+      <p>The 38% confidence score alone would not have prevented the error. The explanation—specifically identifying geographic and technical mismatches—gave the security team concrete reasons to investigate further.</p>
+
+      <h3>Actionable Recommendations</h3>
+      <p>LENS doesn't just score; it recommends. "Do not rely on this finding without substantial additional evidence" is specific guidance that shapes next steps.</p>
+
+      <h2>Implications for OSINT Practice</h2>
+      <p>This case illustrates why confidence scoring should be standard practice in OSINT:</p>
+
+      <ul>
+        <li><strong>For security teams:</strong> Confidence scoring prevents embarrassing errors and wasted resources</li>
+        <li><strong>For compliance teams:</strong> Documented evidence analysis provides defensible decision-making processes</li>
+        <li><strong>For subjects of investigation:</strong> Proper analysis protects innocent individuals from misidentification</li>
+        <li><strong>For the OSINT discipline:</strong> Rigorous methodology builds trust in findings that deserve trust</li>
+      </ul>
+
+      <h2>Conclusion</h2>
+      <p>The Alex Chen case is not unusual. False positives from name and username matching occur regularly in OSINT. What made this case different was not the error—it was catching the error before it caused harm.</p>
+
+      <p>LENS confidence scoring identified the attribution as weak despite superficial similarities. The explanation highlighted specific contradictions. The recommendation prevented premature action.</p>
+
+      <p>The candidate was hired. They've been with the company for eight months and received a positive performance review. The Seattle-based security researcher continues posting on the forum, unaware they were briefly mistaken for someone else.</p>
+
+      <p>This is what evidence-based confidence scoring is designed to do: prevent harm by making uncertainty visible.</p>
+
+      <p><a href="/lens">Learn more about LENS</a> and how confidence scoring works, or <a href="/scan">run a scan</a> to see it in action.</p>
+    `,
+  },
   "lens-osint-confidence-wrong": {
     title: "Why Most OSINT Tools Get Confidence Wrong",
     date: "January 16, 2026",
