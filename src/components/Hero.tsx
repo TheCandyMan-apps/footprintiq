@@ -12,7 +12,7 @@ export const Hero = ({
   onAdvancedScan
 }: HeroProps) => {
   return (
-    <section className="relative min-h-[85vh] flex items-center justify-center bg-background">
+    <section className="relative min-h-[80svh] md:min-h-[85vh] flex items-center justify-center bg-background">
       {/* Subtle background gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-muted/30 via-background to-background" />
       
