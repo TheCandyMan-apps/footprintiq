@@ -15,14 +15,12 @@ export function ForensicConfidenceGauge({
   const normalizedScore = Math.max(0, Math.min(100, score));
   
   const { color, label } = useMemo(() => {
-    if (normalizedScore >= 71) {
+    if (normalizedScore >= 80) {
       return { color: 'hsl(142, 76%, 36%)', label: 'High Reliability' };
-    } else if (normalizedScore >= 51) {
+    } else if (normalizedScore >= 60) {
       return { color: 'hsl(48, 96%, 53%)', label: 'Moderate Reliability' };
-    } else if (normalizedScore >= 31) {
-      return { color: 'hsl(25, 95%, 53%)', label: 'Low Reliability' };
     } else {
-      return { color: 'hsl(0, 84%, 60%)', label: 'Unreliable' };
+      return { color: 'hsl(25, 95%, 53%)', label: 'Low Reliability' };
     }
   }, [normalizedScore]);
 
