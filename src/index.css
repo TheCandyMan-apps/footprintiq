@@ -144,7 +144,22 @@ DESIGN PHILOSOPHY:
   /* Content visibility optimization for below-fold sections */
   .below-fold {
     content-visibility: auto;
-    contain-intrinsic-size: 0 500px;
+    contain-intrinsic-size: auto 400px;
+  }
+
+  /* Disable content-visibility on reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    .below-fold {
+      content-visibility: visible;
+      contain-intrinsic-size: none;
+    }
+  }
+
+  /* Fallback for browsers without content-visibility support */
+  @supports not (content-visibility: auto) {
+    .below-fold {
+      visibility: visible;
+    }
   }
 
   /* Touch-friendly targets - minimum 44x44px */
