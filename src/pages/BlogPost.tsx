@@ -8,6 +8,393 @@ import { getBlogHeroImage } from "@/lib/blogImages";
 import { sanitizeHtml } from "@/lib/sanitize";
 
 const blogPosts: Record<string, { title: string; date: string; readTime: string; category: string; content: string }> = {
+  "lens-osint-confidence-wrong": {
+    title: "Why Most OSINT Tools Get Confidence Wrong",
+    date: "January 16, 2026",
+    readTime: "10 min read",
+    category: "LENS",
+    content: `
+      <h2>The Illusion of Certainty</h2>
+      <p>OSINT tools promise clarity. They scan platforms, find usernames, and return matches. A profile is either found or not found. Match or no match. Binary.</p>
+
+      <p>This simplicity is appealing. It's also misleading.</p>
+
+      <p>The reality of open-source intelligence is fundamentally probabilistic. A username existing on a platform does not mean it belongs to the person you're investigating. A profile photo similarity does not confirm identity. A matching email does not prove ownership.</p>
+
+      <p>Yet most OSINT tools treat these ambiguities as certainties, presenting results without context, confidence levels, or explanations. This approach creates more problems than it solves.</p>
+
+      <h2>Binary Results vs Probabilistic Reality</h2>
+      <p>Consider a username search for "john_smith_84" across 500 platforms. A typical OSINT tool might return 47 matches and declare success. But what do these matches actually tell us?</p>
+
+      <ul>
+        <li><strong>Some matches are coincidental:</strong> Common usernames appear across unrelated accounts</li>
+        <li><strong>Some are inactive:</strong> Abandoned accounts from years ago with no recent activity</li>
+        <li><strong>Some are impersonators:</strong> Accounts created to mimic or deceive</li>
+        <li><strong>Some are legitimately connected:</strong> Accounts that actually belong to the same person</li>
+      </ul>
+
+      <p>Without distinguishing between these categories, raw results are noise, not intelligence. A match count is not a confidence level. Finding something is not the same as verifying it.</p>
+
+      <p>Real-world OSINT requires probabilistic thinking: weighing evidence, considering alternatives, and expressing uncertainty where it exists. Binary tools cannot do this.</p>
+
+      <h2>Why High Match Rates Still Mislead</h2>
+      <p>A common assumption in OSINT is that more matches mean better results. If a tool finds 100 profiles linked to a target, it must be thorough. If it claims 95% accuracy, it must be reliable.</p>
+
+      <p>Both assumptions are wrong.</p>
+
+      <h3>Volume Does Not Equal Accuracy</h3>
+      <p>A tool that returns every possible match will inevitably find the correct profile—but it will also return dozens of incorrect ones. Without filtering, ranking, or confidence scoring, the analyst must manually verify each result.</p>
+
+      <p>This creates a hidden cost: investigation time wasted on false leads. In practice, a tool that returns 50 unqualified matches may be less useful than one that returns 5 qualified matches with explanations.</p>
+
+      <h3>The Base Rate Problem</h3>
+      <p>OSINT accuracy claims often ignore the base rate problem. If a tool claims 95% accuracy on username matching, this sounds impressive. But what does it mean in practice?</p>
+
+      <p>If 1 in 1000 profiles actually belongs to your target, and the tool has a 5% false positive rate, you will receive approximately 50 false matches for every true match. The "95% accurate" tool now produces mostly noise.</p>
+
+      <p>Without understanding these statistical realities, practitioners overestimate tool reliability and underestimate the verification burden.</p>
+
+      <h2>The Cost of False Positives</h2>
+      <p>False positives in OSINT are not merely inconvenient. They carry real consequences.</p>
+
+      <h3>Wasted Investigation Time</h3>
+      <p>Every false lead requires verification. Analysts must examine profiles, cross-reference data, and rule out incorrect matches. In complex investigations, this can consume hours or days.</p>
+
+      <p>Time spent on false positives is time not spent on genuine leads. The opportunity cost is significant.</p>
+
+      <h3>Damaged Reputations</h3>
+      <p>Misidentification can harm innocent individuals. If an OSINT report incorrectly links someone to concerning activity, their reputation may suffer even after the error is discovered.</p>
+
+      <p>In employment screening, due diligence, or journalistic contexts, misattribution has serious ethical and legal implications.</p>
+
+      <h3>Legal and Ethical Consequences</h3>
+      <p>OSINT findings increasingly inform legal, regulatory, and security decisions. Incorrect attributions can lead to wrongful suspicion, investigation of innocent parties, or flawed risk assessments.</p>
+
+      <p>Tools that present uncertain findings as certain facts enable these harms.</p>
+
+      <h3>Trust Erosion</h3>
+      <p>Repeated false positives erode trust in OSINT as a discipline. When practitioners or stakeholders encounter unreliable results, they may dismiss legitimate findings or abandon OSINT entirely.</p>
+
+      <p>Overclaiming damages the field's credibility.</p>
+
+      <h2>A Better Approach: Confidence Scoring</h2>
+      <p>The solution is not more data or faster scans. It is better analysis.</p>
+
+      <p>Instead of treating OSINT as a matching exercise, we should treat it as an evidence-weighing exercise. Each signal provides some support for a hypothesis. Multiple signals, when corroborated, increase confidence. Contradictory signals decrease it.</p>
+
+      <h3>From Match Counting to Evidence Analysis</h3>
+      <p>Effective OSINT asks: What evidence supports this attribution? How strong is that evidence? What alternative explanations exist?</p>
+
+      <p>This requires examining:</p>
+      <ul>
+        <li><strong>Username consistency:</strong> Does the username follow patterns seen in known accounts?</li>
+        <li><strong>Platform context:</strong> Is this the type of platform the target would use?</li>
+        <li><strong>Temporal patterns:</strong> Do account creation dates and activity align with known timelines?</li>
+        <li><strong>Cross-platform corroboration:</strong> Do multiple signals point to the same conclusion?</li>
+        <li><strong>Contradictory evidence:</strong> Are there signals that weaken the attribution?</li>
+      </ul>
+
+      <h3>Why Context Matters More Than Quantity</h3>
+      <p>A single verified connection is worth more than a hundred unverified matches. Context—understanding why a result appears and how reliable it is—transforms raw data into actionable intelligence.</p>
+
+      <p>This is the insight behind LENS (Link & Evidence Network System): OSINT results require explanation, not just enumeration. Analysts need to understand not just what was found, but why it matters and how confident they should be.</p>
+
+      <h3>Explainable Confidence</h3>
+      <p>Confidence should be explainable. A score of 75% should come with reasoning: which signals contributed, how they corroborated, and what uncertainties remain.</p>
+
+      <p>Black-box confidence claims—scores without explanation—are little better than binary matches. They provide a number without understanding.</p>
+
+      <p>Transparent confidence scoring supports human judgment. It helps analysts calibrate their own assessments, identify gaps, and make informed decisions about next steps.</p>
+
+      <h2>Conclusion</h2>
+      <p>Most OSINT tools get confidence wrong because they treat fundamentally uncertain processes as binary operations. They prioritize match counts over evidence quality. They claim accuracy without context.</p>
+
+      <p>The cost is measured in wasted time, damaged reputations, and eroded trust.</p>
+
+      <p>A better approach acknowledges uncertainty, weights evidence, and explains confidence. It treats OSINT as what it is: a probabilistic discipline that supports human judgment rather than replacing it.</p>
+
+      <p>This is the foundation of LENS: not certainty, but clarity about uncertainty.</p>
+
+      <p><a href="/lens">Learn more about LENS</a> and how evidence-based confidence scoring works.</p>
+    `,
+  },
+  "lens-introduction": {
+    title: "From Results to Reliability: Introducing LENS",
+    date: "January 17, 2026",
+    readTime: "8 min read",
+    category: "LENS",
+    content: `
+      <h2>The Gap Between Data and Intelligence</h2>
+      <p>OSINT tools excel at finding things. They scan hundreds of platforms, search breach databases, and return results in seconds. The collection problem has largely been solved.</p>
+
+      <p>But collection is not analysis. Finding a profile is not the same as understanding whether it belongs to your target. Discovering a breach record does not tell you how concerned you should be. Raw data is not intelligence.</p>
+
+      <p>This gap—between what tools find and what analysts need—is why we built LENS.</p>
+
+      <h2>Why LENS Exists</h2>
+      <p>LENS emerged from a specific problem we observed: analysts drowning in unqualified matches.</p>
+
+      <p>A typical username scan might return 40 results across different platforms. An email search might reveal 12 breach appearances. A phone number lookup might surface various associated profiles and data points.</p>
+
+      <p>Without context, these results create more questions than answers:</p>
+      <ul>
+        <li>Which of these 40 profiles actually belong to my target?</li>
+        <li>How serious are these 12 breaches?</li>
+        <li>Can I trust these associations?</li>
+      </ul>
+
+      <p>Analysts were spending significant time verifying findings that tools presented as certain. The tools provided volume; the analysts needed judgment.</p>
+
+      <h3>From "Did We Find Something?" to "Should We Trust It?"</h3>
+      <p>LENS shifts the question from discovery to reliability. Instead of asking whether a result exists, LENS asks how confident you should be in that result.</p>
+
+      <p>This is a fundamental reframing. Discovery tools optimize for recall—finding as much as possible. Analysis tools optimize for precision—ensuring what is found is meaningful.</p>
+
+      <p>LENS is an analysis layer, not a search tool. It sits above discovery and evaluates what was found.</p>
+
+      <h2>Design Philosophy</h2>
+      <p>LENS is built on four principles:</p>
+
+      <h3>1. Transparency Over Black-Box Scoring</h3>
+      <p>Many tools provide confidence scores without explanation. A result labeled "87% match" tells you little about why that number was chosen or how to interpret it.</p>
+
+      <p>LENS provides reasoning for every confidence assessment. If a result scores highly, you can see which signals contributed. If a result scores poorly, you understand why.</p>
+
+      <p>This transparency serves two purposes: it allows analysts to calibrate their own judgment, and it creates accountability for the system's conclusions.</p>
+
+      <h3>2. Explainability as a Core Principle</h3>
+      <p>Confidence is only useful if humans can act on it. A score without context does not help an analyst decide whether to investigate further or move on.</p>
+
+      <p>LENS generates human-readable explanations alongside numerical scores. These explanations describe the evidence, its quality, and its limitations.</p>
+
+      <p>Explainability is not a feature added after the fact—it is built into how LENS evaluates evidence.</p>
+
+      <h3>3. Probabilistic Thinking, Not Binary Claims</h3>
+      <p>OSINT is inherently uncertain. Usernames can be shared. Breach data can be inaccurate. Profiles can be impersonated. Any system that claims certainty is overstating its capabilities.</p>
+
+      <p>LENS embraces uncertainty. It provides confidence bands (Strong, Likely, Weak, Insufficient) rather than yes/no conclusions. It acknowledges when evidence is ambiguous.</p>
+
+      <p>This probabilistic approach reflects the reality of OSINT and respects the analyst's role in making final judgments.</p>
+
+      <h3>4. Supporting Human Judgment, Not Replacing It</h3>
+      <p>LENS is a decision-support tool, not a decision-making tool. It provides structured analysis that helps humans make better judgments faster.</p>
+
+      <p>The goal is not to automate the analyst out of the loop. It is to give the analyst better information, saving time on routine verification while preserving human oversight for critical decisions.</p>
+
+      <h2>Ethical OSINT Principles Built Into LENS</h2>
+      <p>LENS is designed with strict ethical constraints:</p>
+
+      <h3>Public Data Only</h3>
+      <p>LENS analyzes publicly accessible information. It does not scrape behind logins, bypass authentication, or access private systems. If data requires credentials to view, LENS cannot and will not access it.</p>
+
+      <h3>No Surveillance or Monitoring Capabilities</h3>
+      <p>LENS is an analysis tool, not a surveillance system. It does not track individuals over time, send alerts about target activity, or enable ongoing monitoring.</p>
+
+      <p>Each LENS analysis is a point-in-time assessment based on currently available public data.</p>
+
+      <h3>No Certainty Claims</h3>
+      <p>LENS never claims that a result is definitely correct. It provides confidence levels with explanations, acknowledging uncertainty where it exists.</p>
+
+      <p>Overclaiming is unethical because it can lead to incorrect actions based on false confidence. LENS errs on the side of caution.</p>
+
+      <h3>Privacy-First Architecture</h3>
+      <p>LENS is designed to minimize data retention and respect subject privacy. Scan results are not used for purposes beyond the requesting user's investigation.</p>
+
+      <h2>How LENS Works</h2>
+      <p>At a high level, LENS evaluates three dimensions of evidence:</p>
+
+      <h3>Signal Analysis</h3>
+      <p>LENS examines individual signals within scan results:</p>
+      <ul>
+        <li><strong>Username consistency:</strong> Does this username follow patterns seen in other verified accounts?</li>
+        <li><strong>Platform context:</strong> Is this platform relevant to the target's profile or industry?</li>
+        <li><strong>Activity patterns:</strong> Does account activity align with known behaviors?</li>
+      </ul>
+
+      <h3>Corroboration</h3>
+      <p>LENS looks for signals that reinforce each other:</p>
+      <ul>
+        <li>Multiple platforms showing the same username with consistent details</li>
+        <li>Cross-references between email addresses, usernames, and other identifiers</li>
+        <li>Temporal alignment between account creations and known events</li>
+      </ul>
+
+      <h3>Context Evaluation</h3>
+      <p>LENS considers what signals are missing or contradictory:</p>
+      <ul>
+        <li>Expected platforms where the target should appear but doesn't</li>
+        <li>Inconsistencies between profiles that might indicate separate individuals</li>
+        <li>Evidence that weakens confidence in attributions</li>
+      </ul>
+
+      <h3>Confidence Banding</h3>
+      <p>Based on this analysis, LENS assigns results to confidence bands:</p>
+      <ul>
+        <li><strong>Strong (75-100%):</strong> High corroboration across multiple signals</li>
+        <li><strong>Likely (50-74%):</strong> Some signals align, verification recommended</li>
+        <li><strong>Weak (31-49%):</strong> Limited evidence, treat as tentative</li>
+        <li><strong>Insufficient (0-30%):</strong> Cannot establish meaningful connection</li>
+      </ul>
+
+      <h2>LENS as an Analysis Layer</h2>
+      <p>LENS is not a replacement for OSINT scanning tools. It is a layer that sits above them, adding the analysis step that transforms raw results into qualified intelligence.</p>
+
+      <p>Think of it as the difference between a database search and a research report. The search finds records; the report evaluates them.</p>
+
+      <p>This layered approach means LENS can work with various data sources and scanning tools. It is agnostic to where results come from—it focuses on how to interpret them.</p>
+
+      <h2>Getting Started</h2>
+      <p>LENS is integrated into FootprintIQ scans. When you run a scan, LENS automatically analyzes results and provides confidence assessments.</p>
+
+      <p>For deeper analysis and cross-platform correlation, LENS Pro offers enhanced capabilities including detailed reasoning and priority recommendations.</p>
+
+      <p><a href="/scan">Run a scan</a> to see LENS in action, or <a href="/lens">learn more about how LENS works</a>.</p>
+    `,
+  },
+  "lens-confidence-meaning": {
+    title: "What 'Confidence' Actually Means in OSINT",
+    date: "January 18, 2026",
+    readTime: "9 min read",
+    category: "LENS",
+    content: `
+      <h2>The Overloaded Word</h2>
+      <p>In everyday language, confidence often means certainty. When someone says they are confident about something, they usually mean they believe it is true.</p>
+
+      <p>In OSINT, confidence means something different—and the distinction matters.</p>
+
+      <p>OSINT confidence is a measure of evidential support: how much the available evidence supports a particular conclusion. It is not a claim about truth. It is a claim about evidence.</p>
+
+      <p>Understanding this distinction helps practitioners interpret results correctly, communicate findings clearly, and avoid the dangerous trap of false certainty.</p>
+
+      <h2>Confidence vs Certainty</h2>
+      <p>Certainty is an absolute claim: this is true. Confidence is a relative claim: the evidence supports this conclusion to some degree.</p>
+
+      <h3>Why OSINT Can Never Provide Certainty</h3>
+      <p>OSINT operates on public information, which is inherently incomplete. We do not have access to:</p>
+      <ul>
+        <li>Private communications confirming identity</li>
+        <li>Official records verifying account ownership</li>
+        <li>Direct statements from the subject</li>
+        <li>Complete information about all relevant accounts and activities</li>
+      </ul>
+
+      <p>We work with fragments: public profiles, breach records, username patterns, activity traces. These fragments can strongly suggest connections, but they cannot prove them in an absolute sense.</p>
+
+      <p>A username appearing on five platforms with consistent details provides strong evidence that the accounts are connected. But it does not eliminate the possibility of coincidence, impersonation, or error.</p>
+
+      <h3>The Danger of Conflating Confidence and Certainty</h3>
+      <p>When practitioners or tools treat confidence as certainty, several problems arise:</p>
+
+      <ul>
+        <li><strong>Overaction:</strong> Taking definitive action based on probabilistic evidence</li>
+        <li><strong>Misattribution:</strong> Incorrectly linking individuals to accounts or activities</li>
+        <li><strong>Legal exposure:</strong> Making claims that cannot be substantiated</li>
+        <li><strong>Reputational harm:</strong> Damaging individuals based on incomplete evidence</li>
+      </ul>
+
+      <p>A 90% confidence score means there is roughly a 1-in-10 chance the conclusion is wrong. In high-stakes contexts, that 10% matters significantly.</p>
+
+      <h2>How Humans Should Interpret Risk</h2>
+      <p>Confidence scores are decision-support tools. They help analysts allocate attention and effort appropriately.</p>
+
+      <h3>Confidence as a Guide, Not a Verdict</h3>
+      <p>High confidence indicates that further investigation may be warranted. It does not indicate that investigation is unnecessary.</p>
+
+      <p>A 85% confidence attribution is an invitation to verify, not a permission to assume. The evidence is strong enough to merit attention; it is not strong enough to skip verification.</p>
+
+      <p>Conversely, low confidence does not mean a result should be ignored. It means less evidence is currently available. Further investigation might surface additional signals that increase confidence—or reveal the connection is indeed incorrect.</p>
+
+      <h3>Using Confidence Bands to Guide Next Steps</h3>
+      <p>LENS uses four confidence bands, each suggesting different actions:</p>
+
+      <h4>Strong Confidence (75-100%)</h4>
+      <p>The evidence strongly supports this conclusion. Multiple independent signals corroborate. Recommended action: proceed with verification, prioritize this lead.</p>
+
+      <h4>Likely Confidence (50-74%)</h4>
+      <p>The evidence supports this conclusion but with notable gaps or limited corroboration. Recommended action: investigate further before relying on this finding.</p>
+
+      <h4>Weak Confidence (31-49%)</h4>
+      <p>Limited evidence exists. The connection is possible but not well-supported. Recommended action: treat as tentative, seek additional signals before acting.</p>
+
+      <h4>Insufficient Confidence (0-30%)</h4>
+      <p>Cannot establish a meaningful connection with available evidence. Recommended action: do not rely on this finding without substantial additional evidence.</p>
+
+      <h3>The Role of Corroboration</h3>
+      <p>Confidence increases when multiple independent signals point to the same conclusion. A username match on one platform is suggestive. The same username with consistent profile details across five platforms is compelling.</p>
+
+      <p>Corroboration is not just about quantity—it is about independence. Five results from the same source are less meaningful than three results from different sources.</p>
+
+      <p>Analysts should ask: How many independent signals support this conclusion? If one signal proved incorrect, would others still support it?</p>
+
+      <h2>Why Restraint Builds Trust</h2>
+      <p>The instinct in OSINT is often to claim as much as possible—to demonstrate thoroughness by presenting findings assertively. This instinct is counterproductive.</p>
+
+      <h3>Overclaiming Erodes Credibility</h3>
+      <p>When OSINT findings are later shown to be incorrect, trust in future findings diminishes. Stakeholders who have experienced false positives become skeptical of true positives.</p>
+
+      <p>A tool or analyst that regularly overreaches—presenting uncertain findings as certain—will eventually lose credibility entirely.</p>
+
+      <h3>The Value of Saying "We Don't Know"</h3>
+      <p>Acknowledging uncertainty is not a weakness. It is a professional standard.</p>
+
+      <p>When evidence is ambiguous, the appropriate response is to say so: "The available evidence suggests this connection with moderate confidence. Further investigation is recommended before relying on this finding."</p>
+
+      <p>This honest uncertainty serves stakeholders better than false confidence. It allows them to make informed decisions about how to proceed.</p>
+
+      <h3>How Transparency Strengthens OSINT</h3>
+      <p>As a discipline, OSINT benefits when practitioners are transparent about methods and limitations. Clients and stakeholders develop appropriate expectations. False positives are understood as inherent to probabilistic analysis rather than failures of competence.</p>
+
+      <p>Transparency also enables improvement. When uncertainty is acknowledged, there is motivation to seek additional evidence. When findings are presented as certain, investigation often stops prematurely.</p>
+
+      <h3>Building Long-Term Trust</h3>
+      <p>The most trusted OSINT practitioners are not those who claim the most. They are those whose claims prove reliable over time.</p>
+
+      <p>Restraint today builds trust for tomorrow. A finding presented with appropriate uncertainty, later verified as correct, strengthens credibility. A finding presented with false certainty, later shown to be wrong, destroys it.</p>
+
+      <h2>Practical Guidance</h2>
+      <p>How should you interpret LENS confidence scores in practice?</p>
+
+      <h3>Reading LENS Scores</h3>
+      <p>Every LENS score comes with an explanation. Read the explanation, not just the number. The reasoning tells you:</p>
+      <ul>
+        <li>Which signals contributed to the score</li>
+        <li>How those signals corroborated</li>
+        <li>What uncertainties remain</li>
+        <li>What additional investigation might increase confidence</li>
+      </ul>
+
+      <h3>High Confidence Still Requires Verification</h3>
+      <p>Even a 95% confidence score means roughly 1 in 20 findings at that level will be incorrect. In large-scale investigations, this adds up.</p>
+
+      <p>High confidence findings should still be verified before consequential action. The confidence score tells you this lead is worth pursuing—not that verification is unnecessary.</p>
+
+      <h3>Low Confidence Might Still Be Meaningful</h3>
+      <p>A 40% confidence finding is not worthless. It indicates some evidence exists, even if limited.</p>
+
+      <p>In some contexts, weak evidence is the starting point for deeper investigation. In others, it is appropriately set aside. The decision depends on context, stakes, and resources—not the score alone.</p>
+
+      <h3>Context Matters</h3>
+      <p>A 70% confidence finding in a routine due diligence check may be sufficient to flag for further review. The same finding in a legal proceeding requires much higher verification.</p>
+
+      <p>Confidence scores inform judgment. They do not replace it.</p>
+
+      <h2>Conclusion</h2>
+      <p>Confidence in OSINT is a measure of evidential support, not a claim of certainty. Understanding this distinction helps practitioners:</p>
+
+      <ul>
+        <li>Interpret findings appropriately</li>
+        <li>Communicate uncertainty clearly</li>
+        <li>Avoid the harms of false certainty</li>
+        <li>Build long-term trust through professional restraint</li>
+      </ul>
+
+      <p>LENS is designed around this philosophy. Every confidence score comes with reasoning. Every finding acknowledges uncertainty. The goal is to support human judgment with transparent analysis—not to replace judgment with automated claims.</p>
+
+      <p>This is what it means to take confidence seriously: not as a number to maximize, but as a concept to respect.</p>
+
+      <p><a href="/lens">Learn more about LENS</a> and how evidence-based confidence scoring supports better OSINT.</p>
+    `,
+  },
   "osint-ai-era-2026": {
     title: "2026 OSINT and the Era of AI: The Future of Digital Intelligence",
     date: "January 10, 2026",
