@@ -179,7 +179,6 @@ export const Header = () => {
                 height={80}
                 loading="eager"
                 decoding="sync"
-                fetchPriority="high"
                 className="h-20 w-auto object-contain max-w-[250px] drop-shadow-sm transition-all duration-300 group-hover:scale-105 group-hover:drop-shadow-[0_0_8px_rgba(var(--primary),0.3)]"
               />
             </Link>
