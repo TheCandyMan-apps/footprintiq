@@ -178,6 +178,25 @@
         <img src="/logo-dark-optimized.webp" alt="" width="250" height="80" style="height:80px;width:auto;object-fit:contain;opacity:0" fetchpriority="high" />
       </div>
     </div>
+    
+    <!-- Boot error handler - shows diagnostic if React fails to mount -->
+    <script>
+      (function(){
+        var timeout = setTimeout(function(){
+          var root = document.getElementById('root');
+          if(root && root.querySelector('.header-skeleton')){
+            root.innerHTML = '<div style="padding:40px;text-align:center;font-family:system-ui,sans-serif;color:#fff;background:#0a0a0f;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center"><h1 style="color:#ef4444;margin-bottom:16px">App Failed to Load</h1><p style="color:#a1a1aa;margin-bottom:24px;max-width:400px">The application could not start. This may be due to cached data or a network issue.</p><button onclick="location.reload(true)" style="background:#7c3aed;color:#fff;padding:12px 24px;border-radius:8px;border:none;cursor:pointer;font-size:16px">Force Reload</button><p style="color:#52525b;margin-top:24px;font-size:12px">If this persists, try: Settings → Clear browsing data → Cached images and files</p></div>';
+          }
+        }, 8000);
+        window.__bootTimeout = timeout;
+      })();
+    </script>
+    
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Clear boot timeout when module loads -->
+    <script type="module">
+      if(window.__bootTimeout) clearTimeout(window.__bootTimeout);
+    </script>
   </body>
 </html>
