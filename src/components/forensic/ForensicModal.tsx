@@ -15,7 +15,13 @@ import {
 } from '@/components/ui/collapsible';
 import { ForensicConfidenceGauge } from './ForensicConfidenceGauge';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
-import { Copy, Check, Shield, Clock, Lock, Layers, Search, ChevronRight, ExternalLink, CircleCheck, CircleAlert, Info, Sparkles } from 'lucide-react';
+import { Copy, Check, Shield, Clock, Lock, Layers, Search, ChevronRight, ExternalLink, CircleCheck, CircleAlert, Info, Sparkles, Network, HelpCircle } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -191,6 +197,69 @@ export function ForensicModal({
             {/* Confidence Score Gauge */}
             <div className="flex justify-center py-2">
               <ForensicConfidenceGauge score={result.confidenceScore} size={140} />
+            </div>
+
+            {/* Confidence Breakdown (Pro-only) */}
+            <div className="p-4 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 relative overflow-hidden">
+              <div className="flex items-center gap-2 mb-3">
+                <h4 className="text-sm font-semibold text-muted-foreground">Confidence Breakdown</h4>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/40 text-primary">
+                  Pro
+                </Badge>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/60 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-[240px] text-center">
+                      <p className="text-xs">Pro reveals how each signal contributes to confidence — not just the final score.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
+              {/* Blurred signal breakdown for free users */}
+              <div className="space-y-2.5 select-none" style={{ filter: 'blur(4px)' }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Username consistency</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full w-[85%] bg-primary/60 rounded-full" />
+                    </div>
+                    <span className="text-xs font-medium w-8 text-right">85%</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Platform context strength</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full w-[72%] bg-primary/60 rounded-full" />
+                    </div>
+                    <span className="text-xs font-medium w-8 text-right">72%</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Cross-platform corroboration</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full w-[45%] bg-amber-500/60 rounded-full" />
+                    </div>
+                    <span className="text-xs font-medium w-8 text-right">45%</span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Metadata stability</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full w-[68%] bg-primary/60 rounded-full" />
+                    </div>
+                    <span className="text-xs font-medium w-8 text-right">68%</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Overlay gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
             </div>
 
             <Separator />
@@ -381,6 +450,33 @@ export function ForensicModal({
                 )}
               </CollapsibleContent>
             </Collapsible>
+
+            {/* Evidence Network Teaser (Pro) */}
+            <div className="p-4 rounded-lg border border-dashed border-primary/30 bg-primary/5">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Network className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h5 className="text-sm font-medium">Link & Evidence Network</h5>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/40 text-primary">
+                      Pro
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    See how this profile connects to others across scans.
+                  </p>
+                  <a 
+                    href="/pricing" 
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Unlock LENS Pro
+                  </a>
+                </div>
+              </div>
+            </div>
 
             <Separator />
 
