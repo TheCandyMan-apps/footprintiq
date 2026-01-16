@@ -1,4 +1,5 @@
-import type jsPDF from 'jspdf';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // Re-export professional styles for convenience
 export * from './pdfStyles';
@@ -112,12 +113,11 @@ export function wrapText(
 }
 
 /**
- * Capture screenshot of HTML element (lazy loads html2canvas)
+ * Capture screenshot of HTML element
  */
 export async function captureElementScreenshot(
   element: HTMLElement
 ): Promise<string> {
-  const html2canvas = (await import('html2canvas')).default;
   const canvas = await html2canvas(element, {
     backgroundColor: '#ffffff',
     scale: 2,
