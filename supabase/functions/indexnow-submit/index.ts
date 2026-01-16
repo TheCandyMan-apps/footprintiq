@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const INDEXNOW_KEY = "fpiq-indexnow-2024-a1b2c3d4e5f6";
+const INDEXNOW_KEY = "c0cc39aa52a04aeca5ef190b51e994b6";
 const HOST = "footprintiq.app";
 const KEY_LOCATION = `https://${HOST}/${INDEXNOW_KEY}.txt`;
 
