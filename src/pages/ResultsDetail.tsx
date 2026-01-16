@@ -1618,11 +1618,12 @@ const ResultsDetail = () => {
                 return (
                 <div key={finding.id} className={cn("space-y-2", isSearch && "opacity-70")}>
                   <FindingCard 
+                    scanId={scanId!}
                     finding={{
                       id: finding.id,
                       provider: finding.provider,
                       kind: finding.providerCategory || (finding.raw as any)?.providerCategory || (finding.raw as any)?.kind || 'profile_presence',
-                      severity: (finding.raw as any)?.severity || finding.severity,
+                      severity: (finding as any).raw?.severity || finding.severity,
                       confidence: finding.confidence,
                       observed_at: finding.observedAt,
                       evidence: finding.evidence || [],

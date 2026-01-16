@@ -30,6 +30,7 @@ import { getProviderIcon } from '@/lib/providerIcons';
 import { prettySiteNameFromUrl } from '@/lib/normalizeFinding';
 import { LockedInsightBlock } from '@/components/billing/LockedInsightBlock';
 import { useResultsGating } from '@/components/billing/GatedContent';
+import { ForensicVerifyButton } from '@/components/forensic';
 
 interface Evidence {
   key?: string;
@@ -48,6 +49,7 @@ interface FindingCardProps {
     evidence: Evidence[];
     meta?: Record<string, any>;
   };
+  scanId: string;
 }
 
 const REMEDIATION_SUGGESTIONS: Record<string, string[]> = {
@@ -142,7 +144,7 @@ const getRemediationSteps = (kind: string | undefined, severity: string): string
   return REMEDIATION_SUGGESTIONS.default;
 };
 
-export function FindingCard({ finding }: FindingCardProps) {
+export function FindingCard({ finding, scanId }: FindingCardProps) {
   const { workspace } = useWorkspace();
   const { isFree } = useResultsGating();
   const [isEvidenceOpen, setIsEvidenceOpen] = useState(false);
@@ -468,6 +470,12 @@ export function FindingCard({ finding }: FindingCardProps) {
                 <span className="hidden sm:inline">Open</span>
               </a>
             </Button>
+            <ForensicVerifyButton
+              findingId={finding.id}
+              url={profileUrl}
+              platform={platformName || 'Unknown'}
+              scanId={scanId}
+            />
           </div>
         )}
       </div>
