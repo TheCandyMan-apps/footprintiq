@@ -3583,6 +3583,69 @@ export type Database = {
         }
         Relationships: []
       }
+      evidence_ledger: {
+        Row: {
+          confidence_score: number
+          created_at: string
+          finding_id: string
+          hashed_content: string | null
+          id: string
+          platform_consistency: string | null
+          raw_response: Json | null
+          scan_id: string
+          source_age: string | null
+          ssl_status: string | null
+          user_id: string
+          verification_hash: string
+          verified_at: string
+        }
+        Insert: {
+          confidence_score: number
+          created_at?: string
+          finding_id: string
+          hashed_content?: string | null
+          id?: string
+          platform_consistency?: string | null
+          raw_response?: Json | null
+          scan_id: string
+          source_age?: string | null
+          ssl_status?: string | null
+          user_id: string
+          verification_hash: string
+          verified_at?: string
+        }
+        Update: {
+          confidence_score?: number
+          created_at?: string
+          finding_id?: string
+          hashed_content?: string | null
+          id?: string
+          platform_consistency?: string | null
+          raw_response?: Json | null
+          scan_id?: string
+          source_age?: string | null
+          ssl_status?: string | null
+          user_id?: string
+          verification_hash?: string
+          verified_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evidence_ledger_finding_id_fkey"
+            columns: ["finding_id"]
+            isOneToOne: false
+            referencedRelation: "findings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evidence_ledger_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       explanation_cache: {
         Row: {
           context_hash: string
