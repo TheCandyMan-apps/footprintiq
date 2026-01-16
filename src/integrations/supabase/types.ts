@@ -3634,7 +3634,7 @@ export type Database = {
             foreignKeyName: "evidence_ledger_scan_id_fkey"
             columns: ["scan_id"]
             isOneToOne: false
-            referencedRelation: "scan_jobs"
+            referencedRelation: "scans"
             referencedColumns: ["id"]
           },
         ]
