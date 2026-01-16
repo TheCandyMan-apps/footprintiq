@@ -15,25 +15,17 @@
     <link rel="icon" type="image/png" href="https://storage.googleapis.com/gpt-engineer-file-uploads/2uSl18P0SSfJLWqHu910xv9mZBj1/uploads/1762544667872-FPIQ-Logo-X.png">
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- Performance & Resource Hints - placed early for browser to act on immediately -->
-    <!-- Preconnect to critical origins (with and without crossorigin for different request types) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <!-- Performance & Resource Hints -->
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="https://byuzgvauaeldjqxlrjci.supabase.co" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preconnect" href="https://byuzgvauaeldjqxlrjci.supabase.co" />
     <link rel="preconnect" href="https://byuzgvauaeldjqxlrjci.supabase.co" crossorigin />
-    
-    <!-- DNS prefetch for less critical origins -->
-    <link rel="dns-prefetch" href="https://plausible.io" />
-    <link rel="dns-prefetch" href="https://www.clarity.ms" />
-    <link rel="dns-prefetch" href="https://scripts.clarity.ms" />
-    
-    <!-- Preload critical font -->
     <link rel="preload" href="https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2" as="font" type="font/woff2" crossorigin />
     
-    <!-- Preload LCP image (logo) with WebP format -->
-    <link rel="preload" as="image" href="/logo-dark-optimized.webp" type="image/webp" fetchpriority="high" />
+    <!-- Preload LCP image (logo) -->
+    <link rel="preload" as="image" href="/logo-dark.png" fetchpriority="high" />
     
-    <!-- Critical CSS - Above-the-fold styles inlined to reduce render-blocking -->
+    <!-- Critical CSS -->
     <style>
       @font-face {
         font-family: 'Inter';
@@ -43,43 +35,9 @@
         src: url('https://fonts.gstatic.com/s/inter/v13/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2') format('woff2');
       }
       
-      /* Reset & Base - Critical for layout stability */
-      *,*::before,*::after{box-sizing:border-box;border:0 solid}
-      html{line-height:1.5;-webkit-text-size-adjust:100%;font-family:Inter,system-ui,-apple-system,sans-serif}
-      body{margin:0;line-height:inherit;-webkit-font-smoothing:antialiased;background:#0a0a0f;color:#e4e4e7}
-      #root{min-height:100vh;display:flex;flex-direction:column}
-      img,video{display:block;max-width:100%;height:auto}
-      
-      /* Header - Critical for LCP */
-      header{border-bottom:1px solid hsl(240 3.7% 15.9%);background:#0a0a0f;position:sticky;top:0;z-index:50}
-      .header-skeleton{height:80px;background:linear-gradient(90deg,#1a1a2e 25%,#16162a 50%,#1a1a2e 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
-      @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-      
-      /* Layout utilities - Critical for above-the-fold */
-      .flex{display:flex}.items-center{align-items:center}.justify-between{justify-content:space-between}
-      .gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-6{gap:1.5rem}
-      .px-6{padding-left:1.5rem;padding-right:1.5rem}.py-0{padding-top:0;padding-bottom:0}
-      .max-w-7xl{max-width:80rem}.mx-auto{margin-left:auto;margin-right:auto}
-      .hidden{display:none}@media(min-width:768px){.md\\:flex{display:flex}}
-      
-      /* Typography - Critical */
-      .text-sm{font-size:.875rem;line-height:1.25rem}
-      .text-4xl{font-size:2.25rem;line-height:2.5rem}.font-bold{font-weight:700}
-      .text-muted-foreground{color:#a1a1aa}
-      
-      /* Button base - Critical for CTA */
-      button,[type=button]{appearance:none;cursor:pointer;background:transparent}
-      .bg-primary{background:hsl(262.1 83.3% 57.8%)}.text-primary-foreground{color:hsl(210 20% 98%)}
-      .rounded-md{border-radius:.375rem}.rounded-lg{border-radius:.5rem}
-      .h-10{height:2.5rem}.px-4{padding-left:1rem;padding-right:1rem}
-      
-      /* Object-contain for logo */
-      .object-contain{object-fit:contain}.h-20{height:5rem}.w-auto{width:auto}
-      .max-w-\\[250px\\]{max-width:250px}
-      
-      /* Transitions - keep smooth feel */
-      .transition-all{transition-property:all;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}
-      .duration-300{transition-duration:.3s}
+      /* Critical above-the-fold styles */
+      body { margin: 0; font-family: Inter, system-ui, -apple-system, sans-serif; }
+      #root { min-height: 100vh; }
     </style>
     
     <!-- Default meta (overridden by Helmet) -->
@@ -90,12 +48,16 @@
     
     <!-- Performance Optimization -->
     <meta http-equiv="x-dns-prefetch-control" content="on" />
+    <link rel="preconnect" href="https://plausible.io" crossorigin />
     
-    <!-- Analytics scripts - async/defer to avoid blocking render -->
+    <!-- Privacy-friendly analytics by Plausible (deferred for LCP) -->
     <script defer src="https://plausible.io/js/pa-0A3M4Q9GLRmfRuk2LDGh6.js"></script>
-    <script>window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)}</script>
+    <script>
+      window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+      plausible.init()
+    </script>
 
-    <!-- Microsoft Clarity Analytics - loaded async -->
+    <!-- Microsoft Clarity Analytics -->
     <script>
       (function(c,l,a,r,i,t,y){
         c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -172,31 +134,7 @@
 </head>
 
   <body>
-    <div id="root">
-      <!-- Inline skeleton for faster FCP - replaced by React -->
-      <div class="header-skeleton" aria-hidden="true">
-        <img src="/logo-dark-optimized.webp" alt="" width="250" height="80" style="height:80px;width:auto;object-fit:contain;opacity:0" fetchpriority="high" />
-      </div>
-    </div>
-    
-    <!-- Boot error handler - shows diagnostic if React fails to mount -->
-    <script>
-      (function(){
-        var timeout = setTimeout(function(){
-          var root = document.getElementById('root');
-          if(root && root.querySelector('.header-skeleton')){
-            root.innerHTML = '<div style="padding:40px;text-align:center;font-family:system-ui,sans-serif;color:#fff;background:#0a0a0f;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center"><h1 style="color:#ef4444;margin-bottom:16px">App Failed to Load</h1><p style="color:#a1a1aa;margin-bottom:24px;max-width:400px">The application could not start. This may be due to cached data or a network issue.</p><button onclick="location.reload(true)" style="background:#7c3aed;color:#fff;padding:12px 24px;border-radius:8px;border:none;cursor:pointer;font-size:16px">Force Reload</button><p style="color:#52525b;margin-top:24px;font-size:12px">If this persists, try: Settings → Clear browsing data → Cached images and files</p></div>';
-          }
-        }, 8000);
-        window.__bootTimeout = timeout;
-      })();
-    </script>
-    
+    <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    
-    <!-- Clear boot timeout when module loads -->
-    <script type="module">
-      if(window.__bootTimeout) clearTimeout(window.__bootTimeout);
-    </script>
   </body>
 </html>

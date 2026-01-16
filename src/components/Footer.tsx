@@ -15,15 +15,15 @@ export const Footer = () => {
           {/* Brand */}
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-4 justify-center md:justify-start">
-              <img 
-                src="/logo-dark-optimized.webp" 
-                alt="FootprintIQ Logo"
-                width={180}
-                height={51}
-                loading="lazy"
-                decoding="async"
-                className="h-16 w-auto object-contain max-w-[180px] drop-shadow-sm"
-              />
+            <img 
+              src="/logo-dark.png" 
+              alt="FootprintIQ Logo"
+              width={180}
+              height={51}
+              loading="lazy"
+              decoding="async"
+              className="h-16 w-auto object-contain max-w-[180px] drop-shadow-sm"
+            />
             </div>
             <p className="text-sm text-muted-foreground mb-4">
               Understand your digital footprint with comprehensive OSINT-based visibility analysis.

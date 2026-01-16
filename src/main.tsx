@@ -19,14 +19,15 @@ if (import.meta.env.DEV) {
   });
 }
 
-// Clean up any stale service workers that might be caching old builds
+// Defer service worker registration to avoid blocking critical path
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.getRegistrations().then((registrations) => {
-      for (const registration of registrations) {
-        registration.unregister();
-      }
-    });
+    // Wait for page to be fully interactive before registering SW
+    setTimeout(() => {
+      navigator.serviceWorker.register('/registerSW.js').catch(() => {
+        // SW registration failed silently - not critical for app functionality
+      });
+    }, 3000);
   });
 }
 
