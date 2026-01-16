@@ -3,6 +3,9 @@
  */
 
 export const blogHeroImages: Record<string, string> = {
+  "lens-osint-confidence-wrong": "/blog-images/lens-confidence.webp",
+  "lens-introduction": "/blog-images/lens-intro.webp",
+  "lens-confidence-meaning": "/blog-images/lens-meaning.webp",
   "osint-ai-era-2026": "/blog-images/osint-ai-era-2026.webp",
   "what-is-digital-footprint": "/blog-images/digital-footprint.webp",
   "remove-data-brokers": "/blog-images/data-brokers.webp",

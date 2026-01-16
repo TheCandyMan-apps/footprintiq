@@ -4,6 +4,33 @@ import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 const blogPosts = [{
+  slug: "lens-osint-confidence-wrong",
+  title: "Why Most OSINT Tools Get Confidence Wrong",
+  excerpt: "Binary results mislead analysts. High match rates create noise. False positives waste time and damage trust. Learn why probabilistic thinking matters in OSINT.",
+  date: "January 16, 2026",
+  readTime: "10 min read",
+  category: "LENS",
+  featured: true,
+  image: "/blog-images/lens-confidence.webp"
+}, {
+  slug: "lens-introduction",
+  title: "From Results to Reliability: Introducing LENS",
+  excerpt: "LENS is an analysis layer that evaluates evidence quality, corroboration, and context to produce confidence assessments humans can understand. Learn why we built it.",
+  date: "January 17, 2026",
+  readTime: "8 min read",
+  category: "LENS",
+  featured: false,
+  image: "/blog-images/lens-intro.webp"
+}, {
+  slug: "lens-confidence-meaning",
+  title: "What 'Confidence' Actually Means in OSINT",
+  excerpt: "Confidence is not certainty. Understanding the difference helps you interpret risk, make better decisions, and build trust through honest uncertainty.",
+  date: "January 18, 2026",
+  readTime: "9 min read",
+  category: "LENS",
+  featured: false,
+  image: "/blog-images/lens-meaning.webp"
+}, {
   slug: "osint-ai-era-2026",
   title: "2026 OSINT and the Era of AI: The Future of Digital Intelligence",
   excerpt: "Discover how AI is transforming Open Source Intelligence in 2026. From autonomous agents to predictive threat detection, explore the cutting-edge tools and ethical considerations shaping modern OSINT.",
