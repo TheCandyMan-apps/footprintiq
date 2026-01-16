@@ -11,6 +11,7 @@ import { ScanProgress } from './ScanProgress';
 import { FootprintDNACard } from '@/components/FootprintDNACard';
 import AIInsightsPanel from '@/components/AIInsightsPanel';
 import { LockedInsightsGrid } from '@/components/billing/LockedInsightBlock';
+import { ForensicVerifyButton } from '@/components/forensic';
 import { Loader2, FileJson, FileSpreadsheet, ExternalLink, Shield } from 'lucide-react';
 import {
   Table,
@@ -362,7 +363,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                     <TableHead className="text-xs sm:text-sm">Site</TableHead>
                     <TableHead className="text-xs sm:text-sm">Status</TableHead>
                     <TableHead className="hidden md:table-cell text-xs sm:text-sm">URL</TableHead>
-                    <TableHead className="w-12 sm:w-16"></TableHead>
+                    <TableHead className="w-24 sm:w-28 text-xs sm:text-sm">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -385,23 +386,33 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                         {result.url || '-'}
                       </TableCell>
                       <TableCell>
-                        {result.url && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            asChild
-                            className="h-8 w-8 p-0"
-                          >
-                            <a
-                              href={result.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              aria-label="Open profile"
-                            >
-                              <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
-                            </a>
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {result.url && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                asChild
+                                className="h-8 w-8 p-0"
+                              >
+                                <a
+                                  href={result.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label="Open profile"
+                                >
+                                  <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
+                                </a>
+                              </Button>
+                              <ForensicVerifyButton
+                                findingId={result.id}
+                                url={result.url}
+                                platform={result.site || 'Unknown'}
+                                scanId={jobId}
+                              />
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

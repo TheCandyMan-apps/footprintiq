@@ -78,3 +78,6 @@ verify_jwt = false
 
 [functions.n8n-canonical-results]
 verify_jwt = false
+
+[functions.lens-verify]
+verify_jwt = false
