@@ -196,6 +196,7 @@ const AdminScanHealth = lazy(() => import("./pages/admin/ScanHealth"));
 const SecuritySettings = lazy(() => import("./pages/admin/SecuritySettings"));
 const SampleReport = lazy(() => import("./pages/SampleReport"));
 const ContextEnrichment = lazy(() => import("./pages/ContextEnrichment"));
+const Lens = lazy(() => import("./pages/Lens"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -292,6 +293,7 @@ function RouterContent() {
           <Route path="/blog/what-is-digital-exposure" element={<WhatIsDigitalExposure />} />
           <Route path="/blog/username-search-misleading" element={<UsernameSearchMisleading />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
+          <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
           <Route path="/username-search" element={<UsernamePage />} />
