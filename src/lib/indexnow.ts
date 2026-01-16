@@ -24,6 +24,7 @@ export const INDEXNOW_URLS = [
   "/usernames",
   "/contact",
   "/careers",
+  "/lens",
 ];
 
 /**
