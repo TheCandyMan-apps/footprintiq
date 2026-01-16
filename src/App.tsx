@@ -79,6 +79,10 @@ const FreeUsernameSearch = lazy(() => import("./pages/blog/FreeUsernameSearch"))
 const UsernameReuse = lazy(() => import("./pages/blog/UsernameReuse"));
 const WhatIsDigitalExposure = lazy(() => import("./pages/blog/WhatIsDigitalExposure"));
 const UsernameSearchMisleading = lazy(() => import("./pages/blog/UsernameSearchMisleading"));
+const LensOsintConfidenceWrong = lazy(() => import("./pages/blog/LensOsintConfidenceWrong"));
+const LensIntroduction = lazy(() => import("./pages/blog/LensIntroduction"));
+const LensConfidenceMeaning = lazy(() => import("./pages/blog/LensConfidenceMeaning"));
+const LensCaseStudyFalsePositive = lazy(() => import("./pages/blog/LensCaseStudyFalsePositive"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -292,6 +296,10 @@ function RouterContent() {
           <Route path="/blog/username-reuse" element={<UsernameReuse />} />
           <Route path="/blog/what-is-digital-exposure" element={<WhatIsDigitalExposure />} />
           <Route path="/blog/username-search-misleading" element={<UsernameSearchMisleading />} />
+          <Route path="/blog/lens-osint-confidence-wrong" element={<LensOsintConfidenceWrong />} />
+          <Route path="/blog/lens-introduction" element={<LensIntroduction />} />
+          <Route path="/blog/lens-confidence-meaning" element={<LensConfidenceMeaning />} />
+          <Route path="/blog/lens-case-study-false-positive" element={<LensCaseStudyFalsePositive />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
