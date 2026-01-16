@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/collapsible';
 import { ForensicConfidenceGauge } from './ForensicConfidenceGauge';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
-import { Copy, Check, Shield, Clock, Lock, Layers, Search, ChevronRight, ExternalLink, CircleCheck, CircleAlert, Info } from 'lucide-react';
+import { Copy, Check, Shield, Clock, Lock, Layers, Search, ChevronRight, ExternalLink, CircleCheck, CircleAlert, Info, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -232,6 +232,25 @@ export function ForensicModal({
               <p className="text-sm text-muted-foreground">
                 {getWhatThisMeans(result.confidenceScore)}
               </p>
+            </div>
+
+            {/* Pro Insight Callout */}
+            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+              <div className="flex items-start gap-3">
+                <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <div className="space-y-2">
+                  <h5 className="text-sm font-medium text-primary">Pro Insight</h5>
+                  <p className="text-sm text-muted-foreground">
+                    LENS confidence improves as more evidence is connected across scans. Pro users can run deeper analysis, compare related profiles, and surface hidden corroboration signals.
+                  </p>
+                  <a 
+                    href="/pricing" 
+                    className="text-xs text-primary/80 hover:text-primary transition-colors inline-flex items-center gap-1"
+                  >
+                    Learn more about Pro
+                  </a>
+                </div>
+              </div>
             </div>
 
             <Separator />
