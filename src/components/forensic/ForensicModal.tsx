@@ -32,6 +32,7 @@ interface ForensicModalProps {
   result: LensVerificationResult | null;
   url?: string;
   platform?: string;
+  scanId?: string;
 }
 
 // Get dynamic headline based on confidence score
@@ -70,6 +71,7 @@ export function ForensicModal({
   result,
   url,
   platform,
+  scanId,
 }: ForensicModalProps) {
   const [copied, setCopied] = useState(false);
   const [technicalOpen, setTechnicalOpen] = useState(false);
@@ -243,33 +245,39 @@ export function ForensicModal({
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
             </div>
 
-            {/* Evidence Summary - What LENS Looked At */}
+            {/* Evidence Snapshot - Human Readable */}
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold">Evidence summary</h4>
-              <p className="text-sm text-muted-foreground">
-                LENS evaluates each result using multiple public-signal checks, including:
-              </p>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-start gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                  <span>Username structure and consistency</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                  <span>Platform context and profile type</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                  <span>Cross-platform corroboration (where available)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary mt-2 shrink-0" />
-                  <span>Metadata completeness and stability</span>
-                </li>
-              </ul>
-              <p className="text-xs text-muted-foreground">
-                Each signal contributes to the confidence estimate shown above.
-              </p>
+              <h4 className="text-sm font-semibold">Evidence Snapshot</h4>
+              <div className="space-y-0">
+                {/* Platform */}
+                <div className="flex items-center justify-between py-2.5 border-b border-muted">
+                  <span className="text-sm text-muted-foreground">Platform</span>
+                  <span className="text-sm font-medium">{platform || 'Unknown'}</span>
+                </div>
+                
+                {/* URL Verified */}
+                <div className="flex items-center justify-between py-2.5 border-b border-muted">
+                  <span className="text-sm text-muted-foreground">Public URL verified</span>
+                  <div className="flex items-center gap-1.5">
+                    <CircleCheck className="h-4 w-4 text-green-500" />
+                    <span className="text-sm font-medium text-green-500">Yes</span>
+                  </div>
+                </div>
+                
+                {/* Evidence Sources */}
+                <div className="flex items-center justify-between py-2.5 border-b border-muted">
+                  <span className="text-sm text-muted-foreground">Evidence sources</span>
+                  <span className="text-sm font-medium">1</span>
+                </div>
+                
+                {/* Scan Reference */}
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-sm text-muted-foreground">Scan reference</span>
+                  <code className="text-xs font-mono bg-muted px-2 py-0.5 rounded">
+                    {scanId ? scanId.slice(0, 8) : 'N/A'}
+                  </code>
+                </div>
+              </div>
             </div>
 
             <Separator />
@@ -330,7 +338,7 @@ export function ForensicModal({
             <Collapsible open={technicalOpen} onOpenChange={setTechnicalOpen}>
               <CollapsibleTrigger className="flex items-center gap-2 w-full text-left hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors">
                 <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${technicalOpen ? 'rotate-90' : ''}`} />
-                <span className="text-sm font-semibold">Technical Evidence (Advanced)</span>
+                <span className="text-sm font-semibold">Show technical details</span>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-3 space-y-4">
                 <p className="text-xs text-muted-foreground">

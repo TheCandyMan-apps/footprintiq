@@ -82,6 +82,7 @@ export function ForensicVerifyButton({
         result={currentResult}
         url={url}
         platform={platform}
+        scanId={scanId}
       />
     </>
   );
