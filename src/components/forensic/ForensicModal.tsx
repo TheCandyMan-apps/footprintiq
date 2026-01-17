@@ -329,6 +329,33 @@ export function ForensicModal({
               </div>
             </div>
 
+            {/* Link & Evidence Network (Pro) - Disabled Teaser */}
+            <div className="p-4 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 relative overflow-hidden">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Network className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <h5 className="text-sm font-semibold text-muted-foreground">Link & Evidence Network</h5>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/40 text-primary">
+                      Pro
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    See how this profile relates to others across scans.
+                  </p>
+                  <a 
+                    href="/pricing" 
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    Unlock LENS Pro
+                  </a>
+                </div>
+              </div>
+            </div>
+
             <Separator />
 
             {/* Recommended Next Steps */}
