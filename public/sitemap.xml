@@ -147,6 +147,12 @@
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
+  <url>
+    <loc>https://footprintiq.app/what-is-a-digital-footprint</loc>
+    <lastmod>2025-01-17</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
   
   <!-- LENS - Ethical OSINT Analysis -->
   <url>
