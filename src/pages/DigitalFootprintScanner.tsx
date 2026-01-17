@@ -662,6 +662,28 @@ const DigitalFootprintScanner = () => {
                   </span>
                 </Link>
                 <Link 
+                  to="/reduce-digital-footprint" 
+                  className="p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-muted/50 transition-colors group"
+                >
+                  <span className="text-foreground font-medium group-hover:text-primary transition-colors block mb-1">
+                    How to Reduce Your Digital Footprint
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    Practical, ethical steps to lower exposure
+                  </span>
+                </Link>
+                <Link 
+                  to="/how-identity-theft-starts" 
+                  className="p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-muted/50 transition-colors group"
+                >
+                  <span className="text-foreground font-medium group-hover:text-primary transition-colors block mb-1">
+                    How Identity Theft Starts
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    Why it's rarely a hack
+                  </span>
+                </Link>
+                <Link 
                   to="/username-exposure" 
                   className="p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-muted/50 transition-colors group"
                 >
@@ -681,6 +703,17 @@ const DigitalFootprintScanner = () => {
                   </span>
                   <span className="text-sm text-muted-foreground">
                     Ethical open-source intelligence explained
+                  </span>
+                </Link>
+                <Link 
+                  to="/digital-privacy-glossary" 
+                  className="p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-muted/50 transition-colors group"
+                >
+                  <span className="text-foreground font-medium group-hover:text-primary transition-colors block mb-1">
+                    Digital Privacy Glossary
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    Key terms and definitions explained
                   </span>
                 </Link>
               </div>

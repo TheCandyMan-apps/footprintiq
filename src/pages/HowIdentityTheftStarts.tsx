@@ -570,14 +570,18 @@ const HowIdentityTheftStarts = () => {
           {/* Related Resources */}
           <section className="border-t pt-8">
             <h2 className="text-xl font-semibold text-foreground mb-4">Related Resources</h2>
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Link to="/digital-footprint-scanner" className="p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                <h3 className="font-medium text-foreground mb-1">Digital Footprint Scanner</h3>
+                <p className="text-sm text-muted-foreground">Check your online exposure.</p>
+              </Link>
               <Link to="/reduce-digital-footprint" className="p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
                 <h3 className="font-medium text-foreground mb-1">Reduce Your Digital Footprint</h3>
                 <p className="text-sm text-muted-foreground">Practical steps to lower your online visibility.</p>
               </Link>
-              <Link to="/what-is-digital-footprint" className="p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
-                <h3 className="font-medium text-foreground mb-1">What Is a Digital Footprint?</h3>
-                <p className="text-sm text-muted-foreground">Understand the basics of digital exposure.</p>
+              <Link to="/digital-privacy-glossary" className="p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                <h3 className="font-medium text-foreground mb-1">Digital Privacy Glossary</h3>
+                <p className="text-sm text-muted-foreground">Key terms and definitions explained.</p>
               </Link>
               <Link to="/what-is-osint" className="p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
                 <h3 className="font-medium text-foreground mb-1">What Is OSINT?</h3>
