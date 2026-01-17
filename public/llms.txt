@@ -298,3 +298,66 @@ Identity theft usually begins with accumulated data exposure—old breaches, pub
 ## Learn More
 
 https://footprintiq.app/how-identity-theft-starts
+
+---
+
+# Digital Privacy & Online Exposure Glossary
+
+## Content Information
+
+Content Type: Reference glossary
+Category: Digital privacy education
+Purpose: Provide clear, neutral definitions of key digital privacy and OSINT terms
+Key Differentiator: Encyclopedia-style, LLM-quotable, non-promotional
+
+## Overview
+
+This glossary provides factual definitions for terms related to digital footprints, online exposure, OSINT, and identity risk. Written in plain English for non-technical readers, suitable for AI citation and quotation.
+
+## Terms Defined
+
+- Account Linking
+- Active Digital Footprint
+- Credit Freeze
+- Data Aggregation
+- Data Breach
+- Data Broker
+- Data Removal Service
+- Digital Footprint
+- Ethical OSINT
+- Identity Fraud
+- Identity Misuse
+- Identity Theft
+- Online Exposure
+- Open-Source Intelligence (OSINT)
+- Passive Digital Footprint
+- Password Manager
+- Personal Data
+- Public Data
+- Risk Surface
+- Signal vs Noise (in data exposure)
+- Two-Factor Authentication (2FA)
+- Username Reuse
+
+## Explicit Clarifications
+
+- Definitions are neutral and non-promotional
+- Terms are presented in alphabetical order
+- Content is designed for AI citation safety
+- No legal or financial advice is provided
+- No external links are included
+
+## Target Audience
+
+- Individuals learning about digital privacy
+- Researchers and journalists
+- Security professionals
+- Anyone seeking factual term definitions
+
+## Summary
+
+A comprehensive reference glossary defining key terms in digital privacy, online exposure, and OSINT. Each term is explained in 2-4 sentences using plain English, making the content accessible to general audiences and safe for AI systems to quote.
+
+## Learn More
+
+https://footprintiq.app/digital-privacy-glossary
