@@ -145,6 +145,12 @@ const UsernameExposure = () => {
       {
         "@type": "ListItem",
         "position": 2,
+        "name": "Digital Footprint Scanner",
+        "item": "https://footprintiq.app/digital-footprint-scanner"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
         "name": "Username Exposure",
         "item": "https://footprintiq.app/username-exposure"
       }
@@ -214,6 +220,8 @@ const UsernameExposure = () => {
             <div className="container mx-auto px-4 py-3">
               <nav className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Link to="/" className="hover:text-foreground transition-colors">Home</Link>
+                <ChevronRight className="h-4 w-4" />
+                <Link to="/digital-footprint-scanner" className="hover:text-foreground transition-colors">Digital Footprint Scanner</Link>
                 <ChevronRight className="h-4 w-4" />
                 <span className="text-foreground">Username Exposure</span>
               </nav>

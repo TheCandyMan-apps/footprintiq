@@ -92,6 +92,12 @@ const WhatIsDigitalFootprintEducational = () => {
       {
         "@type": "ListItem",
         "position": 2,
+        "name": "Digital Footprint Scanner",
+        "item": "https://footprintiq.app/digital-footprint-scanner"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
         "name": "What Is a Digital Footprint?",
         "item": "https://footprintiq.app/what-is-a-digital-footprint"
       }
@@ -264,6 +270,8 @@ const WhatIsDigitalFootprintEducational = () => {
             <nav className="text-sm text-muted-foreground" aria-label="Breadcrumb">
               <ol className="flex items-center gap-2">
                 <li><Link to="/" className="hover:text-primary transition-colors">Home</Link></li>
+                <li>/</li>
+                <li><Link to="/digital-footprint-scanner" className="hover:text-primary transition-colors">Digital Footprint Scanner</Link></li>
                 <li>/</li>
                 <li className="text-foreground">What Is a Digital Footprint?</li>
               </ol>
