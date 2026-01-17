@@ -247,7 +247,10 @@ const DigitalFootprintScanner = () => {
               </p>
               
               <p>
-                Understanding both your active and passive footprint is essential for making informed decisions about your online privacy and security.
+                Understanding both your active and passive footprint is essential for making informed decisions about your online privacy and security. For a deeper exploration of this topic, read our guide on{" "}
+                <Link to="/what-is-a-digital-footprint" className="text-primary hover:underline">
+                  what a digital footprint is and how it forms
+                </Link>.
               </p>
             </div>
           </section>
@@ -533,6 +536,13 @@ const DigitalFootprintScanner = () => {
               <p>
                 FootprintIQ exists to give you knowledge and agency—not to exploit your data or enable misuse. We focus on helping you understand risk, make decisions, and take action if you choose to. The difference between awareness and exploitation isn't subtle; it's fundamental.
               </p>
+              <p>
+                If you're concerned about data brokers specifically, our guide on{" "}
+                <Link to="/blog/remove-data-brokers" className="text-primary hover:underline">
+                  how to remove yourself from data broker sites
+                </Link>{" "}
+                provides actionable steps you can take.
+              </p>
             </div>
           </section>
 
@@ -634,50 +644,144 @@ const DigitalFootprintScanner = () => {
 
           {/* Internal Links */}
           <section className="mt-16 pt-8 border-t border-border">
-            <h3 className="text-lg font-semibold mb-4">Related Resources</h3>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <Link 
-                to="/username-search" 
-                className="text-primary hover:underline flex items-center gap-2"
-              >
-                <ArrowRight className="h-4 w-4" />
-                Username Search Tool
-              </Link>
-              <Link 
-                to="/email-breach-check" 
-                className="text-primary hover:underline flex items-center gap-2"
-              >
-                <ArrowRight className="h-4 w-4" />
-                Email Breach Check
-              </Link>
-              <Link 
-                to="/blog/what-is-digital-footprint" 
-                className="text-primary hover:underline flex items-center gap-2"
-              >
-                <ArrowRight className="h-4 w-4" />
-                What Is a Digital Footprint?
-              </Link>
-              <Link 
-                to="/blog/what-is-digital-exposure" 
-                className="text-primary hover:underline flex items-center gap-2"
-              >
-                <ArrowRight className="h-4 w-4" />
-                Understanding Digital Exposure
-              </Link>
-              <Link 
-                to="/trust" 
-                className="text-primary hover:underline flex items-center gap-2"
-              >
-                <ArrowRight className="h-4 w-4" />
-                Our Trust & Ethics
-              </Link>
-              <Link 
-                to="/data-sources" 
-                className="text-primary hover:underline flex items-center gap-2"
-              >
-                <ArrowRight className="h-4 w-4" />
-                How We Source Data
-              </Link>
+            <h3 className="text-lg font-semibold mb-6">Related Resources</h3>
+            
+            {/* Educational Guides */}
+            <div className="mb-8">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">Educational Guides</h4>
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <Link 
+                  to="/what-is-a-digital-footprint" 
+                  className="p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-muted/50 transition-colors group"
+                >
+                  <span className="text-foreground font-medium group-hover:text-primary transition-colors block mb-1">
+                    What Is a Digital Footprint?
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    Examples, risks, and how to check yours
+                  </span>
+                </Link>
+                <Link 
+                  to="/username-exposure" 
+                  className="p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-muted/50 transition-colors group"
+                >
+                  <span className="text-foreground font-medium group-hover:text-primary transition-colors block mb-1">
+                    Username Exposure
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    How accounts get linked across the internet
+                  </span>
+                </Link>
+                <Link 
+                  to="/what-is-osint" 
+                  className="p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-muted/50 transition-colors group"
+                >
+                  <span className="text-foreground font-medium group-hover:text-primary transition-colors block mb-1">
+                    What Is OSINT?
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    Ethical open-source intelligence explained
+                  </span>
+                </Link>
+              </div>
+            </div>
+
+            {/* Blog Posts */}
+            <div className="mb-8">
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">From the Blog</h4>
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <Link 
+                  to="/blog/what-is-digital-footprint" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Understanding Your Digital Footprint
+                </Link>
+                <Link 
+                  to="/blog/remove-data-brokers" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  How to Remove Yourself from Data Brokers
+                </Link>
+                <Link 
+                  to="/blog/what-is-digital-exposure" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Understanding Digital Exposure
+                </Link>
+                <Link 
+                  to="/blog/check-email-breach" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  How to Check If Your Email Was Breached
+                </Link>
+                <Link 
+                  to="/blog/username-reuse" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  The Risks of Username Reuse
+                </Link>
+                <Link 
+                  to="/blog/social-media-privacy" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Social Media Privacy Guide
+                </Link>
+              </div>
+            </div>
+
+            {/* Tools & Resources */}
+            <div>
+              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-4">Tools & Resources</h4>
+              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <Link 
+                  to="/username-search" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Username Search Tool
+                </Link>
+                <Link 
+                  to="/email-breach-check" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Email Breach Check
+                </Link>
+                <Link 
+                  to="/trust" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Our Trust & Ethics
+                </Link>
+                <Link 
+                  to="/data-sources" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  How We Source Data
+                </Link>
+                <Link 
+                  to="/sample-report" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  View Sample Report
+                </Link>
+                <Link 
+                  to="/blog/password-security-guide" 
+                  className="text-primary hover:underline flex items-center gap-2"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Password Security Guide
+                </Link>
+              </div>
             </div>
           </section>
         </main>
