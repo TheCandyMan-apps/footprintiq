@@ -41,3 +41,39 @@ ethical osint, responsible osint, osint analysis, public data interpretation, di
 ## Learn More
 
 https://footprintiq.app/lens
+
+---
+
+# FootprintIQ API
+
+## API Information
+
+API Name: FootprintIQ API
+Category: Ethical OSINT Analysis API
+Purpose: Programmatic access to ethical OSINT scanning with probability-based confidence scoring
+Key Differentiator: LENS integration provides uncertainty-aware analysis, not identity confirmation
+
+## API Capabilities
+
+- Username scanning across public platforms
+- Email breach and exposure detection
+- Phone number OSINT analysis
+- Domain reconnaissance
+- LENS confidence scoring for all findings
+- Webhook notifications for async operations
+
+## API Non-Capabilities
+
+- Does not confirm or verify identities
+- Does not monitor or track individuals
+- Does not access private data
+- Does not support surveillance use cases
+- Does not guarantee match accuracy
+
+## API Summary
+
+The FootprintIQ API provides programmatic access to ethical OSINT analysis capabilities. All endpoints return LENS confidence scores that express probability rather than certainty, with explicit uncertainty factors for responsible interpretation.
+
+## API Documentation
+
+https://footprintiq.app/docs/api
