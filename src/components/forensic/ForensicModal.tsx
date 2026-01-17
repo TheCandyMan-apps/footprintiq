@@ -289,23 +289,42 @@ export function ForensicModal({
               </div>
             </div>
 
-            <Separator />
-
-            {/* Pro Insight Callout */}
-            <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+            {/* LENS Pro Insight - Subtle, Trust-First */}
+            <div className="p-4 rounded-lg bg-muted/30 border border-muted-foreground/20">
               <div className="flex items-start gap-3">
-                <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                <div className="space-y-2">
-                  <h5 className="text-sm font-medium text-primary">Pro Insight</h5>
-                  <p className="text-sm text-muted-foreground">
-                    LENS confidence improves as more evidence is connected across scans. Pro users can run deeper analysis, compare related profiles, and surface hidden corroboration signals.
-                  </p>
-                  <a 
-                    href="/pricing" 
-                    className="text-xs text-primary/80 hover:text-primary transition-colors inline-flex items-center gap-1"
-                  >
-                    Learn more about Pro
-                  </a>
+                <Network className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <div className="space-y-3">
+                  <h5 className="text-sm font-semibold">LENS Pro Insight</h5>
+                  
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      LENS Pro provides deeper analysis by examining how this profile connects 
+                      to other findings across scans.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Pro users can see why confidence changes, compare related profiles, 
+                      and surface corroborating or conflicting signals.
+                    </p>
+                  </div>
+                  
+                  {/* CTA with Tooltip */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <a 
+                          href="/pricing" 
+                          className="inline-flex items-center gap-1.5 text-sm text-primary 
+                                     hover:text-primary/80 transition-colors font-medium"
+                        >
+                          Learn more about LENS Pro
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[200px] text-center">
+                        <p className="text-xs">Pro adds depth and explanation — not surveillance.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </div>
               </div>
             </div>
@@ -439,34 +458,6 @@ export function ForensicModal({
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Evidence Network Teaser (Pro) */}
-            <div className="p-4 rounded-lg border border-dashed border-primary/30 bg-primary/5">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Network className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <h5 className="text-sm font-medium">Link & Evidence Network</h5>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/40 text-primary">
-                      Pro
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    See how this profile connects to others across scans.
-                  </p>
-                  <a 
-                    href="/pricing" 
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <Sparkles className="h-3 w-3" />
-                    Unlock LENS Pro
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <Separator />
 
             {/* Footer */}
             <div className="space-y-2 text-xs text-muted-foreground">
