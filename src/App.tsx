@@ -206,6 +206,7 @@ const DigitalFootprintScanner = lazy(() => import("./pages/DigitalFootprintScann
 const WhatIsDigitalFootprintEducational = lazy(() => import("./pages/WhatIsDigitalFootprintEducational"));
 const UsernameExposure = lazy(() => import("./pages/UsernameExposure"));
 const WhatIsOsint = lazy(() => import("./pages/WhatIsOsint"));
+const ReduceDigitalFootprint = lazy(() => import("./pages/ReduceDigitalFootprint"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -462,6 +463,7 @@ function RouterContent() {
           <Route path="/automation" element={<Automation />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/trust/ai-agents" element={<TrustAIAgents />} />
+          <Route path="/reduce-digital-footprint" element={<ReduceDigitalFootprint />} />
           <Route path="/integrations" element={<div className="container mx-auto py-8"><h1 className="text-3xl">Integrations coming soon</h1></div>} />
         
           {/* Workspace & Collaboration Routes */}
