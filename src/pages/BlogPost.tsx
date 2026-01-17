@@ -1633,6 +1633,217 @@ const blogPosts: Record<string, { title: string; date: string; readTime: string;
       <p>Identity theft recovery can take months or years. Stay persistent, keep detailed records of all communications, and don't hesitate to seek legal help if needed. The sooner you act, the less damage will occur.</p>
     `,
   },
+  "ethical-osint-standard": {
+    title: "Why Ethical OSINT Needs a New Standard",
+    date: "January 20, 2026",
+    readTime: "6 min read",
+    category: "LENS",
+    content: `
+      <h2>Introduction</h2>
+      <p>OSINT has never been more accessible — or more misunderstood.</p>
+
+      <p>What began as a discipline rooted in verification and context has, in many cases, devolved into bulk data collection and unexamined assumptions. Tools surface thousands of results, but rarely explain what those results actually mean.</p>
+
+      <p><strong>Ethical OSINT isn't about collecting less data. It's about claiming less certainty.</strong></p>
+
+      <h2>The Problem with "More Results"</h2>
+      <p>Most OSINT tools optimize for coverage:</p>
+      <ul>
+        <li>more sites</li>
+        <li>more hits</li>
+        <li>more screenshots</li>
+        <li>more "matches"</li>
+      </ul>
+
+      <p>But raw volume creates a dangerous illusion of accuracy.</p>
+
+      <p>Search pages, username lookups, and scraped directories are often presented alongside real profiles — without differentiation. The burden of interpretation is pushed onto the user.</p>
+
+      <p>This is how false positives happen.</p>
+
+      <h2>Ethics Is an Interpretation Problem</h2>
+      <p>Public data is not inherently unethical. Irresponsible interpretation is.</p>
+
+      <p>Ethical OSINT requires:</p>
+      <ul>
+        <li>acknowledging uncertainty</li>
+        <li>explaining confidence</li>
+        <li>reducing noise</li>
+        <li>avoiding identity claims</li>
+      </ul>
+
+      <p>If a tool can't explain why something is likely true, it shouldn't imply that it is.</p>
+
+      <h2>The Case for an OSINT Analysis Layer</h2>
+      <p>This is why FootprintIQ introduced <a href="/lens">LENS</a> (Link & Evidence Network System).</p>
+
+      <p>LENS does not find more data. It evaluates how reliable existing data actually is.</p>
+
+      <p>Instead of treating all results equally, LENS analyzes:</p>
+      <ul>
+        <li>consistency across sources</li>
+        <li>contextual relevance</li>
+        <li>evidence strength</li>
+        <li>likelihood of coincidence</li>
+      </ul>
+
+      <p>The result is probability, not assumption.</p>
+
+      <h2>A New Standard</h2>
+      <p>Ethical OSINT tools should:</p>
+      <ul>
+        <li>use only public data</li>
+        <li>never monitor individuals</li>
+        <li>never confirm identities</li>
+        <li>explain confidence transparently</li>
+        <li>surface uncertainty clearly</li>
+      </ul>
+
+      <p>LENS was built around these principles — not as a feature, but as a standard.</p>
+
+      <p><strong>Ethical OSINT isn't about knowing everything. It's about being honest about what you don't know.</strong></p>
+
+      <p><a href="/lens">Learn more about LENS</a> and how it brings ethical standards to OSINT analysis.</p>
+    `,
+  },
+  "osint-false-positives": {
+    title: "False Positives Are the Real OSINT Risk (And How to Reduce Them)",
+    date: "January 21, 2026",
+    readTime: "7 min read",
+    category: "LENS",
+    content: `
+      <h2>Introduction</h2>
+      <p>In OSINT, false positives are worse than missed results.</p>
+
+      <p>A missed profile is inconvenient. A false match can lead to incorrect conclusions, reputational harm, or wasted investigations.</p>
+
+      <p>Yet many tools quietly optimize for recall over accuracy.</p>
+
+      <h2>Why False Positives Happen</h2>
+      <p>False positives typically come from:</p>
+      <ul>
+        <li>search result pages treated as profiles</li>
+        <li>reused usernames across unrelated people</li>
+        <li>auto-generated directory pages</li>
+        <li>international mirrors and cached content</li>
+      </ul>
+
+      <p>When these signals are not distinguished, they appear equally valid.</p>
+
+      <h2>Confidence Without Explanation Is Dangerous</h2>
+      <p>Many tools assign confidence implicitly:</p>
+      <ul>
+        <li>result exists → assumed relevant</li>
+        <li>multiple results → assumed confirmation</li>
+      </ul>
+
+      <p>But correlation is not identity.</p>
+
+      <p>Without explaining <em>why</em> confidence exists, users are encouraged to over-trust.</p>
+
+      <h2>How LENS Approaches Accuracy</h2>
+      <p><a href="/lens">LENS</a> was designed to reduce false positives by default.</p>
+
+      <p>It:</p>
+      <ul>
+        <li>demotes search and lookup pages</li>
+        <li>groups results by platform and context</li>
+        <li>evaluates corroboration across sources</li>
+        <li>caps confidence where ambiguity exists</li>
+      </ul>
+
+      <p>Most importantly, LENS explains uncertainty instead of hiding it.</p>
+
+      <h2>Focus Mode: Reducing Noise Intentionally</h2>
+      <p>LENS introduces Focus Mode, which:</p>
+      <ul>
+        <li>filters out low-signal background noise</li>
+        <li>prioritizes meaningful corroboration</li>
+        <li>avoids overstating weak evidence</li>
+      </ul>
+
+      <p>The goal isn't fewer results — it's clearer understanding.</p>
+
+      <h2>Accuracy Is a Design Choice</h2>
+      <p>False positives aren't inevitable. They are the result of design decisions.</p>
+
+      <p><strong>LENS chooses restraint over speculation — and that choice defines ethical OSINT.</strong></p>
+
+      <p><a href="/lens">Learn more about how LENS reduces false positives</a> through evidence-based confidence scoring.</p>
+    `,
+  },
+  "public-data-not-public-truth": {
+    title: "Public Data Doesn't Mean Public Truth",
+    date: "January 22, 2026",
+    readTime: "6 min read",
+    category: "LENS",
+    content: `
+      <h2>Introduction</h2>
+      <p>Public data is easy to access. Understanding it responsibly is not.</p>
+
+      <p>A username appearing on a site doesn't mean:</p>
+      <ul>
+        <li>ownership</li>
+        <li>activity</li>
+        <li>intent</li>
+        <li>or identity</li>
+      </ul>
+
+      <p>Yet many tools collapse these distinctions.</p>
+
+      <h2>The Myth of Digital Certainty</h2>
+      <p>OSINT users often expect definitive answers:</p>
+      <p><em>"Is this the same person?"</em></p>
+
+      <p>But public data rarely provides certainty — only signals.</p>
+
+      <p>Ethical tools must respect that limitation.</p>
+
+      <h2>Interpreting Digital Footprints Responsibly</h2>
+      <p>A digital footprint is:</p>
+      <ul>
+        <li>fragmented</li>
+        <li>contextual</li>
+        <li>often incomplete</li>
+        <li>sometimes misleading</li>
+      </ul>
+
+      <p>Responsible OSINT analysis requires:</p>
+      <ul>
+        <li>probability, not absolutes</li>
+        <li>context, not assumptions</li>
+        <li>explanation, not implication</li>
+      </ul>
+
+      <h2>LENS and Probabilistic Interpretation</h2>
+      <p><a href="/lens">LENS</a> expresses findings as likelihoods, not conclusions.</p>
+
+      <p>Every result exists on a spectrum:</p>
+      <ul>
+        <li>highly likely</li>
+        <li>possibly related</li>
+        <li>ambiguous</li>
+        <li>coincidental</li>
+      </ul>
+
+      <p>This framing protects users from overconfidence — and protects subjects from misinterpretation.</p>
+
+      <h2>Why This Matters</h2>
+      <p>As OSINT becomes mainstream, scrutiny will increase:</p>
+      <ul>
+        <li>regulators</li>
+        <li>journalists</li>
+        <li>researchers</li>
+        <li>privacy advocates</li>
+      </ul>
+
+      <p>Tools that fail to explain uncertainty will not age well.</p>
+
+      <p><strong>LENS was built for that future.</strong></p>
+
+      <p><a href="/lens">Learn more about LENS</a> and how it brings probabilistic interpretation to digital footprint analysis.</p>
+    `,
+  },
 };
 
 const BlogPost = () => {

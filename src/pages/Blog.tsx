@@ -4,6 +4,33 @@ import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 const blogPosts = [{
+  slug: "ethical-osint-standard",
+  title: "Why Ethical OSINT Needs a New Standard",
+  excerpt: "Ethical OSINT isn't about collecting less data — it's about claiming less certainty. Learn why interpretation, not volume, defines responsible intelligence practice.",
+  date: "January 20, 2026",
+  readTime: "6 min read",
+  category: "LENS",
+  featured: false,
+  image: "/blog-images/ethical-osint.webp"
+}, {
+  slug: "osint-false-positives",
+  title: "False Positives Are the Real OSINT Risk (And How to Reduce Them)",
+  excerpt: "A missed profile is inconvenient. A false match can lead to incorrect conclusions, reputational harm, or wasted investigations. Learn how LENS reduces false positives by design.",
+  date: "January 21, 2026",
+  readTime: "7 min read",
+  category: "LENS",
+  featured: false,
+  image: "/blog-images/false-positives.webp"
+}, {
+  slug: "public-data-not-public-truth",
+  title: "Public Data Doesn't Mean Public Truth",
+  excerpt: "A username appearing on a site doesn't mean ownership, activity, intent, or identity. Learn why responsible OSINT requires probabilistic interpretation, not absolute claims.",
+  date: "January 22, 2026",
+  readTime: "6 min read",
+  category: "LENS",
+  featured: false,
+  image: "/blog-images/public-data.webp"
+}, {
   slug: "lens-case-study-false-positive",
   title: "Case Study: How LENS Prevented a Costly Misidentification",
   excerpt: "A security team nearly flagged the wrong person based on username matches alone. LENS confidence scoring revealed critical evidence gaps that traditional tools missed.",
