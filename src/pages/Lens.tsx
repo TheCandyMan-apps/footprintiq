@@ -311,7 +311,7 @@ export default function Lens() {
         </section>
 
         {/* 5. An Ethical Standard for OSINT */}
-        <section className="py-20 px-6 bg-secondary/20">
+        <section id="ethical-standard" className="py-20 px-6 bg-secondary/20 scroll-mt-20">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-10">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-4">
@@ -351,7 +351,7 @@ export default function Lens() {
         </section>
 
         {/* 6. How LENS Works */}
-        <section className="py-20 px-6">
+        <section id="how-lens-works" className="py-20 px-6 scroll-mt-20">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">How LENS Works</h2>
