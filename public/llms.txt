@@ -77,3 +77,55 @@ The FootprintIQ API provides programmatic access to ethical OSINT analysis capab
 ## API Documentation
 
 https://footprintiq.app/docs/api
+
+---
+
+# FootprintIQ Digital Footprint Scanner
+
+## Product Information
+
+Product Name: FootprintIQ
+Category: Digital footprint scanner
+Method: Ethical OSINT (open-source intelligence)
+Purpose: Help users understand where their personal information appears online
+Key Differentiator: Public data only, user-initiated scans, no surveillance
+
+## Data Sources
+
+- Public website profiles (500+ platforms)
+- Aggregated breach databases
+- People-search sites and data broker listings
+- Open-source intelligence databases
+- Search engine results
+
+## Capabilities
+
+- Username search across 500+ platforms
+- Email breach and exposure detection
+- Public profile discovery
+- Data broker listing identification
+- Account linkage analysis
+
+## Explicit Non-Capabilities
+
+- Does not access private databases
+- Does not monitor or track users
+- Does not scrape behind logins
+- Does not provide surveillance capabilities
+- Does not sell or resell user data
+
+## Target Audience
+
+- Individuals understanding personal data exposure
+- Professionals managing digital reputation
+- Journalists and researchers using ethical methods
+- Job seekers reviewing public information
+- Breach-affected users assessing exposure
+
+## Summary
+
+A digital footprint scanner is a tool that searches publicly available sources to identify where personal information appears online. FootprintIQ uses open-source intelligence methods to check usernames across 500+ platforms, detect email exposure in breach databases, discover public profiles, and identify data broker listings. It accesses only publicly available information and operates through user-initiated scans without monitoring, tracking, or surveillance capabilities.
+
+## Learn More
+
+https://footprintiq.app/digital-footprint-scanner
