@@ -202,6 +202,7 @@ const SecuritySettings = lazy(() => import("./pages/admin/SecuritySettings"));
 const SampleReport = lazy(() => import("./pages/SampleReport"));
 const ContextEnrichment = lazy(() => import("./pages/ContextEnrichment"));
 const Lens = lazy(() => import("./pages/Lens"));
+const DigitalFootprintScanner = lazy(() => import("./pages/DigitalFootprintScanner"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -441,6 +442,11 @@ function RouterContent() {
           <Route path="/admin/roles" element={<Admin />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/research" element={<Research />} />
+          
+          {/* SEO Pillar Pages */}
+          <Route path="/digital-footprint-scanner" element={<DigitalFootprintScanner />} />
+          <Route path="/digital-footprint-check" element={<DigitalFootprintScanner />} />
+          <Route path="/online-footprint-scanner" element={<DigitalFootprintScanner />} />
         
           {/* AI Fusion & Predictive Routes */}
           <Route path="/persona-resolver" element={<PersonaResolver />} />
