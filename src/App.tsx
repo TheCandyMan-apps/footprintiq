@@ -207,6 +207,7 @@ const WhatIsDigitalFootprintEducational = lazy(() => import("./pages/WhatIsDigit
 const UsernameExposure = lazy(() => import("./pages/UsernameExposure"));
 const WhatIsOsint = lazy(() => import("./pages/WhatIsOsint"));
 const ReduceDigitalFootprint = lazy(() => import("./pages/ReduceDigitalFootprint"));
+const HowIdentityTheftStarts = lazy(() => import("./pages/HowIdentityTheftStarts"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -464,6 +465,7 @@ function RouterContent() {
           <Route path="/agents" element={<Agents />} />
           <Route path="/trust/ai-agents" element={<TrustAIAgents />} />
           <Route path="/reduce-digital-footprint" element={<ReduceDigitalFootprint />} />
+          <Route path="/how-identity-theft-starts" element={<HowIdentityTheftStarts />} />
           <Route path="/integrations" element={<div className="container mx-auto py-8"><h1 className="text-3xl">Integrations coming soon</h1></div>} />
         
           {/* Workspace & Collaboration Routes */}
