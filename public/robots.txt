@@ -26,3 +26,20 @@ Allow: /
 
 User-agent: facebookexternalhit
 Allow: /
+
+# AI and LLM discovery
+User-agent: GPTBot
+Allow: /llms.txt
+Allow: /lens
+
+User-agent: Claude-Web
+Allow: /llms.txt
+Allow: /lens
+
+User-agent: Anthropic-AI
+Allow: /llms.txt
+Allow: /lens
+
+User-agent: CCBot
+Allow: /llms.txt
+Allow: /lens
