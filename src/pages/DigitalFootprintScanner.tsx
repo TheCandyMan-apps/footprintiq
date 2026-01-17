@@ -716,6 +716,17 @@ const DigitalFootprintScanner = () => {
                     Key terms and definitions explained
                   </span>
                 </Link>
+                <Link 
+                  to="/is-my-data-exposed" 
+                  className="p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-muted/50 transition-colors group"
+                >
+                  <span className="text-foreground font-medium group-hover:text-primary transition-colors block mb-1">
+                    Is My Data Already Exposed?
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    Calm, factual answers about data exposure
+                  </span>
+                </Link>
               </div>
             </div>
 
