@@ -204,6 +204,7 @@ const ContextEnrichment = lazy(() => import("./pages/ContextEnrichment"));
 const Lens = lazy(() => import("./pages/Lens"));
 const DigitalFootprintScanner = lazy(() => import("./pages/DigitalFootprintScanner"));
 const WhatIsDigitalFootprintEducational = lazy(() => import("./pages/WhatIsDigitalFootprintEducational"));
+const UsernameExposure = lazy(() => import("./pages/UsernameExposure"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -449,6 +450,7 @@ function RouterContent() {
           <Route path="/digital-footprint-check" element={<DigitalFootprintScanner />} />
           <Route path="/online-footprint-scanner" element={<DigitalFootprintScanner />} />
           <Route path="/what-is-a-digital-footprint" element={<WhatIsDigitalFootprintEducational />} />
+          <Route path="/username-exposure" element={<UsernameExposure />} />
         
           {/* AI Fusion & Predictive Routes */}
           <Route path="/persona-resolver" element={<PersonaResolver />} />
