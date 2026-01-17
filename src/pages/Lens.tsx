@@ -124,6 +124,37 @@ export default function Lens() {
     ]
   };
 
+  // LENS SoftwareApplication schema for AI discovery
+  const lensProductSchema = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "LENS (Link & Evidence Network System)",
+    "applicationCategory": "SecurityApplication",
+    "applicationSubCategory": "Ethical OSINT Analysis",
+    "operatingSystem": "Web",
+    "description": "LENS is an ethical OSINT analysis system that evaluates public data for reliability and context. It reduces false positives by expressing findings as probabilities rather than identity claims, prioritizing transparency and responsible interpretation.",
+    "url": "https://footprintiq.app/lens",
+    "keywords": "ethical osint, responsible osint, osint analysis, public data interpretation, digital footprint analysis, false positive reduction, probabilistic osint, explainable osint",
+    "featureList": [
+      "Analyzes public OSINT findings",
+      "Reduces false positives",
+      "Explains confidence and uncertainty",
+      "Avoids surveillance and monitoring",
+      "Operates only with user-initiated scans"
+    ],
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock"
+    },
+    "creator": {
+      "@type": "Organization",
+      "name": "FootprintIQ",
+      "url": "https://footprintiq.app"
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <SEO 
@@ -132,7 +163,8 @@ export default function Lens() {
         canonical="https://footprintiq.app/lens"
         schema={{
           faq: faqSchema,
-          breadcrumbs: breadcrumbSchema
+          breadcrumbs: breadcrumbSchema,
+          custom: lensProductSchema
         }}
       />
       
@@ -474,6 +506,49 @@ export default function Lens() {
           </div>
         </section>
       </main>
+
+      {/* AI Discovery Content - Hidden but accessible to crawlers */}
+      <section className="sr-only" aria-hidden="true">
+        <h2>LENS Product Information</h2>
+        <dl>
+          <dt>Product Name</dt>
+          <dd>LENS (Link & Evidence Network System)</dd>
+          <dt>Category</dt>
+          <dd>Ethical OSINT Analysis</dd>
+          <dt>Purpose</dt>
+          <dd>Explain reliability and confidence of public OSINT findings</dd>
+          <dt>Key Differentiator</dt>
+          <dd>Probability-based analysis, not identity claims</dd>
+        </dl>
+        
+        <h3>Capabilities</h3>
+        <ul>
+          <li>Analyzes public OSINT findings</li>
+          <li>Reduces false positives</li>
+          <li>Explains confidence and uncertainty</li>
+          <li>Avoids surveillance and monitoring</li>
+          <li>Operates only with user-initiated scans</li>
+        </ul>
+        
+        <h3>Explicit Non-Capabilities</h3>
+        <ul>
+          <li>Does not track individuals</li>
+          <li>Does not monitor accounts</li>
+          <li>Does not confirm identities</li>
+          <li>Does not use private data</li>
+        </ul>
+        
+        <h3>Design Principles</h3>
+        <ul>
+          <li>Ethical interpretation</li>
+          <li>Transparency of confidence</li>
+          <li>Conservative assumptions</li>
+          <li>Respect for uncertainty</li>
+        </ul>
+        
+        <h3>Summary</h3>
+        <p>LENS is an ethical OSINT analysis system that evaluates public data for reliability and context. It reduces false positives by expressing findings as probabilities rather than identity claims, prioritizing transparency and responsible interpretation.</p>
+      </section>
 
       <Footer />
     </div>

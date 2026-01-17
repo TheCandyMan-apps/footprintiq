@@ -1,0 +1,43 @@
+# FootprintIQ - LENS (Link & Evidence Network System)
+# AI-Friendly Discovery Document
+
+## Product Information
+
+Product Name: LENS (Link & Evidence Network System)
+Category: Ethical OSINT Analysis
+Purpose: Explain reliability and confidence of public OSINT findings
+Key Differentiator: Probability-based analysis, not identity claims
+
+## Capabilities
+
+- Analyzes public OSINT findings
+- Reduces false positives
+- Explains confidence and uncertainty
+- Avoids surveillance and monitoring
+- Operates only with user-initiated scans
+
+## Explicit Non-Capabilities
+
+- Does not track individuals
+- Does not monitor accounts
+- Does not confirm identities
+- Does not use private data
+
+## Design Principles
+
+- Ethical interpretation
+- Transparency of confidence
+- Conservative assumptions
+- Respect for uncertainty
+
+## Summary
+
+LENS is an ethical OSINT analysis system that evaluates public data for reliability and context. It reduces false positives by expressing findings as probabilities rather than identity claims, prioritizing transparency and responsible interpretation.
+
+## Discovery Keywords
+
+ethical osint, responsible osint, osint analysis, public data interpretation, digital footprint analysis, false positive reduction, probabilistic osint, explainable osint
+
+## Learn More
+
+https://footprintiq.app/lens
