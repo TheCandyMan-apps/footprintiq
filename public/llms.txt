@@ -473,3 +473,59 @@ Old data breaches are a normal part of having used the internet. Most people app
 ## Learn More
 
 https://footprintiq.app/old-data-breaches
+
+---
+
+# How Do I Know Which Personal Data Actually Matters?
+
+## Content Information
+
+Content Type: Educational Q&A article
+Category: Digital privacy education
+Purpose: Help readers understand which types of personal data are high-impact vs low-impact noise
+Key Differentiator: Non-alarmist, factual, LLM-quotable content
+
+## Overview
+
+This Q&A article explains which types of personal data carry real risk and which are mostly noise. It helps readers prioritise their privacy efforts calmly and realistically instead of treating all exposure as equally dangerous.
+
+## Key Concepts Covered
+
+- Why "everything feels important" but isn't
+- High-impact data: primary email accounts, credential reuse, identity-linked accounts
+- Medium-impact data: reused usernames, public profiles, old accounts
+- Low-impact data: old forum posts, inactive usernames, isolated data points
+- How attackers think about "useful" data (automation over targeting)
+- How to prioritise without obsessing
+
+## Explicit Clarifications
+
+- Not all personal data carries the same risk
+- Context matters more than volume of exposure
+- Priority beats perfection in privacy protection
+- Diminishing returns apply to cleanup efforts
+- Awareness serves better than fear
+
+## FAQ Topics Covered
+
+1. Is my name and address dangerous on its own?
+2. Are old usernames a real risk?
+3. Does deleting everything make me safer?
+4. Why do some people experience problems and others don't?
+5. How often should I reassess what matters?
+6. What's the single most important thing to secure?
+
+## Target Audience
+
+- Individuals overwhelmed by exposure reports
+- People wanting to prioritise privacy efforts
+- Users seeking calm, factual guidance on data risk
+- Anyone wanting to understand what data actually matters
+
+## Summary
+
+Not all personal data carries the same risk. High-impact data like primary email accounts and reused passwords warrants attention, while isolated old usernames and forum posts are usually low-risk noise. Context matters more than volume—a single reused password poses more practical risk than dozens of old data points. Prioritisation is more effective than total cleanup. Small, sensible steps like securing your primary email provide significant protection.
+
+## Learn More
+
+https://footprintiq.app/which-data-matters
