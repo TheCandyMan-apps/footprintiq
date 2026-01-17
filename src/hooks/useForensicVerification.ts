@@ -7,10 +7,13 @@ export interface LensVerificationResult {
   confidenceScore: number;
   hashedContent: string;
   verificationHash: string;
+  providerCount: number;
+  urlVerified: boolean;
   metadata: {
     sourceAge: string;
     sslStatus: string;
     platformConsistency: string;
+    analysisMethod: string;
   };
   verifiedAt: string;
 }
@@ -70,7 +73,12 @@ export function useForensicVerification(): UseForensicVerificationReturn {
         confidenceScore: data.confidenceScore,
         hashedContent: data.hashedContent,
         verificationHash: data.verificationHash,
-        metadata: data.metadata,
+        providerCount: data.providerCount || 1,
+        urlVerified: data.urlVerified ?? true,
+        metadata: {
+          ...data.metadata,
+          analysisMethod: data.metadata?.analysisMethod || 'LENS Standard',
+        },
         verifiedAt: data.verifiedAt,
       };
 

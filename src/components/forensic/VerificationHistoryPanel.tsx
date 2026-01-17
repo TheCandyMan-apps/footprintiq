@@ -37,10 +37,13 @@ const historyToResult = (item: VerificationHistoryItem): LensVerificationResult 
   hashedContent: item.hashed_content || '',
   verifiedAt: item.verified_at,
   cached: false,
+  providerCount: 1,
+  urlVerified: true,
   metadata: {
     sourceAge: item.source_age || 'Unknown',
     sslStatus: item.ssl_status || 'Unknown',
     platformConsistency: item.platform_consistency || 'Unknown',
+    analysisMethod: 'LENS Standard',
   },
 });
 
