@@ -259,15 +259,24 @@ export function ForensicModal({
                 <div className="flex items-center justify-between py-2.5 border-b border-muted">
                   <span className="text-sm text-muted-foreground">Public URL verified</span>
                   <div className="flex items-center gap-1.5">
-                    <CircleCheck className="h-4 w-4 text-green-500" />
-                    <span className="text-sm font-medium text-green-500">Yes</span>
+                    {result.urlVerified ? (
+                      <>
+                        <CircleCheck className="h-4 w-4 text-green-500" />
+                        <span className="text-sm font-medium text-green-500">Yes</span>
+                      </>
+                    ) : (
+                      <>
+                        <CircleAlert className="h-4 w-4 text-amber-500" />
+                        <span className="text-sm font-medium text-amber-500">Partial</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 
                 {/* Evidence Sources */}
                 <div className="flex items-center justify-between py-2.5 border-b border-muted">
                   <span className="text-sm text-muted-foreground">Evidence sources</span>
-                  <span className="text-sm font-medium">1</span>
+                  <span className="text-sm font-medium">{result.providerCount}</span>
                 </div>
                 
                 {/* Scan Reference */}

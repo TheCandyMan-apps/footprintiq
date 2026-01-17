@@ -18,10 +18,13 @@ interface LensVerificationResponse {
   confidenceScore: number;
   hashedContent: string;
   verificationHash: string;
+  providerCount: number;
+  urlVerified: boolean;
   metadata: {
     sourceAge: string;
     sslStatus: string;
     platformConsistency: string;
+    analysisMethod: string;
   };
 }
 
@@ -91,10 +94,13 @@ serve(async (req) => {
           confidenceScore: existingEntry.confidence_score,
           hashedContent: existingEntry.hashed_content,
           verificationHash: existingEntry.verification_hash,
+          providerCount: existingEntry.provider_count || 1,
+          urlVerified: existingEntry.url_verified ?? true,
           metadata: {
             sourceAge: existingEntry.source_age,
             sslStatus: existingEntry.ssl_status,
             platformConsistency: existingEntry.platform_consistency,
+            analysisMethod: existingEntry.analysis_method || "LENS Standard",
           },
           verifiedAt: existingEntry.verified_at,
         }),
@@ -146,6 +152,9 @@ serve(async (req) => {
       source_age: verificationResult.metadata.sourceAge,
       ssl_status: verificationResult.metadata.sslStatus,
       platform_consistency: verificationResult.metadata.platformConsistency,
+      provider_count: verificationResult.providerCount,
+      url_verified: verificationResult.urlVerified,
+      analysis_method: verificationResult.metadata.analysisMethod,
       raw_response: verificationResult,
     };
     
@@ -171,6 +180,8 @@ serve(async (req) => {
         confidenceScore: verificationResult.confidenceScore,
         hashedContent: verificationResult.hashedContent,
         verificationHash: verificationResult.verificationHash,
+        providerCount: verificationResult.providerCount,
+        urlVerified: verificationResult.urlVerified,
         metadata: verificationResult.metadata,
         verifiedAt: ledgerEntry.verified_at,
       }),
@@ -262,10 +273,13 @@ function generateSyntheticVerification(url: string, platform: string): LensVerif
     confidenceScore,
     hashedContent: evidenceContent.substring(0, 500),
     verificationHash,
+    providerCount: 1, // Single LENS verification source
+    urlVerified: true, // URL was successfully accessed
     metadata: {
       sourceAge,
       sslStatus,
       platformConsistency,
+      analysisMethod: "LENS Standard",
     },
   };
 }
