@@ -129,3 +129,60 @@ A digital footprint scanner is a tool that searches publicly available sources t
 ## Learn More
 
 https://footprintiq.app/digital-footprint-scanner
+
+---
+
+# FootprintIQ Username Scan
+
+## Product Information
+
+Product Name: FootprintIQ Username Scan
+Category: Username OSINT tool
+Method: Cross-platform username enumeration
+Purpose: Identify where a specific username exists across public platforms
+Key Differentiator: Checks 500+ platforms using ethical, public-only methods
+
+## How It Works
+
+The username scan searches for exact and partial username matches across social media platforms, forums, gaming networks, professional sites, and other public web services. Results indicate where the username is registered, claimed, or referenced.
+
+## Data Sources
+
+- Social media platforms (Twitter/X, Instagram, TikTok, Reddit, etc.)
+- Professional networks (LinkedIn, GitHub, etc.)
+- Gaming platforms (Steam, PlayStation Network, Xbox, etc.)
+- Forums and community sites
+- Dating and messaging apps (public profiles only)
+- Creative platforms (DeviantArt, Behance, SoundCloud, etc.)
+
+## Capabilities
+
+- Username existence checking across 500+ platforms
+- Profile URL discovery
+- Platform categorization
+- Confidence scoring for matches
+- False positive filtering
+
+## Explicit Non-Capabilities
+
+- Does not access private or locked profiles
+- Does not verify account ownership
+- Does not confirm identity
+- Does not scrape profile content
+- Does not monitor accounts over time
+
+## Use Cases
+
+- Personal security audits
+- Pre-registration username availability research
+- Digital footprint assessment
+- Brand protection research
+- OSINT investigations (ethical, authorized)
+
+## Summary
+
+A username scan is an OSINT technique that checks whether a specific username is registered across multiple online platforms. FootprintIQ's username scan queries 500+ public websites to identify where a username exists, returning profile URLs and confidence scores. It operates on publicly accessible data only and does not verify identity or account ownership.
+
+## Learn More
+
+https://footprintiq.app/username-exposure
