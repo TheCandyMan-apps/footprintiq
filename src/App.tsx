@@ -12,6 +12,7 @@ import { lazy, Suspense } from "react";
 import { LoadingState } from "@/components/LoadingState";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useAccessibility } from "@/hooks/useAccessibility";
+import { useGoogleAnalytics } from "@/hooks/useGoogleAnalytics";
 import { HelmetProvider } from 'react-helmet-async';
 import { PageTransition } from "@/components/PageTransition";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
@@ -229,6 +230,9 @@ function AppContent() {
 function RouterContent() {
   const navigate = useNavigate();
   const { announce } = useAccessibility();
+  
+  // Track page views on route changes for Google Analytics
+  useGoogleAnalytics();
   
   // Global navigation shortcuts
   useKeyboardShortcuts([
