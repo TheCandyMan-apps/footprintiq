@@ -122,9 +122,12 @@ const DigitalPrivacyGlossary = () => {
 
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://footprintiq.app';
 
-  const articleJsonLd = {
+  const definedTermSetId = `${origin}/digital-privacy-glossary#term-set`;
+
+  const definedTermSetJsonLd = {
     "@context": "https://schema.org",
     "@type": "DefinedTermSet",
+    "@id": definedTermSetId,
     "name": "Digital Privacy & Online Exposure Glossary",
     "description": "Comprehensive glossary of terms related to digital footprints, online exposure, OSINT, and identity risk. Clear definitions for non-technical readers.",
     "url": `${origin}/digital-privacy-glossary`,
@@ -133,11 +136,104 @@ const DigitalPrivacyGlossary = () => {
       "name": "FootprintIQ",
       "url": origin
     },
-    "hasDefinedTerm": glossaryTerms.map(item => ({
-      "@type": "DefinedTerm",
-      "name": item.term,
-      "description": item.definition
-    }))
+    "hasDefinedTerm": [
+      {
+        "@type": "DefinedTerm",
+        "@id": `${origin}/digital-privacy-glossary#digital-footprint`,
+        "name": "Digital Footprint",
+        "description": "A digital footprint is the trail of data a person creates through their online activity. This includes information shared intentionally, such as social media posts, as well as data collected passively, such as browsing history and location data.",
+        "inDefinedTermSet": definedTermSetId
+      },
+      {
+        "@type": "DefinedTerm",
+        "@id": `${origin}/digital-privacy-glossary#active-digital-footprint`,
+        "name": "Active Digital Footprint",
+        "description": "An active digital footprint consists of data that a person deliberately shares online. This includes social media posts, comments, uploaded photos, forum contributions, and profile information.",
+        "inDefinedTermSet": definedTermSetId
+      },
+      {
+        "@type": "DefinedTerm",
+        "@id": `${origin}/digital-privacy-glossary#passive-digital-footprint`,
+        "name": "Passive Digital Footprint",
+        "description": "A passive digital footprint consists of data collected about a person without their direct input or awareness. This includes IP addresses, browsing behavior, device information, and tracking cookies.",
+        "inDefinedTermSet": definedTermSetId
+      },
+      {
+        "@type": "DefinedTerm",
+        "@id": `${origin}/digital-privacy-glossary#online-exposure`,
+        "name": "Online Exposure",
+        "description": "Online exposure refers to the extent to which a person's information is accessible through internet sources. High exposure means more personal data is publicly available or stored across multiple platforms.",
+        "inDefinedTermSet": definedTermSetId
+      },
+      {
+        "@type": "DefinedTerm",
+        "@id": `${origin}/digital-privacy-glossary#osint`,
+        "name": "Open-Source Intelligence (OSINT)",
+        "description": "Open-source intelligence, or OSINT, is the collection and analysis of information from publicly available sources. These sources include websites, social media, public records, news articles, and other openly accessible data.",
+        "inDefinedTermSet": definedTermSetId
+      },
+      {
+        "@type": "DefinedTerm",
+        "@id": `${origin}/digital-privacy-glossary#ethical-osint`,
+        "name": "Ethical OSINT",
+        "description": "Ethical OSINT refers to the practice of gathering and analyzing publicly available information while respecting legal boundaries and privacy considerations. Ethical practitioners use only data that is legitimately accessible without bypassing access controls.",
+        "inDefinedTermSet": definedTermSetId
+      },
+      {
+        "@type": "DefinedTerm",
+        "@id": `${origin}/digital-privacy-glossary#data-breach`,
+        "name": "Data Breach",
+        "description": "A data breach is an incident where protected or confidential information is accessed, disclosed, or stolen without authorization. Breaches can affect organizations of any size and may expose personal data including email addresses, passwords, and financial information.",
+        "inDefinedTermSet": definedTermSetId
+      },
+      {
+        "@type": "DefinedTerm",
+        "@id": `${origin}/digital-privacy-glossary#data-aggregation`,
+        "name": "Data Aggregation",
+        "description": "Data aggregation is the process of collecting and combining information from multiple sources into a single dataset. In the context of online exposure, aggregation allows small pieces of information from different platforms to be combined.",
+        "inDefinedTermSet": definedTermSetId
+      },
+      {
+        "@type": "DefinedTerm",
+        "@id": `${origin}/digital-privacy-glossary#identity-theft`,
+        "name": "Identity Theft",
+        "description": "Identity theft is the act of obtaining and using another person's personal identifying information, typically for financial gain or to commit fraud. Despite common perceptions, identity theft rarely begins with a dramatic hack.",
+        "inDefinedTermSet": definedTermSetId
+      },
+      {
+        "@type": "DefinedTerm",
+        "@id": `${origin}/digital-privacy-glossary#identity-misuse`,
+        "name": "Identity Misuse",
+        "description": "Identity misuse is a broad term covering any unauthorized use of another person's personal information. This includes but is not limited to financial fraud, account takeover, impersonation, and harassment.",
+        "inDefinedTermSet": definedTermSetId
+      },
+      {
+        "@type": "DefinedTerm",
+        "@id": `${origin}/digital-privacy-glossary#data-broker`,
+        "name": "Data Broker",
+        "description": "A data broker is a business that collects personal information from various sources and sells or licenses that data to other organizations. Data brokers compile information from public records, online activity, purchase history, and other sources.",
+        "inDefinedTermSet": definedTermSetId
+      }
+    ]
+  };
+
+  const webPageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Digital Privacy & Online Exposure Glossary",
+    "description": "Comprehensive glossary of digital privacy terms including digital footprint, OSINT, data breach, identity theft, and online exposure.",
+    "url": `${origin}/digital-privacy-glossary`,
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "FootprintIQ",
+      "url": origin
+    },
+    "about": {
+      "@id": definedTermSetId
+    },
+    "mainEntity": {
+      "@id": definedTermSetId
+    }
   };
 
   const faqJsonLd = {
@@ -202,7 +298,10 @@ const DigitalPrivacyGlossary = () => {
         <meta name="twitter:description" content="Comprehensive glossary of digital privacy terms. Clear, neutral definitions for non-technical readers." />
         
         <script type="application/ld+json">
-          {JSON.stringify(articleJsonLd)}
+          {JSON.stringify(definedTermSetJsonLd)}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(webPageJsonLd)}
         </script>
         <script type="application/ld+json">
           {JSON.stringify(faqJsonLd)}
