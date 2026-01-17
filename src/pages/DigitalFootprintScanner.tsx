@@ -760,6 +760,17 @@ const DigitalFootprintScanner = () => {
                     Realistic privacy expectations today
                   </span>
                 </Link>
+                <Link 
+                  to="/ai-answers-hub" 
+                  className="p-4 rounded-lg border border-border/50 hover:border-primary/50 hover:bg-muted/50 transition-colors group"
+                >
+                  <span className="text-foreground font-medium group-hover:text-primary transition-colors block mb-1">
+                    AI Answers Hub
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    Quick answers to common privacy questions
+                  </span>
+                </Link>
               </div>
             </div>
 
