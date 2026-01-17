@@ -570,7 +570,7 @@ const HowIdentityTheftStarts = () => {
           {/* Related Resources */}
           <section className="border-t pt-8">
             <h2 className="text-xl font-semibold text-foreground mb-4">Related Resources</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
               <Link to="/digital-footprint-scanner" className="p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
                 <h3 className="font-medium text-foreground mb-1">Digital Footprint Scanner</h3>
                 <p className="text-sm text-muted-foreground">Check your online exposure.</p>
@@ -578,6 +578,10 @@ const HowIdentityTheftStarts = () => {
               <Link to="/reduce-digital-footprint" className="p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
                 <h3 className="font-medium text-foreground mb-1">Reduce Your Digital Footprint</h3>
                 <p className="text-sm text-muted-foreground">Practical steps to lower your online visibility.</p>
+              </Link>
+              <Link to="/is-my-data-exposed" className="p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
+                <h3 className="font-medium text-foreground mb-1">Is My Data Already Exposed?</h3>
+                <p className="text-sm text-muted-foreground">Calm, factual answers about data exposure.</p>
               </Link>
               <Link to="/digital-privacy-glossary" className="p-4 bg-muted/50 rounded-lg hover:bg-muted transition-colors">
                 <h3 className="font-medium text-foreground mb-1">Digital Privacy Glossary</h3>
