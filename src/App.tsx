@@ -210,6 +210,7 @@ const ReduceDigitalFootprint = lazy(() => import("./pages/ReduceDigitalFootprint
 const HowIdentityTheftStarts = lazy(() => import("./pages/HowIdentityTheftStarts"));
 const DigitalPrivacyGlossary = lazy(() => import("./pages/DigitalPrivacyGlossary"));
 const IsMyDataExposed = lazy(() => import("./pages/IsMyDataExposed"));
+const OldDataBreaches = lazy(() => import("./pages/OldDataBreaches"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -470,6 +471,7 @@ function RouterContent() {
           <Route path="/how-identity-theft-starts" element={<HowIdentityTheftStarts />} />
           <Route path="/digital-privacy-glossary" element={<DigitalPrivacyGlossary />} />
           <Route path="/is-my-data-exposed" element={<IsMyDataExposed />} />
+          <Route path="/old-data-breaches" element={<OldDataBreaches />} />
           <Route path="/integrations" element={<div className="container mx-auto py-8"><h1 className="text-3xl">Integrations coming soon</h1></div>} />
         
           {/* Workspace & Collaboration Routes */}
