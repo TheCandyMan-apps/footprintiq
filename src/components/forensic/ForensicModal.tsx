@@ -134,6 +134,12 @@ export function ForensicModal({
                 Cached
               </Badge>
             )}
+            <a 
+              href="/lens" 
+              className="ml-auto text-xs font-normal text-muted-foreground hover:text-primary transition-colors"
+            >
+              What is LENS?
+            </a>
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             Evidence-based confidence assessment
@@ -165,7 +171,13 @@ export function ForensicModal({
             <div className="space-y-3">
               <h4 className="text-sm font-semibold">What this means</h4>
               <p className="text-sm text-muted-foreground">
-                {getWhatThisMeans()}
+                {getWhatThisMeans()}{' '}
+                <a 
+                  href="/lens#how-lens-works" 
+                  className="text-primary hover:underline"
+                >
+                  Learn how LENS evaluates confidence
+                </a>
               </p>
             </div>
 
@@ -173,10 +185,18 @@ export function ForensicModal({
             <div className="p-3 rounded-lg bg-muted/50 border border-muted-foreground/20">
               <div className="flex items-start gap-2">
                 <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-medium">Important:</span> Confidence reflects probability — not proof. 
-                  LENS does not track people or make identity claims.
-                </p>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Important:</span> Confidence reflects probability — not proof. 
+                    LENS does not track people or make identity claims.
+                  </p>
+                  <a 
+                    href="/lens#ethical-standard" 
+                    className="text-xs text-primary hover:underline mt-1 inline-block"
+                  >
+                    Read about our ethical OSINT standard
+                  </a>
+                </div>
               </div>
             </div>
 
@@ -494,6 +514,13 @@ export function ForensicModal({
               <p>
                 LENS analyzes public signals only and does not monitor accounts, access private data, or track individuals.
               </p>
+              <a 
+                href="/lens" 
+                className="inline-flex items-center gap-1.5 text-primary hover:underline font-medium mt-1"
+              >
+                Learn more about how LENS works
+                <ExternalLink className="h-3 w-3" />
+              </a>
             </div>
           </div>
         </ScrollArea>
