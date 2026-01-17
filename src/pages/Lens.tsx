@@ -1,6 +1,8 @@
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { SEO } from '@/components/SEO';
+import { JsonLd } from '@/components/seo/JsonLd';
+import { buildLensJsonLd } from '@/lib/seo/lensJsonLd';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +25,9 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+
+// Dynamic origin for stable @id values in JSON-LD
+const origin = typeof window !== "undefined" ? window.location.origin : "https://footprintiq.app";
 
 export default function Lens() {
   const traditionalOsintProblems = [
@@ -73,6 +78,7 @@ export default function Lens() {
     'Identify corroborating or conflicting signals',
   ];
 
+  // FAQ items for UI rendering (JSON-LD handled by buildLensJsonLd)
   const faqItems = [
     {
       question: 'Is LENS a people search tool?',
@@ -92,81 +98,14 @@ export default function Lens() {
     },
   ];
 
-  const faqSchema = {
-    "@context": "https://schema.org" as const,
-    "@type": "FAQPage" as const,
-    mainEntity: faqItems.map(item => ({
-      "@type": "Question" as const,
-      "name": item.question,
-      "acceptedAnswer": {
-        "@type": "Answer" as const,
-        "text": item.answer
-      }
-    }))
-  };
-
-  const breadcrumbSchema = {
-    "@context": "https://schema.org" as const,
-    "@type": "BreadcrumbList" as const,
-    itemListElement: [
-      {
-        "@type": "ListItem" as const,
-        "position": 1,
-        "name": "Home",
-        "item": "https://footprintiq.app"
-      },
-      {
-        "@type": "ListItem" as const,
-        "position": 2,
-        "name": "LENS",
-        "item": "https://footprintiq.app/lens"
-      }
-    ]
-  };
-
-  // LENS SoftwareApplication schema for AI discovery
-  const lensProductSchema = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "LENS (Link & Evidence Network System)",
-    "applicationCategory": "SecurityApplication",
-    "applicationSubCategory": "Ethical OSINT Analysis",
-    "operatingSystem": "Web",
-    "description": "LENS is an ethical OSINT analysis system that evaluates public data for reliability and context. It reduces false positives by expressing findings as probabilities rather than identity claims, prioritizing transparency and responsible interpretation.",
-    "url": "https://footprintiq.app/lens",
-    "keywords": "ethical osint, responsible osint, osint analysis, public data interpretation, digital footprint analysis, false positive reduction, probabilistic osint, explainable osint",
-    "featureList": [
-      "Analyzes public OSINT findings",
-      "Reduces false positives",
-      "Explains confidence and uncertainty",
-      "Avoids surveillance and monitoring",
-      "Operates only with user-initiated scans"
-    ],
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD",
-      "availability": "https://schema.org/InStock"
-    },
-    "creator": {
-      "@type": "Organization",
-      "name": "FootprintIQ",
-      "url": "https://footprintiq.app"
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
       <SEO 
         title="LENS™ — The Ethical OSINT Analysis Layer | FootprintIQ"
         description="Understand what public data means — without speculation, surveillance, or overreach. LENS analyzes public OSINT findings to explain confidence, context, and reliability."
-        canonical="https://footprintiq.app/lens"
-        schema={{
-          faq: faqSchema,
-          breadcrumbs: breadcrumbSchema,
-          custom: lensProductSchema
-        }}
+        canonical={`${origin}/lens`}
       />
+      <JsonLd data={buildLensJsonLd(origin)} />
       
       <Header />
 
