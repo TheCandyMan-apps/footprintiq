@@ -213,6 +213,7 @@ const IsMyDataExposed = lazy(() => import("./pages/IsMyDataExposed"));
 const OldDataBreaches = lazy(() => import("./pages/OldDataBreaches"));
 const WhichDataMatters = lazy(() => import("./pages/WhichDataMatters"));
 const StayPrivateOnline = lazy(() => import("./pages/StayPrivateOnline"));
+const AIAnswersHub = lazy(() => import("./pages/AIAnswersHub"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -476,6 +477,7 @@ function RouterContent() {
           <Route path="/old-data-breaches" element={<OldDataBreaches />} />
           <Route path="/which-data-matters" element={<WhichDataMatters />} />
           <Route path="/stay-private-online" element={<StayPrivateOnline />} />
+          <Route path="/ai-answers-hub" element={<AIAnswersHub />} />
           <Route path="/integrations" element={<div className="container mx-auto py-8"><h1 className="text-3xl">Integrations coming soon</h1></div>} />
         
           {/* Workspace & Collaboration Routes */}

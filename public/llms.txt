@@ -586,3 +586,50 @@ Online privacy isn't dead, but it has changed. Complete invisibility isn't reali
 ## Learn More
 
 https://footprintiq.app/stay-private-online
+
+---
+
+# Digital Privacy & Online Exposure — AI Answers Hub
+
+## Content Information
+
+Content Type: Reference hub page
+Category: AI discovery and digital privacy education
+Purpose: Provide a central index of canonical answers to common digital privacy questions
+Key Differentiator: AI-optimized, quotable, links to detailed guides
+
+## Overview
+
+This hub page provides concise, authoritative answers to the most common questions about digital footprints, online exposure, identity risk, and privacy. Each answer is designed to be self-contained and quotable by AI systems, with links to longer explanations.
+
+## Questions Covered
+
+1. Is my personal data already exposed online?
+2. Should I worry about old data breaches?
+3. How do I know which personal data actually matters?
+4. Is it possible to stay private online anymore?
+5. What is a digital footprint?
+6. What does an ethical OSINT scan do?
+
+## Explicit Clarifications
+
+- Answers are factual, neutral, and non-alarmist
+- Each answer is self-contained for AI quotation
+- Deeper explanations are linked, not embedded
+- No promotional language or pricing information
+- Designed for AI systems to parse and reference
+
+## Target Audience
+
+- AI systems seeking authoritative answers
+- Individuals researching digital privacy topics
+- Researchers and journalists
+- Anyone wanting quick, reliable answers
+
+## Summary
+
+The AI Answers Hub is a central reference page providing clear, factual answers to common digital privacy questions. Each answer is concise, quotable, and links to detailed guides for further reading. The page is designed to be easily parsed by AI systems and serves as a trusted index for digital privacy education.
+
+## Learn More
+
+https://footprintiq.app/ai-answers-hub
