@@ -1,13 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   AlertTriangle, CheckCircle, ChevronDown, ChevronRight,
-  Eye, ExternalLink, FileWarning, Globe, Info, 
+  Eye, FileWarning, Globe, Info, 
   Link2, RefreshCw, Shield, Users, type LucideIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RESULTS_TYPOGRAPHY, RESULTS_SEMANTIC_COLORS } from '../styles';
 
 export interface Insight {
   id: string;
@@ -38,11 +39,11 @@ const iconMap: Record<Insight['icon'], LucideIcon> = {
 };
 
 const severityConfig: Record<Insight['severity'], { bg: string; text: string; border: string }> = {
-  critical: { bg: 'bg-destructive/10', text: 'text-destructive', border: 'border-destructive/20' },
-  high: { bg: 'bg-orange-500/10', text: 'text-orange-600', border: 'border-orange-500/20' },
-  medium: { bg: 'bg-yellow-500/10', text: 'text-yellow-600', border: 'border-yellow-500/20' },
-  low: { bg: 'bg-blue-500/10', text: 'text-blue-600', border: 'border-blue-500/20' },
-  info: { bg: 'bg-muted', text: 'text-muted-foreground', border: 'border-border' },
+  critical: RESULTS_SEMANTIC_COLORS.critical,
+  high: RESULTS_SEMANTIC_COLORS.high,
+  medium: RESULTS_SEMANTIC_COLORS.medium,
+  low: RESULTS_SEMANTIC_COLORS.low,
+  info: RESULTS_SEMANTIC_COLORS.info,
 };
 
 function InsightRow({ insight }: { insight: Insight }) {
@@ -115,17 +116,15 @@ export function InsightsSection({ insights, maxVisible = 5 }: InsightsSectionPro
 
   if (insights.length === 0) {
     return (
-      <div className="py-4 text-center text-sm text-muted-foreground">
-        No significant insights detected
+      <div className="py-3 text-center">
+        <span className={RESULTS_TYPOGRAPHY.caption}>No significant insights detected</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-1.5">
-      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-        Insights
-      </h4>
+      <h4 className={`${RESULTS_TYPOGRAPHY.sectionTitle} mb-2`}>Insights</h4>
 
       {/* Visible Insights */}
       <div className="space-y-1.5">

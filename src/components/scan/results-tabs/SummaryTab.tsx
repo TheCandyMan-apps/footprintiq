@@ -7,6 +7,7 @@ import { IdentitySnapshotCard } from './summary/IdentitySnapshotCard';
 import { InsightsSection, generateInsights } from './summary/InsightsSection';
 import { CompactStatsCard } from './summary/CompactStatsCard';
 import { ProfileImagesStrip } from './summary/ProfileImagesStrip';
+import { RESULTS_SPACING, RESULTS_TYPOGRAPHY, RESULTS_BORDERS } from './styles';
 
 interface SummaryTabProps {
   jobId: string;
@@ -21,7 +22,6 @@ interface SummaryTabProps {
   results: ScanResult[];
 }
 
-// Extract unique platforms from results
 function getUniquePlatforms(results: ScanResult[]): string[] {
   const platforms = new Set<string>();
   results.forEach(r => {
@@ -30,7 +30,6 @@ function getUniquePlatforms(results: ScanResult[]): string[] {
   return Array.from(platforms);
 }
 
-// Get profile images from results
 function getProfileImages(results: any[]): string[] {
   const images: string[] = [];
   results.forEach(r => {
@@ -41,34 +40,29 @@ function getProfileImages(results: any[]): string[] {
   return images.slice(0, 8);
 }
 
-// Generate a human-readable summary
 function generateSummary(
   username: string,
   found: number,
   claimed: number,
   breaches: number,
-  platforms: number,
-  lensScore: number
+  platforms: number
 ): string {
   const total = found + claimed;
   
   if (total === 0) {
-    return `No matching accounts found for "${username}". The username may be unique or spelled differently on various services.`;
+    return `No matching accounts found for "${username}". The username may be unique or spelled differently.`;
   }
 
   let summary = `Found ${total} account${total !== 1 ? 's' : ''} across ${platforms} platform${platforms !== 1 ? 's' : ''}. `;
-  
   if (found > 0) summary += `${found} confirmed active. `;
   if (breaches > 0) summary += `${breaches} potential exposure${breaches !== 1 ? 's' : ''}.`;
 
   return summary.trim();
 }
 
-// Calculate reuse score based on username consistency
 function calculateReuseScore(found: number, platforms: number): number {
   if (platforms === 0) return 0;
-  const ratio = found / platforms;
-  return Math.round(ratio * 100);
+  return Math.round((found / platforms) * 100);
 }
 
 export function SummaryTab({ jobId, job, grouped, resultsCount, results }: SummaryTabProps) {
@@ -97,10 +91,9 @@ export function SummaryTab({ jobId, job, grouped, resultsCount, results }: Summa
       grouped.found.length,
       grouped.claimed.length,
       breachCount,
-      platforms.length,
-      lensAnalysis.overallScore
+      platforms.length
     ), 
-    [job?.username, grouped, breachCount, platforms.length, lensAnalysis.overallScore]
+    [job?.username, grouped, breachCount, platforms.length]
   );
 
   const insights = useMemo(() => 
@@ -115,7 +108,6 @@ export function SummaryTab({ jobId, job, grouped, resultsCount, results }: Summa
     [grouped.found.length, grouped.claimed.length, breachCount, platforms.length, reuseScore, lensAnalysis.overallScore]
   );
 
-  // Extract potential aliases from results
   const aliases = useMemo(() => {
     const aliasSet = new Set<string>();
     results.forEach(r => {
@@ -130,34 +122,22 @@ export function SummaryTab({ jobId, job, grouped, resultsCount, results }: Summa
     return Array.from(aliasSet).slice(0, 5);
   }, [results, job?.username]);
 
-  const handleRescan = () => {
-    window.location.href = `/scan/usernames?q=${encodeURIComponent(job?.username || '')}`;
-  };
-
-  const handleExport = () => {
-    console.log('Export triggered for job:', jobId);
-  };
-
   return (
-    <div className="space-y-3">
-      {/* Row 1: Identity + Stats side by side */}
+    <div className={RESULTS_SPACING.contentMarginSm}>
+      {/* Row 1: Identity + Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        {/* Left: Identity Snapshot + Summary */}
-        <div className="lg:col-span-8 space-y-3">
+        <div className="lg:col-span-8 space-y-2">
           <IdentitySnapshotCard
             searchedValue={job?.username || 'Unknown'}
             scanType="username"
             aliases={aliases}
             overallScore={lensAnalysis.overallScore}
           />
-          
-          {/* Brief summary inline */}
-          <p className="text-sm text-muted-foreground px-1 leading-relaxed">
+          <p className={`${RESULTS_TYPOGRAPHY.caption} px-1 leading-relaxed`}>
             {summary}
           </p>
         </div>
 
-        {/* Right: Stats + Images */}
         <div className="lg:col-span-4 space-y-3">
           <CompactStatsCard
             accountsFound={grouped.found.length}
@@ -167,23 +147,21 @@ export function SummaryTab({ jobId, job, grouped, resultsCount, results }: Summa
           />
           
           {profileImages.length > 0 && (
-            <div className="px-1">
-              <ProfileImagesStrip images={profileImages} maxImages={6} />
-            </div>
+            <ProfileImagesStrip images={profileImages} maxImages={6} />
           )}
         </div>
       </div>
 
-      {/* Row 2: Insights Section (replaces large cards) */}
-      <Card className="border-border/50">
-        <CardContent className="p-4">
+      {/* Row 2: Insights */}
+      <Card className={RESULTS_BORDERS.cardBorder}>
+        <CardContent className={RESULTS_SPACING.cardPadding}>
           <InsightsSection insights={insights} maxVisible={5} />
         </CardContent>
       </Card>
 
-      {/* Row 3: Results count footer */}
-      <div className="flex items-center justify-end py-1 px-1">
-        <span className="text-xs text-muted-foreground">
+      {/* Row 3: Footer */}
+      <div className="flex items-center justify-end py-1">
+        <span className={RESULTS_TYPOGRAPHY.captionMuted}>
           {resultsCount} results analyzed
         </span>
       </div>

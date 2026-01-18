@@ -7,19 +7,24 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ForensicVerifyButton } from '@/components/forensic';
 import { 
   ExternalLink, Search, Filter, ChevronRight,
-  User, Users, MessageSquare, Clock, Globe,
+  User, Users, Clock, Globe,
   CheckCircle, HelpCircle, AlertCircle, ArrowUpDown
 } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { cn } from '@/lib/utils';
+import { 
+  RESULTS_SPACING, 
+  RESULTS_TYPOGRAPHY, 
+  RESULTS_BORDERS,
+  RESULTS_SEMANTIC_COLORS 
+} from './styles';
 
 interface AccountsTabProps {
   results: ScanResult[];
   jobId: string;
 }
 
-// Platform icon mapping
 const getPlatformIcon = (platform: string) => {
   const p = platform?.toLowerCase() || '';
   if (p.includes('github') || p.includes('gitlab')) return '🐙';
@@ -38,19 +43,28 @@ const getPlatformIcon = (platform: string) => {
   return '🌐';
 };
 
-// Get match confidence
-const getMatchConfidence = (score: number): { label: string; color: string; icon: typeof CheckCircle } => {
-  if (score >= 80) return { label: 'Likely', color: 'text-green-600 bg-green-500/10 border-green-500/20', icon: CheckCircle };
-  if (score >= 60) return { label: 'Possible', color: 'text-yellow-600 bg-yellow-500/10 border-yellow-500/20', icon: HelpCircle };
-  return { label: 'Weak', color: 'text-orange-600 bg-orange-500/10 border-orange-500/20', icon: AlertCircle };
+const getMatchConfidence = (score: number) => {
+  if (score >= 80) return { 
+    label: 'Likely', 
+    ...RESULTS_SEMANTIC_COLORS.confidenceHigh,
+    icon: CheckCircle 
+  };
+  if (score >= 60) return { 
+    label: 'Possible', 
+    ...RESULTS_SEMANTIC_COLORS.confidenceMedium,
+    icon: HelpCircle 
+  };
+  return { 
+    label: 'Weak', 
+    ...RESULTS_SEMANTIC_COLORS.confidenceLow,
+    icon: AlertCircle 
+  };
 };
 
-// Extract key fields for display (max 3)
 const extractKeyFields = (result: ScanResult): string[] => {
   const meta = (result.meta || result.metadata || {}) as Record<string, any>;
   const fields: string[] = [];
 
-  // Priority order for display
   if (meta.bio) fields.push(meta.bio.slice(0, 50) + (meta.bio.length > 50 ? '…' : ''));
   else if (meta.description) fields.push(meta.description.slice(0, 50) + (meta.description.length > 50 ? '…' : ''));
   
@@ -115,7 +129,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
   };
 
   return (
-    <div className="space-y-3">
+    <div className={RESULTS_SPACING.contentMarginSm}>
       {/* Compact Filters */}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
@@ -242,7 +256,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Badge 
                       variant="outline" 
-                      className={cn('h-6 px-1.5 gap-1 text-[10px]', confidence.color)}
+                      className={cn('h-6 px-1.5 gap-1 text-[10px]', confidence.bg, confidence.text, confidence.border)}
                     >
                       <ConfidenceIcon className="w-3 h-3" />
                       <span className="hidden sm:inline">{confidence.label}</span>
