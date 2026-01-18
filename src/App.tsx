@@ -199,6 +199,7 @@ const Referrals = lazy(() => import("./pages/Referrals"));
 const Research = lazy(() => import("./pages/Research"));
 const AdminScanHealth = lazy(() => import("./pages/admin/ScanHealth"));
 const SecuritySettings = lazy(() => import("./pages/admin/SecuritySettings"));
+const AdminLensImages = lazy(() => import("./pages/AdminLensImages"));
 const SampleReport = lazy(() => import("./pages/SampleReport"));
 const ContextEnrichment = lazy(() => import("./pages/ContextEnrichment"));
 const Lens = lazy(() => import("./pages/Lens"));
@@ -448,6 +449,7 @@ function RouterContent() {
           <Route path="/admin/audit-viewer" element={<AuditViewer />} />
           <Route path="/referrals" element={<Referrals />} />
           <Route path="/admin/system-health" element={<SystemHealth />} />
+          <Route path="/admin/lens-images" element={<AdminLensImages />} />
           <Route path="/admin/security-settings" element={<SecuritySettings />} />
           <Route path="/admin/scan-health" element={<AdminScanHealth />} />
           <Route path="/admin/database-export" element={<DatabaseExport />} />
