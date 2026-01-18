@@ -14,7 +14,7 @@ import { generateInvestigationReport } from '@/lib/investigationReportPDF';
 import { ScanProgress } from './ScanProgress';
 import { ResultsTabBar } from './ResultsTabBar';
 import { TabSkeleton } from './results-tabs/TabSkeleton';
-import { Loader2, FileJson, FileSpreadsheet, Shield, FileText } from 'lucide-react';
+import { Loader2, Shield } from 'lucide-react';
 import { parseISO, isValid } from 'date-fns';
 
 // Lazy load tab components for performance
@@ -287,86 +287,54 @@ export function ScanResults({ jobId }: ScanResultsProps) {
     );
   }
 
+  // Action handlers for toolbar
+  const handleExportJSON = () => exportResultsToJSON(results as any[], jobId);
+  const handleExportCSV = () => exportResultsToCSV(results as any[], jobId);
+  const handleExportPDF = () => {
+    generateInvestigationReport({
+      job,
+      results,
+      grouped,
+      tabCounts,
+      breachResults,
+      geoLocations,
+    });
+    toast({
+      title: 'Report Generated',
+      description: 'Your PDF investigation report is downloading.',
+    });
+  };
+  const handleNewScan = () => {
+    window.location.href = `/scan/usernames?q=${encodeURIComponent(job.username || '')}`;
+  };
+
   return (
     <Card className="rounded-2xl shadow-sm">
-      <CardHeader className="p-4 sm:p-6 md:p-8">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+      <CardHeader className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="flex-1">
-            <div className="mb-3 p-3 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
-              <div className="text-sm text-muted-foreground mb-1">Scanning Username:</div>
-              <div className="text-2xl sm:text-3xl font-bold text-primary break-words">
+            <div className="mb-2 p-2.5 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+              <div className="text-xs text-muted-foreground mb-0.5">Scanning Username:</div>
+              <div className="text-xl sm:text-2xl font-bold text-primary break-words">
                 {job.username}
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mb-2">
-              <Badge variant={['finished', 'completed', 'completed_partial'].includes(job.status) ? 'default' : 'secondary'}>
-                {job.status === 'completed_partial' ? 'Completed (Partial)' : job.status}
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <Badge variant={['finished', 'completed', 'completed_partial'].includes(job.status) ? 'default' : 'secondary'} className="text-xs">
+                {job.status === 'completed_partial' ? 'Partial' : job.status}
               </Badge>
               {job.started_at && (
                 <span>Started: {new Date(job.started_at).toLocaleString()}</span>
               )}
-              {job.finished_at && (
-                <span>Finished: {new Date(job.finished_at).toLocaleString()}</span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-accent/10 ring-1 ring-accent/20">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <Shield className="w-3.5 h-3.5 text-accent" />
-                <span className="text-xs font-medium text-accent">Scan secured by RLS</span>
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-accent/10 ring-1 ring-accent/20">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <Shield className="w-3 h-3 text-accent" />
+                <span className="text-[10px] font-medium text-accent">RLS secured</span>
               </div>
             </div>
             {job.error && (
-              <p className="text-sm text-destructive mt-2">{job.error}</p>
+              <p className="text-xs text-destructive mt-1">{job.error}</p>
             )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportResultsToJSON(results as any[], jobId)}
-              disabled={results.length === 0}
-              className="text-xs sm:text-sm"
-            >
-              <FileJson className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">JSON</span>
-              <span className="sm:hidden">JSON</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportResultsToCSV(results as any[], jobId)}
-              disabled={results.length === 0}
-              className="text-xs sm:text-sm"
-            >
-              <FileSpreadsheet className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">CSV</span>
-              <span className="sm:hidden">CSV</span>
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => {
-                generateInvestigationReport({
-                  job,
-                  results,
-                  grouped,
-                  tabCounts,
-                  breachResults,
-                  geoLocations,
-                });
-                toast({
-                  title: 'Report Generated',
-                  description: 'Your PDF investigation report is downloading.',
-                });
-              }}
-              disabled={results.length === 0}
-              className="text-xs sm:text-sm"
-            >
-              <FileText className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden sm:inline">PDF Report</span>
-              <span className="sm:hidden">PDF</span>
-            </Button>
           </div>
         </div>
       </CardHeader>
@@ -409,8 +377,17 @@ export function ScanResults({ jobId }: ScanResultsProps) {
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            {/* Sticky Tab Bar */}
-            <ResultsTabBar tabCounts={tabCounts} hasGeoData={hasGeoData} showTimeline={showTimeline} />
+            {/* Sticky Tab Bar with Toolbar */}
+            <ResultsTabBar 
+              tabCounts={tabCounts} 
+              hasGeoData={hasGeoData} 
+              showTimeline={showTimeline}
+              onExportJSON={handleExportJSON}
+              onExportCSV={handleExportCSV}
+              onExportPDF={handleExportPDF}
+              onNewScan={handleNewScan}
+              actionsDisabled={results.length === 0}
+            />
 
             {/* Tab Content - Lazy Loaded */}
             <div className="mt-6">

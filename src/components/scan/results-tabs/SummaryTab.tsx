@@ -7,7 +7,6 @@ import { IdentitySnapshotCard } from './summary/IdentitySnapshotCard';
 import { InsightsSection, generateInsights } from './summary/InsightsSection';
 import { CompactStatsCard } from './summary/CompactStatsCard';
 import { ProfileImagesStrip } from './summary/ProfileImagesStrip';
-import { SummaryToolbar } from './summary/SummaryToolbar';
 
 interface SummaryTabProps {
   jobId: string;
@@ -182,15 +181,11 @@ export function SummaryTab({ jobId, job, grouped, resultsCount, results }: Summa
         </CardContent>
       </Card>
 
-      {/* Row 3: Compact Actions Toolbar */}
-      <div className="flex items-center justify-between py-2 px-1 border-t border-border/50">
+      {/* Row 3: Results count footer */}
+      <div className="flex items-center justify-end py-1 px-1">
         <span className="text-xs text-muted-foreground">
           {resultsCount} results analyzed
         </span>
-        <SummaryToolbar 
-          onRescan={handleRescan}
-          onExport={handleExport}
-        />
       </div>
     </div>
   );
