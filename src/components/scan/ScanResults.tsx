@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, lazy, Suspense, useCallback } from 'react';
+import { useEffect, useState, useRef, lazy, Suspense, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,14 @@ import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useScanResultsData, ScanJob } from '@/hooks/useScanResultsData';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { exportResultsToJSON, exportResultsToCSV } from '@/utils/exporters';
 import { generateInvestigationReport } from '@/lib/investigationReportPDF';
 import { ScanProgress } from './ScanProgress';
 import { ResultsTabBar } from './ResultsTabBar';
 import { TabSkeleton } from './results-tabs/TabSkeleton';
 import { Loader2, FileJson, FileSpreadsheet, Shield, FileText } from 'lucide-react';
+import { parseISO, isValid } from 'date-fns';
 
 // Lazy load tab components for performance
 const SummaryTab = lazy(() => import('./results-tabs/SummaryTab'));
@@ -36,6 +38,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
   const [jobLoading, setJobLoading] = useState(true);
   const [broadcastResultCount, setBroadcastResultCount] = useState(0);
   const { toast } = useToast();
+  const { workspace } = useWorkspace();
 
   // Get initial tab from URL or default to 'summary'
   const tabFromUrl = searchParams.get('tab') as TabValue | null;
@@ -68,6 +71,54 @@ export function ScanResults({ jobId }: ScanResultsProps) {
     geoLocations, 
     breachResults 
   } = useScanResultsData(jobId);
+
+  // Calculate timeline event count for conditional visibility
+  const timelineEventCount = useMemo(() => {
+    let count = 0;
+    (results as any[]).forEach(result => {
+      const meta = (result.meta || result.metadata || {}) as Record<string, any>;
+      
+      // Check for various date signals
+      const dateFields = [
+        meta.created_at, meta.joined, meta.registered, meta.member_since,
+        meta.last_seen, meta.last_active, meta.last_login, meta.updated_at, meta.last_post,
+        meta.breach_date, meta.pwned_date, meta.leak_date, meta.exposed_at,
+        meta.profile_updated, meta.bio_updated
+      ];
+      
+      dateFields.forEach(field => {
+        if (field) {
+          // Try to parse the date
+          if (typeof field === 'number') {
+            count++;
+          } else if (typeof field === 'string') {
+            try {
+              const d = parseISO(field);
+              if (isValid(d)) count++;
+            } catch {
+              // Check for year pattern
+              if (/\b(20\d{2}|19\d{2})\b/.test(field)) count++;
+            }
+          }
+        }
+      });
+    });
+    return count;
+  }, [results]);
+
+  // Determine if Timeline tab should be visible
+  // Hide for Free users when no meaningful data exists
+  const showTimeline = useMemo(() => {
+    const isFree = !workspace?.plan || workspace.plan === 'free';
+    // Always show for paid users, show for free users only if there are timeline events
+    return !isFree || timelineEventCount > 0;
+  }, [workspace?.plan, timelineEventCount]);
+
+  // Determine if user is premium (for passing to TimelineTab)
+  const isPremium = useMemo(() => {
+    const plan = workspace?.plan || 'free';
+    return plan !== 'free';
+  }, [workspace?.plan]);
 
   useEffect(() => {
     loadJob();
@@ -359,7 +410,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
         ) : (
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             {/* Sticky Tab Bar */}
-            <ResultsTabBar tabCounts={tabCounts} hasGeoData={hasGeoData} />
+            <ResultsTabBar tabCounts={tabCounts} hasGeoData={hasGeoData} showTimeline={showTimeline} />
 
             {/* Tab Content - Lazy Loaded */}
             <div className="mt-6">
@@ -387,15 +438,18 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                 </Suspense>
               </TabsContent>
 
-              <TabsContent value="timeline" className="mt-0">
-                <Suspense fallback={<TabSkeleton />}>
-                  <TimelineTab 
-                    scanId={jobId} 
-                    results={results} 
-                    username={job.username}
-                  />
-                </Suspense>
-              </TabsContent>
+              {showTimeline && (
+                <TabsContent value="timeline" className="mt-0">
+                  <Suspense fallback={<TabSkeleton />}>
+                    <TimelineTab 
+                      scanId={jobId} 
+                      results={results} 
+                      username={job.username}
+                      isPremium={isPremium}
+                    />
+                  </Suspense>
+                </TabsContent>
+              )}
 
               <TabsContent value="breaches" className="mt-0">
                 <Suspense fallback={<TabSkeleton />}>
