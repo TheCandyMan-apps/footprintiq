@@ -369,7 +369,8 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                     jobId={jobId} 
                     job={job} 
                     grouped={grouped} 
-                    resultsCount={results.length} 
+                    resultsCount={results.length}
+                    results={results}
                   />
                 </Suspense>
               </TabsContent>

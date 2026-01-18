@@ -2,8 +2,10 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Shield, ExternalLink, AlertCircle } from 'lucide-react';
+import { AlertTriangle, Shield, ExternalLink, AlertCircle, Sparkles } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
+import { LensConfidenceBadge } from '@/components/scan/LensConfidenceBadge';
+import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 
 interface BreachesTabProps {
   results: ScanResult[];
@@ -26,6 +28,9 @@ const getSeverityColor = (severity: string) => {
 };
 
 export function BreachesTab({ results, breachResults }: BreachesTabProps) {
+  // LENS Analysis for breach results
+  const lensAnalysis = useLensAnalysis(breachResults);
+
   // Group breaches by severity
   const groupedBreaches = useMemo(() => {
     const groups: Record<string, any[]> = {
@@ -64,6 +69,21 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* LENS Analysis Note */}
+      <Card className="p-4 border-primary/20 bg-primary/5">
+        <div className="flex items-start gap-3">
+          <Sparkles className="h-5 w-5 text-primary mt-0.5" />
+          <div className="flex-1">
+            <h4 className="font-medium text-sm mb-1">LENS Breach Analysis</h4>
+            <p className="text-xs text-muted-foreground">
+              {lensAnalysis.highConfidence} high-confidence, {lensAnalysis.moderateConfidence} moderate, 
+              and {lensAnalysis.lowConfidence} low-confidence breach findings detected. 
+              Overall reliability: {lensAnalysis.overallScore}%
+            </p>
+          </div>
+        </div>
+      </Card>
+
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="p-4 text-center border-red-500/20 bg-red-500/5">
@@ -98,7 +118,9 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
 
       {/* Breach List */}
       <div className="space-y-3">
-        {breachResults.map((breach, idx) => (
+        {breachResults.map((breach, idx) => {
+          const lensScore = lensAnalysis.resultScores.get(breach.id);
+          return (
           <Card key={breach.id || idx} className="overflow-hidden">
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
               <div className="flex items-center gap-3">
@@ -113,6 +135,13 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {lensScore && (
+                  <LensConfidenceBadge
+                    score={lensScore.score}
+                    reasoning={lensScore.reasoning}
+                    size="sm"
+                  />
+                )}
                 <Badge className={getSeverityColor(breach.severity)}>
                   {breach.severity || 'Unknown'}
                 </Badge>
@@ -133,7 +162,7 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
               </CardContent>
             )}
           </Card>
-        ))}
+        )})}
       </div>
 
       {/* Recommendations */}

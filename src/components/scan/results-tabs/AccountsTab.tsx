@@ -14,6 +14,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ScanResult } from '@/hooks/useScanResultsData';
+import { LensConfidenceBadge } from '@/components/scan/LensConfidenceBadge';
+import { LensSummaryCard } from '@/components/scan/LensSummaryCard';
+import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 
 interface AccountsTabProps {
   results: ScanResult[];
@@ -36,6 +39,9 @@ const getStatusVariant = (status: string) => {
 export function AccountsTab({ results, jobId }: AccountsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  // LENS Analysis
+  const lensAnalysis = useLensAnalysis(results);
 
   // Filter results
   const filteredResults = useMemo(() => {
@@ -67,6 +73,15 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
 
   return (
     <div className="space-y-4">
+      {/* LENS Summary Card */}
+      <LensSummaryCard
+        overallScore={lensAnalysis.overallScore}
+        highConfidence={lensAnalysis.highConfidence}
+        moderateConfidence={lensAnalysis.moderateConfidence}
+        lowConfidence={lensAnalysis.lowConfidence}
+        totalFindings={results.length}
+      />
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
@@ -114,6 +129,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
               <TableHead className="w-12 text-xs sm:text-sm">ID</TableHead>
               <TableHead className="text-xs sm:text-sm">Platform</TableHead>
               <TableHead className="text-xs sm:text-sm">Status</TableHead>
+              <TableHead className="text-xs sm:text-sm">LENS</TableHead>
               <TableHead className="hidden md:table-cell text-xs sm:text-sm">URL</TableHead>
               <TableHead className="w-28 text-xs sm:text-sm">Actions</TableHead>
             </TableRow>
@@ -121,14 +137,16 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
           <TableBody>
             {filteredResults.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                   {searchQuery || statusFilter !== 'all' 
                     ? 'No results match your filters'
                     : 'No accounts found'}
                 </TableCell>
               </TableRow>
             ) : (
-              filteredResults.map((result) => (
+              filteredResults.map((result) => {
+                const lensScore = lensAnalysis.resultScores.get(result.id);
+                return (
                 <TableRow key={result.id}>
                   <TableCell className="text-muted-foreground text-xs">
                     {result.id.slice(0, 8)}
@@ -142,6 +160,15 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                     <Badge variant={getStatusVariant(result.status)} className="text-xs">
                       {result.status || 'unknown'}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {lensScore && (
+                      <LensConfidenceBadge
+                        score={lensScore.score}
+                        reasoning={lensScore.reasoning}
+                        size="sm"
+                      />
+                    )}
                   </TableCell>
                   <TableCell className="hidden md:table-cell max-w-md truncate text-xs text-muted-foreground">
                     {result.url || '-'}
@@ -176,7 +203,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                     </div>
                   </TableCell>
                 </TableRow>
-              ))
+              )})
             )}
           </TableBody>
         </Table>
