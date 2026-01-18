@@ -763,6 +763,32 @@ const ResultsDetail = () => {
           </div>
         </div>
 
+        {/* New Results Experience Banner - Show for username scans */}
+        {scan.scan_type === 'username' && (
+          <Card className="mb-6 border-2 border-primary/50 bg-gradient-to-r from-primary/5 to-accent/5">
+            <div className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <Zap className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+                  <div>
+                    <h3 className="font-semibold text-base mb-1">New Interactive Results Available</h3>
+                    <p className="text-sm text-muted-foreground">
+                      View your results with the new tabbed interface including Timeline, Breaches, and Connections tabs.
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => navigate(`/scan/usernames/${scanId}`)}
+                  className="gap-2 shrink-0"
+                >
+                  <Eye className="h-4 w-4" />
+                  Open New Results
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Scan Status Banner */}
         {scan.status !== 'completed' && (
           <Card className={cn(

@@ -13,9 +13,10 @@ import { TabCounts } from '@/hooks/useScanResultsData';
 interface ResultsTabBarProps {
   tabCounts: TabCounts;
   hasGeoData: boolean;
+  showTimeline?: boolean;
 }
 
-export function ResultsTabBar({ tabCounts, hasGeoData }: ResultsTabBarProps) {
+export function ResultsTabBar({ tabCounts, hasGeoData, showTimeline = true }: ResultsTabBarProps) {
   return (
     <div className="sticky top-0 z-40 -mx-4 sm:-mx-6 md:-mx-8 px-4 sm:px-6 md:px-8 py-3 bg-background/95 backdrop-blur-sm border-b shadow-sm">
       <TabsList className="w-full h-auto flex-wrap justify-start gap-1 bg-transparent p-0">
@@ -48,13 +49,15 @@ export function ResultsTabBar({ tabCounts, hasGeoData }: ResultsTabBarProps) {
           <span className="hidden sm:inline">Connections</span>
         </TabsTrigger>
 
-        <TabsTrigger 
-          value="timeline" 
-          className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2"
-        >
-          <Clock className="h-4 w-4" />
-          <span className="hidden sm:inline">Timeline</span>
-        </TabsTrigger>
+        {showTimeline && (
+          <TabsTrigger 
+            value="timeline" 
+            className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-4 py-2"
+          >
+            <Clock className="h-4 w-4" />
+            <span className="hidden sm:inline">Timeline</span>
+          </TabsTrigger>
+        )}
 
         <TabsTrigger 
           value="breaches" 

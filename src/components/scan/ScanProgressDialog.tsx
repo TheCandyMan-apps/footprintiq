@@ -405,7 +405,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     }
   }, [phase]);
 
-  // Deterministic View Results handler using cached resultsRoute
+  // Deterministic View Results handler using cached resultsRoute and scanType
   const handleViewResults = useCallback(() => {
     if (!scanId) return;
 
@@ -418,9 +418,14 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
 
     onOpenChange(false);
 
-    // Use results_route for deterministic routing - no async fetch inside click handler
-    // 'maigret' routes to basic results page, 'results' (default) routes to full results page
-    if (resultsRoute === 'maigret') {
+    // Route based on scan type for the best results experience:
+    // - Username scans → new tabbed results UI at /scan/usernames/:scanId
+    // - Maigret route → basic maigret results page
+    // - Everything else → full legacy results page
+    if (scanType === 'username') {
+      console.log('[ScanProgress] Navigating:', { to: 'username-results', path: `/scan/usernames/${scanId}` });
+      navigate(`/scan/usernames/${scanId}`);
+    } else if (resultsRoute === 'maigret') {
       console.log('[ScanProgress] Navigating:', { to: 'maigret', path: `/maigret/results/${scanId}` });
       navigate(`/maigret/results/${scanId}`);
     } else {
