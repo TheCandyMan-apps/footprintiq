@@ -1,51 +1,48 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState, useRef, lazy, Suspense } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useRealtimeResults } from '@/hooks/useRealtimeResults';
-import { exportResultsToJSON, exportResultsToCSV, groupByStatus } from '@/utils/exporters';
+import { useScanResultsData, ScanJob } from '@/hooks/useScanResultsData';
+import { exportResultsToJSON, exportResultsToCSV } from '@/utils/exporters';
 import { ScanProgress } from './ScanProgress';
-import { FootprintDNACard } from '@/components/FootprintDNACard';
-import AIInsightsPanel from '@/components/AIInsightsPanel';
-import { LockedInsightsGrid } from '@/components/billing/LockedInsightBlock';
-import { ForensicVerifyButton, VerificationHistoryPanel } from '@/components/forensic';
-import { Loader2, FileJson, FileSpreadsheet, ExternalLink, Shield } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { ResultsTabBar } from './ResultsTabBar';
+import { TabSkeleton } from './results-tabs/TabSkeleton';
+import { Loader2, FileJson, FileSpreadsheet, Shield } from 'lucide-react';
+
+// Lazy load tab components for performance
+const SummaryTab = lazy(() => import('./results-tabs/SummaryTab'));
+const AccountsTab = lazy(() => import('./results-tabs/AccountsTab'));
+const ConnectionsTab = lazy(() => import('./results-tabs/ConnectionsTab'));
+const TimelineTab = lazy(() => import('./results-tabs/TimelineTab'));
+const BreachesTab = lazy(() => import('./results-tabs/BreachesTab'));
+const MapTab = lazy(() => import('./results-tabs/MapTab'));
 
 interface ScanResultsProps {
   jobId: string;
-}
-
-interface ScanJob {
-  id: string;
-  username: string;
-  status: string;
-  created_at: string;
-  started_at: string | null;
-  finished_at: string | null;
-  error: string | null;
-  all_sites: boolean;
-  requested_by: string | null;
 }
 
 export function ScanResults({ jobId }: ScanResultsProps) {
   const [job, setJob] = useState<ScanJob | null>(null);
   const [jobLoading, setJobLoading] = useState(true);
   const [broadcastResultCount, setBroadcastResultCount] = useState(0);
-  const { results, loading: resultsLoading } = useRealtimeResults(jobId);
   const { toast } = useToast();
   const jobChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const progressChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+
+  // Use centralized data hook
+  const { 
+    results, 
+    loading: resultsLoading, 
+    grouped, 
+    tabCounts, 
+    hasGeoData, 
+    geoLocations, 
+    breachResults 
+  } = useScanResultsData(jobId);
 
   useEffect(() => {
     loadJob();
@@ -97,14 +94,12 @@ export function ScanResults({ jobId }: ScanResultsProps) {
       .channel(`scan_progress_${jobId}`)
       .on('broadcast', { event: 'provider_update' }, (payload) => {
         console.debug('[ScanResults] Provider update:', payload);
-        // Update broadcast result count for optimistic progress display
         if (payload.payload?.resultCount !== undefined) {
           setBroadcastResultCount(payload.payload.resultCount);
         }
       })
       .on('broadcast', { event: 'scan_complete' }, (payload) => {
         console.debug('[ScanResults] Scan complete broadcast:', payload);
-        // Refresh job data on completion
         loadJob();
       })
       .subscribe();
@@ -131,7 +126,6 @@ export function ScanResults({ jobId }: ScanResultsProps) {
         .maybeSingle();
 
       if (scanData) {
-        // Map scans table fields to expected ScanJob interface
         const mappedJob: ScanJob = {
           id: scanData.id,
           username: scanData.username || '',
@@ -162,7 +156,6 @@ export function ScanResults({ jobId }: ScanResultsProps) {
     } catch (error: any) {
       console.error('Failed to load job:', error);
       
-      // Provide helpful error message
       const isNotFound = error?.code === 'PGRST116' || error?.message?.includes('not found');
       toast({
         title: isNotFound ? 'Scan Not Found' : 'Error',
@@ -175,25 +168,6 @@ export function ScanResults({ jobId }: ScanResultsProps) {
       setJobLoading(false);
     }
   };
-
-  const getStatusVariant = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'found':
-        return 'default';
-      case 'claimed':
-        return 'secondary';
-      case 'not_found':
-        return 'outline';
-      default:
-        return 'outline';
-    }
-  };
-
-  const grouped = useMemo(() => groupByStatus(results), [results]);
-  const foundCount = grouped.found.length;
-  const claimedCount = grouped.claimed.length;
-  const notFoundCount = grouped.not_found.length;
-  const unknownCount = grouped.unknown.length;
 
   if (jobLoading) {
     return (
@@ -209,10 +183,10 @@ export function ScanResults({ jobId }: ScanResultsProps) {
     return (
       <Card className="rounded-2xl shadow-sm">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-destructive" />
-            Scan Not Found
-          </CardTitle>
+            <h2 className="text-lg font-semibold">Scan Not Found</h2>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-muted-foreground">
@@ -274,7 +248,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => exportResultsToJSON(results, jobId)}
+              onClick={() => exportResultsToJSON(results as any[], jobId)}
               disabled={results.length === 0}
               className="text-xs sm:text-sm"
             >
@@ -285,7 +259,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => exportResultsToCSV(results, jobId)}
+              onClick={() => exportResultsToCSV(results as any[], jobId)}
               disabled={results.length === 0}
               className="text-xs sm:text-sm"
             >
@@ -297,8 +271,8 @@ export function ScanResults({ jobId }: ScanResultsProps) {
         </div>
       </CardHeader>
       <Separator />
-      <CardContent className="p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6">
-        {/* Progress Indicator - shown first */}
+      <CardContent className="p-4 sm:p-6 md:p-8 space-y-4">
+        {/* Progress Indicator */}
         <ScanProgress
           startedAt={job.started_at}
           finishedAt={job.finished_at}
@@ -334,124 +308,56 @@ export function ScanResults({ jobId }: ScanResultsProps) {
             </p>
           </div>
         ) : (
-          <>
-            {/* Results count badges */}
-            <div className="flex flex-wrap gap-2 sm:gap-3 mb-4 sm:mb-6">
-              <Badge variant="default" className="bg-green-600 text-xs sm:text-sm">
-                Found: {foundCount}
-              </Badge>
-              <Badge variant="secondary" className="bg-blue-600 text-xs sm:text-sm">
-                Claimed: {claimedCount}
-              </Badge>
-              <Badge variant="outline" className="text-xs sm:text-sm">Not Found: {notFoundCount}</Badge>
-              {unknownCount > 0 && (
-                <Badge variant="outline" className="bg-amber-100 text-xs sm:text-sm">
-                  Unknown: {unknownCount}
-                </Badge>
+          <Tabs defaultValue="summary" className="w-full">
+            {/* Sticky Tab Bar */}
+            <ResultsTabBar tabCounts={tabCounts} hasGeoData={hasGeoData} />
+
+            {/* Tab Content - Lazy Loaded */}
+            <div className="mt-6">
+              <TabsContent value="summary" className="mt-0">
+                <Suspense fallback={<TabSkeleton />}>
+                  <SummaryTab 
+                    jobId={jobId} 
+                    job={job} 
+                    grouped={grouped} 
+                    resultsCount={results.length} 
+                  />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="accounts" className="mt-0">
+                <Suspense fallback={<TabSkeleton />}>
+                  <AccountsTab results={results} jobId={jobId} />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="connections" className="mt-0">
+                <Suspense fallback={<TabSkeleton />}>
+                  <ConnectionsTab results={results} username={job.username} />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="timeline" className="mt-0">
+                <Suspense fallback={<TabSkeleton />}>
+                  <TimelineTab scanId={jobId} />
+                </Suspense>
+              </TabsContent>
+
+              <TabsContent value="breaches" className="mt-0">
+                <Suspense fallback={<TabSkeleton />}>
+                  <BreachesTab results={results} breachResults={breachResults} />
+                </Suspense>
+              </TabsContent>
+
+              {hasGeoData && (
+                <TabsContent value="map" className="mt-0">
+                  <Suspense fallback={<TabSkeleton />}>
+                    <MapTab locations={geoLocations} />
+                  </Suspense>
+                </TabsContent>
               )}
-              <Badge variant="outline" className="ml-auto text-xs sm:text-sm">
-                Total: {results.length}
-              </Badge>
             </div>
-
-            {/* Results table - shown before analysis cards */}
-            <div className="border rounded-lg overflow-hidden overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-8 sm:w-12 text-xs sm:text-sm">ID</TableHead>
-                    <TableHead className="text-xs sm:text-sm">Site</TableHead>
-                    <TableHead className="text-xs sm:text-sm">Status</TableHead>
-                    <TableHead className="hidden md:table-cell text-xs sm:text-sm">URL</TableHead>
-                    <TableHead className="w-24 sm:w-28 text-xs sm:text-sm">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {results.map((result) => (
-                    <TableRow key={result.id}>
-                      <TableCell className="text-muted-foreground text-xs sm:text-sm">
-                        {result.id.slice(0, 8)}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <Badge variant="outline" className="font-mono text-[10px] sm:text-xs">
-                          {result.site || 'Unknown'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusVariant(result.status)} className="text-[10px] sm:text-xs">
-                          {result.status || 'unknown'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell max-w-md truncate text-xs sm:text-sm text-muted-foreground">
-                        {result.url || '-'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          {result.url && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                asChild
-                                className="h-8 w-8 p-0"
-                              >
-                                <a
-                                  href={result.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  aria-label="Open profile"
-                                >
-                                  <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
-                                </a>
-                              </Button>
-                              <ForensicVerifyButton
-                                findingId={result.id}
-                                url={result.url}
-                                platform={result.site || 'Unknown'}
-                                scanId={jobId}
-                              />
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-
-            {/* Analysis section - moved below results */}
-            <Separator className="my-6" />
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Main analysis content */}
-              <div className="lg:col-span-2 space-y-6">
-                <h3 className="text-lg font-semibold text-muted-foreground">Analysis & Insights</h3>
-                
-                {/* Footprint DNA Card */}
-                <FootprintDNACard scanId={jobId} userId={job?.requested_by || undefined} />
-
-                {/* Locked Insights for Free users */}
-                <LockedInsightsGrid />
-
-                {/* AI Insights Panel */}
-                <AIInsightsPanel 
-                  scanData={{
-                    jobId,
-                    breaches: grouped.found.length,
-                    exposures: results.length,
-                    dataBrokers: grouped.claimed.length,
-                    darkWeb: grouped.unknown.length,
-                  }}
-                />
-              </div>
-
-              {/* Verification History Sidebar */}
-              <div className="lg:col-span-1">
-                <VerificationHistoryPanel scanId={jobId} />
-              </div>
-            </div>
-          </>
+          </Tabs>
         )}
       </CardContent>
     </Card>
