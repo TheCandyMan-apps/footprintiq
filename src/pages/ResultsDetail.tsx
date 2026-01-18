@@ -28,6 +28,13 @@ import { SectionErrorBoundary } from "@/components/SectionErrorBoundary";
 import { AIAnalysis } from "@/components/AIAnalysis";
 import { AIInsightsCard } from "@/components/AIInsightsCard";
 import { CatfishDetection } from '@/components/CatfishDetection';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  LayoutDashboard,
+  Clock,
+  ShieldAlert,
+  MapPin
+} from "lucide-react";
 import { TimelineChart } from "@/components/TimelineChart";
 import { ShareReportDialog } from "@/components/ShareReportDialog";
 import { PDFReportButton } from "@/components/PDFReportButton";
@@ -878,15 +885,82 @@ const ResultsDetail = () => {
           </ScanErrorBoundary>
         )}
 
-        {/* Light viral share prompt - shown at top of completed results */}
-        {!subscriptionLoading && userPlan === 'free' && scan.status !== 'pending' && scan.status !== 'processing' && (
-          <ViralSharePrompt 
-            className="mb-6" 
-            placement="results_top" 
-            scanId={scanId} 
-            variant="light" 
-          />
+        {/* Results Navigation Bar */}
+        {scan.status !== 'pending' && scan.status !== 'processing' && (findings.length > 0 || dataSources.length > 0 || socialProfiles.length > 0) && (
+          <div className="sticky top-0 z-40 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 bg-background/95 backdrop-blur-sm border-b shadow-sm mb-6">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => document.getElementById('section-summary')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                <span className="hidden sm:inline">Summary</span>
+              </button>
+
+              <button
+                onClick={() => document.getElementById('section-accounts')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/80 text-sm font-medium transition-colors"
+              >
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Accounts</span>
+                {(dataSources.length + socialProfiles.length) > 0 && (
+                  <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                    {dataSources.length + socialProfiles.length}
+                  </Badge>
+                )}
+              </button>
+
+              <button
+                onClick={() => document.getElementById('section-connections')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/80 text-sm font-medium transition-colors"
+              >
+                <Network className="h-4 w-4" />
+                <span className="hidden sm:inline">Connections</span>
+              </button>
+
+              <button
+                onClick={() => document.getElementById('section-timeline')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/80 text-sm font-medium transition-colors"
+              >
+                <Clock className="h-4 w-4" />
+                <span className="hidden sm:inline">Timeline</span>
+              </button>
+
+              <button
+                onClick={() => document.getElementById('section-breaches')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex items-center gap-2 px-4 py-2 rounded-md bg-muted hover:bg-muted/80 text-sm font-medium transition-colors"
+              >
+                <ShieldAlert className="h-4 w-4" />
+                <span className="hidden sm:inline">Breaches</span>
+                {findings.filter(f => 
+                  f.type === 'breach' || 
+                  f.providerCategory?.toLowerCase().includes('breach') ||
+                  f.tags?.some(t => t.toLowerCase().includes('breach'))
+                ).length > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
+                    {findings.filter(f => 
+                      f.type === 'breach' || 
+                      f.providerCategory?.toLowerCase().includes('breach') ||
+                      f.tags?.some(t => t.toLowerCase().includes('breach'))
+                    ).length}
+                  </Badge>
+                )}
+              </button>
+            </div>
+          </div>
         )}
+
+        {/* Summary Section */}
+        <div id="section-summary">
+          {/* Light viral share prompt - shown at top of completed results */}
+          {!subscriptionLoading && userPlan === 'free' && scan.status !== 'pending' && scan.status !== 'processing' && (
+            <ViralSharePrompt 
+              className="mb-6" 
+              placement="results_top" 
+              scanId={scanId} 
+              variant="light" 
+            />
+          )}
 
         {/* Real-time Status Indicator - shown if scan is active */}
         {(scan.status === 'pending' || scan.status === 'processing') && scanId && (
@@ -1038,6 +1112,7 @@ const ResultsDetail = () => {
             />
           </div>
         )}
+        </div> {/* End section-summary */}
 
         {/* Removal Queue - Hidden for now */}
         {/* <div className="mb-8">
@@ -1049,6 +1124,8 @@ const ResultsDetail = () => {
           <RemovalSuccessTracker userId={user?.id} />
         </div> */}
 
+        {/* Connections Section */}
+        <div id="section-connections">
         {/* Visualizations Section */}
         {(dataSources.length > 0 || socialProfiles.length > 0) && (
           <SectionErrorBoundary section="Data Analytics">
@@ -1339,7 +1416,10 @@ const ResultsDetail = () => {
             />
           </div>
         )}
+        </div> {/* End section-connections */}
 
+        {/* Timeline Section */}
+        <div id="section-timeline">
         {/* Summary Card */}
         <Card className="p-8 mb-8 bg-gradient-card border-border shadow-card">
           <div className="text-center">
@@ -1476,8 +1556,10 @@ const ResultsDetail = () => {
             </div>
           </Card>
         )}
+        </div> {/* End section-timeline */}
 
-
+        {/* Accounts Section */}
+        <div id="section-accounts">
         {/* Findings Section - Enhanced detailed cards */}
         {findings.length > 0 && (() => {
           // Use centralized filter utility
@@ -1658,7 +1740,10 @@ const ResultsDetail = () => {
             </div>
           </div>
         )})()}
+        </div> {/* End section-accounts */}
 
+        {/* Breaches Section */}
+        <div id="section-breaches">
         {/* Monitoring Toggle */}
         {user && scanId && (
           <div className="mb-8">
@@ -1880,7 +1965,8 @@ const ResultsDetail = () => {
               </Card>
               );
             })}
-          </div>
+        </div>
+        </div> {/* End section-breaches */}
         </div>
         </div>
       </div>
