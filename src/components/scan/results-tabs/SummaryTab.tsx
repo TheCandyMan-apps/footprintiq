@@ -3,7 +3,9 @@ import { FootprintDNACard } from '@/components/FootprintDNACard';
 import AIInsightsPanel from '@/components/AIInsightsPanel';
 import { LockedInsightsGrid } from '@/components/billing/LockedInsightBlock';
 import { VerificationHistoryPanel } from '@/components/forensic';
-import { ScanJob } from '@/hooks/useScanResultsData';
+import { LensSummaryCard } from '@/components/scan/LensSummaryCard';
+import { useLensAnalysis } from '@/hooks/useLensAnalysis';
+import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 
 interface SummaryTabProps {
   jobId: string;
@@ -15,11 +17,24 @@ interface SummaryTabProps {
     unknown: any[];
   };
   resultsCount: number;
+  results: ScanResult[];
 }
 
-export function SummaryTab({ jobId, job, grouped, resultsCount }: SummaryTabProps) {
+export function SummaryTab({ jobId, job, grouped, resultsCount, results }: SummaryTabProps) {
+  // LENS Analysis
+  const lensAnalysis = useLensAnalysis(results);
+
   return (
     <div className="space-y-6">
+      {/* LENS Summary at top */}
+      <LensSummaryCard
+        overallScore={lensAnalysis.overallScore}
+        highConfidence={lensAnalysis.highConfidence}
+        moderateConfidence={lensAnalysis.moderateConfidence}
+        lowConfidence={lensAnalysis.lowConfidence}
+        totalFindings={resultsCount}
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main analysis content */}
         <div className="lg:col-span-2 space-y-6">
