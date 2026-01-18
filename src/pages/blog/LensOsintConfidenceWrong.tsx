@@ -8,32 +8,26 @@ import { Link } from "react-router-dom";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { getBlogHeroImage } from "@/lib/blogImages";
-
 export default function LensOsintConfidenceWrong() {
   const breadcrumbs = {
     "@context": "https://schema.org" as const,
     "@type": "BreadcrumbList" as const,
-    itemListElement: [
-      {
-        "@type": "ListItem" as const,
-        position: 1,
-        name: "Home",
-        item: "https://footprintiq.app"
-      },
-      {
-        "@type": "ListItem" as const,
-        position: 2,
-        name: "Blog",
-        item: "https://footprintiq.app/blog"
-      },
-      {
-        "@type": "ListItem" as const,
-        position: 3,
-        name: "Why Most OSINT Tools Get Confidence Wrong"
-      }
-    ]
+    itemListElement: [{
+      "@type": "ListItem" as const,
+      position: 1,
+      name: "Home",
+      item: "https://footprintiq.app"
+    }, {
+      "@type": "ListItem" as const,
+      position: 2,
+      name: "Blog",
+      item: "https://footprintiq.app/blog"
+    }, {
+      "@type": "ListItem" as const,
+      position: 3,
+      name: "Why Most OSINT Tools Get Confidence Wrong"
+    }]
   };
-
   const articleSchema = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
@@ -49,26 +43,17 @@ export default function LensOsintConfidenceWrong() {
     publisher: organizationSchema,
     keywords: "OSINT confidence, false positives, LENS, digital intelligence, evidence analysis"
   };
-
-  return (
-    <div className="min-h-screen flex flex-col">
-      <SEO 
-        title="Why Most OSINT Tools Get Confidence Wrong | FootprintIQ"
-        description="Learn why binary OSINT results mislead investigators and how probabilistic confidence scoring provides more reliable intelligence."
-        canonical="https://footprintiq.app/blog/lens-osint-confidence-wrong"
-        ogImage={getBlogHeroImage("lens-osint-confidence-wrong")}
-        article={{
-          publishedTime: "2026-01-16T09:00:00Z",
-          modifiedTime: "2026-01-16T09:00:00Z",
-          author: "FootprintIQ",
-          tags: ["LENS", "OSINT", "Confidence Scoring"]
-        }}
-        schema={{
-          organization: organizationSchema,
-          breadcrumbs: breadcrumbs,
-          custom: articleSchema
-        }}
-      />
+  return <div className="min-h-screen flex flex-col">
+      <SEO title="Why Most OSINT Tools Get Confidence Wrong | FootprintIQ" description="Learn why binary OSINT results mislead investigators and how probabilistic confidence scoring provides more reliable intelligence." canonical="https://footprintiq.app/blog/lens-osint-confidence-wrong" ogImage={getBlogHeroImage("lens-osint-confidence-wrong")} article={{
+      publishedTime: "2026-01-16T09:00:00Z",
+      modifiedTime: "2026-01-16T09:00:00Z",
+      author: "FootprintIQ",
+      tags: ["LENS", "OSINT", "Confidence Scoring"]
+    }} schema={{
+      organization: organizationSchema,
+      breadcrumbs: breadcrumbs,
+      custom: articleSchema
+    }} />
       <Header />
       
       <main className="flex-1">
@@ -87,9 +72,9 @@ export default function LensOsintConfidenceWrong() {
                 <Badge variant="outline">Confidence Scoring</Badge>
                 <span className="text-sm text-muted-foreground">10 min read</span>
               </div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
-                Why Most OSINT Tools Get Confidence Wrong
-              </h1>
+              <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">Why Most OSINT Tools Get Confidence Wrong
+
+            </h1>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <time dateTime="2026-01-16">January 16, 2026</time>
                 <span>•</span>
@@ -99,12 +84,7 @@ export default function LensOsintConfidenceWrong() {
 
             {/* Featured Image */}
             <div className="mb-12 rounded-2xl overflow-hidden shadow-2xl">
-              <img 
-                src={getBlogHeroImage("lens-osint-confidence-wrong")} 
-                alt="LENS Confidence Scoring - Beyond Binary Results"
-                className="w-full h-auto"
-                loading="eager"
-              />
+              <img src={getBlogHeroImage("lens-osint-confidence-wrong")} alt="LENS Confidence Scoring - Beyond Binary Results" className="w-full h-auto" loading="eager" />
             </div>
 
             {/* Introduction */}
@@ -399,6 +379,5 @@ export default function LensOsintConfidenceWrong() {
       </main>
       
       <Footer />
-    </div>
-  );
+    </div>;
 }
