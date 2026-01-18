@@ -215,6 +215,7 @@ const WhichDataMatters = lazy(() => import("./pages/WhichDataMatters"));
 const StayPrivateOnline = lazy(() => import("./pages/StayPrivateOnline"));
 const AIAnswersHub = lazy(() => import("./pages/AIAnswersHub"));
 const AboutFootprintIQ = lazy(() => import("./pages/AboutFootprintIQ"));
+const EditorialEthicsPolicy = lazy(() => import("./pages/EditorialEthicsPolicy"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -480,6 +481,7 @@ function RouterContent() {
           <Route path="/stay-private-online" element={<StayPrivateOnline />} />
           <Route path="/ai-answers-hub" element={<AIAnswersHub />} />
           <Route path="/about-footprintiq" element={<AboutFootprintIQ />} />
+          <Route path="/editorial-ethics-policy" element={<EditorialEthicsPolicy />} />
           <Route path="/integrations" element={<div className="container mx-auto py-8"><h1 className="text-3xl">Integrations coming soon</h1></div>} />
         
           {/* Workspace & Collaboration Routes */}
