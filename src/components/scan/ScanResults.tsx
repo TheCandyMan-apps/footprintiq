@@ -389,7 +389,11 @@ export function ScanResults({ jobId }: ScanResultsProps) {
 
               <TabsContent value="timeline" className="mt-0">
                 <Suspense fallback={<TabSkeleton />}>
-                  <TimelineTab scanId={jobId} />
+                  <TimelineTab 
+                    scanId={jobId} 
+                    results={results} 
+                    username={job.username}
+                  />
                 </Suspense>
               </TabsContent>
 
