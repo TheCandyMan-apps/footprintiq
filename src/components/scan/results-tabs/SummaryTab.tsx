@@ -4,10 +4,9 @@ import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 
 import { IdentitySnapshotCard } from './summary/IdentitySnapshotCard';
-import { TopSignalsList, generateSignals } from './summary/TopSignalsList';
+import { InsightsSection, generateInsights } from './summary/InsightsSection';
 import { CompactStatsCard } from './summary/CompactStatsCard';
 import { ProfileImagesStrip } from './summary/ProfileImagesStrip';
-import { RecommendedActionsCard } from './summary/RecommendedActionsCard';
 import { SummaryToolbar } from './summary/SummaryToolbar';
 
 interface SummaryTabProps {
@@ -55,26 +54,15 @@ function generateSummary(
   const total = found + claimed;
   
   if (total === 0) {
-    return `We searched for "${username}" across multiple platforms and didn't find any matching accounts. This could mean the username is unique, rarely used online, or spelled differently on various services.`;
+    return `No matching accounts found for "${username}". The username may be unique or spelled differently on various services.`;
   }
 
-  let summary = `We found ${total} account${total !== 1 ? 's' : ''} for "${username}" across ${platforms} platform${platforms !== 1 ? 's' : ''}. `;
+  let summary = `Found ${total} account${total !== 1 ? 's' : ''} across ${platforms} platform${platforms !== 1 ? 's' : ''}. `;
   
-  if (found > 0) {
-    summary += `${found} confirmed active. `;
-  }
+  if (found > 0) summary += `${found} confirmed active. `;
+  if (breaches > 0) summary += `${breaches} potential exposure${breaches !== 1 ? 's' : ''}.`;
 
-  if (breaches > 0) {
-    summary += `${breaches} potential data exposure${breaches !== 1 ? 's' : ''} detected. `;
-  }
-
-  if (lensScore >= 80) {
-    summary += `High confidence in findings.`;
-  } else if (lensScore >= 60) {
-    summary += `Some results may benefit from manual verification.`;
-  }
-
-  return summary;
+  return summary.trim();
 }
 
 // Calculate reuse score based on username consistency
@@ -116,22 +104,22 @@ export function SummaryTab({ jobId, job, grouped, resultsCount, results }: Summa
     [job?.username, grouped, breachCount, platforms.length, lensAnalysis.overallScore]
   );
 
-  const signals = useMemo(() => 
-    generateSignals(
+  const insights = useMemo(() => 
+    generateInsights(
       grouped.found.length,
       grouped.claimed.length,
       breachCount,
       platforms.length,
-      reuseScore
+      reuseScore,
+      lensAnalysis.overallScore
     ),
-    [grouped.found.length, grouped.claimed.length, breachCount, platforms.length, reuseScore]
+    [grouped.found.length, grouped.claimed.length, breachCount, platforms.length, reuseScore, lensAnalysis.overallScore]
   );
 
-  // Extract potential aliases from results (e.g., variations found)
+  // Extract potential aliases from results
   const aliases = useMemo(() => {
     const aliasSet = new Set<string>();
     results.forEach(r => {
-      // Use type assertion since meta can have various shapes
       const meta = (r.meta || r.metadata || {}) as Record<string, unknown>;
       if (meta.display_name && typeof meta.display_name === 'string' && meta.display_name !== job?.username) {
         aliasSet.add(meta.display_name);
@@ -144,93 +132,65 @@ export function SummaryTab({ jobId, job, grouped, resultsCount, results }: Summa
   }, [results, job?.username]);
 
   const handleRescan = () => {
-    // Navigate to scan page with pre-filled username
     window.location.href = `/scan/usernames?q=${encodeURIComponent(job?.username || '')}`;
   };
 
   const handleExport = () => {
-    // Trigger export - this would typically use a toast or modal
     console.log('Export triggered for job:', jobId);
   };
 
   return (
-    <div className="space-y-4">
-      {/* Above the fold: 8-col left + 4-col right */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left Column - 8 cols */}
-        <div className="lg:col-span-8 space-y-4">
-          {/* Identity Snapshot */}
+    <div className="space-y-3">
+      {/* Row 1: Identity + Stats side by side */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        {/* Left: Identity Snapshot + Summary */}
+        <div className="lg:col-span-8 space-y-3">
           <IdentitySnapshotCard
             searchedValue={job?.username || 'Unknown'}
             scanType="username"
             aliases={aliases}
             overallScore={lensAnalysis.overallScore}
           />
-
-          {/* What we found paragraph */}
-          <Card className="border-border/50">
-            <CardContent className="p-4">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                What We Found
-              </h4>
-              <p className="text-sm text-foreground/90 leading-relaxed">
-                {summary}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Top Signals */}
-          <Card className="border-border/50">
-            <CardContent className="p-4">
-              <TopSignalsList signals={signals} maxItems={5} />
-            </CardContent>
-          </Card>
+          
+          {/* Brief summary inline */}
+          <p className="text-sm text-muted-foreground px-1 leading-relaxed">
+            {summary}
+          </p>
         </div>
 
-        {/* Right Column - 4 cols */}
-        <div className="lg:col-span-4 space-y-4">
-          {/* Compact Stats */}
+        {/* Right: Stats + Images */}
+        <div className="lg:col-span-4 space-y-3">
           <CompactStatsCard
             accountsFound={grouped.found.length}
             platformsChecked={platforms.length}
             breachExposure={breachCount}
             reuseSignals={reuseScore}
           />
-
-          {/* Profile Images Strip */}
-          <Card className="border-border/50">
-            <CardContent className="p-4">
+          
+          {profileImages.length > 0 && (
+            <div className="px-1">
               <ProfileImagesStrip images={profileImages} maxImages={6} />
-            </CardContent>
-          </Card>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Below the fold */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Recommended Actions - spans 8 cols */}
-        <div className="lg:col-span-8">
-          <RecommendedActionsCard
-            breachCount={breachCount}
-            foundCount={grouped.found.length}
-            claimedCount={grouped.claimed.length}
-          />
-        </div>
+      {/* Row 2: Insights Section (replaces large cards) */}
+      <Card className="border-border/50">
+        <CardContent className="p-4">
+          <InsightsSection insights={insights} maxVisible={5} />
+        </CardContent>
+      </Card>
 
-        {/* Toolbar - spans 4 cols */}
-        <div className="lg:col-span-4">
-          <Card className="border-border/50 bg-muted/20">
-            <CardContent className="p-4">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
-                Actions
-              </h4>
-              <SummaryToolbar 
-                onRescan={handleRescan}
-                onExport={handleExport}
-              />
-            </CardContent>
-          </Card>
-        </div>
+      {/* Row 3: Compact Actions Toolbar */}
+      <div className="flex items-center justify-between py-2 px-1 border-t border-border/50">
+        <span className="text-xs text-muted-foreground">
+          {resultsCount} results analyzed
+        </span>
+        <SummaryToolbar 
+          onRescan={handleRescan}
+          onExport={handleExport}
+        />
       </div>
     </div>
   );
