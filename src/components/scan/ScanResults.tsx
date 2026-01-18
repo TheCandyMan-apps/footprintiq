@@ -9,10 +9,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useScanResultsData, ScanJob } from '@/hooks/useScanResultsData';
 import { exportResultsToJSON, exportResultsToCSV } from '@/utils/exporters';
+import { generateInvestigationReport } from '@/lib/investigationReportPDF';
 import { ScanProgress } from './ScanProgress';
 import { ResultsTabBar } from './ResultsTabBar';
 import { TabSkeleton } from './results-tabs/TabSkeleton';
-import { Loader2, FileJson, FileSpreadsheet, Shield } from 'lucide-react';
+import { Loader2, FileJson, FileSpreadsheet, Shield, FileText } from 'lucide-react';
 
 // Lazy load tab components for performance
 const SummaryTab = lazy(() => import('./results-tabs/SummaryTab'));
@@ -268,7 +269,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
               <p className="text-sm text-destructive mt-2">{job.error}</p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               size="sm"
@@ -290,6 +291,30 @@ export function ScanResults({ jobId }: ScanResultsProps) {
               <FileSpreadsheet className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">CSV</span>
               <span className="sm:hidden">CSV</span>
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => {
+                generateInvestigationReport({
+                  job,
+                  results,
+                  grouped,
+                  tabCounts,
+                  breachResults,
+                  geoLocations,
+                });
+                toast({
+                  title: 'Report Generated',
+                  description: 'Your PDF investigation report is downloading.',
+                });
+              }}
+              disabled={results.length === 0}
+              className="text-xs sm:text-sm"
+            >
+              <FileText className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">PDF Report</span>
+              <span className="sm:hidden">PDF</span>
             </Button>
           </div>
         </div>
