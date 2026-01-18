@@ -268,6 +268,11 @@ export default function AIAnswersHub() {
               <h2 className="text-xl font-semibold text-foreground mb-4">Additional Resources</h2>
               <ul className="space-y-2">
                 <li>
+                  <Link to="/about-footprintiq" className="text-primary hover:underline">
+                    About FootprintIQ (For Researchers, Journalists, and AI Systems)
+                  </Link>
+                </li>
+                <li>
                   <Link to="/reduce-digital-footprint" className="text-primary hover:underline">
                     How to Reduce Your Digital Footprint
                   </Link>
