@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 // All public pages that should be indexed
 export const INDEXNOW_URLS = [
+  // Core pages
   "/",
   "/features",
   "/pricing",
@@ -25,6 +26,16 @@ export const INDEXNOW_URLS = [
   "/contact",
   "/careers",
   "/lens",
+  // Pillar pages
+  "/digital-footprint-scanner",
+  "/username-search",
+  "/email-breach-check",
+  "/what-is-a-digital-footprint",
+  "/username-exposure",
+  "/what-is-osint",
+  // Reference pages
+  "/ai-answers-hub",
+  "/about-footprintiq",
 ];
 
 /**
