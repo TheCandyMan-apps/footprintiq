@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef, lazy, Suspense } from 'react';
+import { useEffect, useState, useRef, lazy, Suspense, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,11 +26,34 @@ interface ScanResultsProps {
   jobId: string;
 }
 
+const VALID_TABS = ['summary', 'accounts', 'connections', 'timeline', 'breaches', 'map'] as const;
+type TabValue = typeof VALID_TABS[number];
+
 export function ScanResults({ jobId }: ScanResultsProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [job, setJob] = useState<ScanJob | null>(null);
   const [jobLoading, setJobLoading] = useState(true);
   const [broadcastResultCount, setBroadcastResultCount] = useState(0);
   const { toast } = useToast();
+
+  // Get initial tab from URL or default to 'summary'
+  const tabFromUrl = searchParams.get('tab') as TabValue | null;
+  const initialTab = tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'summary';
+  const [activeTab, setActiveTab] = useState<TabValue>(initialTab);
+
+  // Update URL when tab changes
+  const handleTabChange = useCallback((value: string) => {
+    const newTab = value as TabValue;
+    setActiveTab(newTab);
+    
+    // Update URL without full page reload
+    if (newTab === 'summary') {
+      searchParams.delete('tab');
+    } else {
+      searchParams.set('tab', newTab);
+    }
+    setSearchParams(searchParams, { replace: true });
+  }, [searchParams, setSearchParams]);
   const jobChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const progressChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
@@ -308,7 +332,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
             </p>
           </div>
         ) : (
-          <Tabs defaultValue="summary" className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             {/* Sticky Tab Bar */}
             <ResultsTabBar tabCounts={tabCounts} hasGeoData={hasGeoData} />
 
