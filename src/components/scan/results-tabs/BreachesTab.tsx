@@ -3,13 +3,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, Calendar, Database, Info } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
+import { 
+  RESULTS_SPACING, 
+  RESULTS_TYPOGRAPHY, 
+  RESULTS_BORDERS,
+  RESULTS_BACKGROUNDS 
+} from './styles';
 
 interface BreachesTabProps {
   results: ScanResult[];
   breachResults: any[];
 }
 
-// Map data types to plain-language descriptions
 const getDataTypeLabel = (dataType: string): string => {
   const labels: Record<string, string> = {
     'email': 'Email addresses',
@@ -28,7 +33,6 @@ const getDataTypeLabel = (dataType: string): string => {
   return labels[dataType.toLowerCase()] || dataType.replace(/_/g, ' ');
 };
 
-// Generate plain-language impact explanation
 const getImpactExplanation = (dataTypes: string[]): string => {
   const hasPassword = dataTypes.some(t => t.toLowerCase().includes('password'));
   const hasEmail = dataTypes.some(t => t.toLowerCase().includes('email'));
@@ -44,24 +48,23 @@ const getImpactExplanation = (dataTypes: string[]): string => {
   );
 
   if (hasFinancial) {
-    return 'This breach included financial data. Review your accounts for unauthorized activity and consider placing a fraud alert.';
+    return 'Financial data included. Review accounts for unauthorized activity.';
   }
   if (hasPassword && hasEmail) {
-    return 'Your email and password combination may have been exposed. Update your password for this service and any others where you used the same credentials.';
+    return 'Email and password may be exposed. Update passwords immediately.';
   }
   if (hasPassword) {
-    return 'Password data was included. If you reused this password elsewhere, consider updating those accounts as well.';
+    return 'Password data included. Update this and any reused passwords.';
   }
   if (hasPII) {
-    return 'Personal identifying information was included. Be alert to potential phishing attempts using this data.';
+    return 'Personal info included. Watch for phishing attempts.';
   }
   if (hasEmail) {
-    return 'Your email address was included. You may receive more spam or phishing emails as a result.';
+    return 'Email address included. Expect potential spam or phishing.';
   }
-  return 'Some of your data was included in this breach. Review the exposed data types and take appropriate precautions.';
+  return 'Some data was exposed. Review and take precautions.';
 };
 
-// Extract year from breach data
 const extractYear = (breach: any): string | null => {
   if (breach.meta?.breach_date) {
     const year = new Date(breach.meta.breach_date).getFullYear();
@@ -69,12 +72,10 @@ const extractYear = (breach: any): string | null => {
   }
   if (breach.meta?.year) return breach.meta.year.toString();
   if (breach.year) return breach.year.toString();
-  // Try to extract year from description or name
   const yearMatch = (breach.site || breach.provider || '').match(/\b(20\d{2}|19\d{2})\b/);
   return yearMatch ? yearMatch[1] : null;
 };
 
-// Extract data types from breach
 const extractDataTypes = (breach: any): string[] => {
   if (Array.isArray(breach.meta?.data_classes)) return breach.meta.data_classes;
   if (Array.isArray(breach.meta?.dataTypes)) return breach.meta.dataTypes;
@@ -86,7 +87,6 @@ const extractDataTypes = (breach: any): string[] => {
 };
 
 export function BreachesTab({ results, breachResults }: BreachesTabProps) {
-  // Process breach data for display
   const processedBreaches = useMemo(() => {
     return breachResults.map((breach, idx) => ({
       id: breach.id || idx,
@@ -99,22 +99,20 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
 
   const totalBreaches = processedBreaches.length;
 
-  // Empty state - reassuring message
+  // Empty state
   if (totalBreaches === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-6">
-          <ShieldCheck className="w-8 h-8 text-green-500" />
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
+          <ShieldCheck className="w-6 h-6 text-green-500" />
         </div>
-        <h3 className="text-xl font-semibold mb-2">No Breaches Found</h3>
-        <p className="text-muted-foreground text-center max-w-md">
-          Good news — we didn't find this identity in any known data breaches. 
-          This doesn't guarantee complete safety, but it's a positive sign.
+        <h3 className={RESULTS_TYPOGRAPHY.cardTitle}>No Breaches Found</h3>
+        <p className={`${RESULTS_TYPOGRAPHY.caption} max-w-sm text-center mt-1`}>
+          Good news — no known data breaches detected for this identity.
         </p>
-        <div className="mt-6 p-4 bg-muted/50 rounded-lg max-w-md">
-          <p className="text-sm text-muted-foreground text-center">
-            We check against known breach databases. New breaches are discovered regularly, 
-            so periodic monitoring is recommended.
+        <div className={`mt-4 ${RESULTS_SPACING.cardPadding} ${RESULTS_BACKGROUNDS.muted} rounded-lg max-w-sm`}>
+          <p className={`${RESULTS_TYPOGRAPHY.captionMuted} text-center`}>
+            We check against known breach databases. New breaches are discovered regularly.
           </p>
         </div>
       </div>
@@ -122,69 +120,63 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={RESULTS_SPACING.contentMargin}>
       {/* Header summary */}
-      <div className="flex items-center gap-3 p-4 bg-muted/30 rounded-lg">
-        <Info className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-        <p className="text-sm text-muted-foreground">
-          Found <span className="font-medium text-foreground">{totalBreaches}</span> breach{totalBreaches !== 1 ? 'es' : ''} associated with this identity. 
-          Review each entry and consider updating credentials where applicable.
+      <div className={`flex items-center gap-2 py-2 px-3 ${RESULTS_BACKGROUNDS.muted} rounded-md`}>
+        <Info className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        <p className={RESULTS_TYPOGRAPHY.caption}>
+          <span className="font-medium text-foreground">{totalBreaches}</span> breach{totalBreaches !== 1 ? 'es' : ''} found. 
+          Review and update credentials where applicable.
         </p>
       </div>
 
       {/* Breach cards */}
-      <div className="space-y-4">
+      <div className={RESULTS_SPACING.contentMarginSm}>
         {processedBreaches.map((breach) => (
-          <Card key={breach.id} className="overflow-hidden">
+          <Card key={breach.id} className={RESULTS_BORDERS.cardBorder}>
             <CardContent className="p-0">
-              {/* Card header */}
-              <div className="p-4 border-b border-border/50">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-base truncate">
-                      {breach.name}
-                    </h3>
-                    {breach.year && (
-                      <div className="flex items-center gap-1.5 mt-1 text-sm text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>{breach.year}</span>
-                      </div>
-                    )}
+              {/* Header */}
+              <div className={`${RESULTS_SPACING.cardPadding} border-b ${RESULTS_BORDERS.divider}`}>
+                <h3 className={`${RESULTS_TYPOGRAPHY.cardTitle} truncate`}>
+                  {breach.name}
+                </h3>
+                {breach.year && (
+                  <div className={`flex items-center gap-1.5 mt-1 ${RESULTS_TYPOGRAPHY.caption}`}>
+                    <Calendar className="h-3 w-3" />
+                    <span>{breach.year}</span>
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* Data types exposed */}
+              {/* Data types */}
               {breach.dataTypes.length > 0 && (
-                <div className="px-4 py-3 border-b border-border/50 bg-muted/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Database className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Data Exposed
-                    </span>
+                <div className={`px-3 py-2 border-b ${RESULTS_BORDERS.divider} ${RESULTS_BACKGROUNDS.subtle}`}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Database className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className={RESULTS_TYPOGRAPHY.sectionTitle}>Data Exposed</span>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {breach.dataTypes.slice(0, 8).map((dataType, idx) => (
+                  <div className="flex flex-wrap gap-1">
+                    {breach.dataTypes.slice(0, 6).map((dataType, idx) => (
                       <Badge 
                         key={idx} 
                         variant="secondary"
-                        className="text-xs font-normal"
+                        className="text-[10px] font-normal h-5 px-1.5"
                       >
                         {getDataTypeLabel(dataType)}
                       </Badge>
                     ))}
-                    {breach.dataTypes.length > 8 && (
-                      <Badge variant="outline" className="text-xs font-normal">
-                        +{breach.dataTypes.length - 8} more
+                    {breach.dataTypes.length > 6 && (
+                      <Badge variant="outline" className="text-[10px] font-normal h-5 px-1.5">
+                        +{breach.dataTypes.length - 6}
                       </Badge>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Impact explanation */}
-              <div className="p-4 bg-muted/10">
-                <p className="text-sm text-muted-foreground leading-relaxed">
+              {/* Impact */}
+              <div className={`${RESULTS_SPACING.cardPadding} ${RESULTS_BACKGROUNDS.subtle}`}>
+                <p className={RESULTS_TYPOGRAPHY.caption}>
                   {getImpactExplanation(breach.dataTypes)}
                 </p>
               </div>
@@ -193,21 +185,21 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
         ))}
       </div>
 
-      {/* Practical next steps */}
-      <Card className="p-4 bg-primary/5 border-primary/20">
-        <h4 className="font-medium text-sm mb-3">Practical Next Steps</h4>
-        <ul className="text-sm text-muted-foreground space-y-2">
+      {/* Next steps */}
+      <Card className={`${RESULTS_SPACING.cardPadding} bg-primary/5 ${RESULTS_BORDERS.cardBorder}`}>
+        <h4 className={`${RESULTS_TYPOGRAPHY.sectionTitle} mb-2`}>Next Steps</h4>
+        <ul className={`${RESULTS_TYPOGRAPHY.caption} space-y-1.5`}>
           <li className="flex items-start gap-2">
             <span className="text-primary font-medium">1.</span>
-            Update passwords for any affected services, using unique passwords for each.
+            Update passwords for affected services.
           </li>
           <li className="flex items-start gap-2">
             <span className="text-primary font-medium">2.</span>
-            Enable two-factor authentication where available for additional security.
+            Enable two-factor authentication.
           </li>
           <li className="flex items-start gap-2">
             <span className="text-primary font-medium">3.</span>
-            Monitor your accounts for any unusual activity over the coming weeks.
+            Monitor accounts for unusual activity.
           </li>
         </ul>
       </Card>

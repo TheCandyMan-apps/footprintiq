@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User } from 'lucide-react';
 import { LensConfidenceBadge } from '@/components/scan/LensConfidenceBadge';
-import { cn } from '@/lib/utils';
+import { RESULTS_SPACING, RESULTS_TYPOGRAPHY, RESULTS_BORDERS } from '../styles';
 
 interface IdentitySnapshotCardProps {
   searchedValue: string;
@@ -20,15 +20,15 @@ export function IdentitySnapshotCard({
   const typeLabel = scanType === 'email' ? 'Email' : scanType === 'phone' ? 'Phone' : 'Username';
   
   return (
-    <Card className="border-border/50">
-      <CardContent className="p-4">
+    <Card className={RESULTS_BORDERS.cardBorder}>
+      <CardContent className={RESULTS_SPACING.cardPadding}>
         <div className="flex items-start gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 border border-primary/20 shrink-0">
-            <User className="w-5 h-5 text-primary" />
+          <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/10 border border-primary/20 shrink-0">
+            <User className="w-4 h-4 text-primary" />
           </div>
-          <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex-1 min-w-0 space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge variant="secondary" className="text-xs font-normal px-2 py-0.5">
+              <Badge variant="secondary" className="text-[10px] font-normal px-1.5 py-0 h-5">
                 {typeLabel}
               </Badge>
               <LensConfidenceBadge 
@@ -37,7 +37,7 @@ export function IdentitySnapshotCard({
                 size="sm"
               />
             </div>
-            <p className="font-semibold text-base truncate" title={searchedValue}>
+            <p className={`${RESULTS_TYPOGRAPHY.cardTitle} truncate`} title={searchedValue}>
               {searchedValue}
             </p>
             {aliases.length > 0 && (
@@ -46,13 +46,13 @@ export function IdentitySnapshotCard({
                   <Badge 
                     key={idx} 
                     variant="outline" 
-                    className="text-xs font-normal px-1.5 py-0 h-5 bg-muted/50"
+                    className="text-[10px] font-normal px-1.5 py-0 h-5 bg-muted/50"
                   >
                     {alias}
                   </Badge>
                 ))}
                 {aliases.length > 5 && (
-                  <Badge variant="outline" className="text-xs font-normal px-1.5 py-0 h-5">
+                  <Badge variant="outline" className="text-[10px] font-normal px-1.5 py-0 h-5">
                     +{aliases.length - 5}
                   </Badge>
                 )}

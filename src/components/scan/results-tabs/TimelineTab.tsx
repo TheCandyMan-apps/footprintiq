@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { 
-  Calendar, Clock, AlertTriangle, User, Shield, 
+  Calendar, Clock, User, Shield, 
   Activity, Eye, Lock, Info, ChevronDown, ChevronUp,
   Download, Filter
 } from 'lucide-react';
@@ -12,6 +12,13 @@ import { ScanResult } from '@/hooks/useScanResultsData';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { 
+  RESULTS_SPACING, 
+  RESULTS_TYPOGRAPHY, 
+  RESULTS_BORDERS,
+  RESULTS_BACKGROUNDS,
+  RESULTS_SEMANTIC_COLORS 
+} from './styles';
 
 interface TimelineTabProps {
   scanId: string;
@@ -34,25 +41,25 @@ interface TimelineEvent {
   metadata?: Record<string, any>;
 }
 
-const EVENT_CONFIG: Record<TimelineEventType, { icon: typeof Calendar; color: string; label: string }> = {
+const EVENT_CONFIG: Record<TimelineEventType, { icon: typeof Calendar; colors: { bg: string; text: string; border: string }; label: string }> = {
   account_created: {
     icon: User,
-    color: 'text-green-600 bg-green-500/10 border-green-500/20',
+    colors: { bg: 'bg-green-500/10', text: 'text-green-600', border: 'border-green-500/20' },
     label: 'Account Created'
   },
   last_activity: {
     icon: Activity,
-    color: 'text-blue-600 bg-blue-500/10 border-blue-500/20',
+    colors: { bg: 'bg-blue-500/10', text: 'text-blue-600', border: 'border-blue-500/20' },
     label: 'Last Activity'
   },
   breach_detected: {
     icon: Shield,
-    color: 'text-red-600 bg-red-500/10 border-red-500/20',
+    colors: { bg: 'bg-red-500/10', text: 'text-red-600', border: 'border-red-500/20' },
     label: 'Breach Detected'
   },
   profile_updated: {
     icon: Eye,
-    color: 'text-purple-600 bg-purple-500/10 border-purple-500/20',
+    colors: { bg: 'bg-purple-500/10', text: 'text-purple-600', border: 'border-purple-500/20' },
     label: 'Profile Updated'
   }
 };
@@ -393,7 +400,7 @@ export function TimelineTab({ scanId, results, username, isPremium = false }: Ti
                 variant={filter === type ? 'default' : 'outline'}
                 className={cn(
                   'cursor-pointer transition-colors gap-1.5',
-                  filter !== type && config.color
+                  filter !== type && `${config.colors.bg} ${config.colors.text} ${config.colors.border}`
                 )}
                 onClick={() => setFilter(filter === type ? 'all' : type as FilterType)}
               >
@@ -484,8 +491,8 @@ function TimelineEventCard({ event }: { event: TimelineEvent }) {
 
   return (
     <div className={cn(
-      'flex items-start gap-4 p-4 rounded-lg border',
-      config.color
+      'flex items-start gap-3 p-3 rounded-md border',
+      config.colors.bg, config.colors.text, config.colors.border
     )}>
       <div className={cn(
         'flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center',

@@ -1,6 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { BarChart3, Globe, Shield, RefreshCw, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RESULTS_SPACING, RESULTS_TYPOGRAPHY, RESULTS_BORDERS, RESULTS_BACKGROUNDS } from '../styles';
 
 interface StatRow {
   label: string;
@@ -24,52 +25,52 @@ export function CompactStatsCard({
 }: CompactStatsCardProps) {
   const stats: StatRow[] = [
     {
-      label: 'Accounts found',
+      label: 'Accounts',
       value: accountsFound,
-      icon: <BarChart3 className="w-3.5 h-3.5" />,
+      icon: <BarChart3 className="w-3 h-3" />,
     },
     {
       label: 'Platforms',
       value: platformsChecked,
-      icon: <Globe className="w-3.5 h-3.5" />,
+      icon: <Globe className="w-3 h-3" />,
     },
     {
-      label: 'Breach exposure',
+      label: 'Breaches',
       value: breachExposure > 0 ? breachExposure : '—',
-      icon: <AlertTriangle className="w-3.5 h-3.5" />,
+      icon: <AlertTriangle className="w-3 h-3" />,
       highlight: breachExposure > 0,
     },
     {
-      label: 'Reuse signals',
+      label: 'Reuse',
       value: reuseSignals > 0 ? `${reuseSignals}%` : '—',
-      icon: <RefreshCw className="w-3.5 h-3.5" />,
+      icon: <RefreshCw className="w-3 h-3" />,
     },
   ];
 
   return (
-    <Card className="border-border/50">
-      <CardHeader className="pb-2 pt-3 px-4">
-        <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-          <Shield className="w-3.5 h-3.5" />
+    <Card className={RESULTS_BORDERS.cardBorder}>
+      <CardHeader className="pb-1.5 pt-2.5 px-3">
+        <h4 className={`${RESULTS_TYPOGRAPHY.sectionTitle} flex items-center gap-1.5`}>
+          <Shield className="w-3 h-3" />
           Stats
-        </CardTitle>
+        </h4>
       </CardHeader>
-      <CardContent className="px-4 pb-3 pt-0">
+      <CardContent className="px-3 pb-2.5 pt-0">
         <div className="space-y-1">
           {stats.map((stat, idx) => (
             <div 
               key={idx}
               className={cn(
-                'flex items-center justify-between py-1.5 px-2 rounded text-sm',
-                stat.highlight ? 'bg-destructive/5' : 'bg-muted/30'
+                'flex items-center justify-between py-1 px-2 rounded text-xs',
+                stat.highlight ? 'bg-destructive/5' : RESULTS_BACKGROUNDS.muted
               )}
             >
-              <span className="flex items-center gap-2 text-muted-foreground">
+              <span className="flex items-center gap-1.5 text-muted-foreground">
                 {stat.icon}
                 {stat.label}
               </span>
               <span className={cn(
-                'font-semibold tabular-nums',
+                'font-medium tabular-nums',
                 stat.highlight && 'text-destructive'
               )}>
                 {stat.value}
