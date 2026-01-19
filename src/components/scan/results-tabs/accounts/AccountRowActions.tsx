@@ -6,13 +6,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useForensicVerification, LensVerificationResult } from '@/hooks/useForensicVerification';
-import { LensStatusBadge } from './LensStatusBadge';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { RESULTS_ACTION_CLUSTER } from '../styles';
 
 type ClaimType = 'me' | 'not_me';
 
@@ -73,7 +73,7 @@ export function AccountRowActions({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex items-center gap-1 shrink-0">
+      <div className={RESULTS_ACTION_CLUSTER.container}>
         {/* Open Link */}
         {url && (
           <Tooltip>
@@ -81,12 +81,12 @@ export function AccountRowActions({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                className={RESULTS_ACTION_CLUSTER.button}
                 asChild
                 onClick={(e) => e.stopPropagation()}
               >
                 <a href={url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-4 h-4" />
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </Button>
             </TooltipTrigger>
@@ -103,17 +103,15 @@ export function AccountRowActions({
               variant="ghost"
               size="icon"
               className={cn(
-                'h-8 w-8',
-                isFocused 
-                  ? 'bg-primary/10 text-primary' 
-                  : 'text-muted-foreground hover:text-foreground'
+                RESULTS_ACTION_CLUSTER.button,
+                isFocused && RESULTS_ACTION_CLUSTER.buttonActive
               )}
               onClick={(e) => {
                 e.stopPropagation();
                 onFocus();
               }}
             >
-              <Crosshair className="w-4 h-4" />
+              <Crosshair className="w-3.5 h-3.5" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
@@ -128,7 +126,7 @@ export function AccountRowActions({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                className={RESULTS_ACTION_CLUSTER.button}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleVerify();
@@ -136,9 +134,9 @@ export function AccountRowActions({
                 disabled={isVerifyingNow}
               >
                 {isVerifyingNow ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <Sparkles className="w-4 h-4" />
+                  <Sparkles className="w-3.5 h-3.5" />
                 )}
               </Button>
             </TooltipTrigger>
@@ -148,21 +146,19 @@ export function AccountRowActions({
           </Tooltip>
         )}
 
-        {/* Claim Toggle - Simplified */}
+        {/* Claim Toggle */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               className={cn(
-                'h-8 w-8',
+                RESULTS_ACTION_CLUSTER.button,
                 claimStatus === 'me' && 'bg-green-500/10 text-green-600',
-                claimStatus === 'not_me' && 'bg-red-500/10 text-red-600',
-                !claimStatus && 'text-muted-foreground hover:text-foreground'
+                claimStatus === 'not_me' && 'bg-red-500/10 text-red-600'
               )}
               onClick={(e) => {
                 e.stopPropagation();
-                // Cycle: null -> me -> not_me -> null
                 if (!claimStatus) handleClaimToggle('me');
                 else if (claimStatus === 'me') handleClaimToggle('not_me');
                 else onClaimChange(null);
@@ -170,11 +166,11 @@ export function AccountRowActions({
               disabled={isClaimLoading}
             >
               {isClaimLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : claimStatus === 'not_me' ? (
-                <UserX className="w-4 h-4" />
+                <UserX className="w-3.5 h-3.5" />
               ) : (
-                <UserCheck className="w-4 h-4" />
+                <UserCheck className="w-3.5 h-3.5" />
               )}
             </Button>
           </TooltipTrigger>
@@ -188,20 +184,27 @@ export function AccountRowActions({
         </Tooltip>
 
         {/* Expand */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleExpand();
-          }}
-        >
-          <ChevronRight className={cn(
-            'w-4 h-4 transition-transform',
-            isExpanded && 'rotate-90'
-          )} />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={RESULTS_ACTION_CLUSTER.button}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleExpand();
+              }}
+            >
+              <ChevronRight className={cn(
+                'w-3.5 h-3.5 transition-transform',
+                isExpanded && 'rotate-90'
+              )} />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{isExpanded ? 'Collapse' : 'Expand'}</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </TooltipProvider>
   );
