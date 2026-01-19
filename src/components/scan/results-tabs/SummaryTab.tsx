@@ -95,7 +95,7 @@ export function SummaryTab({
   }, [results, job?.username]);
 
   // Scan narrative from events
-  const narrative = useScanNarrative(jobId, job?.username || '', job?.scan_type || 'username');
+  const narrative = useScanNarrative(jobId, job?.username || '', 'username');
 
   // Key findings
   const keyFindings = useMemo(() => 
@@ -131,7 +131,7 @@ export function SummaryTab({
         <div className="lg:col-span-8 space-y-4">
           <IdentitySnapshotCard
             searchedValue={job?.username || 'Unknown'}
-            scanType={job?.scan_type || 'username'}
+            scanType="username"
             aliases={aliases}
             overallScore={lensAnalysis.overallScore}
             scanTime={job?.finished_at || job?.started_at}
