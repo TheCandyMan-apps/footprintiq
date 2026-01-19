@@ -726,10 +726,190 @@ const DigitalFootprintScanner = () => {
               </Card>
             </div>
 
-            <div className="prose prose-lg dark:prose-invert max-w-none">
+            <div className="prose prose-lg dark:prose-invert max-w-none mb-10">
               <p>
                 FootprintIQ fits the "free footprint scanner" category—we focus on awareness and education, giving you the knowledge to make informed decisions. For most people, periodic self-audits provide sufficient protection without ongoing costs.
               </p>
+            </div>
+
+            {/* FootprintIQ vs Competitors Table */}
+            <h3 className="text-xl font-semibold mb-4">FootprintIQ vs. Competitors & Data Broker Sites</h3>
+            <p className="text-muted-foreground mb-6">
+              See how FootprintIQ compares to popular alternatives and why we're different from data broker sites that profit from your information:
+            </p>
+            
+            <div className="overflow-x-auto mb-8">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[180px]">Feature</TableHead>
+                    <TableHead className="bg-primary/5">
+                      <span className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-primary" />
+                        FootprintIQ
+                      </span>
+                    </TableHead>
+                    <TableHead>Have I Been Pwned</TableHead>
+                    <TableHead>Namechk / KnowEm</TableHead>
+                    <TableHead>BeenVerified / Spokeo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Username search</TableCell>
+                    <TableCell className="bg-primary/5">
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <CheckCircle2 className="h-4 w-4" /> 500+ sites
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <XCircle className="h-4 w-4 text-muted-foreground/50" />
+                    </TableCell>
+                    <TableCell>~100 sites</TableCell>
+                    <TableCell className="text-muted-foreground">Limited</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Email breach check</TableCell>
+                    <TableCell className="bg-primary/5">
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <CheckCircle2 className="h-4 w-4" /> Yes
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1 text-primary">
+                        <CheckCircle2 className="h-4 w-4" /> Yes
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <XCircle className="h-4 w-4 text-muted-foreground/50" />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">Partial</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Phone lookup</TableCell>
+                    <TableCell className="bg-primary/5">
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <CheckCircle2 className="h-4 w-4" /> Yes
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <XCircle className="h-4 w-4 text-muted-foreground/50" />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <XCircle className="h-4 w-4 text-muted-foreground/50" />
+                    </TableCell>
+                    <TableCell>Yes (paid)</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Data broker detection</TableCell>
+                    <TableCell className="bg-primary/5">
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <CheckCircle2 className="h-4 w-4" /> Yes
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <XCircle className="h-4 w-4 text-muted-foreground/50" />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <XCircle className="h-4 w-4 text-muted-foreground/50" />
+                    </TableCell>
+                    <TableCell className="text-destructive">They ARE brokers</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Free tier</TableCell>
+                    <TableCell className="bg-primary/5">
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <CheckCircle2 className="h-4 w-4" /> Generous
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1 text-primary">
+                        <CheckCircle2 className="h-4 w-4" /> Yes
+                      </span>
+                    </TableCell>
+                    <TableCell>Limited</TableCell>
+                    <TableCell className="text-destructive">Teaser only</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Sells your data</TableCell>
+                    <TableCell className="bg-primary/5">
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <XCircle className="h-4 w-4" /> Never
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1">
+                        <XCircle className="h-4 w-4 text-primary" /> No
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1">
+                        <XCircle className="h-4 w-4 text-primary" /> No
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-destructive font-medium">
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 className="h-4 w-4" /> Yes
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Ethical OSINT focus</TableCell>
+                    <TableCell className="bg-primary/5">
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <CheckCircle2 className="h-4 w-4" /> Core principle
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 className="h-4 w-4 text-primary" /> Yes
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">Partial</TableCell>
+                    <TableCell className="text-destructive">
+                      <XCircle className="h-4 w-4" />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Risk education</TableCell>
+                    <TableCell className="bg-primary/5">
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <CheckCircle2 className="h-4 w-4" /> Detailed
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">Basic</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <XCircle className="h-4 w-4 text-muted-foreground/50" />
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      <XCircle className="h-4 w-4 text-muted-foreground/50" />
+                    </TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Unified report</TableCell>
+                    <TableCell className="bg-primary/5">
+                      <span className="flex items-center gap-1 text-primary font-medium">
+                        <CheckCircle2 className="h-4 w-4" /> All-in-one
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">Breaches only</TableCell>
+                    <TableCell className="text-muted-foreground">Usernames only</TableCell>
+                    <TableCell>Aggregated (paid)</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-6 border border-border/50">
+              <div className="flex items-start gap-3">
+                <Shield className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground mb-1">Why FootprintIQ is different</p>
+                  <p className="text-sm text-muted-foreground">
+                    Unlike data broker sites that profit by selling your information, FootprintIQ exists to give you visibility and control. We combine the best of specialized tools—username search, breach detection, and data broker awareness—into a single ethical platform that never sells your data.
+                  </p>
+                </div>
+              </div>
             </div>
           </section>
 
