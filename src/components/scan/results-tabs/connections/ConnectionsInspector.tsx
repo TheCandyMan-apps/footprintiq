@@ -3,10 +3,16 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ExternalLink, X, Link2, Image, FileText, Users, Sparkles,
-  MapPin, Calendar, User
+  MapPin, Calendar, User, Crosshair, Loader2, CheckCircle, HelpCircle, AlertCircle
 } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
+import { LensVerificationResult, useForensicVerification } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { LensStatusBadge } from '../accounts/LensStatusBadge';
+import { RESULTS_SEMANTIC_COLORS, RESULTS_ACTION_CLUSTER } from '../styles';
+
+type ClaimType = 'me' | 'not_me';
 
 interface ConnectionsInspectorProps {
   isOpen: boolean;
@@ -16,6 +22,13 @@ interface ConnectionsInspectorProps {
   categoryStats: Record<string, number>;
   connectionStats: Record<string, number>;
   totalProfiles: number;
+  scanId?: string;
+  // Investigation props
+  isFocused?: boolean;
+  onFocus?: () => void;
+  verificationResult?: LensVerificationResult | null;
+  onVerificationComplete?: (result: LensVerificationResult) => void;
+  lensScore?: number;
 }
 
 const CONNECTION_LABELS: Record<string, { label: string; icon: typeof Link2 }> = {
@@ -44,6 +57,24 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: 'Other',
 };
 
+function getMatchConfidence(score: number) {
+  if (score >= 80) return { 
+    label: 'Strong', 
+    ...RESULTS_SEMANTIC_COLORS.confidenceHigh,
+    icon: CheckCircle 
+  };
+  if (score >= 60) return { 
+    label: 'Medium', 
+    ...RESULTS_SEMANTIC_COLORS.confidenceMedium,
+    icon: HelpCircle 
+  };
+  return { 
+    label: 'Weak', 
+    ...RESULTS_SEMANTIC_COLORS.confidenceLow,
+    icon: AlertCircle 
+  };
+}
+
 export function ConnectionsInspector({
   isOpen,
   onClose,
@@ -52,8 +83,39 @@ export function ConnectionsInspector({
   categoryStats,
   connectionStats,
   totalProfiles,
+  scanId,
+  isFocused = false,
+  onFocus,
+  verificationResult,
+  onVerificationComplete,
+  lensScore = 70,
 }: ConnectionsInspectorProps) {
   const meta = (selectedProfile?.meta || selectedProfile?.metadata || {}) as Record<string, any>;
+  const profileImage = meta.avatar_url || meta.profile_image || meta.image;
+  const extractedUsername = meta.username || meta.handle || meta.screen_name;
+  
+  const { verify, isVerifying } = useForensicVerification();
+  const [localVerifying, setLocalVerifying] = useState(false);
+  
+  const handleVerify = async () => {
+    if (!selectedProfile?.url || isVerifying || localVerifying || !scanId) return;
+    
+    setLocalVerifying(true);
+    const result = await verify({ 
+      url: selectedProfile.url, 
+      platform: selectedProfile.site || 'Unknown', 
+      scanId, 
+      findingId: selectedProfile.id 
+    });
+    if (result && onVerificationComplete) {
+      onVerificationComplete(result);
+    }
+    setLocalVerifying(false);
+  };
+  
+  const isVerifyingNow = isVerifying || localVerifying;
+  const confidence = getMatchConfidence(lensScore);
+  const ConfidenceIcon = confidence.icon;
 
   return (
     <div
@@ -66,7 +128,9 @@ export function ConnectionsInspector({
         <div className="w-72 h-full flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-3 border-b border-border">
-            <span className="text-sm font-medium">Inspector</span>
+            <span className="text-sm font-medium">
+              {selectedProfile ? 'Node Details' : 'Inspector'}
+            </span>
             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={onClose}>
               <X className="h-3.5 w-3.5" />
             </Button>
@@ -76,60 +140,158 @@ export function ConnectionsInspector({
             <div className="p-3 space-y-4">
               {selectedProfile ? (
                 <>
-                  {/* Selected Node Details */}
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Selected Node
-                    </h4>
-                    <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+                  {/* Profile Header with Image */}
+                  <div className="flex items-center gap-3">
+                    {profileImage ? (
+                      <img 
+                        src={profileImage} 
+                        alt=""
+                        className="w-12 h-12 rounded-full object-cover border border-border shadow-sm"
+                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center border border-border">
+                        <span className="text-sm font-semibold text-primary">
+                          {(selectedProfile.site || 'UN').slice(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <div 
-                          className="w-3 h-3 rounded-full" 
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0" 
                           style={{ backgroundColor: CATEGORY_COLORS[categorizePlatform(selectedProfile.site || '')] }}
                         />
-                        <span className="font-medium text-sm">{selectedProfile.site}</span>
+                        <span className="font-semibold text-sm truncate">{selectedProfile.site}</span>
                       </div>
-                      
-                      {meta.bio && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {meta.bio}
-                        </p>
+                      {extractedUsername && (
+                        <span className="text-xs text-muted-foreground">@{extractedUsername}</span>
                       )}
+                    </div>
+                  </div>
 
+                  {/* Confidence + LENS Badge */}
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant="outline" 
+                      className={cn(
+                        'h-6 px-2 gap-1 text-xs font-medium',
+                        confidence.bg, 
+                        confidence.text, 
+                        confidence.border
+                      )}
+                    >
+                      <ConfidenceIcon className="w-3 h-3" />
+                      {confidence.label}
+                    </Badge>
+                    {verificationResult && (
+                      <LensStatusBadge 
+                        status={null}
+                        score={verificationResult.confidenceScore}
+                        compact={false}
+                      />
+                    )}
+                  </div>
+
+                  {/* Key Fields */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Key Fields
+                    </h4>
+                    <div className="p-2.5 rounded-lg bg-muted/40 space-y-2">
+                      {meta.bio && (
+                        <div>
+                          <span className="text-[10px] text-muted-foreground uppercase">Bio</span>
+                          <p className="text-xs line-clamp-3">{meta.bio}</p>
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-1.5">
-                        {meta.followers && (
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <User className="w-3 h-3" />
-                            {meta.followers}
+                        {meta.followers !== undefined && (
+                          <Badge variant="outline" className="text-[10px] gap-1 h-5">
+                            <User className="w-2.5 h-2.5" />
+                            {meta.followers.toLocaleString()}
                           </Badge>
                         )}
                         {meta.location && (
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <MapPin className="w-3 h-3" />
+                          <Badge variant="outline" className="text-[10px] gap-1 h-5">
+                            <MapPin className="w-2.5 h-2.5" />
                             {meta.location}
                           </Badge>
                         )}
-                        {meta.created_at && (
-                          <Badge variant="outline" className="text-xs gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(meta.created_at).getFullYear()}
+                        {(meta.created_at || meta.joined) && (
+                          <Badge variant="outline" className="text-[10px] gap-1 h-5">
+                            <Calendar className="w-2.5 h-2.5" />
+                            {meta.joined || new Date(meta.created_at).getFullYear()}
                           </Badge>
                         )}
                       </div>
+                      {!meta.bio && !meta.followers && !meta.location && (
+                        <p className="text-xs text-muted-foreground/60 italic">No metadata available</p>
+                      )}
+                    </div>
+                  </div>
 
+                  {/* Actions */}
+                  <div className="space-y-2">
+                    <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Actions
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {onFocus && (
+                        <Button
+                          variant={isFocused ? "default" : "outline"}
+                          size="sm"
+                          className="flex-1 gap-1.5 text-xs h-8"
+                          onClick={onFocus}
+                        >
+                          <Crosshair className="w-3.5 h-3.5" />
+                          {isFocused ? 'Focused' : 'Focus'}
+                        </Button>
+                      )}
+                      {selectedProfile.url && !verificationResult && onVerificationComplete && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 gap-1.5 text-xs h-8"
+                          onClick={handleVerify}
+                          disabled={isVerifyingNow}
+                        >
+                          {isVerifyingNow ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Sparkles className="w-3.5 h-3.5" />
+                          )}
+                          LENS Verify
+                        </Button>
+                      )}
                       {selectedProfile.url && (
                         <Button
                           variant="outline"
                           size="sm"
-                          className="w-full gap-2 text-xs h-7"
+                          className="flex-1 gap-1.5 text-xs h-8"
                           onClick={() => window.open(selectedProfile.url, '_blank')}
                         >
-                          <ExternalLink className="w-3 h-3" />
-                          Visit Profile
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Open
                         </Button>
                       )}
                     </div>
                   </div>
+
+                  {/* URL */}
+                  {selectedProfile.url && (
+                    <div className="pt-2 border-t border-border/30">
+                      <span className="text-[10px] text-muted-foreground uppercase block mb-1">Profile URL</span>
+                      <a 
+                        href={selectedProfile.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline break-all line-clamp-2"
+                      >
+                        {selectedProfile.url}
+                      </a>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
@@ -197,9 +359,9 @@ export function ConnectionsInspector({
                   Tips
                 </h4>
                 <ul className="text-xs text-muted-foreground space-y-1">
-                  <li>• Hover nodes for details</li>
-                  <li>• Click nodes to visit profiles</li>
-                  <li>• Drag to pan, scroll to zoom</li>
+                  <li>• Click nodes to inspect</li>
+                  <li>• Focus to highlight connections</li>
+                  <li>• Double-click to open profile</li>
                 </ul>
               </div>
             </div>
