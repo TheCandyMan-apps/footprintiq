@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Check, Database, Shield, AlertTriangle, Loader2, Link2, Clock } from 'lucide-react';
+import { Search, Check, Database, Shield, AlertTriangle, Loader2, Link2, Clock, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { NarrativeItem } from '@/hooks/useScanNarrative';
 
@@ -8,6 +8,7 @@ interface ScanNarrativeFeedProps {
   summary: string;
   isLoading?: boolean;
   isComplete?: boolean;
+  estimatedTimeRemaining?: string;
 }
 
 const iconMap = {
@@ -20,7 +21,7 @@ const iconMap = {
   loader: Loader2,
 };
 
-export function ScanNarrativeFeed({ items, summary, isLoading, isComplete }: ScanNarrativeFeedProps) {
+export function ScanNarrativeFeed({ items, summary, isLoading, isComplete, estimatedTimeRemaining }: ScanNarrativeFeedProps) {
   if (isLoading && items.length === 0) {
     return (
       <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
@@ -44,12 +45,21 @@ export function ScanNarrativeFeed({ items, summary, isLoading, isComplete }: Sca
           <Clock className="w-3 h-3" />
           {isComplete ? 'What we did' : "What we're doing"}
         </h4>
-        {!isComplete && (
-          <span className="text-[10px] text-primary font-medium flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            Live
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {/* ETA Badge */}
+          {!isComplete && estimatedTimeRemaining && (
+            <span className="text-[10px] text-muted-foreground flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded">
+              <Timer className="w-2.5 h-2.5" />
+              {estimatedTimeRemaining}
+            </span>
+          )}
+          {!isComplete && (
+            <span className="text-[10px] text-primary font-medium flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              Live
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Timeline items - compact */}
@@ -91,8 +101,16 @@ export function ScanNarrativeFeed({ items, summary, isLoading, isComplete }: Sca
                 {item.text}
               </span>
 
+              {/* Per-provider ETA */}
+              {isActive && item.eta && (
+                <span className="text-[10px] text-muted-foreground/70 tabular-nums flex items-center gap-0.5">
+                  <Timer className="w-2 h-2" />
+                  {item.eta}
+                </span>
+              )}
+
               {/* Timestamp */}
-              {item.timestamp && (
+              {item.timestamp && !item.eta && (
                 <span className="text-[10px] text-muted-foreground/70 tabular-nums">
                   {item.timestamp}
                 </span>
