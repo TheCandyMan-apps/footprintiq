@@ -34,6 +34,30 @@ function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+// Derive status from result data when status field is missing
+function deriveStatus(result: any): string {
+  // Direct status field
+  if (result.status) return result.status.toLowerCase();
+  
+  // For profile_presence kind, treat as "found"
+  if (result.kind === 'profile_presence') return 'found';
+  
+  // Check evidence for status indicators
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const existsEvidence = result.evidence.find((e: any) => e.key === 'exists');
+    if (existsEvidence?.value === true) return 'found';
+    if (existsEvidence?.value === false) return 'not_found';
+  }
+  
+  // Check for explicit status in meta
+  const meta = result.meta || result.metadata || {};
+  if (meta.status) return meta.status.toLowerCase();
+  if (meta.exists === true) return 'found';
+  if (meta.exists === false) return 'not_found';
+  
+  return 'unknown';
+}
+
 export function groupByStatus(rows: any[]) {
   const groups: Record<string, any[]> = {
     found: [],
@@ -43,7 +67,7 @@ export function groupByStatus(rows: any[]) {
   };
 
   for (const r of rows) {
-    const status = (r.status || 'unknown').toLowerCase();
+    const status = deriveStatus(r);
     if (!groups[status]) {
       groups[status] = [];
     }
