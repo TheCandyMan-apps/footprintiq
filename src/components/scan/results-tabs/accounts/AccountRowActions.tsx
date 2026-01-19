@@ -73,40 +73,51 @@ export function AccountRowActions({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex items-center gap-0.5 shrink-0">
-        {/* LENS Status Badge (if verified) */}
-        {verificationResult && (
-          <LensStatusBadge 
-            status={null}
-            score={verificationResult.confidenceScore}
-            compact
-            className="mr-1"
-          />
+      <div className="flex items-center gap-1 shrink-0">
+        {/* Open Link */}
+        {url && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                asChild
+                onClick={(e) => e.stopPropagation()}
+              >
+                <a href={url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Open profile</p>
+            </TooltipContent>
+          </Tooltip>
         )}
 
         {/* Focus Button */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant={isFocused ? 'secondary' : 'ghost'}
+              variant="ghost"
               size="icon"
               className={cn(
-                'h-7 w-7',
-                isFocused && 'ring-2 ring-primary ring-offset-1'
+                'h-8 w-8',
+                isFocused 
+                  ? 'bg-primary/10 text-primary' 
+                  : 'text-muted-foreground hover:text-foreground'
               )}
               onClick={(e) => {
                 e.stopPropagation();
                 onFocus();
               }}
             >
-              <Crosshair className={cn(
-                'w-3.5 h-3.5',
-                isFocused && 'text-primary'
-              )} />
+              <Crosshair className="w-4 h-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-xs">{isFocused ? 'Unfocus entity' : 'Focus this entity'}</p>
+            <p className="text-xs">{isFocused ? 'Unfocus' : 'Focus'}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -117,7 +128,7 @@ export function AccountRowActions({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleVerify();
@@ -125,9 +136,9 @@ export function AccountRowActions({
                 disabled={isVerifyingNow}
               >
                 {isVerifyingNow ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-4 h-4" />
                 )}
               </Button>
             </TooltipTrigger>
@@ -137,92 +148,50 @@ export function AccountRowActions({
           </Tooltip>
         )}
 
-        {/* Claim Toggle */}
-        <div className="flex items-center border rounded-md overflow-hidden mx-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={claimStatus === 'me' ? 'default' : 'ghost'}
-                size="icon"
-                className={cn(
-                  'h-7 w-7 rounded-none',
-                  claimStatus === 'me' && 'bg-green-600 hover:bg-green-700'
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClaimToggle('me');
-                }}
-                disabled={isClaimLoading}
-              >
-                {isClaimLoading && claimStatus !== 'me' ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <UserCheck className="w-3 h-3" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">This is me</p>
-            </TooltipContent>
-          </Tooltip>
-          
-          <div className="w-px h-4 bg-border" />
-          
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={claimStatus === 'not_me' ? 'default' : 'ghost'}
-                size="icon"
-                className={cn(
-                  'h-7 w-7 rounded-none',
-                  claimStatus === 'not_me' && 'bg-red-600 hover:bg-red-700'
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleClaimToggle('not_me');
-                }}
-                disabled={isClaimLoading}
-              >
-                {isClaimLoading && claimStatus !== 'not_me' ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <UserX className="w-3 h-3" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Not me</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-
-        {/* Open Link */}
-        {url && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                asChild
-                onClick={(e) => e.stopPropagation()}
-              >
-                <a href={url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Open profile</p>
-            </TooltipContent>
-          </Tooltip>
-        )}
+        {/* Claim Toggle - Simplified */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                'h-8 w-8',
+                claimStatus === 'me' && 'bg-green-500/10 text-green-600',
+                claimStatus === 'not_me' && 'bg-red-500/10 text-red-600',
+                !claimStatus && 'text-muted-foreground hover:text-foreground'
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                // Cycle: null -> me -> not_me -> null
+                if (!claimStatus) handleClaimToggle('me');
+                else if (claimStatus === 'me') handleClaimToggle('not_me');
+                else onClaimChange(null);
+              }}
+              disabled={isClaimLoading}
+            >
+              {isClaimLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : claimStatus === 'not_me' ? (
+                <UserX className="w-4 h-4" />
+              ) : (
+                <UserCheck className="w-4 h-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">
+              {!claimStatus && 'Mark as yours'}
+              {claimStatus === 'me' && 'Claimed as you'}
+              {claimStatus === 'not_me' && 'Marked as not you'}
+            </p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Expand */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground"
           onClick={(e) => {
             e.stopPropagation();
             onToggleExpand();

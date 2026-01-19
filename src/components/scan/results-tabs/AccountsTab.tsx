@@ -1,131 +1,32 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ForensicVerifyButton } from '@/components/forensic';
-import { 
-  ExternalLink, Search, Filter,
-  User, Users, Clock, Globe,
-  CheckCircle, HelpCircle, AlertCircle, ArrowUpDown
-} from 'lucide-react';
+import { Search, Filter, User, ArrowUpDown } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { useInvestigation } from '@/contexts/InvestigationContext';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
-import { cn } from '@/lib/utils';
-import { 
-  RESULTS_SPACING, 
-  RESULTS_SEMANTIC_COLORS 
-} from './styles';
+import { RESULTS_SPACING } from './styles';
 import { AccountFilters, QuickFilterOption } from './accounts/AccountFilters';
-import { AccountRowActions } from './accounts/AccountRowActions';
+import { AccountRow } from './accounts/AccountRow';
 
 interface AccountsTabProps {
   results: ScanResult[];
   jobId: string;
 }
 
-// Extract platform name from various data structures
+type SortOption = 'platform' | 'confidence' | 'status';
+
+// Helper to extract platform name for search/sort
 const extractPlatformName = (result: ScanResult): string => {
   if (result.site && result.site !== 'Unknown') return result.site;
-  
   const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  if (meta.platform && meta.platform !== 'Unknown') return meta.platform;
-  if (meta.site && meta.site !== 'Unknown') return meta.site;
-  
-  if (result.evidence && Array.isArray(result.evidence)) {
-    const siteEvidence = result.evidence.find(
-      (e: any) => e.key === 'site' || e.key === 'platform'
-    );
-    if (siteEvidence?.value) return siteEvidence.value;
-  }
-  
-  const url = result.url || meta.url;
-  if (url) {
-    try {
-      const hostname = new URL(url).hostname;
-      const parts = hostname.replace('www.', '').split('.');
-      return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-    } catch {}
-  }
-  
-  if (meta.provider) return meta.provider;
-  
+  if (meta.platform) return meta.platform;
+  if (meta.site) return meta.site;
   return 'Unknown';
 };
 
-// Extract URL from various data structures
-const extractUrl = (result: ScanResult): string | null => {
-  if (result.url) return result.url;
-  
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  if (meta.url) return meta.url;
-  
-  if (result.evidence && Array.isArray(result.evidence)) {
-    const urlEvidence = result.evidence.find((e: any) => e.key === 'url');
-    if (urlEvidence?.value) return urlEvidence.value;
-  }
-  
-  return null;
-};
-
-const getPlatformIcon = (platform: string) => {
-  const p = platform?.toLowerCase() || '';
-  if (p.includes('github') || p.includes('gitlab')) return '🐙';
-  if (p.includes('twitter') || p.includes('x.com')) return '🐦';
-  if (p.includes('linkedin')) return '💼';
-  if (p.includes('facebook') || p.includes('meta')) return '📘';
-  if (p.includes('instagram')) return '📷';
-  if (p.includes('reddit')) return '🤖';
-  if (p.includes('youtube')) return '▶️';
-  if (p.includes('tiktok')) return '🎵';
-  if (p.includes('discord')) return '💬';
-  if (p.includes('telegram')) return '✈️';
-  if (p.includes('pinterest')) return '📌';
-  if (p.includes('medium')) return '📝';
-  if (p.includes('stackoverflow')) return '📚';
-  if (p.includes('chaturbate') || p.includes('chatur')) return '🔞';
-  if (p.includes('onlyfans')) return '💎';
-  if (p.includes('twitch')) return '🎮';
-  if (p.includes('spotify')) return '🎧';
-  return '🌐';
-};
-
-const getMatchConfidence = (score: number) => {
-  if (score >= 80) return { 
-    label: 'Likely', 
-    ...RESULTS_SEMANTIC_COLORS.confidenceHigh,
-    icon: CheckCircle 
-  };
-  if (score >= 60) return { 
-    label: 'Possible', 
-    ...RESULTS_SEMANTIC_COLORS.confidenceMedium,
-    icon: HelpCircle 
-  };
-  return { 
-    label: 'Weak', 
-    ...RESULTS_SEMANTIC_COLORS.confidenceLow,
-    icon: AlertCircle 
-  };
-};
-
-const extractKeyFields = (result: ScanResult): string[] => {
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  const fields: string[] = [];
-
-  if (meta.bio) fields.push(meta.bio.slice(0, 50) + (meta.bio.length > 50 ? '…' : ''));
-  else if (meta.description) fields.push(meta.description.slice(0, 50) + (meta.description.length > 50 ? '…' : ''));
-  
-  if (meta.followers !== undefined) fields.push(`${meta.followers} followers`);
-  if (meta.location) fields.push(meta.location);
-  if (meta.joined) fields.push(`Joined ${meta.joined}`);
-
-  return fields.slice(0, 3);
-};
-
-type SortOption = 'platform' | 'confidence' | 'status';
 
 export function AccountsTab({ results, jobId }: AccountsTabProps) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -327,187 +228,27 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
           filteredResults.map((result) => {
             const lensScore = lensAnalysis.resultScores.get(result.id);
             const score = lensScore?.score || 50;
-            const confidence = getMatchConfidence(score);
-            const ConfidenceIcon = confidence.icon;
-            const keyFields = extractKeyFields(result);
             const isExpanded = expandedRows.has(result.id);
             const isFocused = focusedEntityId === result.id;
-            const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-            const profileImage = meta.avatar_url || meta.profile_image || meta.image;
-            const platformName = extractPlatformName(result);
-            const profileUrl = extractUrl(result);
             const verificationResult = verifiedEntities.get(result.id) || null;
             const claimStatus = claimedEntities.get(result.id) || null;
 
             return (
-              <Collapsible key={result.id} open={isExpanded} onOpenChange={() => toggleExpanded(result.id)}>
-                {/* Compact Row - 72-88px height */}
-                <div className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 bg-background hover:bg-muted/50 transition-colors',
-                  'min-h-[72px] max-h-[88px]',
-                  isExpanded && 'bg-muted/30',
-                  isFocused && 'ring-2 ring-primary ring-inset bg-primary/5'
-                )}>
-                  {/* Left: Platform icon + profile image */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-lg" title={platformName}>
-                      {getPlatformIcon(platformName)}
-                    </span>
-                    {profileImage ? (
-                      <img 
-                        src={profileImage} 
-                        alt=""
-                        className="w-9 h-9 rounded-full object-cover border border-border"
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                      />
-                    ) : (
-                      <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center border border-border">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Center: Platform name + key fields */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">
-                        {platformName}
-                      </span>
-                      {result.status === 'found' && (
-                        <Badge className="h-4 px-1 text-[10px] bg-green-600">Active</Badge>
-                      )}
-                      {result.status === 'claimed' && (
-                        <Badge variant="secondary" className="h-4 px-1 text-[10px]">Claimed</Badge>
-                      )}
-                      {claimStatus === 'me' && (
-                        <Badge className="h-4 px-1 text-[10px] bg-blue-600">You</Badge>
-                      )}
-                      {claimStatus === 'not_me' && (
-                        <Badge variant="outline" className="h-4 px-1 text-[10px] border-red-500/50 text-red-500">Not you</Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {keyFields.length > 0 ? (
-                        <p className="text-xs text-muted-foreground truncate">
-                          {keyFields.join(' · ')}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground truncate">
-                          {profileUrl ? new URL(profileUrl).pathname.replace(/^\//, '') : 'No details'}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: Confidence badge + actions cluster */}
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Badge 
-                      variant="outline" 
-                      className={cn('h-6 px-1.5 gap-1 text-[10px]', confidence.bg, confidence.text, confidence.border)}
-                    >
-                      <ConfidenceIcon className="w-3 h-3" />
-                      <span className="hidden sm:inline">{confidence.label}</span>
-                      <span className="sm:hidden">{score}%</span>
-                    </Badge>
-                    
-                    <AccountRowActions
-                      findingId={result.id}
-                      url={profileUrl}
-                      platform={platformName}
-                      scanId={jobId}
-                      isFocused={isFocused}
-                      onFocus={() => handleFocus(result.id)}
-                      verificationResult={verificationResult}
-                      onVerificationComplete={(r) => handleVerificationComplete(result.id, r)}
-                      claimStatus={claimStatus}
-                      onClaimChange={(claim) => handleClaimChange(result.id, claim)}
-                      isClaimLoading={isClaimLoading}
-                      isExpanded={isExpanded}
-                      onToggleExpand={() => toggleExpanded(result.id)}
-                    />
-                  </div>
-                </div>
-
-                {/* Expanded Panel */}
-                <CollapsibleContent>
-                  <div className="bg-muted/20 border-t px-4 py-3 space-y-3">
-                    {/* Profile Signals Grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {meta.bio && (
-                        <div className="col-span-2 sm:col-span-4 p-2 rounded bg-background border text-xs">
-                          <span className="text-muted-foreground">Bio: </span>
-                          <span>{meta.bio}</span>
-                        </div>
-                      )}
-                      {meta.followers !== undefined && (
-                        <div className="flex items-center gap-1.5 p-2 rounded bg-background border text-xs">
-                          <Users className="w-3 h-3 text-primary" />
-                          <span className="text-muted-foreground">Followers:</span>
-                          <span className="font-medium">{meta.followers}</span>
-                        </div>
-                      )}
-                      {meta.following !== undefined && (
-                        <div className="flex items-center gap-1.5 p-2 rounded bg-background border text-xs">
-                          <Users className="w-3 h-3 text-primary" />
-                          <span className="text-muted-foreground">Following:</span>
-                          <span className="font-medium">{meta.following}</span>
-                        </div>
-                      )}
-                      {meta.location && (
-                        <div className="flex items-center gap-1.5 p-2 rounded bg-background border text-xs">
-                          <Globe className="w-3 h-3 text-primary" />
-                          <span className="text-muted-foreground">Location:</span>
-                          <span className="font-medium truncate">{meta.location}</span>
-                        </div>
-                      )}
-                      {(meta.joined || meta.created_at) && (
-                        <div className="flex items-center gap-1.5 p-2 rounded bg-background border text-xs">
-                          <Clock className="w-3 h-3 text-primary" />
-                          <span className="text-muted-foreground">Joined:</span>
-                          <span className="font-medium">{meta.joined || meta.created_at}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Raw Fields (collapsed by default in nested accordion) */}
-                    {Object.keys(meta).length > 0 && (
-                      <details className="text-xs">
-                        <summary className="cursor-pointer text-muted-foreground hover:text-foreground py-1">
-                          View raw fields ({Object.keys(meta).length})
-                        </summary>
-                        <div className="mt-2 p-2 rounded bg-background border font-mono space-y-1 max-h-48 overflow-auto">
-                          {Object.entries(meta).map(([key, value]) => (
-                            <div key={key} className="flex gap-2">
-                              <span className="text-muted-foreground shrink-0">{key}:</span>
-                              <span className="truncate">
-                                {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </details>
-                    )}
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 pt-1">
-                      {result.url && (
-                        <ForensicVerifyButton
-                          findingId={result.id}
-                          url={result.url}
-                          platform={result.site || 'Unknown'}
-                          scanId={jobId}
-                        />
-                      )}
-                      <Button variant="outline" size="sm" asChild className="h-7 text-xs">
-                        <a href={result.url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="w-3 h-3 mr-1" />
-                          View Profile
-                        </a>
-                      </Button>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+              <AccountRow
+                key={result.id}
+                result={result}
+                jobId={jobId}
+                lensScore={score}
+                isFocused={isFocused}
+                isExpanded={isExpanded}
+                verificationResult={verificationResult}
+                claimStatus={claimStatus}
+                isClaimLoading={isClaimLoading}
+                onFocus={() => handleFocus(result.id)}
+                onToggleExpand={() => toggleExpanded(result.id)}
+                onVerificationComplete={(r) => handleVerificationComplete(result.id, r)}
+                onClaimChange={(claim) => handleClaimChange(result.id, claim)}
+              />
             );
           })
         )}
