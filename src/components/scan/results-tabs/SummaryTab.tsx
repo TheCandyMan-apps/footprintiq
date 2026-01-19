@@ -1,13 +1,15 @@
 import { useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
+import { useScanNarrative } from '@/hooks/useScanNarrative';
 import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 
 import { IdentitySnapshotCard } from './summary/IdentitySnapshotCard';
-import { InsightsSection, generateInsights } from './summary/InsightsSection';
 import { CompactStatsCard } from './summary/CompactStatsCard';
 import { ProfileImagesStrip } from './summary/ProfileImagesStrip';
-import { RESULTS_SPACING, RESULTS_TYPOGRAPHY, RESULTS_BORDERS } from './styles';
+import { ScanNarrativeFeed } from './summary/ScanNarrativeFeed';
+import { KeyFindingsPanel, generateKeyFindings } from './summary/KeyFindingsPanel';
+import { SummaryActions } from './summary/SummaryActions';
 
 interface SummaryTabProps {
   jobId: string;
@@ -20,6 +22,9 @@ interface SummaryTabProps {
   };
   resultsCount: number;
   results: ScanResult[];
+  onExportJSON?: () => void;
+  onExportCSV?: () => void;
+  onExportPDF?: () => void;
 }
 
 function getUniquePlatforms(results: ScanResult[]): string[] {
@@ -36,76 +41,43 @@ function getProfileImages(results: any[]): string[] {
     const meta = r.meta || r.metadata || {};
     if (meta.avatar_url) images.push(meta.avatar_url);
     if (meta.profile_image) images.push(meta.profile_image);
+    if (meta.image) images.push(meta.image);
   });
-  return images.slice(0, 8);
-}
-
-function generateSummary(
-  username: string,
-  found: number,
-  claimed: number,
-  breaches: number,
-  platforms: number
-): string {
-  const total = found + claimed;
-  
-  if (total === 0) {
-    return `No matching accounts found for "${username}". The username may be unique or spelled differently.`;
-  }
-
-  let summary = `Found ${total} account${total !== 1 ? 's' : ''} across ${platforms} platform${platforms !== 1 ? 's' : ''}. `;
-  if (found > 0) summary += `${found} confirmed active. `;
-  if (breaches > 0) summary += `${breaches} potential exposure${breaches !== 1 ? 's' : ''}.`;
-
-  return summary.trim();
+  return images.filter(url => url && url.startsWith('http')).slice(0, 8);
 }
 
 function calculateReuseScore(found: number, platforms: number): number {
   if (platforms === 0) return 0;
-  return Math.round((found / platforms) * 100);
+  return Math.round((found / Math.max(platforms, found)) * 100);
 }
 
-export function SummaryTab({ jobId, job, grouped, resultsCount, results }: SummaryTabProps) {
+export function SummaryTab({ 
+  jobId, 
+  job, 
+  grouped, 
+  resultsCount, 
+  results,
+  onExportJSON,
+  onExportCSV,
+  onExportPDF,
+}: SummaryTabProps) {
+  const navigate = useNavigate();
   const lensAnalysis = useLensAnalysis(results);
   
   const platforms = useMemo(() => getUniquePlatforms(results), [results]);
-  const profileImages = useMemo(() => getProfileImages(grouped.found), [grouped.found]);
+  const profileImages = useMemo(() => getProfileImages(results), [results]);
   
   const breachCount = useMemo(() => {
-    const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised'];
-    return results.filter(r => {
+    return results.filter((r: any) => {
+      const kind = (r.kind || '').toLowerCase();
       const site = (r.site || '').toLowerCase();
-      const status = (r.status || '').toLowerCase();
-      return breachKeywords.some(k => site.includes(k) || status.includes(k));
+      return kind.includes('breach') || kind.includes('leak') || site.includes('breach') || site.includes('hibp');
     }).length;
   }, [results]);
 
   const reuseScore = useMemo(() => 
     calculateReuseScore(grouped.found.length, platforms.length),
     [grouped.found.length, platforms.length]
-  );
-
-  const summary = useMemo(() => 
-    generateSummary(
-      job?.username || 'Unknown',
-      grouped.found.length,
-      grouped.claimed.length,
-      breachCount,
-      platforms.length
-    ), 
-    [job?.username, grouped, breachCount, platforms.length]
-  );
-
-  const insights = useMemo(() => 
-    generateInsights(
-      grouped.found.length,
-      grouped.claimed.length,
-      breachCount,
-      platforms.length,
-      reuseScore,
-      lensAnalysis.overallScore
-    ),
-    [grouped.found.length, grouped.claimed.length, breachCount, platforms.length, reuseScore, lensAnalysis.overallScore]
   );
 
   const aliases = useMemo(() => {
@@ -115,55 +87,93 @@ export function SummaryTab({ jobId, job, grouped, resultsCount, results }: Summa
       if (meta.display_name && typeof meta.display_name === 'string' && meta.display_name !== job?.username) {
         aliasSet.add(meta.display_name);
       }
-      if (meta.alias && typeof meta.alias === 'string') {
-        aliasSet.add(meta.alias);
+      if (meta.name && typeof meta.name === 'string' && meta.name !== job?.username) {
+        aliasSet.add(meta.name);
       }
     });
     return Array.from(aliasSet).slice(0, 5);
   }, [results, job?.username]);
 
+  // Scan narrative from events
+  const narrative = useScanNarrative(jobId, job?.username || '', job?.scan_type || 'username');
+
+  // Key findings
+  const keyFindings = useMemo(() => 
+    generateKeyFindings(grouped.found.length, platforms.length, breachCount, reuseScore, aliases),
+    [grouped.found.length, platforms.length, breachCount, reuseScore, aliases]
+  );
+
+  // Calculate scan duration
+  const scanDuration = useMemo(() => {
+    if (job?.started_at && job?.finished_at) {
+      return new Date(job.finished_at).getTime() - new Date(job.started_at).getTime();
+    }
+    return narrative.scanDuration;
+  }, [job?.started_at, job?.finished_at, narrative.scanDuration]);
+
+  // Determine scan status
+  const scanStatus = useMemo(() => {
+    const status = (job?.status || '').toLowerCase();
+    if (status.includes('complete')) return 'completed';
+    if (status.includes('running') || status.includes('pending')) return 'running';
+    if (status.includes('fail') || status.includes('error')) return 'failed';
+    if (status.includes('partial')) return 'partial';
+    return 'completed';
+  }, [job?.status]);
+
+  const handleNewScan = () => navigate('/');
+
   return (
-    <div className={RESULTS_SPACING.contentMarginSm}>
-      {/* Row 1: Identity + Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        <div className="lg:col-span-8 space-y-2">
+    <div className="space-y-4">
+      {/* Main 8/4 grid layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        {/* Left column - 8 cols */}
+        <div className="lg:col-span-8 space-y-4">
           <IdentitySnapshotCard
             searchedValue={job?.username || 'Unknown'}
-            scanType="username"
+            scanType={job?.scan_type || 'username'}
             aliases={aliases}
             overallScore={lensAnalysis.overallScore}
+            scanTime={job?.finished_at || job?.started_at}
+            scanDuration={scanDuration}
+            scanStatus={scanStatus}
           />
-          <p className={`${RESULTS_TYPOGRAPHY.caption} px-1 leading-relaxed`}>
-            {summary}
-          </p>
+
+          <ScanNarrativeFeed
+            items={narrative.items}
+            summary={narrative.summary}
+            isLoading={narrative.isLoading}
+          />
+
+          <KeyFindingsPanel findings={keyFindings} scanId={jobId} />
         </div>
 
-        <div className="lg:col-span-4 space-y-3">
+        {/* Right column - 4 cols */}
+        <div className="lg:col-span-4 space-y-4">
+          <ProfileImagesStrip images={profileImages} maxImages={6} />
+
           <CompactStatsCard
             accountsFound={grouped.found.length}
             platformsChecked={platforms.length}
             breachExposure={breachCount}
             reuseSignals={reuseScore}
           />
-          
-          {profileImages.length > 0 && (
-            <ProfileImagesStrip images={profileImages} maxImages={6} />
-          )}
+
+          <div className="flex justify-end">
+            <SummaryActions
+              onExportJSON={onExportJSON}
+              onExportCSV={onExportCSV}
+              onExportPDF={onExportPDF}
+              onNewScan={handleNewScan}
+              disabled={results.length === 0}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Row 2: Insights */}
-      <Card className={RESULTS_BORDERS.cardBorder}>
-        <CardContent className={RESULTS_SPACING.cardPadding}>
-          <InsightsSection insights={insights} maxVisible={5} />
-        </CardContent>
-      </Card>
-
-      {/* Row 3: Footer */}
-      <div className="flex items-center justify-end py-1">
-        <span className={RESULTS_TYPOGRAPHY.captionMuted}>
-          {resultsCount} results analyzed
-        </span>
+      {/* Footer */}
+      <div className="text-xs text-muted-foreground text-center pt-2 border-t border-border/50">
+        {platforms.length} platforms checked • {resultsCount} results
       </div>
     </div>
   );
