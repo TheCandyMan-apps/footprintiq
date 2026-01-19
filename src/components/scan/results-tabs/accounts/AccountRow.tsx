@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { CheckCircle, HelpCircle, AlertCircle, Globe, Clock, Users, MapPin } from 'lucide-react';
@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { RESULTS_SEMANTIC_COLORS, RESULTS_ROW, RESULTS_ICON_CONTAINER, RESULTS_ACTION_CLUSTER } from '../styles';
 import { AccountRowActions } from './AccountRowActions';
 import { LensStatusBadge } from './LensStatusBadge';
+import { ForensicModal } from '@/components/forensic/ForensicModal';
 import {
   Tooltip,
   TooltipContent,
@@ -216,6 +217,7 @@ export function AccountRow({
   onVerificationComplete,
   onClaimChange,
 }: AccountRowProps) {
+  const [lensModalOpen, setLensModalOpen] = useState(false);
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
   const profileUrl = useMemo(() => extractUrl(result), [result]);
@@ -334,13 +336,30 @@ export function AccountRow({
               <span className="hidden sm:inline">{confidence.label}</span>
             </Badge>
 
-            {/* LENS Badge (if verified) */}
+            {/* LENS Badge (if verified) - clickable to open modal */}
             {verificationResult && (
-              <LensStatusBadge 
-                status={null}
-                score={verificationResult.confidenceScore}
-                compact={false}
-              />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div 
+                      className="cursor-pointer" 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLensModalOpen(true);
+                      }}
+                    >
+                      <LensStatusBadge 
+                        status={null}
+                        score={verificationResult.confidenceScore}
+                        compact={false}
+                      />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p className="text-xs">View LENS Analysis</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
           
@@ -454,6 +473,16 @@ export function AccountRow({
           )}
         </div>
       </CollapsibleContent>
+
+      {/* LENS Analysis Modal */}
+      <ForensicModal
+        open={lensModalOpen}
+        onOpenChange={setLensModalOpen}
+        result={verificationResult}
+        url={profileUrl || undefined}
+        platform={platformName}
+        scanId={jobId}
+      />
     </Collapsible>
   );
 }
