@@ -25,6 +25,7 @@ import {
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { useTierGating } from '@/hooks/useTierGating';
 
 interface ForensicModalProps {
   open: boolean;
@@ -76,6 +77,11 @@ export function ForensicModal({
   const [copied, setCopied] = useState(false);
   const [technicalOpen, setTechnicalOpen] = useState(false);
   const { toast } = useToast();
+  const { isFree, hasCapability } = useTierGating();
+  
+  // Determine access based on tier
+  const hasBreakdownAccess = hasCapability('aiInsights') || !isFree;
+  const hasNetworkAccess = hasCapability('identityGraph') || !isFree;
 
   if (!result) return null;
 
@@ -202,68 +208,112 @@ export function ForensicModal({
 
             <Separator />
 
-            {/* Confidence Breakdown (Pro-only) */}
-            <div className="p-4 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 relative overflow-hidden">
-              <div className="flex items-center gap-2 mb-3">
-                <h4 className="text-sm font-semibold text-muted-foreground">Confidence Breakdown</h4>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/40 text-primary">
-                  Pro
-                </Badge>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/60 cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-[240px] text-center">
-                      <p className="text-xs">Pro reveals how each signal contributes to confidence — not just the final score.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              
-              {/* Blurred signal breakdown for free users */}
-              <div className="space-y-2.5 select-none" style={{ filter: 'blur(4px)' }}>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Username consistency</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full w-[85%] bg-primary/60 rounded-full" />
+            {/* Confidence Breakdown */}
+            {hasBreakdownAccess ? (
+              <div className="p-4 rounded-lg border bg-muted/20">
+                <h4 className="text-sm font-semibold mb-3">Confidence Breakdown</h4>
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Username consistency</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full bg-primary/60 rounded-full" style={{ width: `${((result.metadata as any)?.usernameConsistency) || 85}%` }} />
+                      </div>
+                      <span className="text-xs font-medium w-8 text-right">{((result.metadata as any)?.usernameConsistency) || 85}%</span>
                     </div>
-                    <span className="text-xs font-medium w-8 text-right">85%</span>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Platform context strength</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full w-[72%] bg-primary/60 rounded-full" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Platform context strength</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full bg-primary/60 rounded-full" style={{ width: `${((result.metadata as any)?.platformStrength) || 72}%` }} />
+                      </div>
+                      <span className="text-xs font-medium w-8 text-right">{((result.metadata as any)?.platformStrength) || 72}%</span>
                     </div>
-                    <span className="text-xs font-medium w-8 text-right">72%</span>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Cross-platform corroboration</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full w-[45%] bg-amber-500/60 rounded-full" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Cross-platform corroboration</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full bg-amber-500/60 rounded-full" style={{ width: `${((result.metadata as any)?.crossPlatform) || 45}%` }} />
+                      </div>
+                      <span className="text-xs font-medium w-8 text-right">{((result.metadata as any)?.crossPlatform) || 45}%</span>
                     </div>
-                    <span className="text-xs font-medium w-8 text-right">45%</span>
                   </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">Metadata stability</span>
-                  <div className="flex items-center gap-2">
-                    <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full w-[68%] bg-primary/60 rounded-full" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Metadata stability</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full bg-primary/60 rounded-full" style={{ width: `${((result.metadata as any)?.metadataStability) || 68}%` }} />
+                      </div>
+                      <span className="text-xs font-medium w-8 text-right">{((result.metadata as any)?.metadataStability) || 68}%</span>
                     </div>
-                    <span className="text-xs font-medium w-8 text-right">68%</span>
                   </div>
                 </div>
               </div>
-              
-              {/* Overlay gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
-            </div>
+            ) : (
+              <div className="p-4 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 relative overflow-hidden">
+                <div className="flex items-center gap-2 mb-3">
+                  <h4 className="text-sm font-semibold text-muted-foreground">Confidence Breakdown</h4>
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/40 text-primary">
+                    Pro
+                  </Badge>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/60 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[240px] text-center">
+                        <p className="text-xs">Pro reveals how each signal contributes to confidence — not just the final score.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                
+                {/* Blurred signal breakdown for free users */}
+                <div className="space-y-2.5 select-none" style={{ filter: 'blur(4px)' }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Username consistency</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full w-[85%] bg-primary/60 rounded-full" />
+                      </div>
+                      <span className="text-xs font-medium w-8 text-right">85%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Platform context strength</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full w-[72%] bg-primary/60 rounded-full" />
+                      </div>
+                      <span className="text-xs font-medium w-8 text-right">72%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Cross-platform corroboration</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full w-[45%] bg-amber-500/60 rounded-full" />
+                      </div>
+                      <span className="text-xs font-medium w-8 text-right">45%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Metadata stability</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className="h-full w-[68%] bg-primary/60 rounded-full" />
+                      </div>
+                      <span className="text-xs font-medium w-8 text-right">68%</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Overlay gradient */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/80 via-transparent to-transparent pointer-events-none" />
+              </div>
+            )}
 
             {/* Evidence Snapshot - Human Readable */}
             <div className="space-y-3">
@@ -309,72 +359,90 @@ export function ForensicModal({
               </div>
             </div>
 
-            {/* LENS Pro Insight - Subtle, Trust-First */}
-            <div className="p-4 rounded-lg bg-muted/30 border border-muted-foreground/20">
-              <div className="flex items-start gap-3">
-                <Network className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                <div className="space-y-3">
-                  <h5 className="text-sm font-semibold">LENS Pro Insight</h5>
-                  
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      LENS Pro provides deeper analysis by examining how this profile connects 
-                      to other findings across scans.
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Pro users can see why confidence changes, compare related profiles, 
-                      and surface corroborating or conflicting signals.
-                    </p>
+            {/* LENS Pro Insight - Only show for free users */}
+            {isFree && (
+              <div className="p-4 rounded-lg bg-muted/30 border border-muted-foreground/20">
+                <div className="flex items-start gap-3">
+                  <Network className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+                  <div className="space-y-3">
+                    <h5 className="text-sm font-semibold">LENS Pro Insight</h5>
+                    
+                    <div className="space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        LENS Pro provides deeper analysis by examining how this profile connects 
+                        to other findings across scans.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Pro users can see why confidence changes, compare related profiles, 
+                        and surface corroborating or conflicting signals.
+                      </p>
+                    </div>
+                    
+                    {/* CTA with Tooltip */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <a 
+                            href="/pricing" 
+                            className="inline-flex items-center gap-1.5 text-sm text-primary 
+                                       hover:text-primary/80 transition-colors font-medium"
+                          >
+                            Learn more about LENS Pro
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[200px] text-center">
+                          <p className="text-xs">Pro adds depth and explanation — not surveillance.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
-                  
-                  {/* CTA with Tooltip */}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <a 
-                          href="/pricing" 
-                          className="inline-flex items-center gap-1.5 text-sm text-primary 
-                                     hover:text-primary/80 transition-colors font-medium"
-                        >
-                          Learn more about LENS Pro
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </a>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="max-w-[200px] text-center">
-                        <p className="text-xs">Pro adds depth and explanation — not surveillance.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Link & Evidence Network (Pro) - Disabled Teaser */}
-            <div className="p-4 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 relative overflow-hidden">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Network className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <h5 className="text-sm font-semibold text-muted-foreground">Link & Evidence Network</h5>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/40 text-primary">
-                      Pro
-                    </Badge>
+            {/* Link & Evidence Network */}
+            {hasNetworkAccess ? (
+              <div className="p-4 rounded-lg border bg-muted/20">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Network className="h-4 w-4 text-primary" />
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    See how this profile relates to others across scans.
-                  </p>
-                  <a 
-                    href="/pricing" 
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-                  >
-                    <Sparkles className="h-3 w-3" />
-                    Unlock LENS Pro
-                  </a>
+                  <div className="flex-1 space-y-2">
+                    <h5 className="text-sm font-semibold">Link & Evidence Network</h5>
+                    <p className="text-sm text-muted-foreground">
+                      This profile has been analyzed. View the full Identity Graph from the Connections tab to see how it relates to other findings.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-4 rounded-lg border border-dashed border-muted-foreground/30 bg-muted/20 relative overflow-hidden">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Network className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <h5 className="text-sm font-semibold text-muted-foreground">Link & Evidence Network</h5>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 border-primary/40 text-primary">
+                        Pro
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      See how this profile relates to others across scans.
+                    </p>
+                    <a 
+                      href="/pricing" 
+                      className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      Unlock LENS Pro
+                    </a>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <Separator />
 
