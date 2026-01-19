@@ -76,26 +76,65 @@ const extractUrl = (result: ScanResult): string | null => {
   return null;
 };
 
-const getPlatformIcon = (platform: string) => {
+// Map platform name to domain for favicon lookup
+const getPlatformDomain = (platform: string, url?: string | null): string => {
+  // If we have a URL, extract domain from it
+  if (url) {
+    try {
+      const hostname = new URL(url).hostname;
+      return hostname.replace('www.', '');
+    } catch {}
+  }
+  
+  // Fallback: map common platform names to domains
   const p = platform?.toLowerCase() || '';
-  if (p.includes('github') || p.includes('gitlab')) return '🐙';
-  if (p.includes('twitter') || p.includes('x.com')) return '🐦';
-  if (p.includes('linkedin')) return '💼';
-  if (p.includes('facebook') || p.includes('meta')) return '📘';
-  if (p.includes('instagram')) return '📷';
-  if (p.includes('reddit')) return '🤖';
-  if (p.includes('youtube')) return '▶️';
-  if (p.includes('tiktok')) return '🎵';
-  if (p.includes('discord')) return '💬';
-  if (p.includes('telegram')) return '✈️';
-  if (p.includes('pinterest')) return '📌';
-  if (p.includes('medium')) return '📝';
-  if (p.includes('stackoverflow')) return '📚';
-  if (p.includes('chaturbate') || p.includes('chatur')) return '🔞';
-  if (p.includes('onlyfans')) return '💎';
-  if (p.includes('twitch')) return '🎮';
-  if (p.includes('spotify')) return '🎧';
-  return '🌐';
+  const domainMap: Record<string, string> = {
+    'github': 'github.com',
+    'gitlab': 'gitlab.com',
+    'twitter': 'twitter.com',
+    'x': 'x.com',
+    'linkedin': 'linkedin.com',
+    'facebook': 'facebook.com',
+    'instagram': 'instagram.com',
+    'reddit': 'reddit.com',
+    'youtube': 'youtube.com',
+    'tiktok': 'tiktok.com',
+    'discord': 'discord.com',
+    'telegram': 'telegram.org',
+    'pinterest': 'pinterest.com',
+    'medium': 'medium.com',
+    'stackoverflow': 'stackoverflow.com',
+    'chaturbate': 'chaturbate.com',
+    'onlyfans': 'onlyfans.com',
+    'twitch': 'twitch.tv',
+    'spotify': 'spotify.com',
+    'snapchat': 'snapchat.com',
+    'whatsapp': 'whatsapp.com',
+    'tumblr': 'tumblr.com',
+    'flickr': 'flickr.com',
+    'vimeo': 'vimeo.com',
+    'steam': 'store.steampowered.com',
+    'patreon': 'patreon.com',
+    'behance': 'behance.net',
+    'dribbble': 'dribbble.com',
+    'deviantart': 'deviantart.com',
+    'soundcloud': 'soundcloud.com',
+    'bandcamp': 'bandcamp.com',
+    'quora': 'quora.com',
+    'mastodon': 'mastodon.social',
+    'threads': 'threads.net',
+    'bluesky': 'bsky.app',
+    'lushstories': 'lushstories.com',
+    'nitrotype': 'nitrotype.com',
+  };
+
+  // Check for exact match or partial match
+  for (const [key, domain] of Object.entries(domainMap)) {
+    if (p.includes(key)) return domain;
+  }
+
+  // Last resort: try to construct domain from platform name
+  return `${p.replace(/\s+/g, '')}.com`;
 };
 
 const getMatchConfidence = (score: number) => {
@@ -196,11 +235,22 @@ export function AccountRow({
         isExpanded && !isFocused && RESULTS_ROW.expanded,
         isFocused && RESULTS_ROW.focused
       )}>
-        {/* Left: Platform icon in container */}
+        {/* Left: Platform favicon */}
         <div className={RESULTS_ICON_CONTAINER.platform}>
-          <span className="text-2xl" title={platformName}>
-            {getPlatformIcon(platformName)}
-          </span>
+          <img 
+            src={`https://www.google.com/s2/favicons?domain=${getPlatformDomain(platformName, profileUrl)}&sz=32`}
+            alt={`${platformName} icon`}
+            className="w-6 h-6 rounded"
+            onError={(e) => {
+              // Fallback to Globe icon if favicon fails
+              e.currentTarget.style.display = 'none';
+              const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+              if (fallback) fallback.style.display = 'flex';
+            }}
+          />
+          <div className="hidden w-6 h-6 items-center justify-center rounded-full bg-muted">
+            <Globe className="w-4 h-4 text-muted-foreground" />
+          </div>
         </div>
 
         {/* Profile Avatar */}
