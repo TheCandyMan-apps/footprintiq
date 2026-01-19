@@ -1,6 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Check, Database, Shield, AlertTriangle, Loader2 } from 'lucide-react';
+import { Search, Check, Database, Shield, AlertTriangle, Loader2, Link2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { NarrativeItem } from '@/hooks/useScanNarrative';
 
@@ -8,6 +7,7 @@ interface ScanNarrativeFeedProps {
   items: NarrativeItem[];
   summary: string;
   isLoading?: boolean;
+  isComplete?: boolean;
 }
 
 const iconMap = {
@@ -16,22 +16,19 @@ const iconMap = {
   database: Database,
   shield: Shield,
   alert: AlertTriangle,
+  link: Link2,
+  loader: Loader2,
 };
 
-export function ScanNarrativeFeed({ items, summary, isLoading }: ScanNarrativeFeedProps) {
-  if (isLoading) {
+export function ScanNarrativeFeed({ items, summary, isLoading, isComplete }: ScanNarrativeFeedProps) {
+  if (isLoading && items.length === 0) {
     return (
-      <Card className="border-border/50">
-        <CardHeader className="pb-2 pt-3 px-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground">Scan Narrative</CardTitle>
-        </CardHeader>
-        <CardContent className="px-4 pb-4">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">Loading scan details...</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          <span className="text-xs">Loading scan details...</span>
+        </div>
+      </div>
     );
   }
 
@@ -40,46 +37,83 @@ export function ScanNarrativeFeed({ items, summary, isLoading }: ScanNarrativeFe
   }
 
   return (
-    <Card className="border-border/50">
-      <CardHeader className="pb-2 pt-3 px-4">
-        <CardTitle className="text-sm font-medium text-muted-foreground">Scan Narrative</CardTitle>
-      </CardHeader>
-      <CardContent className="px-4 pb-4 space-y-3">
-        {/* Timeline items */}
-        <div className="space-y-2">
-          {items.map((item, index) => {
-            const Icon = iconMap[item.icon] || Check;
-            return (
-              <div
-                key={item.id}
-                className={cn(
-                  'flex items-start gap-2.5 text-sm',
-                  index === 0 ? 'text-foreground' : 'text-muted-foreground'
-                )}
-              >
-                <div className="mt-0.5 flex-shrink-0">
-                  <div
-                    className={cn(
-                      'h-4 w-4 rounded-full flex items-center justify-center',
-                      index === 0 ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                    )}
-                  >
-                    <Icon className="h-2.5 w-2.5" />
-                  </div>
-                </div>
-                <span className={cn(index === 0 && 'font-medium')}>{item.text}</span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Summary paragraph */}
-        {summary && (
-          <div className="pt-2 border-t border-border/50">
-            <p className="text-sm text-muted-foreground leading-relaxed">{summary}</p>
-          </div>
+    <div className="p-3 rounded-lg bg-muted/20 border border-border/40 space-y-2">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+          <Clock className="w-3 h-3" />
+          What we did
+        </h4>
+        {!isComplete && (
+          <span className="text-[10px] text-primary font-medium flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            Live
+          </span>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Timeline items - compact */}
+      <div className="space-y-1">
+        {items.map((item, index) => {
+          const Icon = iconMap[item.icon] || Check;
+          const isActive = item.isActive;
+          const isFirst = index === 0;
+          const isLast = index === items.length - 1 && isComplete;
+
+          return (
+            <div
+              key={item.id}
+              className={cn(
+                'flex items-center gap-2 text-xs',
+                isActive ? 'text-foreground' : 'text-muted-foreground',
+                isLast && 'text-foreground'
+              )}
+            >
+              {/* Icon */}
+              <div className={cn(
+                'w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0',
+                isActive ? 'bg-primary/20 text-primary' : 
+                isLast ? 'bg-green-500/20 text-green-600 dark:text-green-400' :
+                isFirst ? 'bg-muted text-muted-foreground' : 'bg-muted/50 text-muted-foreground'
+              )}>
+                <Icon className={cn(
+                  'w-2.5 h-2.5',
+                  isActive && item.icon === 'loader' && 'animate-spin'
+                )} />
+              </div>
+
+              {/* Text */}
+              <span className={cn(
+                'flex-1 truncate',
+                (isActive || isLast) && 'font-medium'
+              )}>
+                {item.text}
+              </span>
+
+              {/* Timestamp */}
+              {item.timestamp && (
+                <span className="text-[10px] text-muted-foreground/70 tabular-nums">
+                  {item.timestamp}
+                </span>
+              )}
+
+              {/* Findings count badge */}
+              {item.findingsCount !== undefined && item.findingsCount > 0 && (
+                <span className="text-[10px] font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                  {item.findingsCount}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Summary - only show if complete */}
+      {summary && isComplete && (
+        <p className="text-[11px] text-muted-foreground leading-relaxed pt-1 border-t border-border/30">
+          {summary}
+        </p>
+      )}
+    </div>
   );
 }
