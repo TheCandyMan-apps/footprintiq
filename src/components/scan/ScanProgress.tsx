@@ -63,7 +63,7 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
   const [lastProgress, setLastProgress] = useState(0);
 
   const calculateProgress = (): number => {
-    if (status === 'finished') return 100;
+    if (['finished', 'completed', 'completed_partial', 'completed_empty'].includes(status)) return 100;
     if (resultCount === 0 || estimatedTotal === 0) return Math.max(5, lastProgress);
     
     // Ensure progress is monotonically increasing
@@ -78,7 +78,7 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
   };
 
   const calculateEstimatedRemaining = (): string => {
-    if (status === 'finished' || status === 'error') return '-';
+    if (['finished', 'completed', 'completed_partial', 'completed_empty', 'error', 'failed', 'timeout'].includes(status)) return '-';
     if (resultCount === 0 || elapsedSeconds === 0) return 'Calculating...';
     
     const scanRate = resultCount / elapsedSeconds; // sites per second
@@ -95,9 +95,9 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
   };
 
   const progress = calculateProgress();
-  const isRunning = status === 'running';
-  const isFinished = status === 'finished';
-  const isError = status === 'error';
+  const isRunning = status === 'running' || status === 'pending';
+  const isFinished = ['finished', 'completed', 'completed_partial', 'completed_empty'].includes(status);
+  const isError = ['error', 'failed', 'failed_timeout', 'timeout'].includes(status);
 
   return (
     <Card className="rounded-2xl shadow-sm">

@@ -25,6 +25,55 @@ interface AccountsTabProps {
   jobId: string;
 }
 
+// Extract platform name from various data structures
+const extractPlatformName = (result: ScanResult): string => {
+  // Priority 1: Direct site field
+  if (result.site && result.site !== 'Unknown') return result.site;
+  
+  // Priority 2: meta.platform (from Sherlock/n8n)
+  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
+  if (meta.platform && meta.platform !== 'Unknown') return meta.platform;
+  if (meta.site && meta.site !== 'Unknown') return meta.site;
+  
+  // Priority 3: Evidence array {key: 'site', value: 'Platform'}
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const siteEvidence = result.evidence.find(
+      (e: any) => e.key === 'site' || e.key === 'platform'
+    );
+    if (siteEvidence?.value) return siteEvidence.value;
+  }
+  
+  // Priority 4: Extract from URL domain
+  const url = result.url || meta.url;
+  if (url) {
+    try {
+      const hostname = new URL(url).hostname;
+      const parts = hostname.replace('www.', '').split('.');
+      return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+    } catch {}
+  }
+  
+  // Fallback to provider name
+  if (meta.provider) return meta.provider;
+  
+  return 'Unknown';
+};
+
+// Extract URL from various data structures
+const extractUrl = (result: ScanResult): string | null => {
+  if (result.url) return result.url;
+  
+  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
+  if (meta.url) return meta.url;
+  
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const urlEvidence = result.evidence.find((e: any) => e.key === 'url');
+    if (urlEvidence?.value) return urlEvidence.value;
+  }
+  
+  return null;
+};
+
 const getPlatformIcon = (platform: string) => {
   const p = platform?.toLowerCase() || '';
   if (p.includes('github') || p.includes('gitlab')) return '🐙';
@@ -40,6 +89,10 @@ const getPlatformIcon = (platform: string) => {
   if (p.includes('pinterest')) return '📌';
   if (p.includes('medium')) return '📝';
   if (p.includes('stackoverflow')) return '📚';
+  if (p.includes('chaturbate') || p.includes('chatur')) return '🔞';
+  if (p.includes('onlyfans')) return '💎';
+  if (p.includes('twitch')) return '🎮';
+  if (p.includes('spotify')) return '🎧';
   return '🌐';
 };
 
@@ -198,6 +251,8 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
             const isExpanded = expandedRows.has(result.id);
             const meta = (result.meta || result.metadata || {}) as Record<string, any>;
             const profileImage = meta.avatar_url || meta.profile_image || meta.image;
+            const platformName = extractPlatformName(result);
+            const profileUrl = extractUrl(result);
 
             return (
               <Collapsible key={result.id} open={isExpanded} onOpenChange={() => toggleExpanded(result.id)}>
@@ -209,8 +264,8 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                 )}>
                   {/* Left: Platform icon + profile image */}
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-lg" title={result.site}>
-                      {getPlatformIcon(result.site)}
+                    <span className="text-lg" title={platformName}>
+                      {getPlatformIcon(platformName)}
                     </span>
                     {profileImage ? (
                       <img 
@@ -230,7 +285,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm truncate">
-                        {result.site || 'Unknown'}
+                        {platformName}
                       </span>
                       {result.status === 'found' && (
                         <Badge className="h-4 px-1 text-[10px] bg-green-600">Active</Badge>
@@ -246,7 +301,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                         </p>
                       ) : (
                         <p className="text-xs text-muted-foreground truncate">
-                          {result.url ? new URL(result.url).pathname.replace(/^\//, '') : 'No details'}
+                          {profileUrl ? new URL(profileUrl).pathname.replace(/^\//, '') : 'No details'}
                         </p>
                       )}
                     </div>
@@ -263,9 +318,9 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                       <span className="sm:hidden">{score}%</span>
                     </Badge>
                     
-                    {result.url && (
+                    {profileUrl && (
                       <Button variant="ghost" size="sm" asChild className="h-7 w-7 p-0">
-                        <a href={result.url} target="_blank" rel="noopener noreferrer">
+                        <a href={profileUrl} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                       </Button>
