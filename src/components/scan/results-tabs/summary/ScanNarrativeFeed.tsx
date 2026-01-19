@@ -65,7 +65,8 @@ export function ScanNarrativeFeed({ items, summary, isLoading, isComplete }: Sca
               key={item.id}
               className={cn(
                 'flex items-center gap-2 text-xs transition-all duration-300',
-                isActive ? 'text-foreground font-medium bg-primary/5 -mx-1 px-1 py-0.5 rounded' : 'text-muted-foreground',
+                isActive && 'text-foreground font-medium bg-primary/5 -mx-1 px-1 py-0.5 rounded animate-pulse-subtle',
+                !isActive && 'text-muted-foreground',
                 isLast && !isActive && 'text-foreground'
               )}
             >

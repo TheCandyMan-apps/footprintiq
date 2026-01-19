@@ -34,6 +34,64 @@ interface ScanEvent {
   error_message: string | null;
 }
 
+/**
+ * Maps provider IDs to user-friendly action messages
+ */
+const PROVIDER_ACTION_MESSAGES: Record<string, { action: string; icon: NarrativeItem['icon'] }> = {
+  // Username providers
+  sherlock: { action: 'Searching social media profiles...', icon: 'search' },
+  maigret: { action: 'Checking 500+ platforms for username...', icon: 'search' },
+  gosearch: { action: 'Running advanced username intelligence...', icon: 'database' },
+  whatsmyname: { action: 'Scanning known username databases...', icon: 'search' },
+  
+  // Email providers
+  holehe: { action: 'Checking email registrations...', icon: 'search' },
+  hibp: { action: 'Checking breach databases...', icon: 'shield' },
+  dehashed: { action: 'Searching leaked credentials...', icon: 'shield' },
+  clearbit: { action: 'Enriching email identity data...', icon: 'database' },
+  fullcontact: { action: 'Looking up contact information...', icon: 'database' },
+  ipqs_email: { action: 'Analyzing email reputation...', icon: 'shield' },
+  perplexity_osint: { action: 'Running AI-powered research...', icon: 'database' },
+  
+  // Phone providers
+  abstract_phone: { action: 'Analyzing carrier information...', icon: 'database' },
+  numverify: { action: 'Validating phone number...', icon: 'check' },
+  ipqs_phone: { action: 'Checking fraud indicators...', icon: 'shield' },
+  twilio_lookup: { action: 'Verifying carrier data...', icon: 'database' },
+  whatsapp_check: { action: 'Checking WhatsApp registration...', icon: 'link' },
+  telegram_check: { action: 'Checking Telegram presence...', icon: 'link' },
+  signal_check: { action: 'Checking Signal registration...', icon: 'link' },
+  phone_osint: { action: 'Searching public mentions...', icon: 'search' },
+  truecaller: { action: 'Looking up caller ID information...', icon: 'database' },
+  phone_reputation: { action: 'Analyzing spam/scam indicators...', icon: 'shield' },
+  phoneinfoga: { action: 'Running phone OSINT scan...', icon: 'search' },
+  
+  // Domain providers
+  spiderfoot: { action: 'Crawling domain intelligence...', icon: 'search' },
+  
+  // Default
+  default: { action: 'Processing scan...', icon: 'loader' },
+};
+
+function getProviderActionMessage(providerId: string): { action: string; icon: NarrativeItem['icon'] } {
+  const normalized = providerId.toLowerCase().replace(/[_-]/g, '');
+  
+  // Try exact match first
+  if (PROVIDER_ACTION_MESSAGES[providerId.toLowerCase()]) {
+    return PROVIDER_ACTION_MESSAGES[providerId.toLowerCase()];
+  }
+  
+  // Try normalized key match
+  for (const [key, value] of Object.entries(PROVIDER_ACTION_MESSAGES)) {
+    const normalizedKey = key.replace(/[_-]/g, '');
+    if (normalized.includes(normalizedKey) || normalizedKey.includes(normalized)) {
+      return value;
+    }
+  }
+  
+  return PROVIDER_ACTION_MESSAGES.default;
+}
+
 export function useScanNarrative(scanId: string, searchedValue: string, scanType: string): ScanNarrative {
   const { data: scanEvents, isLoading } = useQuery({
     queryKey: ['scan-events-narrative', scanId],
@@ -188,66 +246,73 @@ export function useScanNarrative(scanId: string, searchedValue: string, scanType
       });
 
     } else {
-      // RUNNING STATE: Show user-friendly narrative steps
+      // RUNNING STATE: Show provider-specific messages
       const progressPct = providers.size > 0 
         ? Math.round((completedProviders.length / providers.size) * 100) 
         : 0;
 
-      // Step 1: Searching social platforms (always active at start)
-      items.push({
-        id: 'step-1-search',
-        icon: 'search',
-        text: 'Searching social platforms...',
-        isActive: activeProviders.length > 0 && completedProviders.length === 0,
-      });
-
-      // Step 2: Checking for username reuse (after 2+ findings)
-      if (totalFindings >= 2 || completedProviders.length >= 1) {
-        items.push({
-          id: 'step-2-reuse',
-          icon: 'link',
-          text: 'Checking for username reuse...',
-          isActive: totalFindings >= 2 && totalFindings < 5,
+      // Show active provider-specific messages (max 2 displayed)
+      if (activeProviders.length > 0) {
+        const displayActive = activeProviders.slice(0, 2);
+        
+        displayActive.forEach((provider, idx) => {
+          const providerKey = provider.name.toLowerCase().replace(/\s+/g, '');
+          const { action, icon } = getProviderActionMessage(providerKey);
+          items.push({
+            id: `active-${providerKey}-${idx}`,
+            icon,
+            text: action,
+            provider: provider.name,
+            isActive: true,
+          });
         });
+        
+        // If more than 2 active, show a summary
+        if (activeProviders.length > 2) {
+          items.push({
+            id: 'active-more',
+            icon: 'loader',
+            text: `+${activeProviders.length - 2} more providers running...`,
+            isActive: true,
+          });
+        }
       }
 
-      // Step 3: Analyzing profile images (after 3+ findings or 2+ providers)
-      if (totalFindings >= 3 || completedProviders.length >= 2) {
-        items.push({
-          id: 'step-3-profiles',
-          icon: 'database',
-          text: 'Analyzing profile images...',
-          isActive: totalFindings >= 3 && progressPct < 60,
-        });
+      // Show most recent completed provider with results
+      if (completedProviders.length > 0) {
+        const recentWithFindings = completedProviders
+          .filter(p => p.findings > 0)
+          .slice(-1)[0];
+        
+        if (recentWithFindings) {
+          items.push({
+            id: 'completed-recent',
+            icon: 'check',
+            text: `${recentWithFindings.name} found ${recentWithFindings.findings} account${recentWithFindings.findings !== 1 ? 's' : ''}`,
+            provider: recentWithFindings.name,
+            isActive: false,
+          });
+        }
       }
 
-      // Step 4: Correlating identity signals (after 50% progress)
-      if (progressPct >= 40 || completedProviders.length >= 3) {
-        items.push({
-          id: 'step-4-correlate',
-          icon: 'shield',
-          text: 'Correlating identity signals...',
-          isActive: progressPct >= 40 && progressPct < 80,
-        });
-      }
-
-      // Step 5: Finalizing results (near completion)
-      if (progressPct >= 70 || (completedProviders.length > 0 && activeProviders.length <= 1)) {
-        items.push({
-          id: 'step-5-finalize',
-          icon: 'loader',
-          text: 'Finalizing results...',
-          isActive: progressPct >= 70 || activeProviders.length <= 1,
-        });
-      }
-
-      // Show findings count if we have any
+      // Show cumulative findings count
       if (totalFindings > 0) {
         items.push({
           id: 'live-found',
           icon: 'check',
           text: `${totalFindings} account${totalFindings !== 1 ? 's' : ''} found so far`,
           findingsCount: totalFindings,
+          isActive: false,
+        });
+      }
+
+      // Finalizing step (when near completion)
+      if (progressPct >= 80 || (activeProviders.length === 1 && completedProviders.length >= 2)) {
+        items.push({
+          id: 'step-finalize',
+          icon: 'loader',
+          text: 'Finalizing results...',
+          isActive: activeProviders.length <= 1,
         });
       }
     }
