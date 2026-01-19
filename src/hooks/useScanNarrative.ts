@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useProviderETAs, getProviderETA, formatETA, calculateRemainingETA } from './useProviderETAs';
 
 export interface NarrativeItem {
   id: string;
@@ -11,6 +12,7 @@ export interface NarrativeItem {
   duration?: number;
   findingsCount?: number;
   isActive?: boolean;
+  eta?: string; // Estimated time remaining for this provider
 }
 
 export interface ScanNarrative {
@@ -21,6 +23,7 @@ export interface ScanNarrative {
   scanDuration: number;
   isLoading: boolean;
   isComplete: boolean;
+  estimatedTimeRemaining?: string; // Overall ETA for scan completion
 }
 
 interface ScanEvent {
@@ -93,6 +96,8 @@ function getProviderActionMessage(providerId: string): { action: string; icon: N
 }
 
 export function useScanNarrative(scanId: string, searchedValue: string, scanType: string): ScanNarrative {
+  const { data: etaMap } = useProviderETAs();
+  
   const { data: scanEvents, isLoading } = useQuery({
     queryKey: ['scan-events-narrative', scanId],
     queryFn: async () => {
@@ -139,7 +144,7 @@ export function useScanNarrative(scanId: string, searchedValue: string, scanType
     let totalDuration = 0;
     const providers = new Set<string>();
     const completedProviders: { name: string; findings: number; duration: number; timestamp: string }[] = [];
-    const activeProviders: { name: string; stage: string }[] = [];
+    const activeProviders: { name: string; stage: string; startedAt: string; rawName: string }[] = [];
     const failedProviders: string[] = [];
 
     // Group events by provider
@@ -177,9 +182,13 @@ export function useScanNarrative(scanId: string, searchedValue: string, scanType
           timestamp: completeEvent.created_at,
         });
       } else {
+        // Find the earliest event for this provider (start time)
+        const startEvent = events[0];
         activeProviders.push({
           name: formatProviderName(provider),
+          rawName: provider,
           stage: latestEvent.stage,
+          startedAt: startEvent.created_at,
         });
       }
     });
@@ -251,29 +260,44 @@ export function useScanNarrative(scanId: string, searchedValue: string, scanType
         ? Math.round((completedProviders.length / providers.size) * 100) 
         : 0;
 
-      // Show active provider-specific messages (max 2 displayed)
+      // Show active provider-specific messages (max 2 displayed) with ETAs
       if (activeProviders.length > 0) {
         const displayActive = activeProviders.slice(0, 2);
         
         displayActive.forEach((provider, idx) => {
           const providerKey = provider.name.toLowerCase().replace(/\s+/g, '');
           const { action, icon } = getProviderActionMessage(providerKey);
+          
+          // Calculate remaining time for this provider
+          const estimatedDuration = getProviderETA(provider.rawName, etaMap);
+          const elapsed = Date.now() - new Date(provider.startedAt).getTime();
+          const remainingMs = Math.max(0, estimatedDuration - elapsed);
+          const etaText = remainingMs > 0 ? formatETA(remainingMs) : '';
+          
           items.push({
             id: `active-${providerKey}-${idx}`,
             icon,
             text: action,
             provider: provider.name,
             isActive: true,
+            eta: etaText,
           });
         });
         
-        // If more than 2 active, show a summary
+        // If more than 2 active, show a summary with combined ETA
         if (activeProviders.length > 2) {
+          const remainingProviders = activeProviders.slice(2);
+          const { formatted: combinedEta } = calculateRemainingETA(
+            remainingProviders.map(p => ({ name: p.rawName, startedAt: p.startedAt })),
+            etaMap
+          );
+          
           items.push({
             id: 'active-more',
             icon: 'loader',
             text: `+${activeProviders.length - 2} more providers running...`,
             isActive: true,
+            eta: combinedEta,
           });
         }
       }
@@ -322,6 +346,14 @@ export function useScanNarrative(scanId: string, searchedValue: string, scanType
       ? generateSummary(totalFindings, providers.size, completedProviders, typeLabel)
       : '';
 
+    // Calculate overall remaining time
+    const { formatted: estimatedTimeRemaining } = isComplete 
+      ? { formatted: undefined }
+      : calculateRemainingETA(
+          activeProviders.map(p => ({ name: p.rawName, startedAt: p.startedAt })),
+          etaMap
+        );
+
     return {
       items: items.slice(0, 6), // Max 6 items
       summary,
@@ -330,8 +362,9 @@ export function useScanNarrative(scanId: string, searchedValue: string, scanType
       scanDuration: totalDuration,
       isLoading,
       isComplete,
+      estimatedTimeRemaining,
     };
-  }, [scanEvents, searchedValue, scanType, isLoading]);
+  }, [scanEvents, searchedValue, scanType, isLoading, etaMap]);
 
   return narrative;
 }
