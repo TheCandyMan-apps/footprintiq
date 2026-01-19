@@ -22,7 +22,13 @@ import {
   XCircle,
   ArrowRight,
   HelpCircle,
-  Sparkles
+  Sparkles,
+  Phone,
+  Zap,
+  RefreshCw,
+  Clock,
+  Scale,
+  Target
 } from "lucide-react";
 import {
   Accordion,
@@ -30,6 +36,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const DigitalFootprintScanner = () => {
   const faqs = [
@@ -56,6 +70,22 @@ const DigitalFootprintScanner = () => {
     {
       question: "Who should use an OSINT-based scan?",
       answer: "Anyone curious about their online visibility can benefit from a scan. However, it's particularly valuable for people concerned about identity theft, professionals managing their online reputation, journalists and researchers needing ethical investigation tools, job seekers wanting to review what employers might find, and anyone who has experienced a data breach and wants to understand their exposure. If you've ever wondered what information about you exists online, a scan provides concrete answers."
+    },
+    {
+      question: "How accurate is a digital footprint scanner?",
+      answer: "Accuracy depends on the scanner's methodology and sources. FootprintIQ uses multiple OSINT tools and cross-validates results to reduce false positives. We search over 500 public platforms and breach databases, providing confidence scores for each finding. However, no scanner can guarantee 100% coverage—some information may exist in sources we don't index, or under variations of your identifiers we haven't checked. For best results, run scans with multiple usernames and email addresses you've used over time."
+    },
+    {
+      question: "Can a footprint scanner find deleted accounts?",
+      answer: "In many cases, yes. When you delete a social media account, the platform removes it from their public interface, but traces often remain. Your username may still appear in cached search results, archived web pages, or data broker listings. Breach databases also retain records indefinitely—if your email was in a breach before you deleted the account, that record still exists. A footprint scanner reveals these persistent traces that outlast account deletion."
+    },
+    {
+      question: "How often should I scan my digital footprint?",
+      answer: "We recommend scanning at least once per quarter, or after any significant online activity changes. Major life events—job changes, moving, ending relationships—often prompt privacy reviews. If you've received a breach notification, scan immediately to assess your exposure. Regular scanning helps you catch new exposures early, before they compound into larger risks. Some users with higher security needs scan monthly."
+    },
+    {
+      question: "What's the difference between a footprint scanner and a background check?",
+      answer: "Background checks access restricted databases like court records, credit histories, and criminal records—often requiring consent and legal authorization. A digital footprint scanner like FootprintIQ only searches publicly accessible sources that anyone can find. We don't access government databases, credit bureaus, or private records. Our focus is helping you understand your public exposure, not conducting formal investigations that would require special authorization."
     }
   ];
 
@@ -121,30 +151,65 @@ const DigitalFootprintScanner = () => {
     "description": "Ethical digital footprint intelligence platform"
   };
 
+  const schemaHowTo = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": "How to Scan Your Digital Footprint",
+    "description": "Step-by-step guide to checking your online exposure using FootprintIQ's free footprint scanner.",
+    "totalTime": "PT5M",
+    "step": [
+      {
+        "@type": "HowToStep",
+        "position": 1,
+        "name": "Enter your identifier",
+        "text": "Enter your username, email address, or phone number into the footprint scanner. You can run multiple scans with different identifiers for comprehensive coverage."
+      },
+      {
+        "@type": "HowToStep",
+        "position": 2,
+        "name": "Scanner queries public sources",
+        "text": "Our footprint scanner searches over 500 public platforms, breach databases, and OSINT sources for matches. This process takes 2-3 minutes depending on scan depth."
+      },
+      {
+        "@type": "HowToStep",
+        "position": 3,
+        "name": "Results are aggregated",
+        "text": "Findings from multiple tools are aggregated, de-duplicated, and validated. Each result receives a confidence score based on cross-validation."
+      },
+      {
+        "@type": "HowToStep",
+        "position": 4,
+        "name": "Review your exposure report",
+        "text": "You receive a structured report showing where your information appears, categorized by risk level. Use this to prioritize which exposures to address first."
+      }
+    ]
+  };
+
   return (
     <>
       <Helmet>
         <title>Digital Footprint Scanner – Free & Ethical Online Exposure Check | FootprintIQ</title>
         <meta 
           name="description" 
-          content="Scan your digital footprint for free. Check where your usernames, emails, and personal data appear online using ethical OSINT methods. No surveillance, no data selling—just visibility." 
+          content="Free footprint scanner to check your online exposure. Our digital footprint scanner searches 500+ public sources for usernames, email breaches, and data broker listings—ethically and privately." 
         />
-        <meta name="keywords" content="digital footprint scanner, online footprint scanner, digital footprint check, find my digital footprint, personal data exposure, ethical OSINT tools, username search, email breach check" />
+        <meta name="keywords" content="digital footprint scanner, online footprint scanner, free footprint scanner, digital footprint check, find my digital footprint, personal data exposure, ethical OSINT tools, username scanner, email breach scanner, internet footprint" />
         <link rel="canonical" href="https://footprintiq.com/digital-footprint-scanner" />
         
         <meta property="og:title" content="Digital Footprint Scanner – Free & Ethical Online Exposure Check" />
-        <meta property="og:description" content="Understand your online visibility. Scan usernames, emails, and public data with ethical OSINT methods. Free, private, and transparent." />
+        <meta property="og:description" content="Free footprint scanner to check your online exposure. Searches 500+ public sources for usernames, email breaches, and data broker listings." />
         <meta property="og:url" content="https://footprintiq.com/digital-footprint-scanner" />
         <meta property="og:type" content="website" />
         
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Digital Footprint Scanner – Free & Ethical Online Exposure Check" />
-        <meta name="twitter:description" content="Understand your online visibility. Scan usernames, emails, and public data with ethical OSINT methods." />
+        <meta name="twitter:description" content="Free footprint scanner to check your online exposure. Ethical OSINT methods, no surveillance." />
         
         <script type="application/ld+json">{JSON.stringify(schemaFAQ)}</script>
         <script type="application/ld+json">{JSON.stringify(schemaBreadcrumb)}</script>
         <script type="application/ld+json">{JSON.stringify(schemaSoftware)}</script>
         <script type="application/ld+json">{JSON.stringify(schemaOrganization)}</script>
+        <script type="application/ld+json">{JSON.stringify(schemaHowTo)}</script>
       </Helmet>
 
       <div className="min-h-screen bg-background">
@@ -162,9 +227,14 @@ const DigitalFootprintScanner = () => {
 
           {/* Hero Section */}
           <section className="mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
               Digital Footprint Scanner – Free & Ethical Online Exposure Check
             </h1>
+            
+            {/* Lead-in subtitle with keyword variations */}
+            <p className="text-xl text-primary/80 font-medium mb-6">
+              Our free online footprint scanner helps you discover where your personal information appears across the web—no surveillance, no data selling.
+            </p>
             
             <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
               <p className="text-xl text-muted-foreground leading-relaxed">
@@ -172,16 +242,42 @@ const DigitalFootprintScanner = () => {
               </p>
               
               <p>
-                Most people don't realize how much of their information is publicly accessible. Over years of internet use, data accumulates across dozens or hundreds of sites. Old forum accounts, forgotten social profiles, and breached passwords all contribute to your digital footprint.
+                Most people don't realize how much of their information is publicly accessible. Over years of internet use, data accumulates across dozens or hundreds of sites. Old forum accounts, forgotten social profiles, and breached passwords all contribute to your digital footprint. An online footprint scanner reveals this accumulated exposure in minutes.
               </p>
               
               <p>
-                The important thing to understand: most exposure isn't caused by hacking. It comes from normal internet use over time. Account sign-ups, public posts, data broker collection, and third-party data sharing all create visibility that most people never think about.
+                The important thing to understand: most exposure isn't caused by hacking. It comes from normal internet use over time. Account sign-ups, public posts, data broker collection, and third-party data sharing all create visibility that most people never think about. A web presence scanner helps you see what's already out there.
               </p>
               
               <p>
-                Before you can reduce your exposure, you need to understand it. A scan gives you that visibility—showing you what exists so you can make informed decisions about what matters.
+                Before you can reduce your exposure, you need to understand it. A footprint scan gives you that visibility—showing you what exists so you can make informed decisions about what matters.
               </p>
+            </div>
+
+            {/* Quick Summary Box */}
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 mb-8">
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                <Zap className="h-5 w-5 text-primary" />
+                What This Footprint Scanner Does in 30 Seconds
+              </h2>
+              <ul className="grid sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                  Searches 500+ public platforms for your usernames
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                  Checks breach databases for exposed emails
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                  Identifies data broker listings
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                  Provides a structured exposure report
+                </li>
+              </ul>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -197,13 +293,172 @@ const DigitalFootprintScanner = () => {
             </div>
           </section>
 
-          {/* What Is a Digital Footprint */}
+          {/* How Our Footprint Scanner Works - NEW SECTION */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold mb-6">What Is a Digital Footprint?</h2>
+            <h2 className="text-2xl font-bold mb-6">How Our Footprint Scanner Works</h2>
             
             <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
               <p>
-                Your digital footprint is the trail of information you leave behind as you use the internet. Every account you create, post you make, and service you sign up for adds to this trail. Over time, it builds into a detailed picture of your online presence.
+                Understanding how an online footprint scanner operates helps you trust the results. Here's the step-by-step process our digital footprint scanner follows:
+              </p>
+            </div>
+
+            <div className="space-y-4 mb-8">
+              {[
+                {
+                  step: 1,
+                  title: "Enter your identifier",
+                  description: "Start by entering a username, email address, or phone number. The footprint scanner accepts any identifier you want to check. For comprehensive coverage, run multiple scans with different identifiers you've used online over the years."
+                },
+                {
+                  step: 2,
+                  title: "Scanner queries 500+ public sources",
+                  description: "Our free footprint scanner sends queries to social networks, forums, data aggregators, and breach databases. We use ethical OSINT methods—the same techniques used by security researchers and journalists—to find where your information appears."
+                },
+                {
+                  step: 3,
+                  title: "Results are aggregated and validated",
+                  description: "Raw findings from multiple tools are combined, de-duplicated, and cross-validated. Each result receives a confidence score. False positives are filtered out so you only see genuine matches."
+                },
+                {
+                  step: 4,
+                  title: "You receive a structured exposure report",
+                  description: "Your internet footprint is presented in a clear report organized by category and risk level. You can see exactly where your username appears, which breaches included your email, and what data broker listings may contain your information."
+                }
+              ].map((item) => (
+                <div key={item.step} className="flex gap-4 items-start">
+                  <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold shrink-0">
+                    {item.step}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg mb-1">{item.title}</h3>
+                    <p className="text-muted-foreground">{item.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-muted-foreground">
+              The entire process typically takes 2-3 minutes. You'll receive results in real-time as our digital exposure tool completes each check.
+            </p>
+          </section>
+
+          {/* Types of Footprint Scans - NEW SECTION */}
+          <section className="mb-16">
+            <h2 className="text-2xl font-bold mb-6">Types of Footprint Scans</h2>
+            
+            <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
+              <p>
+                Different identifiers reveal different aspects of your digital footprint. Our online visibility checker supports three primary scan types, each designed to uncover specific exposure patterns:
+              </p>
+            </div>
+
+            <div className="grid gap-6 mb-8">
+              <Card className="border-primary/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-lg bg-primary/10">
+                      <User className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Username Footprint Scanner</h3>
+                      <p className="text-muted-foreground mb-3">
+                        The username scanner discovers where a specific handle appears across the internet. It's the most revealing scan type because usernames create linkable identities. When you reuse "alex_1995" across platforms, each account becomes connected in ways that aren't obvious until you see them mapped together.
+                      </p>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          Searches 500+ social networks and forums
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          Identifies profile reuse across platforms
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          Reveals forgotten accounts you may have created
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-lg bg-primary/10">
+                      <Mail className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Email Breach Scanner</h3>
+                      <p className="text-muted-foreground mb-3">
+                        The email exposure scanner checks whether your address appears in known data breaches. Over 15 billion records have been exposed in public breaches—if you've used the internet for any length of time, your email has likely been compromised at least once.
+                      </p>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          Cross-references aggregated breach databases
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          Identifies which services were compromised
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          Shows what data types were exposed (passwords, names, etc.)
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-primary/20">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-lg bg-primary/10">
+                      <Phone className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Phone Number Lookup</h3>
+                      <p className="text-muted-foreground mb-3">
+                        The phone scanner checks for associated accounts and data broker listings. Phone numbers are increasingly used as account identifiers and often appear in people-search sites without your knowledge. This scan reveals where your number has been linked.
+                      </p>
+                      <ul className="text-sm text-muted-foreground space-y-1">
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          Finds accounts linked to your phone number
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          Checks data broker and people-search sites
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                          Identifies potential spam/scam targeting vectors
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="bg-muted/50 rounded-lg p-6 border border-border/50">
+              <p className="text-sm text-muted-foreground">
+                <strong className="text-foreground">Pro tip:</strong> For the most complete picture, run all three scan types. Your username, email, and phone number each reveal different facets of your online exposure that together form your complete digital footprint.
+              </p>
+            </div>
+          </section>
+
+          {/* What Is a Digital Footprint */}
+          <section className="mb-16">
+            <h2 className="text-2xl font-bold mb-6">What Does a Digital Footprint Scanner Check?</h2>
+            
+            <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
+              <p>
+                Your digital footprint is the trail of information you leave behind as you use the internet. Every account you create, post you make, and service you sign up for adds to this trail. Over time, it builds into a detailed picture of your online presence that a footprint scanner can reveal.
               </p>
             </div>
 
@@ -217,7 +472,7 @@ const DigitalFootprintScanner = () => {
                     <div>
                       <h3 className="font-semibold text-lg mb-2">Active Footprint</h3>
                       <p className="text-muted-foreground">
-                        Information you intentionally share—social media posts, account profiles, forum comments, and public content you create. You have some control over this data.
+                        Information you intentionally share—social media posts, account profiles, forum comments, and public content you create. You have some control over this data. A digital footprint scanner shows where this active content exists.
                       </p>
                     </div>
                   </div>
@@ -233,7 +488,7 @@ const DigitalFootprintScanner = () => {
                     <div>
                       <h3 className="font-semibold text-lg mb-2">Passive Footprint</h3>
                       <p className="text-muted-foreground">
-                        Information collected without your direct action—data broker profiles, breach records, aggregated data from third parties. This often exists without your knowledge.
+                        Information collected without your direct action—data broker profiles, breach records, aggregated data from third parties. This often exists without your knowledge. An online footprint scanner reveals this hidden exposure.
                       </p>
                     </div>
                   </div>
@@ -257,11 +512,11 @@ const DigitalFootprintScanner = () => {
 
           {/* What FootprintIQ Scans */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold mb-6">What FootprintIQ Scans</h2>
+            <h2 className="text-2xl font-bold mb-6">What Our Footprint Scanner Searches</h2>
             
             <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
               <p>
-                FootprintIQ uses open-source intelligence (OSINT) methods to search publicly accessible sources. Here's what we look for:
+                FootprintIQ uses open-source intelligence (OSINT) methods to search publicly accessible sources. Here's what our online footprint scanner looks for:
               </p>
             </div>
 
@@ -270,22 +525,22 @@ const DigitalFootprintScanner = () => {
                 {
                   icon: User,
                   title: "Usernames across public websites",
-                  description: "We check 500+ platforms to see where a username appears, from major social networks to niche forums and services."
+                  description: "Our username scanner checks 500+ platforms to see where a username appears, from major social networks to niche forums and services."
                 },
                 {
                   icon: Mail,
                   title: "Email exposure from known breaches",
-                  description: "We cross-reference emails against aggregated breach databases to identify potential password exposures."
+                  description: "The email breach scanner cross-references emails against aggregated breach databases to identify potential password exposures."
                 },
                 {
                   icon: Globe,
                   title: "Public profiles and linked accounts",
-                  description: "We identify connections between accounts that use the same username or email across different platforms."
+                  description: "We identify connections between accounts that use the same username or email across different platforms—revealing your web presence."
                 },
                 {
                   icon: Search,
                   title: "Open-source intelligence sources",
-                  description: "We query public records, search engines, and OSINT databases that aggregate publicly available information."
+                  description: "Our OSINT scanner queries public records, search engines, and intelligence databases that aggregate publicly available information."
                 },
                 {
                   icon: Database,
@@ -311,18 +566,18 @@ const DigitalFootprintScanner = () => {
 
             <div className="bg-muted/50 rounded-lg p-6 border border-border/50">
               <p className="text-sm text-muted-foreground">
-                <strong className="text-foreground">Important:</strong> All sources we query are publicly accessible. We do not access private databases, bypass authentication, or use any data that isn't already available through open channels.
+                <strong className="text-foreground">Important:</strong> All sources our footprint scanner queries are publicly accessible. We do not access private databases, bypass authentication, or use any data that isn't already available through open channels.
               </p>
             </div>
           </section>
 
           {/* What FootprintIQ Does NOT Do */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold mb-6">What FootprintIQ Does NOT Do</h2>
+            <h2 className="text-2xl font-bold mb-6">What a Legitimate Footprint Scanner Avoids</h2>
             
             <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
               <p>
-                Ethical boundaries matter. We believe in transparency about what we do and—equally important—what we don't do. These aren't limitations; they're intentional choices that define who we are.
+                Ethical boundaries matter. We believe in transparency about what our digital footprint scanner does and—equally important—what it doesn't do. These aren't limitations; they're intentional choices that define who we are.
               </p>
             </div>
 
@@ -330,7 +585,7 @@ const DigitalFootprintScanner = () => {
               {[
                 {
                   title: "No private database access",
-                  description: "We don't purchase, steal, or access private datasets. If information isn't publicly available, we don't have it."
+                  description: "We don't purchase, steal, or access private datasets. If information isn't publicly available, our footprint scanner doesn't have it."
                 },
                 {
                   title: "No monitoring or tracking",
@@ -338,7 +593,7 @@ const DigitalFootprintScanner = () => {
                 },
                 {
                   title: "No scraping behind logins",
-                  description: "We don't log into accounts to access protected content. If it requires authentication, it's off-limits."
+                  description: "We don't log into accounts to access protected content. If it requires authentication, it's off-limits to our online visibility checker."
                 },
                 {
                   title: "No surveillance capabilities",
@@ -367,18 +622,124 @@ const DigitalFootprintScanner = () => {
 
             <div className="bg-primary/5 rounded-lg p-6 border border-primary/20">
               <p className="text-muted-foreground">
-                We draw clear ethical lines because trust matters more than features. You should know exactly what a tool does before you use it—and FootprintIQ is built on that principle.
+                We draw clear ethical lines because trust matters more than features. You should know exactly what a footprint scanner does before you use it—and FootprintIQ is built on that principle.
+              </p>
+            </div>
+          </section>
+
+          {/* Digital Footprint Scanner Comparison - NEW SECTION */}
+          <section className="mb-16">
+            <h2 className="text-2xl font-bold mb-6">Digital Footprint Scanner Comparison</h2>
+            
+            <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
+              <p>
+                Not all digital footprint tools serve the same purpose. Understanding the differences helps you choose the right online exposure check for your needs:
+              </p>
+            </div>
+
+            <div className="overflow-x-auto mb-8">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[200px]">Feature</TableHead>
+                    <TableHead>Free Footprint Scanners</TableHead>
+                    <TableHead>Paid Monitoring Services</TableHead>
+                    <TableHead>Data Broker Sites</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Cost</TableCell>
+                    <TableCell>Free or freemium</TableCell>
+                    <TableCell>$10-30/month</TableCell>
+                    <TableCell>"Free" (you're the product)</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Scan Type</TableCell>
+                    <TableCell>On-demand, user-initiated</TableCell>
+                    <TableCell>Continuous monitoring</TableCell>
+                    <TableCell>Profile aggregation</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Data Sources</TableCell>
+                    <TableCell>Public OSINT sources</TableCell>
+                    <TableCell>Public + some private sources</TableCell>
+                    <TableCell>Purchased data, scraped info</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Your Data</TableCell>
+                    <TableCell>Not sold or shared</TableCell>
+                    <TableCell>Varies by provider</TableCell>
+                    <TableCell>Actively sold to third parties</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Purpose</TableCell>
+                    <TableCell>Self-awareness & education</TableCell>
+                    <TableCell>Alerts & ongoing protection</TableCell>
+                    <TableCell>Profit from your information</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Best For</TableCell>
+                    <TableCell>One-time audits, learning</TableCell>
+                    <TableCell>High-risk individuals</TableCell>
+                    <TableCell>No one (avoid these)</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4 mb-8">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Clock className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">One-Time Scans</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Best for periodic privacy audits. Run a free footprint scan when you want to understand your current exposure. Ideal for most users who want awareness without ongoing costs.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <RefreshCw className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Continuous Monitoring</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Appropriate for high-risk individuals (executives, public figures) who need immediate alerts when new exposure appears. Paid services offer this.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Scale className="h-5 w-5 text-primary" />
+                    <h3 className="font-semibold">Self-Service vs. Managed</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Self-service footprint scanners give you control and education. Managed services handle removal for you but cost more and require trusting a third party.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="prose prose-lg dark:prose-invert max-w-none">
+              <p>
+                FootprintIQ fits the "free footprint scanner" category—we focus on awareness and education, giving you the knowledge to make informed decisions. For most people, periodic self-audits provide sufficient protection without ongoing costs.
               </p>
             </div>
           </section>
 
           {/* Why Visibility Matters */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold mb-6">Why Digital Footprint Visibility Matters</h2>
+            <h2 className="text-2xl font-bold mb-6">Why Use an Online Footprint Scanner?</h2>
             
             <div className="prose prose-lg dark:prose-invert max-w-none">
               <p>
-                Identity theft and fraud aren't usually the result of a single dramatic hack. They're opportunistic—criminals look for exposed information and combine small pieces into larger attacks over time.
+                Identity theft and fraud aren't usually the result of a single dramatic hack. They're opportunistic—criminals look for exposed information and combine small pieces into larger attacks over time. A digital footprint scanner helps you see what they might find.
               </p>
               
               <p>
@@ -386,89 +747,18 @@ const DigitalFootprintScanner = () => {
               </p>
               
               <p>
-                The risk isn't hypothetical. It's mathematical. The more exposure you have, the more opportunity attackers have to find a weak point. Old data doesn't become safe just because time passes—it often sits in searchable databases indefinitely.
+                The risk isn't hypothetical. It's mathematical. The more exposure you have, the more opportunity attackers have to find a weak point. Old data doesn't become safe just because time passes—it often sits in searchable databases indefinitely. An internet footprint check reveals these accumulated risks.
               </p>
               
               <p>
-                Understanding your exposure is the first step toward reducing it. You can't address risks you don't know exist.
+                Understanding your exposure is the first step toward reducing it. You can't address risks you don't know exist. That's why using a web presence scanner regularly is essential for modern digital hygiene.
               </p>
             </div>
           </section>
 
-          {/* Who This Is For */}
+          {/* Footprint Scanner vs. Data Broker Sites */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold mb-6">Who This Is For</h2>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <UserCheck className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg mb-2">Privacy-Conscious Individuals</h3>
-                      <p className="text-muted-foreground">
-                        Anyone who wants to understand their online visibility and take control of their personal information. Whether you're concerned about identity theft, protecting family members, or simply curious about your digital presence.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Briefcase className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg mb-2">Professionals & Executives</h3>
-                      <p className="text-muted-foreground">
-                        People who need to audit their online presence for career reasons—job seekers reviewing what employers might find, executives managing reputation risk, or public figures assessing their exposure.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <FileSearch className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg mb-2">Journalists & Researchers</h3>
-                      <p className="text-muted-foreground">
-                        Investigators who need ethical OSINT tools for legitimate research. FootprintIQ provides structured, reproducible searches across public sources without crossing ethical or legal boundaries.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Users className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg mb-2">Risk Reduction Seekers</h3>
-                      <p className="text-muted-foreground">
-                        Anyone who wants to reduce their long-term exposure—people who've experienced a breach, those going through life changes, or anyone looking to minimize their attack surface.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </section>
-
-          {/* How FootprintIQ Is Different */}
-          <section className="mb-16">
-            <h2 className="text-3xl font-bold mb-6">How FootprintIQ Is Different</h2>
+            <h2 className="text-2xl font-bold mb-6">Footprint Scanner vs. Data Broker Sites</h2>
             
             <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
               <p>
@@ -534,25 +824,96 @@ const DigitalFootprintScanner = () => {
 
             <div className="prose prose-lg dark:prose-invert max-w-none">
               <p>
-                FootprintIQ exists to give you knowledge and agency—not to exploit your data or enable misuse. We focus on helping you understand risk, make decisions, and take action if you choose to. The difference between awareness and exploitation isn't subtle; it's fundamental.
+                FootprintIQ exists to give you knowledge and agency—not to exploit your data or enable misuse. Our online footprint scanner focuses on helping you understand risk, make decisions, and take action if you choose to. The difference between awareness and exploitation isn't subtle; it's fundamental.
               </p>
               <p>
                 If you're concerned about data brokers specifically, our guide on{" "}
                 <Link to="/blog/remove-data-brokers" className="text-primary hover:underline">
                   how to remove yourself from data broker sites
                 </Link>{" "}
-                provides actionable steps you can take.
+                provides actionable steps you can take after running a footprint scan.
               </p>
+            </div>
+          </section>
+
+          {/* Who Should Use a Digital Footprint Scanner */}
+          <section className="mb-16">
+            <h2 className="text-2xl font-bold mb-6">Who Should Use a Digital Footprint Scanner?</h2>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <UserCheck className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Privacy-Conscious Individuals</h3>
+                      <p className="text-muted-foreground">
+                        Anyone who wants to understand their online visibility and take control of their personal information. Whether you're concerned about identity theft, protecting family members, or simply curious about your digital presence—an online footprint scanner provides answers.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Briefcase className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Professionals & Executives</h3>
+                      <p className="text-muted-foreground">
+                        People who need to audit their web presence for career reasons—job seekers reviewing what employers might find, executives managing reputation risk, or public figures assessing their exposure with a personal data scanner.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <FileSearch className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Journalists & Researchers</h3>
+                      <p className="text-muted-foreground">
+                        Investigators who need ethical OSINT tools for legitimate research. FootprintIQ provides structured, reproducible searches across public sources without crossing ethical or legal boundaries.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-4">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Users className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg mb-2">Risk Reduction Seekers</h3>
+                      <p className="text-muted-foreground">
+                        Anyone who wants to reduce their long-term exposure—people who've experienced a breach, those going through life changes, or anyone looking to minimize their attack surface with a free footprint scanner.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </section>
 
           {/* What You Can Do After Scanning */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold mb-6">What You Can Do After Scanning</h2>
+            <h2 className="text-2xl font-bold mb-6">Next Steps After Running a Footprint Scan</h2>
             
             <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
               <p>
-                A scan is information, not a verdict. What you do with that information depends on your priorities and circumstances. Here are some common next steps:
+                A footprint scan is information, not a verdict. What you do with that information depends on your priorities and circumstances. Here are some common next steps after using our digital footprint scanner:
               </p>
             </div>
 
@@ -569,9 +930,9 @@ const DigitalFootprintScanner = () => {
                   description: "If the same credentials appear across multiple breaches, prioritize changing them. Consider a password manager for unique passwords."
                 },
                 {
-                  icon: Eye,
+                  icon: Target,
                   title: "Decide what exposure matters",
-                  description: "Not all visibility is equally risky. A public professional profile is different from an exposed password. Prioritize based on actual risk."
+                  description: "Not all visibility is equally risky. A public professional profile is different from an exposed password. Prioritize based on actual risk revealed by your footprint scan."
                 },
                 {
                   icon: Sparkles,
@@ -604,9 +965,9 @@ const DigitalFootprintScanner = () => {
 
           {/* FAQ Section */}
           <section className="mb-16">
-            <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
-              <HelpCircle className="h-8 w-8 text-primary" />
-              Frequently Asked Questions
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+              <HelpCircle className="h-7 w-7 text-primary" />
+              Common Questions About Footprint Scanning
             </h2>
             
             <Accordion type="single" collapsible className="w-full">
@@ -625,9 +986,9 @@ const DigitalFootprintScanner = () => {
 
           {/* Closing CTA */}
           <section className="text-center py-12 px-6 rounded-2xl bg-gradient-to-br from-primary/10 via-background to-primary/5 border border-primary/20">
-            <h2 className="text-3xl font-bold mb-4">Understand Your Online Exposure</h2>
+            <h2 className="text-2xl font-bold mb-4">Understand Your Online Exposure</h2>
             <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Knowledge is the first step toward better security. Run a free scan to see what information about you exists in public sources—no surveillance, no data selling, just clarity.
+              Knowledge is the first step toward better security. Run a free footprint scan to see what information about you exists in public sources—no surveillance, no data selling, just clarity.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button asChild size="lg" className="gap-2">
