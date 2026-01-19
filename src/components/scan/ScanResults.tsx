@@ -14,6 +14,7 @@ import { generateInvestigationReport } from '@/lib/investigationReportPDF';
 import { ScanProgress } from './ScanProgress';
 import { ResultsTabBar } from './ResultsTabBar';
 import { TabSkeleton } from './results-tabs/TabSkeleton';
+import { InvestigationProvider } from '@/contexts/InvestigationContext';
 import { Loader2, Shield } from 'lucide-react';
 import { parseISO, isValid } from 'date-fns';
 
@@ -376,73 +377,75 @@ export function ScanResults({ jobId }: ScanResultsProps) {
             </p>
           </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            {/* Sticky Tab Bar with Toolbar */}
-            <ResultsTabBar 
-              tabCounts={tabCounts} 
-              hasGeoData={hasGeoData} 
-              showTimeline={showTimeline}
-              onExportJSON={handleExportJSON}
-              onExportCSV={handleExportCSV}
-              onExportPDF={handleExportPDF}
-              onNewScan={handleNewScan}
-              actionsDisabled={results.length === 0}
-            />
+          <InvestigationProvider scanId={jobId}>
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+              {/* Sticky Tab Bar with Toolbar */}
+              <ResultsTabBar 
+                tabCounts={tabCounts} 
+                hasGeoData={hasGeoData} 
+                showTimeline={showTimeline}
+                onExportJSON={handleExportJSON}
+                onExportCSV={handleExportCSV}
+                onExportPDF={handleExportPDF}
+                onNewScan={handleNewScan}
+                actionsDisabled={results.length === 0}
+              />
 
-            {/* Tab Content - Lazy Loaded */}
-            <div className="mt-6">
-              <TabsContent value="summary" className="mt-0">
-                <Suspense fallback={<TabSkeleton />}>
-                  <SummaryTab 
-                    jobId={jobId} 
-                    job={job} 
-                    grouped={grouped} 
-                    resultsCount={results.length}
-                    results={results}
-                  />
-                </Suspense>
-              </TabsContent>
-
-              <TabsContent value="accounts" className="mt-0">
-                <Suspense fallback={<TabSkeleton />}>
-                  <AccountsTab results={results} jobId={jobId} />
-                </Suspense>
-              </TabsContent>
-
-              <TabsContent value="connections" className="mt-0">
-                <Suspense fallback={<TabSkeleton />}>
-                  <ConnectionsTab results={results} username={job.username} />
-                </Suspense>
-              </TabsContent>
-
-              {showTimeline && (
-                <TabsContent value="timeline" className="mt-0">
+              {/* Tab Content - Lazy Loaded */}
+              <div className="mt-6">
+                <TabsContent value="summary" className="mt-0">
                   <Suspense fallback={<TabSkeleton />}>
-                    <TimelineTab 
-                      scanId={jobId} 
-                      results={results} 
-                      username={job.username}
-                      isPremium={isPremium}
+                    <SummaryTab 
+                      jobId={jobId} 
+                      job={job} 
+                      grouped={grouped} 
+                      resultsCount={results.length}
+                      results={results}
                     />
                   </Suspense>
                 </TabsContent>
-              )}
 
-              <TabsContent value="breaches" className="mt-0">
-                <Suspense fallback={<TabSkeleton />}>
-                  <BreachesTab results={results} breachResults={breachResults} />
-                </Suspense>
-              </TabsContent>
-
-              {hasGeoData && (
-                <TabsContent value="map" className="mt-0">
+                <TabsContent value="accounts" className="mt-0">
                   <Suspense fallback={<TabSkeleton />}>
-                    <MapTab locations={geoLocations} />
+                    <AccountsTab results={results} jobId={jobId} />
                   </Suspense>
                 </TabsContent>
-              )}
-            </div>
-          </Tabs>
+
+                <TabsContent value="connections" className="mt-0">
+                  <Suspense fallback={<TabSkeleton />}>
+                    <ConnectionsTab results={results} username={job.username} jobId={jobId} />
+                  </Suspense>
+                </TabsContent>
+
+                {showTimeline && (
+                  <TabsContent value="timeline" className="mt-0">
+                    <Suspense fallback={<TabSkeleton />}>
+                      <TimelineTab 
+                        scanId={jobId} 
+                        results={results} 
+                        username={job.username}
+                        isPremium={isPremium}
+                      />
+                    </Suspense>
+                  </TabsContent>
+                )}
+
+                <TabsContent value="breaches" className="mt-0">
+                  <Suspense fallback={<TabSkeleton />}>
+                    <BreachesTab results={results} breachResults={breachResults} />
+                  </Suspense>
+                </TabsContent>
+
+                {hasGeoData && (
+                  <TabsContent value="map" className="mt-0">
+                    <Suspense fallback={<TabSkeleton />}>
+                      <MapTab locations={geoLocations} />
+                    </Suspense>
+                  </TabsContent>
+                )}
+              </div>
+            </Tabs>
+          </InvestigationProvider>
         )}
       </CardContent>
     </Card>

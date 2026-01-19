@@ -3320,6 +3320,36 @@ export type Database = {
         }
         Relationships: []
       }
+      entity_claims: {
+        Row: {
+          claim_type: string
+          created_at: string | null
+          finding_id: string
+          id: string
+          scan_id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          claim_type: string
+          created_at?: string | null
+          finding_id: string
+          id?: string
+          scan_id: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          claim_type?: string
+          created_at?: string | null
+          finding_id?: string
+          id?: string
+          scan_id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       entity_cooccurrences: {
         Row: {
           confidence: number | null
