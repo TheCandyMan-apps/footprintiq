@@ -5,9 +5,15 @@ import { CheckCircle, HelpCircle, AlertCircle, Globe, Clock, Users, MapPin } fro
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
-import { RESULTS_SEMANTIC_COLORS } from '../styles';
+import { RESULTS_SEMANTIC_COLORS, RESULTS_ROW, RESULTS_ICON_CONTAINER, RESULTS_ACTION_CLUSTER } from '../styles';
 import { AccountRowActions } from './AccountRowActions';
 import { LensStatusBadge } from './LensStatusBadge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type ClaimType = 'me' | 'not_me';
 
@@ -112,7 +118,6 @@ const getMatchConfidence = (score: number) => {
 
 const getInitials = (name: string): string => {
   if (!name) return '??';
-  // Handle usernames with underscores or hyphens
   const cleaned = name.replace(/[_-]/g, ' ');
   const words = cleaned.split(' ').filter(Boolean);
   if (words.length >= 2) {
@@ -128,7 +133,6 @@ const extractUsername = (result: ScanResult): string | null => {
   if (meta.handle) return meta.handle;
   if (meta.screen_name) return meta.screen_name;
   
-  // Try to extract from URL
   const url = extractUrl(result);
   if (url) {
     try {
@@ -141,16 +145,22 @@ const extractUsername = (result: ScanResult): string | null => {
   return null;
 };
 
+// Extract truncated bio for display
 const extractBio = (result: ScanResult): string | null => {
   const meta = (result.meta || result.metadata || {}) as Record<string, any>;
   const bio = meta.bio || meta.description || meta.about || meta.summary;
   if (!bio) return null;
   
-  // Truncate to ~60 chars
   if (bio.length > 60) {
     return bio.slice(0, 57) + '...';
   }
   return bio;
+};
+
+// Extract full bio for tooltip
+const extractFullBio = (result: ScanResult): string | null => {
+  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
+  return meta.bio || meta.description || meta.about || meta.summary || null;
 };
 
 export function AccountRow({
@@ -172,6 +182,7 @@ export function AccountRow({
   const profileUrl = useMemo(() => extractUrl(result), [result]);
   const username = useMemo(() => extractUsername(result), [result]);
   const bio = useMemo(() => extractBio(result), [result]);
+  const fullBio = useMemo(() => extractFullBio(result), [result]);
   const profileImage = meta.avatar_url || meta.profile_image || meta.image;
   const confidence = getMatchConfidence(lensScore);
   const ConfidenceIcon = confidence.icon;
@@ -180,17 +191,14 @@ export function AccountRow({
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
       {/* Main Row */}
       <div className={cn(
-        'flex items-center gap-4 px-4 py-3',
-        'min-h-[76px]',
-        'border-l-2 border-transparent',
-        'hover:bg-muted/40',
-        'transition-all duration-150',
-        isExpanded && 'bg-muted/30',
-        isFocused && 'bg-primary/5 border-l-primary'
+        RESULTS_ROW.base,
+        !isFocused && !isExpanded && RESULTS_ROW.default,
+        isExpanded && !isFocused && RESULTS_ROW.expanded,
+        isFocused && RESULTS_ROW.focused
       )}>
         {/* Left: Platform icon in container */}
-        <div className="w-10 h-10 rounded-lg bg-muted/50 flex items-center justify-center shrink-0">
-          <span className="text-xl" title={platformName}>
+        <div className={RESULTS_ICON_CONTAINER.platform}>
+          <span className="text-2xl" title={platformName}>
             {getPlatformIcon(platformName)}
           </span>
         </div>
@@ -200,7 +208,7 @@ export function AccountRow({
           <img 
             src={profileImage} 
             alt=""
-            className="w-11 h-11 rounded-full object-cover border border-border shrink-0 shadow-sm"
+            className={RESULTS_ICON_CONTAINER.avatar}
             onError={(e) => { 
               e.currentTarget.style.display = 'none';
               const fallback = e.currentTarget.nextElementSibling as HTMLElement;
@@ -210,7 +218,7 @@ export function AccountRow({
         ) : null}
         <div 
           className={cn(
-            "w-11 h-11 rounded-full bg-primary/10 items-center justify-center border border-border shrink-0",
+            RESULTS_ICON_CONTAINER.avatarFallback,
             profileImage ? 'hidden' : 'flex'
           )}
         >
@@ -238,39 +246,56 @@ export function AccountRow({
             )}
           </div>
           
-          {/* Line 2: Bio or placeholder */}
-          <p className={cn(
-            "text-xs mt-0.5 truncate max-w-md",
-            bio ? "text-muted-foreground" : "text-muted-foreground/60 italic"
-          )}>
-            {bio || "No bio available"}
-          </p>
+          {/* Line 2: Bio with tooltip */}
+          <TooltipProvider delayDuration={400}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className={cn(
+                  "text-xs mt-0.5 truncate max-w-md cursor-default",
+                  bio ? "text-muted-foreground" : "text-muted-foreground/60 italic"
+                )}>
+                  {bio || "No bio available"}
+                </p>
+              </TooltipTrigger>
+              {fullBio && fullBio.length > 60 && (
+                <TooltipContent side="bottom" className="max-w-sm">
+                  <p className="text-xs">{fullBio}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
-        {/* Right: Badges + Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Confidence Badge */}
-          <Badge 
-            variant="outline" 
-            className={cn(
-              'h-6 px-2 gap-1 text-xs font-medium',
-              confidence.bg, 
-              confidence.text, 
-              confidence.border
-            )}
-          >
-            <ConfidenceIcon className="w-3 h-3" />
-            <span className="hidden sm:inline">{confidence.label}</span>
-          </Badge>
+        {/* Right: Badges + Divider + Actions */}
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Badges Group */}
+          <div className="flex items-center gap-2">
+            {/* Confidence Badge */}
+            <Badge 
+              variant="outline" 
+              className={cn(
+                'h-6 px-2 gap-1 text-xs font-medium',
+                confidence.bg, 
+                confidence.text, 
+                confidence.border
+              )}
+            >
+              <ConfidenceIcon className="w-3 h-3" />
+              <span className="hidden sm:inline">{confidence.label}</span>
+            </Badge>
 
-          {/* LENS Badge (if verified) */}
-          {verificationResult && (
-            <LensStatusBadge 
-              status={null}
-              score={verificationResult.confidenceScore}
-              compact={false}
-            />
-          )}
+            {/* LENS Badge (if verified) */}
+            {verificationResult && (
+              <LensStatusBadge 
+                status={null}
+                score={verificationResult.confidenceScore}
+                compact={false}
+              />
+            )}
+          </div>
+          
+          {/* Subtle Divider */}
+          <div className={RESULTS_ACTION_CLUSTER.divider} />
           
           {/* Action Cluster */}
           <AccountRowActions
