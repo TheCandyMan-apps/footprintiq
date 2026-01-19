@@ -13,6 +13,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { detectScanPipeline } from '@/utils/scanPipeline';
+import { useScanNarrative } from '@/hooks/useScanNarrative';
+import { ScanNarrativeFeed } from './results-tabs/summary/ScanNarrativeFeed';
 
 interface ProviderStatus {
   name: string;
@@ -69,6 +71,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
   // Cached scan_type and results_route for deterministic routing
   const [scanType, setScanType] = useState<string | null>(null);
   const [resultsRoute, setResultsRoute] = useState<string>('results');
+  const [searchedValue, setSearchedValue] = useState<string>('');
 
   // State
   const [progress, setProgress] = useState(0);
@@ -227,7 +230,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     }
   }, [phase]);
 
-  // Cache scan_type and results_route on dialog open for deterministic routing
+  // Cache scan_type, results_route, and searchedValue on dialog open for deterministic routing
   useEffect(() => {
     if (!scanId) return;
     let cancelled = false;
@@ -237,7 +240,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
 
       const { data, error } = await supabase
         .from('scans')
-        .select('scan_type, results_route')
+        .select('scan_type, results_route, username, email, phone')
         .eq('id', scanId)
         .maybeSingle();
 
@@ -253,6 +256,8 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
         const route = (data as any)?.results_route ?? 'results';
         console.log('[ScanProgress] Setting resultsRoute:', { scanId, route });
         setResultsRoute(route);
+        // Set searchedValue for narrative context
+        setSearchedValue(data?.username || data?.email || data?.phone || '');
       }
     })();
 
@@ -1045,6 +1050,9 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
     return `${time}.${ms}`;
   };
 
+  // Narrative feed for user-friendly progress updates
+  const narrative = useScanNarrative(scanId || '', searchedValue, scanType || 'username');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -1102,6 +1110,16 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
           </div>
 
           <Separator />
+
+          {/* Narrative Progress Feed */}
+          {searchedValue && narrative.items.length > 0 && (
+            <ScanNarrativeFeed
+              items={narrative.items}
+              summary=""
+              isLoading={narrative.isLoading}
+              isComplete={phase === 'completed'}
+            />
+          )}
 
           <ScrollArea className="h-64">
             <div className="space-y-2">

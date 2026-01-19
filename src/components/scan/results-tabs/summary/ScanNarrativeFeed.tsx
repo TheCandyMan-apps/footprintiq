@@ -42,7 +42,7 @@ export function ScanNarrativeFeed({ items, summary, isLoading, isComplete }: Sca
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
           <Clock className="w-3 h-3" />
-          What we did
+          {isComplete ? 'What we did' : "What we're doing"}
         </h4>
         {!isComplete && (
           <span className="text-[10px] text-primary font-medium flex items-center gap-1">
@@ -64,9 +64,9 @@ export function ScanNarrativeFeed({ items, summary, isLoading, isComplete }: Sca
             <div
               key={item.id}
               className={cn(
-                'flex items-center gap-2 text-xs',
-                isActive ? 'text-foreground' : 'text-muted-foreground',
-                isLast && 'text-foreground'
+                'flex items-center gap-2 text-xs transition-all duration-300',
+                isActive ? 'text-foreground font-medium bg-primary/5 -mx-1 px-1 py-0.5 rounded' : 'text-muted-foreground',
+                isLast && !isActive && 'text-foreground'
               )}
             >
               {/* Icon */}

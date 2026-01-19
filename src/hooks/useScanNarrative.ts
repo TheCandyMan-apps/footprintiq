@@ -188,28 +188,61 @@ export function useScanNarrative(scanId: string, searchedValue: string, scanType
       });
 
     } else {
-      // RUNNING STATE: Show live steps
+      // RUNNING STATE: Show user-friendly narrative steps
+      const progressPct = providers.size > 0 
+        ? Math.round((completedProviders.length / providers.size) * 100) 
+        : 0;
+
+      // Step 1: Searching social platforms (always active at start)
       items.push({
-        id: 'live-search',
+        id: 'step-1-search',
         icon: 'search',
-        text: `Searching ${estimatePlatformCount(providers.size)}+ sources for "${searchedValue}"`,
-        isActive: true,
+        text: 'Searching social platforms...',
+        isActive: activeProviders.length > 0 && completedProviders.length === 0,
       });
 
-      // Show active providers
-      if (activeProviders.length > 0) {
-        const activeNames = activeProviders.slice(0, 2).map(p => p.name).join(', ');
-        const moreCount = activeProviders.length > 2 ? ` +${activeProviders.length - 2} more` : '';
+      // Step 2: Checking for username reuse (after 2+ findings)
+      if (totalFindings >= 2 || completedProviders.length >= 1) {
         items.push({
-          id: 'live-providers',
-          icon: 'loader',
-          text: `${activeNames}${moreCount} checking...`,
-          isActive: true,
+          id: 'step-2-reuse',
+          icon: 'link',
+          text: 'Checking for username reuse...',
+          isActive: totalFindings >= 2 && totalFindings < 5,
         });
       }
 
-      // Show completed count if any
-      if (completedProviders.length > 0) {
+      // Step 3: Analyzing profile images (after 3+ findings or 2+ providers)
+      if (totalFindings >= 3 || completedProviders.length >= 2) {
+        items.push({
+          id: 'step-3-profiles',
+          icon: 'database',
+          text: 'Analyzing profile images...',
+          isActive: totalFindings >= 3 && progressPct < 60,
+        });
+      }
+
+      // Step 4: Correlating identity signals (after 50% progress)
+      if (progressPct >= 40 || completedProviders.length >= 3) {
+        items.push({
+          id: 'step-4-correlate',
+          icon: 'shield',
+          text: 'Correlating identity signals...',
+          isActive: progressPct >= 40 && progressPct < 80,
+        });
+      }
+
+      // Step 5: Finalizing results (near completion)
+      if (progressPct >= 70 || (completedProviders.length > 0 && activeProviders.length <= 1)) {
+        items.push({
+          id: 'step-5-finalize',
+          icon: 'loader',
+          text: 'Finalizing results...',
+          isActive: progressPct >= 70 || activeProviders.length <= 1,
+        });
+      }
+
+      // Show findings count if we have any
+      if (totalFindings > 0) {
         items.push({
           id: 'live-found',
           icon: 'check',
