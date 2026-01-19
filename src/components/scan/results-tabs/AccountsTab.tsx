@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,19 +6,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ForensicVerifyButton } from '@/components/forensic';
 import { 
-  ExternalLink, Search, Filter, ChevronRight,
+  ExternalLink, Search, Filter,
   User, Users, Clock, Globe,
   CheckCircle, HelpCircle, AlertCircle, ArrowUpDown
 } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
+import { useInvestigation } from '@/contexts/InvestigationContext';
+import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
 import { 
   RESULTS_SPACING, 
-  RESULTS_TYPOGRAPHY, 
-  RESULTS_BORDERS,
   RESULTS_SEMANTIC_COLORS 
 } from './styles';
+import { AccountFilters, QuickFilterOption } from './accounts/AccountFilters';
+import { AccountRowActions } from './accounts/AccountRowActions';
 
 interface AccountsTabProps {
   results: ScanResult[];
@@ -27,15 +29,12 @@ interface AccountsTabProps {
 
 // Extract platform name from various data structures
 const extractPlatformName = (result: ScanResult): string => {
-  // Priority 1: Direct site field
   if (result.site && result.site !== 'Unknown') return result.site;
   
-  // Priority 2: meta.platform (from Sherlock/n8n)
   const meta = (result.meta || result.metadata || {}) as Record<string, any>;
   if (meta.platform && meta.platform !== 'Unknown') return meta.platform;
   if (meta.site && meta.site !== 'Unknown') return meta.site;
   
-  // Priority 3: Evidence array {key: 'site', value: 'Platform'}
   if (result.evidence && Array.isArray(result.evidence)) {
     const siteEvidence = result.evidence.find(
       (e: any) => e.key === 'site' || e.key === 'platform'
@@ -43,7 +42,6 @@ const extractPlatformName = (result: ScanResult): string => {
     if (siteEvidence?.value) return siteEvidence.value;
   }
   
-  // Priority 4: Extract from URL domain
   const url = result.url || meta.url;
   if (url) {
     try {
@@ -53,7 +51,6 @@ const extractPlatformName = (result: ScanResult): string => {
     } catch {}
   }
   
-  // Fallback to provider name
   if (meta.provider) return meta.provider;
   
   return 'Unknown';
@@ -135,16 +132,82 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<SortOption>('confidence');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [quickFilter, setQuickFilter] = useState<QuickFilterOption>('all');
 
   const lensAnalysis = useLensAnalysis(results);
+  const {
+    focusedEntityId,
+    setFocusedEntity,
+    claimedEntities,
+    setClaim,
+    isClaimLoading,
+    verifiedEntities,
+    setVerification,
+  } = useInvestigation();
+
+  // Calculate filter counts
+  const filterCounts = useMemo(() => {
+    const counts = {
+      all: results.length,
+      high_confidence: 0,
+      low_confidence: 0,
+      claimed: 0,
+      unclaimed: 0,
+      verified: 0,
+    };
+
+    results.forEach(result => {
+      const score = lensAnalysis.resultScores.get(result.id)?.score || 50;
+      if (score >= 75) counts.high_confidence++;
+      if (score < 50) counts.low_confidence++;
+      
+      if (claimedEntities.has(result.id)) {
+        counts.claimed++;
+      } else {
+        counts.unclaimed++;
+      }
+      
+      if (verifiedEntities.has(result.id)) {
+        counts.verified++;
+      }
+    });
+
+    return counts;
+  }, [results, lensAnalysis.resultScores, claimedEntities, verifiedEntities]);
 
   const filteredResults = useMemo(() => {
     let filtered = results.filter(result => {
+      // Text search
       const matchesSearch = searchQuery === '' || 
         result.site?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         result.url?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Status filter
       const matchesStatus = statusFilter === 'all' || result.status?.toLowerCase() === statusFilter;
-      return matchesSearch && matchesStatus;
+      
+      // Quick filter
+      let matchesQuickFilter = true;
+      const score = lensAnalysis.resultScores.get(result.id)?.score || 50;
+      
+      switch (quickFilter) {
+        case 'high_confidence':
+          matchesQuickFilter = score >= 75;
+          break;
+        case 'low_confidence':
+          matchesQuickFilter = score < 50;
+          break;
+        case 'claimed':
+          matchesQuickFilter = claimedEntities.has(result.id);
+          break;
+        case 'unclaimed':
+          matchesQuickFilter = !claimedEntities.has(result.id);
+          break;
+        case 'verified':
+          matchesQuickFilter = verifiedEntities.has(result.id);
+          break;
+      }
+      
+      return matchesSearch && matchesStatus && matchesQuickFilter;
     });
 
     filtered.sort((a, b) => {
@@ -162,7 +225,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
     });
 
     return filtered;
-  }, [results, searchQuery, statusFilter, sortBy, lensAnalysis.resultScores]);
+  }, [results, searchQuery, statusFilter, sortBy, quickFilter, lensAnalysis.resultScores, claimedEntities, verifiedEntities]);
 
   const statusCounts = useMemo(() => {
     const counts = { found: 0, claimed: 0, not_found: 0 };
@@ -173,17 +236,36 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
     return counts;
   }, [results]);
 
-  const toggleExpanded = (id: string) => {
+  const toggleExpanded = useCallback((id: string) => {
     setExpandedRows(prev => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
-  };
+  }, []);
+
+  const handleFocus = useCallback((id: string) => {
+    setFocusedEntity(focusedEntityId === id ? null : id);
+  }, [focusedEntityId, setFocusedEntity]);
+
+  const handleVerificationComplete = useCallback((findingId: string, result: LensVerificationResult) => {
+    setVerification(findingId, result);
+  }, [setVerification]);
+
+  const handleClaimChange = useCallback((findingId: string, claim: 'me' | 'not_me' | null) => {
+    setClaim(findingId, claim);
+  }, [setClaim]);
 
   return (
     <div className={RESULTS_SPACING.contentMarginSm}>
-      {/* Compact Filters */}
+      {/* Quick Filters */}
+      <AccountFilters
+        activeFilter={quickFilter}
+        onFilterChange={setQuickFilter}
+        counts={filterCounts}
+      />
+
+      {/* Search + Sort Controls */}
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -238,7 +320,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
           <div className="p-8 text-center">
             <User className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
             <p className="text-sm text-muted-foreground">
-              {searchQuery || statusFilter !== 'all' ? 'No matching accounts' : 'No accounts found'}
+              {searchQuery || statusFilter !== 'all' || quickFilter !== 'all' ? 'No matching accounts' : 'No accounts found'}
             </p>
           </div>
         ) : (
@@ -249,10 +331,13 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
             const ConfidenceIcon = confidence.icon;
             const keyFields = extractKeyFields(result);
             const isExpanded = expandedRows.has(result.id);
+            const isFocused = focusedEntityId === result.id;
             const meta = (result.meta || result.metadata || {}) as Record<string, any>;
             const profileImage = meta.avatar_url || meta.profile_image || meta.image;
             const platformName = extractPlatformName(result);
             const profileUrl = extractUrl(result);
+            const verificationResult = verifiedEntities.get(result.id) || null;
+            const claimStatus = claimedEntities.get(result.id) || null;
 
             return (
               <Collapsible key={result.id} open={isExpanded} onOpenChange={() => toggleExpanded(result.id)}>
@@ -260,7 +345,8 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                 <div className={cn(
                   'flex items-center gap-3 px-3 py-2.5 bg-background hover:bg-muted/50 transition-colors',
                   'min-h-[72px] max-h-[88px]',
-                  isExpanded && 'bg-muted/30'
+                  isExpanded && 'bg-muted/30',
+                  isFocused && 'ring-2 ring-primary ring-inset bg-primary/5'
                 )}>
                   {/* Left: Platform icon + profile image */}
                   <div className="flex items-center gap-2 shrink-0">
@@ -293,6 +379,12 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                       {result.status === 'claimed' && (
                         <Badge variant="secondary" className="h-4 px-1 text-[10px]">Claimed</Badge>
                       )}
+                      {claimStatus === 'me' && (
+                        <Badge className="h-4 px-1 text-[10px] bg-blue-600">You</Badge>
+                      )}
+                      {claimStatus === 'not_me' && (
+                        <Badge variant="outline" className="h-4 px-1 text-[10px] border-red-500/50 text-red-500">Not you</Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       {keyFields.length > 0 ? (
@@ -307,7 +399,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                     </div>
                   </div>
 
-                  {/* Right: Confidence badge + actions */}
+                  {/* Right: Confidence badge + actions cluster */}
                   <div className="flex items-center gap-1.5 shrink-0">
                     <Badge 
                       variant="outline" 
@@ -318,22 +410,21 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                       <span className="sm:hidden">{score}%</span>
                     </Badge>
                     
-                    {profileUrl && (
-                      <Button variant="ghost" size="sm" asChild className="h-7 w-7 p-0">
-                        <a href={profileUrl} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      </Button>
-                    )}
-                    
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                        <ChevronRight className={cn(
-                          'w-4 h-4 transition-transform',
-                          isExpanded && 'rotate-90'
-                        )} />
-                      </Button>
-                    </CollapsibleTrigger>
+                    <AccountRowActions
+                      findingId={result.id}
+                      url={profileUrl}
+                      platform={platformName}
+                      scanId={jobId}
+                      isFocused={isFocused}
+                      onFocus={() => handleFocus(result.id)}
+                      verificationResult={verificationResult}
+                      onVerificationComplete={(r) => handleVerificationComplete(result.id, r)}
+                      claimStatus={claimStatus}
+                      onClaimChange={(claim) => handleClaimChange(result.id, claim)}
+                      isClaimLoading={isClaimLoading}
+                      isExpanded={isExpanded}
+                      onToggleExpand={() => toggleExpanded(result.id)}
+                    />
                   </div>
                 </div>
 

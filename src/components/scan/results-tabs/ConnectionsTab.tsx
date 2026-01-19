@@ -20,6 +20,7 @@ import { ConnectionsInspector } from './connections/ConnectionsInspector';
 interface ConnectionsTabProps {
   results: ScanResult[];
   username: string;
+  jobId?: string;
 }
 
 const PLATFORM_CATEGORIES: Record<string, { platforms: string[]; label: string; icon: string }> = {
@@ -69,7 +70,7 @@ const CONNECTION_EXPLANATIONS: Record<ConnectionReason, { label: string; descrip
   cross_reference: { label: 'Cross-Reference', description: 'Profile references another', icon: Link2 },
 };
 
-export function ConnectionsTab({ results, username }: ConnectionsTabProps) {
+export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const networkRef = useRef<HTMLDivElement>(null);
   const networkInstance = useRef<Network | null>(null);
