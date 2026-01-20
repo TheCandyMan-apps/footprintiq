@@ -71,27 +71,28 @@ export const RESULTS_COMPONENTS = {
   statsRow: 'flex items-center justify-between py-1.5 px-2 rounded bg-muted/30 text-sm',
 };
 
-// Row tokens for account list
+// Row tokens for account list - investigative feed style
 export const RESULTS_ROW = {
-  base: 'flex items-center gap-4 px-4 py-3 min-h-[76px] border-l-2 transition-all duration-150',
-  default: 'border-transparent hover:border-muted-foreground/30 hover:bg-muted/40',
-  expanded: 'bg-muted/30 border-muted-foreground/20',
-  focused: 'bg-primary/5 border-l-primary',
+  base: 'flex items-center gap-3 px-3 py-2 min-h-[56px] border-l-2 transition-all duration-100',
+  default: 'border-l-transparent hover:border-l-muted-foreground/40 hover:bg-muted/20',
+  expanded: 'bg-muted/15 border-l-muted-foreground/30',
+  focused: 'bg-primary/5 border-l-primary shadow-sm',
 };
 
-// Icon container tokens
+// Icon container tokens - profile card style
 export const RESULTS_ICON_CONTAINER = {
-  platform: 'w-11 h-11 rounded-xl bg-gradient-to-br from-muted/60 to-muted/30 flex items-center justify-center shrink-0 shadow-sm border border-border/30',
-  avatar: 'w-11 h-11 rounded-full object-cover border border-border shrink-0 shadow-sm',
-  avatarFallback: 'w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center border border-border shrink-0',
+  platform: 'w-10 h-10 rounded-lg bg-gradient-to-br from-muted/50 to-muted/20 flex items-center justify-center shrink-0 border border-border/40',
+  avatar: 'w-10 h-10 rounded-lg object-cover border border-border/50 shrink-0',
+  avatarFallback: 'w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center border border-border/50 shrink-0',
+  platformBadge: 'absolute -top-1 -left-1 z-10 w-4 h-4 rounded bg-background border border-border shadow-sm flex items-center justify-center',
 };
 
-// Action cluster tokens
+// Action cluster tokens - compact investigative actions
 export const RESULTS_ACTION_CLUSTER = {
-  container: 'flex items-center gap-0.5 rounded-lg bg-muted/30 p-0.5',
-  button: 'h-7 w-7 rounded-md text-muted-foreground hover:text-foreground hover:bg-background/80',
-  buttonActive: 'bg-primary/10 text-primary',
-  divider: 'w-px h-6 bg-border/40',
+  container: 'flex items-center gap-0.5 rounded-md bg-muted/40 p-0.5',
+  button: 'h-6 w-6 rounded text-muted-foreground hover:text-foreground hover:bg-background/80 transition-colors',
+  buttonActive: 'bg-primary/15 text-primary',
+  divider: 'w-px h-5 bg-border/50',
 };
 
 // Helper to combine classes

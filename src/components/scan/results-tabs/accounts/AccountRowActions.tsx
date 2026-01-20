@@ -86,12 +86,12 @@ export function AccountRowActions({
                 onClick={(e) => e.stopPropagation()}
               >
                 <a href={url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-3.5 h-3.5" />
+                  <ExternalLink className="w-3 h-3" />
                 </a>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">Open profile</p>
+              <p className="text-xs">Open</p>
             </TooltipContent>
           </Tooltip>
         )}
@@ -111,11 +111,11 @@ export function AccountRowActions({
                 onFocus();
               }}
             >
-              <Crosshair className="w-3.5 h-3.5" />
+              <Crosshair className="w-3 h-3" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-xs">{isFocused ? 'Unfocus' : 'Focus'}</p>
+            <p className="text-xs">{isFocused ? 'Clear focus' : 'Focus'}</p>
           </TooltipContent>
         </Tooltip>
 
@@ -134,14 +134,14 @@ export function AccountRowActions({
                 disabled={isVerifyingNow}
               >
                 {isVerifyingNow ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3 h-3" />
                 )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">LENS Verify</p>
+              <p className="text-xs">Verify</p>
             </TooltipContent>
           </Tooltip>
         )}
@@ -154,8 +154,8 @@ export function AccountRowActions({
               size="icon"
               className={cn(
                 RESULTS_ACTION_CLUSTER.button,
-                claimStatus === 'me' && 'bg-green-500/10 text-green-600',
-                claimStatus === 'not_me' && 'bg-red-500/10 text-red-600'
+                claimStatus === 'me' && 'bg-green-500/15 text-green-600',
+                claimStatus === 'not_me' && 'bg-red-500/15 text-red-600'
               )}
               onClick={(e) => {
                 e.stopPropagation();
@@ -166,19 +166,19 @@ export function AccountRowActions({
               disabled={isClaimLoading}
             >
               {isClaimLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <Loader2 className="w-3 h-3 animate-spin" />
               ) : claimStatus === 'not_me' ? (
-                <UserX className="w-3.5 h-3.5" />
+                <UserX className="w-3 h-3" />
               ) : (
-                <UserCheck className="w-3.5 h-3.5" />
+                <UserCheck className="w-3 h-3" />
               )}
             </Button>
           </TooltipTrigger>
           <TooltipContent>
             <p className="text-xs">
-              {!claimStatus && 'Mark as yours'}
-              {claimStatus === 'me' && 'Claimed as you'}
-              {claimStatus === 'not_me' && 'Marked as not you'}
+              {!claimStatus && 'Claim'}
+              {claimStatus === 'me' && 'Yours'}
+              {claimStatus === 'not_me' && 'Not you'}
             </p>
           </TooltipContent>
         </Tooltip>
@@ -196,13 +196,13 @@ export function AccountRowActions({
               }}
             >
               <ChevronRight className={cn(
-                'w-3.5 h-3.5 transition-transform',
+                'w-3 h-3 transition-transform duration-150',
                 isExpanded && 'rotate-90'
               )} />
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p className="text-xs">{isExpanded ? 'Collapse' : 'Expand'}</p>
+            <p className="text-xs">{isExpanded ? 'Less' : 'More'}</p>
           </TooltipContent>
         </Tooltip>
       </div>
