@@ -219,6 +219,7 @@ const AboutFootprintIQ = lazy(() => import("./pages/AboutFootprintIQ"));
 const EditorialEthicsPolicy = lazy(() => import("./pages/EditorialEthicsPolicy"));
 const AIDigitalExposure = lazy(() => import("./pages/ai/DigitalExposure"));
 const AIDigitalFootprint = lazy(() => import("./pages/ai/DigitalFootprint"));
+const AIWhatIsOsint = lazy(() => import("./pages/ai/WhatIsOsint"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -488,6 +489,7 @@ function RouterContent() {
           <Route path="/editorial-ethics-policy" element={<EditorialEthicsPolicy />} />
           <Route path="/ai/digital-exposure" element={<AIDigitalExposure />} />
           <Route path="/ai/digital-footprint" element={<AIDigitalFootprint />} />
+          <Route path="/ai/what-is-osint" element={<AIWhatIsOsint />} />
           <Route path="/integrations" element={<div className="container mx-auto py-8"><h1 className="text-3xl">Integrations coming soon</h1></div>} />
         
           {/* Workspace & Collaboration Routes */}
