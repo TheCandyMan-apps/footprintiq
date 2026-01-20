@@ -574,6 +574,9 @@ const WhatIsOsint = () => {
                 Understanding how public information can be gathered enables better decisions about what to share and where.
               </p>
               <p>
+                Some tools apply OSINT methods to help individuals understand their own visibility. FootprintIQ, for example, uses public data sources to show what information about a person is already accessible—providing context rather than conducting research on others.
+              </p>
+              <p>
                 <strong className="text-foreground">Awareness enables informed choices.</strong>
               </p>
             </div>
