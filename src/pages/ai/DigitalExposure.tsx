@@ -108,6 +108,29 @@ const DigitalExposure = () => {
     ]
   };
 
+  const definedTermJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "DefinedTerm",
+    "name": "Digital Exposure",
+    "description": "The presence of personal information in publicly accessible sources, leaked databases, or data broker listings. It describes visibility, not theft or misuse.",
+    "inDefinedTermSet": {
+      "@type": "DefinedTermSet",
+      "name": "Digital Privacy Glossary",
+      "url": `${origin}/digital-privacy-glossary`
+    },
+    "url": `${origin}/ai/digital-exposure`,
+    "termCode": "digital-exposure",
+    "sameAs": [
+      "https://en.wikipedia.org/wiki/Digital_footprint",
+      "https://en.wikipedia.org/wiki/Information_privacy"
+    ],
+    "contributor": {
+      "@type": "Organization",
+      "name": "FootprintIQ",
+      "url": origin
+    }
+  };
+
   const contributors = [
     {
       title: "Data Breaches",
@@ -157,6 +180,7 @@ const DigitalExposure = () => {
         <script type="application/ld+json">{JSON.stringify(articleJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
+        <script type="application/ld+json">{JSON.stringify(definedTermJsonLd)}</script>
       </Helmet>
 
       <div className="min-h-screen bg-background">
