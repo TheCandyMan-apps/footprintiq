@@ -10,6 +10,8 @@ import { AccountRowActions } from './AccountRowActions';
 import { LensStatusBadge } from './LensStatusBadge';
 import { ForensicModal } from '@/components/forensic/ForensicModal';
 import { ConfidenceBreakdown, ConfidenceTooltipContent } from './ConfidenceBreakdown';
+import { LensUpgradePrompt } from './LensUpgradePrompt';
+import { useTierGating } from '@/hooks/useTierGating';
 import {
   Tooltip,
   TooltipContent,
@@ -261,6 +263,7 @@ export function AccountRow({
 }: AccountRowProps) {
   const [lensModalOpen, setLensModalOpen] = useState(false);
   const [faviconError, setFaviconError] = useState(false);
+  const { isFree } = useTierGating();
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
   const profileUrl = useMemo(() => extractUrl(result), [result]);
@@ -270,6 +273,9 @@ export function AccountRow({
   const profileImage = meta.avatar_url || meta.profile_image || meta.image;
   const confidence = getMatchConfidence(lensScore);
   const ConfidenceIcon = confidence.icon;
+  
+  // Determine if this is an "unclear" account that needs review
+  const isUnclearConfidence = lensScore < 60 && !verificationResult;
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
@@ -454,6 +460,11 @@ export function AccountRow({
       {/* Expanded Panel - OSINT fields + Confidence Breakdown */}
       <CollapsibleContent>
         <div className="bg-muted/5 border-b border-border/20 px-4 py-3 ml-[56px] space-y-3">
+          {/* Inline LENS upsell for unclear confidence accounts (Free users only) */}
+          {isUnclearConfidence && isFree && (
+            <LensUpgradePrompt variant="banner" context="unclear" />
+          )}
+          
           {/* Confidence Breakdown Section */}
           <div className="pb-3 border-b border-border/20">
             <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
