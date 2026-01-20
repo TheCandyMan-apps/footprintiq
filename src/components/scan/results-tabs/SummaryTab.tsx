@@ -126,7 +126,8 @@ export function SummaryTab({
   const navigateToTab = (tab: string) => {
     const params = new URLSearchParams(location.search);
     params.set('tab', tab);
-    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+    // Use navigate with state to maintain scroll position
+    navigate(`${location.pathname}?${params.toString()}`);
   };
 
   const handleClearFocus = () => setFocusedEntity?.(null);

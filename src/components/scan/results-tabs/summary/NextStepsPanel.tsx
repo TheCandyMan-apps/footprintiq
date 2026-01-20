@@ -120,9 +120,14 @@ export function NextStepsPanel({
           return (
             <button
               key={step.id}
-              onClick={step.action}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                step.action();
+              }}
               className={cn(
-                "flex items-center gap-2 py-1.5 px-2 rounded text-left transition-colors group",
+                "flex items-center gap-2 py-1.5 px-2 rounded text-left transition-colors group cursor-pointer",
                 isPrimary 
                   ? "bg-primary/4 hover:bg-primary/8 border border-primary/10" 
                   : "bg-muted/15 hover:bg-muted/30 border border-transparent"
