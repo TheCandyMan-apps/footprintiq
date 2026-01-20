@@ -1,15 +1,14 @@
 import { useMemo } from 'react';
 import { ScanResult } from '@/hooks/useScanResultsData';
+import { 
+  computeAllCorrelations, 
+  extractSignals,
+  CorrelationEdge as SignalEdge,
+  CorrelationReason,
+  CORRELATION_CONFIG,
+} from '@/lib/correlationSignals';
 
-export type EdgeReason = 
-  | 'same_username' 
-  | 'similar_username'
-  | 'same_image' 
-  | 'similar_bio' 
-  | 'shared_link' 
-  | 'shared_email'
-  | 'cross_reference'
-  | 'identity_search';
+export type EdgeReason = CorrelationReason | 'identity_search';
 
 export interface GraphNode {
   id: string;
@@ -19,7 +18,7 @@ export interface GraphNode {
   category: string;
   url?: string;
   imageUrl?: string;
-  confidence: number; // 0-100
+  confidence: number;
   lensStatus?: 'verified' | 'likely' | 'unclear' | null;
   meta?: Record<string, any>;
   result?: ScanResult;
@@ -31,8 +30,9 @@ export interface GraphEdge {
   target: string;
   reason: EdgeReason;
   reasonLabel: string;
-  weight: number; // 0-1 for thickness/opacity
-  confidence: number; // 0-100
+  weight: number;
+  confidence: number;
+  details?: string;
 }
 
 export interface CorrelationGraphData {
