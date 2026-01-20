@@ -1,8 +1,12 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { useScanNarrative } from '@/hooks/useScanNarrative';
 import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
+import { useInvestigation } from '@/contexts/InvestigationContext';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Crosshair, X, ExternalLink } from 'lucide-react';
 
 import { IdentitySnapshotCard } from './summary/IdentitySnapshotCard';
 import { CompactStatsCard } from './summary/CompactStatsCard';
@@ -62,7 +66,37 @@ export function SummaryTab({
   onExportPDF,
 }: SummaryTabProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const lensAnalysis = useLensAnalysis(results);
+  
+  // Get focus state from investigation context
+  let focusedEntityId: string | null = null;
+  let setFocusedEntity: ((id: string | null) => void) | null = null;
+  
+  try {
+    const investigation = useInvestigation();
+    focusedEntityId = investigation.focusedEntityId;
+    setFocusedEntity = investigation.setFocusedEntity;
+  } catch {
+    // Context not available - no focus state
+  }
+
+  // Find the focused result details
+  const focusedResult = useMemo(() => {
+    if (!focusedEntityId) return null;
+    return results.find(r => r.id === focusedEntityId) || null;
+  }, [focusedEntityId, results]);
+
+  const handleClearFocus = () => {
+    setFocusedEntity?.(null);
+  };
+
+  const handleViewFocused = () => {
+    const params = new URLSearchParams(location.search);
+    params.set('tab', 'accounts');
+    params.set('focus', focusedEntityId || '');
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+  };
   
   const platforms = useMemo(() => getUniquePlatforms(results), [results]);
   const profileImages = useMemo(() => getProfileImages(results), [results]);
@@ -125,6 +159,47 @@ export function SummaryTab({
 
   return (
     <div className="space-y-3">
+      {/* Focused Entity Banner */}
+      {focusedResult && (
+        <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Crosshair className="w-3.5 h-3.5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-xs font-medium text-foreground">Focused Entity:</span>
+              <span className="text-xs text-muted-foreground ml-1.5 truncate">
+                {focusedResult.site || 'Unknown'} 
+                {focusedResult.url && (
+                  <span className="text-muted-foreground/60 ml-1">
+                    ({new URL(focusedResult.url).hostname})
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-[10px]"
+              onClick={handleViewFocused}
+            >
+              <ExternalLink className="w-3 h-3 mr-1" />
+              View
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0"
+              onClick={handleClearFocus}
+            >
+              <X className="w-3 h-3" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Main 8/4 grid layout - tight spacing */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
         {/* Left column - 8 cols (main briefing content) */}
