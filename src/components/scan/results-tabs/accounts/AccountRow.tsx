@@ -302,17 +302,17 @@ export function AccountRow({
         onClick={onToggleExpand}
       >
         {/* LEFT: Platform Icon + Profile Thumbnail */}
-        <div className="relative shrink-0">
-          {/* Platform favicon badge - now larger and clearer */}
+        <div className="relative shrink-0 w-12">
+          {/* Platform favicon badge - larger and more prominent */}
           <PlatformIconBadge 
             platform={platformName} 
             url={profileUrl} 
-            size="md"
+            size="lg"
             position="top-left"
           />
           
-          {/* Profile thumbnail - slightly larger to accommodate icon */}
-          <div className="w-10 h-10 rounded overflow-hidden bg-muted/20 border border-border/30 relative ml-0.5 mt-0.5">
+          {/* Profile thumbnail - sized to work with larger icon */}
+          <div className="w-11 h-11 rounded overflow-hidden bg-muted/20 border border-border/30 relative ml-1 mt-1">
             {profileImage ? (
               <img 
                 src={profileImage} 
@@ -331,7 +331,7 @@ export function AccountRow({
                 profileImage ? 'hidden' : 'flex'
               )}
             >
-              <span className="text-[11px] font-semibold text-primary/40">
+              <span className="text-[12px] font-semibold text-primary/40">
                 {getInitials(username || platformName)}
               </span>
             </div>

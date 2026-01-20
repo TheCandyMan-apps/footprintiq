@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type PlatformIconSize = 'xs' | 'sm' | 'md' | 'lg';
+export type PlatformIconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
 interface PlatformIconProps {
   platform: string;
@@ -22,6 +22,7 @@ const SIZE_CONFIG: Record<PlatformIconSize, {
   sm: { container: 'w-5 h-5', icon: 'w-4 h-4', fontSize: 'text-[9px]' },
   md: { container: 'w-6 h-6', icon: 'w-5 h-5', fontSize: 'text-[10px]' },
   lg: { container: 'w-7 h-7', icon: 'w-6 h-6', fontSize: 'text-[11px]' },
+  xl: { container: 'w-8 h-8', icon: 'w-6 h-6', fontSize: 'text-[12px]' },
 };
 
 // Map platform name to domain for favicon lookup
@@ -99,11 +100,14 @@ export function PlatformIcon({
   return (
     <div 
       className={cn(
-        'rounded flex items-center justify-center bg-muted/50 shrink-0',
+        'rounded flex items-center justify-center shrink-0',
         showBorder && 'border border-border/40',
         config.container,
         className
       )}
+      style={{ 
+        backgroundColor: faviconError ? 'hsl(var(--muted) / 0.3)' : 'hsl(var(--muted) / 0.5)' 
+      }}
     >
       {!faviconError ? (
         <img 
@@ -114,16 +118,17 @@ export function PlatformIcon({
           loading="lazy"
         />
       ) : (
-        // Fallback: Platform initial or globe icon
+        // Fallback: Platform initial with better styling or globe icon
         platform && platform !== 'Unknown' ? (
           <span className={cn(
-            'font-bold text-muted-foreground/70',
-            config.fontSize
+            'font-bold uppercase tracking-tight',
+            config.fontSize,
+            'text-foreground/50'
           )}>
             {getPlatformInitial(platform)}
           </span>
         ) : (
-          <Globe className={cn(config.icon, 'text-muted-foreground/50')} />
+          <Globe className={cn(config.icon, 'text-muted-foreground/40')} />
         )
       )}
     </div>
