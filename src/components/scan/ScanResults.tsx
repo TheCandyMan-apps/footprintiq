@@ -198,7 +198,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
       // Try new scans table first (used by scan-orchestrate)
       const { data: scanData, error: scanError } = await supabase
         .from('scans')
-        .select('id, username, scan_type, status, created_at, user_id')
+        .select('id, username, scan_type, status, created_at, completed_at, user_id')
         .eq('id', jobId)
         .maybeSingle();
 
@@ -209,7 +209,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
           status: scanData.status,
           created_at: scanData.created_at,
           started_at: scanData.created_at,
-          finished_at: ['completed', 'completed_partial', 'failed', 'failed_timeout'].includes(scanData.status) ? scanData.created_at : null,
+          finished_at: scanData.completed_at || null,
           error: null,
           all_sites: false,
           requested_by: scanData.user_id
