@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
-import { CheckCircle, HelpCircle, AlertCircle, Globe, Clock, Users, MapPin, User } from 'lucide-react';
+import { CheckCircle, HelpCircle, AlertCircle, Globe, Clock, Users, MapPin } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
-import { RESULTS_SEMANTIC_COLORS, RESULTS_ROW, RESULTS_ICON_CONTAINER } from '../styles';
+import { RESULTS_SEMANTIC_COLORS } from '../styles';
 import { AccountRowActions } from './AccountRowActions';
 import { LensStatusBadge } from './LensStatusBadge';
 import { ForensicModal } from '@/components/forensic/ForensicModal';
@@ -267,21 +267,21 @@ export function AccountRow({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
-      {/* Main Row - Profile card style */}
+      {/* Main Row - Profile investigation style */}
       <div 
         className={cn(
-          RESULTS_ROW.base,
-          'border-b border-border/30 last:border-b-0 cursor-pointer group',
-          !isFocused && !isExpanded && RESULTS_ROW.default,
-          isExpanded && !isFocused && RESULTS_ROW.expanded,
-          isFocused && RESULTS_ROW.focused
+          'flex items-center gap-3 px-3 py-2.5 min-h-[72px] max-h-[88px] border-l-2 transition-all duration-100 cursor-pointer group',
+          'border-b border-border/20 last:border-b-0',
+          !isFocused && !isExpanded && 'border-l-transparent hover:border-l-primary/30 hover:bg-muted/10',
+          isExpanded && !isFocused && 'bg-muted/10 border-l-muted-foreground/20',
+          isFocused && 'bg-primary/5 border-l-primary'
         )}
         onClick={onToggleExpand}
       >
-        {/* Left: Platform Icon + Profile Thumbnail */}
+        {/* LEFT: Platform Icon + Profile Thumbnail */}
         <div className="relative shrink-0">
-          {/* Platform favicon badge */}
-          <div className={RESULTS_ICON_CONTAINER.platformBadge}>
+          {/* Platform favicon badge - positioned top-left */}
+          <div className="absolute -top-1 -left-1 z-10 w-4 h-4 rounded-sm bg-background border border-border/50 shadow-sm flex items-center justify-center">
             {!faviconError ? (
               <img 
                 src={`https://www.google.com/s2/favicons?domain=${getPlatformDomain(platformName, profileUrl)}&sz=16`}
@@ -290,12 +290,12 @@ export function AccountRow({
                 onError={() => setFaviconError(true)}
               />
             ) : (
-              <Globe className="w-2 h-2 text-muted-foreground" />
+              <Globe className="w-2.5 h-2.5 text-muted-foreground" />
             )}
           </div>
           
-          {/* Profile thumbnail */}
-          <div className={cn(RESULTS_ICON_CONTAINER.avatar, 'overflow-hidden')}>
+          {/* Profile thumbnail - larger for investigation feel */}
+          <div className="w-11 h-11 rounded-lg overflow-hidden bg-muted/30 border border-border/40 relative">
             {profileImage ? (
               <img 
                 src={profileImage} 
@@ -310,53 +310,51 @@ export function AccountRow({
             ) : null}
             <div 
               className={cn(
-                RESULTS_ICON_CONTAINER.avatarFallback,
-                'absolute inset-0',
+                'absolute inset-0 flex items-center justify-center bg-primary/5',
                 profileImage ? 'hidden' : 'flex'
               )}
             >
-              <User className="w-3.5 h-3.5 text-primary/40" />
+              <span className="text-sm font-semibold text-primary/50">
+                {getInitials(username || platformName)}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Center: Platform + Username + Bio */}
-        <div className="flex-1 min-w-0">
-          {/* Primary line */}
-          <div className="flex items-center gap-1 leading-none">
-            <span className="font-medium text-[12px] truncate">{platformName}</span>
+        {/* CENTER: Platform + Username + Bio */}
+        <div className="flex-1 min-w-0 py-0.5">
+          {/* Primary line: Platform name + username */}
+          <div className="flex items-center gap-1.5 leading-none mb-1">
+            <span className="font-semibold text-[13px] text-foreground truncate">{platformName}</span>
             {username && (
-              <>
-                <span className="text-muted-foreground/30 text-[10px]">·</span>
-                <span className="text-muted-foreground text-[11px] truncate max-w-[100px]">@{username}</span>
-              </>
+              <span className="text-muted-foreground text-[12px] truncate">@{username}</span>
             )}
             {claimStatus && (
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className={cn(
-                      'w-1 h-1 rounded-full shrink-0 ml-0.5',
+                      'w-1.5 h-1.5 rounded-full shrink-0',
                       claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500'
                     )} />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-[10px]">
-                    {claimStatus === 'me' ? 'Claimed' : 'Not you'}
+                    {claimStatus === 'me' ? 'Claimed as yours' : 'Marked as not you'}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
           </div>
           
-          {/* Bio line */}
+          {/* Secondary line: Bio snippet */}
           <TooltipProvider delayDuration={400}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <p className={cn(
-                  "text-[10px] leading-tight mt-0.5 truncate",
-                  bio ? "text-muted-foreground/80" : "text-muted-foreground/40 italic"
+                  "text-[11px] leading-snug truncate max-w-md",
+                  bio ? "text-muted-foreground" : "text-muted-foreground/50 italic"
                 )}>
-                  {bio || "No bio"}
+                  {bio || "No bio available"}
                 </p>
               </TooltipTrigger>
               {fullBio && fullBio.length > 80 && (
@@ -368,9 +366,31 @@ export function AccountRow({
           </TooltipProvider>
         </div>
 
-        {/* Right: Badges + Actions */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* LENS Badge - Always visible when verified */}
+        {/* RIGHT: Badges + Actions - clear separation with divider */}
+        <div className="flex items-center gap-2 shrink-0 pl-2 border-l border-border/20">
+          {/* Confidence Badge - always visible */}
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    'h-6 px-2 gap-1 text-[10px] font-medium cursor-default',
+                    confidence.bg, confidence.text, confidence.border
+                  )}
+                >
+                  <ConfidenceIcon className="w-3 h-3" />
+                  <span className="hidden sm:inline">{confidence.label}</span>
+                  <span className="sm:hidden">{confidence.shortLabel}</span>
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-[10px]">
+                {lensScore}% match confidence
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* LENS Badge - visible when verified */}
           {verificationResult && (
             <TooltipProvider>
               <Tooltip>
@@ -395,20 +415,6 @@ export function AccountRow({
               </Tooltip>
             </TooltipProvider>
           )}
-
-          {/* Confidence Badge - hide on mobile */}
-          <div className="hidden sm:flex items-center">
-            <Badge 
-              variant="outline" 
-              className={cn(
-                'h-[18px] px-1.5 gap-0.5 text-[9px] font-medium',
-                confidence.bg, confidence.text, confidence.border
-              )}
-            >
-              <ConfidenceIcon className="w-2.5 h-2.5" />
-              {confidence.shortLabel}
-            </Badge>
-          </div>
           
           {/* Action cluster */}
           <AccountRowActions
@@ -429,84 +435,82 @@ export function AccountRow({
         </div>
       </div>
 
-      {/* Expanded Panel - Compact raw fields */}
+      {/* Expanded Panel - OSINT fields */}
       <CollapsibleContent>
-        <div className="bg-muted/5 border-b border-border/30 px-3 py-2 ml-[46px] space-y-1.5">
-          {/* Full bio if available */}
-          {meta.bio && (
-            <p className="text-xs text-foreground/85 leading-relaxed">{meta.bio}</p>
+        <div className="bg-muted/5 border-b border-border/20 px-4 py-3 ml-[56px] space-y-2">
+          {/* Full bio if longer */}
+          {fullBio && fullBio.length > 80 && (
+            <p className="text-[12px] text-foreground/90 leading-relaxed">{fullBio}</p>
           )}
           
-          {/* Profile signals - inline compact */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+          {/* Profile signals grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
             {meta.followers !== undefined && (
-              <span className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                <span className="text-foreground font-medium">{meta.followers.toLocaleString()}</span> followers
-              </span>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Users className="w-3 h-3 shrink-0" />
+                <span><span className="text-foreground font-medium">{meta.followers.toLocaleString()}</span> followers</span>
+              </div>
             )}
             {meta.following !== undefined && (
-              <span className="flex items-center gap-1">
-                <Users className="w-3 h-3" />
-                <span className="text-foreground font-medium">{meta.following.toLocaleString()}</span> following
-              </span>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Users className="w-3 h-3 shrink-0" />
+                <span><span className="text-foreground font-medium">{meta.following.toLocaleString()}</span> following</span>
+              </div>
             )}
-            {meta.location && (
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3 h-3" />
-                {meta.location}
-              </span>
+            {meta.location && meta.location !== 'Unknown' && (
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <MapPin className="w-3 h-3 shrink-0" />
+                <span className="truncate">{meta.location}</span>
+              </div>
             )}
             {meta.joined && (
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                Joined {meta.joined}
-              </span>
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <Clock className="w-3 h-3 shrink-0" />
+                <span>Joined {meta.joined}</span>
+              </div>
             )}
             {meta.website && (
               <a 
                 href={meta.website} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-primary hover:underline"
+                className="flex items-center gap-1.5 text-primary hover:underline col-span-2"
                 onClick={(e) => e.stopPropagation()}
               >
-                <Globe className="w-3 h-3" />
-                {meta.website.replace(/^https?:\/\//, '').slice(0, 30)}
+                <Globe className="w-3 h-3 shrink-0" />
+                <span className="truncate">{meta.website.replace(/^https?:\/\//, '').slice(0, 40)}</span>
               </a>
             )}
           </div>
 
-          {/* Profile URL */}
-          {profileUrl && (
-            <div className="flex items-center gap-2 pt-1.5 border-t border-border/20 mt-1.5">
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">URL</span>
+          {/* Profile URL + Raw fields in compact footer */}
+          <div className="flex items-center justify-between gap-4 pt-2 border-t border-border/15 text-[10px]">
+            {profileUrl && (
               <a 
                 href={profileUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-[11px] text-primary/80 hover:text-primary hover:underline truncate flex-1"
+                className="text-primary/70 hover:text-primary hover:underline truncate flex-1"
                 onClick={(e) => e.stopPropagation()}
               >
                 {profileUrl}
               </a>
-            </div>
-          )}
-
-          {/* Raw fields toggle */}
-          {Object.keys(meta).length > 0 && (
-            <details 
-              className="pt-1.5 border-t border-border/20 mt-1.5"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <summary className="text-[9px] uppercase tracking-wider text-muted-foreground/50 cursor-pointer hover:text-muted-foreground select-none font-medium">
-                Raw fields
-              </summary>
-              <pre className="mt-1.5 text-[10px] bg-muted/20 rounded p-2 overflow-x-auto max-h-24 text-muted-foreground/80 leading-tight">
-                {JSON.stringify(meta, null, 2)}
-              </pre>
-            </details>
-          )}
+            )}
+            
+            {Object.keys(meta).length > 0 && (
+              <details 
+                className="shrink-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <summary className="text-[9px] uppercase tracking-wider text-muted-foreground/50 cursor-pointer hover:text-muted-foreground select-none font-medium">
+                  Raw OSINT
+                </summary>
+                <pre className="absolute right-4 mt-1 text-[10px] bg-popover border border-border rounded-md p-2 shadow-lg overflow-x-auto max-h-32 max-w-sm text-muted-foreground/80 leading-tight z-20">
+                  {JSON.stringify(meta, null, 2)}
+                </pre>
+              </details>
+            )}
+          </div>
         </div>
       </CollapsibleContent>
 
