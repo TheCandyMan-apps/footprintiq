@@ -198,8 +198,9 @@ export function useScanNarrative(scanId: string, searchedValue: string, scanType
 
     // Build narrative items based on completion state
     if (isComplete) {
-      // COMPLETED STATE: Show compact "What we did" feed
+      // COMPLETED STATE: Show compact "What we did" feed with timestamps
       const startTime = firstEvent ? formatTime(firstEvent.created_at) : '';
+      const endTime = lastEvent ? formatTime(lastEvent.created_at) : '';
       
       // Step 1: Searched sources
       items.push({
@@ -209,30 +210,29 @@ export function useScanNarrative(scanId: string, searchedValue: string, scanType
         timestamp: startTime,
       });
 
-      // Step 2: Providers with results (group top providers)
+      // Step 2: Found accounts (if any)
       const providersWithFindings = completedProviders.filter(p => p.findings > 0);
       if (providersWithFindings.length > 0) {
-        const topProviders = providersWithFindings.slice(0, 3).map(p => p.name);
-        const totalFromTop = providersWithFindings.slice(0, 3).reduce((sum, p) => sum + p.findings, 0);
+        const topProviders = providersWithFindings.slice(0, 2).map(p => p.name);
         items.push({
           id: 'step-found',
           icon: 'check',
-          text: `${topProviders.join(', ')} found ${totalFromTop} account${totalFromTop !== 1 ? 's' : ''}`,
-          findingsCount: totalFromTop,
+          text: `Found ${totalFindings} account${totalFindings !== 1 ? 's' : ''} via ${topProviders.join(', ')}${providersWithFindings.length > 2 ? ` +${providersWithFindings.length - 2}` : ''}`,
+          findingsCount: totalFindings,
         });
       }
 
-      // Step 3: Checked username reuse
+      // Step 3: Checked username reuse / built connections
       if (totalFindings > 1) {
         items.push({
-          id: 'step-reuse',
+          id: 'step-connections',
           icon: 'link',
-          text: `Analyzed username reuse across ${totalFindings} profiles`,
+          text: `Built connection graph across ${totalFindings} profiles`,
         });
       }
 
       // Step 4: Breach check (if applicable)
-      const breachProviders = ['hibp', 'breach', 'haveibeenpwned', 'leak'];
+      const breachProviders = ['hibp', 'breach', 'haveibeenpwned', 'leak', 'dehashed'];
       const hasBreachCheck = Array.from(providers).some((p) =>
         breachProviders.some((bp) => p.toLowerCase().includes(bp))
       );
@@ -244,8 +244,16 @@ export function useScanNarrative(scanId: string, searchedValue: string, scanType
         });
       }
 
-      // Step 5: Finalized
-      const endTime = lastEvent ? formatTime(lastEvent.created_at) : '';
+      // Step 5: Verified signals (if we have findings)
+      if (totalFindings > 0) {
+        items.push({
+          id: 'step-verify',
+          icon: 'database',
+          text: `Verified signals and enriched metadata`,
+        });
+      }
+
+      // Step 6: Finalized
       const durationSec = totalDuration > 0 ? `${(totalDuration / 1000).toFixed(1)}s` : '';
       items.push({
         id: 'step-complete',
