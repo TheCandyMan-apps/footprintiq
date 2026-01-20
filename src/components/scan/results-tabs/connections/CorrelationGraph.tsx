@@ -385,6 +385,25 @@ export function CorrelationGraph({
             'z-index': 1000,
           },
         },
+        // Correlation edges highlighted on hover (emphasized further)
+        {
+          selector: 'edge.correlation-highlight',
+          style: {
+            'line-color': '#2563eb',
+            'line-opacity': 0.95,
+            'width': 4,
+            'z-index': 800,
+          },
+        },
+        // Identity edges kept faint when non-root is hovered
+        {
+          selector: 'edge.identity-faint',
+          style: {
+            'line-opacity': 0.1,
+            'width': 0.5,
+            'z-index': 0,
+          },
+        },
       ],
       layout: groupByPlatform 
         ? {
@@ -412,23 +431,47 @@ export function CorrelationGraph({
 
     // ========== HOVER HANDLERS ==========
 
-    // Node hover
+    // Node hover - prioritize correlation edges
     cy.on('mouseover', 'node', (evt) => {
       const node = evt.target;
       if (node.data('isGroup')) return;
 
       // Clear previous hover classes
-      cy.elements().removeClass('hovered neighbor unhovered');
+      cy.elements().removeClass('hovered neighbor unhovered correlation-highlight identity-faint');
       
-      // Add hover classes
+      // Add hover class to the node
       node.addClass('hovered');
+      
       const connectedEdges = node.connectedEdges();
-      const connectedNodes = connectedEdges.connectedNodes();
-      connectedEdges.addClass('neighbor');
-      connectedNodes.addClass('neighbor');
+      const isRootNode = node.id() === 'identity-root';
+      
+      // Separate correlation edges from identity edges
+      const correlationEdges = connectedEdges.filter((edge: cytoscape.EdgeSingular) => 
+        edge.data('source') !== 'identity-root' && edge.data('target') !== 'identity-root'
+      );
+      const identityEdges = connectedEdges.filter((edge: cytoscape.EdgeSingular) => 
+        edge.data('source') === 'identity-root' || edge.data('target') === 'identity-root'
+      );
+      
+      // Highlight correlation edges first (stronger)
+      correlationEdges.addClass('neighbor correlation-highlight');
+      correlationEdges.connectedNodes().addClass('neighbor');
+      
+      // Keep identity edges faint unless root is selected
+      if (isRootNode) {
+        identityEdges.addClass('neighbor');
+        identityEdges.connectedNodes().addClass('neighbor');
+      } else {
+        identityEdges.addClass('identity-faint');
+      }
       
       // Dim unrelated elements
-      cy.elements().not(node).not(connectedEdges).not(connectedNodes).addClass('unhovered');
+      const relatedElements = node.union(correlationEdges).union(correlationEdges.connectedNodes());
+      if (isRootNode) {
+        cy.elements().not(node).not(connectedEdges).not(connectedEdges.connectedNodes()).addClass('unhovered');
+      } else {
+        cy.elements().not(relatedElements).not(identityEdges).addClass('unhovered');
+      }
 
       // Show tooltip
       const pos = node.renderedPosition();
@@ -448,7 +491,7 @@ export function CorrelationGraph({
     });
 
     cy.on('mouseout', 'node', () => {
-      cy.elements().removeClass('hovered neighbor unhovered');
+      cy.elements().removeClass('hovered neighbor unhovered correlation-highlight identity-faint');
       setTooltipData(null);
     });
 
@@ -456,7 +499,7 @@ export function CorrelationGraph({
     cy.on('mouseover', 'edge', (evt) => {
       const edge = evt.target;
       
-      cy.elements().removeClass('hovered neighbor unhovered');
+      cy.elements().removeClass('hovered neighbor unhovered correlation-highlight identity-faint');
       edge.addClass('hovered');
       edge.connectedNodes().addClass('neighbor');
       cy.elements().not(edge).not(edge.connectedNodes()).addClass('unhovered');
@@ -479,7 +522,7 @@ export function CorrelationGraph({
     });
 
     cy.on('mouseout', 'edge', () => {
-      cy.elements().removeClass('hovered neighbor unhovered');
+      cy.elements().removeClass('hovered neighbor unhovered correlation-highlight identity-faint');
       setTooltipData(null);
     });
 
