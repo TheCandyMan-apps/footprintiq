@@ -159,7 +159,7 @@ export default function FreeUsernameSearch() {
 
             <p>
               For individuals conducting a personal audit, this information provides a starting point 
-              for understanding their online footprint and overall <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link>. It's particularly helpful when preparing for 
+              for understanding their <Link to="/ai/digital-footprint" className="text-primary hover:underline">online footprint</Link> and overall <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link>. It's particularly helpful when preparing for 
               a job search, cleaning up old accounts, or simply satisfying curiosity about one's 
               digital presence.
             </p>
