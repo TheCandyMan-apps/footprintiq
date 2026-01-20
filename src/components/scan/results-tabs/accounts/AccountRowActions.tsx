@@ -112,7 +112,9 @@ export function AccountRowActions({
               <Crosshair className="w-2.5 h-2.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent className="text-[10px]">{isFocused ? 'Clear' : 'Focus'}</TooltipContent>
+          <TooltipContent className="text-[10px]">
+            {isFocused ? 'Clear focus' : 'Focus on this account'}
+          </TooltipContent>
         </Tooltip>
 
         {/* LENS Verify Button */}
