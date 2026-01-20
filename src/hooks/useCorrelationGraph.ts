@@ -330,7 +330,7 @@ export function useCorrelationGraph(
     ) => {
       if (weight < MIN_WEIGHT) return;
       
-      const pairKey = [sourceId, targetId].sort().join('-');
+      const pairKey = [sourceId, targetId].sort().join('::');
       if (!pairSignals.has(pairKey)) {
         pairSignals.set(pairKey, []);
       }
@@ -543,7 +543,7 @@ export function useCorrelationGraph(
     pairSignals.forEach((signals, pairKey) => {
       if (signals.length === 0) return;
       
-      const [sourceId, targetId] = pairKey.split('-');
+      const [sourceId, targetId] = pairKey.split('::');
       const node1 = nodes.find(n => n.id === sourceId);
       const node2 = nodes.find(n => n.id === targetId);
       
