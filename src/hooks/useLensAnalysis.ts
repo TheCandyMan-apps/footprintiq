@@ -43,12 +43,32 @@ export function useLensAnalysis(results: ScanResult[]): LensAnalysis {
       'soundcloud', 'bandcamp', 'mixcloud'
     ]);
 
+    // Helper to derive status from result data
+    const deriveStatus = (result: ScanResult): string => {
+      if (result.status) return result.status.toLowerCase();
+      
+      const kind = (result as any).kind || '';
+      if (kind === 'profile_presence' || kind === 'presence.hit' || kind === 'account_found') {
+        return 'found';
+      }
+      if (kind === 'presence.miss' || kind === 'not_found') {
+        return 'not_found';
+      }
+      
+      const meta = (result.meta || result.metadata || {}) as Record<string, any>;
+      if (meta.status) return meta.status.toLowerCase();
+      if (meta.exists === true) return 'found';
+      if (meta.exists === false) return 'not_found';
+      
+      return 'unknown';
+    };
+
     results.forEach((result) => {
       let score = 50; // Base score
       const reasons: string[] = [];
 
-      // Status-based scoring
-      const status = result.status?.toLowerCase();
+      // Status-based scoring - derive from kind field if no explicit status
+      const status = deriveStatus(result);
       if (status === 'found') {
         score += 25;
         reasons.push('Profile found and accessible');
