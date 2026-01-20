@@ -6,13 +6,20 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useForensicVerification, LensVerificationResult } from '@/hooks/useForensicVerification';
+import { useTierGating } from '@/hooks/useTierGating';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { RESULTS_ACTION_CLUSTER } from '../styles';
+import { LensUpgradePrompt } from './LensUpgradePrompt';
 
 type ClaimType = 'me' | 'not_me';
 
@@ -48,10 +55,18 @@ export function AccountRowActions({
   onToggleExpand,
 }: AccountRowActionsProps) {
   const { verify, isVerifying } = useForensicVerification();
+  const { isFree } = useTierGating();
   const [localVerifying, setLocalVerifying] = useState(false);
+  const [showUpgradePopover, setShowUpgradePopover] = useState(false);
 
   const handleVerify = async () => {
     if (!url || isVerifying || localVerifying) return;
+    
+    // Show upgrade prompt for free users
+    if (isFree) {
+      setShowUpgradePopover(true);
+      return;
+    }
     
     setLocalVerifying(true);
     const result = await verify({ url, platform, scanId, findingId });
@@ -117,32 +132,44 @@ export function AccountRowActions({
           </TooltipContent>
         </Tooltip>
 
-        {/* LENS Verify Button - More prominent */}
+        {/* LENS Verify Button with upgrade popover for free users */}
         {url && !verificationResult && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  RESULTS_ACTION_CLUSTER.button,
-                  'text-primary hover:text-primary hover:bg-primary/10'
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleVerify();
-                }}
-                disabled={isVerifyingNow}
-              >
-                {isVerifyingNow ? (
-                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                ) : (
-                  <Sparkles className="w-2.5 h-2.5" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="text-[10px]">LENS Verify</TooltipContent>
-          </Tooltip>
+          <Popover open={showUpgradePopover} onOpenChange={setShowUpgradePopover}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      RESULTS_ACTION_CLUSTER.button,
+                      'text-primary hover:text-primary hover:bg-primary/10'
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleVerify();
+                    }}
+                    disabled={isVerifyingNow}
+                  >
+                    {isVerifyingNow ? (
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-2.5 h-2.5" />
+                    )}
+                  </Button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent className="text-[10px]">LENS Verify</TooltipContent>
+            </Tooltip>
+            <PopoverContent 
+              side="top" 
+              align="end" 
+              className="w-72 p-0"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <LensUpgradePrompt variant="banner" context="verify" />
+            </PopoverContent>
+          </Popover>
         )}
 
         {/* Claim Toggle */}
