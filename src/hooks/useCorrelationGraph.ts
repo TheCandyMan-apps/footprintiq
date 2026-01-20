@@ -43,6 +43,8 @@ export interface CorrelationGraphData {
   stats: {
     totalNodes: number;
     totalEdges: number;
+    identityEdges: number;
+    correlationEdges: number;
     byCategory: Record<string, number>;
     byReason: Record<EdgeReason, number>;
   };
@@ -195,6 +197,8 @@ export function useCorrelationGraph(
         stats: {
           totalNodes: 0,
           totalEdges: 0,
+          identityEdges: 0,
+          correlationEdges: 0,
           byCategory: {},
           byReason: reasonStats,
         },
@@ -339,10 +343,10 @@ export function useCorrelationGraph(
     };
 
     // Use the advanced correlation computation
-    const { edges: correlationEdges } = computeAllCorrelations(foundProfiles);
+    const { edges: computedCorrelationEdges } = computeAllCorrelations(foundProfiles);
     
     // Map correlation edges to our format with proper edge reasons
-    correlationEdges.forEach(corrEdge => {
+    computedCorrelationEdges.forEach(corrEdge => {
       const sourceNodeId = nodeIdMap.get(corrEdge.sourceId);
       const targetNodeId = nodeIdMap.get(corrEdge.targetId);
       
@@ -580,12 +584,18 @@ export function useCorrelationGraph(
       });
     });
 
+    // Calculate identity vs correlation edge counts
+    const identityEdges = edges.filter(e => e.source === 'identity-root' || e.target === 'identity-root').length;
+    const correlationEdges = edges.filter(e => e.source !== 'identity-root' && e.target !== 'identity-root').length;
+
     return {
       nodes,
       edges,
       stats: {
         totalNodes: nodes.length,
         totalEdges: edges.length,
+        identityEdges,
+        correlationEdges,
         byCategory: categoryStats,
         byReason: reasonStats,
       },

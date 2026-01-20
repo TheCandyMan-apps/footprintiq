@@ -100,19 +100,15 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   // Use the improved correlation graph hook
   const correlationData = useCorrelationGraph(results, username, verifiedEntities);
   
-  // Calculate correlation stats (edges that are account↔account, not identity→account)
-  const correlationStats = useMemo(() => {
-    const accountToAccountEdges = correlationData.edges.filter(
-      e => e.source !== 'identity-root' && e.target !== 'identity-root'
-    );
-    return {
-      totalNodes: correlationData.stats.totalNodes,
-      totalEdges: correlationData.stats.totalEdges,
-      correlationEdges: accountToAccountEdges.length,
-      hasCorrelations: accountToAccountEdges.length > 0,
-      byReason: correlationData.stats.byReason,
-    };
-  }, [correlationData]);
+  // Use stats directly from the correlation graph hook
+  const correlationStats = useMemo(() => ({
+    totalNodes: correlationData.stats.totalNodes,
+    totalEdges: correlationData.stats.totalEdges,
+    identityEdges: correlationData.stats.identityEdges,
+    correlationEdges: correlationData.stats.correlationEdges,
+    hasCorrelations: correlationData.stats.correlationEdges > 0,
+    byReason: correlationData.stats.byReason,
+  }), [correlationData.stats]);
 
   const categorizePlatform = (site: string): string => {
     const siteLower = site.toLowerCase();
