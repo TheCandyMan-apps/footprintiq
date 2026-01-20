@@ -441,25 +441,22 @@ const WhatIsIdentityProfiling = () => {
             </h2>
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
               <p>
-                Complete avoidance of identity profiling is impractical for most people who participate in modern digital life. However, reducing exposure and limiting correlation is possible.
+                <strong className="text-foreground">Identity profiling cannot be fully eliminated.</strong> Participating in digital life—using email, making purchases, engaging with platforms—generates data. That data persists, connects, and contributes to profiles whether you are aware of it or not.
               </p>
               <p>
-                <strong className="text-foreground">Use varied identifiers.</strong> Different usernames and email addresses for different contexts make it harder to connect your activities across platforms. Compartmentalisation limits what any single profile can reveal.
+                This is not a failure of personal security. It is a structural reality of how modern systems work. Complete avoidance would require near-total withdrawal from digital participation, which is impractical for most people.
               </p>
               <p>
-                <strong className="text-foreground">Review privacy settings.</strong> Many platforms offer controls over what information is public. Regular audits of these settings can reduce the data available for aggregation.
+                <strong className="text-foreground">Some reduction is possible through data hygiene.</strong> While elimination is unrealistic, limiting the scope and connectedness of your data is achievable. Using different identifiers for different contexts reduces correlation. Reviewing privacy settings limits what becomes public. Being selective about sharing slows the growth of your footprint.
               </p>
               <p>
-                <strong className="text-foreground">Be selective about sharing.</strong> Not everything needs to be posted publicly. Considering whether information needs to be shared—and with whom—can limit your digital footprint over time.
+                These steps do not prevent profiling—they reduce its completeness. A profile built from fragmented, compartmentalised data will be less comprehensive than one built from consistent, connected identifiers.
               </p>
               <p>
-                <strong className="text-foreground">Search for yourself.</strong> Knowing what is already available helps you understand your current exposure. You cannot manage what you are not aware of.
+                <strong className="text-foreground">Awareness improves decision-making.</strong> Understanding that profiling occurs allows you to make more informed choices about what you share, where you participate, and how you present yourself. You cannot control how others analyse available data, but you can influence what data becomes available.
               </p>
               <p>
-                <strong className="text-foreground">Accept practical limits.</strong> Some profiling is unavoidable. Using email, making purchases, and engaging with online services all generate data. The goal is not elimination but informed participation.
-              </p>
-              <p>
-                Reducing profiling is a matter of degree. Small changes—using different identifiers, limiting public information, being thoughtful about new sharing—can meaningfully reduce how easily your activities are connected without requiring complete withdrawal from digital life.
+                The goal is not to disappear. It is to participate with awareness—understanding the trade-offs involved and making choices that align with your own comfort level and circumstances.
               </p>
             </div>
           </section>
