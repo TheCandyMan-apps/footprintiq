@@ -136,19 +136,19 @@ const getPlatformDomain = (platform: string, url?: string | null): string => {
 
 const getMatchConfidence = (score: number) => {
   if (score >= 80) return { 
-    label: 'Strong', 
+    label: 'High Confidence', 
     shortLabel: 'High',
     ...RESULTS_SEMANTIC_COLORS.confidenceHigh,
     icon: CheckCircle 
   };
   if (score >= 60) return { 
-    label: 'Medium', 
+    label: 'Moderate', 
     shortLabel: 'Med',
     ...RESULTS_SEMANTIC_COLORS.confidenceMedium,
     icon: HelpCircle 
   };
   return { 
-    label: 'Weak', 
+    label: 'Needs Review', 
     shortLabel: 'Low',
     ...RESULTS_SEMANTIC_COLORS.confidenceLow,
     icon: AlertCircle 
@@ -360,7 +360,7 @@ export function AccountRow({
                   "text-[11px] leading-snug truncate max-w-md",
                   bio ? "text-muted-foreground" : "text-muted-foreground/50 italic"
                 )}>
-                  {bio || "No bio available"}
+                  {bio || "No public bio available"}
                 </p>
               </TooltipTrigger>
               {fullBio && fullBio.length > 80 && (

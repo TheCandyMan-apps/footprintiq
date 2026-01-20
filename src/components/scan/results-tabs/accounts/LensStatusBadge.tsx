@@ -19,22 +19,26 @@ function getStatusFromScore(score: number): Exclude<LensStatus, 'pending' | null
 
 const STATUS_CONFIG = {
   verified: {
-    label: 'Verified',
+    label: 'Identity Confirmed',
+    shortLabel: 'Confirmed',
     icon: CheckCircle,
     className: 'bg-green-500/15 text-green-600 border-green-500/30 dark:text-green-400',
   },
   likely: {
-    label: 'Likely',
+    label: 'Probable Match',
+    shortLabel: 'Probable',
     icon: HelpCircle,
     className: 'bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400',
   },
   unclear: {
-    label: 'Unclear',
+    label: 'Insufficient Evidence',
+    shortLabel: 'Unconfirmed',
     icon: AlertTriangle,
     className: 'bg-muted text-muted-foreground border-border',
   },
   pending: {
-    label: 'Verifying',
+    label: 'Analysing',
+    shortLabel: 'Analysing',
     icon: Loader2,
     className: 'bg-primary/10 text-primary border-primary/30',
   },
@@ -63,7 +67,7 @@ export function LensStatusBadge({ status, score, className, compact = false }: L
         compact ? 'w-2.5 h-2.5' : 'w-3 h-3',
         effectiveStatus === 'pending' && 'animate-spin'
       )} />
-      {!compact && <span>{config.label}</span>}
+      {!compact && <span>{compact ? config.shortLabel : config.label}</span>}
       {score !== undefined && effectiveStatus !== 'pending' && (
         <span className="opacity-70">{score}%</span>
       )}
