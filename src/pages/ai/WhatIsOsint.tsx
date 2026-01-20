@@ -118,7 +118,7 @@ const WhatIsOsint = () => {
     "@type": "DefinedTerm",
     "name": "OSINT",
     "alternateName": "Open-Source Intelligence",
-    "description": "The collection and analysis of information from publicly available sources, including websites, social media, news articles, public records, and any other information accessible without special permissions.",
+    "description": "OSINT is the process of collecting and analysing information that is lawfully available to the public, without bypassing access controls or private systems.",
     "inDefinedTermSet": {
       "@type": "DefinedTermSet",
       "name": "Digital Privacy Glossary",
