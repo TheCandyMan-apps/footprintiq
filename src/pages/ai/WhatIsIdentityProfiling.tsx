@@ -268,22 +268,22 @@ const WhatIsIdentityProfiling = () => {
             </h2>
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
               <p>
-                Identity profiling follows a predictable sequence. Understanding these steps explains why profiling happens so quietly and at such scale.
+                Identity profiling is fundamentally a pattern-matching process. It works by identifying correlations between data points rather than confirming facts. When the same identifier appears in multiple places, systems note the connection—but that connection is associative, not verified.
               </p>
               <p>
-                <strong className="text-foreground">Data aggregation</strong> comes first. Separate pieces of information from different sources are collected and stored together. A single username might link profiles across dozens of platforms. An email address might appear in breach databases, public directories, and social media accounts.
+                <strong className="text-foreground">Correlation, not confirmation.</strong> Profiling draws links between data points that appear related. If a username exists on several platforms, those accounts may be connected to the same person—but this is inference, not proof. The link is probabilistic.
               </p>
               <p>
-                <strong className="text-foreground">Pattern recognition</strong> follows aggregation. Algorithms identify recurring behaviours, preferences, or associations. Posting times, topic interests, writing style, and engagement patterns all contribute to inferred characteristics.
+                <strong className="text-foreground">Probability, not certainty.</strong> Every inference in a profile carries uncertainty. A pattern that suggests an interest, demographic, or behaviour is a prediction based on likelihood. Profiles are approximations, and the conclusions drawn from them may be wrong.
               </p>
               <p>
-                <strong className="text-foreground">Identity linking</strong> connects appearances. When the same identifier—a username, email, or phone number—appears in multiple places, systems create connections between those appearances. This builds a more complete picture than any single source provides.
+                <strong className="text-foreground">Often automated.</strong> Most profiling happens without human involvement. Systems analyse data at scale, processing patterns across millions of records. No analyst reviews individual profiles—algorithms draw inferences automatically.
               </p>
               <p>
-                <strong className="text-foreground">Inference and prediction</strong> complete the process. Based on aggregated data and recognised patterns, automated systems make predictions about demographics, interests, or likely behaviours. These inferences may or may not be accurate, but they inform decisions made about you.
+                <strong className="text-foreground">Persistence over time.</strong> Profiling depends on data that accumulates. Information shared years ago remains available for analysis alongside recent activity. This temporal depth allows patterns to emerge that would be invisible from any single snapshot.
               </p>
               <p>
-                The entire process is usually automated. Most profiling happens without any human reviewing individual accounts. Systems process data at scale, handling billions of data points across hundreds of millions of users.
+                The result is a composite picture built from fragments. Each fragment alone reveals little, but together they suggest a shape. That shape may be accurate, partially correct, or entirely misleading—but it influences how systems respond to you.
               </p>
             </div>
           </section>
