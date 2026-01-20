@@ -50,7 +50,7 @@ const WhatIsOsint = () => {
         "name": "What is OSINT?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "OSINT stands for open-source intelligence. It means gathering and analysing information from sources that anyone can access—like websites, social media, news articles, and public records. No special permissions or hacking required."
+          "text": "OSINT stands for open-source intelligence. It refers to gathering and analysing information from publicly available sources—websites, social media, news, and public records."
         }
       },
       {
@@ -58,7 +58,7 @@ const WhatIsOsint = () => {
         "name": "Is OSINT legal?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Gathering publicly available information is generally legal. However, how you use that information matters. Using public data for harassment, stalking, or fraud is illegal. The method of collection, type of information, and intended use all affect legality."
+          "text": "Gathering publicly available information is generally legal. How that information is used determines legality. Using public data for harassment or fraud is illegal regardless of how it was obtained."
         }
       },
       {
@@ -66,7 +66,7 @@ const WhatIsOsint = () => {
         "name": "Can I use OSINT on myself?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes. Searching for your own name, email, or username to understand what others might find about you is one of the most practical uses of open-source intelligence methods. It helps you understand and manage your own digital presence."
+          "text": "Yes. Searching for your own name, email, or username helps you understand what others might find about you online."
         }
       },
       {
@@ -74,7 +74,7 @@ const WhatIsOsint = () => {
         "name": "How is OSINT different from hacking?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "OSINT only uses publicly available information that anyone can access. Hacking involves gaining unauthorised access to protected systems or data. OSINT does not bypass security, guess passwords, or exploit vulnerabilities."
+          "text": "OSINT uses only publicly available information. Hacking involves gaining unauthorised access to protected systems. OSINT does not bypass security or exploit vulnerabilities."
         }
       },
       {
@@ -82,7 +82,7 @@ const WhatIsOsint = () => {
         "name": "What is the difference between OSINT, digital footprint, and digital exposure?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "OSINT is a method of gathering public information. A digital footprint is all the data you leave behind online. Digital exposure is the portion of your footprint that others can actually find. OSINT is how someone might discover your exposure."
+          "text": "OSINT is a method of gathering public information. A digital footprint is all data you leave online. Digital exposure is the portion of your footprint that others can find."
         }
       }
     ]
@@ -137,33 +137,33 @@ const WhatIsOsint = () => {
   };
 
   const publicDataExamples = [
-    { category: "Social Media", examples: "Public posts, profile information, connections, and comments on platforms like LinkedIn, Twitter, or Facebook" },
-    { category: "News and Media", examples: "Published articles, press releases, interviews, podcasts, and video content" },
-    { category: "Government Records", examples: "Company registrations, court filings, property ownership, and regulatory databases" },
-    { category: "Professional Directories", examples: "Industry memberships, certifications, alumni networks, and business registries" },
+    { category: "Social Media", examples: "Public posts, profile information, and comments on platforms like LinkedIn or Twitter" },
+    { category: "News and Media", examples: "Published articles, press releases, and broadcast content" },
+    { category: "Government Records", examples: "Company registrations, court filings, and property records" },
+    { category: "Professional Directories", examples: "Industry memberships, certifications, and business registries" },
     { category: "Web Archives", examples: "Historical versions of websites preserved by archiving services" },
-    { category: "Academic Sources", examples: "Published research, conference papers, and institutional publications" }
+    { category: "Academic Sources", examples: "Published research and conference papers" }
   ];
 
   const everydayUses = [
     {
       title: "Employment Decisions",
-      description: "Employers often review public social media profiles and professional networks when evaluating candidates. Job seekers research companies through news, reviews, and public filings before accepting offers.",
+      description: "Employers review public profiles when evaluating candidates. Job seekers check company news and reviews before accepting offers.",
       icon: Users
     },
     {
       title: "Fraud Prevention",
-      description: "Banks and businesses verify identity claims using public records. Individuals check whether a company or seller is legitimate before making purchases or investments.",
+      description: "Businesses verify identity claims using public records. Individuals check whether a seller is legitimate before making purchases.",
       icon: Shield
     },
     {
       title: "Journalism",
-      description: "Reporters verify claims, identify sources, and investigate stories using public records, social media posts, and official statements. Fact-checkers use the same methods to confirm accuracy.",
+      description: "Reporters verify claims using public records and official statements. Fact-checkers confirm accuracy through the same sources.",
       icon: BookOpen
     },
     {
       title: "Avoiding Scams",
-      description: "Before wiring money or sharing sensitive information, people search for warning signs—checking if a person, company, or offer has been reported as fraudulent elsewhere online.",
+      description: "Before sharing sensitive information, people search for warning signs—checking if a person or company has been reported as fraudulent.",
       icon: Eye
     }
   ];
@@ -171,23 +171,23 @@ const WhatIsOsint = () => {
   const ethicalPrinciples = [
     {
       principle: "Public Data Only",
-      description: "Information should be genuinely publicly accessible. If you need special access, deception, or technical exploitation to obtain it, it is not appropriate for ethical OSINT."
+      description: "Information should be genuinely publicly accessible. If special access or deception is required, it is not appropriate for ethical OSINT."
     },
     {
       principle: "No Ongoing Monitoring",
-      description: "A one-time search is different from continuous surveillance. Ethical practice means gathering information for a specific purpose, not tracking someone indefinitely."
+      description: "A one-time search differs from continuous tracking. Ethical practice means gathering information for a specific purpose, not indefinitely."
     },
     {
       principle: "No Impersonation",
-      description: "Creating fake accounts, pretending to be someone else, or deceiving people to gain information crosses ethical and often legal lines. Genuine OSINT does not require deception."
+      description: "Creating fake accounts or pretending to be someone else to gain information crosses ethical and legal lines."
     },
     {
       principle: "Proportionate Purpose",
-      description: "The depth of research should match the legitimate need. Extensive investigation into an individual requires stronger justification than a simple background check."
+      description: "The depth of research should match the legitimate need. Extensive research requires stronger justification."
     },
     {
       principle: "Consider Impact",
-      description: "Even when information is public, consider how its use might affect the person involved. Public availability does not automatically justify any use."
+      description: "Public availability does not justify any use. Consider how the use might affect the person involved."
     }
   ];
 
@@ -245,7 +245,7 @@ const WhatIsOsint = () => {
               What Is OSINT?
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
-              Open-source intelligence explained simply: what it means, where it comes from, and why understanding publicly available information matters.
+              Open-source intelligence explained: what it means, where it comes from, and how publicly available information can be gathered and used.
             </p>
           </header>
 
@@ -253,7 +253,7 @@ const WhatIsOsint = () => {
           <nav className="mb-12 p-6 bg-muted/50 rounded-lg border">
             <h2 className="text-lg font-semibold mb-4">In This Article</h2>
             <ul className="space-y-2 text-muted-foreground">
-              <li><a href="#definition" className="hover:text-primary transition-colors">1. What OSINT Actually Means</a></li>
+              <li><a href="#definition" className="hover:text-primary transition-colors">1. What OSINT Means</a></li>
               <li><a href="#what-counts" className="hover:text-primary transition-colors">2. What Counts as OSINT</a></li>
               <li><a href="#vs-hacking" className="hover:text-primary transition-colors">3. OSINT vs. Hacking</a></li>
               <li><a href="#everyday-use" className="hover:text-primary transition-colors">4. How OSINT Is Used in Everyday Life</a></li>
@@ -264,37 +264,37 @@ const WhatIsOsint = () => {
             </ul>
           </nav>
 
-          {/* Section 1: Plain-language definition */}
+          {/* Section 1: Definition */}
           <section id="definition" className="mb-12 p-8 bg-primary/5 rounded-lg border border-primary/20">
             <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
               <Info className="h-6 w-6 text-primary" />
-              1. What OSINT Actually Means
+              1. What OSINT Means
             </h2>
-            <div className="prose prose-lg max-w-none text-muted-foreground">
-              <p className="mb-4 text-lg">
-                <strong className="text-foreground">OSINT stands for open-source intelligence.</strong> In plain terms, it means gathering and analysing information from sources that anyone can access—websites, social media, news articles, public records, and similar materials.
-              </p>
-              <p className="mb-4">
-                The "open" refers to the availability of the information, not to open-source software. If you can find it without needing passwords, special access, or hacking, it qualifies as open-source information.
-              </p>
-              <p className="mb-4">
-                The term originated in government contexts, but the practice itself is something ordinary people do every day. When you search for information about a company before a job interview, check reviews before a purchase, or look up someone's professional background, you are using open-source intelligence methods.
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
+              <p>
+                <strong className="text-foreground">OSINT stands for open-source intelligence.</strong> It refers to gathering and analysing information from publicly available sources.
               </p>
               <p>
-                OSINT is a method—a way of finding and using publicly available information. It is not a job title, a profession, or a technology. It describes how information is gathered, not who gathers it.
+                These sources include websites, social media, news articles, public records, and similar materials. The "open" refers to the accessibility of the information, not to open-source software.
+              </p>
+              <p>
+                If information can be found without passwords, special access, or technical exploitation, it qualifies as open-source.
+              </p>
+              <p>
+                OSINT is a method—a way of gathering publicly available information. It describes how information is collected, not who collects it or why.
               </p>
             </div>
           </section>
 
-          {/* Section 2: What Counts as OSINT */}
+          {/* Section 2: What Counts */}
           <section id="what-counts" className="mb-12">
             <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
               <Globe className="h-6 w-6 text-primary" />
               2. What Counts as OSINT
             </h2>
-            <div className="prose prose-lg max-w-none text-muted-foreground mb-6">
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4 mb-6">
               <p>
-                For information to qualify as open-source, it must be genuinely publicly accessible. This means anyone can find and view it without needing special credentials, insider knowledge, or technical exploitation.
+                For information to qualify as open-source, it must be genuinely publicly accessible. Anyone can find and view it without special credentials or technical exploitation.
               </p>
             </div>
 
@@ -317,19 +317,19 @@ const WhatIsOsint = () => {
               </table>
             </div>
 
-            <div className="prose prose-lg max-w-none text-muted-foreground">
-              <p className="mb-4">
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
+              <p>
                 <strong className="text-foreground">What does NOT count as OSINT:</strong>
               </p>
               <ul className="space-y-2">
-                <li>Private messages or emails accessed without permission</li>
-                <li>Password-protected content you are not authorised to view</li>
-                <li>Information obtained by impersonating someone else</li>
-                <li>Data from hacking, phishing, or exploiting system vulnerabilities</li>
+                <li>Private messages accessed without permission</li>
+                <li>Password-protected content without authorisation</li>
+                <li>Information obtained through impersonation</li>
+                <li>Data from hacking or exploiting vulnerabilities</li>
                 <li>Leaked data that was never intended to be public</li>
               </ul>
-              <p className="mt-4">
-                The distinction matters. If accessing the information required bypassing security or deceiving someone, it is not open-source intelligence—regardless of what the information contains.
+              <p>
+                If accessing the information required bypassing security or deceiving someone, it is not open-source intelligence.
               </p>
             </div>
           </section>
@@ -340,18 +340,18 @@ const WhatIsOsint = () => {
               <Shield className="h-6 w-6 text-primary" />
               3. OSINT vs. Hacking
             </h2>
-            <div className="prose prose-lg max-w-none text-muted-foreground mb-6">
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4 mb-6">
               <p>
-                A common misconception is that OSINT involves hacking or technical intrusion. This is incorrect. The two are fundamentally different in method, legality, and ethics.
+                OSINT and hacking are fundamentally different. The distinction is based on method, legality, and ethics.
               </p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6 my-6">
               <Card className="border-primary/20">
                 <CardContent className="pt-6">
-                  <h3 className="font-semibold text-foreground mb-3 text-lg">OSINT (Legal)</h3>
+                  <h3 className="font-semibold text-foreground mb-3 text-lg">OSINT</h3>
                   <ul className="space-y-2 text-muted-foreground text-sm">
-                    <li>Uses information anyone can access</li>
+                    <li>Uses publicly accessible information</li>
                     <li>No passwords guessed or stolen</li>
                     <li>No security measures bypassed</li>
                     <li>No deception or impersonation</li>
@@ -363,7 +363,7 @@ const WhatIsOsint = () => {
 
               <Card className="border-destructive/20">
                 <CardContent className="pt-6">
-                  <h3 className="font-semibold text-foreground mb-3 text-lg">Hacking (Illegal)</h3>
+                  <h3 className="font-semibold text-foreground mb-3 text-lg">Hacking</h3>
                   <ul className="space-y-2 text-muted-foreground text-sm">
                     <li>Gains unauthorised access to systems</li>
                     <li>Involves credential theft or guessing</li>
@@ -376,12 +376,12 @@ const WhatIsOsint = () => {
               </Card>
             </div>
 
-            <div className="prose prose-lg max-w-none text-muted-foreground">
-              <p className="mb-4">
-                <strong className="text-foreground">The legal distinction:</strong> Gathering publicly available information is legal in most places. Accessing information that requires bypassing security—even if the security is weak—is typically illegal.
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
+              <p>
+                <strong className="text-foreground">Legal distinction:</strong> Gathering public information is legal in most places. Accessing protected information—even with weak security—is typically illegal.
               </p>
               <p>
-                <strong className="text-foreground">The ethical distinction:</strong> OSINT respects existing access controls. If a profile is private, OSINT does not attempt to view it. If a database requires authentication, OSINT does not attempt to access it. The practice operates within boundaries, not around them.
+                <strong className="text-foreground">Ethical distinction:</strong> OSINT respects access controls. If a profile is private, OSINT does not attempt to view it. The practice operates within boundaries.
               </p>
             </div>
           </section>
@@ -392,9 +392,9 @@ const WhatIsOsint = () => {
               <Users className="h-6 w-6 text-primary" />
               4. How OSINT Is Used in Everyday Life
             </h2>
-            <div className="prose prose-lg max-w-none text-muted-foreground mb-6">
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4 mb-6">
               <p>
-                Open-source intelligence is not exotic or specialised. Most people use these methods regularly, often without thinking of it in formal terms.
+                Open-source intelligence methods are common in everyday contexts. Most people use these approaches regularly without formal terminology.
               </p>
             </div>
 
@@ -421,7 +421,7 @@ const WhatIsOsint = () => {
 
             <div className="prose prose-lg max-w-none text-muted-foreground">
               <p>
-                In each case, the underlying method is the same: gathering publicly available information to make better decisions. The formality varies, but the principle does not.
+                The underlying method is consistent: gathering publicly available information to make decisions.
               </p>
             </div>
           </section>
@@ -432,9 +432,9 @@ const WhatIsOsint = () => {
               <Scale className="h-6 w-6 text-primary" />
               5. Ethical OSINT Principles
             </h2>
-            <div className="prose prose-lg max-w-none text-muted-foreground mb-6">
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4 mb-6">
               <p>
-                The fact that information is publicly available does not mean every use of that information is appropriate. Ethical practice requires considering not just what is possible, but what is responsible.
+                Public availability does not justify every use of information. Ethical practice requires considering what is responsible, not just what is possible.
               </p>
             </div>
 
@@ -451,7 +451,7 @@ const WhatIsOsint = () => {
 
             <div className="prose prose-lg max-w-none text-muted-foreground">
               <p>
-                These principles distinguish responsible inquiry from problematic behaviour. The question is not only "can I find this?" but "should I find this, and what will I do with it?"
+                The question is not only "can this be found?" but "should it be found, and for what purpose?"
               </p>
             </div>
           </section>
@@ -462,9 +462,9 @@ const WhatIsOsint = () => {
               <Layers className="h-6 w-6 text-primary" />
               6. OSINT vs. Digital Footprint vs. Digital Exposure
             </h2>
-            <div className="prose prose-lg max-w-none text-muted-foreground mb-6">
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4 mb-6">
               <p>
-                These three terms are related but describe different things. Understanding the distinctions helps clarify what each concept actually means.
+                These terms are related but describe different concepts. Understanding the distinctions clarifies what each one means.
               </p>
             </div>
 
@@ -473,10 +473,10 @@ const WhatIsOsint = () => {
                 <CardContent className="pt-6">
                   <h3 className="font-semibold text-foreground mb-3 text-lg">OSINT</h3>
                   <p className="text-muted-foreground text-sm mb-3">
-                    <strong>What it is:</strong> A method of gathering information from public sources.
+                    <strong>Definition:</strong> A method of gathering information from public sources.
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    <strong>In practice:</strong> How someone might research you, a company, or a topic using publicly available data.
+                    <strong>Function:</strong> How someone might find information about a person, company, or topic.
                   </p>
                 </CardContent>
               </Card>
@@ -487,10 +487,10 @@ const WhatIsOsint = () => {
                     <Link to="/ai/digital-footprint" className="hover:text-primary transition-colors">Digital Footprint</Link>
                   </h3>
                   <p className="text-muted-foreground text-sm mb-3">
-                    <strong>What it is:</strong> All the data you leave behind when using the internet.
+                    <strong>Definition:</strong> All data left behind when using the internet.
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    <strong>In practice:</strong> Every account, post, search, and interaction—both public and private.
+                    <strong>Scope:</strong> Includes both public and private data across all accounts and interactions.
                   </p>
                 </CardContent>
               </Card>
@@ -501,21 +501,21 @@ const WhatIsOsint = () => {
                     <Link to="/ai/digital-exposure" className="hover:text-primary transition-colors">Digital Exposure</Link>
                   </h3>
                   <p className="text-muted-foreground text-sm mb-3">
-                    <strong>What it is:</strong> The portion of your footprint that others can actually find.
+                    <strong>Definition:</strong> The portion of a footprint that others can find.
                   </p>
                   <p className="text-muted-foreground text-sm">
-                    <strong>In practice:</strong> Public profiles, breached data, information in data broker listings.
+                    <strong>Scope:</strong> Public profiles, breached data, and information in data broker listings.
                   </p>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="prose prose-lg max-w-none text-muted-foreground">
-              <p className="mb-4">
-                <strong className="text-foreground">How they connect:</strong> Your <Link to="/ai/digital-footprint" className="text-primary hover:underline">digital footprint</Link> is everything you leave behind online. Your <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link> is the subset of that footprint that is visible to others. OSINT is how someone might discover and analyse your exposure.
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
+              <p>
+                <strong className="text-foreground">How they connect:</strong> A <Link to="/ai/digital-footprint" className="text-primary hover:underline">digital footprint</Link> is everything left online. <Link to="/ai/digital-exposure" className="text-primary hover:underline">Digital exposure</Link> is the visible subset. OSINT is how that exposure might be discovered.
               </p>
               <p>
-                When you use OSINT methods to research yourself, you are essentially measuring your own digital exposure—seeing what others could find using the same publicly available sources.
+                Using OSINT methods on yourself means measuring your own exposure—seeing what others could find using publicly available sources.
               </p>
             </div>
           </section>
@@ -526,60 +526,55 @@ const WhatIsOsint = () => {
               <Search className="h-6 w-6 text-primary" />
               7. Can You Use OSINT on Yourself?
             </h2>
-            <div className="prose prose-lg max-w-none text-muted-foreground">
-              <p className="mb-4 text-lg">
-                <strong className="text-foreground">Yes.</strong> Searching for your own name, email addresses, usernames, and other identifiers is one of the most practical applications of open-source intelligence methods.
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
+              <p>
+                <strong className="text-foreground">Yes.</strong> Searching for your own name, email, or username is a practical application of open-source methods.
               </p>
-              <p className="mb-4">
-                This kind of self-research helps you understand what others might find when they look for information about you. It can reveal forgotten accounts, outdated information, or data you did not know was public.
+              <p>
+                Self-research helps you understand what others might find when searching for information about you.
               </p>
               
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">What you might discover:</h3>
               <ul className="space-y-2 mb-6">
-                <li>Old social media profiles you no longer use</li>
-                <li>Your information in data broker databases</li>
-                <li>Public records containing your address or phone number</li>
-                <li>Forum posts or comments from years ago</li>
+                <li>Old social media profiles no longer in use</li>
+                <li>Information in data broker databases</li>
+                <li>Public records with your address or phone number</li>
+                <li>Forum posts from years ago</li>
                 <li>Professional profiles with outdated information</li>
-                <li>Photos or mentions by others that include you</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">What you can do with this information:</h3>
+              <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Actions you can take:</h3>
               <ul className="space-y-2 mb-6">
-                <li>Delete or deactivate accounts you no longer need</li>
+                <li>Delete or deactivate unused accounts</li>
                 <li>Update outdated information on active profiles</li>
                 <li>Request removal from data broker listings</li>
-                <li>Adjust privacy settings on platforms where you are active</li>
-                <li>Make more informed decisions about future sharing</li>
+                <li>Adjust privacy settings on current platforms</li>
               </ul>
 
               <p>
-                Self-research is not about paranoia. It is about understanding your own visibility and making conscious choices about your online presence.
+                Self-research is about understanding visibility and making informed choices about online presence.
               </p>
             </div>
           </section>
 
-          {/* Section 8: Calm Closing */}
+          {/* Section 8: Closing */}
           <section id="closing" className="mb-12 p-8 bg-muted/50 rounded-lg border">
             <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
               <Eye className="h-6 w-6 text-primary" />
               8. Awareness, Not Alarm
             </h2>
-            <div className="prose prose-lg max-w-none text-muted-foreground">
-              <p className="mb-4">
-                Learning about OSINT and digital visibility is not meant to create anxiety. The goal is understanding—knowing what exists, how it can be found, and what choices you have.
-              </p>
-              <p className="mb-4">
-                Most people have a digital presence. That is a normal part of modern life. Having information online does not mean something bad will happen. Most publicly available information is never accessed by anyone with harmful intent.
-              </p>
-              <p className="mb-4">
-                What understanding OSINT provides is context. When you know how public information can be gathered and connected, you can make better decisions about what you share, where you share it, and how you present yourself online.
-              </p>
-              <p className="mb-4">
-                You do not need to disappear from the internet or live in fear of what exists about you online. You simply benefit from knowing what is there.
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
+              <p>
+                Understanding OSINT and digital visibility is not intended to create anxiety. The purpose is awareness—knowing what exists and what choices are available.
               </p>
               <p>
-                <strong className="text-foreground">Awareness enables informed choices. That is the point.</strong>
+                Most people have a digital presence. That is typical for modern life. Having information online does not mean harm will occur.
+              </p>
+              <p>
+                Understanding how public information can be gathered enables better decisions about what to share and where.
+              </p>
+              <p>
+                <strong className="text-foreground">Awareness enables informed choices.</strong>
               </p>
             </div>
           </section>
@@ -595,7 +590,7 @@ const WhatIsOsint = () => {
                   What is OSINT?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  OSINT stands for open-source intelligence. It means gathering and analysing information from sources that anyone can access—like websites, social media, news articles, and public records. No special permissions or hacking required.
+                  OSINT stands for open-source intelligence. It refers to gathering and analysing information from publicly available sources—websites, social media, news, and public records.
                 </AccordionContent>
               </AccordionItem>
 
@@ -604,7 +599,7 @@ const WhatIsOsint = () => {
                   Is OSINT legal?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Gathering publicly available information is generally legal. However, how you use that information matters. Using public data for harassment, stalking, or fraud is illegal. The method of collection, type of information, and intended use all affect legality.
+                  Gathering publicly available information is generally legal. How that information is used determines legality. Using public data for harassment or fraud is illegal regardless of how it was obtained.
                 </AccordionContent>
               </AccordionItem>
 
@@ -613,7 +608,7 @@ const WhatIsOsint = () => {
                   Can I use OSINT on myself?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  Yes. Searching for your own name, email, or username to understand what others might find about you is one of the most practical uses of open-source intelligence methods. It helps you understand and manage your own digital presence.
+                  Yes. Searching for your own name, email, or username helps you understand what others might find about you online.
                 </AccordionContent>
               </AccordionItem>
 
@@ -622,7 +617,7 @@ const WhatIsOsint = () => {
                   How is OSINT different from hacking?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  OSINT only uses publicly available information that anyone can access. Hacking involves gaining unauthorised access to protected systems or data. OSINT does not bypass security, guess passwords, or exploit vulnerabilities.
+                  OSINT uses only publicly available information. Hacking involves gaining unauthorised access to protected systems. OSINT does not bypass security or exploit vulnerabilities.
                 </AccordionContent>
               </AccordionItem>
 
@@ -631,7 +626,7 @@ const WhatIsOsint = () => {
                   What is the difference between OSINT, digital footprint, and digital exposure?
                 </AccordionTrigger>
                 <AccordionContent className="text-muted-foreground">
-                  OSINT is a method of gathering public information. A <Link to="/ai/digital-footprint" className="text-primary hover:underline">digital footprint</Link> is all the data you leave behind online. <Link to="/ai/digital-exposure" className="text-primary hover:underline">Digital exposure</Link> is the portion of your footprint that others can actually find. OSINT is how someone might discover your exposure.
+                  OSINT is a method of gathering public information. A <Link to="/ai/digital-footprint" className="text-primary hover:underline">digital footprint</Link> is all data left online. <Link to="/ai/digital-exposure" className="text-primary hover:underline">Digital exposure</Link> is the portion of that footprint others can find.
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
@@ -646,14 +641,14 @@ const WhatIsOsint = () => {
                 className="p-4 bg-background rounded-lg border hover:border-primary/50 transition-colors group"
               >
                 <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">What Is a Digital Footprint?</h3>
-                <p className="text-sm text-muted-foreground mt-1">Understanding the trail of data you leave online.</p>
+                <p className="text-sm text-muted-foreground mt-1">The trail of data left behind when using the internet.</p>
               </Link>
               <Link 
                 to="/ai/digital-exposure" 
                 className="p-4 bg-background rounded-lg border hover:border-primary/50 transition-colors group"
               >
                 <h3 className="font-medium text-foreground group-hover:text-primary transition-colors">What Is Digital Exposure?</h3>
-                <p className="text-sm text-muted-foreground mt-1">When your online information becomes visible to others.</p>
+                <p className="text-sm text-muted-foreground mt-1">When online information becomes visible to others.</p>
               </Link>
             </div>
           </section>
@@ -661,8 +656,8 @@ const WhatIsOsint = () => {
           {/* Editorial Note */}
           <aside className="p-6 bg-muted/30 rounded-lg border border-muted mb-8">
             <p className="text-sm text-muted-foreground">
-              <strong className="text-foreground">Editorial note:</strong> This page provides a neutral, educational explanation of open-source intelligence for general audiences. It is not a guide for practitioners and does not promote specific tools or techniques. 
-              See our <Link to="/editorial-ethics-policy" className="text-primary hover:underline">Editorial & Ethics Policy</Link> for more about our approach to content.
+              <strong className="text-foreground">Editorial note:</strong> This page provides a neutral, factual explanation of open-source intelligence for general audiences. 
+              See the <Link to="/editorial-ethics-policy" className="text-primary hover:underline">Editorial & Ethics Policy</Link> for more about content standards.
             </p>
           </aside>
         </main>
