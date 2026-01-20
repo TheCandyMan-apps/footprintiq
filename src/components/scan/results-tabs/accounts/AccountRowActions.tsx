@@ -132,44 +132,66 @@ export function AccountRowActions({
           </TooltipContent>
         </Tooltip>
 
-        {/* LENS Verify Button with upgrade popover for free users */}
+        {/* LENS Verify Button - shows upgrade popover for free users only */}
         {url && !verificationResult && (
-          <Popover open={showUpgradePopover} onOpenChange={setShowUpgradePopover}>
+          isFree ? (
+            <Popover open={showUpgradePopover} onOpenChange={setShowUpgradePopover}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        RESULTS_ACTION_CLUSTER.button,
+                        'text-primary hover:text-primary hover:bg-primary/10'
+                      )}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowUpgradePopover(true);
+                      }}
+                    >
+                      <Sparkles className="w-2.5 h-2.5" />
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent className="text-[10px]">Upgrade to verify</TooltipContent>
+              </Tooltip>
+              <PopoverContent 
+                side="top" 
+                align="end" 
+                className="w-72 p-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <LensUpgradePrompt variant="banner" context="verify" />
+              </PopoverContent>
+            </Popover>
+          ) : (
             <Tooltip>
               <TooltipTrigger asChild>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      RESULTS_ACTION_CLUSTER.button,
-                      'text-primary hover:text-primary hover:bg-primary/10'
-                    )}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleVerify();
-                    }}
-                    disabled={isVerifyingNow}
-                  >
-                    {isVerifyingNow ? (
-                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-2.5 h-2.5" />
-                    )}
-                  </Button>
-                </PopoverTrigger>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    RESULTS_ACTION_CLUSTER.button,
+                    'text-primary hover:text-primary hover:bg-primary/10'
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleVerify();
+                  }}
+                  disabled={isVerifyingNow}
+                >
+                  {isVerifyingNow ? (
+                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-2.5 h-2.5" />
+                  )}
+                </Button>
               </TooltipTrigger>
               <TooltipContent className="text-[10px]">LENS Verify</TooltipContent>
             </Tooltip>
-            <PopoverContent 
-              side="top" 
-              align="end" 
-              className="w-72 p-0"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <LensUpgradePrompt variant="banner" context="verify" />
-            </PopoverContent>
-          </Popover>
+          )
         )}
 
         {/* Claim Toggle */}
