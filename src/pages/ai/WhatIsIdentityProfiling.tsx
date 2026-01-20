@@ -334,19 +334,22 @@ const WhatIsIdentityProfiling = () => {
             </h2>
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
               <p>
-                These terms are often confused, but they describe different processes with different implications.
+                These three terms are often used interchangeably, but they describe meaningfully different processes. Understanding the distinctions helps place identity profiling in proper context.
               </p>
               <p>
-                <strong className="text-foreground">Tracking</strong> follows specific actions in real time. Website cookies that monitor which pages you visit, apps that log your location, or analytics that record your clicks are all forms of tracking. Tracking creates new data about current behaviour.
+                <strong className="text-foreground">Tracking</strong> follows activity in real time. It monitors what you do as you do it—which websites you visit, where your phone travels, what you click. Tracking creates new data about current behaviour. It requires active collection mechanisms like cookies, location services, or analytics scripts.
               </p>
               <p>
-                <strong className="text-foreground">Surveillance</strong> implies intentional, ongoing monitoring by a specific actor. Law enforcement watching a suspect, an employer monitoring employee communications, or a stalker following someone's movements are forms of surveillance. Surveillance involves deliberate attention from an observer.
+                <strong className="text-foreground">Surveillance</strong> implies intentional monitoring or observation by a specific party. It suggests someone—a person, agency, or organisation—is deliberately watching. Surveillance carries connotations of attention and oversight, whether by law enforcement, employers, or individuals.
               </p>
               <p>
-                <strong className="text-foreground">Identity profiling</strong> is different. It analyses data that already exists rather than creating new data. It does not require real-time monitoring or deliberate attention. Profiling happens passively, often without any human involvement, by connecting information that was shared at different times and places.
+                <strong className="text-foreground">Identity profiling</strong> is inference from existing data. It does not require real-time monitoring or deliberate attention. Profiling analyses information that was already shared, often long ago, to draw probabilistic conclusions. No one needs to be watching; systems process data that is already available.
               </p>
               <p>
-                The key distinction is that profiling is inferential and retrospective. No one needs to follow you. Algorithms piece together what has already been made available. This makes profiling feel less intrusive in the moment, but its effects can be equally significant.
+                This distinction matters for perspective. Profiling is not surveillance—there is no observer focused on you. It is not tracking—nothing new is being collected. It is the analysis of your existing <Link to="/ai/digital-footprint" className="text-primary hover:underline">digital footprint</Link> to infer patterns.
+              </p>
+              <p>
+                Recognising this can reduce unnecessary anxiety. Profiling is impersonal and automated. It happens at scale, processing millions of records without individual attention. The concern is not that someone is watching, but that accumulated data has downstream effects you may not anticipate.
               </p>
             </div>
           </section>
