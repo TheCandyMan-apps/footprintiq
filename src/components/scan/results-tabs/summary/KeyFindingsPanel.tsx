@@ -82,11 +82,14 @@ export function KeyFindingsPanel({ findings, scanId }: KeyFindingsPanelProps) {
   }
 
   return (
-    <Card className="border-border/50">
-      <CardHeader className="pb-2 pt-3 px-4">
-        <CardTitle className="text-sm font-medium text-muted-foreground">Key Findings</CardTitle>
+    <Card className="border-border/40">
+      <CardHeader className="pb-1.5 pt-2.5 px-3">
+        <CardTitle className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+          <Eye className="w-3 h-3" />
+          Key Findings
+        </CardTitle>
       </CardHeader>
-      <CardContent className="px-4 pb-3 space-y-1">
+      <CardContent className="px-3 pb-2.5 space-y-0.5">
         {findings.slice(0, 5).map((finding) => {
           const Icon = iconMap[finding.icon] || Eye;
           const styles = severityStyles[finding.severity];
@@ -94,39 +97,41 @@ export function KeyFindingsPanel({ findings, scanId }: KeyFindingsPanelProps) {
           return (
             <div
               key={finding.id}
-              className="group flex items-start gap-3 py-2.5 px-2 -mx-2 rounded-md hover:bg-muted/50 transition-colors"
+              className="group flex items-center gap-2.5 py-1.5 px-2 -mx-2 rounded hover:bg-muted/40 transition-colors"
             >
               {/* Icon */}
-              <div className={cn('mt-0.5 flex-shrink-0', styles.icon)}>
-                <Icon className="h-4 w-4" />
+              <div className={cn('shrink-0', styles.icon)}>
+                <Icon className="h-3.5 w-3.5" />
               </div>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0 space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-foreground truncate">
-                    {finding.title}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className={cn('text-[10px] px-1.5 py-0 h-4 capitalize', styles.badge)}
-                  >
-                    {finding.severity}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground line-clamp-1">{finding.explanation}</p>
+              {/* Content - single line */}
+              <div className="flex-1 min-w-0 flex items-center gap-2">
+                <span className="text-xs font-medium text-foreground truncate">
+                  {finding.title}
+                </span>
+                <Badge
+                  variant="outline"
+                  className={cn('text-[9px] px-1 py-0 h-3.5 capitalize shrink-0', styles.badge)}
+                >
+                  {finding.severity}
+                </Badge>
               </div>
+
+              {/* Explanation on hover */}
+              <span className="hidden sm:block text-[10px] text-muted-foreground truncate max-w-[120px] opacity-0 group-hover:opacity-100 transition-opacity">
+                {finding.explanation}
+              </span>
 
               {/* View action */}
               {finding.deepLink && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 px-2 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                   onClick={() => handleViewClick(finding)}
                 >
                   View
-                  <ChevronRight className="h-3 w-3 ml-0.5" />
+                  <ChevronRight className="h-2.5 w-2.5 ml-0.5" />
                 </Button>
               )}
             </div>
