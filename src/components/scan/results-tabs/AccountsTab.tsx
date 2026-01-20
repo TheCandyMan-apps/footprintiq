@@ -245,8 +245,8 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
         </span>
       </div>
 
-      {/* Account Rows */}
-      <div className="border rounded-lg divide-y overflow-hidden">
+      {/* Account Rows - Compact feed */}
+      <div className="border rounded-lg overflow-hidden bg-card">
         {filteredResults.length === 0 ? (
           <div className="p-8 text-center">
             <User className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
