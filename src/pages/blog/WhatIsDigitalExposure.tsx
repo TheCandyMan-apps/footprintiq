@@ -189,7 +189,7 @@ export default function WhatIsDigitalExposure() {
             <p>
               This persistence means that exposure is cumulative. Your current digital 
               presence includes not just recent activity, but the accumulated traces of 
-              years of online participation.
+              years of online participation—your entire <Link to="/ai/digital-footprint" className="text-primary hover:underline">digital footprint</Link>.
             </p>
 
             <p>
