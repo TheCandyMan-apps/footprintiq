@@ -6,10 +6,12 @@ import { format } from 'date-fns';
 
 import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { useInvestigation } from '@/contexts/InvestigationContext';
+import { useScanNarrative } from '@/hooks/useScanNarrative';
 
 import { IntelligenceBrief } from './summary/IntelligenceBrief';
 import { NextStepsPanel } from './summary/NextStepsPanel';
 import { FocusedEntityBanner } from './summary/FocusedEntityBanner';
+import { ScanNarrativeFeed } from './summary/ScanNarrativeFeed';
 
 interface SummaryTabProps {
   jobId: string;
@@ -147,6 +149,9 @@ export function SummaryTab({
   const config = typeConfig[scanType] || typeConfig.username;
   const TypeIcon = config.icon;
 
+  // Scan narrative for persistent progress/completion feed
+  const narrative = useScanNarrative(jobId, job?.username || '', scanType);
+
   return (
     <div className="space-y-1.5">
       {/* Brief Header - Compact scan identifier */}
@@ -179,8 +184,18 @@ export function SummaryTab({
       </div>
 
       {/* Intelligence Brief - Compact card */}
-      <div className="border border-border/20 rounded bg-card p-2.5 space-y-3">
-        {/* 1) What We Found */}
+      <div className="border border-border/20 rounded bg-card p-2.5 space-y-2.5">
+        {/* 1) Scan Narrative Feed - What we did / Live progress */}
+        <ScanNarrativeFeed
+          items={narrative.items}
+          summary={narrative.summary}
+          isLoading={narrative.isLoading}
+          isComplete={narrative.isComplete}
+          estimatedTimeRemaining={narrative.estimatedTimeRemaining}
+          variant="compact"
+        />
+
+        {/* 2) What We Found */}
         <IntelligenceBrief
           username={job?.username || 'Unknown'}
           accountsFound={grouped.found.length}
@@ -193,7 +208,7 @@ export function SummaryTab({
           verifiedCount={verifiedEntities.size}
         />
 
-        {/* 2) Focused Entity (if active) */}
+        {/* 3) Focused Entity (if active) */}
         {focusedResult && (
           <FocusedEntityBanner
             result={focusedResult}
@@ -202,7 +217,7 @@ export function SummaryTab({
           />
         )}
 
-        {/* 3) Recommended Next Steps */}
+        {/* 4) Recommended Next Steps */}
         <NextStepsPanel
           accountsFound={grouped.found.length}
           breachCount={breachCount}
