@@ -50,7 +50,7 @@ const WhatIsIdentityProfiling = () => {
         "name": "What is identity profiling?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Identity profiling is the process of inferring characteristics about a person by connecting and analysing data points from multiple sources. It is pattern-based inference, not direct observation."
+          "text": "Identity profiling is the process of inferring characteristics, relationships, or risk indicators about an individual by analysing patterns across multiple data sources. It typically happens automatically without human review."
         }
       },
       {
@@ -117,7 +117,7 @@ const WhatIsIdentityProfiling = () => {
     "@context": "https://schema.org",
     "@type": "DefinedTerm",
     "name": "Identity Profiling",
-    "description": "Identity profiling is the process of inferring characteristics, behaviours, or associations about a person by connecting and analysing data points from multiple sources.",
+    "description": "Identity profiling is the process of inferring characteristics, relationships, or risk indicators about an individual by analysing patterns across multiple data sources.",
     "inDefinedTermSet": {
       "@type": "DefinedTermSet",
       "name": "Digital Privacy Glossary",
@@ -249,13 +249,13 @@ const WhatIsIdentityProfiling = () => {
             </h2>
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
               <p>
-                <strong className="text-foreground">Identity profiling is the process of building a picture of someone by connecting pieces of information from different sources.</strong> It is about inference—drawing conclusions from patterns—rather than direct observation.
+                <strong className="text-foreground">Identity profiling is the process of inferring characteristics, relationships, or risk indicators about an individual by analysing patterns across multiple data sources.</strong> It is inference-based, not observation-based.
               </p>
               <p>
-                When separate data points are combined, patterns emerge. A username used on multiple platforms, an email address appearing in public records, or consistent posting habits across sites all contribute to a profile that suggests interests, habits, demographics, or associations.
+                When separate data points are combined, patterns may emerge. A username used on multiple platforms, an email address appearing in public records, or consistent posting habits across sites can contribute to inferences about interests, habits, demographics, or associations.
               </p>
               <p>
-                Profiling does not require anyone to watch you. It happens when systems analyse information that already exists. The process is typically automated, running at scale across millions of data points without human involvement.
+                Profiling typically happens automatically. Algorithms analyse information that already exists, often running at scale across millions of data points. Human analysts are not necessarily involved, and the inferences drawn may or may not be accurate.
               </p>
             </div>
           </section>
@@ -472,7 +472,7 @@ const WhatIsIdentityProfiling = () => {
               <AccordionItem value="item-1">
                 <AccordionTrigger>What is identity profiling?</AccordionTrigger>
                 <AccordionContent>
-                  Identity profiling is the process of inferring characteristics about a person by connecting and analysing data points from multiple sources. It is pattern-based inference, not direct observation.
+                  Identity profiling is the process of inferring characteristics, relationships, or risk indicators about an individual by analysing patterns across multiple data sources. It typically happens automatically without human review.
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="item-2">
