@@ -1118,6 +1118,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
               summary=""
               isLoading={narrative.isLoading}
               isComplete={phase === 'completed'}
+              estimatedTimeRemaining={narrative.estimatedTimeRemaining}
             />
           )}
 
