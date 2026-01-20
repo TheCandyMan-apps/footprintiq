@@ -68,8 +68,9 @@ export const EDGE_REASON_CONFIG: Record<EdgeReason, { label: string; weight: num
   similar_username: { label: 'Similar username', weight: 0.7, icon: '🔤' },
   same_image: { label: 'Same profile image', weight: 0.95, icon: '🖼️' },
   similar_bio: { label: 'Similar bio', weight: 0.6, icon: '📝' },
-  shared_link: { label: 'Shared link/domain', weight: 0.75, icon: '🔗' },
+  shared_domain: { label: 'Shared link/domain', weight: 0.75, icon: '🔗' },
   shared_email: { label: 'Shared email', weight: 0.85, icon: '📧' },
+  shared_id: { label: 'Shared platform ID', weight: 0.85, icon: '🆔' },
   cross_reference: { label: 'Cross-reference', weight: 0.8, icon: '↔️' },
   identity_search: { label: 'Search identity', weight: 1.0, icon: '🔍' },
 };
@@ -164,8 +165,9 @@ export function useCorrelationGraph(
       similar_username: 0,
       same_image: 0,
       similar_bio: 0,
-      shared_link: 0,
+      shared_domain: 0,
       shared_email: 0,
+      shared_id: 0,
       cross_reference: 0,
       identity_search: 0,
     };
@@ -368,14 +370,14 @@ export function useCorrelationGraph(
             const pairKey = [nodeIds[i], nodeIds[j]].sort().join('-');
             if (!processedPairs.has(pairKey)) {
               processedPairs.add(pairKey);
-              reasonStats.shared_link++;
+              reasonStats.shared_domain++;
               edges.push({
                 id: `edge-domain-${pairKey}`,
                 source: nodeIds[i],
                 target: nodeIds[j],
-                reason: 'shared_link',
-                reasonLabel: `${EDGE_REASON_CONFIG.shared_link.label} (${domain})`,
-                weight: EDGE_REASON_CONFIG.shared_link.weight,
+                reason: 'shared_domain',
+                reasonLabel: `${EDGE_REASON_CONFIG.shared_domain.label} (${domain})`,
+                weight: EDGE_REASON_CONFIG.shared_domain.weight,
                 confidence: 70,
               });
             }

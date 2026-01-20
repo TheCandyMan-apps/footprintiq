@@ -34,8 +34,9 @@ const REASON_ICONS: Record<EdgeReason, typeof Link2> = {
   similar_username: Link2,
   same_image: ImageIcon,
   similar_bio: FileText,
-  shared_link: Link2,
+  shared_domain: Link2,
   shared_email: Mail,
+  shared_id: Link2,
   cross_reference: ArrowRight,
   identity_search: Users,
 };
