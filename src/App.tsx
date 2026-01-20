@@ -221,6 +221,7 @@ const AIDigitalExposure = lazy(() => import("./pages/ai/DigitalExposure"));
 const AIDigitalFootprint = lazy(() => import("./pages/ai/DigitalFootprint"));
 const AIWhatIsOsint = lazy(() => import("./pages/ai/WhatIsOsint"));
 const AIWhatIsIdentityProfiling = lazy(() => import("./pages/ai/WhatIsIdentityProfiling"));
+const AIIndex = lazy(() => import("./pages/ai/Index"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -488,6 +489,7 @@ function RouterContent() {
           <Route path="/ai-answers-hub" element={<AIAnswersHub />} />
           <Route path="/about-footprintiq" element={<AboutFootprintIQ />} />
           <Route path="/editorial-ethics-policy" element={<EditorialEthicsPolicy />} />
+          <Route path="/ai" element={<AIIndex />} />
           <Route path="/ai/digital-exposure" element={<AIDigitalExposure />} />
           <Route path="/ai/digital-footprint" element={<AIDigitalFootprint />} />
           <Route path="/ai/what-is-osint" element={<AIWhatIsOsint />} />
