@@ -13,7 +13,7 @@ import { NextStepsPanel } from './summary/NextStepsPanel';
 import { FocusedEntityBanner } from './summary/FocusedEntityBanner';
 import { ProfileImagesStrip } from './summary/ProfileImagesStrip';
 import { SummaryActions } from './summary/SummaryActions';
-import { VerificationStatusCard } from './summary/VerificationStatusCard';
+import { VerificationOverview } from './summary/VerificationOverview';
 
 interface SummaryTabProps {
   jobId: string;
@@ -274,10 +274,11 @@ export function SummaryTab({
             </CardContent>
           </Card>
 
-          {/* LENS Verification Status */}
-          <VerificationStatusCard
+          {/* LENS Verification Overview */}
+          <VerificationOverview
             totalAccounts={grouped.found.length}
             verifiedEntities={verifiedEntities}
+            onNavigateToAccounts={() => navigateToTab('accounts')}
           />
 
           {/* Actions */}

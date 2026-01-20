@@ -370,8 +370,34 @@ export function AccountRow({
 
         {/* Right: Badges + Actions */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Badges - hide on mobile */}
-          <div className="hidden sm:flex items-center gap-1">
+          {/* LENS Badge - Always visible when verified */}
+          {verificationResult && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div 
+                    className="cursor-pointer" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLensModalOpen(true);
+                    }}
+                  >
+                    <LensStatusBadge 
+                      status={null}
+                      score={verificationResult.confidenceScore}
+                      compact={false}
+                    />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p className="text-xs">View LENS Analysis</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
+          {/* Confidence Badge - hide on mobile */}
+          <div className="hidden sm:flex items-center">
             <Badge 
               variant="outline" 
               className={cn(
@@ -382,31 +408,6 @@ export function AccountRow({
               <ConfidenceIcon className="w-2.5 h-2.5" />
               {confidence.shortLabel}
             </Badge>
-
-            {verificationResult && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div 
-                      className="cursor-pointer" 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLensModalOpen(true);
-                      }}
-                    >
-                      <LensStatusBadge 
-                        status={null}
-                        score={verificationResult.confidenceScore}
-                        compact
-                      />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p className="text-xs">View LENS Analysis</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
           </div>
           
           {/* Action cluster */}

@@ -117,14 +117,17 @@ export function AccountRowActions({
           </TooltipContent>
         </Tooltip>
 
-        {/* LENS Verify Button */}
+        {/* LENS Verify Button - More prominent */}
         {url && !verificationResult && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className={RESULTS_ACTION_CLUSTER.button}
+                className={cn(
+                  RESULTS_ACTION_CLUSTER.button,
+                  'text-primary hover:text-primary hover:bg-primary/10'
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleVerify();
@@ -138,7 +141,7 @@ export function AccountRowActions({
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="text-[10px]">Verify</TooltipContent>
+            <TooltipContent className="text-[10px]">LENS Verify</TooltipContent>
           </Tooltip>
         )}
 
