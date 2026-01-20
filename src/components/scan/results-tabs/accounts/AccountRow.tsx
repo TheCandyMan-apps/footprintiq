@@ -253,7 +253,7 @@ export function AccountRow({
         )}
         onClick={onToggleExpand}
       >
-        {/* Left: Platform Icon + Profile Thumbnail Stack */}
+        {/* Left: Platform Icon + Profile Thumbnail */}
         <div className="relative shrink-0">
           {/* Platform favicon badge */}
           <div className={RESULTS_ICON_CONTAINER.platformBadge}>
@@ -261,11 +261,11 @@ export function AccountRow({
               <img 
                 src={`https://www.google.com/s2/favicons?domain=${getPlatformDomain(platformName, profileUrl)}&sz=16`}
                 alt=""
-                className="w-3 h-3"
+                className="w-2.5 h-2.5"
                 onError={() => setFaviconError(true)}
               />
             ) : (
-              <Globe className="w-2.5 h-2.5 text-muted-foreground" />
+              <Globe className="w-2 h-2 text-muted-foreground" />
             )}
           </div>
           
@@ -290,7 +290,7 @@ export function AccountRow({
                 profileImage ? 'hidden' : 'flex'
               )}
             >
-              <User className="w-4 h-4 text-primary/50" />
+              <User className="w-3.5 h-3.5 text-primary/40" />
             </div>
           </div>
         </div>
@@ -298,12 +298,12 @@ export function AccountRow({
         {/* Center: Platform + Username + Bio */}
         <div className="flex-1 min-w-0">
           {/* Primary line */}
-          <div className="flex items-center gap-1.5 leading-none">
-            <span className="font-semibold text-[13px] truncate">{platformName}</span>
+          <div className="flex items-center gap-1 leading-none">
+            <span className="font-medium text-[12px] truncate">{platformName}</span>
             {username && (
               <>
-                <span className="text-muted-foreground/40">·</span>
-                <span className="text-muted-foreground text-[13px] truncate max-w-[120px]">@{username}</span>
+                <span className="text-muted-foreground/30 text-[10px]">·</span>
+                <span className="text-muted-foreground text-[11px] truncate max-w-[100px]">@{username}</span>
               </>
             )}
             {claimStatus && (
@@ -311,12 +311,12 @@ export function AccountRow({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span className={cn(
-                      'w-1.5 h-1.5 rounded-full shrink-0',
+                      'w-1 h-1 rounded-full shrink-0 ml-0.5',
                       claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500'
                     )} />
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    {claimStatus === 'me' ? 'Claimed as yours' : 'Marked as not you'}
+                  <TooltipContent side="top" className="text-[10px]">
+                    {claimStatus === 'me' ? 'Claimed' : 'Not you'}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -328,15 +328,15 @@ export function AccountRow({
             <Tooltip>
               <TooltipTrigger asChild>
                 <p className={cn(
-                  "text-[11px] leading-tight mt-0.5 truncate",
-                  bio ? "text-muted-foreground" : "text-muted-foreground/40 italic"
+                  "text-[10px] leading-tight mt-0.5 truncate",
+                  bio ? "text-muted-foreground/80" : "text-muted-foreground/40 italic"
                 )}>
-                  {bio || "No bio available"}
+                  {bio || "No bio"}
                 </p>
               </TooltipTrigger>
               {fullBio && fullBio.length > 80 && (
-                <TooltipContent side="bottom" className="max-w-xs">
-                  <p className="text-xs">{fullBio}</p>
+                <TooltipContent side="bottom" className="max-w-xs text-[11px]">
+                  {fullBio}
                 </TooltipContent>
               )}
             </Tooltip>

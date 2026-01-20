@@ -197,61 +197,61 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
       />
 
       {/* Search + Sort Controls */}
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-col sm:flex-row gap-1.5">
         <div className="relative flex-1">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
           <Input
-            placeholder="Search platforms..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-8 pl-8 text-sm"
+            className="h-7 pl-7 text-[12px]"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-8 w-full sm:w-[130px] text-xs">
-            <Filter className="h-3 w-3 mr-1.5" />
+          <SelectTrigger className="h-7 w-full sm:w-[110px] text-[11px]">
+            <Filter className="h-2.5 w-2.5 mr-1" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-xs">All ({results.length})</SelectItem>
-            <SelectItem value="found" className="text-xs">Found ({statusCounts.found})</SelectItem>
-            <SelectItem value="claimed" className="text-xs">Claimed ({statusCounts.claimed})</SelectItem>
-            <SelectItem value="not_found" className="text-xs">Not Found ({statusCounts.not_found})</SelectItem>
+            <SelectItem value="all" className="text-[11px]">All ({results.length})</SelectItem>
+            <SelectItem value="found" className="text-[11px]">Found ({statusCounts.found})</SelectItem>
+            <SelectItem value="claimed" className="text-[11px]">Claimed ({statusCounts.claimed})</SelectItem>
+            <SelectItem value="not_found" className="text-[11px]">Not Found ({statusCounts.not_found})</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-          <SelectTrigger className="h-8 w-full sm:w-[120px] text-xs">
-            <ArrowUpDown className="h-3 w-3 mr-1.5" />
+          <SelectTrigger className="h-7 w-full sm:w-[100px] text-[11px]">
+            <ArrowUpDown className="h-2.5 w-2.5 mr-1" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="confidence" className="text-xs">Confidence</SelectItem>
-            <SelectItem value="platform" className="text-xs">Platform</SelectItem>
-            <SelectItem value="status" className="text-xs">Status</SelectItem>
+            <SelectItem value="confidence" className="text-[11px]">Confidence</SelectItem>
+            <SelectItem value="platform" className="text-[11px]">Platform</SelectItem>
+            <SelectItem value="status" className="text-[11px]">Status</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Quick Stats */}
-      <div className="flex items-center gap-2 text-xs">
-        <Badge variant="default" className="h-5 px-1.5 bg-green-600 hover:bg-green-600">
+      {/* Quick Stats - inline */}
+      <div className="flex items-center gap-1.5 text-[11px]">
+        <Badge variant="default" className="h-4 px-1.5 text-[10px] bg-green-600 hover:bg-green-600">
           {statusCounts.found} found
         </Badge>
-        <Badge variant="secondary" className="h-5 px-1.5">
+        <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
           {statusCounts.claimed} claimed
         </Badge>
-        <span className="text-muted-foreground ml-auto">
-          {filteredResults.length} of {results.length}
+        <span className="text-muted-foreground/60 ml-auto text-[10px]">
+          {filteredResults.length}/{results.length}
         </span>
       </div>
 
       {/* Account Rows - Compact feed */}
-      <div className="border rounded-lg overflow-hidden bg-card">
+      <div className="border border-border/30 rounded-md overflow-hidden bg-card">
         {filteredResults.length === 0 ? (
-          <div className="p-8 text-center">
-            <User className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
-            <p className="text-sm text-muted-foreground">
-              {searchQuery || statusFilter !== 'all' || quickFilter !== 'all' ? 'No matching accounts' : 'No accounts found'}
+          <div className="p-6 text-center">
+            <User className="w-6 h-6 mx-auto text-muted-foreground/40 mb-1.5" />
+            <p className="text-[12px] text-muted-foreground">
+              {searchQuery || statusFilter !== 'all' || quickFilter !== 'all' ? 'No matches' : 'No accounts found'}
             </p>
           </div>
         ) : (

@@ -25,37 +25,37 @@ export function ProfileImagesStrip({ images, maxImages = 6 }: ProfileImagesStrip
   }
 
   return (
-    <Card className="border-border/40">
-      <CardContent className="p-2.5">
-        {/* Header inline with images */}
-        <div className="flex items-center gap-2 mb-2">
-          <Images className="w-3 h-3 text-muted-foreground" />
-          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+    <Card className="border-border/30">
+      <CardContent className="p-2">
+        {/* Header inline */}
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <Images className="w-2.5 h-2.5 text-muted-foreground" />
+          <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">
             Profile Images
           </span>
-          <span className="text-[10px] text-muted-foreground/60">({validImages.length})</span>
+          <span className="text-[9px] text-muted-foreground/50">({validImages.length})</span>
         </div>
 
-        {/* Horizontal strip of avatars */}
-        <div className="flex items-center gap-1.5 flex-wrap">
+        {/* Horizontal strip */}
+        <div className="flex items-center gap-1 flex-wrap">
           {visibleImages.map((url, index) => {
             const isFailed = failedImages.has(index);
 
             return (
               <Avatar 
                 key={index} 
-                className="h-10 w-10 rounded-lg border border-border/50 shadow-sm"
+                className="h-8 w-8 rounded-md border border-border/40"
               >
                 {!isFailed && (
                   <AvatarImage
                     src={url}
                     alt={`Profile ${index + 1}`}
-                    className="object-cover rounded-lg"
+                    className="object-cover rounded-md"
                     onError={() => handleImageError(index)}
                   />
                 )}
-                <AvatarFallback className="rounded-lg bg-muted">
-                  <User className="h-4 w-4 text-muted-foreground" />
+                <AvatarFallback className="rounded-md bg-muted/30">
+                  <User className="h-3 w-3 text-muted-foreground/50" />
                 </AvatarFallback>
               </Avatar>
             );
@@ -64,8 +64,8 @@ export function ProfileImagesStrip({ images, maxImages = 6 }: ProfileImagesStrip
           {remainingCount > 0 && (
             <div
               className={cn(
-                'h-10 w-10 rounded-lg bg-muted/60 border border-border/50 flex items-center justify-center',
-                'text-[10px] font-medium text-muted-foreground'
+                'h-8 w-8 rounded-md bg-muted/40 border border-border/30 flex items-center justify-center',
+                'text-[9px] font-medium text-muted-foreground'
               )}
             >
               +{remainingCount}

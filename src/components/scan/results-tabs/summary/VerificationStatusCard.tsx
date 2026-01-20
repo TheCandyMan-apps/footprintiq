@@ -39,66 +39,59 @@ export function VerificationStatusCard({
   if (totalAccounts === 0) return null;
 
   return (
-    <Card className="border-border/40">
-      <CardContent className="p-2.5">
+    <Card className="border-border/30">
+      <CardContent className="p-2">
         {/* Header */}
-        <div className="flex items-center justify-between mb-2">
-          <h4 className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-            <Sparkles className="w-3 h-3" />
+        <div className="flex items-center justify-between mb-1.5">
+          <h4 className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+            <Sparkles className="w-2.5 h-2.5" />
             LENS Verification
           </h4>
           {stats.totalVerified > 0 && (
-            <Badge variant="outline" className="h-4 px-1.5 text-[9px] text-muted-foreground">
-              {stats.verificationRate}% coverage
+            <Badge variant="outline" className="h-3.5 px-1 text-[8px] text-muted-foreground/70">
+              {stats.verificationRate}%
             </Badge>
           )}
         </div>
 
         {/* Stats Row */}
         {stats.totalVerified > 0 ? (
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Verified */}
+          <div className="flex items-center gap-1.5 flex-wrap">
             {stats.verified > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded bg-green-500/10 border border-green-500/20">
-                <CheckCircle className="w-3 h-3 text-green-600 dark:text-green-400" />
-                <span className="text-[11px] font-medium text-green-700 dark:text-green-300">
-                  {stats.verified} Verified
+              <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-green-500/10 border border-green-500/20">
+                <CheckCircle className="w-2.5 h-2.5 text-green-600 dark:text-green-400" />
+                <span className="text-[10px] font-medium text-green-700 dark:text-green-300">
+                  {stats.verified}
                 </span>
               </div>
             )}
-
-            {/* Likely */}
             {stats.likely > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded bg-amber-500/10 border border-amber-500/20">
-                <HelpCircle className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                <span className="text-[11px] font-medium text-amber-700 dark:text-amber-300">
-                  {stats.likely} Likely
+              <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20">
+                <HelpCircle className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
+                <span className="text-[10px] font-medium text-amber-700 dark:text-amber-300">
+                  {stats.likely}
                 </span>
               </div>
             )}
-
-            {/* Unclear */}
             {stats.unclear > 0 && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded bg-muted border border-border">
-                <AlertTriangle className="w-3 h-3 text-muted-foreground" />
-                <span className="text-[11px] font-medium text-muted-foreground">
-                  {stats.unclear} Unclear
+              <div className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted/40 border border-border/30">
+                <AlertTriangle className="w-2.5 h-2.5 text-muted-foreground" />
+                <span className="text-[10px] font-medium text-muted-foreground">
+                  {stats.unclear}
                 </span>
               </div>
             )}
-
-            {/* Unverified count */}
             {stats.unverified > 0 && (
-              <span className="text-[10px] text-muted-foreground/60 ml-auto">
+              <span className="text-[9px] text-muted-foreground/50 ml-auto">
                 {stats.unverified} pending
               </span>
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-2 text-muted-foreground/70">
-            <Shield className="w-3.5 h-3.5" />
-            <span className="text-[11px]">
-              No accounts verified yet. Use LENS Verify in Accounts tab.
+          <div className="flex items-center gap-1.5 text-muted-foreground/60">
+            <Shield className="w-3 h-3" />
+            <span className="text-[10px]">
+              Use LENS Verify in Accounts tab
             </span>
           </div>
         )}

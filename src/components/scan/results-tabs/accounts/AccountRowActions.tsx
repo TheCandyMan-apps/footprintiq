@@ -86,13 +86,11 @@ export function AccountRowActions({
                 onClick={(e) => e.stopPropagation()}
               >
                 <a href={url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-3 h-3" />
+                  <ExternalLink className="w-2.5 h-2.5" />
                 </a>
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Open</p>
-            </TooltipContent>
+            <TooltipContent className="text-[10px]">Open</TooltipContent>
           </Tooltip>
         )}
 
@@ -111,12 +109,10 @@ export function AccountRowActions({
                 onFocus();
               }}
             >
-              <Crosshair className="w-3 h-3" />
+              <Crosshair className="w-2.5 h-2.5" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>
-            <p className="text-xs">{isFocused ? 'Clear focus' : 'Focus'}</p>
-          </TooltipContent>
+          <TooltipContent className="text-[10px]">{isFocused ? 'Clear' : 'Focus'}</TooltipContent>
         </Tooltip>
 
         {/* LENS Verify Button */}
@@ -134,15 +130,13 @@ export function AccountRowActions({
                 disabled={isVerifyingNow}
               >
                 {isVerifyingNow ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <Loader2 className="w-2.5 h-2.5 animate-spin" />
                 ) : (
-                  <Sparkles className="w-3 h-3" />
+                  <Sparkles className="w-2.5 h-2.5" />
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Verify</p>
-            </TooltipContent>
+            <TooltipContent className="text-[10px]">Verify</TooltipContent>
           </Tooltip>
         )}
 
@@ -166,20 +160,18 @@ export function AccountRowActions({
               disabled={isClaimLoading}
             >
               {isClaimLoading ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <Loader2 className="w-2.5 h-2.5 animate-spin" />
               ) : claimStatus === 'not_me' ? (
-                <UserX className="w-3 h-3" />
+                <UserX className="w-2.5 h-2.5" />
               ) : (
-                <UserCheck className="w-3 h-3" />
+                <UserCheck className="w-2.5 h-2.5" />
               )}
             </Button>
           </TooltipTrigger>
-          <TooltipContent>
-            <p className="text-xs">
-              {!claimStatus && 'Claim'}
-              {claimStatus === 'me' && 'Yours'}
-              {claimStatus === 'not_me' && 'Not you'}
-            </p>
+          <TooltipContent className="text-[10px]">
+            {!claimStatus && 'Claim'}
+            {claimStatus === 'me' && 'Yours'}
+            {claimStatus === 'not_me' && 'Not you'}
           </TooltipContent>
         </Tooltip>
 
@@ -196,14 +188,12 @@ export function AccountRowActions({
               }}
             >
               <ChevronRight className={cn(
-                'w-3 h-3 transition-transform duration-150',
+                'w-2.5 h-2.5 transition-transform duration-100',
                 isExpanded && 'rotate-90'
               )} />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>
-            <p className="text-xs">{isExpanded ? 'Less' : 'More'}</p>
-          </TooltipContent>
+          <TooltipContent className="text-[10px]">{isExpanded ? 'Less' : 'More'}</TooltipContent>
         </Tooltip>
       </div>
     </TooltipProvider>
