@@ -5,7 +5,7 @@ import { CheckCircle, HelpCircle, AlertCircle, Globe, Clock, Users, MapPin, User
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
-import { RESULTS_SEMANTIC_COLORS } from '../styles';
+import { RESULTS_SEMANTIC_COLORS, RESULTS_ROW, RESULTS_ICON_CONTAINER } from '../styles';
 import { AccountRowActions } from './AccountRowActions';
 import { LensStatusBadge } from './LensStatusBadge';
 import { ForensicModal } from '@/components/forensic/ForensicModal';
@@ -242,44 +242,35 @@ export function AccountRow({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
-      {/* Main Row - Compact investigative feed style */}
+      {/* Main Row - Profile card style */}
       <div 
         className={cn(
-          // Base row styles - compact feed layout
-          'group flex items-center gap-3 px-3 py-2.5 min-h-[68px]',
-          'border-b border-border/40 last:border-b-0',
-          'transition-all duration-150 cursor-pointer',
-          // Left accent border for focus state
-          'border-l-2',
-          // Default state
-          !isFocused && !isExpanded && 'border-l-transparent hover:bg-muted/30 hover:border-l-muted-foreground/40',
-          // Expanded state
-          isExpanded && !isFocused && 'bg-muted/20 border-l-muted-foreground/30',
-          // Focused state - primary accent
-          isFocused && 'bg-primary/5 border-l-primary'
+          RESULTS_ROW.base,
+          'border-b border-border/30 last:border-b-0 cursor-pointer group',
+          !isFocused && !isExpanded && RESULTS_ROW.default,
+          isExpanded && !isFocused && RESULTS_ROW.expanded,
+          isFocused && RESULTS_ROW.focused
         )}
         onClick={onToggleExpand}
       >
-        {/* Left Section: Platform Icon + Profile Avatar Stack */}
-        <div className="relative flex items-center shrink-0">
-          {/* Platform Favicon - small, top-left overlay */}
-          <div className="absolute -top-0.5 -left-0.5 z-10">
+        {/* Left: Platform Icon + Profile Thumbnail Stack */}
+        <div className="relative shrink-0">
+          {/* Platform favicon badge */}
+          <div className={RESULTS_ICON_CONTAINER.platformBadge}>
             {!faviconError ? (
               <img 
                 src={`https://www.google.com/s2/favicons?domain=${getPlatformDomain(platformName, profileUrl)}&sz=16`}
                 alt=""
-                className="w-4 h-4 rounded-sm bg-background border border-border shadow-sm"
+                className="w-3 h-3"
                 onError={() => setFaviconError(true)}
               />
             ) : (
-              <div className="w-4 h-4 rounded-sm bg-muted border border-border flex items-center justify-center">
-                <Globe className="w-2.5 h-2.5 text-muted-foreground" />
-              </div>
+              <Globe className="w-2.5 h-2.5 text-muted-foreground" />
             )}
           </div>
           
-          {/* Profile Avatar - main visual */}
-          <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted/50 border border-border/50 shadow-sm">
+          {/* Profile thumbnail */}
+          <div className={cn(RESULTS_ICON_CONTAINER.avatar, 'overflow-hidden')}>
             {profileImage ? (
               <img 
                 src={profileImage} 
@@ -294,56 +285,53 @@ export function AccountRow({
             ) : null}
             <div 
               className={cn(
-                'w-full h-full items-center justify-center bg-gradient-to-br from-primary/10 to-primary/5',
+                RESULTS_ICON_CONTAINER.avatarFallback,
+                'absolute inset-0',
                 profileImage ? 'hidden' : 'flex'
               )}
             >
-              <User className="w-5 h-5 text-primary/60" />
+              <User className="w-4 h-4 text-primary/50" />
             </div>
           </div>
         </div>
 
-        {/* Center: Content - Platform + Username + Bio */}
-        <div className="flex-1 min-w-0 py-0.5">
-          {/* Line 1: Platform name + username + claim indicator */}
-          <div className="flex items-center gap-1.5">
-            <span className="font-semibold text-sm leading-tight">{platformName}</span>
+        {/* Center: Platform + Username + Bio */}
+        <div className="flex-1 min-w-0">
+          {/* Primary line */}
+          <div className="flex items-center gap-1.5 leading-none">
+            <span className="font-semibold text-[13px] truncate">{platformName}</span>
             {username && (
               <>
-                <span className="text-muted-foreground/60">·</span>
-                <span className="text-muted-foreground text-sm truncate max-w-[140px]">@{username}</span>
+                <span className="text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground text-[13px] truncate max-w-[120px]">@{username}</span>
               </>
             )}
-            {/* Claim status dot */}
             {claimStatus && (
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span 
-                      className={cn(
-                        'w-1.5 h-1.5 rounded-full shrink-0 ml-0.5',
-                        claimStatus === 'me' && 'bg-green-500',
-                        claimStatus === 'not_me' && 'bg-red-500'
-                      )} 
-                    />
+                    <span className={cn(
+                      'w-1.5 h-1.5 rounded-full shrink-0',
+                      claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500'
+                    )} />
                   </TooltipTrigger>
                   <TooltipContent side="top" className="text-xs">
-                    {claimStatus === 'me' ? 'Claimed as you' : 'Marked as not you'}
+                    {claimStatus === 'me' ? 'Claimed as yours' : 'Marked as not you'}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             )}
           </div>
           
-          {/* Line 2: Bio snippet */}
+          {/* Bio line */}
           <TooltipProvider delayDuration={400}>
             <Tooltip>
               <TooltipTrigger asChild>
                 <p className={cn(
-                  "text-xs leading-snug mt-0.5 truncate cursor-default",
-                  bio ? "text-muted-foreground" : "text-muted-foreground/50 italic"
+                  "text-[11px] leading-tight mt-0.5 truncate",
+                  bio ? "text-muted-foreground" : "text-muted-foreground/40 italic"
                 )}>
-                  {bio || "No bio"}
+                  {bio || "No bio available"}
                 </p>
               </TooltipTrigger>
               {fullBio && fullBio.length > 80 && (
@@ -355,25 +343,21 @@ export function AccountRow({
           </TooltipProvider>
         </div>
 
-        {/* Right Section: Badges + Divider + Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Badge Group */}
-          <div className="hidden sm:flex items-center gap-1.5">
-            {/* Confidence Badge - compact */}
+        {/* Right: Badges + Actions */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Badges - hide on mobile */}
+          <div className="hidden sm:flex items-center gap-1">
             <Badge 
               variant="outline" 
               className={cn(
-                'h-5 px-1.5 gap-1 text-[10px] font-medium border',
-                confidence.bg, 
-                confidence.text, 
-                confidence.border
+                'h-[18px] px-1.5 gap-0.5 text-[9px] font-medium',
+                confidence.bg, confidence.text, confidence.border
               )}
             >
               <ConfidenceIcon className="w-2.5 h-2.5" />
-              <span>{confidence.shortLabel}</span>
+              {confidence.shortLabel}
             </Badge>
 
-            {/* LENS Badge (if verified) */}
             {verificationResult && (
               <TooltipProvider>
                 <Tooltip>
@@ -400,10 +384,7 @@ export function AccountRow({
             )}
           </div>
           
-          {/* Subtle Divider */}
-          <div className="w-px h-5 bg-border/50 hidden sm:block" />
-          
-          {/* Action Cluster */}
+          {/* Action cluster */}
           <AccountRowActions
             findingId={result.id}
             url={profileUrl}
@@ -422,67 +403,63 @@ export function AccountRow({
         </div>
       </div>
 
-      {/* Expanded Panel - Compact details */}
+      {/* Expanded Panel - Compact raw fields */}
       <CollapsibleContent>
-        <div className="bg-muted/10 border-b border-border/40 px-3 py-3 ml-[52px] space-y-2.5">
-          {/* Profile Signals - Horizontal flow */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
-            {meta.bio && (
-              <div className="w-full mb-1">
-                <p className="text-sm text-foreground/90">{meta.bio}</p>
-              </div>
-            )}
+        <div className="bg-muted/5 border-b border-border/30 px-3 py-2 ml-[46px] space-y-1.5">
+          {/* Full bio if available */}
+          {meta.bio && (
+            <p className="text-xs text-foreground/85 leading-relaxed">{meta.bio}</p>
+          )}
+          
+          {/* Profile signals - inline compact */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
             {meta.followers !== undefined && (
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <span className="flex items-center gap-1">
                 <Users className="w-3 h-3" />
-                <span className="font-medium text-foreground">{meta.followers.toLocaleString()}</span>
-                <span>followers</span>
-              </div>
+                <span className="text-foreground font-medium">{meta.followers.toLocaleString()}</span> followers
+              </span>
             )}
             {meta.following !== undefined && (
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <span className="flex items-center gap-1">
                 <Users className="w-3 h-3" />
-                <span className="font-medium text-foreground">{meta.following.toLocaleString()}</span>
-                <span>following</span>
-              </div>
+                <span className="text-foreground font-medium">{meta.following.toLocaleString()}</span> following
+              </span>
             )}
             {meta.location && (
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3" />
-                <span>{meta.location}</span>
-              </div>
+                {meta.location}
+              </span>
             )}
             {meta.joined && (
-              <div className="flex items-center gap-1 text-muted-foreground">
+              <span className="flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                <span>Joined {meta.joined}</span>
-              </div>
+                Joined {meta.joined}
+              </span>
             )}
             {meta.website && (
-              <div className="flex items-center gap-1">
-                <Globe className="w-3 h-3 text-muted-foreground" />
-                <a 
-                  href={meta.website} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline truncate max-w-[200px]"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {meta.website.replace(/^https?:\/\//, '')}
-                </a>
-              </div>
+              <a 
+                href={meta.website} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-primary hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Globe className="w-3 h-3" />
+                {meta.website.replace(/^https?:\/\//, '').slice(0, 30)}
+              </a>
             )}
           </div>
 
-          {/* Profile URL - Compact */}
+          {/* Profile URL */}
           {profileUrl && (
-            <div className="flex items-center gap-2 pt-2 border-t border-border/30">
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70">URL</span>
+            <div className="flex items-center gap-2 pt-1.5 border-t border-border/20 mt-1.5">
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground/50 font-medium">URL</span>
               <a 
                 href={profileUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-xs text-primary hover:underline truncate flex-1"
+                className="text-[11px] text-primary/80 hover:text-primary hover:underline truncate flex-1"
                 onClick={(e) => e.stopPropagation()}
               >
                 {profileUrl}
@@ -490,16 +467,16 @@ export function AccountRow({
             </div>
           )}
 
-          {/* Raw Metadata - Collapsible */}
+          {/* Raw fields toggle */}
           {Object.keys(meta).length > 0 && (
             <details 
-              className="pt-2 border-t border-border/30"
+              className="pt-1.5 border-t border-border/20 mt-1.5"
               onClick={(e) => e.stopPropagation()}
             >
-              <summary className="text-[10px] uppercase tracking-wide text-muted-foreground/70 cursor-pointer hover:text-muted-foreground select-none">
-                Raw metadata
+              <summary className="text-[9px] uppercase tracking-wider text-muted-foreground/50 cursor-pointer hover:text-muted-foreground select-none font-medium">
+                Raw fields
               </summary>
-              <pre className="mt-2 text-[10px] bg-muted/30 rounded p-2 overflow-x-auto max-h-32 text-muted-foreground">
+              <pre className="mt-1.5 text-[10px] bg-muted/20 rounded p-2 overflow-x-auto max-h-24 text-muted-foreground/80 leading-tight">
                 {JSON.stringify(meta, null, 2)}
               </pre>
             </details>
