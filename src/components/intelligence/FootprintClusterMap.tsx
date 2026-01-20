@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { extractPlatform } from '@/lib/evidenceParser';
 import { HelpIcon } from '@/components/ui/help-icon';
+import { PlatformIcon } from '@/components/ui/PlatformIcon';
 
 interface FootprintClusterMapProps {
   scanId: string;
@@ -82,17 +83,18 @@ export function FootprintClusterMap({ scanId }: FootprintClusterMapProps) {
                     {platformList.length} {platformList.length === 1 ? 'platform' : 'platforms'}
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   {platformList.slice(0, 5).map((platform, idx) => (
-                    <span 
+                    <div 
                       key={idx}
-                      className="text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground"
+                      className="flex items-center gap-1.5 text-xs px-2 py-1 rounded bg-muted text-muted-foreground"
                     >
-                      {platform}
-                    </span>
+                      <PlatformIcon platform={platform} size="sm" showBorder={false} />
+                      <span>{platform}</span>
+                    </div>
                   ))}
                   {platformList.length > 5 && (
-                    <span className="text-xs px-2 py-0.5 text-muted-foreground">
+                    <span className="text-xs px-2 py-1 text-muted-foreground">
                       +{platformList.length - 5} more
                     </span>
                   )}

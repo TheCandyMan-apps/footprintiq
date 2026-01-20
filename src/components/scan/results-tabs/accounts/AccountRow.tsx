@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
-import { CheckCircle, HelpCircle, AlertCircle, Globe, Clock, Users, MapPin, Info } from 'lucide-react';
+import { CheckCircle, HelpCircle, AlertCircle, Clock, Users, MapPin, Info, Globe } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ import { ForensicModal } from '@/components/forensic/ForensicModal';
 import { ConfidenceBreakdown, ConfidenceTooltipContent } from './ConfidenceBreakdown';
 import { LensUpgradePrompt } from './LensUpgradePrompt';
 import { useTierGating } from '@/hooks/useTierGating';
+import { PlatformIconBadge } from '@/components/ui/PlatformIcon';
 import {
   Tooltip,
   TooltipContent,
@@ -273,7 +274,6 @@ export function AccountRow({
   onClaimChange,
 }: AccountRowProps) {
   const [lensModalOpen, setLensModalOpen] = useState(false);
-  const [faviconError, setFaviconError] = useState(false);
   const { isFree } = useTierGating();
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
@@ -303,22 +303,16 @@ export function AccountRow({
       >
         {/* LEFT: Platform Icon + Profile Thumbnail */}
         <div className="relative shrink-0">
-          {/* Platform favicon badge */}
-          <div className="absolute -top-0.5 -left-0.5 z-10 w-3 h-3 rounded-sm bg-background border border-border/40 flex items-center justify-center">
-            {!faviconError ? (
-              <img 
-                src={`https://www.google.com/s2/favicons?domain=${getPlatformDomain(platformName, profileUrl)}&sz=16`}
-                alt=""
-                className="w-2 h-2"
-                onError={() => setFaviconError(true)}
-              />
-            ) : (
-              <Globe className="w-2 h-2 text-muted-foreground" />
-            )}
-          </div>
+          {/* Platform favicon badge - now larger and clearer */}
+          <PlatformIconBadge 
+            platform={platformName} 
+            url={profileUrl} 
+            size="md"
+            position="top-left"
+          />
           
-          {/* Profile thumbnail - compact */}
-          <div className="w-9 h-9 rounded overflow-hidden bg-muted/20 border border-border/30 relative">
+          {/* Profile thumbnail - slightly larger to accommodate icon */}
+          <div className="w-10 h-10 rounded overflow-hidden bg-muted/20 border border-border/30 relative ml-0.5 mt-0.5">
             {profileImage ? (
               <img 
                 src={profileImage} 
