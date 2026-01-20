@@ -1,12 +1,11 @@
-import { Button } from '@/components/ui/button';
 import { 
   Crosshair, 
   Sparkles, 
   Network, 
-  Shield, 
   FileWarning,
   ChevronRight,
-  Download
+  Download,
+  ArrowRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,7 +47,7 @@ export function NextStepsPanel({
     steps.push({
       id: 'breaches',
       label: 'Review breach exposures',
-      description: `${breachCount} credential ${breachCount === 1 ? 'leak' : 'leaks'} need attention`,
+      description: `${breachCount} credential ${breachCount === 1 ? 'leak needs' : 'leaks need'} attention`,
       icon: FileWarning,
       priority: 'primary',
       action: onNavigateToBreaches,
@@ -59,8 +58,8 @@ export function NextStepsPanel({
   if (accountsFound > 0 && verifiedCount < Math.min(3, accountsFound)) {
     steps.push({
       id: 'verify',
-      label: 'Verify key accounts',
-      description: 'Use LENS to confirm account ownership',
+      label: 'LENS verify key accounts',
+      description: 'Confirm ownership with forensic analysis',
       icon: Sparkles,
       priority: breachCount > 0 ? 'secondary' : 'primary',
       action: onNavigateToAccounts,
@@ -83,7 +82,7 @@ export function NextStepsPanel({
   if (accountsFound > 2) {
     steps.push({
       id: 'connections',
-      label: 'Explore connections',
+      label: 'Review connections',
       description: 'Map relationships between accounts',
       icon: Network,
       priority: 'secondary',
@@ -95,8 +94,8 @@ export function NextStepsPanel({
   if (accountsFound > 0 && onExport) {
     steps.push({
       id: 'export',
-      label: 'Export findings',
-      description: 'Download report for documentation',
+      label: 'Export report',
+      description: 'Download findings for documentation',
       icon: Download,
       priority: 'secondary',
       action: onExport,
@@ -108,12 +107,12 @@ export function NextStepsPanel({
   }
 
   return (
-    <section>
-      <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-        <Shield className="w-3 h-3" />
+    <section className="border-t border-border/20 pt-3">
+      <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+        <ArrowRight className="w-3 h-3" />
         Recommended Next Steps
       </h3>
-      <div className="space-y-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
         {steps.slice(0, 4).map((step) => {
           const Icon = step.icon;
           const isPrimary = step.priority === 'primary';
@@ -123,26 +122,26 @@ export function NextStepsPanel({
               key={step.id}
               onClick={step.action}
               className={cn(
-                "w-full flex items-center gap-2.5 py-1.5 px-2 -mx-2 rounded text-left transition-colors group",
+                "flex items-center gap-2.5 py-2 px-2.5 rounded-md text-left transition-colors group",
                 isPrimary 
-                  ? "bg-primary/5 hover:bg-primary/10" 
-                  : "hover:bg-muted/40"
+                  ? "bg-primary/5 hover:bg-primary/10 border border-primary/15" 
+                  : "bg-muted/20 hover:bg-muted/40 border border-transparent"
               )}
             >
               <div className={cn(
-                "w-5 h-5 rounded flex items-center justify-center shrink-0",
-                isPrimary ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                "w-6 h-6 rounded-md flex items-center justify-center shrink-0",
+                isPrimary ? "bg-primary/10 text-primary" : "bg-muted/50 text-muted-foreground"
               )}>
-                <Icon className="w-3 h-3" />
+                <Icon className="w-3.5 h-3.5" />
               </div>
               <div className="flex-1 min-w-0">
                 <span className={cn(
-                  "text-[12px] font-medium block leading-tight",
+                  "text-[11px] font-medium block leading-tight",
                   isPrimary ? "text-primary" : "text-foreground"
                 )}>
                   {step.label}
                 </span>
-                <span className="text-[10px] text-muted-foreground leading-tight">
+                <span className="text-[10px] text-muted-foreground leading-tight line-clamp-1">
                   {step.description}
                 </span>
               </div>
