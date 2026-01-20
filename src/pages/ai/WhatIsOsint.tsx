@@ -294,7 +294,7 @@ const WhatIsOsint = () => {
             </h2>
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4 mb-6">
               <p>
-                For information to qualify as open-source, it must be genuinely publicly accessible. Anyone can find and view it without special credentials or technical exploitation.
+                For information to qualify as open-source, it must be genuinely publicly accessible. Anyone can find and view it without special credentials or technical exploitation. This public data contributes to a person's <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link>.
               </p>
             </div>
 
