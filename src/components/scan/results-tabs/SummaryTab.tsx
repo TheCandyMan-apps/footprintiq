@@ -34,7 +34,11 @@ interface SummaryTabProps {
 function getUniquePlatforms(results: ScanResult[]): string[] {
   const platforms = new Set<string>();
   results.forEach(r => {
-    if (r.site) platforms.add(r.site);
+    // Check multiple fields for platform name
+    const site = r.site || '';
+    const meta = (r.meta || r.metadata || {}) as Record<string, any>;
+    const platform = site || meta.platform || meta.site || meta.provider || '';
+    if (platform) platforms.add(platform);
   });
   return Array.from(platforms);
 }
@@ -289,7 +293,7 @@ export function SummaryTab({
 
       {/* Minimal Footer */}
       <div className="text-[10px] text-muted-foreground/60 text-center pt-1 border-t border-border/20">
-        {platforms.length > 0 ? `${platforms.length} platforms` : 'Multiple sources'} • {resultsCount} total results
+        {grouped.found.length > 0 ? `${grouped.found.length} accounts found` : 'Multiple sources'} • {resultsCount} results
       </div>
     </div>
   );
