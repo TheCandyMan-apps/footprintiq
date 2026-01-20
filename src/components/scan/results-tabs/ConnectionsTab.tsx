@@ -4,11 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Network, DataSet } from 'vis-network/standalone';
 import { 
   Download, ZoomIn, ZoomOut, Maximize2, 
-  Link2, Image, FileText, Users, Info, PanelRightClose, PanelRightOpen, X
+  Link2, Image, FileText, Users, Info, PanelRightClose, PanelRightOpen, X, Crosshair
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
+import { useInvestigation } from '@/contexts/InvestigationContext';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -87,9 +88,11 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   const edgesDataset = useRef<DataSet<any> | null>(null);
   
   const [selectedNodeIdx, setSelectedNodeIdx] = useState<number | null>(null);
-  const [focusedNodeIdx, setFocusedNodeIdx] = useState<number | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(() => window.innerWidth >= 768);
-  const [verificationResults, setVerificationResults] = useState<Map<string, LensVerificationResult>>(new Map());
+  const [localVerificationResults, setLocalVerificationResults] = useState<Map<string, LensVerificationResult>>(new Map());
+
+  // Use global investigation context for focus state
+  const { focusedEntityId, setFocusedEntity, verifiedEntities } = useInvestigation();
 
   const categorizePlatform = (site: string): string => {
     const siteLower = site.toLowerCase();
@@ -149,15 +152,35 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   }, [connectionStats]);
 
   const selectedProfile = selectedNodeIdx !== null ? foundProfiles[selectedNodeIdx] : null;
+  
+  // Derive focused node index from global focusedEntityId
+  const focusedNodeIdx = useMemo(() => {
+    if (!focusedEntityId) return null;
+    const idx = foundProfiles.findIndex(p => p.id === focusedEntityId);
+    return idx >= 0 ? idx : null;
+  }, [focusedEntityId, foundProfiles]);
+
   const focusedProfile = focusedNodeIdx !== null ? foundProfiles[focusedNodeIdx] : null;
 
   const handleFocusNode = useCallback((idx: number | null) => {
-    setFocusedNodeIdx(prev => prev === idx ? null : idx);
-  }, []);
+    if (idx === null) {
+      setFocusedEntity(null);
+    } else {
+      const profile = foundProfiles[idx];
+      if (profile) {
+        // Toggle focus: if already focused, clear it
+        setFocusedEntity(focusedEntityId === profile.id ? null : profile.id);
+      }
+    }
+  }, [setFocusedEntity, foundProfiles, focusedEntityId]);
+
+  const handleClearFocus = useCallback(() => {
+    setFocusedEntity(null);
+  }, [setFocusedEntity]);
 
   const handleVerificationComplete = useCallback((result: LensVerificationResult) => {
     if (selectedProfile) {
-      setVerificationResults(prev => {
+      setLocalVerificationResults(prev => {
         const next = new Map(prev);
         next.set(selectedProfile.id, result);
         return next;
@@ -467,13 +490,14 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
           </TooltipProvider>
 
           {/* Focus indicator */}
-          {focusedNodeIdx !== null && (
+          {focusedNodeIdx !== null && focusedProfile && (
             <Badge 
-              variant="secondary" 
-              className="h-5 gap-1 text-[10px] cursor-pointer hover:bg-secondary/80"
-              onClick={() => setFocusedNodeIdx(null)}
+              variant="default" 
+              className="h-5 gap-1 text-[10px] cursor-pointer hover:bg-primary/80"
+              onClick={handleClearFocus}
             >
-              Focused: {focusedProfile?.site}
+              <Crosshair className="w-2.5 h-2.5" />
+              Focused: {focusedProfile.site}
               <X className="w-2.5 h-2.5" />
             </Badge>
           )}
@@ -544,9 +568,9 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
           connectionStats={connectionStats}
           totalProfiles={foundProfiles.length}
           scanId={jobId}
-          isFocused={selectedNodeIdx !== null && focusedNodeIdx === selectedNodeIdx}
+          isFocused={selectedProfile ? focusedEntityId === selectedProfile.id : false}
           onFocus={() => selectedNodeIdx !== null && handleFocusNode(selectedNodeIdx)}
-          verificationResult={selectedProfile ? verificationResults.get(selectedProfile.id) : null}
+          verificationResult={selectedProfile ? (verifiedEntities.get(selectedProfile.id) || localVerificationResults.get(selectedProfile.id)) : null}
           onVerificationComplete={handleVerificationComplete}
           lensScore={75}
         />
