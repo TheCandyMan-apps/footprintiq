@@ -663,6 +663,10 @@ const WhatIsOsint = () => {
               See the <Link to="/editorial-ethics-policy" className="text-primary hover:underline">Editorial & Ethics Policy</Link> for more about content standards.
             </p>
           </aside>
+
+          <p className="text-sm text-muted-foreground text-center mb-8">
+            Part of the <Link to="/ai" className="text-primary hover:underline">FootprintIQ AI Answers hub</Link>
+          </p>
         </main>
 
         <Footer />

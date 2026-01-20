@@ -541,6 +541,10 @@ const WhatIsIdentityProfiling = () => {
               </Link>
             </div>
           </section>
+
+          <p className="text-sm text-muted-foreground text-center mb-8">
+            Part of the <Link to="/ai" className="text-primary hover:underline">FootprintIQ AI Answers hub</Link>
+          </p>
         </main>
 
         <Footer />
