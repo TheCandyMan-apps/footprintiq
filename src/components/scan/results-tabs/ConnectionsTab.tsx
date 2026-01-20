@@ -12,7 +12,7 @@ import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { useInvestigation } from '@/contexts/InvestigationContext';
 import { cn } from '@/lib/utils';
-import { useCorrelationGraph } from '@/hooks/useCorrelationGraph';
+import { useCorrelationGraph, CATEGORY_CONFIG, EDGE_REASON_CONFIG, EdgeReason } from '@/hooks/useCorrelationGraph';
 import {
   Tooltip,
   TooltipContent,
@@ -26,43 +26,6 @@ interface ConnectionsTabProps {
   username: string;
   jobId?: string;
 }
-
-const PLATFORM_CATEGORIES: Record<string, { platforms: string[]; label: string; icon: string }> = {
-  social: {
-    platforms: ['facebook', 'twitter', 'instagram', 'linkedin', 'tiktok', 'snapchat', 'mastodon', 'threads', 'pinterest'],
-    label: 'Social',
-    icon: '👥'
-  },
-  professional: {
-    platforms: ['linkedin', 'github', 'gitlab', 'behance', 'dribbble', 'stackoverflow', 'npm', 'pypi'],
-    label: 'Professional',
-    icon: '💼'
-  },
-  media: {
-    platforms: ['youtube', 'vimeo', 'soundcloud', 'spotify', 'deviantart', 'flickr', 'medium', 'substack'],
-    label: 'Media',
-    icon: '🎬'
-  },
-  gaming: {
-    platforms: ['steam', 'xbox', 'playstation', 'twitch', 'discord', 'roblox', 'epic', 'battlenet', 'minecraft'],
-    label: 'Gaming',
-    icon: '🎮'
-  },
-  forum: {
-    platforms: ['reddit', 'quora', 'hackernews', 'lobsters', '4chan', 'discourse'],
-    label: 'Forums',
-    icon: '💬'
-  },
-};
-
-const CATEGORY_COLORS: Record<string, string> = {
-  social: '#3b82f6',
-  professional: '#8b5cf6',
-  media: '#ec4899',
-  gaming: '#10b981',
-  forum: '#f59e0b',
-  other: '#6b7280',
-};
 
 type ConnectionReason = 'username_reuse' | 'image_match' | 'bio_similarity' | 'email_link' | 'cross_reference';
 
@@ -89,7 +52,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   const nodesDataset = useRef<DataSet<any> | null>(null);
   const edgesDataset = useRef<DataSet<any> | null>(null);
   
-  const [selectedNodeIdx, setSelectedNodeIdx] = useState<number | null>(null);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(() => window.innerWidth >= 768);
   const [localVerificationResults, setLocalVerificationResults] = useState<Map<string, LensVerificationResult>>(new Map());
   const [showDebugPanel, setShowDebugPanel] = useState(false);
@@ -97,10 +60,10 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   // Use global investigation context for focus state
   const { focusedEntityId, setFocusedEntity, verifiedEntities } = useInvestigation();
 
-  // Use the improved correlation graph hook
+  // Use the correlation graph hook - THIS IS THE SOURCE OF TRUTH
   const correlationData = useCorrelationGraph(results, username, verifiedEntities);
   
-  // Use stats directly from the correlation graph hook
+  // Stats from correlation data
   const correlationStats = useMemo(() => ({
     totalNodes: correlationData.stats.totalNodes,
     totalEdges: correlationData.stats.totalEdges,
@@ -108,51 +71,53 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
     correlationEdges: correlationData.stats.correlationEdges,
     hasCorrelations: correlationData.stats.correlationEdges > 0,
     byReason: correlationData.stats.byReason,
+    byCategory: correlationData.stats.byCategory,
   }), [correlationData.stats]);
 
-  const categorizePlatform = (site: string): string => {
-    const siteLower = site.toLowerCase();
-    for (const [category, data] of Object.entries(PLATFORM_CATEGORIES)) {
-      if (data.platforms.some(p => siteLower.includes(p))) {
-        return category;
-      }
-    }
-    return 'other';
-  };
+  // Get selected profile from correlation data nodes
+  const selectedProfile = useMemo(() => {
+    if (!selectedNodeId) return null;
+    const node = correlationData.nodes.find(n => n.id === selectedNodeId);
+    return node?.result || null;
+  }, [selectedNodeId, correlationData.nodes]);
 
-  const getConnectionReason = (result: ScanResult): ConnectionReason => {
-    const meta = (result.meta || result.metadata || {}) as Record<string, unknown>;
-    if (meta.avatar_url || meta.profile_image) return 'image_match';
-    if (meta.bio || meta.description) return 'bio_similarity';
-    if (meta.email) return 'email_link';
-    if (meta.linked_accounts || meta.references) return 'cross_reference';
-    return 'username_reuse';
-  };
+  // Get focused profile
+  const focusedProfile = useMemo(() => {
+    if (!focusedEntityId) return null;
+    const node = correlationData.nodes.find(n => n.result?.id === focusedEntityId);
+    return node?.result || null;
+  }, [focusedEntityId, correlationData.nodes]);
 
-  const foundProfiles = useMemo(() => {
-    return results.filter(r => 
-      r.status?.toLowerCase() === 'found' || r.status?.toLowerCase() === 'claimed'
-    );
-  }, [results]);
-
+  // Category stats for the legend
   const categoryStats = useMemo(() => {
-    const stats: Record<string, number> = {};
-    foundProfiles.forEach(profile => {
-      const category = categorizePlatform(profile.site || '');
-      stats[category] = (stats[category] || 0) + 1;
-    });
-    return stats;
-  }, [foundProfiles]);
+    return correlationData.stats.byCategory;
+  }, [correlationData.stats.byCategory]);
 
+  // Connection stats for inspector
   const connectionStats = useMemo(() => {
     const stats: Record<ConnectionReason, number> = {
       username_reuse: 0, image_match: 0, bio_similarity: 0, email_link: 0, cross_reference: 0
     };
-    foundProfiles.forEach(profile => {
-      stats[getConnectionReason(profile)]++;
+    // Map from edge reasons to connection reasons
+    const reasonMap: Record<string, ConnectionReason> = {
+      username_reuse: 'username_reuse',
+      same_username: 'username_reuse',
+      similar_username: 'username_reuse',
+      image_reuse: 'image_match',
+      same_image: 'image_match',
+      bio_similarity: 'bio_similarity',
+      similar_bio: 'bio_similarity',
+      shared_email: 'email_link',
+      shared_link: 'cross_reference',
+      shared_domain: 'cross_reference',
+      cross_reference: 'cross_reference',
+    };
+    Object.entries(correlationData.stats.byReason).forEach(([reason, count]) => {
+      const mapped = reasonMap[reason];
+      if (mapped) stats[mapped] += count;
     });
     return stats;
-  }, [foundProfiles]);
+  }, [correlationData.stats.byReason]);
 
   // Generate explanation summary
   const explanationSummary = useMemo(() => {
@@ -167,28 +132,17 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
     return `Linked by ${reasons[0]} and ${reasons[1]}`;
   }, [connectionStats]);
 
-  const selectedProfile = selectedNodeIdx !== null ? foundProfiles[selectedNodeIdx] : null;
-  
-  // Derive focused node index from global focusedEntityId
-  const focusedNodeIdx = useMemo(() => {
-    if (!focusedEntityId) return null;
-    const idx = foundProfiles.findIndex(p => p.id === focusedEntityId);
-    return idx >= 0 ? idx : null;
-  }, [focusedEntityId, foundProfiles]);
-
-  const focusedProfile = focusedNodeIdx !== null ? foundProfiles[focusedNodeIdx] : null;
-
-  const handleFocusNode = useCallback((idx: number | null) => {
-    if (idx === null) {
+  const handleFocusNode = useCallback((nodeId: string | null) => {
+    if (nodeId === null || nodeId === 'identity-root') {
       setFocusedEntity(null);
     } else {
-      const profile = foundProfiles[idx];
-      if (profile) {
-        // Toggle focus: if already focused, clear it
-        setFocusedEntity(focusedEntityId === profile.id ? null : profile.id);
+      const node = correlationData.nodes.find(n => n.id === nodeId);
+      const entityId = node?.result?.id;
+      if (entityId) {
+        setFocusedEntity(focusedEntityId === entityId ? null : entityId);
       }
     }
-  }, [setFocusedEntity, foundProfiles, focusedEntityId]);
+  }, [setFocusedEntity, correlationData.nodes, focusedEntityId]);
 
   const handleClearFocus = useCallback(() => {
     setFocusedEntity(null);
@@ -233,76 +187,96 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
     const nodes = nodesDataset.current;
     const edges = edgesDataset.current;
 
-    if (focusedNodeIdx === null) {
+    // Find the focused node ID from the entity ID
+    const focusedNode = correlationData.nodes.find(n => n.result?.id === focusedEntityId);
+    const focusedNodeId = focusedNode?.id || null;
+
+    if (!focusedNodeId) {
       // Reset all nodes/edges to default
-      nodes.forEach((node: any) => {
-        if (node.id !== 'center') {
-          const idx = parseInt(node.id.replace('node-', ''), 10);
-          const profile = foundProfiles[idx];
-          const category = categorizePlatform(profile?.site || '');
-          nodes.update({
-            id: node.id,
-            opacity: 1,
-            color: {
-              background: CATEGORY_COLORS[category],
-              border: CATEGORY_COLORS[category],
-              highlight: { background: CATEGORY_COLORS[category], border: '#ffffff' }
-            },
-            size: 18,
-          });
-        }
+      correlationData.nodes.forEach((graphNode) => {
+        const categoryColor = CATEGORY_CONFIG[graphNode.category]?.color || '#6b7280';
+        nodes.update({
+          id: graphNode.id,
+          opacity: 1,
+          color: graphNode.type === 'identity' 
+            ? { background: 'hsl(var(--primary))', border: 'hsl(var(--primary))' }
+            : { background: categoryColor, border: categoryColor, highlight: { background: categoryColor, border: '#ffffff' } },
+          size: graphNode.type === 'identity' ? 30 : 18,
+          borderWidth: 2,
+        });
       });
-      edges.forEach((edge: any) => {
-        const idx = parseInt(edge.id.replace('edge-', ''), 10);
-        const profile = foundProfiles[idx];
-        const category = categorizePlatform(profile?.site || '');
+      correlationData.edges.forEach((graphEdge) => {
+        const isIdentityEdge = graphEdge.source === 'identity-root' || graphEdge.target === 'identity-root';
         edges.update({
-          id: edge.id,
-          color: { color: CATEGORY_COLORS[category], opacity: 0.5, highlight: CATEGORY_COLORS[category] },
-          width: 2,
+          id: graphEdge.id,
+          color: { 
+            color: isIdentityEdge ? 'hsl(var(--muted-foreground))' : 'hsl(var(--foreground))',
+            opacity: isIdentityEdge ? 0.15 : 0.6,
+          },
+          width: isIdentityEdge ? 0.75 : 2 + graphEdge.weight * 2,
+          dashes: isIdentityEdge,
         });
       });
     } else {
-      // Highlight focused node and dim others
-      const focusedNodeId = `node-${focusedNodeIdx}`;
-      const focusedEdgeId = `edge-${focusedNodeIdx}`;
-      const focusedCategory = categorizePlatform(foundProfiles[focusedNodeIdx]?.site || '');
+      // Find all edges connected to focused node
+      const connectedEdgeIds = new Set<string>();
+      const connectedNodeIds = new Set<string>([focusedNodeId]);
+      
+      // Find correlation edges (account↔account) connected to focused node first
+      correlationData.edges.forEach(edge => {
+        const isCorrelation = edge.source !== 'identity-root' && edge.target !== 'identity-root';
+        if (isCorrelation && (edge.source === focusedNodeId || edge.target === focusedNodeId)) {
+          connectedEdgeIds.add(edge.id);
+          connectedNodeIds.add(edge.source);
+          connectedNodeIds.add(edge.target);
+        }
+      });
+      
+      // Also include identity edge to focused node
+      correlationData.edges.forEach(edge => {
+        if ((edge.source === focusedNodeId && edge.target === 'identity-root') ||
+            (edge.target === focusedNodeId && edge.source === 'identity-root')) {
+          connectedEdgeIds.add(edge.id);
+        }
+      });
+      connectedNodeIds.add('identity-root');
 
-      nodes.forEach((node: any) => {
-        if (node.id === 'center') return;
-        
-        const isFocused = node.id === focusedNodeId;
-        const idx = parseInt(node.id.replace('node-', ''), 10);
-        const profile = foundProfiles[idx];
-        const category = categorizePlatform(profile?.site || '');
+      // Update nodes
+      correlationData.nodes.forEach((graphNode) => {
+        const isConnected = connectedNodeIds.has(graphNode.id);
+        const isFocused = graphNode.id === focusedNodeId;
+        const categoryColor = CATEGORY_CONFIG[graphNode.category]?.color || '#6b7280';
         
         nodes.update({
-          id: node.id,
-          opacity: isFocused ? 1 : 0.3,
-          color: {
-            background: isFocused ? CATEGORY_COLORS[category] : `${CATEGORY_COLORS[category]}40`,
-            border: isFocused ? '#ffffff' : CATEGORY_COLORS[category],
-            highlight: { background: CATEGORY_COLORS[category], border: '#ffffff' }
-          },
-          size: isFocused ? 24 : 14,
+          id: graphNode.id,
+          opacity: isConnected ? 1 : 0.25,
+          color: graphNode.type === 'identity' 
+            ? { background: 'hsl(var(--primary))', border: 'hsl(var(--primary))' }
+            : {
+                background: isConnected ? categoryColor : `${categoryColor}40`,
+                border: isFocused ? '#ffffff' : categoryColor,
+                highlight: { background: categoryColor, border: '#ffffff' }
+              },
+          size: isFocused ? 26 : (graphNode.type === 'identity' ? 30 : (isConnected ? 18 : 12)),
           borderWidth: isFocused ? 3 : 2,
         });
       });
 
-      edges.forEach((edge: any) => {
-        const isFocused = edge.id === focusedEdgeId;
-        const idx = parseInt(edge.id.replace('edge-', ''), 10);
-        const profile = foundProfiles[idx];
-        const category = categorizePlatform(profile?.site || '');
+      // Update edges
+      correlationData.edges.forEach((graphEdge) => {
+        const isConnected = connectedEdgeIds.has(graphEdge.id);
+        const isIdentityEdge = graphEdge.source === 'identity-root' || graphEdge.target === 'identity-root';
         
         edges.update({
-          id: edge.id,
+          id: graphEdge.id,
           color: { 
-            color: isFocused ? CATEGORY_COLORS[category] : `${CATEGORY_COLORS[category]}30`,
-            opacity: isFocused ? 1 : 0.2,
-            highlight: CATEGORY_COLORS[category]
+            color: isConnected 
+              ? (isIdentityEdge ? 'hsl(var(--muted-foreground))' : 'hsl(var(--primary))')
+              : 'hsl(var(--muted-foreground))',
+            opacity: isConnected ? (isIdentityEdge ? 0.4 : 1) : 0.1,
           },
-          width: isFocused ? 4 : 1,
+          width: isConnected ? (isIdentityEdge ? 1 : 3 + graphEdge.weight * 2) : 0.5,
+          dashes: isIdentityEdge,
         });
       });
 
@@ -312,7 +286,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
         animation: { duration: 300, easingFunction: 'easeInOutQuad' }
       });
     }
-  }, [focusedNodeIdx, foundProfiles]);
+  }, [focusedEntityId, correlationData.nodes, correlationData.edges]);
 
   // Responsive inspector toggle
   useEffect(() => {
@@ -325,102 +299,99 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Build the network from correlationData
   useEffect(() => {
-    if (!networkRef.current || foundProfiles.length === 0) return;
+    if (!networkRef.current || correlationData.nodes.length === 0) return;
 
     const nodes = new DataSet<any>([]);
     const edges = new DataSet<any>([]);
     nodesDataset.current = nodes;
     edgesDataset.current = edges;
 
-    const categoryGroups: Record<string, ScanResult[]> = {};
-    foundProfiles.forEach(profile => {
-      const category = categorizePlatform(profile.site || '');
-      if (!categoryGroups[category]) categoryGroups[category] = [];
-      categoryGroups[category].push(profile);
-    });
-
-    nodes.add({
-      id: 'center',
-      label: `🔍 ${username}`,
-      shape: 'box',
-      color: { background: 'hsl(var(--primary))', border: 'hsl(var(--primary))' },
-      font: { size: 14, color: 'hsl(var(--primary-foreground))', bold: true },
-      size: 30,
-      mass: 5,
-      fixed: { x: true, y: true },
-      x: 0,
-      y: 0,
-    });
-
-    const categoryAngles: Record<string, number> = {
-      social: 0, professional: 72, media: 144, gaming: 216, forum: 288, other: 180
-    };
-
-    let nodeIdx = 0;
-    Object.entries(categoryGroups).forEach(([category, profiles]) => {
-      const baseAngle = (categoryAngles[category] || 0) * (Math.PI / 180);
-      const baseRadius = 160;
+    // === MAP correlationData.nodes TO vis-network nodes ===
+    correlationData.nodes.forEach((graphNode) => {
+      const categoryColor = CATEGORY_CONFIG[graphNode.category]?.color || '#6b7280';
       
-      profiles.forEach((profile, i) => {
-        const angleOffset = (i - profiles.length / 2) * 0.3;
-        const angle = baseAngle + angleOffset;
-        const radius = baseRadius + (i % 2) * 35;
-        
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius;
-        
-        const connectionReason = getConnectionReason(profile);
-        const reasonInfo = CONNECTION_EXPLANATIONS[connectionReason];
-        const meta = (profile.meta || profile.metadata || {}) as Record<string, unknown>;
+      if (graphNode.type === 'identity') {
+        // Identity node: box shape, fixed at center, larger
+        nodes.add({
+          id: graphNode.id,
+          label: `🔍 ${graphNode.label}`,
+          shape: 'box',
+          color: { background: 'hsl(var(--primary))', border: 'hsl(var(--primary))' },
+          font: { size: 14, color: 'hsl(var(--primary-foreground))', bold: true },
+          size: 30,
+          mass: 5,
+          fixed: { x: true, y: true },
+          x: 0,
+          y: 0,
+        });
+      } else {
+        // Account node: dot shape, color by category, size by confidence
+        const confidenceSize = 14 + (graphNode.confidence / 100) * 8; // 14-22 range
         
         const tooltipLines = [
-          `📍 ${profile.site}`,
-          `🔗 ${reasonInfo.label}`,
-        ];
-        if (meta.bio) tooltipLines.push(`Bio: "${String(meta.bio).substring(0, 40)}..."`);
+          `📍 ${graphNode.platform || graphNode.label}`,
+          graphNode.lensStatus ? `✓ ${graphNode.lensStatus}` : null,
+          graphNode.meta?.username ? `@${graphNode.meta.username}` : null,
+          graphNode.meta?.bio ? `Bio: "${String(graphNode.meta.bio).substring(0, 40)}..."` : null,
+        ].filter(Boolean);
 
-        const nodeId = `node-${nodeIdx}`;
         nodes.add({
-          id: nodeId,
-          label: profile.site || 'Unknown',
+          id: graphNode.id,
+          label: graphNode.platform || graphNode.label,
           shape: 'dot',
           color: {
-            background: CATEGORY_COLORS[category],
-            border: CATEGORY_COLORS[category],
-            highlight: { background: CATEGORY_COLORS[category], border: '#ffffff' }
+            background: categoryColor,
+            border: categoryColor,
+            highlight: { background: categoryColor, border: '#ffffff' }
           },
-          size: 18,
-          x, y,
+          size: confidenceSize,
           title: tooltipLines.join('\n'),
           font: { size: 10, color: '#ffffff', strokeWidth: 2, strokeColor: '#000000' }
         });
+      }
+    });
 
-        const getEdgeStyle = (reason: ConnectionReason) => {
-          switch (reason) {
-            case 'username_reuse': return { dashes: false, width: 2 };
-            case 'image_match': return { dashes: true, width: 2 };
-            case 'bio_similarity': return { dashes: true, width: 1.5 };
-            case 'email_link': return { dashes: false, width: 3 };
-            case 'cross_reference': return { dashes: true, width: 2 };
-            default: return { dashes: false, width: 2 };
-          }
-        };
+    // === MAP correlationData.edges TO vis-network edges ===
+    correlationData.edges.forEach((graphEdge) => {
+      const isIdentityEdge = graphEdge.source === 'identity-root' || graphEdge.target === 'identity-root';
+      
+      // Edge styling based on type
+      let edgeColor: string;
+      let edgeOpacity: number;
+      let edgeWidth: number;
+      let dashes: boolean;
+      
+      if (isIdentityEdge) {
+        // Identity edges: thinner, lower opacity, dashed
+        edgeColor = 'hsl(var(--muted-foreground))';
+        edgeOpacity = 0.15;
+        edgeWidth = 0.75;
+        dashes = true;
+      } else {
+        // Correlation edges: thicker, higher opacity, based on weight
+        edgeColor = 'hsl(var(--foreground))';
+        edgeOpacity = 0.5 + graphEdge.weight * 0.4; // 0.5-0.9 range
+        edgeWidth = 1.5 + graphEdge.weight * 2.5; // 1.5-4 range
+        dashes = graphEdge.reason === 'bio_similarity' || graphEdge.reason === 'similar_bio';
+      }
 
-        const edgeStyle = getEdgeStyle(connectionReason);
+      // Build tooltip with reason + confidence
+      const reasonConfig = EDGE_REASON_CONFIG[graphEdge.reason as EdgeReason];
+      const tooltipText = graphEdge.details || 
+        `${reasonConfig?.label || graphEdge.reason} (${Math.round(graphEdge.confidence)}%)`;
 
-        edges.add({
-          id: `edge-${nodeIdx}`,
-          from: 'center',
-          to: nodeId,
-          color: { color: CATEGORY_COLORS[category], opacity: 0.5, highlight: CATEGORY_COLORS[category] },
-          width: edgeStyle.width,
-          dashes: edgeStyle.dashes,
-          title: `${reasonInfo.label}: ${reasonInfo.description}`,
-          smooth: { enabled: true, type: 'curvedCW', roundness: 0.2 }
-        });
-
-        nodeIdx++;
+      edges.add({
+        id: graphEdge.id,
+        from: graphEdge.source,
+        to: graphEdge.target,
+        color: { color: edgeColor, opacity: edgeOpacity, highlight: 'hsl(var(--primary))' },
+        width: edgeWidth,
+        dashes,
+        title: tooltipText,
+        smooth: { enabled: true, type: 'curvedCW', roundness: isIdentityEdge ? 0.1 : 0.25 },
+        arrows: isIdentityEdge ? undefined : { to: { enabled: false } },
       });
     });
 
@@ -429,8 +400,14 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
       edges: { smooth: { enabled: true, type: 'curvedCW', roundness: 0.2 }, shadow: true },
       physics: {
         enabled: true,
-        stabilization: { iterations: 100, fit: true },
-        barnesHut: { gravitationalConstant: -2000, centralGravity: 0.35, springLength: 140, springConstant: 0.02, damping: 0.3 },
+        stabilization: { iterations: 150, fit: true },
+        barnesHut: { 
+          gravitationalConstant: -3000, 
+          centralGravity: 0.4, 
+          springLength: 180, 
+          springConstant: 0.03, 
+          damping: 0.3 
+        },
       },
       interaction: { hover: true, tooltipDelay: 50, zoomView: true, dragView: true },
       layout: { improvedLayout: true }
@@ -440,28 +417,26 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
     networkInstance.current = new Network(networkRef.current, { nodes, edges }, options);
 
     networkInstance.current.once('stabilizationIterationsDone', () => {
-      networkInstance.current?.moveTo({
-        position: { x: 0, y: 0 },
-        scale: 1.2,
+      networkInstance.current?.fit({
         animation: { duration: 400, easingFunction: 'easeInOutQuad' }
       });
     });
 
+    // Click to select node and open inspector
     networkInstance.current.on('click', (params) => {
-      if (params.nodes.length > 0 && params.nodes[0] !== 'center') {
-        const idx = parseInt(params.nodes[0].replace('node-', ''), 10);
-        setSelectedNodeIdx(idx);
+      if (params.nodes.length > 0 && params.nodes[0] !== 'identity-root') {
+        setSelectedNodeId(params.nodes[0]);
         setInspectorOpen(true);
       } else {
-        setSelectedNodeIdx(null);
+        setSelectedNodeId(null);
       }
     });
 
+    // Double-click to open profile URL
     networkInstance.current.on('doubleClick', (params) => {
-      if (params.nodes.length > 0 && params.nodes[0] !== 'center') {
-        const idx = parseInt(params.nodes[0].replace('node-', ''), 10);
-        const profile = foundProfiles[idx];
-        if (profile?.url) window.open(profile.url, '_blank');
+      if (params.nodes.length > 0 && params.nodes[0] !== 'identity-root') {
+        const node = correlationData.nodes.find(n => n.id === params.nodes[0]);
+        if (node?.url) window.open(node.url, '_blank');
       }
     });
 
@@ -471,9 +446,10 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
         networkInstance.current = null;
       }
     };
-  }, [foundProfiles, username]);
+  }, [correlationData.nodes, correlationData.edges, username]);
 
-  if (foundProfiles.length === 0) {
+  // Empty state
+  if (correlationData.nodes.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-muted-foreground">
         <Users className="w-8 h-8 mr-2 opacity-50" />
@@ -482,9 +458,11 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
     );
   }
 
+  const accountNodes = correlationData.nodes.filter(n => n.type === 'account');
+
   return (
     <div ref={containerRef} className="flex flex-col h-[calc(100vh-280px)] min-h-[400px]">
-      {/* Debug Status Line - always visible */}
+      {/* Debug Status Line */}
       <div className="flex items-center gap-3 px-3 py-1 bg-muted/20 border-b border-border/50 text-[10px] font-mono text-muted-foreground">
         <span>Nodes: <strong className="text-foreground">{correlationStats.totalNodes}</strong></span>
         <span>•</span>
@@ -513,16 +491,38 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
         </Button>
       </div>
 
-      {/* Empty state for no correlations */}
+      {/* Empty state for no correlations - still show graph but with message */}
       {correlationStats.correlationEdges === 0 ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-muted/10">
-          <AlertCircle className="w-10 h-10 text-muted-foreground/40 mb-3" />
-          <h3 className="text-sm font-medium text-foreground mb-1">
-            No cross-account correlations detected yet
-          </h3>
-          <p className="text-xs text-muted-foreground max-w-sm mb-4">
-            This view becomes more useful when shared signals exist (username, images, links, bio).
-          </p>
+        <div className="flex-1 flex flex-col min-h-0">
+          {/* Warning banner */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border-b border-amber-500/20 text-xs text-amber-700 dark:text-amber-400">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span>No cross-account correlations detected. Graph shows identity→account links only.</span>
+          </div>
+          
+          {/* Still show the graph */}
+          <div className="flex flex-1 min-h-0">
+            <div
+              ref={networkRef}
+              className="flex-1 bg-gradient-to-br from-background to-muted/20"
+              style={{ cursor: 'grab' }}
+            />
+            <ConnectionsInspector
+              isOpen={inspectorOpen}
+              onClose={() => setInspectorOpen(false)}
+              selectedProfile={selectedProfile}
+              username={username}
+              categoryStats={categoryStats}
+              connectionStats={connectionStats}
+              totalProfiles={accountNodes.length}
+              scanId={jobId}
+              isFocused={selectedProfile ? focusedEntityId === selectedProfile.id : false}
+              onFocus={() => selectedNodeId && handleFocusNode(selectedNodeId)}
+              verificationResult={selectedProfile ? (verifiedEntities.get(selectedProfile.id) || localVerificationResults.get(selectedProfile.id)) : null}
+              onVerificationComplete={handleVerificationComplete}
+              lensScore={75}
+            />
+          </div>
         </div>
       ) : (
         <>
@@ -535,7 +535,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
                       <Info className="w-3 h-3 text-primary flex-shrink-0" />
                       <span className="truncate">
-                        <strong className="text-foreground">{foundProfiles.length}</strong> profiles · 
+                        <strong className="text-foreground">{accountNodes.length}</strong> profiles · 
                         <strong className="text-foreground ml-1">{correlationStats.correlationEdges}</strong> correlations · {explanationSummary}
                       </span>
                     </div>
@@ -549,7 +549,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
               </TooltipProvider>
 
               {/* Focus indicator */}
-              {focusedNodeIdx !== null && focusedProfile && (
+              {focusedEntityId && focusedProfile && (
                 <Badge 
                   variant="default" 
                   className="h-5 gap-1 text-[10px] cursor-pointer hover:bg-primary/80"
@@ -565,13 +565,13 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
               <div className="hidden sm:flex items-center gap-1 ml-auto">
                 {Object.entries(categoryStats)
                   .filter(([_, count]) => count > 0)
-                  .slice(0, 4)
+                  .slice(0, 5)
                   .map(([category]) => (
                     <div
                       key={category}
                       className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: CATEGORY_COLORS[category] }}
-                      title={PLATFORM_CATEGORIES[category]?.label || category}
+                      style={{ backgroundColor: CATEGORY_CONFIG[category]?.color || '#6b7280' }}
+                      title={CATEGORY_CONFIG[category]?.label || category}
                     />
                   ))}
               </div>
@@ -642,10 +642,10 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
               username={username}
               categoryStats={categoryStats}
               connectionStats={connectionStats}
-              totalProfiles={foundProfiles.length}
+              totalProfiles={accountNodes.length}
               scanId={jobId}
               isFocused={selectedProfile ? focusedEntityId === selectedProfile.id : false}
-              onFocus={() => selectedNodeIdx !== null && handleFocusNode(selectedNodeIdx)}
+              onFocus={() => selectedNodeId && handleFocusNode(selectedNodeId)}
               verificationResult={selectedProfile ? (verifiedEntities.get(selectedProfile.id) || localVerificationResults.get(selectedProfile.id)) : null}
               onVerificationComplete={handleVerificationComplete}
               lensScore={75}
