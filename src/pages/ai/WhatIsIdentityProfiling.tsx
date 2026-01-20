@@ -392,18 +392,37 @@ const WhatIsIdentityProfiling = () => {
               <Lightbulb className="h-6 w-6 text-primary" />
               6. Why Identity Profiling Matters
             </h2>
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4 mb-8">
+              <p>
+                Identity profiling matters because it affects decisions made about you—often without your knowledge or input. Understanding its relationship to related concepts helps clarify why.
+              </p>
+            </div>
+
+            {/* Conceptual Relationships */}
+            <div className="p-6 bg-muted/30 rounded-lg border mb-8">
+              <h3 className="font-semibold text-foreground mb-4">How Profiling Relates to Other Concepts</h3>
+              <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
+                <p>
+                  <strong className="text-foreground"><Link to="/ai/digital-footprint" className="text-primary hover:underline">Digital Footprint</Link></strong> describes what data exists—the trail of information you leave through online activity. Your footprint is the raw material that makes profiling possible.
+                </p>
+                <p>
+                  <strong className="text-foreground"><Link to="/ai/digital-exposure" className="text-primary hover:underline">Digital Exposure</Link></strong> describes how that data connects and becomes discoverable. Exposure determines which parts of your footprint can be aggregated and correlated.
+                </p>
+                <p>
+                  <strong className="text-foreground"><Link to="/ai/what-is-osint" className="text-primary hover:underline">OSINT (Open-Source Intelligence)</Link></strong> is a methodology for analysing publicly available data. Profiling often uses OSINT techniques, applied at scale by automated systems.
+                </p>
+                <p>
+                  <strong className="text-foreground">Identity profiling is an outcome, not a tool.</strong> It is what emerges when footprint data becomes exposed, and that exposure is analysed. You create a footprint, exposure makes it available, and profiling is the inference that results.
+                </p>
+              </div>
+            </div>
+
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
               <p>
-                Identity profiling matters because it affects decisions made about you—often without your knowledge or input.
+                <strong className="text-foreground">Downstream effects.</strong> Profiles influence the content you see, the prices you are offered, and the opportunities available to you. Employment screening, rental applications, insurance quotes, and credit decisions may all be shaped by inferences drawn from your exposure.
               </p>
               <p>
-                <strong className="text-foreground">Content and pricing.</strong> The information you see online, the prices you are offered, and the products recommended to you may all be influenced by your profile. Two people searching for the same product might see different results or different prices.
-              </p>
-              <p>
-                <strong className="text-foreground">Access and opportunity.</strong> Profiles can influence employment screening, rental applications, insurance quotes, and credit decisions. Inferences drawn from your <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link> may affect opportunities before you know you are being evaluated.
-              </p>
-              <p>
-                <strong className="text-foreground">Accuracy and fairness.</strong> Profiling is based on inference, not certainty. Conclusions drawn from patterns may be incorrect. You might be categorised based on associations rather than your actual characteristics, leading to decisions based on flawed assumptions.
+                <strong className="text-foreground">Accuracy concerns.</strong> Profiling is based on inference, not certainty. Conclusions drawn from patterns may be incorrect. You might be categorised based on associations rather than your actual characteristics, leading to decisions based on flawed assumptions.
               </p>
               <p>
                 <strong className="text-foreground">Persistence and context collapse.</strong> Information shared in one context may be interpreted in another. A casual comment from years ago, a username chosen as a teenager, or a group membership that no longer reflects your views—all can become part of a profile that follows you indefinitely.
