@@ -22,6 +22,8 @@ export function useScrollDepthTracking({
 }: ScrollDepthOptions) {
   const trackedThresholds = useRef<Set<number>>(new Set());
   const hasTrackedPageview = useRef(false);
+  const startTime = useRef<number>(Date.now());
+  const trackedTimeThresholds = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     // Track pageview on mount (only once)
@@ -31,6 +33,7 @@ export function useScrollDepthTracking({
         page_type: pageType,
       });
       hasTrackedPageview.current = true;
+      startTime.current = Date.now();
     }
 
     const handleScroll = () => {
@@ -51,17 +54,38 @@ export function useScrollDepthTracking({
       }
     };
 
+    // Time on page tracking at intervals (30s, 60s, 120s, 300s)
+    const timeThresholds = [30, 60, 120, 300];
+    const timeInterval = setInterval(() => {
+      const elapsedSeconds = Math.floor((Date.now() - startTime.current) / 1000);
+      
+      for (const threshold of timeThresholds) {
+        if (elapsedSeconds >= threshold && !trackedTimeThresholds.current.has(threshold)) {
+          trackedTimeThresholds.current.add(threshold);
+          analytics.trackEvent('time_on_page', {
+            page: pageId,
+            seconds: threshold,
+            page_type: pageType,
+          });
+        }
+      }
+    }, 5000);
+
     // Check initial scroll position
     handleScroll();
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearInterval(timeInterval);
+    };
   }, [pageId, thresholds, pageType]);
 
   // Reset on unmount for SPA navigation
   useEffect(() => {
     return () => {
       trackedThresholds.current.clear();
+      trackedTimeThresholds.current.clear();
       hasTrackedPageview.current = false;
     };
   }, [pageId]);
