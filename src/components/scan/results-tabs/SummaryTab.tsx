@@ -144,6 +144,7 @@ export function SummaryTab({
             summary={narrative.summary}
             isLoading={narrative.isLoading}
             isComplete={narrative.isComplete}
+            estimatedTimeRemaining={narrative.estimatedTimeRemaining}
           />
 
           <KeyFindingsPanel findings={keyFindings} scanId={jobId} />
