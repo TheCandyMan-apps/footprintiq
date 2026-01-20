@@ -107,12 +107,12 @@ export function NextStepsPanel({
   }
 
   return (
-    <section className="border-t border-border/20 pt-3">
-      <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-        <ArrowRight className="w-3 h-3" />
-        Recommended Next Steps
+    <section className="border-t border-border/15 pt-2">
+      <h3 className="text-[9px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+        <ArrowRight className="w-2.5 h-2.5" />
+        Next Steps
       </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-2 gap-1">
         {steps.slice(0, 4).map((step) => {
           const Icon = step.icon;
           const isPrimary = step.priority === 'primary';
@@ -122,31 +122,31 @@ export function NextStepsPanel({
               key={step.id}
               onClick={step.action}
               className={cn(
-                "flex items-center gap-2.5 py-2 px-2.5 rounded-md text-left transition-colors group",
+                "flex items-center gap-2 py-1.5 px-2 rounded text-left transition-colors group",
                 isPrimary 
-                  ? "bg-primary/5 hover:bg-primary/10 border border-primary/15" 
-                  : "bg-muted/20 hover:bg-muted/40 border border-transparent"
+                  ? "bg-primary/4 hover:bg-primary/8 border border-primary/10" 
+                  : "bg-muted/15 hover:bg-muted/30 border border-transparent"
               )}
             >
               <div className={cn(
-                "w-6 h-6 rounded-md flex items-center justify-center shrink-0",
-                isPrimary ? "bg-primary/10 text-primary" : "bg-muted/50 text-muted-foreground"
+                "w-5 h-5 rounded flex items-center justify-center shrink-0",
+                isPrimary ? "bg-primary/8 text-primary" : "bg-muted/40 text-muted-foreground"
               )}>
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-3 h-3" />
               </div>
               <div className="flex-1 min-w-0">
                 <span className={cn(
-                  "text-[11px] font-medium block leading-tight",
+                  "text-[10px] font-medium block leading-tight truncate",
                   isPrimary ? "text-primary" : "text-foreground"
                 )}>
                   {step.label}
                 </span>
-                <span className="text-[10px] text-muted-foreground leading-tight line-clamp-1">
+                <span className="text-[9px] text-muted-foreground/70 leading-tight line-clamp-1">
                   {step.description}
                 </span>
               </div>
               <ChevronRight className={cn(
-                "w-3 h-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity",
+                "w-2.5 h-2.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity",
                 isPrimary ? "text-primary" : "text-muted-foreground"
               )} />
             </button>

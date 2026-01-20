@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { CheckCircle, AlertTriangle, User, UserCheck, Shield } from 'lucide-react';
 
@@ -30,7 +29,7 @@ const FILTER_CONFIG: Record<QuickFilterOption, { label: string; icon: typeof Che
 
 export function AccountFilters({ activeFilter, onFilterChange, counts }: AccountFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5 py-1">
+    <div className="flex flex-wrap items-center gap-1 py-0.5">
       {(Object.entries(FILTER_CONFIG) as [QuickFilterOption, typeof FILTER_CONFIG['all']][]).map(([key, config]) => {
         const count = counts[key];
         const isActive = activeFilter === key;
@@ -44,24 +43,21 @@ export function AccountFilters({ activeFilter, onFilterChange, counts }: Account
             key={key}
             onClick={() => onFilterChange(key)}
             className={cn(
-              'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors',
-              'border hover:bg-accent/50',
+              'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium transition-colors',
+              'border hover:bg-accent/40',
               isActive 
                 ? 'bg-primary text-primary-foreground border-primary' 
-                : 'bg-background text-muted-foreground border-border hover:text-foreground'
+                : 'bg-background text-muted-foreground border-border/50 hover:text-foreground'
             )}
           >
-            <Icon className="w-3 h-3" />
+            <Icon className="w-2.5 h-2.5" />
             <span>{config.label}</span>
-            <Badge 
-              variant="secondary" 
-              className={cn(
-                'h-4 px-1 text-[10px] ml-0.5',
-                isActive && 'bg-primary-foreground/20 text-primary-foreground'
-              )}
-            >
+            <span className={cn(
+              'text-[9px] ml-0.5',
+              isActive ? 'text-primary-foreground/70' : 'text-muted-foreground/60'
+            )}>
               {count}
-            </Badge>
+            </span>
           </button>
         );
       })}
