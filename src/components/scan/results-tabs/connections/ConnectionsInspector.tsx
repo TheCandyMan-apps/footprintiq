@@ -7,10 +7,17 @@ import {
 } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult, useForensicVerification } from '@/hooks/useForensicVerification';
+import { useTierGating } from '@/hooks/useTierGating';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { LensStatusBadge } from '../accounts/LensStatusBadge';
+import { LensUpgradePrompt } from '../accounts/LensUpgradePrompt';
 import { RESULTS_SEMANTIC_COLORS, RESULTS_ACTION_CLUSTER } from '../styles';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 type ClaimType = 'me' | 'not_me';
 
@@ -95,10 +102,18 @@ export function ConnectionsInspector({
   const extractedUsername = meta.username || meta.handle || meta.screen_name;
   
   const { verify, isVerifying } = useForensicVerification();
+  const { isFree } = useTierGating();
   const [localVerifying, setLocalVerifying] = useState(false);
+  const [showUpgradePopover, setShowUpgradePopover] = useState(false);
   
   const handleVerify = async () => {
     if (!selectedProfile?.url || isVerifying || localVerifying || !scanId) return;
+    
+    // Show upgrade prompt for free users
+    if (isFree) {
+      setShowUpgradePopover(true);
+      return;
+    }
     
     setLocalVerifying(true);
     const result = await verify({ 
@@ -249,20 +264,39 @@ export function ConnectionsInspector({
                         </Button>
                       )}
                       {selectedProfile.url && !verificationResult && onVerificationComplete && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 gap-1.5 text-xs h-8"
-                          onClick={handleVerify}
-                          disabled={isVerifyingNow}
-                        >
-                          {isVerifyingNow ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Sparkles className="w-3.5 h-3.5" />
-                          )}
-                          LENS Verify
-                        </Button>
+                        isFree ? (
+                          <Popover open={showUpgradePopover} onOpenChange={setShowUpgradePopover}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 gap-1.5 text-xs h-8 text-primary border-primary/30 hover:bg-primary/10"
+                                onClick={() => setShowUpgradePopover(true)}
+                              >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                LENS Verify
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" align="center" className="w-72 p-0">
+                              <LensUpgradePrompt variant="banner" context="verify" />
+                            </PopoverContent>
+                          </Popover>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 gap-1.5 text-xs h-8"
+                            onClick={handleVerify}
+                            disabled={isVerifyingNow}
+                          >
+                            {isVerifyingNow ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Sparkles className="w-3.5 h-3.5" />
+                            )}
+                            LENS Verify
+                          </Button>
+                        )
                       )}
                       {selectedProfile.url && (
                         <Button
