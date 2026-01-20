@@ -61,9 +61,13 @@ export type CorrelationReason =
   | 'same_image'
   | 'similar_bio'
   | 'shared_domain'
+  | 'shared_link'
   | 'shared_email'
   | 'shared_id'
-  | 'cross_reference';
+  | 'cross_reference'
+  | 'username_reuse'
+  | 'image_reuse'
+  | 'bio_similarity';
 
 export const CORRELATION_CONFIG: Record<CorrelationReason, { 
   label: string; 
@@ -76,9 +80,13 @@ export const CORRELATION_CONFIG: Record<CorrelationReason, {
   same_image: { label: 'Same profile image', weight: 0.98, strength: 'strong', icon: '🖼️' },
   similar_bio: { label: 'Similar bio content', weight: 0.5, strength: 'weak', icon: '📝' },
   shared_domain: { label: 'Shared link/domain', weight: 0.75, strength: 'medium', icon: '🔗' },
+  shared_link: { label: 'Shared link', weight: 0.7, strength: 'medium', icon: '🔗' },
   shared_email: { label: 'Shared email', weight: 0.9, strength: 'strong', icon: '📧' },
   shared_id: { label: 'Shared platform ID', weight: 0.85, strength: 'strong', icon: '🆔' },
   cross_reference: { label: 'Profile cross-reference', weight: 0.8, strength: 'medium', icon: '↔️' },
+  username_reuse: { label: 'Username reuse', weight: 0.9, strength: 'strong', icon: '🔁' },
+  image_reuse: { label: 'Image reuse', weight: 0.95, strength: 'strong', icon: '🖼️' },
+  bio_similarity: { label: 'Bio similarity', weight: 0.6, strength: 'medium', icon: '📝' },
 };
 
 // ============================================================================

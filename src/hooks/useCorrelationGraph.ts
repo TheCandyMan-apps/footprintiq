@@ -68,10 +68,14 @@ export const EDGE_REASON_CONFIG: Record<EdgeReason, { label: string; weight: num
   similar_username: { label: 'Similar username', weight: 0.7, icon: '🔤' },
   same_image: { label: 'Same profile image', weight: 0.95, icon: '🖼️' },
   similar_bio: { label: 'Similar bio', weight: 0.6, icon: '📝' },
-  shared_domain: { label: 'Shared link/domain', weight: 0.75, icon: '🔗' },
+  shared_domain: { label: 'Shared link/domain', weight: 0.7, icon: '🔗' },
+  shared_link: { label: 'Shared link', weight: 0.7, icon: '🔗' },
   shared_email: { label: 'Shared email', weight: 0.85, icon: '📧' },
   shared_id: { label: 'Shared platform ID', weight: 0.85, icon: '🆔' },
   cross_reference: { label: 'Cross-reference', weight: 0.8, icon: '↔️' },
+  username_reuse: { label: 'Username reuse', weight: 0.9, icon: '🔁' },
+  image_reuse: { label: 'Image reuse', weight: 0.95, icon: '🖼️' },
+  bio_similarity: { label: 'Bio similarity', weight: 0.6, icon: '📝' },
   identity_search: { label: 'Search identity', weight: 1.0, icon: '🔍' },
 };
 
@@ -166,9 +170,13 @@ export function useCorrelationGraph(
       same_image: 0,
       similar_bio: 0,
       shared_domain: 0,
+      shared_link: 0,
       shared_email: 0,
       shared_id: 0,
       cross_reference: 0,
+      username_reuse: 0,
+      image_reuse: 0,
+      bio_similarity: 0,
       identity_search: 0,
     };
 
@@ -310,81 +318,176 @@ export function useCorrelationGraph(
 
     // Create account-to-account edges based on shared signals
     const processedPairs = new Set<string>();
+    const MIN_CONFIDENCE = 60; // Only generate edges >= 60% confidence
 
-    // Same username connections
-    usernameMap.forEach((nodeIds) => {
+    // Helper to add an edge with deduplication
+    const addAccountEdge = (
+      sourceId: string,
+      targetId: string,
+      reason: EdgeReason,
+      confidence: number,
+      details: string
+    ) => {
+      if (confidence < MIN_CONFIDENCE) return;
+      
+      const pairKey = [sourceId, targetId].sort().join('-');
+      const edgeKey = `${pairKey}-${reason}`;
+      
+      if (!processedPairs.has(edgeKey)) {
+        processedPairs.add(edgeKey);
+        const config = EDGE_REASON_CONFIG[reason];
+        reasonStats[reason]++;
+        
+        edges.push({
+          id: `edge-${reason}-${pairKey}`,
+          source: sourceId,
+          target: targetId,
+          reason,
+          reasonLabel: config.label,
+          weight: config.weight,
+          confidence,
+          details,
+        });
+      }
+    };
+
+    // Get node data for signal extraction
+    const getNodeData = (nodeId: string) => {
+      const node = nodes.find(n => n.id === nodeId);
+      return node ? {
+        username: node.meta?.username as string | undefined,
+        bio: node.meta?.bio as string | undefined,
+        platform: node.platform,
+        imageUrl: node.imageUrl,
+      } : null;
+    };
+
+    // 1. Username reuse edges (weight: 0.9)
+    usernameMap.forEach((nodeIds, normalizedUsername) => {
       if (nodeIds.length > 1) {
         for (let i = 0; i < nodeIds.length; i++) {
           for (let j = i + 1; j < nodeIds.length; j++) {
-            const pairKey = [nodeIds[i], nodeIds[j]].sort().join('-');
-            if (!processedPairs.has(pairKey)) {
-              processedPairs.add(pairKey);
-              reasonStats.same_username++;
-              edges.push({
-                id: `edge-${pairKey}`,
-                source: nodeIds[i],
-                target: nodeIds[j],
-                reason: 'same_username',
-                reasonLabel: EDGE_REASON_CONFIG.same_username.label,
-                weight: EDGE_REASON_CONFIG.same_username.weight,
-                confidence: 85,
-              });
-            }
+            const node1 = getNodeData(nodeIds[i]);
+            const node2 = getNodeData(nodeIds[j]);
+            const rawUsername = node1?.username || normalizedUsername;
+            
+            addAccountEdge(
+              nodeIds[i],
+              nodeIds[j],
+              'username_reuse',
+              90,
+              `Same username "${rawUsername}" used on ${node1?.platform || 'platform'} and ${node2?.platform || 'platform'}`
+            );
           }
         }
       }
     });
 
-    // Same image connections
+    // 2. Image reuse edges (weight: 0.95)
     imageMap.forEach((nodeIds) => {
       if (nodeIds.length > 1) {
         for (let i = 0; i < nodeIds.length; i++) {
           for (let j = i + 1; j < nodeIds.length; j++) {
-            const pairKey = [nodeIds[i], nodeIds[j]].sort().join('-');
-            if (!processedPairs.has(pairKey)) {
-              processedPairs.add(pairKey);
-              reasonStats.same_image++;
-              edges.push({
-                id: `edge-img-${pairKey}`,
-                source: nodeIds[i],
-                target: nodeIds[j],
-                reason: 'same_image',
-                reasonLabel: EDGE_REASON_CONFIG.same_image.label,
-                weight: EDGE_REASON_CONFIG.same_image.weight,
-                confidence: 90,
-              });
-            }
+            const node1 = getNodeData(nodeIds[i]);
+            const node2 = getNodeData(nodeIds[j]);
+            
+            addAccountEdge(
+              nodeIds[i],
+              nodeIds[j],
+              'image_reuse',
+              95,
+              `Same profile image detected on ${node1?.platform || 'platform'} and ${node2?.platform || 'platform'}`
+            );
           }
         }
       }
     });
 
-    // Shared domain connections
+    // 3. Shared domain/link edges (weight: 0.7)
+    const COMMON_DOMAINS = new Set([
+      'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'protonmail.com',
+      'icloud.com', 'aol.com', 'live.com', 'msn.com', 'mail.com',
+      'linktr.ee', 'linktree.com', 'bit.ly', 'goo.gl', 't.co',
+    ]);
+    
     domainMap.forEach((nodeIds, domain) => {
-      // Skip common domains
-      if (['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com'].includes(domain)) return;
+      // Skip common/non-distinctive domains
+      if (COMMON_DOMAINS.has(domain)) return;
       
       if (nodeIds.length > 1) {
         for (let i = 0; i < nodeIds.length; i++) {
           for (let j = i + 1; j < nodeIds.length; j++) {
-            const pairKey = [nodeIds[i], nodeIds[j]].sort().join('-');
-            if (!processedPairs.has(pairKey)) {
-              processedPairs.add(pairKey);
-              reasonStats.shared_domain++;
-              edges.push({
-                id: `edge-domain-${pairKey}`,
-                source: nodeIds[i],
-                target: nodeIds[j],
-                reason: 'shared_domain',
-                reasonLabel: `${EDGE_REASON_CONFIG.shared_domain.label} (${domain})`,
-                weight: EDGE_REASON_CONFIG.shared_domain.weight,
-                confidence: 70,
-              });
-            }
+            const node1 = getNodeData(nodeIds[i]);
+            const node2 = getNodeData(nodeIds[j]);
+            
+            addAccountEdge(
+              nodeIds[i],
+              nodeIds[j],
+              'shared_link',
+              70,
+              `Shared link to "${domain}" found in ${node1?.platform || 'platform'} and ${node2?.platform || 'platform'} profiles`
+            );
           }
         }
       }
     });
+
+    // 4. Bio similarity edges (weight: 0.6)
+    // Simple keyword-based similarity for bio text
+    const accountNodes = nodes.filter(n => n.type === 'account');
+    const bioKeywordsMap = new Map<string, string[]>();
+    
+    // Extract keywords from bios
+    accountNodes.forEach(node => {
+      const bio = (node.meta?.bio as string) || '';
+      if (bio.length >= 20) {
+        const keywords = bio
+          .toLowerCase()
+          .replace(/https?:\/\/[^\s]+/g, '')
+          .replace(/[@#]\w+/g, '')
+          .replace(/[^\w\s]/g, ' ')
+          .split(/\s+/)
+          .filter(w => w.length >= 4)
+          .filter(w => !['the', 'and', 'for', 'with', 'that', 'this', 'have', 'from', 'they', 'been', 'about', 'would', 'their', 'will', 'what', 'when', 'where', 'which', 'your', 'just', 'more', 'some', 'than', 'them', 'into', 'only'].includes(w));
+        
+        if (keywords.length >= 3) {
+          bioKeywordsMap.set(node.id, [...new Set(keywords)]);
+        }
+      }
+    });
+    
+    // Compare bios pairwise
+    const bioNodeIds = Array.from(bioKeywordsMap.keys());
+    for (let i = 0; i < bioNodeIds.length; i++) {
+      for (let j = i + 1; j < bioNodeIds.length; j++) {
+        const keywords1 = bioKeywordsMap.get(bioNodeIds[i]) || [];
+        const keywords2 = bioKeywordsMap.get(bioNodeIds[j]) || [];
+        
+        const set1 = new Set(keywords1);
+        const set2 = new Set(keywords2);
+        const intersection = keywords1.filter(k => set2.has(k));
+        const union = new Set([...keywords1, ...keywords2]);
+        
+        if (intersection.length >= 3) {
+          const similarity = intersection.length / union.size;
+          const confidence = Math.round(60 + similarity * 30); // 60-90% range
+          
+          if (confidence >= MIN_CONFIDENCE) {
+            const node1 = getNodeData(bioNodeIds[i]);
+            const node2 = getNodeData(bioNodeIds[j]);
+            const sharedWords = intersection.slice(0, 4).join(', ');
+            
+            addAccountEdge(
+              bioNodeIds[i],
+              bioNodeIds[j],
+              'bio_similarity',
+              confidence,
+              `Similar bio content: shared keywords "${sharedWords}" between ${node1?.platform || 'platform'} and ${node2?.platform || 'platform'}`
+            );
+          }
+        }
+      }
+    }
 
     return {
       nodes,
