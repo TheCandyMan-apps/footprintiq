@@ -79,35 +79,57 @@ const AIIndex = () => {
     pageType: 'authority',
   });
 
+  const webPageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "AI Answers: Understanding Digital Identity & Exposure",
+    "description": "A neutral index of authoritative explanations about digital identity, exposure, and public data.",
+    "url": `${origin}/ai`,
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": "FootprintIQ",
+      "url": origin
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "FootprintIQ"
+    }
+  };
+
   const collectionPageJsonLd = {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     "name": "AI Answers: Understanding Digital Identity & Exposure",
     "description": "A neutral index of authoritative explanations about digital identity, exposure, and public data.",
+    "url": `${origin}/ai`,
     "publisher": {
       "@type": "Organization",
       "name": "FootprintIQ"
     },
     "mainEntity": {
       "@type": "ItemList",
+      "numberOfItems": foundations.length + dataConnections.length + commonQuestions.length,
       "itemListElement": [
         ...foundations.map((item, index) => ({
           "@type": "ListItem",
           "position": index + 1,
           "url": `${origin}${item.href}`,
-          "name": item.title
+          "name": item.title,
+          "description": item.description
         })),
         ...dataConnections.map((item, index) => ({
           "@type": "ListItem",
           "position": foundations.length + index + 1,
           "url": `${origin}${item.href}`,
-          "name": item.title
+          "name": item.title,
+          "description": item.description
         })),
         ...commonQuestions.map((item, index) => ({
           "@type": "ListItem",
           "position": foundations.length + dataConnections.length + index + 1,
           "url": `${origin}${item.href}`,
-          "name": item.title
+          "name": item.title,
+          "description": item.description
         })),
       ]
     }
@@ -184,6 +206,9 @@ const AIIndex = () => {
         <meta property="og:description" content="A neutral index of authoritative explanations about digital identity, exposure, and public data." />
         <meta property="og:url" content={`${origin}/ai`} />
         <meta property="og:type" content="website" />
+        <script type="application/ld+json">
+          {JSON.stringify(webPageJsonLd)}
+        </script>
         <script type="application/ld+json">
           {JSON.stringify(collectionPageJsonLd)}
         </script>
