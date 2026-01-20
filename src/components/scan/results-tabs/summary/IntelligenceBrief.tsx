@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertTriangle, HelpCircle, Shield, Globe, Users, RefreshCw, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, AlertTriangle, HelpCircle, Shield, Globe, Users, RefreshCw, AlertCircle, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface KeyFindingItem {
@@ -8,6 +10,10 @@ interface KeyFindingItem {
   text: string;
   confidence: 'high' | 'medium' | 'low';
   severity?: 'critical' | 'warning' | 'info';
+  deepLink?: {
+    tab: string;
+    filter?: string;
+  };
 }
 
 interface IntelligenceBriefProps {
@@ -47,6 +53,9 @@ export function IntelligenceBrief({
   aliases,
   scanComplete,
 }: IntelligenceBriefProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   // Generate the plain-English summary
   const summary = useMemo(() => {
     const parts: string[] = [];
@@ -72,7 +81,7 @@ export function IntelligenceBrief({
     return parts.join(' ');
   }, [username, accountsFound, breachCount, reuseScore]);
 
-  // Generate key findings with confidence
+  // Generate key findings with confidence and deep links
   const keyFindings = useMemo((): KeyFindingItem[] => {
     const findings: KeyFindingItem[] = [];
 
@@ -82,6 +91,7 @@ export function IntelligenceBrief({
         text: `${breachCount} breach ${breachCount === 1 ? 'exposure' : 'exposures'} detected — credentials may be compromised`,
         confidence: 'high',
         severity: 'critical',
+        deepLink: { tab: 'breaches' },
       });
     }
 
@@ -89,8 +99,9 @@ export function IntelligenceBrief({
       const confidence = accountsFound > 10 ? 'high' : accountsFound > 3 ? 'medium' : 'low';
       findings.push({
         id: 'presence',
-        text: `Active presence confirmed on ${accountsFound} platform${accountsFound !== 1 ? 's' : ''}`,
+        text: `Active on ${accountsFound} platform${accountsFound !== 1 ? 's' : ''}`,
         confidence,
+        deepLink: { tab: 'accounts' },
       });
     }
 
@@ -99,12 +110,14 @@ export function IntelligenceBrief({
         id: 'reuse',
         text: `High identifier reuse (${reuseScore}%) — strong correlation between accounts`,
         confidence: reuseScore >= 80 ? 'high' : 'medium',
+        deepLink: { tab: 'connections' },
       });
     } else if (reuseScore >= 30 && accountsFound > 3) {
       findings.push({
         id: 'reuse',
         text: `Moderate identifier reuse (${reuseScore}%) — some account correlation`,
         confidence: 'low',
+        deepLink: { tab: 'connections' },
       });
     }
 
@@ -113,6 +126,7 @@ export function IntelligenceBrief({
         id: 'aliases',
         text: `${aliases.length} alternate name${aliases.length !== 1 ? 's' : ''} detected: ${aliases.slice(0, 2).join(', ')}${aliases.length > 2 ? '...' : ''}`,
         confidence: 'medium',
+        deepLink: { tab: 'accounts' },
       });
     }
 
@@ -126,6 +140,17 @@ export function IntelligenceBrief({
 
     return findings.slice(0, 5);
   }, [accountsFound, breachCount, reuseScore, aliases]);
+
+  const handleFindingClick = (finding: KeyFindingItem) => {
+    if (finding.deepLink) {
+      const params = new URLSearchParams(location.search);
+      params.set('tab', finding.deepLink.tab);
+      if (finding.deepLink.filter) {
+        params.set('filter', finding.deepLink.filter);
+      }
+      navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+    }
+  };
 
   return (
     <div className="space-y-3">
@@ -146,21 +171,32 @@ export function IntelligenceBrief({
           <AlertTriangle className="w-3 h-3" />
           Key Findings
         </h3>
-        <ul className="space-y-1">
+        <ul className="space-y-0.5">
           {keyFindings.map((finding) => {
             const conf = confidenceConfig[finding.confidence];
             const ConfIcon = conf.icon;
+            const hasLink = !!finding.deepLink;
             
             return (
               <li 
                 key={finding.id} 
                 className={cn(
-                  "flex items-start gap-2 py-1.5 px-2 -mx-2 rounded text-[12px]",
-                  finding.severity === 'critical' && 'bg-destructive/5'
+                  "group flex items-center gap-2 py-1.5 px-2 -mx-2 rounded text-[12px] transition-colors",
+                  finding.severity === 'critical' && 'bg-destructive/5',
+                  hasLink && 'hover:bg-muted/40 cursor-pointer'
                 )}
+                onClick={() => hasLink && handleFindingClick(finding)}
+                role={hasLink ? 'button' : undefined}
+                tabIndex={hasLink ? 0 : undefined}
+                onKeyDown={(e) => {
+                  if (hasLink && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    handleFindingClick(finding);
+                  }
+                }}
               >
                 <span className={cn(
-                  "mt-0.5 shrink-0",
+                  "shrink-0",
                   finding.severity === 'critical' ? 'text-destructive' : 'text-muted-foreground'
                 )}>
                   •
@@ -178,6 +214,20 @@ export function IntelligenceBrief({
                   <ConfIcon className="w-2 h-2" />
                   {conf.label}
                 </Badge>
+                {hasLink && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-5 px-1.5 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleFindingClick(finding);
+                    }}
+                  >
+                    View
+                    <ChevronRight className="h-2.5 w-2.5 ml-0.5" />
+                  </Button>
+                )}
               </li>
             );
           })}
