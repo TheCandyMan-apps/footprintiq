@@ -1,11 +1,11 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import cytoscape, { Core, NodeSingular, EdgeSingular } from 'cytoscape';
+import cytoscape, { Core } from 'cytoscape';
 import { 
-  GraphNode, GraphEdge, CorrelationGraphData, 
+  GraphNode, CorrelationGraphData, 
   CATEGORY_CONFIG, EDGE_REASON_CONFIG 
 } from '@/hooks/useCorrelationGraph';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -25,9 +25,9 @@ interface CorrelationGraphProps {
 }
 
 const LENS_COLORS = {
-  verified: '#22c55e', // green-500
-  likely: '#f59e0b',   // amber-500
-  unclear: '#6b7280',  // gray-500
+  verified: '#22c55e',
+  likely: '#f59e0b',
+  unclear: '#6b7280',
 };
 
 export function CorrelationGraph({
@@ -38,14 +38,20 @@ export function CorrelationGraph({
   className,
 }: CorrelationGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const [groupByPlatform, setGroupByPlatform] = useState(false);
+  const [tooltipData, setTooltipData] = useState<{
+    x: number;
+    y: number;
+    type: 'node' | 'edge';
+    content: { label: string; username?: string; confidence?: number; reason?: string };
+  } | null>(null);
 
   // Build cytoscape elements from graph data
   const buildElements = useCallback(() => {
     const elements: cytoscape.ElementDefinition[] = [];
 
-    // Add nodes
     data.nodes.forEach((node) => {
       const categoryConfig = CATEGORY_CONFIG[node.category] || CATEGORY_CONFIG.other;
       const lensColor = node.lensStatus ? LENS_COLORS[node.lensStatus] : LENS_COLORS.unclear;
@@ -64,14 +70,13 @@ export function CorrelationGraph({
           imageUrl: node.imageUrl,
           meta: node.meta,
           result: node.result,
-          // For grouping
+          username: node.meta?.username,
           parent: groupByPlatform && node.type === 'account' ? `group-${node.category}` : undefined,
         },
         classes: [node.type, node.lensStatus || 'unclear'].filter(Boolean).join(' '),
       });
     });
 
-    // Add compound nodes for grouping
     if (groupByPlatform) {
       const categories = new Set(data.nodes.filter(n => n.type === 'account').map(n => n.category));
       categories.forEach((cat) => {
@@ -88,7 +93,6 @@ export function CorrelationGraph({
       });
     }
 
-    // Add edges
     data.edges.forEach((edge) => {
       elements.push({
         data: {
@@ -99,6 +103,7 @@ export function CorrelationGraph({
           reasonLabel: edge.reasonLabel,
           weight: edge.weight,
           confidence: edge.confidence,
+          details: edge.details,
         },
       });
     });
@@ -116,7 +121,7 @@ export function CorrelationGraph({
       container: containerRef.current,
       elements,
       style: [
-        // Identity (root) node
+        // Identity (root) node - always show label
         {
           selector: 'node.identity',
           style: {
@@ -134,9 +139,10 @@ export function CorrelationGraph({
             'width': 50,
             'height': 50,
             'shape': 'diamond',
+            'text-opacity': 1,
           },
         },
-        // Account nodes
+        // Account nodes - hide labels by default (show on hover/focus)
         {
           selector: 'node.account',
           style: {
@@ -146,13 +152,16 @@ export function CorrelationGraph({
             'label': 'data(label)',
             'text-valign': 'bottom',
             'text-margin-y': 6,
-            'font-size': 10,
+            'font-size': 9,
             'color': 'hsl(var(--foreground))',
             'text-outline-width': 1.5,
             'text-outline-color': 'hsl(var(--background))',
-            'width': 36,
-            'height': 36,
+            'width': 32,
+            'height': 32,
             'shape': 'ellipse',
+            'text-opacity': 0, // Hidden by default
+            'transition-property': 'text-opacity, width, height, border-width',
+            'transition-duration': 150,
           },
         },
         // LENS status variants
@@ -178,6 +187,58 @@ export function CorrelationGraph({
             'border-style': 'dashed',
           },
         },
+        // Hovered node - show label and enlarge
+        {
+          selector: 'node.hovered',
+          style: {
+            'text-opacity': 1,
+            'width': 40,
+            'height': 40,
+            'border-width': 4,
+            'z-index': 900,
+            'font-size': 10,
+            'font-weight': 'bold',
+          },
+        },
+        // Hovered edge
+        {
+          selector: 'edge.hovered',
+          style: {
+            'line-color': 'hsl(var(--primary))',
+            'line-opacity': 1,
+            'width': 4,
+            'z-index': 900,
+          },
+        },
+        // Connected to hovered (neighbors)
+        {
+          selector: 'node.neighbor',
+          style: {
+            'text-opacity': 0.8,
+            'opacity': 1,
+          },
+        },
+        {
+          selector: 'edge.neighbor',
+          style: {
+            'line-opacity': 0.8,
+            'width': 2.5,
+          },
+        },
+        // Unhovered state (dimmed when something is hovered)
+        {
+          selector: 'node.unhovered',
+          style: {
+            'opacity': 0.4,
+            'text-opacity': 0,
+          },
+        },
+        {
+          selector: 'edge.unhovered',
+          style: {
+            'opacity': 0.15,
+          },
+        },
         // Group (compound) nodes
         {
           selector: 'node.group-node',
@@ -201,11 +262,13 @@ export function CorrelationGraph({
         {
           selector: 'edge',
           style: {
-            'width': 2,
+            'width': 1.5,
             'line-color': '#64748b',
-            'line-opacity': 0.5,
+            'line-opacity': 0.4,
             'curve-style': 'bezier',
             'target-arrow-shape': 'none',
+            'transition-property': 'line-opacity, width, line-color',
+            'transition-duration': 150,
           },
         },
         // Edges from identity root
@@ -213,11 +276,36 @@ export function CorrelationGraph({
           selector: 'edge[source = "identity-root"]',
           style: {
             'line-color': 'hsl(var(--primary))',
-            'line-opacity': 0.5,
+            'line-opacity': 0.35,
             'line-style': 'solid',
           },
         },
-        // Highlighted/selected states
+        // Strong correlation edges
+        {
+          selector: 'edge[weight >= 0.85]',
+          style: {
+            'width': 2.5,
+            'line-opacity': 0.6,
+          },
+        },
+        // Medium correlation edges
+        {
+          selector: 'edge[weight >= 0.6][weight < 0.85]',
+          style: {
+            'width': 2,
+            'line-opacity': 0.5,
+          },
+        },
+        // Weak correlation edges
+        {
+          selector: 'edge[weight < 0.6]',
+          style: {
+            'width': 1,
+            'line-style': 'dashed',
+            'line-opacity': 0.35,
+          },
+        },
+        // Selected states
         {
           selector: 'node:selected',
           style: {
@@ -226,17 +314,18 @@ export function CorrelationGraph({
             'overlay-padding': '6px',
           },
         },
-        // Dimmed state for unfocused nodes
+        // Dimmed state for focus mode
         {
           selector: 'node.dimmed',
           style: {
-            'opacity': 0.25,
+            'opacity': 0.2,
+            'text-opacity': 0,
           },
         },
         {
           selector: 'edge.dimmed',
           style: {
-            'opacity': 0.1,
+            'opacity': 0.08,
           },
         },
         // Highlighted state for focused paths
@@ -246,6 +335,7 @@ export function CorrelationGraph({
             'border-width': 4,
             'border-color': 'hsl(var(--primary))',
             'z-index': 999,
+            'text-opacity': 1,
           },
         },
         {
@@ -267,6 +357,7 @@ export function CorrelationGraph({
             'height': 48,
             'font-size': 12,
             'font-weight': 'bold',
+            'text-opacity': 1,
             'z-index': 1000,
           },
         },
@@ -295,7 +386,81 @@ export function CorrelationGraph({
       wheelSensitivity: 0.3,
     });
 
-    // Event handlers
+    // ========== HOVER HANDLERS ==========
+
+    // Node hover
+    cy.on('mouseover', 'node', (evt) => {
+      const node = evt.target;
+      if (node.data('isGroup')) return;
+
+      // Clear previous hover classes
+      cy.elements().removeClass('hovered neighbor unhovered');
+      
+      // Add hover classes
+      node.addClass('hovered');
+      const connectedEdges = node.connectedEdges();
+      const connectedNodes = connectedEdges.connectedNodes();
+      connectedEdges.addClass('neighbor');
+      connectedNodes.addClass('neighbor');
+      
+      // Dim unrelated elements
+      cy.elements().not(node).not(connectedEdges).not(connectedNodes).addClass('unhovered');
+
+      // Show tooltip
+      const pos = node.renderedPosition();
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      if (containerRect) {
+        setTooltipData({
+          x: containerRect.left + pos.x,
+          y: containerRect.top + pos.y - 50,
+          type: 'node',
+          content: {
+            label: node.data('label'),
+            username: node.data('username'),
+            confidence: node.data('confidence'),
+          },
+        });
+      }
+    });
+
+    cy.on('mouseout', 'node', () => {
+      cy.elements().removeClass('hovered neighbor unhovered');
+      setTooltipData(null);
+    });
+
+    // Edge hover
+    cy.on('mouseover', 'edge', (evt) => {
+      const edge = evt.target;
+      
+      cy.elements().removeClass('hovered neighbor unhovered');
+      edge.addClass('hovered');
+      edge.connectedNodes().addClass('neighbor');
+      cy.elements().not(edge).not(edge.connectedNodes()).addClass('unhovered');
+
+      // Show edge tooltip
+      const midpoint = edge.midpoint();
+      const containerRect = containerRef.current?.getBoundingClientRect();
+      if (containerRect) {
+        setTooltipData({
+          x: containerRect.left + midpoint.x,
+          y: containerRect.top + midpoint.y - 30,
+          type: 'edge',
+          content: {
+            label: edge.data('reasonLabel') || EDGE_REASON_CONFIG[edge.data('reason') as keyof typeof EDGE_REASON_CONFIG]?.label || 'Connection',
+            reason: edge.data('details'),
+            confidence: edge.data('confidence'),
+          },
+        });
+      }
+    });
+
+    cy.on('mouseout', 'edge', () => {
+      cy.elements().removeClass('hovered neighbor unhovered');
+      setTooltipData(null);
+    });
+
+    // ========== CLICK HANDLERS ==========
+
     cy.on('tap', 'node', (evt) => {
       const node = evt.target;
       if (node.data('isGroup')) return;
@@ -340,9 +505,20 @@ export function CorrelationGraph({
       onNodeDoubleClick(graphNode);
     });
 
+    // ========== ZOOM-BASED LABEL VISIBILITY ==========
+    
+    cy.on('zoom', () => {
+      const zoom = cy.zoom();
+      // Show all labels when zoomed in enough
+      if (zoom > 1.2) {
+        cy.nodes('.account').style('text-opacity', 0.8);
+      } else {
+        cy.nodes('.account').not('.hovered').not('.focused').not('.highlighted').style('text-opacity', 0);
+      }
+    });
+
     cyRef.current = cy;
 
-    // Fit after layout
     cy.one('layoutstop', () => {
       cy.fit(undefined, 30);
     });
@@ -358,7 +534,6 @@ export function CorrelationGraph({
     const cy = cyRef.current;
     if (!cy) return;
 
-    // Clear all classes first
     cy.elements().removeClass('dimmed highlighted focused');
 
     if (!focusedNodeId) return;
@@ -366,28 +541,17 @@ export function CorrelationGraph({
     const focusedNode = cy.getElementById(focusedNodeId);
     if (!focusedNode.length) return;
 
-    // Get connected nodes and edges
     const connectedEdges = focusedNode.connectedEdges();
     const connectedNodes = connectedEdges.connectedNodes();
-    
-    // Also get second-degree connections for path highlighting
     const secondDegreeEdges = connectedNodes.connectedEdges();
     const secondDegreeNodes = secondDegreeEdges.connectedNodes();
 
-    // Dim everything
     cy.elements().addClass('dimmed');
-
-    // Highlight the focused node
     focusedNode.removeClass('dimmed').addClass('focused');
-
-    // Highlight direct connections
     connectedEdges.removeClass('dimmed').addClass('highlighted');
     connectedNodes.removeClass('dimmed').addClass('highlighted');
-
-    // Partially highlight second-degree (for path visibility)
     secondDegreeNodes.removeClass('dimmed');
     
-    // Center on focused node
     cy.animate({
       center: { eles: focusedNode },
       zoom: 1.5,
@@ -418,91 +582,164 @@ export function CorrelationGraph({
     const cy = cyRef.current;
     if (!cy) return;
     
-    cy.elements().removeClass('dimmed highlighted focused');
+    cy.elements().removeClass('dimmed highlighted focused hovered neighbor unhovered');
     cy.fit(undefined, 30);
     onNodeClick(null);
   }, [onNodeClick]);
 
+  const handleCenter = useCallback(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    const identityNode = cy.getElementById('identity-root');
+    if (identityNode.length) {
+      cy.animate({
+        center: { eles: identityNode },
+        zoom: 1.2,
+        duration: 300,
+      });
+    }
+  }, []);
+
   return (
     <div className={cn('relative flex flex-col h-full', className)}>
-      {/* Toolbar */}
-      <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded-lg border border-border p-1">
-        <TooltipProvider>
+      {/* Bottom-left Controls (SherlockEye style) */}
+      <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1 bg-background/90 backdrop-blur-sm rounded-lg border border-border p-1.5 shadow-lg">
+        <TooltipProvider delayDuration={300}>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomIn}>
-                <ZoomIn className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomIn}>
+                <ZoomIn className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs">Zoom In</TooltipContent>
+            <TooltipContent side="right" className="text-xs">Zoom In</TooltipContent>
           </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomOut}>
-                <ZoomOut className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleZoomOut}>
+                <ZoomOut className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs">Zoom Out</TooltipContent>
+            <TooltipContent side="right" className="text-xs">Zoom Out</TooltipContent>
+          </Tooltip>
+
+          <div className="w-full h-px bg-border my-0.5" />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleFit}>
+                <Maximize2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-xs">Fit to View</TooltipContent>
           </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleFit}>
-                <Maximize2 className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCenter}>
+                <Focus className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs">Fit to View</TooltipContent>
+            <TooltipContent side="right" className="text-xs">Center on Identity</TooltipContent>
           </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleReset}>
-                <RotateCcw className="h-3.5 w-3.5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleReset}>
+                <RotateCcw className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom" className="text-xs">Reset View</TooltipContent>
+            <TooltipContent side="right" className="text-xs">Reset View</TooltipContent>
           </Tooltip>
 
-          <div className="w-px h-5 bg-border mx-1" />
+          <div className="w-full h-px bg-border my-0.5" />
 
-          <div className="flex items-center gap-1.5 px-1">
-            <Switch
-              id="group-toggle"
-              checked={groupByPlatform}
-              onCheckedChange={setGroupByPlatform}
-              className="h-4 w-7 data-[state=checked]:bg-primary"
-            />
-            <Label htmlFor="group-toggle" className="text-[10px] text-muted-foreground cursor-pointer">
-              <Layers className="h-3 w-3" />
-            </Label>
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-center h-8 w-8">
+                <Switch
+                  id="group-toggle"
+                  checked={groupByPlatform}
+                  onCheckedChange={setGroupByPlatform}
+                  className="h-4 w-7 data-[state=checked]:bg-primary"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-xs">
+              {groupByPlatform ? 'Disable' : 'Enable'} Grouping
+            </TooltipContent>
+          </Tooltip>
         </TooltipProvider>
       </div>
 
-      {/* Legend */}
-      <div className="absolute bottom-2 left-2 z-10 flex flex-wrap gap-2 bg-background/80 backdrop-blur-sm rounded-lg border border-border p-2 max-w-[200px]">
-        <div className="w-full text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1">
+      {/* Bottom-right Legend */}
+      <div className="absolute bottom-3 right-3 z-10 bg-background/90 backdrop-blur-sm rounded-lg border border-border p-2 shadow-lg">
+        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
           Confidence
         </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: LENS_COLORS.verified, backgroundColor: LENS_COLORS.verified + '40' }} />
-          <span className="text-[10px]">Verified</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: LENS_COLORS.likely, backgroundColor: LENS_COLORS.likely + '40' }} />
-          <span className="text-[10px]">Likely</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <div className="w-2.5 h-2.5 rounded-full border-2 border-dashed" style={{ borderColor: LENS_COLORS.unclear, backgroundColor: LENS_COLORS.unclear + '20' }} />
-          <span className="text-[10px]">Unclear</span>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: LENS_COLORS.verified, backgroundColor: LENS_COLORS.verified + '40' }} />
+            <span className="text-[10px]">Strong</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border-2" style={{ borderColor: LENS_COLORS.likely, backgroundColor: LENS_COLORS.likely + '40' }} />
+            <span className="text-[10px]">Medium</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full border-2 border-dashed" style={{ borderColor: LENS_COLORS.unclear, backgroundColor: LENS_COLORS.unclear + '20' }} />
+            <span className="text-[10px]">Weak</span>
+          </div>
         </div>
       </div>
+
+      {/* Custom Tooltip */}
+      {tooltipData && (
+        <div
+          ref={tooltipRef}
+          className="fixed z-50 pointer-events-none"
+          style={{
+            left: tooltipData.x,
+            top: tooltipData.y,
+            transform: 'translate(-50%, -100%)',
+          }}
+        >
+          <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg px-3 py-2 text-xs max-w-[200px]">
+            {tooltipData.type === 'node' ? (
+              <>
+                <div className="font-semibold">{tooltipData.content.label}</div>
+                {tooltipData.content.username && (
+                  <div className="text-muted-foreground">@{tooltipData.content.username}</div>
+                )}
+                {tooltipData.content.confidence !== undefined && (
+                  <div className="mt-1 text-[10px]">
+                    <span className="text-muted-foreground">Confidence:</span>{' '}
+                    <span className="font-medium">{tooltipData.content.confidence}%</span>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="font-semibold">{tooltipData.content.label}</div>
+                {tooltipData.content.reason && (
+                  <div className="text-muted-foreground mt-0.5">{tooltipData.content.reason}</div>
+                )}
+                {tooltipData.content.confidence !== undefined && (
+                  <div className="mt-1 text-[10px]">
+                    <span className="text-muted-foreground">Strength:</span>{' '}
+                    <span className="font-medium">{tooltipData.content.confidence}%</span>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Graph container */}
       <div
         ref={containerRef}
-        className="flex-1 bg-gradient-to-br from-background via-background to-muted/10"
+        className="flex-1 bg-gradient-to-br from-background via-background to-muted/5"
         style={{ cursor: 'grab' }}
       />
     </div>
