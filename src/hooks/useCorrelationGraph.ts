@@ -212,16 +212,21 @@ export function useCorrelationGraph(
     };
     nodes.push(identityNode);
 
+    // =========================================================================
+    // STEP 1: Extract normalized signals using the advanced extraction library
+    // =========================================================================
+    const signalsMap = new Map<string, ReturnType<typeof extractSignals>>();
+    foundProfiles.forEach(result => {
+      signalsMap.set(result.id, extractSignals(result));
+    });
+
     // Create account nodes
     const normalizedSearch = normalizeUsername(searchedUsername);
-    const usernameMap = new Map<string, string[]>(); // normalized username -> node ids
-    const imageMap = new Map<string, string[]>(); // image url -> node ids
-    const domainMap = new Map<string, string[]>(); // domain -> node ids
+    const nodeIdMap = new Map<string, string>(); // result.id -> nodeId
 
-    foundProfiles.forEach((result, idx) => {
+    foundProfiles.forEach((result) => {
       const category = categorizePlatform(result.site || '');
-      const username = extractUsername(result);
-      const imageUrl = extractImageUrl(result);
+      const signals = signalsMap.get(result.id)!;
       const confidence = calculateLensScore(result);
       const meta = (result.meta || result.metadata || {}) as Record<string, any>;
       
@@ -234,6 +239,7 @@ export function useCorrelationGraph(
       }
 
       const nodeId = `account-${result.id}`;
+      nodeIdMap.set(result.id, nodeId);
       
       const node: GraphNode = {
         id: nodeId,
@@ -242,15 +248,19 @@ export function useCorrelationGraph(
         platform: result.site,
         category,
         url: result.url,
-        imageUrl,
+        imageUrl: signals.profileImageUrl,
         confidence,
         lensStatus,
         meta: {
-          username,
-          bio: meta.bio || meta.description,
+          username: signals.rawUsername,
+          bio: signals.rawBio,
           followers: meta.followers,
           location: meta.location,
           joined: meta.joined || meta.created_at,
+          // Include extracted signals for debugging/tooltips
+          extractedDomains: signals.extractedDomains,
+          extractedEmails: signals.extractedEmails,
+          bioKeywords: signals.bioKeywords?.slice(0, 10),
         },
         result,
       };
@@ -259,41 +269,12 @@ export function useCorrelationGraph(
       // Track category stats
       categoryStats[category] = (categoryStats[category] || 0) + 1;
 
-      // Index for correlation detection
-      if (username) {
-        const normalized = normalizeUsername(username);
-        if (!usernameMap.has(normalized)) {
-          usernameMap.set(normalized, []);
-        }
-        usernameMap.get(normalized)!.push(nodeId);
-      }
-
-      if (imageUrl) {
-        if (!imageMap.has(imageUrl)) {
-          imageMap.set(imageUrl, []);
-        }
-        imageMap.get(imageUrl)!.push(nodeId);
-      }
-
-      // Extract domains from bio/links
-      if (meta.bio || meta.website) {
-        const text = `${meta.bio || ''} ${meta.website || ''}`;
-        const domainRegex = /(?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+\.[a-zA-Z]{2,})/g;
-        let match;
-        while ((match = domainRegex.exec(text)) !== null) {
-          const domain = match[1].toLowerCase();
-          if (!domainMap.has(domain)) {
-            domainMap.set(domain, []);
-          }
-          domainMap.get(domain)!.push(nodeId);
-        }
-      }
-
       // Create edge from identity to this account
-      const usernameNorm = username ? normalizeUsername(username) : null;
-      const isSameUsername = usernameNorm === normalizedSearch;
-      const isSimilarUsername = usernameNorm && 
-        (normalizedSearch.includes(usernameNorm) || usernameNorm.includes(normalizedSearch));
+      const isSameUsername = signals.normalizedUsername === normalizedSearch;
+      const isSimilarUsername = signals.normalizedUsername && 
+        (normalizedSearch.includes(signals.normalizedUsername) || 
+         signals.normalizedUsername.includes(normalizedSearch) ||
+         signals.usernameVariants.includes(normalizedSearch));
 
       let reason: EdgeReason = 'identity_search';
       if (isSameUsername) {
@@ -320,12 +301,14 @@ export function useCorrelationGraph(
       });
     });
 
-    // Create account-to-account edges based on shared signals
-    // Collect all signals per pair first, then merge into single edge
-    const MIN_CONFIDENCE = 60;
+    // =========================================================================
+    // STEP 2: Compute account-to-account correlation edges using advanced logic
+    // =========================================================================
+    const MIN_WEIGHT = 0.60; // Only create edges with weight >= 0.60
     
     interface SignalData {
       reason: EdgeReason;
+      weight: number;
       confidence: number;
       detail: string;
     }
@@ -337,10 +320,11 @@ export function useCorrelationGraph(
       sourceId: string,
       targetId: string,
       reason: EdgeReason,
+      weight: number,
       confidence: number,
       detail: string
     ) => {
-      if (confidence < MIN_CONFIDENCE) return;
+      if (weight < MIN_WEIGHT) return;
       
       const pairKey = [sourceId, targetId].sort().join('-');
       if (!pairSignals.has(pairKey)) {
@@ -350,33 +334,91 @@ export function useCorrelationGraph(
       // Avoid duplicate signals of same reason
       const signals = pairSignals.get(pairKey)!;
       if (!signals.some(s => s.reason === reason)) {
-        signals.push({ reason, confidence, detail });
+        signals.push({ reason, weight, confidence, detail });
       }
     };
 
-    // Get node data for signal extraction
-    const getNodeData = (nodeId: string) => {
-      const node = nodes.find(n => n.id === nodeId);
-      return node ? {
-        username: node.meta?.username as string | undefined,
-        bio: node.meta?.bio as string | undefined,
-        platform: node.platform,
-        imageUrl: node.imageUrl,
-      } : null;
-    };
+    // Use the advanced correlation computation
+    const { edges: correlationEdges } = computeAllCorrelations(foundProfiles);
+    
+    // Map correlation edges to our format with proper edge reasons
+    correlationEdges.forEach(corrEdge => {
+      const sourceNodeId = nodeIdMap.get(corrEdge.sourceId);
+      const targetNodeId = nodeIdMap.get(corrEdge.targetId);
+      
+      if (!sourceNodeId || !targetNodeId) return;
+      
+      // Map correlation reason to our EdgeReason type
+      let reason: EdgeReason = corrEdge.reason as EdgeReason;
+      
+      // Map specific reasons for better labeling
+      if (corrEdge.reason === 'same_username') reason = 'username_reuse';
+      if (corrEdge.reason === 'same_image') reason = 'image_reuse';
+      if (corrEdge.reason === 'similar_bio') reason = 'bio_similarity';
+      
+      collectSignal(
+        sourceNodeId,
+        targetNodeId,
+        reason,
+        corrEdge.weight,
+        corrEdge.confidence,
+        corrEdge.details || CORRELATION_CONFIG[corrEdge.reason]?.label || 'Correlation detected'
+      );
+    });
 
-    // 1. Collect username reuse signals (weight: 0.9)
-    usernameMap.forEach((nodeIds, normalizedUsername) => {
+    // Also do our own index-based correlation for additional signals
+    // Build indexes for faster lookup
+    const usernameIndex = new Map<string, string[]>(); // normalized username -> nodeIds
+    const imageIndex = new Map<string, string[]>(); // image fingerprint -> nodeIds
+    const domainIndex = new Map<string, string[]>(); // domain -> nodeIds
+    const emailIndex = new Map<string, string[]>(); // email -> nodeIds
+
+    signalsMap.forEach((signals, resultId) => {
+      const nodeId = nodeIdMap.get(resultId);
+      if (!nodeId) return;
+
+      // Index by normalized username
+      if (signals.normalizedUsername) {
+        const key = signals.normalizedUsername;
+        if (!usernameIndex.has(key)) usernameIndex.set(key, []);
+        usernameIndex.get(key)!.push(nodeId);
+      }
+
+      // Index by image fingerprint
+      if (signals.imageFingerprint) {
+        const key = signals.imageFingerprint;
+        if (!imageIndex.has(key)) imageIndex.set(key, []);
+        imageIndex.get(key)!.push(nodeId);
+      }
+
+      // Index by domains
+      signals.extractedDomains.forEach(domain => {
+        if (!domainIndex.has(domain)) domainIndex.set(domain, []);
+        domainIndex.get(domain)!.push(nodeId);
+      });
+
+      // Index by emails
+      signals.extractedEmails.forEach(email => {
+        if (!emailIndex.has(email)) emailIndex.set(email, []);
+        emailIndex.get(email)!.push(nodeId);
+      });
+    });
+
+    // Collect additional signals from indexes (may add signals missed by computeAllCorrelations)
+    
+    // 1. Username reuse (weight: 0.90)
+    usernameIndex.forEach((nodeIds, normalizedUsername) => {
       if (nodeIds.length > 1) {
         for (let i = 0; i < nodeIds.length; i++) {
           for (let j = i + 1; j < nodeIds.length; j++) {
-            const node1 = getNodeData(nodeIds[i]);
-            const rawUsername = node1?.username || normalizedUsername;
+            const node = nodes.find(n => n.id === nodeIds[i]);
+            const rawUsername = node?.meta?.username || normalizedUsername;
             
             collectSignal(
               nodeIds[i],
               nodeIds[j],
               'username_reuse',
+              0.90,
               90,
               `Same username "${rawUsername}"`
             );
@@ -385,8 +427,8 @@ export function useCorrelationGraph(
       }
     });
 
-    // 2. Collect image reuse signals (weight: 0.95)
-    imageMap.forEach((nodeIds) => {
+    // 2. Image reuse (weight: 0.95)
+    imageIndex.forEach((nodeIds) => {
       if (nodeIds.length > 1) {
         for (let i = 0; i < nodeIds.length; i++) {
           for (let j = i + 1; j < nodeIds.length; j++) {
@@ -394,6 +436,7 @@ export function useCorrelationGraph(
               nodeIds[i],
               nodeIds[j],
               'image_reuse',
+              0.95,
               95,
               'Same profile image'
             );
@@ -402,14 +445,32 @@ export function useCorrelationGraph(
       }
     });
 
-    // 3. Collect shared domain/link signals (weight: 0.7)
+    // 3. Shared email (weight: 0.85)
+    emailIndex.forEach((nodeIds, email) => {
+      if (nodeIds.length > 1) {
+        for (let i = 0; i < nodeIds.length; i++) {
+          for (let j = i + 1; j < nodeIds.length; j++) {
+            collectSignal(
+              nodeIds[i],
+              nodeIds[j],
+              'shared_email',
+              0.85,
+              85,
+              `Shared email "${email}"`
+            );
+          }
+        }
+      }
+    });
+
+    // 4. Shared domain/link (weight: 0.70)
     const COMMON_DOMAINS = new Set([
       'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'protonmail.com',
       'icloud.com', 'aol.com', 'live.com', 'msn.com', 'mail.com',
-      'linktr.ee', 'linktree.com', 'bit.ly', 'goo.gl', 't.co',
+      'linktr.ee', 'linktree.com', 'bit.ly', 'goo.gl', 't.co', 'youtu.be',
     ]);
     
-    domainMap.forEach((nodeIds, domain) => {
+    domainIndex.forEach((nodeIds, domain) => {
       if (COMMON_DOMAINS.has(domain)) return;
       
       if (nodeIds.length > 1) {
@@ -419,33 +480,25 @@ export function useCorrelationGraph(
               nodeIds[i],
               nodeIds[j],
               'shared_link',
+              0.70,
               70,
-              `Shared link to "${domain}"`
+              `Shared link "${domain}"`
             );
           }
         }
       }
     });
 
-    // 4. Collect bio similarity signals (weight: 0.6)
+    // 5. Bio similarity - use keyword overlap (weight: 0.60)
     const accountNodes = nodes.filter(n => n.type === 'account');
     const bioKeywordsMap = new Map<string, string[]>();
     
     accountNodes.forEach(node => {
-      const bio = (node.meta?.bio as string) || '';
-      if (bio.length >= 20) {
-        const keywords = bio
-          .toLowerCase()
-          .replace(/https?:\/\/[^\s]+/g, '')
-          .replace(/[@#]\w+/g, '')
-          .replace(/[^\w\s]/g, ' ')
-          .split(/\s+/)
-          .filter(w => w.length >= 4)
-          .filter(w => !['the', 'and', 'for', 'with', 'that', 'this', 'have', 'from', 'they', 'been', 'about', 'would', 'their', 'will', 'what', 'when', 'where', 'which', 'your', 'just', 'more', 'some', 'than', 'them', 'into', 'only'].includes(w));
-        
-        if (keywords.length >= 3) {
-          bioKeywordsMap.set(node.id, [...new Set(keywords)]);
-        }
+      const resultId = node.result?.id;
+      if (!resultId) return;
+      const signals = signalsMap.get(resultId);
+      if (signals && signals.bioKeywords.length >= 3) {
+        bioKeywordsMap.set(node.id, signals.bioKeywords);
       }
     });
     
@@ -461,15 +514,17 @@ export function useCorrelationGraph(
         
         if (intersection.length >= 3) {
           const similarity = intersection.length / union.size;
-          const confidence = Math.round(60 + similarity * 30);
+          const weight = 0.50 + similarity * 0.25; // 0.50 - 0.75 range
+          const confidence = Math.round(50 + similarity * 40); // 50-90 range
           
-          if (confidence >= MIN_CONFIDENCE) {
+          if (weight >= MIN_WEIGHT) {
             const sharedWords = intersection.slice(0, 3).join(', ');
             
             collectSignal(
               bioNodeIds[i],
               bioNodeIds[j],
               'bio_similarity',
+              weight,
               confidence,
               `Similar bio ("${sharedWords}")`
             );
@@ -478,23 +533,23 @@ export function useCorrelationGraph(
       }
     }
 
-    // Merge signals into edges
+    // =========================================================================
+    // STEP 3: Merge signals into deduplicated edges
+    // =========================================================================
     pairSignals.forEach((signals, pairKey) => {
       if (signals.length === 0) return;
       
       const [sourceId, targetId] = pairKey.split('-');
-      const node1 = getNodeData(sourceId);
-      const node2 = getNodeData(targetId);
+      const node1 = nodes.find(n => n.id === sourceId);
+      const node2 = nodes.find(n => n.id === targetId);
       
       // Sort by weight descending
-      const sortedSignals = signals.sort((a, b) => 
-        EDGE_REASON_CONFIG[b.reason].weight - EDGE_REASON_CONFIG[a.reason].weight
-      );
+      const sortedSignals = signals.sort((a, b) => b.weight - a.weight);
       
       const reasons = sortedSignals.map(s => s.reason);
-      const reasonLabels = sortedSignals.map(s => EDGE_REASON_CONFIG[s.reason].label);
+      const reasonLabels = sortedSignals.map(s => EDGE_REASON_CONFIG[s.reason]?.label || s.reason);
       const primaryReason = reasons[0];
-      const maxWeight = Math.max(...sortedSignals.map(s => EDGE_REASON_CONFIG[s.reason].weight));
+      const maxWeight = Math.max(...sortedSignals.map(s => s.weight));
       const maxConfidence = Math.max(...sortedSignals.map(s => s.confidence));
       
       // Build combined details
