@@ -1,8 +1,9 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { ChevronRight, BookOpen, Link2, HelpCircle, Fingerprint, Globe, Eye, Network, Shield, Building2 } from "lucide-react";
+import { ChevronRight, BookOpen, Link2, HelpCircle, Fingerprint, Globe, Eye, Network, Building2, Info, CheckCircle, ArrowRight } from "lucide-react";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { useScrollDepthTracking } from "@/hooks/useScrollDepthTracking";
@@ -17,19 +18,19 @@ interface TopicLink {
 const foundations: TopicLink[] = [
   {
     title: "What Is a Digital Footprint?",
-    description: "The trail of data you leave behind when using the internet, including both active and passive traces.",
+    description: "An overview of the traces people leave behind through normal internet use, including both intentional and passive information.",
     href: "/ai/digital-footprint",
     icon: Fingerprint,
   },
   {
     title: "What Is Digital Exposure?",
-    description: "When your data becomes visible to others—through breaches, public records, or aggregation.",
+    description: "How publicly available data points can quietly connect over time, creating risk even when no accounts are hacked.",
     href: "/ai/digital-exposure",
     icon: Eye,
   },
   {
-    title: "What Is OSINT?",
-    description: "Open Source Intelligence: the process of collecting and analysing publicly available information.",
+    title: "What Is OSINT? (Open-Source Intelligence)",
+    description: "A plain-language explanation of OSINT as a method that uses public information — and how it already affects everyday life.",
     href: "/ai/what-is-osint",
     icon: Globe,
   },
@@ -37,43 +38,49 @@ const foundations: TopicLink[] = [
 
 const dataConnections: TopicLink[] = [
   {
-    title: "What Is Identity Profiling?",
-    description: "How separate data points can be linked to form a profile of an individual.",
-    href: "/ai/what-is-identity-profiling",
-    icon: Network,
-  },
-  {
     title: "What Are Data Brokers?",
-    description: "Companies that collect, aggregate, and sell personal information from public and commercial sources.",
+    description: "How companies aggregate and resell data from public records, commercial sources, and online activity — and why most people don't realize they're included.",
     href: "/ai/what-are-data-brokers",
     icon: Building2,
   },
+  {
+    title: "What Is Identity Profiling?",
+    description: "How patterns are inferred from multiple data sources, and how profiling differs from tracking or surveillance.",
+    href: "/ai/what-is-identity-profiling",
+    icon: Network,
+  },
 ];
 
-const commonQuestions: TopicLink[] = [
+const commonQuestionsFAQ = [
   {
-    title: "Is My Data Exposed?",
-    description: "Understanding what it means for personal information to be publicly accessible.",
-    href: "/is-my-data-exposed",
-    icon: Shield,
+    question: "I've never been hacked — should I be worried?",
+    answer: "Exposure doesn't require hacking. Most digital exposure comes from normal activity: public profiles, data broker aggregation, and information you've shared over time. The question isn't whether you've been hacked, but what's publicly visible about you.",
+    linkText: "Learn about digital exposure",
+    linkHref: "/ai/digital-exposure"
   },
   {
-    title: "Do Old Data Breaches Still Matter?",
-    description: "Why historical breaches remain relevant to your current exposure.",
-    href: "/old-data-breaches",
-    icon: BookOpen,
+    question: "Why is my data showing up in so many places?",
+    answer: "Data brokers collect information from public records, commercial sources, and online activity. They aggregate this into profiles that get resold and redistributed across hundreds of sites. One piece of information can appear in many places because brokers share and license data to each other.",
+    linkText: "Learn about data brokers",
+    linkHref: "/ai/what-are-data-brokers"
   },
   {
-    title: "Which Data Matters Most?",
-    description: "Not all exposed data carries equal weight—understanding relative significance.",
-    href: "/which-data-matters",
-    icon: HelpCircle,
+    question: "Is OSINT legal?",
+    answer: "Yes. OSINT uses publicly available information — data that anyone can access without bypassing authentication or breaking into systems. It's the same information available through search engines, public records, and social media. How the information is used can raise ethical questions, but the collection itself is generally legal.",
+    linkText: "Learn about OSINT",
+    linkHref: "/ai/what-is-osint"
   },
   {
-    title: "How Can I Stay Private Online?",
-    description: "Practical considerations for managing your digital presence.",
-    href: "/stay-private-online",
-    icon: Eye,
+    question: "Can I remove my digital footprint?",
+    answer: "Partial reduction is possible; complete removal is not. You can submit opt-out requests to data brokers, delete old accounts, and limit future sharing. But information spreads across systems, and some records (like court filings or property records) are permanently public. The realistic goal is reducing visibility, not achieving invisibility.",
+    linkText: "Learn about digital footprints",
+    linkHref: "/ai/digital-footprint"
+  },
+  {
+    question: "What's the difference between exposure and identity theft?",
+    answer: "Exposure is visibility — information about you existing in public sources. Identity theft is misuse — someone using your information to impersonate you or commit fraud. Exposure can increase risk of identity theft, but they're not the same thing. Most exposed people never experience identity theft; most identity theft victims had some level of prior exposure.",
+    linkText: "Learn about the difference",
+    linkHref: "/ai/digital-exposure"
   },
 ];
 
@@ -89,7 +96,7 @@ const AIIndex = () => {
     "@context": "https://schema.org",
     "@type": "WebPage",
     "name": "AI Answers: Understanding Digital Identity & Exposure",
-    "description": "A neutral index of authoritative explanations about digital identity, exposure, and public data.",
+    "description": "Clear, neutral explanations of how digital identity, exposure, and public data work in everyday life.",
     "url": `${origin}/ai`,
     "isPartOf": {
       "@type": "WebSite",
@@ -106,7 +113,7 @@ const AIIndex = () => {
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     "name": "AI Answers: Understanding Digital Identity & Exposure",
-    "description": "A neutral index of authoritative explanations about digital identity, exposure, and public data.",
+    "description": "Clear, neutral explanations of how digital identity, exposure, and public data work in everyday life.",
     "url": `${origin}/ai`,
     "publisher": {
       "@type": "Organization",
@@ -114,7 +121,7 @@ const AIIndex = () => {
     },
     "mainEntity": {
       "@type": "ItemList",
-      "numberOfItems": foundations.length + dataConnections.length + commonQuestions.length,
+      "numberOfItems": foundations.length + dataConnections.length,
       "itemListElement": [
         ...foundations.map((item, index) => ({
           "@type": "ListItem",
@@ -130,15 +137,21 @@ const AIIndex = () => {
           "name": item.title,
           "description": item.description
         })),
-        ...commonQuestions.map((item, index) => ({
-          "@type": "ListItem",
-          "position": foundations.length + dataConnections.length + index + 1,
-          "url": `${origin}${item.href}`,
-          "name": item.title,
-          "description": item.description
-        })),
       ]
     }
+  };
+
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": commonQuestionsFAQ.map(faq => ({
+      "@type": "Question",
+      "name": faq.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": faq.answer
+      }
+    }))
   };
 
   const breadcrumbJsonLd = {
@@ -188,11 +201,14 @@ const AIIndex = () => {
     );
   };
 
-  const Section = ({ title, icon: Icon, topics }: { title: string; icon: React.ElementType; topics: TopicLink[] }) => (
-    <section className="mb-12">
-      <div className="flex items-center gap-2 mb-6">
-        <Icon className="h-5 w-5 text-primary" />
-        <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+  const Section = ({ title, description, icon: Icon, topics }: { title: string; description: string; icon: React.ElementType; topics: TopicLink[] }) => (
+    <section className="mb-16">
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-2">
+          <Icon className="h-5 w-5 text-primary" />
+          <h2 className="text-xl font-semibold text-foreground">{title}</h2>
+        </div>
+        <p className="text-muted-foreground">{description}</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {topics.map((topic) => (
@@ -206,10 +222,10 @@ const AIIndex = () => {
     <>
       <Helmet>
         <title>AI Answers: Understanding Digital Identity & Exposure | FootprintIQ</title>
-        <meta name="description" content="A neutral index of authoritative explanations about digital identity, exposure, and public data." />
+        <meta name="description" content="Clear, neutral explanations of how digital identity, exposure, and public data work in everyday life. No jargon, no fear-based language." />
         <link rel="canonical" href={`${origin}/ai`} />
         <meta property="og:title" content="AI Answers: Understanding Digital Identity & Exposure" />
-        <meta property="og:description" content="A neutral index of authoritative explanations about digital identity, exposure, and public data." />
+        <meta property="og:description" content="Clear, neutral explanations of how digital identity, exposure, and public data work in everyday life." />
         <meta property="og:url" content={`${origin}/ai`} />
         <meta property="og:type" content="website" />
         <script type="application/ld+json">
@@ -217,6 +233,9 @@ const AIIndex = () => {
         </script>
         <script type="application/ld+json">
           {JSON.stringify(collectionPageJsonLd)}
+        </script>
+        <script type="application/ld+json">
+          {JSON.stringify(faqJsonLd)}
         </script>
         <script type="application/ld+json">
           {JSON.stringify(breadcrumbJsonLd)}
@@ -244,41 +263,132 @@ const AIIndex = () => {
 
           {/* Header */}
           <header className="mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
               AI Answers: Understanding Digital Identity & Exposure
             </h1>
-            <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">
-              A neutral index of authoritative explanations about digital identity, exposure, and public data. 
-              These reference pages provide factual context for understanding how personal information exists 
-              and connects across public sources.
-            </p>
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
+              <p className="text-lg leading-relaxed">
+                This hub provides clear, neutral explanations of how digital identity, exposure, and public data work in everyday life.
+              </p>
+              <p className="leading-relaxed">
+                These pages are designed to answer common questions people have about their online presence — without technical jargon, fear-based language, or assumptions of wrongdoing.
+              </p>
+              <p className="leading-relaxed">
+                They focus on publicly accessible information, how it accumulates over time, and how context changes risk.
+              </p>
+            </div>
           </header>
 
-          {/* Sections */}
+          {/* Foundations Section */}
           <Section 
             title="Foundations" 
+            description="These pages explain the core concepts that shape modern digital identity."
             icon={BookOpen} 
             topics={foundations} 
           />
 
+          {/* How Data Connects Section */}
           <Section 
             title="How Data Connects" 
+            description="These pages explain how separate pieces of information become profiles."
             icon={Link2} 
             topics={dataConnections} 
           />
 
-          <Section 
-            title="Common Questions" 
-            icon={HelpCircle} 
-            topics={commonQuestions} 
-          />
+          {/* Common Questions Section */}
+          <section className="mb-16">
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-2">
+                <HelpCircle className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-semibold text-foreground">Common Questions</h2>
+              </div>
+              <p className="text-muted-foreground">
+                These are questions people often ask when trying to understand their online presence.
+              </p>
+            </div>
+            <Accordion type="single" collapsible className="space-y-3">
+              {commonQuestionsFAQ.map((faq, index) => (
+                <AccordionItem 
+                  key={index} 
+                  value={`faq-${index}`} 
+                  className="border border-border/50 rounded-lg px-6 bg-card/30"
+                >
+                  <AccordionTrigger className="text-left font-medium hover:no-underline">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground pb-4">
+                    <p className="mb-3">{faq.answer}</p>
+                    <Link 
+                      to={faq.linkHref} 
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                    >
+                      {faq.linkText}
+                      <ArrowRight className="h-3 w-3" />
+                    </Link>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Each linked page provides context to help separate real risk from noise.
+            </p>
+          </section>
 
-          {/* Additional context */}
-          <aside className="mt-16 pt-8 border-t border-border">
-            <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">
-              These pages are designed as reference material for understanding digital privacy concepts. 
-              They explain what exists and how it works—not what you should do about it. 
-              For related educational content, see the{" "}
+          {/* About These Pages */}
+          <section className="mb-16">
+            <div className="flex items-center gap-2 mb-4">
+              <Info className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold text-foreground">About These Pages</h2>
+            </div>
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
+              <p className="font-medium text-foreground">The goal of this hub is understanding, not alarm.</p>
+              <p>
+                Digital identity today is shaped by years of ordinary online activity, not single events. Most exposure is passive, gradual, and invisible until someone looks at it as a whole.
+              </p>
+              <p>
+                Seeing how these concepts relate makes it easier to make informed decisions about what matters, what doesn't, and where to focus attention.
+              </p>
+            </div>
+          </section>
+
+          {/* Using This Information */}
+          <section className="mb-16">
+            <div className="flex items-center gap-2 mb-4">
+              <CheckCircle className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold text-foreground">Using This Information</h2>
+            </div>
+            <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
+              <p>These explanations are intended to support:</p>
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                <li>Personal awareness</li>
+                <li>Responsible research</li>
+                <li>Accurate reporting</li>
+                <li>Informed discussion</li>
+              </ul>
+              <p>
+                They do not provide instructions for misuse, monitoring, or surveillance.
+              </p>
+              <p className="font-medium text-foreground">
+                Public data is powerful. Context determines how it should be interpreted.
+              </p>
+            </div>
+          </section>
+
+          {/* Further Exploration */}
+          <section className="mb-8 p-6 bg-muted/30 rounded-lg border border-border/50">
+            <h2 className="text-lg font-semibold text-foreground mb-3">Further Exploration</h2>
+            <p className="text-muted-foreground mb-4">
+              FootprintIQ applies these concepts to help people see their digital exposure in context — combining discovery with explanation so results are easier to understand.
+            </p>
+            <p className="text-sm text-muted-foreground italic">
+              Understanding comes before action.
+            </p>
+          </section>
+
+          {/* Related Links */}
+          <aside className="pt-8 border-t border-border">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              For definitions of specific terms, see the{" "}
               <Link to="/digital-privacy-glossary" className="text-primary hover:underline">
                 Digital Privacy Glossary
               </Link>.
