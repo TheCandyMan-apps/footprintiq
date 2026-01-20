@@ -207,7 +207,7 @@ const DigitalExposure = () => {
               </BreadcrumbSeparator>
               <BreadcrumbItem>
                 <BreadcrumbLink asChild>
-                  <Link to="/ai-answers-hub">AI Answers Hub</Link>
+                  <Link to="/ai">AI Answers</Link>
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator>
