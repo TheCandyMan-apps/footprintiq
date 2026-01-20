@@ -80,8 +80,8 @@ export function ConfidenceBreakdown({
       id: 'username',
       label: 'Username match',
       description: username 
-        ? `Username "${username}" found on profile`
-        : 'No username could be extracted',
+        ? `Username "@${username}" matches the searched identifier`
+        : 'Unable to extract username from this profile',
       icon: User,
       score: usernameScore,
       weight: 25,
@@ -93,8 +93,8 @@ export function ConfidenceBreakdown({
       id: 'image',
       label: 'Profile image',
       description: hasProfileImage 
-        ? 'Profile has a custom image'
-        : 'No profile image found',
+        ? 'Custom profile image present — can be used for visual comparison'
+        : 'No profile image available for visual verification',
       icon: Image,
       score: imageScore,
       weight: 20,
@@ -110,8 +110,8 @@ export function ConfidenceBreakdown({
       id: 'bio',
       label: 'Profile completeness',
       description: profileFields > 0 
-        ? `Profile includes ${profileFields === 3 ? 'bio, location, and website' : profileFields === 2 ? 'multiple details' : 'some details'}`
-        : 'Minimal profile information',
+        ? `Profile contains ${profileFields === 3 ? 'bio, location, and website link' : profileFields === 2 ? 'multiple identifying details' : 'some identifying information'}`
+        : 'Limited public information on this profile',
       icon: FileText,
       score: bioScore,
       weight: 20,
@@ -125,10 +125,10 @@ export function ConfidenceBreakdown({
     const activityScore = activityCount > 0 ? 40 + (activityCount * 20) : 30;
     result.push({
       id: 'activity',
-      label: 'Activity signals',
+      label: 'Activity indicators',
       description: activityCount > 0 
-        ? `Account shows ${activityCount === 3 ? 'strong activity' : activityCount === 2 ? 'moderate activity' : 'some activity'}`
-        : 'Limited activity data available',
+        ? `Account shows ${activityCount === 3 ? 'consistent activity patterns' : activityCount === 2 ? 'moderate engagement history' : 'some usage indicators'}`
+        : 'Insufficient activity data for analysis',
       icon: Activity,
       score: activityScore,
       weight: 15,
@@ -140,10 +140,10 @@ export function ConfidenceBreakdown({
       id: 'platform',
       label: 'Platform reliability',
       description: platformScore >= 80 
-        ? `${platformName} is a well-established platform`
+        ? `${platformName} is a verified, well-established platform`
         : platformScore >= 60 
-          ? `${platformName} is a known platform`
-          : `${platformName} has limited verification`,
+          ? `${platformName} is a recognised platform with moderate verification`
+          : `${platformName} has limited identity verification processes`,
       icon: Shield,
       score: platformScore,
       weight: 20,
@@ -155,12 +155,12 @@ export function ConfidenceBreakdown({
   // Get overall confidence explanation
   const confidenceExplanation = useMemo(() => {
     if (score >= 80) {
-      return 'Strong match — multiple signals indicate this is likely the same person';
+      return 'High confidence — multiple data points strongly suggest this account belongs to the same individual';
     }
     if (score >= 60) {
-      return 'Moderate match — some signals align but not all data is consistent';
+      return 'Moderate confidence — some indicators align, but additional verification recommended';
     }
-    return 'Weak match — limited evidence to confirm account ownership';
+    return 'Low confidence — insufficient evidence to confirm identity; manual review suggested';
   }, [score]);
 
   return (
@@ -188,7 +188,7 @@ export function ConfidenceBreakdown({
                 <div className="flex items-center gap-1.5 shrink-0">
                   <StatusIcon className={cn('w-3 h-3', color)} />
                   <span className={cn('text-[10px] font-medium', color)}>
-                    {signal.score >= 70 ? 'Strong' : signal.score >= 40 ? 'Partial' : 'Weak'}
+                    {signal.score >= 70 ? 'Confirmed' : signal.score >= 40 ? 'Partial' : 'Insufficient'}
                   </span>
                 </div>
               </div>
@@ -226,42 +226,51 @@ export function ConfidenceTooltipContent({
   hasProfileImage,
 }: Omit<ConfidenceBreakdownProps, 'className'>) {
   const signals = useMemo(() => {
-    const items: { label: string; status: 'strong' | 'partial' | 'weak' }[] = [];
+    const items: { label: string; status: 'confirmed' | 'partial' | 'insufficient' }[] = [];
     
     // Username
     if (username && username.length > 2) {
-      items.push({ label: 'Username match', status: 'strong' });
+      items.push({ label: 'Username match', status: 'confirmed' });
     } else {
-      items.push({ label: 'Username match', status: 'weak' });
+      items.push({ label: 'Username match', status: 'insufficient' });
     }
     
     // Image
     items.push({ 
       label: 'Profile image', 
-      status: hasProfileImage ? 'strong' : 'weak' 
+      status: hasProfileImage ? 'confirmed' : 'insufficient' 
     });
     
     // Bio
     const hasBio = !!(meta.bio || meta.description || meta.about);
     items.push({ 
-      label: 'Bio present', 
-      status: hasBio ? 'strong' : 'weak' 
+      label: 'Profile details', 
+      status: hasBio ? 'confirmed' : 'insufficient' 
     });
     
     // Platform
     const platformScore = getPlatformReliability(platformName);
     items.push({ 
-      label: 'Platform reliability', 
-      status: platformScore >= 80 ? 'strong' : platformScore >= 60 ? 'partial' : 'weak' 
+      label: 'Platform trust', 
+      status: platformScore >= 80 ? 'confirmed' : platformScore >= 60 ? 'partial' : 'insufficient' 
     });
     
     return items;
   }, [username, hasProfileImage, meta, platformName]);
 
+  const getConfidenceLabel = (score: number) => {
+    if (score >= 80) return 'High confidence';
+    if (score >= 60) return 'Moderate confidence';
+    return 'Low confidence — may require manual verification';
+  };
+
   return (
-    <div className="space-y-1.5 min-w-[180px]">
+    <div className="space-y-1.5 min-w-[200px]">
       <div className="font-medium text-[11px]">
-        {score}% confidence — Why?
+        {getConfidenceLabel(score)}
+      </div>
+      <div className="text-[10px] text-muted-foreground mb-1">
+        Based on {signals.filter(s => s.status === 'confirmed').length} of {signals.length} indicators
       </div>
       <div className="space-y-1">
         {signals.map((s, i) => (
@@ -269,17 +278,17 @@ export function ConfidenceTooltipContent({
             <span className="text-foreground/80">{s.label}</span>
             <span className={cn(
               'font-medium',
-              s.status === 'strong' && 'text-green-600 dark:text-green-400',
+              s.status === 'confirmed' && 'text-green-600 dark:text-green-400',
               s.status === 'partial' && 'text-amber-600 dark:text-amber-400',
-              s.status === 'weak' && 'text-muted-foreground'
+              s.status === 'insufficient' && 'text-muted-foreground'
             )}>
-              {s.status === 'strong' ? '✓' : s.status === 'partial' ? '~' : '—'}
+              {s.status === 'confirmed' ? 'Confirmed' : s.status === 'partial' ? 'Partial' : 'Insufficient'}
             </span>
           </div>
         ))}
       </div>
       <div className="text-[9px] text-muted-foreground pt-1 border-t border-border/30">
-        Expand row for full breakdown
+        Expand for detailed analysis
       </div>
     </div>
   );

@@ -46,8 +46,8 @@ export function NextStepsPanel({
   if (breachCount > 0) {
     steps.push({
       id: 'breaches',
-      label: 'Review breach exposures',
-      description: `${breachCount} credential ${breachCount === 1 ? 'leak needs' : 'leaks need'} attention`,
+      label: 'Investigate breach exposures',
+      description: `${breachCount} compromised credential${breachCount === 1 ? '' : 's'} require${breachCount === 1 ? 's' : ''} immediate review`,
       icon: FileWarning,
       priority: 'primary',
       action: onNavigateToBreaches,
@@ -58,8 +58,8 @@ export function NextStepsPanel({
   if (accountsFound > 0 && verifiedCount < Math.min(3, accountsFound)) {
     steps.push({
       id: 'verify',
-      label: 'LENS verify key accounts',
-      description: 'Confirm ownership with forensic analysis',
+      label: 'Confirm account ownership',
+      description: 'Run LENS verification on priority accounts',
       icon: Sparkles,
       priority: breachCount > 0 ? 'secondary' : 'primary',
       action: onNavigateToAccounts,
@@ -70,8 +70,8 @@ export function NextStepsPanel({
   if (accountsFound > 0 && !hasFocusedEntity) {
     steps.push({
       id: 'focus',
-      label: 'Focus on an entity',
-      description: 'Select a primary account to investigate',
+      label: 'Select primary entity',
+      description: 'Focus investigation on a specific account',
       icon: Crosshair,
       priority: 'secondary',
       action: onNavigateToAccounts,
@@ -82,8 +82,8 @@ export function NextStepsPanel({
   if (accountsFound > 2) {
     steps.push({
       id: 'connections',
-      label: 'Review connections',
-      description: 'Map relationships between accounts',
+      label: 'Analyse account relationships',
+      description: 'Map connections between discovered profiles',
       icon: Network,
       priority: 'secondary',
       action: onNavigateToConnections,
@@ -94,8 +94,8 @@ export function NextStepsPanel({
   if (accountsFound > 0 && onExport) {
     steps.push({
       id: 'export',
-      label: 'Export report',
-      description: 'Download findings for documentation',
+      label: 'Generate report',
+      description: 'Export findings for documentation or review',
       icon: Download,
       priority: 'secondary',
       action: onExport,

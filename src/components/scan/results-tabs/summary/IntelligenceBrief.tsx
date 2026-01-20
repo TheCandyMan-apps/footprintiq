@@ -66,20 +66,20 @@ export function IntelligenceBrief({
   // Generate the plain-English summary (2-3 sentences)
   const summary = useMemo(() => {
     if (accountsFound === 0) {
-      return `No active accounts were found for "${username}". This may indicate a low digital footprint or use of alternate identifiers.`;
+      return `No public profiles were discovered for "${username}". This may indicate minimal online presence or use of different identifiers.`;
     }
     
     const presenceLevel = accountsFound > 15 ? 'extensive' : accountsFound > 8 ? 'significant' : accountsFound > 3 ? 'moderate' : 'limited';
-    let text = `The identifier "${username}" shows ${presenceLevel} online presence across ${accountsFound} platform${accountsFound !== 1 ? 's' : ''}.`;
+    let text = `Investigation identified ${presenceLevel} online presence for "${username}" across ${accountsFound} public platform${accountsFound !== 1 ? 's' : ''}.`;
     
     if (breachCount > 0) {
-      text += ` ${breachCount} breach exposure${breachCount !== 1 ? 's were' : ' was'} detected, requiring immediate review.`;
+      text += ` ${breachCount} data breach exposure${breachCount !== 1 ? 's were' : ' was'} discovered, requiring immediate attention.`;
     } else if (accountsFound > 5) {
-      text += ' No known breach exposures were identified.';
+      text += ' No known data breach exposures were identified in public records.';
     }
     
     if (reuseScore >= 70 && accountsFound > 4) {
-      text += ' High identifier consistency suggests these accounts belong to the same individual.';
+      text += ' High identifier consistency indicates these accounts likely belong to the same individual.';
     }
     
     return text;
@@ -93,7 +93,7 @@ export function IntelligenceBrief({
     if (breachCount > 0) {
       findings.push({
         id: 'breach',
-        text: `${breachCount} breach exposure${breachCount !== 1 ? 's' : ''} — credentials may be compromised`,
+        text: `${breachCount} data breach exposure${breachCount !== 1 ? 's' : ''} discovered — credentials may be compromised`,
         confidence: 'high',
         severity: 'critical',
         icon: AlertTriangle,
@@ -106,7 +106,7 @@ export function IntelligenceBrief({
       const confidence = accountsFound > 10 ? 'high' : accountsFound > 4 ? 'medium' : 'low';
       findings.push({
         id: 'presence',
-        text: `Active on ${accountsFound} platform${accountsFound !== 1 ? 's' : ''} including ${getTopPlatforms(platformsCount)}`,
+        text: `Public profiles discovered on ${accountsFound} platform${accountsFound !== 1 ? 's' : ''}`,
         confidence,
         icon: Globe,
         deepLink: { tab: 'accounts' },
@@ -117,7 +117,7 @@ export function IntelligenceBrief({
     if (reuseScore >= 50 && accountsFound > 2) {
       findings.push({
         id: 'correlation',
-        text: `${reuseScore}% identifier correlation — ${reuseScore >= 70 ? 'strong' : 'moderate'} account linkage`,
+        text: `${reuseScore}% identifier correlation — ${reuseScore >= 70 ? 'high likelihood' : 'moderate likelihood'} of same individual`,
         confidence: reuseScore >= 70 ? 'high' : 'medium',
         icon: Fingerprint,
         deepLink: { tab: 'connections' },
@@ -128,7 +128,7 @@ export function IntelligenceBrief({
     if (aliases.length > 0) {
       findings.push({
         id: 'aliases',
-        text: `${aliases.length} alternate identifier${aliases.length !== 1 ? 's' : ''}: ${aliases.slice(0, 2).join(', ')}${aliases.length > 2 ? '…' : ''}`,
+        text: `${aliases.length} alternate name${aliases.length !== 1 ? 's' : ''} identified: ${aliases.slice(0, 2).join(', ')}${aliases.length > 2 ? '…' : ''}`,
         confidence: 'medium',
         icon: Users,
         deepLink: { tab: 'accounts' },
@@ -139,7 +139,7 @@ export function IntelligenceBrief({
     if (verifiedCount > 0) {
       findings.push({
         id: 'verified',
-        text: `${verifiedCount} account${verifiedCount !== 1 ? 's' : ''} LENS verified`,
+        text: `${verifiedCount} account${verifiedCount !== 1 ? 's' : ''} identity confirmed via LENS`,
         confidence: 'high',
         icon: Shield,
         deepLink: { tab: 'accounts', filter: 'verified' },
@@ -150,7 +150,7 @@ export function IntelligenceBrief({
     if (findings.length === 0) {
       findings.push({
         id: 'limited',
-        text: 'Limited digital footprint detected for this identifier',
+        text: 'No public information available for this identifier',
         confidence: 'low',
         icon: User,
       });
