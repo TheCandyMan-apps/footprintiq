@@ -178,42 +178,42 @@ export function IntelligenceBrief({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2.5">
       {/* Section: What We Found */}
       <section>
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-          <Shield className="w-3 h-3" />
+        <h3 className="text-[9px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-1 flex items-center gap-1">
+          <Shield className="w-2.5 h-2.5" />
           What We Found
         </h3>
         
-        {/* Profile images strip - inline with summary */}
-        <div className="flex gap-3">
+        {/* Profile images + summary inline */}
+        <div className="flex gap-2">
           {profileImages.length > 0 && (
-            <div className="flex -space-x-2 shrink-0">
+            <div className="flex -space-x-1.5 shrink-0">
               {profileImages.slice(0, 3).map((img, idx) => (
                 <img
                   key={idx}
                   src={img}
                   alt=""
-                  className="w-8 h-8 rounded-full border-2 border-background object-cover"
+                  className="w-6 h-6 rounded-full border border-background object-cover"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />
               ))}
             </div>
           )}
-          <p className="text-[13px] leading-relaxed text-foreground/90">
+          <p className="text-[11px] leading-relaxed text-foreground/85">
             {summary}
           </p>
         </div>
       </section>
 
-      {/* Section: Key Findings */}
+      {/* Section: Key Findings - Compact list */}
       <section>
-        <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-          <AlertTriangle className="w-3 h-3" />
+        <h3 className="text-[9px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-1 flex items-center gap-1">
+          <AlertTriangle className="w-2.5 h-2.5" />
           Key Findings
         </h3>
-        <div className="space-y-0.5">
+        <div className="space-y-px">
           {keyFindings.map((finding) => {
             const conf = confidenceConfig[finding.confidence];
             const ConfIcon = conf.icon;
@@ -224,9 +224,9 @@ export function IntelligenceBrief({
               <div 
                 key={finding.id} 
                 className={cn(
-                  "group flex items-center gap-2 py-1.5 px-2 -mx-2 rounded transition-colors",
-                  finding.severity === 'critical' && 'bg-destructive/5',
-                  hasLink && 'hover:bg-muted/30 cursor-pointer'
+                  "group flex items-center gap-1.5 py-1 px-1.5 -mx-1.5 rounded transition-colors",
+                  finding.severity === 'critical' && 'bg-destructive/4',
+                  hasLink && 'hover:bg-muted/20 cursor-pointer'
                 )}
                 onClick={() => hasLink && handleFindingClick(finding)}
                 role={hasLink ? 'button' : undefined}
@@ -238,32 +238,28 @@ export function IntelligenceBrief({
                   }
                 }}
               >
-                {/* Finding icon */}
                 <FindingIcon className={cn(
-                  "w-3.5 h-3.5 shrink-0",
-                  finding.severity === 'critical' ? 'text-destructive' : 'text-muted-foreground'
+                  "w-3 h-3 shrink-0",
+                  finding.severity === 'critical' ? 'text-destructive' : 'text-muted-foreground/70'
                 )} />
                 
-                {/* Finding text */}
                 <span className={cn(
-                  "flex-1 text-[12px] leading-snug",
-                  finding.severity === 'critical' ? 'text-destructive font-medium' : 'text-foreground/85'
+                  "flex-1 text-[11px] leading-tight",
+                  finding.severity === 'critical' ? 'text-destructive font-medium' : 'text-foreground/80'
                 )}>
                   {finding.text}
                 </span>
                 
-                {/* Confidence badge */}
                 <Badge 
                   variant="outline" 
-                  className={cn('h-4 px-1.5 text-[9px] shrink-0 gap-0.5', conf.className)}
+                  className={cn('h-3.5 px-1 text-[8px] shrink-0 gap-0.5', conf.className)}
                 >
                   <ConfIcon className="w-2 h-2" />
                   {conf.label}
                 </Badge>
                 
-                {/* Link indicator */}
                 {hasLink && (
-                  <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <ChevronRight className="w-2.5 h-2.5 text-muted-foreground/40 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                 )}
               </div>
             );

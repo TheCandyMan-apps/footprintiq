@@ -279,35 +279,35 @@ export function AccountRow({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={onToggleExpand}>
-      {/* Main Row - Profile investigation style */}
+      {/* Main Row - Compact investigation style */}
       <div 
         className={cn(
-          'flex items-center gap-3 px-3 py-2.5 min-h-[72px] max-h-[88px] border-l-2 transition-all duration-100 cursor-pointer group',
-          'border-b border-border/20 last:border-b-0',
-          !isFocused && !isExpanded && 'border-l-transparent hover:border-l-primary/30 hover:bg-muted/10',
-          isExpanded && !isFocused && 'bg-muted/10 border-l-muted-foreground/20',
-          isFocused && 'bg-primary/5 border-l-primary'
+          'flex items-center gap-2 px-2 py-1.5 min-h-[52px] border-l-2 transition-all duration-75 cursor-pointer group',
+          'border-b border-border/15 last:border-b-0',
+          !isFocused && !isExpanded && 'border-l-transparent hover:border-l-primary/20 hover:bg-muted/8',
+          isExpanded && !isFocused && 'bg-muted/6 border-l-muted-foreground/15',
+          isFocused && 'bg-primary/4 border-l-primary'
         )}
         onClick={onToggleExpand}
       >
         {/* LEFT: Platform Icon + Profile Thumbnail */}
         <div className="relative shrink-0">
-          {/* Platform favicon badge - positioned top-left */}
-          <div className="absolute -top-1 -left-1 z-10 w-4 h-4 rounded-sm bg-background border border-border/50 shadow-sm flex items-center justify-center">
+          {/* Platform favicon badge */}
+          <div className="absolute -top-0.5 -left-0.5 z-10 w-3 h-3 rounded-sm bg-background border border-border/40 flex items-center justify-center">
             {!faviconError ? (
               <img 
                 src={`https://www.google.com/s2/favicons?domain=${getPlatformDomain(platformName, profileUrl)}&sz=16`}
                 alt=""
-                className="w-2.5 h-2.5"
+                className="w-2 h-2"
                 onError={() => setFaviconError(true)}
               />
             ) : (
-              <Globe className="w-2.5 h-2.5 text-muted-foreground" />
+              <Globe className="w-2 h-2 text-muted-foreground" />
             )}
           </div>
           
-          {/* Profile thumbnail - larger for investigation feel */}
-          <div className="w-11 h-11 rounded-lg overflow-hidden bg-muted/30 border border-border/40 relative">
+          {/* Profile thumbnail - compact */}
+          <div className="w-9 h-9 rounded overflow-hidden bg-muted/20 border border-border/30 relative">
             {profileImage ? (
               <img 
                 src={profileImage} 
@@ -322,11 +322,11 @@ export function AccountRow({
             ) : null}
             <div 
               className={cn(
-                'absolute inset-0 flex items-center justify-center bg-primary/5',
+                'absolute inset-0 flex items-center justify-center bg-primary/4',
                 profileImage ? 'hidden' : 'flex'
               )}
             >
-              <span className="text-sm font-semibold text-primary/50">
+              <span className="text-[11px] font-semibold text-primary/40">
                 {getInitials(username || platformName)}
               </span>
             </div>
@@ -334,72 +334,51 @@ export function AccountRow({
         </div>
 
         {/* CENTER: Platform + Username + Bio */}
-        <div className="flex-1 min-w-0 py-0.5">
+        <div className="flex-1 min-w-0">
           {/* Primary line: Platform name + username */}
-          <div className="flex items-center gap-1.5 leading-none mb-1">
-            <span className="font-semibold text-[13px] text-foreground truncate">{platformName}</span>
+          <div className="flex items-center gap-1 leading-none mb-0.5">
+            <span className="font-semibold text-[12px] text-foreground truncate">{platformName}</span>
             {username && (
-              <span className="text-muted-foreground text-[12px] truncate">@{username}</span>
+              <span className="text-muted-foreground/70 text-[10px] truncate">@{username}</span>
             )}
             {claimStatus && (
-              <TooltipProvider delayDuration={200}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className={cn(
-                      'w-1.5 h-1.5 rounded-full shrink-0',
-                      claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500'
-                    )} />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="text-[10px]">
-                    {claimStatus === 'me' ? 'Claimed as yours' : 'Marked as not you'}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <span className={cn(
+                'w-1 h-1 rounded-full shrink-0',
+                claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500'
+              )} />
             )}
           </div>
           
           {/* Secondary line: Bio snippet */}
-          <TooltipProvider delayDuration={400}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <p className={cn(
-                  "text-[11px] leading-snug truncate max-w-md",
-                  bio ? "text-muted-foreground" : "text-muted-foreground/50 italic"
-                )}>
-                  {bio || "No public bio available"}
-                </p>
-              </TooltipTrigger>
-              {fullBio && fullBio.length > 80 && (
-                <TooltipContent side="bottom" className="max-w-xs text-[11px]">
-                  {fullBio}
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </TooltipProvider>
+          <p className={cn(
+            "text-[10px] leading-snug truncate max-w-sm",
+            bio ? "text-muted-foreground/70" : "text-muted-foreground/40 italic"
+          )}>
+            {bio || "No public bio available"}
+          </p>
         </div>
 
-        {/* RIGHT: Badges + Actions - clear separation with divider */}
-        <div className="flex items-center gap-2 shrink-0 pl-2 border-l border-border/20">
-          {/* Confidence Badge with explainable tooltip */}
+        {/* RIGHT: Badges + Actions - compact */}
+        <div className="flex items-center gap-1.5 shrink-0 pl-1.5 border-l border-border/15">
+          {/* Confidence Badge */}
           <Popover>
             <PopoverTrigger asChild>
               <Badge 
                 variant="outline" 
                 className={cn(
-                  'h-6 px-2 gap-1 text-[10px] font-medium cursor-pointer hover:opacity-80 transition-opacity',
+                  'h-5 px-1.5 gap-0.5 text-[9px] font-medium cursor-pointer hover:opacity-80 transition-opacity',
                   confidence.bg, confidence.text, confidence.border
                 )}
               >
-                <ConfidenceIcon className="w-3 h-3" />
-                <span className="hidden sm:inline">{confidence.label}</span>
-                <span className="sm:hidden">{confidence.shortLabel}</span>
-                <Info className="w-2.5 h-2.5 opacity-60 ml-0.5" />
+                <ConfidenceIcon className="w-2.5 h-2.5" />
+                <span className="hidden sm:inline">{confidence.shortLabel}</span>
+                <Info className="w-2 h-2 opacity-50" />
               </Badge>
             </PopoverTrigger>
             <PopoverContent 
               side="top" 
               align="end" 
-              className="w-auto p-2.5"
+              className="w-auto p-2"
               onClick={(e) => e.stopPropagation()}
             >
               <ConfidenceTooltipContent

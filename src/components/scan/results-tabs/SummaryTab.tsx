@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, Mail, Phone, Globe, Clock, CheckCircle2, FileText } from 'lucide-react';
 import { format } from 'date-fns';
@@ -149,94 +148,88 @@ export function SummaryTab({
   const TypeIcon = config.icon;
 
   return (
-    <div className="space-y-2">
-      {/* Brief Header - Minimal scan identifier */}
-      <div className="flex items-center justify-between gap-3 px-1 py-1.5 border-b border-border/20">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-6 h-6 rounded bg-muted/50 flex items-center justify-center shrink-0">
-            <TypeIcon className="h-3 w-3 text-muted-foreground" />
+    <div className="space-y-1.5">
+      {/* Brief Header - Compact scan identifier */}
+      <div className="flex items-center justify-between gap-2 px-0.5 py-1 border-b border-border/15">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <div className="w-5 h-5 rounded bg-muted/40 flex items-center justify-center shrink-0">
+            <TypeIcon className="h-2.5 w-2.5 text-muted-foreground" />
           </div>
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-[13px] font-semibold truncate">{job?.username || 'Unknown'}</span>
-            <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 font-normal uppercase tracking-wide">
-              {config.label}
-            </Badge>
-            {aliases.length > 0 && (
-              <span className="text-[10px] text-muted-foreground hidden sm:inline">
-                aka {aliases.slice(0, 2).join(', ')}
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
-          {scanComplete && (
-            <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-              <CheckCircle2 className="w-3 h-3" />
+          <span className="text-[12px] font-semibold truncate">{job?.username || 'Unknown'}</span>
+          <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3.5 font-normal uppercase tracking-wide">
+            {config.label}
+          </Badge>
+          {aliases.length > 0 && (
+            <span className="text-[9px] text-muted-foreground/70 hidden sm:inline">
+              aka {aliases.slice(0, 2).join(', ')}
             </span>
           )}
+        </div>
+        <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground/60 shrink-0">
+          {scanComplete && (
+            <CheckCircle2 className="w-2.5 h-2.5 text-green-600 dark:text-green-400" />
+          )}
           {formattedTime && (
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
+            <span className="flex items-center gap-0.5">
+              <Clock className="w-2.5 h-2.5" />
               <span className="hidden sm:inline">{formattedTime}</span>
             </span>
           )}
         </div>
       </div>
 
-      {/* Intelligence Brief Card */}
-      <Card className="border-border/30">
-        <CardContent className="p-3 space-y-4">
-          {/* 1) What We Found - plain English summary */}
-          <IntelligenceBrief
-            username={job?.username || 'Unknown'}
-            accountsFound={grouped.found.length}
-            platformsCount={platforms.length}
-            breachCount={breachCount}
-            reuseScore={reuseScore}
-            aliases={aliases}
-            scanComplete={scanComplete}
-            profileImages={profileImages}
-            verifiedCount={verifiedEntities.size}
+      {/* Intelligence Brief - Compact card */}
+      <div className="border border-border/20 rounded bg-card p-2.5 space-y-3">
+        {/* 1) What We Found */}
+        <IntelligenceBrief
+          username={job?.username || 'Unknown'}
+          accountsFound={grouped.found.length}
+          platformsCount={platforms.length}
+          breachCount={breachCount}
+          reuseScore={reuseScore}
+          aliases={aliases}
+          scanComplete={scanComplete}
+          profileImages={profileImages}
+          verifiedCount={verifiedEntities.size}
+        />
+
+        {/* 2) Focused Entity (if active) */}
+        {focusedResult && (
+          <FocusedEntityBanner
+            result={focusedResult}
+            onView={handleViewFocused}
+            onClear={handleClearFocus}
           />
+        )}
 
-          {/* 2) Focused Entity (if active) */}
-          {focusedResult && (
-            <FocusedEntityBanner
-              result={focusedResult}
-              onView={handleViewFocused}
-              onClear={handleClearFocus}
-            />
-          )}
+        {/* 3) Recommended Next Steps */}
+        <NextStepsPanel
+          accountsFound={grouped.found.length}
+          breachCount={breachCount}
+          hasFocusedEntity={!!focusedEntityId}
+          verifiedCount={verifiedEntities.size}
+          onNavigateToAccounts={() => navigateToTab('accounts')}
+          onNavigateToConnections={() => navigateToTab('connections')}
+          onNavigateToBreaches={() => navigateToTab('breaches')}
+          onExport={onExportPDF}
+        />
+      </div>
 
-          {/* 3) Recommended Next Steps */}
-          <NextStepsPanel
-            accountsFound={grouped.found.length}
-            breachCount={breachCount}
-            hasFocusedEntity={!!focusedEntityId}
-            verifiedCount={verifiedEntities.size}
-            onNavigateToAccounts={() => navigateToTab('accounts')}
-            onNavigateToConnections={() => navigateToTab('connections')}
-            onNavigateToBreaches={() => navigateToTab('breaches')}
-            onExport={onExportPDF}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Compact Footer Stats */}
-      <div className="flex items-center justify-between px-1 py-1 text-[10px] text-muted-foreground/60">
-        <div className="flex items-center gap-3">
-          <span><strong className="text-foreground/70">{grouped.found.length}</strong> accounts</span>
-          <span><strong className="text-foreground/70">{platforms.length}</strong> platforms</span>
+      {/* Compact Footer Stats - Inline */}
+      <div className="flex items-center justify-between px-0.5 text-[9px] text-muted-foreground/50">
+        <div className="flex items-center gap-2">
+          <span><strong className="text-foreground/60">{grouped.found.length}</strong> accounts</span>
+          <span><strong className="text-foreground/60">{platforms.length}</strong> platforms</span>
           {breachCount > 0 && (
-            <span className="text-destructive/80"><strong>{breachCount}</strong> breaches</span>
+            <span className="text-destructive/70"><strong>{breachCount}</strong> breaches</span>
           )}
           {verifiedEntities.size > 0 && (
-            <span className="text-green-600/80 dark:text-green-400/80"><strong>{verifiedEntities.size}</strong> verified</span>
+            <span className="text-green-600/70 dark:text-green-400/70"><strong>{verifiedEntities.size}</strong> verified</span>
           )}
         </div>
-        <span className="flex items-center gap-1">
-          <FileText className="w-3 h-3" />
-          {resultsCount} results
+        <span className="flex items-center gap-0.5">
+          <FileText className="w-2.5 h-2.5" />
+          {resultsCount}
         </span>
       </div>
     </div>

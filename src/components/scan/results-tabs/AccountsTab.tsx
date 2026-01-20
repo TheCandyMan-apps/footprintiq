@@ -1,5 +1,4 @@
 import { useMemo, useState, useCallback } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Filter, User, ArrowUpDown } from 'lucide-react';
@@ -196,61 +195,61 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
         counts={filterCounts}
       />
 
-      {/* Search + Sort Controls */}
-      <div className="flex flex-col sm:flex-row gap-1.5">
+      {/* Search + Sort Controls - Compact */}
+      <div className="flex flex-col sm:flex-row gap-1">
         <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+          <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 h-2.5 w-2.5 text-muted-foreground" />
           <Input
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-7 pl-7 text-[12px]"
+            className="h-6 pl-6 text-[11px]"
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-7 w-full sm:w-[110px] text-[11px]">
-            <Filter className="h-2.5 w-2.5 mr-1" />
+          <SelectTrigger className="h-6 w-full sm:w-[100px] text-[10px]">
+            <Filter className="h-2 w-2 mr-1" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-[11px]">All ({results.length})</SelectItem>
-            <SelectItem value="found" className="text-[11px]">Found ({statusCounts.found})</SelectItem>
-            <SelectItem value="claimed" className="text-[11px]">Claimed ({statusCounts.claimed})</SelectItem>
-            <SelectItem value="not_found" className="text-[11px]">Not Found ({statusCounts.not_found})</SelectItem>
+            <SelectItem value="all" className="text-[10px]">All ({results.length})</SelectItem>
+            <SelectItem value="found" className="text-[10px]">Found ({statusCounts.found})</SelectItem>
+            <SelectItem value="claimed" className="text-[10px]">Claimed ({statusCounts.claimed})</SelectItem>
+            <SelectItem value="not_found" className="text-[10px]">Not Found ({statusCounts.not_found})</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
-          <SelectTrigger className="h-7 w-full sm:w-[100px] text-[11px]">
-            <ArrowUpDown className="h-2.5 w-2.5 mr-1" />
+          <SelectTrigger className="h-6 w-full sm:w-[90px] text-[10px]">
+            <ArrowUpDown className="h-2 w-2 mr-1" />
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="confidence" className="text-[11px]">Confidence</SelectItem>
-            <SelectItem value="platform" className="text-[11px]">Platform</SelectItem>
-            <SelectItem value="status" className="text-[11px]">Status</SelectItem>
+            <SelectItem value="confidence" className="text-[10px]">Confidence</SelectItem>
+            <SelectItem value="platform" className="text-[10px]">Platform</SelectItem>
+            <SelectItem value="status" className="text-[10px]">Status</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      {/* Quick Stats - inline */}
-      <div className="flex items-center gap-1.5 text-[11px]">
-        <Badge variant="default" className="h-4 px-1.5 text-[10px] bg-green-600 hover:bg-green-600">
+      {/* Inline Stats - Minimal */}
+      <div className="flex items-center gap-1 text-[10px]">
+        <span className="px-1.5 py-0.5 rounded bg-green-600/10 text-green-600 dark:text-green-400 font-medium">
           {statusCounts.found} found
-        </Badge>
-        <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
+        </span>
+        <span className="text-muted-foreground/50">
           {statusCounts.claimed} claimed
-        </Badge>
-        <span className="text-muted-foreground/60 ml-auto text-[10px]">
+        </span>
+        <span className="text-muted-foreground/40 ml-auto text-[9px]">
           {filteredResults.length}/{results.length}
         </span>
       </div>
 
-      {/* Account Rows - Compact feed */}
-      <div className="border border-border/30 rounded-md overflow-hidden bg-card">
+      {/* Account Rows - Dense feed */}
+      <div className="border border-border/20 rounded overflow-hidden bg-card">
         {filteredResults.length === 0 ? (
-          <div className="p-6 text-center">
-            <User className="w-6 h-6 mx-auto text-muted-foreground/40 mb-1.5" />
-            <p className="text-[12px] text-muted-foreground">
+          <div className="p-4 text-center">
+            <User className="w-5 h-5 mx-auto text-muted-foreground/30 mb-1" />
+            <p className="text-[11px] text-muted-foreground/60">
               {searchQuery || statusFilter !== 'all' || quickFilter !== 'all' ? 'No matches' : 'No accounts found'}
             </p>
           </div>
