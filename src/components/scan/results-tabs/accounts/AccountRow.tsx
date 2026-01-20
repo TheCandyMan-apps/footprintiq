@@ -170,32 +170,60 @@ const getInitials = (name: string): string => {
 const extractUsername = (result: ScanResult): string | null => {
   const meta = (result.meta || result.metadata || {}) as Record<string, any>;
   
-  // Prefer explicit metadata fields
-  if (meta.username && meta.username !== 'user') return meta.username;
-  if (meta.handle && meta.handle !== 'user') return meta.handle;
-  if (meta.screen_name && meta.screen_name !== 'user') return meta.screen_name;
-  if (meta.display_name) return meta.display_name;
-  if (meta.name) return meta.name;
+  // Generic patterns to filter out
+  const genericPatterns = ['user', 'profile', 'users', 'people', 'account', 'member', 'id', 'u', 'p', 'unknown'];
+  const isGeneric = (val: string | undefined) => {
+    if (!val) return true;
+    const lower = val.toLowerCase().trim();
+    return lower.length < 2 || genericPatterns.includes(lower) || lower === '@user';
+  };
   
-  // Try to extract from URL path - but filter out generic patterns
+  // Prefer explicit metadata fields
+  if (!isGeneric(meta.username)) return meta.username;
+  if (!isGeneric(meta.handle)) return meta.handle;
+  if (!isGeneric(meta.screen_name)) return meta.screen_name;
+  if (!isGeneric(meta.display_name)) return meta.display_name;
+  if (!isGeneric(meta.name)) return meta.name;
+  if (!isGeneric(meta.login)) return meta.login; // GitHub style
+  if (!isGeneric(meta.user)) return meta.user;
+  
+  // Try to extract from URL path
   const url = extractUrl(result);
   if (url) {
     try {
       const pathname = new URL(url).pathname;
       const parts = pathname.split('/').filter(Boolean);
-      if (parts.length > 0) {
-        const candidate = parts[parts.length - 1]; // Get last segment
-        // Filter out generic/useless usernames
-        const genericPatterns = ['user', 'profile', 'users', 'people', 'account', 'member', 'id', 'u', 'p'];
-        if (!genericPatterns.includes(candidate.toLowerCase()) && candidate.length > 1) {
-          return candidate;
-        }
-        // Try first segment as fallback
-        if (parts.length > 1 && !genericPatterns.includes(parts[0].toLowerCase()) && parts[0].length > 1) {
-          return parts[0];
+      
+      // Try each path segment, preferring the one that looks like a username
+      for (const part of parts) {
+        const cleaned = part.replace(/[?#].*$/, ''); // Remove query/hash
+        if (!isGeneric(cleaned) && cleaned.length >= 2 && cleaned.length <= 30) {
+          // Skip numeric-only or file-like segments
+          if (!/^\d+$/.test(cleaned) && !/\.\w{2,4}$/.test(cleaned)) {
+            return cleaned;
+          }
         }
       }
     } catch {}
+  }
+  
+  return null;
+};
+
+const extractBioText = (result: ScanResult): string | null => {
+  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
+  
+  // Check various bio fields - prioritize actual user content
+  const bioFields = [meta.bio, meta.about, meta.summary, meta.headline, meta.tagline];
+  for (const bio of bioFields) {
+    if (bio && typeof bio === 'string' && !isGenericDescription(bio)) {
+      return bio;
+    }
+  }
+  
+  // Description is lower priority as it's often system-generated
+  if (meta.description && !isGenericDescription(meta.description)) {
+    return meta.description;
   }
   
   return null;
@@ -212,22 +240,14 @@ const isGenericDescription = (text: string): boolean => {
 };
 
 const extractBio = (result: ScanResult): string | null => {
+  const bio = extractBioText(result);
+  if (bio) {
+    return bio.length > 80 ? bio.slice(0, 77) + '…' : bio;
+  }
+  
+  // Try location as fallback context
   const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  
-  // Check various bio fields
-  const bioFields = [meta.bio, meta.about, meta.summary, meta.headline, meta.tagline];
-  for (const bio of bioFields) {
-    if (bio && typeof bio === 'string' && !isGenericDescription(bio)) {
-      return bio.length > 80 ? bio.slice(0, 77) + '…' : bio;
-    }
-  }
-  
-  if (meta.description && !isGenericDescription(meta.description)) {
-    return meta.description.length > 80 ? meta.description.slice(0, 77) + '…' : meta.description;
-  }
-  
-  // Try location or other context as fallback
-  if (meta.location && meta.location !== 'Unknown') {
+  if (meta.location && meta.location !== 'Unknown' && meta.location.toLowerCase() !== 'unknown') {
     return `📍 ${meta.location}`;
   }
   
@@ -235,16 +255,7 @@ const extractBio = (result: ScanResult): string | null => {
 };
 
 const extractFullBio = (result: ScanResult): string | null => {
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  
-  const bioFields = [meta.bio, meta.about, meta.summary, meta.headline, meta.tagline];
-  for (const bio of bioFields) {
-    if (bio && typeof bio === 'string' && !isGenericDescription(bio)) return bio;
-  }
-  
-  if (meta.description && !isGenericDescription(meta.description)) return meta.description;
-  
-  return null;
+  return extractBioText(result);
 };
 
 export function AccountRow({
@@ -349,13 +360,16 @@ export function AccountRow({
             )}
           </div>
           
-          {/* Secondary line: Bio snippet */}
-          <p className={cn(
-            "text-[10px] leading-snug truncate max-w-sm",
-            bio ? "text-muted-foreground/70" : "text-muted-foreground/40 italic"
-          )}>
-            {bio || "No public bio available"}
-          </p>
+          {/* Secondary line: Bio snippet or URL hint */}
+          {bio ? (
+            <p className="text-[10px] leading-snug truncate max-w-sm text-muted-foreground/70">
+              {bio}
+            </p>
+          ) : profileUrl ? (
+            <p className="text-[10px] leading-snug truncate max-w-sm text-muted-foreground/40">
+              {new URL(profileUrl).hostname.replace('www.', '')}
+            </p>
+          ) : null}
         </div>
 
         {/* RIGHT: Badges + Actions - compact */}
