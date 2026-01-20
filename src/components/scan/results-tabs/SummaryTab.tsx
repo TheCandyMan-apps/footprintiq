@@ -1,18 +1,17 @@
 import { useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useLensAnalysis } from '@/hooks/useLensAnalysis';
-import { useScanNarrative } from '@/hooks/useScanNarrative';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { User, Mail, Phone, Globe, Clock, CheckCircle2 } from 'lucide-react';
+import { format } from 'date-fns';
+
 import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { useInvestigation } from '@/contexts/InvestigationContext';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Crosshair, X, ExternalLink } from 'lucide-react';
 
-import { IdentitySnapshotCard } from './summary/IdentitySnapshotCard';
-import { CompactStatsCard } from './summary/CompactStatsCard';
+import { IntelligenceBrief } from './summary/IntelligenceBrief';
+import { NextStepsPanel } from './summary/NextStepsPanel';
+import { FocusedEntityBanner } from './summary/FocusedEntityBanner';
 import { ProfileImagesStrip } from './summary/ProfileImagesStrip';
-import { ScanNarrativeFeed } from './summary/ScanNarrativeFeed';
-import { KeyFindingsPanel, generateKeyFindings } from './summary/KeyFindingsPanel';
 import { SummaryActions } from './summary/SummaryActions';
 import { VerificationStatusCard } from './summary/VerificationStatusCard';
 
@@ -48,7 +47,7 @@ function getProfileImages(results: any[]): string[] {
     if (meta.profile_image) images.push(meta.profile_image);
     if (meta.image) images.push(meta.image);
   });
-  return images.filter(url => url && url.startsWith('http')).slice(0, 8);
+  return images.filter(url => url && url.startsWith('http')).slice(0, 6);
 }
 
 function calculateReuseScore(found: number, platforms: number): number {
@@ -68,9 +67,8 @@ export function SummaryTab({
 }: SummaryTabProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const lensAnalysis = useLensAnalysis(results);
   
-  // Get focus and verification state from investigation context
+  // Investigation context
   let focusedEntityId: string | null = null;
   let setFocusedEntity: ((id: string | null) => void) | null = null;
   let verifiedEntities: Map<string, any> = new Map();
@@ -81,29 +79,17 @@ export function SummaryTab({
     setFocusedEntity = investigation.setFocusedEntity;
     verifiedEntities = investigation.verifiedEntities;
   } catch {
-    // Context not available - no focus state
+    // Context not available
   }
 
-  // Find the focused result details
   const focusedResult = useMemo(() => {
     if (!focusedEntityId) return null;
     return results.find(r => r.id === focusedEntityId) || null;
   }, [focusedEntityId, results]);
 
-  const handleClearFocus = () => {
-    setFocusedEntity?.(null);
-  };
-
-  const handleViewFocused = () => {
-    const params = new URLSearchParams(location.search);
-    params.set('tab', 'accounts');
-    params.set('focus', focusedEntityId || '');
-    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
-  };
-  
   const platforms = useMemo(() => getUniquePlatforms(results), [results]);
   const profileImages = useMemo(() => getProfileImages(results), [results]);
-  
+
   const breachCount = useMemo(() => {
     return results.filter((r: any) => {
       const kind = (r.kind || '').toLowerCase();
@@ -131,120 +117,158 @@ export function SummaryTab({
     return Array.from(aliasSet).slice(0, 5);
   }, [results, job?.username]);
 
-  // Scan narrative from events
-  const narrative = useScanNarrative(jobId, job?.username || '', 'username');
+  const scanComplete = (job?.status || '').toLowerCase().includes('complete');
+  const scanTime = job?.finished_at || job?.started_at;
+  const formattedTime = scanTime ? format(new Date(scanTime), 'MMM d, yyyy • HH:mm') : null;
 
-  // Key findings
-  const keyFindings = useMemo(() => 
-    generateKeyFindings(grouped.found.length, platforms.length, breachCount, reuseScore, aliases),
-    [grouped.found.length, platforms.length, breachCount, reuseScore, aliases]
-  );
+  // Navigation helpers
+  const navigateToTab = (tab: string) => {
+    const params = new URLSearchParams(location.search);
+    params.set('tab', tab);
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+  };
 
-  // Calculate scan duration
-  const scanDuration = useMemo(() => {
-    if (job?.started_at && job?.finished_at) {
-      return new Date(job.finished_at).getTime() - new Date(job.started_at).getTime();
-    }
-    return narrative.scanDuration;
-  }, [job?.started_at, job?.finished_at, narrative.scanDuration]);
-
-  // Determine scan status
-  const scanStatus = useMemo(() => {
-    const status = (job?.status || '').toLowerCase();
-    if (status.includes('complete')) return 'completed';
-    if (status.includes('running') || status.includes('pending')) return 'running';
-    if (status.includes('fail') || status.includes('error')) return 'failed';
-    if (status.includes('partial')) return 'partial';
-    return 'completed';
-  }, [job?.status]);
+  const handleClearFocus = () => setFocusedEntity?.(null);
+  
+  const handleViewFocused = () => {
+    const params = new URLSearchParams(location.search);
+    params.set('tab', 'accounts');
+    if (focusedEntityId) params.set('focus', focusedEntityId);
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+  };
 
   const handleNewScan = () => navigate('/');
 
+  // Scan type config
+  const typeConfig: Record<string, { label: string; icon: React.ElementType }> = {
+    username: { label: 'Username', icon: User },
+    email: { label: 'Email', icon: Mail },
+    phone: { label: 'Phone', icon: Phone },
+    domain: { label: 'Domain', icon: Globe },
+  };
+  const scanType = (job as any)?.scan_type || 'username';
+  const config = typeConfig[scanType] || typeConfig.username;
+  const TypeIcon = config.icon;
+
   return (
     <div className="space-y-3">
-      {/* Focused Entity Banner */}
-      {focusedResult && (
-        <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-primary/5 border border-primary/20">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <Crosshair className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-xs font-medium text-foreground">Focused Entity:</span>
-              <span className="text-xs text-muted-foreground ml-1.5 truncate">
-                {focusedResult.site || 'Unknown'} 
-                {focusedResult.url && (
-                  <span className="text-muted-foreground/60 ml-1">
-                    ({new URL(focusedResult.url).hostname})
-                  </span>
+      {/* Brief Header - Compact scan info */}
+      <Card className="border-border/40">
+        <CardContent className="p-2.5">
+          <div className="flex items-center justify-between gap-3">
+            {/* Left: Identity */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-md bg-muted/50 border border-border/50 flex items-center justify-center shrink-0">
+                <TypeIcon className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wide">{config.label}</span>
+                  <span className="text-[13px] font-semibold truncate">{job?.username || 'Unknown'}</span>
+                </div>
+                {aliases.length > 0 && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <span className="text-[9px] text-muted-foreground">aka:</span>
+                    {aliases.slice(0, 2).map((alias, idx) => (
+                      <Badge key={idx} variant="secondary" className="text-[8px] px-1 py-0 h-3 font-normal">
+                        {alias}
+                      </Badge>
+                    ))}
+                  </div>
                 )}
-              </span>
+              </div>
+            </div>
+
+            {/* Right: Scan metadata */}
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
+              {scanComplete && (
+                <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Complete
+                </span>
+              )}
+              {formattedTime && (
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {formattedTime}
+                </span>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-[10px]"
-              onClick={handleViewFocused}
-            >
-              <ExternalLink className="w-3 h-3 mr-1" />
-              View
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0"
-              onClick={handleClearFocus}
-            >
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
-      {/* Main 8/4 grid layout - tight spacing */}
+      {/* Main Brief Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-        {/* Left column - 8 cols (main briefing content) */}
-        <div className="lg:col-span-8 space-y-3">
-          {/* Identity Snapshot - compact header */}
-          <IdentitySnapshotCard
-            searchedValue={job?.username || 'Unknown'}
-            scanType="username"
-            aliases={aliases}
-            overallScore={lensAnalysis.overallScore}
-            scanTime={job?.finished_at || job?.started_at}
-            scanDuration={scanDuration}
-            scanStatus={scanStatus}
-          />
+        {/* Left: Intelligence Brief (8 cols) */}
+        <div className="lg:col-span-8">
+          <Card className="border-border/40">
+            <CardContent className="p-3 space-y-4">
+              {/* Focused Entity (if active) */}
+              {focusedResult && (
+                <FocusedEntityBanner
+                  result={focusedResult}
+                  onView={handleViewFocused}
+                  onClear={handleClearFocus}
+                />
+              )}
 
-          {/* Scan Narrative - What we did/are doing */}
-          <ScanNarrativeFeed
-            items={narrative.items}
-            summary={narrative.summary}
-            isLoading={narrative.isLoading}
-            isComplete={narrative.isComplete}
-            estimatedTimeRemaining={narrative.estimatedTimeRemaining}
-          />
+              {/* Intelligence Brief Sections */}
+              <IntelligenceBrief
+                username={job?.username || 'Unknown'}
+                accountsFound={grouped.found.length}
+                platformsCount={platforms.length}
+                breachCount={breachCount}
+                reuseScore={reuseScore}
+                aliases={aliases}
+                scanComplete={scanComplete}
+              />
 
-          {/* Key Findings - actionable intelligence */}
-          <KeyFindingsPanel findings={keyFindings} scanId={jobId} />
+              {/* Recommended Next Steps */}
+              <NextStepsPanel
+                accountsFound={grouped.found.length}
+                breachCount={breachCount}
+                hasFocusedEntity={!!focusedEntityId}
+                verifiedCount={verifiedEntities.size}
+                onNavigateToAccounts={() => navigateToTab('accounts')}
+                onNavigateToConnections={() => navigateToTab('connections')}
+                onNavigateToBreaches={() => navigateToTab('breaches')}
+                onExport={onExportPDF}
+              />
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Right column - 4 cols (supporting info) */}
-        <div className="lg:col-span-4 space-y-3">
+        {/* Right: Supporting Info (4 cols) */}
+        <div className="lg:col-span-4 space-y-2.5">
           {/* Profile Images */}
           {profileImages.length > 0 && (
-            <ProfileImagesStrip images={profileImages} maxImages={6} />
+            <ProfileImagesStrip images={profileImages} maxImages={4} />
           )}
 
-          {/* Compact Stats */}
-          <CompactStatsCard
-            accountsFound={grouped.found.length}
-            platformsChecked={platforms.length}
-            breachExposure={breachCount}
-            reuseSignals={reuseScore}
-          />
+          {/* Quick Stats */}
+          <Card className="border-border/40">
+            <CardContent className="p-2.5">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="text-center py-1.5 px-2 rounded bg-muted/30">
+                  <div className="text-lg font-semibold tabular-nums">{grouped.found.length}</div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wide">Accounts</div>
+                </div>
+                <div className="text-center py-1.5 px-2 rounded bg-muted/30">
+                  <div className="text-lg font-semibold tabular-nums">{platforms.length || '—'}</div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wide">Platforms</div>
+                </div>
+                <div className="text-center py-1.5 px-2 rounded bg-muted/30">
+                  <div className="text-lg font-semibold tabular-nums text-destructive">{breachCount}</div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wide">Breaches</div>
+                </div>
+                <div className="text-center py-1.5 px-2 rounded bg-muted/30">
+                  <div className="text-lg font-semibold tabular-nums">{verifiedEntities.size}</div>
+                  <div className="text-[9px] text-muted-foreground uppercase tracking-wide">Verified</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* LENS Verification Status */}
           <VerificationStatusCard
@@ -252,7 +276,7 @@ export function SummaryTab({
             verifiedEntities={verifiedEntities}
           />
 
-          {/* Actions - compact buttons */}
+          {/* Actions */}
           <SummaryActions
             onExportJSON={onExportJSON}
             onExportCSV={onExportCSV}
@@ -263,9 +287,9 @@ export function SummaryTab({
         </div>
       </div>
 
-      {/* Footer - minimal */}
-      <div className="text-[11px] text-muted-foreground/70 text-center pt-1.5 border-t border-border/30">
-        {platforms.length > 0 ? `${platforms.length} platforms` : 'Multiple sources'} • {resultsCount} results
+      {/* Minimal Footer */}
+      <div className="text-[10px] text-muted-foreground/60 text-center pt-1 border-t border-border/20">
+        {platforms.length > 0 ? `${platforms.length} platforms` : 'Multiple sources'} • {resultsCount} total results
       </div>
     </div>
   );
