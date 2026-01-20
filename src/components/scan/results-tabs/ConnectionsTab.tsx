@@ -4,13 +4,15 @@ import { Badge } from '@/components/ui/badge';
 import { Network, DataSet } from 'vis-network/standalone';
 import { 
   Download, ZoomIn, ZoomOut, Maximize2, 
-  Link2, Image, FileText, Users, Info, PanelRightClose, PanelRightOpen, X, Crosshair
+  Link2, Image, FileText, Users, Info, PanelRightClose, PanelRightOpen, X, Crosshair,
+  Bug, AlertCircle
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { useInvestigation } from '@/contexts/InvestigationContext';
 import { cn } from '@/lib/utils';
+import { useCorrelationGraph } from '@/hooks/useCorrelationGraph';
 import {
   Tooltip,
   TooltipContent,
@@ -90,9 +92,27 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   const [selectedNodeIdx, setSelectedNodeIdx] = useState<number | null>(null);
   const [inspectorOpen, setInspectorOpen] = useState(() => window.innerWidth >= 768);
   const [localVerificationResults, setLocalVerificationResults] = useState<Map<string, LensVerificationResult>>(new Map());
+  const [showDebugPanel, setShowDebugPanel] = useState(false);
 
   // Use global investigation context for focus state
   const { focusedEntityId, setFocusedEntity, verifiedEntities } = useInvestigation();
+
+  // Use the improved correlation graph hook
+  const correlationData = useCorrelationGraph(results, username, verifiedEntities);
+  
+  // Calculate correlation stats (edges that are account↔account, not identity→account)
+  const correlationStats = useMemo(() => {
+    const accountToAccountEdges = correlationData.edges.filter(
+      e => e.source !== 'identity-root' && e.target !== 'identity-root'
+    );
+    return {
+      totalNodes: correlationData.stats.totalNodes,
+      totalEdges: correlationData.stats.totalEdges,
+      correlationEdges: accountToAccountEdges.length,
+      hasCorrelations: accountToAccountEdges.length > 0,
+      byReason: correlationData.stats.byReason,
+    };
+  }, [correlationData]);
 
   const categorizePlatform = (site: string): string => {
     const siteLower = site.toLowerCase();
@@ -468,113 +488,188 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
 
   return (
     <div ref={containerRef} className="flex flex-col h-[calc(100vh-280px)] min-h-[400px]">
-      {/* Compact Explanation Bar */}
-      <div className="flex items-center justify-between gap-2 px-2 py-1 bg-muted/30 border-b border-border">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
-                  <Info className="w-3 h-3 text-primary flex-shrink-0" />
-                  <span className="truncate">
-                    <strong className="text-foreground">{foundProfiles.length}</strong> profiles · {explanationSummary}
-                  </span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-xs">
-                <p className="text-xs">
-                  This graph shows identity connections across platforms based on username reuse, image matches, bio similarities, or cross-references.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
-          {/* Focus indicator */}
-          {focusedNodeIdx !== null && focusedProfile && (
-            <Badge 
-              variant="default" 
-              className="h-5 gap-1 text-[10px] cursor-pointer hover:bg-primary/80"
-              onClick={handleClearFocus}
-            >
-              <Crosshair className="w-2.5 h-2.5" />
-              Focused: {focusedProfile.site}
-              <X className="w-2.5 h-2.5" />
-            </Badge>
+      {/* Debug Status Panel (toggle with bug icon) */}
+      {showDebugPanel && (
+        <div className="flex items-center gap-4 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/30 text-xs font-mono">
+          <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
+            <Bug className="w-3 h-3" />
+            Debug
+          </span>
+          <span>Nodes: <strong>{correlationStats.totalNodes}</strong></span>
+          <span>Edges: <strong>{correlationStats.totalEdges}</strong></span>
+          <span className={cn(
+            correlationStats.correlationEdges === 0 && 'text-amber-600'
+          )}>
+            Correlations: <strong>{correlationStats.correlationEdges}</strong>
+            <span className="text-muted-foreground ml-1">(account↔account)</span>
+          </span>
+          {correlationStats.correlationEdges > 0 && (
+            <span className="text-muted-foreground">
+              Reasons: {Object.entries(correlationStats.byReason)
+                .filter(([reason, count]) => count > 0 && reason !== 'identity_search')
+                .map(([reason, count]) => `${reason}:${count}`)
+                .join(', ') || 'none'}
+            </span>
           )}
+        </div>
+      )}
 
-          {/* Compact category dots */}
-          <div className="hidden sm:flex items-center gap-1 ml-auto">
-            {Object.entries(categoryStats)
-              .filter(([_, count]) => count > 0)
-              .slice(0, 4)
-              .map(([category]) => (
-                <div
-                  key={category}
-                  className="w-2 h-2 rounded-full"
-                  style={{ backgroundColor: CATEGORY_COLORS[category] }}
-                  title={PLATFORM_CATEGORIES[category]?.label || category}
-                />
-              ))}
+      {/* Empty state for no correlations */}
+      {correlationStats.totalEdges < 2 || correlationStats.correlationEdges === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-muted/10">
+          <AlertCircle className="w-10 h-10 text-muted-foreground/40 mb-3" />
+          <h3 className="text-sm font-medium text-foreground mb-1">
+            No cross-account correlations detected
+          </h3>
+          <p className="text-xs text-muted-foreground max-w-sm mb-4">
+            This view becomes more useful when shared signals exist between accounts — such as matching usernames, profile images, bio keywords, or shared links.
+          </p>
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
+            <span>Nodes: {correlationStats.totalNodes}</span>
+            <span>·</span>
+            <span>Edges: {correlationStats.totalEdges}</span>
+            <span>·</span>
+            <span>Correlations: {correlationStats.correlationEdges}</span>
           </div>
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center gap-0.5">
-          <Button onClick={zoomIn} variant="ghost" size="icon" className="h-6 w-6" title="Zoom In">
-            <ZoomIn className="w-3 h-3" />
-          </Button>
-          <Button onClick={zoomOut} variant="ghost" size="icon" className="h-6 w-6" title="Zoom Out">
-            <ZoomOut className="w-3 h-3" />
-          </Button>
-          <Button onClick={fitNetwork} variant="ghost" size="icon" className="h-6 w-6" title="Fit">
-            <Maximize2 className="w-3 h-3" />
-          </Button>
-          <Button onClick={exportAsImage} variant="ghost" size="icon" className="h-6 w-6" title="Export">
-            <Download className="w-3 h-3" />
-          </Button>
-          <div className="w-px h-4 bg-border mx-0.5" />
           <Button
-            onClick={() => setInspectorOpen(!inspectorOpen)}
             variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            title={inspectorOpen ? 'Hide Inspector' : 'Show Inspector'}
+            size="sm"
+            className="mt-3 text-xs gap-1"
+            onClick={() => setShowDebugPanel(!showDebugPanel)}
           >
-            {inspectorOpen ? (
-              <PanelRightClose className="w-3 h-3" />
-            ) : (
-              <PanelRightOpen className="w-3 h-3" />
-            )}
+            <Bug className="w-3 h-3" />
+            {showDebugPanel ? 'Hide' : 'Show'} Debug Info
           </Button>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* Compact Explanation Bar */}
+          <div className="flex items-center justify-between gap-2 px-2 py-1 bg-muted/30 border-b border-border">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
+                      <Info className="w-3 h-3 text-primary flex-shrink-0" />
+                      <span className="truncate">
+                        <strong className="text-foreground">{foundProfiles.length}</strong> profiles · 
+                        <strong className="text-foreground ml-1">{correlationStats.correlationEdges}</strong> correlations · {explanationSummary}
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">
+                    <p className="text-xs">
+                      This graph shows identity connections across platforms based on username reuse, image matches, bio similarities, or cross-references.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
-      {/* Graph + Inspector */}
-      <div className="flex flex-1 min-h-0">
-        {/* Graph Area */}
-        <div
-          ref={networkRef}
-          className="flex-1 bg-gradient-to-br from-background to-muted/20"
-          style={{ cursor: 'grab' }}
-        />
+              {/* Focus indicator */}
+              {focusedNodeIdx !== null && focusedProfile && (
+                <Badge 
+                  variant="default" 
+                  className="h-5 gap-1 text-[10px] cursor-pointer hover:bg-primary/80"
+                  onClick={handleClearFocus}
+                >
+                  <Crosshair className="w-2.5 h-2.5" />
+                  Focused: {focusedProfile.site}
+                  <X className="w-2.5 h-2.5" />
+                </Badge>
+              )}
 
-        {/* Right Inspector Panel */}
-        <ConnectionsInspector
-          isOpen={inspectorOpen}
-          onClose={() => setInspectorOpen(false)}
-          selectedProfile={selectedProfile}
-          username={username}
-          categoryStats={categoryStats}
-          connectionStats={connectionStats}
-          totalProfiles={foundProfiles.length}
-          scanId={jobId}
-          isFocused={selectedProfile ? focusedEntityId === selectedProfile.id : false}
-          onFocus={() => selectedNodeIdx !== null && handleFocusNode(selectedNodeIdx)}
-          verificationResult={selectedProfile ? (verifiedEntities.get(selectedProfile.id) || localVerificationResults.get(selectedProfile.id)) : null}
-          onVerificationComplete={handleVerificationComplete}
-          lensScore={75}
-        />
-      </div>
+              {/* Compact category dots */}
+              <div className="hidden sm:flex items-center gap-1 ml-auto">
+                {Object.entries(categoryStats)
+                  .filter(([_, count]) => count > 0)
+                  .slice(0, 4)
+                  .map(([category]) => (
+                    <div
+                      key={category}
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: CATEGORY_COLORS[category] }}
+                      title={PLATFORM_CATEGORIES[category]?.label || category}
+                    />
+                  ))}
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-0.5">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setShowDebugPanel(!showDebugPanel)}
+                      variant={showDebugPanel ? "secondary" : "ghost"}
+                      size="icon"
+                      className="h-6 w-6"
+                    >
+                      <Bug className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs">{showDebugPanel ? 'Hide' : 'Show'} debug panel</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Button onClick={zoomIn} variant="ghost" size="icon" className="h-6 w-6" title="Zoom In">
+                <ZoomIn className="w-3 h-3" />
+              </Button>
+              <Button onClick={zoomOut} variant="ghost" size="icon" className="h-6 w-6" title="Zoom Out">
+                <ZoomOut className="w-3 h-3" />
+              </Button>
+              <Button onClick={fitNetwork} variant="ghost" size="icon" className="h-6 w-6" title="Fit">
+                <Maximize2 className="w-3 h-3" />
+              </Button>
+              <Button onClick={exportAsImage} variant="ghost" size="icon" className="h-6 w-6" title="Export">
+                <Download className="w-3 h-3" />
+              </Button>
+              <div className="w-px h-4 bg-border mx-0.5" />
+              <Button
+                onClick={() => setInspectorOpen(!inspectorOpen)}
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                title={inspectorOpen ? 'Hide Inspector' : 'Show Inspector'}
+              >
+                {inspectorOpen ? (
+                  <PanelRightClose className="w-3 h-3" />
+                ) : (
+                  <PanelRightOpen className="w-3 h-3" />
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Graph + Inspector */}
+          <div className="flex flex-1 min-h-0">
+            {/* Graph Area */}
+            <div
+              ref={networkRef}
+              className="flex-1 bg-gradient-to-br from-background to-muted/20"
+              style={{ cursor: 'grab' }}
+            />
+
+            {/* Right Inspector Panel */}
+            <ConnectionsInspector
+              isOpen={inspectorOpen}
+              onClose={() => setInspectorOpen(false)}
+              selectedProfile={selectedProfile}
+              username={username}
+              categoryStats={categoryStats}
+              connectionStats={connectionStats}
+              totalProfiles={foundProfiles.length}
+              scanId={jobId}
+              isFocused={selectedProfile ? focusedEntityId === selectedProfile.id : false}
+              onFocus={() => selectedNodeIdx !== null && handleFocusNode(selectedNodeIdx)}
+              verificationResult={selectedProfile ? (verifiedEntities.get(selectedProfile.id) || localVerificationResults.get(selectedProfile.id)) : null}
+              onVerificationComplete={handleVerificationComplete}
+              lensScore={75}
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }
