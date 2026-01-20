@@ -92,53 +92,53 @@ const AIIndex = () => {
     pageType: 'authority',
   });
 
-  const webPageJsonLd = {
+  const collectionPageJsonLd = {
     "@context": "https://schema.org",
-    "@type": "WebPage",
+    "@type": ["WebPage", "CollectionPage"],
     "name": "AI Answers: Understanding Digital Identity & Exposure",
     "description": "Clear, neutral explanations of how digital identity, exposure, and public data work in everyday life.",
-    "url": `${origin}/ai`,
+    "url": "https://footprintiq.app/ai",
     "isPartOf": {
       "@type": "WebSite",
       "name": "FootprintIQ",
-      "url": origin
+      "url": "https://footprintiq.app"
     },
     "publisher": {
       "@type": "Organization",
-      "name": "FootprintIQ"
-    }
-  };
-
-  const collectionPageJsonLd = {
-    "@context": "https://schema.org",
-    "@type": "CollectionPage",
-    "name": "AI Answers: Understanding Digital Identity & Exposure",
-    "description": "Clear, neutral explanations of how digital identity, exposure, and public data work in everyday life.",
-    "url": `${origin}/ai`,
-    "publisher": {
-      "@type": "Organization",
-      "name": "FootprintIQ"
+      "name": "FootprintIQ",
+      "url": "https://footprintiq.app",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://footprintiq.app/og-image.png"
+      }
     },
-    "mainEntity": {
-      "@type": "ItemList",
-      "numberOfItems": foundations.length + dataConnections.length,
-      "itemListElement": [
-        ...foundations.map((item, index) => ({
-          "@type": "ListItem",
-          "position": index + 1,
-          "url": `${origin}${item.href}`,
-          "name": item.title,
-          "description": item.description
-        })),
-        ...dataConnections.map((item, index) => ({
-          "@type": "ListItem",
-          "position": foundations.length + index + 1,
-          "url": `${origin}${item.href}`,
-          "name": item.title,
-          "description": item.description
-        })),
-      ]
-    }
+    "hasPart": [
+      {
+        "@type": "WebPage",
+        "name": "What Is a Digital Footprint?",
+        "url": "https://footprintiq.app/ai/digital-footprint"
+      },
+      {
+        "@type": "WebPage",
+        "name": "What Is Digital Exposure?",
+        "url": "https://footprintiq.app/ai/digital-exposure"
+      },
+      {
+        "@type": "WebPage",
+        "name": "What Is OSINT?",
+        "url": "https://footprintiq.app/ai/what-is-osint"
+      },
+      {
+        "@type": "WebPage",
+        "name": "What Are Data Brokers?",
+        "url": "https://footprintiq.app/ai/what-are-data-brokers"
+      },
+      {
+        "@type": "WebPage",
+        "name": "What Is Identity Profiling?",
+        "url": "https://footprintiq.app/ai/what-is-identity-profiling"
+      }
+    ]
   };
 
   const faqJsonLd = {
@@ -228,9 +228,6 @@ const AIIndex = () => {
         <meta property="og:description" content="Clear, neutral explanations of how digital identity, exposure, and public data work in everyday life." />
         <meta property="og:url" content={`${origin}/ai`} />
         <meta property="og:type" content="website" />
-        <script type="application/ld+json">
-          {JSON.stringify(webPageJsonLd)}
-        </script>
         <script type="application/ld+json">
           {JSON.stringify(collectionPageJsonLd)}
         </script>
