@@ -7,9 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { useScrollDepthTracking } from "@/hooks/useScrollDepthTracking";
 
 const DigitalExposure = () => {
   const origin = typeof window !== "undefined" ? window.location.origin : "https://footprintiq.app";
+
+  // Track pageview and scroll depth for this authority page
+  useScrollDepthTracking({
+    pageId: '/ai/digital-exposure',
+    pageType: 'authority',
+  });
 
   const articleJsonLd = {
     "@context": "https://schema.org",
