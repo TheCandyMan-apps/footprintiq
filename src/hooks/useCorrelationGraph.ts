@@ -29,7 +29,9 @@ export interface GraphEdge {
   source: string;
   target: string;
   reason: EdgeReason;
+  reasons: EdgeReason[]; // All correlation signals
   reasonLabel: string;
+  reasonLabels: string[]; // All signal labels
   weight: number;
   confidence: number;
   details?: string;
@@ -310,44 +312,45 @@ export function useCorrelationGraph(
         source: 'identity-root',
         target: nodeId,
         reason,
+        reasons: [reason],
         reasonLabel: edgeConfig.label,
+        reasonLabels: [edgeConfig.label],
         weight: edgeConfig.weight,
         confidence: confidence,
       });
     });
 
     // Create account-to-account edges based on shared signals
-    const processedPairs = new Set<string>();
-    const MIN_CONFIDENCE = 60; // Only generate edges >= 60% confidence
-
-    // Helper to add an edge with deduplication
-    const addAccountEdge = (
+    // Collect all signals per pair first, then merge into single edge
+    const MIN_CONFIDENCE = 60;
+    
+    interface SignalData {
+      reason: EdgeReason;
+      confidence: number;
+      detail: string;
+    }
+    
+    const pairSignals = new Map<string, SignalData[]>();
+    
+    // Helper to collect a signal for a pair
+    const collectSignal = (
       sourceId: string,
       targetId: string,
       reason: EdgeReason,
       confidence: number,
-      details: string
+      detail: string
     ) => {
       if (confidence < MIN_CONFIDENCE) return;
       
       const pairKey = [sourceId, targetId].sort().join('-');
-      const edgeKey = `${pairKey}-${reason}`;
+      if (!pairSignals.has(pairKey)) {
+        pairSignals.set(pairKey, []);
+      }
       
-      if (!processedPairs.has(edgeKey)) {
-        processedPairs.add(edgeKey);
-        const config = EDGE_REASON_CONFIG[reason];
-        reasonStats[reason]++;
-        
-        edges.push({
-          id: `edge-${reason}-${pairKey}`,
-          source: sourceId,
-          target: targetId,
-          reason,
-          reasonLabel: config.label,
-          weight: config.weight,
-          confidence,
-          details,
-        });
+      // Avoid duplicate signals of same reason
+      const signals = pairSignals.get(pairKey)!;
+      if (!signals.some(s => s.reason === reason)) {
+        signals.push({ reason, confidence, detail });
       }
     };
 
@@ -362,48 +365,44 @@ export function useCorrelationGraph(
       } : null;
     };
 
-    // 1. Username reuse edges (weight: 0.9)
+    // 1. Collect username reuse signals (weight: 0.9)
     usernameMap.forEach((nodeIds, normalizedUsername) => {
       if (nodeIds.length > 1) {
         for (let i = 0; i < nodeIds.length; i++) {
           for (let j = i + 1; j < nodeIds.length; j++) {
             const node1 = getNodeData(nodeIds[i]);
-            const node2 = getNodeData(nodeIds[j]);
             const rawUsername = node1?.username || normalizedUsername;
             
-            addAccountEdge(
+            collectSignal(
               nodeIds[i],
               nodeIds[j],
               'username_reuse',
               90,
-              `Same username "${rawUsername}" used on ${node1?.platform || 'platform'} and ${node2?.platform || 'platform'}`
+              `Same username "${rawUsername}"`
             );
           }
         }
       }
     });
 
-    // 2. Image reuse edges (weight: 0.95)
+    // 2. Collect image reuse signals (weight: 0.95)
     imageMap.forEach((nodeIds) => {
       if (nodeIds.length > 1) {
         for (let i = 0; i < nodeIds.length; i++) {
           for (let j = i + 1; j < nodeIds.length; j++) {
-            const node1 = getNodeData(nodeIds[i]);
-            const node2 = getNodeData(nodeIds[j]);
-            
-            addAccountEdge(
+            collectSignal(
               nodeIds[i],
               nodeIds[j],
               'image_reuse',
               95,
-              `Same profile image detected on ${node1?.platform || 'platform'} and ${node2?.platform || 'platform'}`
+              'Same profile image'
             );
           }
         }
       }
     });
 
-    // 3. Shared domain/link edges (weight: 0.7)
+    // 3. Collect shared domain/link signals (weight: 0.7)
     const COMMON_DOMAINS = new Set([
       'gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'protonmail.com',
       'icloud.com', 'aol.com', 'live.com', 'msn.com', 'mail.com',
@@ -411,33 +410,27 @@ export function useCorrelationGraph(
     ]);
     
     domainMap.forEach((nodeIds, domain) => {
-      // Skip common/non-distinctive domains
       if (COMMON_DOMAINS.has(domain)) return;
       
       if (nodeIds.length > 1) {
         for (let i = 0; i < nodeIds.length; i++) {
           for (let j = i + 1; j < nodeIds.length; j++) {
-            const node1 = getNodeData(nodeIds[i]);
-            const node2 = getNodeData(nodeIds[j]);
-            
-            addAccountEdge(
+            collectSignal(
               nodeIds[i],
               nodeIds[j],
               'shared_link',
               70,
-              `Shared link to "${domain}" found in ${node1?.platform || 'platform'} and ${node2?.platform || 'platform'} profiles`
+              `Shared link to "${domain}"`
             );
           }
         }
       }
     });
 
-    // 4. Bio similarity edges (weight: 0.6)
-    // Simple keyword-based similarity for bio text
+    // 4. Collect bio similarity signals (weight: 0.6)
     const accountNodes = nodes.filter(n => n.type === 'account');
     const bioKeywordsMap = new Map<string, string[]>();
     
-    // Extract keywords from bios
     accountNodes.forEach(node => {
       const bio = (node.meta?.bio as string) || '';
       if (bio.length >= 20) {
@@ -456,38 +449,81 @@ export function useCorrelationGraph(
       }
     });
     
-    // Compare bios pairwise
     const bioNodeIds = Array.from(bioKeywordsMap.keys());
     for (let i = 0; i < bioNodeIds.length; i++) {
       for (let j = i + 1; j < bioNodeIds.length; j++) {
         const keywords1 = bioKeywordsMap.get(bioNodeIds[i]) || [];
         const keywords2 = bioKeywordsMap.get(bioNodeIds[j]) || [];
         
-        const set1 = new Set(keywords1);
         const set2 = new Set(keywords2);
         const intersection = keywords1.filter(k => set2.has(k));
         const union = new Set([...keywords1, ...keywords2]);
         
         if (intersection.length >= 3) {
           const similarity = intersection.length / union.size;
-          const confidence = Math.round(60 + similarity * 30); // 60-90% range
+          const confidence = Math.round(60 + similarity * 30);
           
           if (confidence >= MIN_CONFIDENCE) {
-            const node1 = getNodeData(bioNodeIds[i]);
-            const node2 = getNodeData(bioNodeIds[j]);
-            const sharedWords = intersection.slice(0, 4).join(', ');
+            const sharedWords = intersection.slice(0, 3).join(', ');
             
-            addAccountEdge(
+            collectSignal(
               bioNodeIds[i],
               bioNodeIds[j],
               'bio_similarity',
               confidence,
-              `Similar bio content: shared keywords "${sharedWords}" between ${node1?.platform || 'platform'} and ${node2?.platform || 'platform'}`
+              `Similar bio ("${sharedWords}")`
             );
           }
         }
       }
     }
+
+    // Merge signals into edges
+    pairSignals.forEach((signals, pairKey) => {
+      if (signals.length === 0) return;
+      
+      const [sourceId, targetId] = pairKey.split('-');
+      const node1 = getNodeData(sourceId);
+      const node2 = getNodeData(targetId);
+      
+      // Sort by weight descending
+      const sortedSignals = signals.sort((a, b) => 
+        EDGE_REASON_CONFIG[b.reason].weight - EDGE_REASON_CONFIG[a.reason].weight
+      );
+      
+      const reasons = sortedSignals.map(s => s.reason);
+      const reasonLabels = sortedSignals.map(s => EDGE_REASON_CONFIG[s.reason].label);
+      const primaryReason = reasons[0];
+      const maxWeight = Math.max(...sortedSignals.map(s => EDGE_REASON_CONFIG[s.reason].weight));
+      const maxConfidence = Math.max(...sortedSignals.map(s => s.confidence));
+      
+      // Build combined details
+      const details = sortedSignals.map(s => s.detail).join(' + ');
+      const platformInfo = node1?.platform && node2?.platform 
+        ? ` (${node1.platform} ↔ ${node2.platform})` 
+        : '';
+      
+      // Build reason label
+      const reasonLabel = reasons.length > 1
+        ? reasonLabels.join(' + ')
+        : reasonLabels[0];
+      
+      // Update stats for all reasons
+      reasons.forEach(r => reasonStats[r]++);
+      
+      edges.push({
+        id: `edge-${pairKey}`,
+        source: sourceId,
+        target: targetId,
+        reason: primaryReason,
+        reasons,
+        reasonLabel,
+        reasonLabels,
+        weight: maxWeight,
+        confidence: maxConfidence,
+        details: details + platformInfo,
+      });
+    });
 
     return {
       nodes,
