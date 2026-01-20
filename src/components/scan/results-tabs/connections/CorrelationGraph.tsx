@@ -258,51 +258,75 @@ export function CorrelationGraph({
             'shape': 'roundrectangle',
           },
         },
-        // Edges
+        // Base edge styling
         {
           selector: 'edge',
           style: {
-            'width': 1.5,
-            'line-color': '#64748b',
-            'line-opacity': 0.4,
+            'width': 1,
+            'line-color': '#94a3b8',
+            'line-opacity': 0.25,
             'curve-style': 'bezier',
             'target-arrow-shape': 'none',
             'transition-property': 'line-opacity, width, line-color',
             'transition-duration': 150,
           },
         },
-        // Edges from identity root
+        // Identity→Account edges (de-emphasized - thin, light, dashed)
         {
           selector: 'edge[source = "identity-root"]',
           style: {
-            'line-color': 'hsl(var(--primary))',
-            'line-opacity': 0.35,
-            'line-style': 'solid',
+            'line-color': '#cbd5e1',
+            'line-opacity': 0.2,
+            'line-style': 'dashed',
+            'width': 0.75,
+            'z-index': 1,
           },
         },
-        // Strong correlation edges
+        // Account↔Account correlation edges (emphasized)
         {
-          selector: 'edge[weight >= 0.85]',
+          selector: 'edge[source != "identity-root"]',
+          style: {
+            'line-color': '#3b82f6',
+            'line-opacity': 0.65,
+            'line-style': 'solid',
+            'z-index': 10,
+          },
+        },
+        // Strong correlation edges (weight >= 0.85)
+        {
+          selector: 'edge[source != "identity-root"][weight >= 0.85]',
+          style: {
+            'width': 3,
+            'line-opacity': 0.8,
+            'line-color': '#2563eb',
+          },
+        },
+        // Medium correlation edges (0.7 <= weight < 0.85)
+        {
+          selector: 'edge[source != "identity-root"][weight >= 0.7][weight < 0.85]',
           style: {
             'width': 2.5,
-            'line-opacity': 0.6,
+            'line-opacity': 0.7,
+            'line-color': '#3b82f6',
           },
         },
-        // Medium correlation edges
+        // Low-medium correlation edges (0.6 <= weight < 0.7)
         {
-          selector: 'edge[weight >= 0.6][weight < 0.85]',
+          selector: 'edge[source != "identity-root"][weight >= 0.6][weight < 0.7]',
           style: {
             'width': 2,
-            'line-opacity': 0.5,
+            'line-opacity': 0.55,
+            'line-color': '#60a5fa',
           },
         },
-        // Weak correlation edges
+        // Weak correlation edges (weight < 0.6)
         {
-          selector: 'edge[weight < 0.6]',
+          selector: 'edge[source != "identity-root"][weight < 0.6]',
           style: {
-            'width': 1,
+            'width': 1.5,
             'line-style': 'dashed',
-            'line-opacity': 0.35,
+            'line-opacity': 0.4,
+            'line-color': '#93c5fd',
           },
         },
         // Selected states
