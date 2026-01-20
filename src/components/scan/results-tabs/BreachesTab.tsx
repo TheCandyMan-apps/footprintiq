@@ -102,16 +102,16 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
   // Empty state
   if (totalBreaches === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
-          <ShieldCheck className="w-6 h-6 text-green-500" />
+      <div className="flex flex-col items-center justify-center py-8">
+        <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center mb-3">
+          <ShieldCheck className="w-5 h-5 text-green-500" />
         </div>
-        <h3 className={RESULTS_TYPOGRAPHY.cardTitle}>No Breaches Found</h3>
-        <p className={`${RESULTS_TYPOGRAPHY.caption} max-w-sm text-center mt-1`}>
+        <h3 className="text-[13px] font-medium">No Breaches Found</h3>
+        <p className="text-[11px] text-muted-foreground max-w-xs text-center mt-1">
           Good news — no known data breaches detected for this identity.
         </p>
-        <div className={`mt-4 ${RESULTS_SPACING.cardPadding} ${RESULTS_BACKGROUNDS.muted} rounded-lg max-w-sm`}>
-          <p className={`${RESULTS_TYPOGRAPHY.captionMuted} text-center`}>
+        <div className="mt-3 px-3 py-2 bg-muted/20 rounded text-center max-w-xs">
+          <p className="text-[10px] text-muted-foreground/70">
             We check against known breach databases. New breaches are discovered regularly.
           </p>
         </div>
@@ -120,29 +120,27 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
   }
 
   return (
-    <div className={RESULTS_SPACING.contentMargin}>
+    <div className={RESULTS_SPACING.contentMarginSm}>
       {/* Header summary */}
-      <div className={`flex items-center gap-2 py-2 px-3 ${RESULTS_BACKGROUNDS.muted} rounded-md`}>
-        <Info className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-        <p className={RESULTS_TYPOGRAPHY.caption}>
+      <div className="flex items-center gap-2 py-1.5 px-2.5 bg-muted/20 rounded text-[11px]">
+        <Info className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+        <p className="text-muted-foreground">
           <span className="font-medium text-foreground">{totalBreaches}</span> breach{totalBreaches !== 1 ? 'es' : ''} found. 
-          Review and update credentials where applicable.
+          Review and update credentials.
         </p>
       </div>
 
-      {/* Breach cards */}
-      <div className={RESULTS_SPACING.contentMarginSm}>
+      {/* Breach cards - compact */}
+      <div className="space-y-1.5">
         {processedBreaches.map((breach) => (
-          <Card key={breach.id} className={RESULTS_BORDERS.cardBorder}>
+          <Card key={breach.id} className="border-border/30">
             <CardContent className="p-0">
               {/* Header */}
-              <div className={`${RESULTS_SPACING.cardPadding} border-b ${RESULTS_BORDERS.divider}`}>
-                <h3 className={`${RESULTS_TYPOGRAPHY.cardTitle} truncate`}>
-                  {breach.name}
-                </h3>
+              <div className="px-2.5 py-2 border-b border-border/20">
+                <h3 className="text-[12px] font-medium truncate">{breach.name}</h3>
                 {breach.year && (
-                  <div className={`flex items-center gap-1.5 mt-1 ${RESULTS_TYPOGRAPHY.caption}`}>
-                    <Calendar className="h-3 w-3" />
+                  <div className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
+                    <Calendar className="h-2.5 w-2.5" />
                     <span>{breach.year}</span>
                   </div>
                 )}
@@ -150,24 +148,24 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
 
               {/* Data types */}
               {breach.dataTypes.length > 0 && (
-                <div className={`px-3 py-2 border-b ${RESULTS_BORDERS.divider} ${RESULTS_BACKGROUNDS.subtle}`}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <Database className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className={RESULTS_TYPOGRAPHY.sectionTitle}>Data Exposed</span>
+                <div className="px-2.5 py-1.5 border-b border-border/20 bg-muted/10">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Database className="h-2.5 w-2.5 text-muted-foreground" />
+                    <span className="text-[9px] font-medium text-muted-foreground uppercase tracking-wider">Exposed</span>
                   </div>
-                  <div className="flex flex-wrap gap-1">
-                    {breach.dataTypes.slice(0, 6).map((dataType, idx) => (
+                  <div className="flex flex-wrap gap-0.5">
+                    {breach.dataTypes.slice(0, 5).map((dataType, idx) => (
                       <Badge 
                         key={idx} 
                         variant="secondary"
-                        className="text-[10px] font-normal h-5 px-1.5"
+                        className="text-[9px] font-normal h-4 px-1"
                       >
                         {getDataTypeLabel(dataType)}
                       </Badge>
                     ))}
-                    {breach.dataTypes.length > 6 && (
-                      <Badge variant="outline" className="text-[10px] font-normal h-5 px-1.5">
-                        +{breach.dataTypes.length - 6}
+                    {breach.dataTypes.length > 5 && (
+                      <Badge variant="outline" className="text-[9px] font-normal h-4 px-1">
+                        +{breach.dataTypes.length - 5}
                       </Badge>
                     )}
                   </div>
@@ -175,8 +173,8 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
               )}
 
               {/* Impact */}
-              <div className={`${RESULTS_SPACING.cardPadding} ${RESULTS_BACKGROUNDS.subtle}`}>
-                <p className={RESULTS_TYPOGRAPHY.caption}>
+              <div className="px-2.5 py-1.5 bg-muted/5">
+                <p className="text-[10px] text-muted-foreground">
                   {getImpactExplanation(breach.dataTypes)}
                 </p>
               </div>
@@ -185,21 +183,21 @@ export function BreachesTab({ results, breachResults }: BreachesTabProps) {
         ))}
       </div>
 
-      {/* Next steps */}
-      <Card className={`${RESULTS_SPACING.cardPadding} bg-primary/5 ${RESULTS_BORDERS.cardBorder}`}>
-        <h4 className={`${RESULTS_TYPOGRAPHY.sectionTitle} mb-2`}>Next Steps</h4>
-        <ul className={`${RESULTS_TYPOGRAPHY.caption} space-y-1.5`}>
-          <li className="flex items-start gap-2">
+      {/* Next steps - compact */}
+      <Card className="p-2.5 bg-primary/5 border-border/30">
+        <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Next Steps</h4>
+        <ul className="text-[11px] text-muted-foreground space-y-1">
+          <li className="flex items-start gap-1.5">
             <span className="text-primary font-medium">1.</span>
-            Update passwords for affected services.
+            Update passwords for affected services
           </li>
-          <li className="flex items-start gap-2">
+          <li className="flex items-start gap-1.5">
             <span className="text-primary font-medium">2.</span>
-            Enable two-factor authentication.
+            Enable two-factor authentication
           </li>
-          <li className="flex items-start gap-2">
+          <li className="flex items-start gap-1.5">
             <span className="text-primary font-medium">3.</span>
-            Monitor accounts for unusual activity.
+            Monitor accounts for unusual activity
           </li>
         </ul>
       </Card>
