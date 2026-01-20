@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { ChevronRight, BookOpen, Link2, HelpCircle, Fingerprint, Globe, Eye, Network, Shield } from "lucide-react";
+import { ChevronRight, BookOpen, Link2, HelpCircle, Fingerprint, Globe, Eye, Network, Shield, Building2 } from "lucide-react";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/Footer";
@@ -41,6 +41,12 @@ const dataConnections: TopicLink[] = [
     description: "How separate data points can be linked to form a profile of an individual.",
     href: "/ai/what-is-identity-profiling",
     icon: Network,
+  },
+  {
+    title: "What Are Data Brokers?",
+    description: "Companies that collect, aggregate, and sell personal information from public and commercial sources.",
+    href: "/ai/what-are-data-brokers",
+    icon: Building2,
   },
 ];
 

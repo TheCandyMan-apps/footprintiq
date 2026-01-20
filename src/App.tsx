@@ -221,6 +221,7 @@ const AIDigitalExposure = lazy(() => import("./pages/ai/DigitalExposure"));
 const AIDigitalFootprint = lazy(() => import("./pages/ai/DigitalFootprint"));
 const AIWhatIsOsint = lazy(() => import("./pages/ai/WhatIsOsint"));
 const AIWhatIsIdentityProfiling = lazy(() => import("./pages/ai/WhatIsIdentityProfiling"));
+const AIWhatAreDataBrokers = lazy(() => import("./pages/ai/WhatAreDataBrokers"));
 const AIIndex = lazy(() => import("./pages/ai/Index"));
 
 const queryClient = new QueryClient({
@@ -494,6 +495,7 @@ function RouterContent() {
           <Route path="/ai/digital-footprint" element={<AIDigitalFootprint />} />
           <Route path="/ai/what-is-osint" element={<AIWhatIsOsint />} />
           <Route path="/ai/what-is-identity-profiling" element={<AIWhatIsIdentityProfiling />} />
+          <Route path="/ai/what-are-data-brokers" element={<AIWhatAreDataBrokers />} />
           <Route path="/integrations" element={<div className="container mx-auto py-8"><h1 className="text-3xl">Integrations coming soon</h1></div>} />
         
           {/* Workspace & Collaboration Routes */}
