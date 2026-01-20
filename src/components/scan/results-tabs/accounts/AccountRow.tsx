@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
-import { CheckCircle, HelpCircle, AlertCircle, Globe, Clock, Users, MapPin } from 'lucide-react';
+import { CheckCircle, HelpCircle, AlertCircle, Globe, Clock, Users, MapPin, Info } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
@@ -9,12 +9,18 @@ import { RESULTS_SEMANTIC_COLORS } from '../styles';
 import { AccountRowActions } from './AccountRowActions';
 import { LensStatusBadge } from './LensStatusBadge';
 import { ForensicModal } from '@/components/forensic/ForensicModal';
+import { ConfidenceBreakdown, ConfidenceTooltipContent } from './ConfidenceBreakdown';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 
 type ClaimType = 'me' | 'not_me';
 
@@ -368,27 +374,37 @@ export function AccountRow({
 
         {/* RIGHT: Badges + Actions - clear separation with divider */}
         <div className="flex items-center gap-2 shrink-0 pl-2 border-l border-border/20">
-          {/* Confidence Badge - always visible */}
-          <TooltipProvider delayDuration={200}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge 
-                  variant="outline" 
-                  className={cn(
-                    'h-6 px-2 gap-1 text-[10px] font-medium cursor-default',
-                    confidence.bg, confidence.text, confidence.border
-                  )}
-                >
-                  <ConfidenceIcon className="w-3 h-3" />
-                  <span className="hidden sm:inline">{confidence.label}</span>
-                  <span className="sm:hidden">{confidence.shortLabel}</span>
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-[10px]">
-                {lensScore}% match confidence
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          {/* Confidence Badge with explainable tooltip */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  'h-6 px-2 gap-1 text-[10px] font-medium cursor-pointer hover:opacity-80 transition-opacity',
+                  confidence.bg, confidence.text, confidence.border
+                )}
+              >
+                <ConfidenceIcon className="w-3 h-3" />
+                <span className="hidden sm:inline">{confidence.label}</span>
+                <span className="sm:hidden">{confidence.shortLabel}</span>
+                <Info className="w-2.5 h-2.5 opacity-60 ml-0.5" />
+              </Badge>
+            </PopoverTrigger>
+            <PopoverContent 
+              side="top" 
+              align="end" 
+              className="w-auto p-2.5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ConfidenceTooltipContent
+                score={lensScore}
+                username={username}
+                platformName={platformName}
+                meta={meta}
+                hasProfileImage={!!profileImage}
+              />
+            </PopoverContent>
+          </Popover>
 
           {/* LENS Badge - visible when verified */}
           {verificationResult && (
@@ -435,9 +451,24 @@ export function AccountRow({
         </div>
       </div>
 
-      {/* Expanded Panel - OSINT fields */}
+      {/* Expanded Panel - OSINT fields + Confidence Breakdown */}
       <CollapsibleContent>
-        <div className="bg-muted/5 border-b border-border/20 px-4 py-3 ml-[56px] space-y-2">
+        <div className="bg-muted/5 border-b border-border/20 px-4 py-3 ml-[56px] space-y-3">
+          {/* Confidence Breakdown Section */}
+          <div className="pb-3 border-b border-border/20">
+            <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <Info className="w-3 h-3" />
+              Confidence Breakdown
+            </h4>
+            <ConfidenceBreakdown
+              score={lensScore}
+              username={username}
+              platformName={platformName}
+              meta={meta}
+              hasProfileImage={!!profileImage}
+            />
+          </div>
+
           {/* Full bio if longer */}
           {fullBio && fullBio.length > 80 && (
             <p className="text-[12px] text-foreground/90 leading-relaxed">{fullBio}</p>
