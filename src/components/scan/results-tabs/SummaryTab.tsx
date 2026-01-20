@@ -14,6 +14,7 @@ import { ProfileImagesStrip } from './summary/ProfileImagesStrip';
 import { ScanNarrativeFeed } from './summary/ScanNarrativeFeed';
 import { KeyFindingsPanel, generateKeyFindings } from './summary/KeyFindingsPanel';
 import { SummaryActions } from './summary/SummaryActions';
+import { VerificationStatusCard } from './summary/VerificationStatusCard';
 
 interface SummaryTabProps {
   jobId: string;
@@ -69,14 +70,16 @@ export function SummaryTab({
   const location = useLocation();
   const lensAnalysis = useLensAnalysis(results);
   
-  // Get focus state from investigation context
+  // Get focus and verification state from investigation context
   let focusedEntityId: string | null = null;
   let setFocusedEntity: ((id: string | null) => void) | null = null;
+  let verifiedEntities: Map<string, any> = new Map();
   
   try {
     const investigation = useInvestigation();
     focusedEntityId = investigation.focusedEntityId;
     setFocusedEntity = investigation.setFocusedEntity;
+    verifiedEntities = investigation.verifiedEntities;
   } catch {
     // Context not available - no focus state
   }
@@ -241,6 +244,12 @@ export function SummaryTab({
             platformsChecked={platforms.length}
             breachExposure={breachCount}
             reuseSignals={reuseScore}
+          />
+
+          {/* LENS Verification Status */}
+          <VerificationStatusCard
+            totalAccounts={grouped.found.length}
+            verifiedEntities={verifiedEntities}
           />
 
           {/* Actions - compact buttons */}
