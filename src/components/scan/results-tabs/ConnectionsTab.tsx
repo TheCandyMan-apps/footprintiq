@@ -462,29 +462,39 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
 
   return (
     <div ref={containerRef} className="flex flex-col h-[calc(100vh-280px)] min-h-[400px]">
-      {/* Debug Status Line */}
-      <div className="flex items-center gap-3 px-3 py-1 bg-muted/20 border-b border-border/50 text-[10px] font-mono text-muted-foreground">
-        <span>Nodes: <strong className="text-foreground">{correlationStats.totalNodes}</strong></span>
-        <span>•</span>
-        <span>Identity edges: <strong className="text-foreground">{correlationStats.identityEdges}</strong></span>
-        <span>•</span>
-        <span className={cn(correlationStats.correlationEdges === 0 && 'text-amber-600')}>
-          Correlations: <strong className={cn(correlationStats.correlationEdges > 0 ? 'text-foreground' : 'text-amber-600')}>
-            {correlationStats.correlationEdges}
-          </strong>
-        </span>
-        {showDebugPanel && correlationStats.correlationEdges > 0 && (
-          <span className="ml-auto text-muted-foreground/60">
-            {Object.entries(correlationStats.byReason)
-              .filter(([reason, count]) => count > 0 && reason !== 'identity_search')
-              .map(([reason, count]) => `${reason}:${count}`)
-              .join(', ') || 'none'}
-          </span>
+      {/* Debug Strip - always visible in dev mode */}
+      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/30 border-b border-border/50 text-[11px] font-mono text-muted-foreground">
+        {correlationData.nodes.length < 2 ? (
+          <span className="text-amber-600">No nodes available for graph</span>
+        ) : correlationData.edges.length === 0 ? (
+          <span className="text-amber-600">No edges generated — correlations not detected yet</span>
+        ) : (
+          <>
+            <span>Results: <strong className="text-foreground">{results.length}</strong></span>
+            <span className="text-muted-foreground/50">•</span>
+            <span>Nodes: <strong className="text-foreground">{correlationData.nodes.length}</strong></span>
+            <span className="text-muted-foreground/50">•</span>
+            <span>Edges: <strong className="text-foreground">{correlationData.edges.length}</strong></span>
+            <span className="text-muted-foreground/50">•</span>
+            <span className={cn(correlationStats.correlationEdges === 0 && 'text-amber-600')}>
+              Correlations: <strong className={cn(correlationStats.correlationEdges > 0 ? 'text-foreground' : 'text-amber-600')}>
+                {correlationStats.correlationEdges}
+              </strong>
+            </span>
+            {showDebugPanel && correlationStats.correlationEdges > 0 && (
+              <span className="ml-2 text-muted-foreground/60">
+                ({Object.entries(correlationStats.byReason)
+                  .filter(([reason, count]) => count > 0 && reason !== 'identity_search')
+                  .map(([reason, count]) => `${reason}:${count}`)
+                  .join(', ') || 'none'})
+              </span>
+            )}
+          </>
         )}
         <Button
           variant="ghost"
           size="sm"
-          className="h-4 w-4 p-0 ml-auto"
+          className="h-4 w-4 p-0 ml-auto opacity-50 hover:opacity-100"
           onClick={() => setShowDebugPanel(!showDebugPanel)}
         >
           <Bug className={cn("w-2.5 h-2.5", showDebugPanel && "text-amber-500")} />
