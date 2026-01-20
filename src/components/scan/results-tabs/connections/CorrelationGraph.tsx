@@ -193,7 +193,7 @@ export function CorrelationGraph({
             'font-size': 11,
             'font-weight': 'bold',
             'color': 'data(categoryColor)',
-            'padding': 20,
+            'padding': '20px',
             'shape': 'roundrectangle',
           },
         },
