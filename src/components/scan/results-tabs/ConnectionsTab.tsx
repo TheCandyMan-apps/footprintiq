@@ -484,58 +484,45 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
 
   return (
     <div ref={containerRef} className="flex flex-col h-[calc(100vh-280px)] min-h-[400px]">
-      {/* Debug Status Panel (toggle with bug icon) */}
-      {showDebugPanel && (
-        <div className="flex items-center gap-4 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/30 text-xs font-mono">
-          <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1">
-            <Bug className="w-3 h-3" />
-            Debug
+      {/* Debug Status Line - always visible */}
+      <div className="flex items-center gap-3 px-3 py-1 bg-muted/20 border-b border-border/50 text-[10px] font-mono text-muted-foreground">
+        <span>Nodes: <strong className="text-foreground">{correlationStats.totalNodes}</strong></span>
+        <span>•</span>
+        <span>Identity edges: <strong className="text-foreground">{correlationStats.identityEdges}</strong></span>
+        <span>•</span>
+        <span className={cn(correlationStats.correlationEdges === 0 && 'text-amber-600')}>
+          Correlations: <strong className={cn(correlationStats.correlationEdges > 0 ? 'text-foreground' : 'text-amber-600')}>
+            {correlationStats.correlationEdges}
+          </strong>
+        </span>
+        {showDebugPanel && correlationStats.correlationEdges > 0 && (
+          <span className="ml-auto text-muted-foreground/60">
+            {Object.entries(correlationStats.byReason)
+              .filter(([reason, count]) => count > 0 && reason !== 'identity_search')
+              .map(([reason, count]) => `${reason}:${count}`)
+              .join(', ') || 'none'}
           </span>
-          <span>Nodes: <strong>{correlationStats.totalNodes}</strong></span>
-          <span>Edges: <strong>{correlationStats.totalEdges}</strong></span>
-          <span className={cn(
-            correlationStats.correlationEdges === 0 && 'text-amber-600'
-          )}>
-            Correlations: <strong>{correlationStats.correlationEdges}</strong>
-            <span className="text-muted-foreground ml-1">(account↔account)</span>
-          </span>
-          {correlationStats.correlationEdges > 0 && (
-            <span className="text-muted-foreground">
-              Reasons: {Object.entries(correlationStats.byReason)
-                .filter(([reason, count]) => count > 0 && reason !== 'identity_search')
-                .map(([reason, count]) => `${reason}:${count}`)
-                .join(', ') || 'none'}
-            </span>
-          )}
-        </div>
-      )}
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-4 w-4 p-0 ml-auto"
+          onClick={() => setShowDebugPanel(!showDebugPanel)}
+        >
+          <Bug className={cn("w-2.5 h-2.5", showDebugPanel && "text-amber-500")} />
+        </Button>
+      </div>
 
       {/* Empty state for no correlations */}
-      {correlationStats.totalEdges < 2 || correlationStats.correlationEdges === 0 ? (
+      {correlationStats.correlationEdges === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-muted/10">
           <AlertCircle className="w-10 h-10 text-muted-foreground/40 mb-3" />
           <h3 className="text-sm font-medium text-foreground mb-1">
-            No cross-account correlations detected
+            No cross-account correlations detected yet
           </h3>
           <p className="text-xs text-muted-foreground max-w-sm mb-4">
-            This view becomes more useful when shared signals exist between accounts — such as matching usernames, profile images, bio keywords, or shared links.
+            This view becomes more useful when shared signals exist (username, images, links, bio).
           </p>
-          <div className="flex items-center gap-2 text-[10px] text-muted-foreground/60">
-            <span>Nodes: {correlationStats.totalNodes}</span>
-            <span>·</span>
-            <span>Edges: {correlationStats.totalEdges}</span>
-            <span>·</span>
-            <span>Correlations: {correlationStats.correlationEdges}</span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="mt-3 text-xs gap-1"
-            onClick={() => setShowDebugPanel(!showDebugPanel)}
-          >
-            <Bug className="w-3 h-3" />
-            {showDebugPanel ? 'Hide' : 'Show'} Debug Info
-          </Button>
         </div>
       ) : (
         <>
