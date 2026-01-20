@@ -124,11 +124,12 @@ export function SummaryTab({
   const handleNewScan = () => navigate('/');
 
   return (
-    <div className="space-y-4">
-      {/* Main 8/4 grid layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        {/* Left column - 8 cols */}
-        <div className="lg:col-span-8 space-y-4">
+    <div className="space-y-3">
+      {/* Main 8/4 grid layout - tight spacing */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+        {/* Left column - 8 cols (main briefing content) */}
+        <div className="lg:col-span-8 space-y-3">
+          {/* Identity Snapshot - compact header */}
           <IdentitySnapshotCard
             searchedValue={job?.username || 'Unknown'}
             scanType="username"
@@ -139,6 +140,7 @@ export function SummaryTab({
             scanStatus={scanStatus}
           />
 
+          {/* Scan Narrative - What we did/are doing */}
           <ScanNarrativeFeed
             items={narrative.items}
             summary={narrative.summary}
@@ -147,13 +149,18 @@ export function SummaryTab({
             estimatedTimeRemaining={narrative.estimatedTimeRemaining}
           />
 
+          {/* Key Findings - actionable intelligence */}
           <KeyFindingsPanel findings={keyFindings} scanId={jobId} />
         </div>
 
-        {/* Right column - 4 cols */}
-        <div className="lg:col-span-4 space-y-4">
-          <ProfileImagesStrip images={profileImages} maxImages={6} />
+        {/* Right column - 4 cols (supporting info) */}
+        <div className="lg:col-span-4 space-y-3">
+          {/* Profile Images */}
+          {profileImages.length > 0 && (
+            <ProfileImagesStrip images={profileImages} maxImages={6} />
+          )}
 
+          {/* Compact Stats */}
           <CompactStatsCard
             accountsFound={grouped.found.length}
             platformsChecked={platforms.length}
@@ -161,21 +168,20 @@ export function SummaryTab({
             reuseSignals={reuseScore}
           />
 
-          <div className="flex justify-end">
-            <SummaryActions
-              onExportJSON={onExportJSON}
-              onExportCSV={onExportCSV}
-              onExportPDF={onExportPDF}
-              onNewScan={handleNewScan}
-              disabled={results.length === 0}
-            />
-          </div>
+          {/* Actions - compact buttons */}
+          <SummaryActions
+            onExportJSON={onExportJSON}
+            onExportCSV={onExportCSV}
+            onExportPDF={onExportPDF}
+            onNewScan={handleNewScan}
+            disabled={results.length === 0}
+          />
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="text-xs text-muted-foreground text-center pt-2 border-t border-border/50">
-        {platforms.length} platforms checked • {resultsCount} results
+      {/* Footer - minimal */}
+      <div className="text-[11px] text-muted-foreground/70 text-center pt-1.5 border-t border-border/30">
+        {platforms.length > 0 ? `${platforms.length} platforms` : 'Multiple sources'} • {resultsCount} results
       </div>
     </div>
   );

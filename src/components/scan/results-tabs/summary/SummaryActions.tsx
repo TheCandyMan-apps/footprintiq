@@ -24,33 +24,33 @@ export function SummaryActions({
   disabled,
 }: SummaryActionsProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 justify-end">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 text-xs" disabled={disabled}>
-            <Download className="h-3.5 w-3.5 mr-1.5" />
+          <Button variant="outline" size="sm" className="h-7 text-[11px] px-2.5" disabled={disabled}>
+            <Download className="h-3 w-3 mr-1" />
             Export
-            <ChevronDown className="h-3 w-3 ml-1" />
+            <ChevronDown className="h-2.5 w-2.5 ml-1" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={onExportJSON} disabled={disabled}>
-            <FileJson className="h-4 w-4 mr-2" />
+        <DropdownMenuContent align="end" className="w-36">
+          <DropdownMenuItem onClick={onExportJSON} disabled={disabled} className="text-xs">
+            <FileJson className="h-3.5 w-3.5 mr-2" />
             JSON
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={onExportCSV} disabled={disabled}>
-            <FileSpreadsheet className="h-4 w-4 mr-2" />
+          <DropdownMenuItem onClick={onExportCSV} disabled={disabled} className="text-xs">
+            <FileSpreadsheet className="h-3.5 w-3.5 mr-2" />
             CSV
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={onExportPDF} disabled={disabled}>
-            <FileText className="h-4 w-4 mr-2" />
+          <DropdownMenuItem onClick={onExportPDF} disabled={disabled} className="text-xs">
+            <FileText className="h-3.5 w-3.5 mr-2" />
             PDF Report
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Button variant="outline" size="sm" className="h-8 text-xs" onClick={onNewScan}>
-        <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+      <Button variant="secondary" size="sm" className="h-7 text-[11px] px-2.5" onClick={onNewScan}>
+        <RefreshCw className="h-3 w-3 mr-1" />
         New Scan
       </Button>
     </div>
