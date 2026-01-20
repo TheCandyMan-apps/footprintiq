@@ -143,28 +143,29 @@ const WhatIsIdentityProfiling = () => {
 
   const commonUses = [
     {
-      sector: "Digital Advertising",
-      description: "Profiles determine which ads you see based on inferred interests, demographics, and purchasing intent."
+      sector: "Fraud Detection",
+      description: "Financial institutions and platforms analyse behavioural patterns to identify potentially fraudulent activity. This can prevent losses but may occasionally flag legitimate users.",
+      tradeoff: "Reduces fraud but can create friction for unusual-but-legitimate behaviour."
     },
     {
-      sector: "Content Recommendation",
-      description: "Streaming services, news sites, and social platforms use profiles to suggest content you might engage with."
+      sector: "Account Security",
+      description: "Services use profiling to detect unauthorised access by comparing login patterns to established behaviour. Unfamiliar locations or devices may trigger additional verification.",
+      tradeoff: "Improves security but requires sharing behavioural data with the platform."
+    },
+    {
+      sector: "Advertising Segmentation",
+      description: "Advertisers group users into segments based on inferred interests and demographics. This enables more relevant advertising but relies on assumptions about preferences.",
+      tradeoff: "Can show more relevant content but may feel intrusive or miss the mark."
     },
     {
       sector: "Risk Assessment",
-      description: "Some financial services and insurers use alternative data to supplement traditional credit scoring."
+      description: "Some financial services, insurers, and landlords use alternative data to evaluate applicants. This can expand access for those with limited traditional records.",
+      tradeoff: "May provide opportunity but can also entrench or amplify existing biases."
     },
     {
-      sector: "Recruitment",
-      description: "Employers and recruiters may review publicly available information when evaluating candidates."
-    },
-    {
-      sector: "Security and Fraud Prevention",
-      description: "Profiles help identify unusual behaviour patterns that might indicate fraudulent activity."
-    },
-    {
-      sector: "Data Brokerage",
-      description: "Companies aggregate and sell profiles to other businesses for marketing, verification, or research purposes."
+      sector: "Reputation Analysis",
+      description: "Background screening services aggregate public information to create reputational summaries for employers, partners, or institutions evaluating individuals.",
+      tradeoff: "Supports due diligence but may surface outdated or context-collapsed information."
     }
   ];
 
@@ -362,16 +363,17 @@ const WhatIsIdentityProfiling = () => {
             </h2>
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4 mb-6">
               <p>
-                Identity profiling is widespread across industries. Understanding where it occurs helps contextualise its effects on daily life.
+                Identity profiling occurs across many sectors, often for purposes that are protective, commercial, or administrative. These applications are neither inherently good nor bad—each involves trade-offs between utility and privacy.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-4 mb-6">
+            <div className="space-y-4 mb-6">
               {commonUses.map((use, index) => (
                 <Card key={index} className="border-primary/20">
                   <CardContent className="pt-6">
                     <h3 className="font-semibold text-foreground mb-2">{use.sector}</h3>
-                    <p className="text-muted-foreground text-sm">{use.description}</p>
+                    <p className="text-muted-foreground text-sm mb-2">{use.description}</p>
+                    <p className="text-xs text-muted-foreground/80 italic">Trade-off: {use.tradeoff}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -379,7 +381,7 @@ const WhatIsIdentityProfiling = () => {
 
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
               <p>
-                In most cases, profiling is a byproduct of normal operations rather than a deliberate investigation. Systems are designed to process data automatically, making decisions at scale without individual review.
+                In each case, profiling serves a functional purpose. The question is not whether profiling happens—it does, widely—but whether the benefits justify the data use and whether individuals have adequate awareness of how their information contributes to these processes.
               </p>
             </div>
           </section>
