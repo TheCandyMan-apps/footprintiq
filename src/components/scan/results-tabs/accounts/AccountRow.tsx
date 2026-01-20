@@ -185,22 +185,47 @@ const extractUsername = (result: ScanResult): string | null => {
   return null;
 };
 
+// Check if text is a generic placeholder description
+const isGenericDescription = (text: string): boolean => {
+  const genericPatterns = [
+    'unknown platform',
+    'profile found on',
+    'account detected',
+  ];
+  const lowerText = text.toLowerCase();
+  return genericPatterns.some(pattern => lowerText.includes(pattern));
+};
+
 // Extract truncated bio for display
 const extractBio = (result: ScanResult): string | null => {
   const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  const bio = meta.bio || meta.description || meta.about || meta.summary;
-  if (!bio) return null;
   
-  if (bio.length > 60) {
-    return bio.slice(0, 57) + '...';
+  // Prioritize actual bio content over description
+  const bio = meta.bio || meta.about || meta.summary;
+  if (bio && !isGenericDescription(bio)) {
+    return bio.length > 60 ? bio.slice(0, 57) + '...' : bio;
   }
-  return bio;
+  
+  // Use description only if it's not a generic placeholder
+  if (meta.description && !isGenericDescription(meta.description)) {
+    return meta.description.length > 60 ? meta.description.slice(0, 57) + '...' : meta.description;
+  }
+  
+  return null;
 };
 
 // Extract full bio for tooltip
 const extractFullBio = (result: ScanResult): string | null => {
   const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  return meta.bio || meta.description || meta.about || meta.summary || null;
+  
+  // Prioritize actual bio content
+  const bio = meta.bio || meta.about || meta.summary;
+  if (bio && !isGenericDescription(bio)) return bio;
+  
+  // Use description only if it's not generic
+  if (meta.description && !isGenericDescription(meta.description)) return meta.description;
+  
+  return null;
 };
 
 export function AccountRow({
