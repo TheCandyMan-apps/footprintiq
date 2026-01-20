@@ -86,7 +86,7 @@ export default function RemoveDataBrokers() {
 
             <div className="prose prose-lg max-w-none">
               <p className="text-xl text-muted-foreground leading-relaxed mb-8">
-                Data brokers collect and sell your personal information without your knowledge. This comprehensive guide shows you exactly how to find and remove your data from these companies.
+                Data brokers collect and sell your personal information without your knowledge, contributing significantly to your overall <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link>. This comprehensive guide shows you exactly how to find and remove your data from these companies.
               </p>
 
               <BlogCallout type="warning" title="The Data Broker Problem">

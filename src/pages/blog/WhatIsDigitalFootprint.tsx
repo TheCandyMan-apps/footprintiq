@@ -112,7 +112,7 @@ export default function WhatIsDigitalFootprint() {
               <p className="text-xl leading-relaxed text-muted-foreground">
                 A digital footprint is the trail of data you leave behind while using the internet. Every time you 
                 browse websites, post on social media, shop online, or use apps, you're creating digital traces that 
-                can be tracked, collected, and analyzed.
+                can be tracked, collected, and analyzed — this accumulation is what we call <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link>.
               </p>
             </div>
 
@@ -209,6 +209,7 @@ export default function WhatIsDigitalFootprint() {
                   <h2 className="text-3xl font-bold">Why Your Digital Footprint Matters</h2>
                 </div>
                 <p className="text-lg text-muted-foreground mb-6">
+                  Understanding <Link to="/ai/digital-exposure" className="text-primary hover:underline">what digital exposure means</Link> is the first step toward managing it.
                   Your digital footprint has far-reaching implications for your privacy, security, and reputation. 
                   Understanding these risks is the first step toward protecting yourself.
                 </p>

@@ -159,7 +159,7 @@ export default function FreeUsernameSearch() {
 
             <p>
               For individuals conducting a personal audit, this information provides a starting point 
-              for understanding their online footprint. It's particularly helpful when preparing for 
+              for understanding their online footprint and overall <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link>. It's particularly helpful when preparing for 
               a job search, cleaning up old accounts, or simply satisfying curiosity about one's 
               digital presence.
             </p>
@@ -237,10 +237,10 @@ export default function FreeUsernameSearch() {
             <h2>Beyond Username Searches</h2>
             
             <p>
-              Understanding your full digital exposure typically requires more than a single username 
+              Understanding your full <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link> typically requires more than a single username 
               scan. <Link to="/blog/username-reuse" className="text-primary hover:underline">Reusing the same username across platforms can create unintended connections over time</Link>. 
-              For a deeper look at this concept, see our guide on <Link to="/blog/what-is-digital-footprint" className="text-primary hover:underline">what is digital exposure</Link> and 
-              why it matters. Other dimensions of your online presence include:
+              For a deeper look at <Link to="/ai/digital-exposure" className="text-primary hover:underline">what digital exposure means</Link> and 
+              why it matters, see our comprehensive guide. Other dimensions of your online presence include:
             </p>
 
             <ul>
