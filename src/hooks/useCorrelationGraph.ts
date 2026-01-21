@@ -589,13 +589,15 @@ export function useCorrelationGraph(
       const maxWeight = Math.max(...sortedSignals.map(s => s.weight));
       const maxConfidence = Math.max(...sortedSignals.map(s => s.confidence));
       
-      // Build combined details
-      const details = sortedSignals.map(s => s.detail).join(' + ');
+      // Build tooltip with clean "Connected via:" format
       const platformInfo = node1?.platform && node2?.platform 
-        ? ` (${node1.platform} ↔ ${node2.platform})` 
+        ? `${node1.platform} ↔ ${node2.platform}\n` 
         : '';
+      const connectedVia = `Connected via: ${reasonLabels.join(', ')}`;
+      const confidenceInfo = `Confidence: ${maxConfidence}%`;
+      const details = `${platformInfo}${connectedVia}\n${confidenceInfo}`;
       
-      // Build reason label
+      // Build reason label for UI display
       const reasonLabel = reasons.length > 1
         ? reasonLabels.join(' + ')
         : reasonLabels[0];
@@ -613,7 +615,7 @@ export function useCorrelationGraph(
         reasonLabels,
         weight: maxWeight,
         confidence: maxConfidence,
-        details: details + platformInfo,
+        details,
       });
     });
 
