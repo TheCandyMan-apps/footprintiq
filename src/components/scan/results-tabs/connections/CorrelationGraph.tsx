@@ -46,6 +46,7 @@ const EDGE_REASON_COLORS: Record<string, { color: string; label: string; priorit
   bio_similarity: { color: '#3b82f6', label: 'Bio Similarity', priority: 4 }, // blue-500
   similar_bio: { color: '#3b82f6', label: 'Bio Similarity', priority: 4 },
   shared_email: { color: '#f59e0b', label: 'Shared Email', priority: 5 },    // amber-500
+  contextual_reference: { color: '#f59e0b', label: 'High-Risk OSINT', priority: 6 }, // amber-500
 };
 
 // Default: show identity + top N strongest connected accounts (Curated View)
@@ -76,7 +77,7 @@ export function CorrelationGraph({
   const [tooltipData, setTooltipData] = useState<{
     x: number;
     y: number;
-    type: 'node' | 'edge';
+    type: 'node' | 'edge' | 'risk_signal';
     content: { 
       displayName: string; 
       confidencePct?: number; 
@@ -87,6 +88,10 @@ export function CorrelationGraph({
       username?: string;
       domain?: string;
       connectionReasons?: string[];
+      // Risk signal tooltip fields
+      signalType?: string;
+      status?: string;
+      actionRequired?: boolean;
     };
   } | null>(null);
 
@@ -231,6 +236,15 @@ export function CorrelationGraph({
       const rawLabel = node.label || '';
       const truncatedLabel = rawLabel.length > 12 ? rawLabel.slice(0, 11) + '…' : rawLabel;
       
+      // Build classes based on node type
+      const nodeClasses: string[] = [node.type];
+      if (node.lensStatus) nodeClasses.push(node.lensStatus);
+      
+      // For risk_signal nodes, add verified/unverified class
+      if (node.type === 'risk_signal') {
+        nodeClasses.push(node.verified ? 'verified' : 'unverified');
+      }
+      
       elements.push({
         data: {
           id: node.id,
@@ -239,7 +253,7 @@ export function CorrelationGraph({
           displayName: node.displayName, // Full display name for tooltips
           type: node.type,
           category: node.category,
-          categoryColor: categoryConfig.color,
+          categoryColor: node.type === 'risk_signal' ? '#f59e0b' : categoryConfig.color,
           lensColor,
           lensStatus: node.lensStatus,
           confidence: node.confidence,
@@ -251,8 +265,13 @@ export function CorrelationGraph({
           username: node.username || node.meta?.username,
           degree, // Store degree for sizing
           parent: groupByPlatform && node.type === 'account' ? `group-${node.category}` : undefined,
+          // Risk signal specific fields
+          riskSignalType: node.riskSignalType,
+          riskLevel: node.riskLevel,
+          verified: node.verified,
+          actionRequired: node.actionRequired,
         },
-        classes: [node.type, node.lensStatus || 'unclear'].filter(Boolean).join(' '),
+        classes: nodeClasses.filter(Boolean).join(' '),
       });
     });
 
@@ -301,6 +320,14 @@ export function CorrelationGraph({
         reasonClasses.push('reason-email');
       } else if (strongestReason === 'shared_link' || strongestReason === 'shared_domain') {
         reasonClasses.push('reason-link');
+      } else if (strongestReason === 'contextual_reference') {
+        reasonClasses.push('reason-risk');
+        // Add verified/unverified class based on edge data
+        if ((edge as any).verified) {
+          reasonClasses.push('verified');
+        } else {
+          reasonClasses.push('unverified');
+        }
       }
       
       // Build combined tooltip for multi-reason edges
@@ -322,6 +349,7 @@ export function CorrelationGraph({
           confidence: edge.confidence,
           details: edge.details,
           isMultiReason: reasons.length > 1,
+          verified: (edge as any).verified || false,
         },
         classes: reasonClasses.join(' '),
       });
@@ -392,6 +420,79 @@ export function CorrelationGraph({
             'shape': 'ellipse',
             'transition-property': 'width, height, border-width, opacity, background-opacity',
             'transition-duration': 200,
+          },
+        },
+        // Risk signal nodes - hexagon shape, opacity scales with confidence
+        {
+          selector: 'node.risk_signal',
+          style: {
+            'background-color': '#f59e0b', // amber-500
+            'border-width': 2,
+            'border-color': '#d97706', // amber-600
+            'label': '', // No label by default (collapsed)
+            'text-valign': 'bottom',
+            'text-margin-y': 6,
+            'font-size': 10,
+            'font-weight': 500,
+            'font-family': 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
+            'color': '#1f2937',
+            'text-background-color': '#ffffff',
+            'text-background-opacity': 0.95,
+            'text-background-padding': '3px',
+            'width': 18,
+            'height': 18,
+            'shape': 'hexagon',
+            'background-opacity': 0.6, // Default medium opacity
+            'transition-property': 'width, height, border-width, opacity, background-opacity',
+            'transition-duration': 200,
+          },
+        },
+        // Risk signal - low confidence (collapsed by default, very dim)
+        {
+          selector: 'node.risk_signal[confidence < 0.4]',
+          style: {
+            'width': 12,
+            'height': 12,
+            'background-opacity': 0.3,
+            'border-width': 1,
+            'display': 'none', // Collapsed by default
+          },
+        },
+        // Risk signal - medium confidence
+        {
+          selector: 'node.risk_signal[confidence >= 0.4][confidence < 0.7]',
+          style: {
+            'width': 16,
+            'height': 16,
+            'background-opacity': 0.6,
+            'background-color': '#3b82f6', // blue-500 for contextual
+          },
+        },
+        // Risk signal - high confidence (more prominent)
+        {
+          selector: 'node.risk_signal[confidence >= 0.7]',
+          style: {
+            'width': 22,
+            'height': 22,
+            'background-opacity': 0.9,
+            'background-color': '#ef4444', // red-500 for high risk
+            'border-color': '#dc2626', // red-600
+            'border-width': 3,
+          },
+        },
+        // Risk signal - verified (solid border)
+        {
+          selector: 'node.risk_signal.verified',
+          style: {
+            'border-style': 'solid',
+            'border-width': 3,
+          },
+        },
+        // Risk signal - unverified (dashed border)
+        {
+          selector: 'node.risk_signal.unverified',
+          style: {
+            'border-style': 'dashed',
           },
         },
         // Low-degree nodes (1-2 connections) - base size
@@ -661,6 +762,31 @@ export function CorrelationGraph({
           selector: 'edge.reason-link',
           style: {
             'line-color': '#f97316', // orange-500
+          },
+        },
+        // Contextual reference (High-Risk OSINT) - Amber with conditional style
+        {
+          selector: 'edge.reason-risk',
+          style: {
+            'line-color': '#f59e0b', // amber-500
+            'line-style': 'dashed', // Dashed by default (unverified)
+          },
+        },
+        // Contextual reference - verified (solid line)
+        {
+          selector: 'edge.reason-risk.verified',
+          style: {
+            'line-style': 'solid',
+            'line-color': '#ef4444', // red-500 for verified risks
+            'width': 2,
+          },
+        },
+        // Contextual reference - unverified (dashed, muted)
+        {
+          selector: 'edge.reason-risk.unverified',
+          style: {
+            'line-style': 'dashed',
+            'line-opacity': 0.4,
           },
         },
         // Selected states
@@ -1716,7 +1842,32 @@ export function CorrelationGraph({
           }}
         >
           <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg px-3 py-2 text-xs max-w-[200px]">
-            {tooltipData.type === 'node' ? (
+            {tooltipData.type === 'risk_signal' ? (
+              <div className="space-y-1.5">
+                <div className="font-semibold text-amber-500">Signal Type: High-Risk OSINT</div>
+                <div className="text-[10px]">
+                  <span className="text-muted-foreground">Confidence:</span>{' '}
+                  <span className={cn(
+                    "font-medium",
+                    tooltipData.content.confidencePct && tooltipData.content.confidencePct >= 70 && "text-destructive",
+                    tooltipData.content.confidencePct && tooltipData.content.confidencePct >= 40 && tooltipData.content.confidencePct < 70 && "text-blue-500",
+                    tooltipData.content.confidencePct && tooltipData.content.confidencePct < 40 && "text-muted-foreground"
+                  )}>
+                    {tooltipData.content.confidencePct ? (tooltipData.content.confidencePct / 100).toFixed(2) : 'N/A'}
+                  </span>
+                </div>
+                <div className="text-[10px]">
+                  <span className="text-muted-foreground">Status:</span>{' '}
+                  <span className="font-medium">{tooltipData.content.status || 'Unverified'}</span>
+                </div>
+                <div className="text-[10px]">
+                  <span className="text-muted-foreground">Action Required:</span>{' '}
+                  <span className={cn("font-medium", tooltipData.content.actionRequired && "text-amber-500")}>
+                    {tooltipData.content.actionRequired ? 'Review' : 'None'}
+                  </span>
+                </div>
+              </div>
+            ) : tooltipData.type === 'node' ? (
               <div className="space-y-1.5">
                 {/* Platform/Site name */}
                 <div className="font-semibold text-foreground">{tooltipData.content.platform || 'Profile'}</div>
