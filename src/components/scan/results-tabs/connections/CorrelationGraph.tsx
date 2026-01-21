@@ -66,10 +66,13 @@ export function CorrelationGraph({
   const [internalFocusedId, setInternalFocusedId] = useState<string | null>(null);
   const [curatedView, setCuratedView] = useState(true); // Curated view is default
   const [searchQuery, setSearchQuery] = useState('');
+  const [nodeListSearchQuery, setNodeListSearchQuery] = useState(''); // Search from NodeList
   const [showStrongestOnly, setShowStrongestOnly] = useState(true); // Default ON
   const [focusHops, setFocusHops] = useState<1 | 2>(1); // 1-hop or 2-hop neighborhood
   const [isZoomedIn, setIsZoomedIn] = useState(false); // Track zoom level for label hint
   const [showNodeList, setShowNodeList] = useState<boolean | null>(null); // null = auto (show when labels off)
+  const [pinnedNodeIds, setPinnedNodeIds] = useState<Set<string>>(new Set());
+  const [hoveredListNodeId, setHoveredListNodeId] = useState<string | null>(null);
   const [tooltipData, setTooltipData] = useState<{
     x: number;
     y: number;
@@ -770,6 +773,50 @@ export function CorrelationGraph({
             'z-index': 800,
           },
         },
+        // ========== PINNED NODES - always show label ==========
+        {
+          selector: 'node.pinned',
+          style: {
+            'label': 'data(label)',
+            'text-background-color': 'hsl(var(--background))',
+            'text-background-opacity': 0.8,
+            'text-background-padding': '2px',
+            'border-color': '#f59e0b', // amber-500
+            'border-width': 2.5,
+            'z-index': 800,
+          },
+        },
+        // ========== LIST-HOVERED NODES - highlight from NodeList ==========
+        {
+          selector: 'node.list-hovered',
+          style: {
+            'label': 'data(label)',
+            'width': 36,
+            'height': 36,
+            'border-width': 3,
+            'border-color': 'hsl(var(--primary))',
+            'z-index': 950,
+            'font-size': 10,
+            'font-weight': 'bold',
+            'text-background-color': 'hsl(var(--background))',
+            'text-background-opacity': 0.9,
+            'text-background-padding': '3px',
+          },
+        },
+        // ========== SEARCH-DIMMED NODES - non-matching in list search ==========
+        {
+          selector: 'node.search-dimmed',
+          style: {
+            'opacity': 0.15,
+            'label': '',
+          },
+        },
+        {
+          selector: 'edge.search-dimmed',
+          style: {
+            'line-opacity': 0.03,
+          },
+        },
       ],
       // SherlockEye-style layout: visible islands with whitespace and readable clusters
       layout: groupByPlatform 
@@ -1149,6 +1196,61 @@ export function CorrelationGraph({
     });
   }, [activeFocusedId, focusHops]);
 
+  // Handle pinned nodes - apply .pinned class
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+
+    cy.nodes().removeClass('pinned');
+    pinnedNodeIds.forEach(nodeId => {
+      const node = cy.getElementById(nodeId);
+      if (node.length) {
+        node.addClass('pinned');
+      }
+    });
+  }, [pinnedNodeIds]);
+
+  // Handle NodeList search - dim non-matching nodes
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+
+    cy.elements().removeClass('search-dimmed');
+
+    if (!nodeListSearchQuery.trim()) return;
+
+    const query = nodeListSearchQuery.toLowerCase().trim();
+    
+    // Find matching node IDs
+    const matchingNodeIds = new Set<string>();
+    displayNodes.forEach(node => {
+      if (node.type === 'identity') {
+        matchingNodeIds.add(node.id);
+        return;
+      }
+      const platform = (node.platform || node.label || '').toLowerCase();
+      const username = (node.username || node.meta?.username || '').toLowerCase();
+      if (platform.includes(query) || username.includes(query)) {
+        matchingNodeIds.add(node.id);
+      }
+    });
+
+    // Dim non-matching nodes and their edges
+    cy.nodes().forEach((node: cytoscape.NodeSingular) => {
+      if (!matchingNodeIds.has(node.id())) {
+        node.addClass('search-dimmed');
+      }
+    });
+    
+    cy.edges().forEach((edge: cytoscape.EdgeSingular) => {
+      const source = edge.data('source');
+      const target = edge.data('target');
+      if (!matchingNodeIds.has(source) || !matchingNodeIds.has(target)) {
+        edge.addClass('search-dimmed');
+      }
+    });
+  }, [nodeListSearchQuery, displayNodes]);
+
   // Clear focus handler
   const handleClearFocus = useCallback(() => {
     setInternalFocusedId(null);
@@ -1156,7 +1258,7 @@ export function CorrelationGraph({
     
     const cy = cyRef.current;
     if (cy) {
-      cy.elements().removeClass('dimmed highlighted focused strong-correlation');
+      cy.elements().removeClass('dimmed highlighted focused strong-correlation focus-neighbor');
       cy.fit(undefined, 30);
     }
   }, [onFocusNode]);
@@ -1238,12 +1340,53 @@ export function CorrelationGraph({
   // Determine if node list should be visible (always show by default since no labels)
   const isNodeListVisible = showNodeList ?? true;
 
-  // Handle node selection from list
+  // Handle node selection from list (sets focus mode)
   const handleNodeListSelect = useCallback((node: GraphNode) => {
     setInternalFocusedId(node.id);
     onFocusNode?.(node.id);
     onNodeClick(node);
   }, [onFocusNode, onNodeClick]);
+
+  // Handle node hover from list (highlights node in graph)
+  const handleNodeListHover = useCallback((nodeId: string | null) => {
+    setHoveredListNodeId(nodeId);
+    
+    const cy = cyRef.current;
+    if (!cy) return;
+    
+    // Clear previous list-hover state
+    cy.nodes().removeClass('list-hovered');
+    
+    if (nodeId) {
+      const node = cy.getElementById(nodeId);
+      if (node.length) {
+        node.addClass('list-hovered');
+        // Pan to node (don't zoom)
+        cy.animate({
+          center: { eles: node },
+          duration: 200,
+        });
+      }
+    }
+  }, []);
+
+  // Handle pin toggle from list
+  const handleNodeListPin = useCallback((nodeId: string) => {
+    setPinnedNodeIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(nodeId)) {
+        newSet.delete(nodeId);
+      } else {
+        newSet.add(nodeId);
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Handle search from NodeList (dims non-matching nodes)
+  const handleNodeListSearch = useCallback((query: string) => {
+    setNodeListSearchQuery(query);
+  }, []);
 
   return (
     <div className={cn('relative flex h-full', className)}>
@@ -1623,7 +1766,11 @@ export function CorrelationGraph({
           nodes={displayNodes}
           edges={displayEdges.map(e => ({ source: e.source, target: e.target }))}
           focusedNodeId={activeFocusedId}
+          pinnedNodeIds={pinnedNodeIds}
           onNodeSelect={handleNodeListSelect}
+          onNodeHover={handleNodeListHover}
+          onNodePin={handleNodeListPin}
+          onSearchChange={handleNodeListSearch}
           className="w-64 shrink-0"
         />
       )}
