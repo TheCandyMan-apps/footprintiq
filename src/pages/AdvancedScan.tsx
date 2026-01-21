@@ -51,6 +51,7 @@ import { normalizePlanTier } from "@/lib/billing/planCapabilities";
 import { WhatsMyNameTab } from "@/components/scan/WhatsMyNameTab";
 import { ToolSelector, TOOLS } from "@/components/scan/ToolSelector";
 import { UpgradeTeaser } from "@/components/upsell/UpgradeTeaser";
+import { ScanTypeAvailabilityMatrix } from "@/components/scan/ScanTypeAvailabilityMatrix";
 import { PremiumUpgradeCTA } from "@/components/upsell/PremiumUpgradeCTA";
 import { TemplateManager } from "@/components/scan/TemplateManager";
 import { SaveTemplateDialog } from "@/components/scan/SaveTemplateDialog";
@@ -946,6 +947,13 @@ export default function AdvancedScan() {
                     email verification, and contact enrichment.
                   </AlertDescription>
                 </Alert>
+              )}
+              
+              {/* Scan Type Availability Matrix - show for Free users */}
+              {isFree && (
+                <ScanTypeAvailabilityMatrix 
+                  currentTier={normalizePlanTier(workspace?.plan || workspace?.subscription_tier)} 
+                />
               )}
               {scanType === 'username' && (
                 <>
