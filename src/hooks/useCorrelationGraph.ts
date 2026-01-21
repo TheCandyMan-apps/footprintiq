@@ -46,6 +46,7 @@ export interface GraphNode {
   category: string;
   url?: string;
   imageUrl?: string;
+  /** 0–1 */
   confidence: number;
   lensStatus?: 'verified' | 'likely' | 'unclear' | null;
   meta?: Record<string, any>;
@@ -263,7 +264,7 @@ export function useCorrelationGraph(
       displayName: `Identity: ${searchedUsername}`,
       username: searchedUsername,
       category: 'identity',
-      confidence: 100,
+      confidence: 1,
       lensStatus: 'verified',
     };
     nodes.push(identityNode);
@@ -283,7 +284,8 @@ export function useCorrelationGraph(
     foundProfiles.forEach((result) => {
       const category = categorizePlatform(result.site || '');
       const signals = signalsMap.get(result.id)!;
-      const confidence = calculateLensScore(result);
+      const confidenceScore = calculateLensScore(result); // 0–100
+      const confidence = Math.max(0, Math.min(1, confidenceScore / 100));
       const meta = (result.meta || result.metadata || {}) as Record<string, any>;
       
       // Check for verification status
@@ -303,8 +305,20 @@ export function useCorrelationGraph(
       // 3) platform
       // 4) domain/host extracted from url
       // 5) "Profile"
-      const platform = result.site || '';
-      const username = signals.rawUsername || '';
+      const platform = (
+        result.site ||
+        (meta as any).platform ||
+        (meta as any).site ||
+        (result as any).platform ||
+        ''
+      );
+      const username = (
+        signals.rawUsername ||
+        extractUsername(result) ||
+        (meta as any).username ||
+        (meta as any).handle ||
+        ''
+      );
       let displayName: string;
       
       if (platform && username) {
