@@ -6,7 +6,7 @@ import {
 } from '@/hooks/useCorrelationGraph';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw, X, Search, Eye, EyeOff, Expand, Shrink, Zap, Tag, Info, List } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Focus, RefreshCw, X, Search, Eye, Expand, Shrink, Zap, Info, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -63,7 +63,6 @@ export function CorrelationGraph({
   const tooltipRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const [groupByPlatform, setGroupByPlatform] = useState(false);
-  const [labelMode, setLabelMode] = useState<'off' | 'focus' | 'all'>('off'); // 3-mode label visibility
   const [internalFocusedId, setInternalFocusedId] = useState<string | null>(null);
   const [curatedView, setCuratedView] = useState(true); // Curated view is default
   const [searchQuery, setSearchQuery] = useState('');
@@ -359,25 +358,26 @@ export function CorrelationGraph({
             'text-opacity': 1,
           },
         },
-        // Account nodes - base style (reduced ~25% from original 30px to 22px)
+        // Account nodes - base style (no labels by default)
         {
           selector: 'node.account',
           style: {
             'background-color': 'data(categoryColor)',
             'border-width': 2,
             'border-color': 'data(lensColor)',
-            'label': 'data(label)',
+            'label': '', // No label by default
             'text-valign': 'bottom',
             'text-margin-y': 5,
-            'font-size': 8,
+            'font-size': 9,
             'color': 'hsl(var(--foreground))',
             'text-outline-width': 1.5,
             'text-outline-color': 'hsl(var(--background))',
+            'text-wrap': 'ellipsis',
+            'text-max-width': '120px',
             'width': 22,
             'height': 22,
             'shape': 'ellipse',
-            'text-opacity': 0, // Hidden by default
-            'transition-property': 'text-opacity, width, height, border-width, opacity',
+            'transition-property': 'width, height, border-width, opacity',
             'transition-duration': 150,
           },
         },
@@ -446,17 +446,20 @@ export function CorrelationGraph({
             'background-opacity': 0.8,
           },
         },
-        // Hovered node - show label and modest enlarge
+        // Hovered node - show label with background
         {
           selector: 'node.hovered',
           style: {
-            'text-opacity': 1,
+            'label': 'data(label)',
             'width': 32,
             'height': 32,
             'border-width': 3,
             'z-index': 900,
             'font-size': 9,
             'font-weight': 'bold',
+            'text-background-color': 'hsl(var(--background))',
+            'text-background-opacity': 0.85,
+            'text-background-padding': '2px',
           },
         },
         // Hovered edge - thicker and darker
@@ -469,11 +472,11 @@ export function CorrelationGraph({
             'z-index': 900,
           },
         },
-        // Connected to hovered (neighbors)
+        // Connected to hovered (neighbors) - show labels
         {
           selector: 'node.neighbor',
           style: {
-            'text-opacity': 0.8,
+            'label': 'data(label)',
             'opacity': 1,
           },
         },
@@ -489,7 +492,7 @@ export function CorrelationGraph({
           selector: 'node.unhovered',
           style: {
             'opacity': 0.2,
-            'text-opacity': 0,
+            'label': '',
           },
         },
         {
@@ -640,7 +643,7 @@ export function CorrelationGraph({
           selector: 'node.dimmed',
           style: {
             'opacity': 0.15,
-            'text-opacity': 0,
+            'label': '',
           },
         },
         {
@@ -649,14 +652,14 @@ export function CorrelationGraph({
             'opacity': 0.05,
           },
         },
-        // Highlighted state for focused paths
+        // Highlighted state for focused paths - show labels
         {
           selector: 'node.highlighted',
           style: {
+            'label': 'data(label)',
             'border-width': 3,
             'border-color': 'hsl(var(--primary))',
             'z-index': 999,
-            'text-opacity': 1,
           },
         },
         {
@@ -668,17 +671,20 @@ export function CorrelationGraph({
             'z-index': 999,
           },
         },
-        // Focused node (the actual focused one)
+        // Focused node (the actual focused one) - show label with background
         {
           selector: 'node.focused',
           style: {
+            'label': 'data(label)',
             'border-width': 4,
             'border-color': 'hsl(var(--primary))',
             'width': 36,
             'height': 36,
             'font-size': 10,
             'font-weight': 'bold',
-            'text-opacity': 1,
+            'text-background-color': 'hsl(var(--background))',
+            'text-background-opacity': 0.85,
+            'text-background-padding': '2px',
             'z-index': 1000,
           },
         },
@@ -980,38 +986,16 @@ export function CorrelationGraph({
       onNodeDoubleClick(graphNode);
     });
 
-    // ========== ZOOM-BASED LABEL VISIBILITY ==========
-    // ========== ZOOM-BASED LABEL VISIBILITY ==========
+    // ========== ZOOM-BASED HINT ==========
     const ZOOM_THRESHOLD = 1.3;
     
-    const updateLabelVisibility = () => {
+    const updateZoomState = () => {
       const zoom = cy.zoom();
-      const zoomedIn = zoom >= ZOOM_THRESHOLD;
-      setIsZoomedIn(zoomedIn);
-      
-      // Determine which labels to show based on mode + zoom
-      if (labelMode === 'all' || zoomedIn) {
-        // Show all labels (mode=all OR zoomed in)
-        cy.nodes('.account').not('.dimmed').style('text-opacity', 0.85);
-      } else if (labelMode === 'focus') {
-        // Show labels only for focused/highlighted nodes and neighbors
-        cy.nodes('.account')
-          .not('.hovered')
-          .not('.focused')
-          .not('.highlighted')
-          .not('.neighbor')
-          .style('text-opacity', 0);
-        cy.nodes('.account.focused, .account.highlighted, .account.neighbor, .account.hovered')
-          .style('text-opacity', 0.85);
-      } else {
-        // Off mode - hide all labels except hovered
-        cy.nodes('.account').not('.hovered').style('text-opacity', 0);
-      }
+      setIsZoomedIn(zoom >= ZOOM_THRESHOLD);
     };
     
-    cy.on('zoom', updateLabelVisibility);
-    // Initial visibility check
-    updateLabelVisibility();
+    cy.on('zoom', updateZoomState);
+    updateZoomState();
 
     cyRef.current = cy;
 
@@ -1023,7 +1007,7 @@ export function CorrelationGraph({
       cy.destroy();
       cyRef.current = null;
     };
-  }, [displayNodes, displayEdges, groupByPlatform, labelMode, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
+  }, [displayNodes, displayEdges, groupByPlatform, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
 
   // Handle focus mode - prioritize correlation edges with hop-based neighborhood
   useEffect(() => {
@@ -1181,8 +1165,8 @@ export function CorrelationGraph({
       minTemp: 0.3,
     } as any).run();
   }, []);
-  // Determine if node list should be visible (auto-show when labels are off)
-  const isNodeListVisible = showNodeList === null ? labelMode === 'off' : showNodeList;
+  // Determine if node list should be visible (always show by default since no labels)
+  const isNodeListVisible = showNodeList ?? true;
 
   // Handle node selection from list
   const handleNodeListSelect = useCallback((node: GraphNode) => {
@@ -1365,45 +1349,6 @@ export function CorrelationGraph({
 
           <div className="w-full h-px bg-border my-0.5" />
 
-          {/* Labels Mode Selector */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex flex-col items-center gap-0.5">
-                <Button
-                  variant={labelMode === 'off' ? 'ghost' : 'secondary'}
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => {
-                    // Cycle through modes: off -> focus -> all -> off
-                    if (labelMode === 'off') setLabelMode('focus');
-                    else if (labelMode === 'focus') setLabelMode('all');
-                    else setLabelMode('off');
-                  }}
-                >
-                  <Tag className={cn(
-                    "h-4 w-4",
-                    labelMode === 'all' && "text-primary",
-                    labelMode === 'focus' && "text-amber-500"
-                  )} />
-                </Button>
-                <span className="text-[8px] text-muted-foreground uppercase">
-                  {labelMode === 'off' ? 'Off' : labelMode === 'focus' ? 'Focus' : 'All'}
-                </span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="text-xs max-w-[180px]">
-              <div className="space-y-1">
-                <div className="font-medium">Labels: {labelMode === 'off' ? 'Off' : labelMode === 'focus' ? 'Focus Only' : 'All'}</div>
-                <div className="text-muted-foreground text-[10px]">
-                  {labelMode === 'off' && 'No labels shown (hover to see)'}
-                  {labelMode === 'focus' && 'Labels on focused node + neighbors'}
-                  {labelMode === 'all' && 'All labels visible (may be noisy)'}
-                </div>
-                <div className="text-[10px] text-muted-foreground italic">Click to cycle modes</div>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center justify-center h-8 w-8">
@@ -1511,15 +1456,13 @@ export function CorrelationGraph({
           </div>
         </div>
         
-        {/* Zoom hint - show when labels are off and not zoomed in */}
-        {labelMode === 'off' && !isZoomedIn && (
-          <div className="mt-2 pt-2 border-t border-border/50">
-            <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
-              <Info className="h-2.5 w-2.5" />
-              <span>Zoom in to reveal labels</span>
-            </div>
+        {/* Hover hint */}
+        <div className="mt-2 pt-2 border-t border-border/50">
+          <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+            <Info className="h-2.5 w-2.5" />
+            <span>Hover a node to reveal label</span>
           </div>
-        )}
+        </div>
       </div>
 
       {/* Custom Tooltip */}
