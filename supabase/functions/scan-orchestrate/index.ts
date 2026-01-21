@@ -1859,6 +1859,106 @@ serve(async (req) => {
           console.error('[orchestrate] Failed to trigger webhooks:', webhookError);
           // Don't fail the scan if webhooks fail
         }
+
+        // Spamhaus enrichment (Pro-only, async, non-blocking)
+        // Runs after primary scan completes to enrich IPs/domains
+        try {
+          const SPAMHAUS_ENABLED = Deno.env.get('SPAMHAUS_ENRICHMENT_ENABLED') === 'true';
+          if (SPAMHAUS_ENABLED && sortedFindings.length > 0) {
+            console.log(`[orchestrate] 🔍 Triggering Spamhaus enrichment for scan ${scanId}`);
+            
+            // Fire-and-forget - enrichment runs async and stores in scan_enrichments
+            // Pro check happens inside spamhaus-enrich (returns PRO_REQUIRED for free users)
+            const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+            
+            // Extract unique IPs/domains from findings for enrichment
+            const enrichmentTargets: Array<{ type: 'ip' | 'domain'; value: string }> = [];
+            const ipv4Regex = /\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b/g;
+            const seenTargets = new Set<string>();
+            
+            for (const finding of sortedFindings.slice(0, 50)) {
+              if (finding.evidence && Array.isArray(finding.evidence)) {
+                for (const ev of finding.evidence) {
+                  const val = String(ev.value || '');
+                  
+                  // Extract IPs
+                  const ips = val.match(ipv4Regex) || [];
+                  for (const ip of ips) {
+                    const parts = ip.split('.').map(Number);
+                    // Skip private IPs
+                    if (parts[0] === 10 || 
+                        (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+                        (parts[0] === 192 && parts[1] === 168) ||
+                        parts[0] === 127 || parts[0] === 0) continue;
+                    
+                    const key = `ip:${ip}`;
+                    if (!seenTargets.has(key)) {
+                      seenTargets.add(key);
+                      enrichmentTargets.push({ type: 'ip', value: ip });
+                    }
+                  }
+                  
+                  // Extract domains from URLs
+                  if (ev.key === 'url' || ev.key === 'profile_url' || ev.key === 'link') {
+                    try {
+                      const url = new URL(val);
+                      const domain = url.hostname.toLowerCase();
+                      if (domain.includes('.') && domain.length > 4) {
+                        const key = `domain:${domain}`;
+                        if (!seenTargets.has(key)) {
+                          seenTargets.add(key);
+                          enrichmentTargets.push({ type: 'domain', value: domain });
+                        }
+                      }
+                    } catch { /* not a valid URL */ }
+                  }
+                }
+              }
+            }
+            
+            // Call spamhaus-enrich for first 10 targets (fire-and-forget)
+            const targetSlice = enrichmentTargets.slice(0, 10);
+            console.log(`[orchestrate] Enriching ${targetSlice.length} targets for scan ${scanId}`);
+            
+            for (const target of targetSlice) {
+              fetch(`${SUPABASE_URL}/functions/v1/spamhaus-enrich`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': authHeader,
+                },
+                body: JSON.stringify({
+                  inputType: target.type,
+                  inputValue: target.value,
+                  scanId: scanId,
+                  skipCache: false,
+                }),
+              }).then(async (res) => {
+                const result = await res.json();
+                if (result.success) {
+                  // Store enrichment in scan_enrichments
+                  await supabaseService.from('scan_enrichments').upsert({
+                    scan_id: scanId,
+                    enrichment_type: 'spamhaus',
+                    input_type: target.type,
+                    input_value: target.value,
+                    signal: result.data,
+                    verdict: result.data.verdict,
+                    confidence: result.data.confidence,
+                  }, {
+                    onConflict: 'scan_id,enrichment_type,input_type,input_value',
+                  });
+                  console.log(`[orchestrate] ✓ Enriched ${target.type}:${target.value}`);
+                }
+              }).catch(err => {
+                console.warn(`[orchestrate] Enrichment failed for ${target.value}:`, err.message);
+              });
+            }
+          }
+        } catch (enrichError) {
+          console.warn('[orchestrate] Spamhaus enrichment error (non-blocking):', enrichError);
+          // Don't fail the scan if enrichment fails
+        }
       }
     } catch (finalizationError) {
       console.error('[orchestrate] CRITICAL: Finalization failed:', finalizationError);

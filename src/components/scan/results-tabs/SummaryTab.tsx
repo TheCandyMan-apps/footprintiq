@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { User, Mail, Phone, Globe, Clock, CheckCircle2, FileText } from 'lucide-react';
@@ -7,11 +7,15 @@ import { format } from 'date-fns';
 import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { useInvestigation } from '@/contexts/InvestigationContext';
 import { useScanNarrative } from '@/hooks/useScanNarrative';
+import { flags } from '@/lib/featureFlags';
 
 import { IntelligenceBrief } from './summary/IntelligenceBrief';
 import { NextStepsPanel } from './summary/NextStepsPanel';
 import { FocusedEntityBanner } from './summary/FocusedEntityBanner';
 import { ScanNarrativeFeed } from './summary/ScanNarrativeFeed';
+
+// Lazy load ReputationSignalsCard for feature-flagged rollout
+const ReputationSignalsCard = lazy(() => import('./ReputationSignalsCard'));
 
 interface SummaryTabProps {
   jobId: string;
@@ -229,6 +233,13 @@ export function SummaryTab({
           onNavigateToBreaches={() => navigateToTab('breaches')}
           onExport={onExportPDF}
         />
+
+        {/* 5) Reputation & Abuse Signals (Pro feature, feature-flagged) */}
+        {flags.spamhausEnrichment && (
+          <Suspense fallback={<div className="h-32 animate-pulse bg-muted rounded-lg" />}>
+            <ReputationSignalsCard scanId={jobId} />
+          </Suspense>
+        )}
       </div>
 
       {/* Compact Footer Stats - Inline */}
