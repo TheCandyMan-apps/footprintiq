@@ -619,11 +619,13 @@ export function useCorrelationGraph(
       const maxWeight = Math.max(...sortedSignals.map(s => s.weight));
       const maxConfidence = Math.max(...sortedSignals.map(s => s.confidence));
       
-      // Build tooltip with clean "Connected via:" format
+      // Build tooltip with aggregated reasons (using + separator like "Username reuse + Shared link")
       const platformInfo = node1?.platform && node2?.platform 
         ? `${node1.platform} ↔ ${node2.platform}\n` 
         : '';
-      const connectedVia = `Connected via: ${reasonLabels.join(', ')}`;
+      const connectedVia = reasonLabels.length > 1
+        ? `Connected via: ${reasonLabels.join(' + ')}`
+        : `Connected via: ${reasonLabels[0]}`;
       const confidenceInfo = `Confidence: ${maxConfidence}%`;
       const details = `${platformInfo}${connectedVia}\n${confidenceInfo}`;
       
