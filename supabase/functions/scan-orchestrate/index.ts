@@ -632,10 +632,12 @@ serve(async (req) => {
         currentPlan: workspace.plan || workspace.subscription_tier || 'free',
         scanType: type,
         message: type === 'email' 
-          ? 'Email scans require Pro plan. Upgrade to access email intelligence.'
+          ? 'Email intelligence is a Pro feature. Free plan supports username lookups only. Upgrade to access breach detection, email verification, and contact enrichment.'
           : type === 'phone'
-          ? 'Phone scans require Pro plan. Upgrade to access phone intelligence.'
-          : `${type} scans are not available on your current plan.`
+          ? 'Phone intelligence is a Pro feature. Free plan supports username lookups only. Upgrade to access carrier lookup, risk scoring, and phone verification.'
+          : type === 'domain'
+          ? 'Domain intelligence requires Pro plan. Upgrade to access DNS records, subdomain enumeration, and threat analysis.'
+          : `${type} scans are not available on your current plan. Upgrade to Pro for access.`
       }), {
         status: 403,
         headers: { ...corsHeaders(), "Content-Type": "application/json" }
