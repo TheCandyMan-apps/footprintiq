@@ -134,6 +134,28 @@ const PricingPage = () => {
     "No monitoring or alerts"
   ];
 
+  // High-Risk Intelligence feature copy per tier
+  const freeHighRisk = {
+    excluded: "High-Risk Intelligence not included",
+    upgrade: "Upgrade to see advanced risk context"
+  };
+
+  const proHighRisk = [
+    "AI-filtered high-risk summaries",
+    "Confidence scoring"
+  ];
+
+  const proHighRiskExcluded = [
+    "No raw sources"
+  ];
+
+  const businessHighRisk = [
+    "Everything in Pro",
+    "Source category breakdowns",
+    "Audit logs",
+    "Compliance export"
+  ];
+
   const proIncludes = [
     "Multiple scans per month",
     "Expanded source coverage",
@@ -168,6 +190,8 @@ const PricingPage = () => {
     "Research groups",
     "Compliance and risk teams"
   ];
+
+  const trustLine = "Ethical OSINT • Public data only • No monitoring • No surveillance";
 
   const transparencyList = [
     "Bypass security controls",
@@ -265,6 +289,19 @@ const PricingPage = () => {
                         ))}
                       </ul>
                     </div>
+                    
+                    {/* High-Risk Intelligence - Free */}
+                    <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                      <p className="text-sm font-medium text-muted-foreground mb-2">High-Risk Intelligence</p>
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground mb-1">
+                        <span>🚫</span>
+                        <span>{freeHighRisk.excluded}</span>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <Lock className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                        <span>{freeHighRisk.upgrade}</span>
+                      </div>
+                    </div>
                   </CardContent>
                   
                   <CardFooter className="flex flex-col gap-2">
@@ -345,6 +382,23 @@ const PricingPage = () => {
                         ))}
                       </ul>
                     </div>
+                    
+                    {/* High-Risk Intelligence - Pro */}
+                    <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                      <p className="text-sm font-medium text-primary mb-2">High-Risk Intelligence</p>
+                      {proHighRisk.map((item, i) => (
+                        <div key={i} className="flex items-start gap-2 text-sm mb-1">
+                          <span>✅</span>
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                      {proHighRiskExcluded.map((item, i) => (
+                        <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                          <span>❌</span>
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                   
                   <CardFooter>
@@ -410,6 +464,17 @@ const PricingPage = () => {
                         ))}
                       </ul>
                     </div>
+                    
+                    {/* High-Risk Intelligence - Business/Enterprise */}
+                    <div className="p-3 bg-muted/50 rounded-lg border border-border">
+                      <p className="text-sm font-medium text-foreground mb-2">High-Risk Intelligence</p>
+                      {businessHighRisk.map((item, i) => (
+                        <div key={i} className="flex items-start gap-2 text-sm mb-1">
+                          <span>✅</span>
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
                   </CardContent>
                   
                   <CardFooter>
@@ -423,6 +488,13 @@ const PricingPage = () => {
                   </CardFooter>
                 </Card>
               </motion.div>
+            </div>
+            
+            {/* Trust Line */}
+            <div className="text-center mt-12">
+              <p className="text-sm text-muted-foreground font-medium">
+                {trustLine}
+              </p>
             </div>
           </div>
         </section>
