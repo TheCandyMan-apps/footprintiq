@@ -622,49 +622,63 @@ export function CorrelationGraph({
           },
         },
       ],
+      // SherlockEye-style layout: clear clusters, identity left/top-left, no overlap
       layout: groupByPlatform 
         ? {
             name: 'cose',
             animate: true,
-            animationDuration: 600,
-            // High repulsion for grouped mode
-            nodeRepulsion: () => 15000,
-            idealEdgeLength: () => 150,
-            gravity: 0.3,
-            nestingFactor: 1.5,
-            numIter: 1000,
-            // Collision detection via node overlap removal
-            nodeOverlap: 50,
-            // Cluster interconnected nodes
-            edgeElasticity: () => 100,
+            animationDuration: 800,
+            // Very high repulsion for clean grouped separation
+            nodeRepulsion: () => 50000,
+            idealEdgeLength: () => 200,
+            gravity: 0.15,
+            nestingFactor: 2.0,
+            numIter: 2000,
+            // Strong collision avoidance
+            nodeOverlap: 80,
+            edgeElasticity: () => 80,
+            padding: 80,
+            componentSpacing: 200,
+            randomize: false,
+            coolingFactor: 0.95,
+            initialTemp: 300,
+            minTemp: 1.0,
           }
         : {
             name: 'cose',
             animate: true,
-            animationDuration: 600,
-            // Increased node repulsion for better spacing
-            nodeRepulsion: () => 12000,
-            idealEdgeLength: (edge: any) => {
-              // Shorter edges for correlation (to cluster connected nodes)
-              const isIdentityEdge = edge.data('source') === 'identity-root';
-              return isIdentityEdge ? 180 : 80;
+            animationDuration: 800,
+            // High repulsion prevents overlap and creates clear spacing
+            nodeRepulsion: (node: any) => {
+              // Identity node has extra-high repulsion to stay on periphery
+              return node.id() === 'identity-root' ? 120000 : 35000;
             },
-            // Lower gravity pushes identity-root slightly off-center
-            gravity: 0.25,
-            // More iterations for better convergence
-            numIter: 1500,
-            // Collision detection - minimum spacing between nodes
-            nodeOverlap: 40,
-            // Edge elasticity - stronger for correlations (pulls connected nodes together)
+            idealEdgeLength: (edge: any) => {
+              // Long edges from identity → accounts push identity to edge
+              // Short edges between correlated accounts form tight clusters
+              const isIdentityEdge = edge.data('source') === 'identity-root';
+              return isIdentityEdge ? 280 : 100;
+            },
+            // Very low gravity keeps identity node on periphery (top-left region)
+            gravity: 0.08,
+            // Many iterations for stable convergence (no jitter)
+            numIter: 2500,
+            // Strong overlap removal
+            nodeOverlap: 60,
+            // High elasticity for correlation edges → tight clusters
+            // Low elasticity for identity edges → loose star pattern
             edgeElasticity: (edge: any) => {
               const isIdentityEdge = edge.data('source') === 'identity-root';
-              return isIdentityEdge ? 45 : 200;
+              return isIdentityEdge ? 20 : 300;
             },
-            padding: 60,
-            // Randomize initial positions for varied layouts
+            padding: 100,
             randomize: false,
-            // Component spacing
-            componentSpacing: 120,
+            // Wide component spacing for disconnected clusters
+            componentSpacing: 180,
+            // Cooling parameters for stable settling
+            coolingFactor: 0.95,
+            initialTemp: 400,
+            minTemp: 1.0,
           },
       minZoom: 0.3,
       maxZoom: 3,
@@ -980,26 +994,32 @@ export function CorrelationGraph({
     const cy = cyRef.current;
     if (!cy) return;
     
-    // Re-run the layout with fresh random positions
+    // Re-run layout with randomized positions for fresh clustering
     cy.layout({
       name: 'cose',
       animate: true,
-      animationDuration: 800,
-      nodeRepulsion: () => 12000,
+      animationDuration: 1000,
+      // High repulsion for clear spacing
+      nodeRepulsion: (node: any) => {
+        return node.id() === 'identity-root' ? 120000 : 35000;
+      },
       idealEdgeLength: (edge: any) => {
         const isIdentityEdge = edge.data('source') === 'identity-root';
-        return isIdentityEdge ? 180 : 80;
+        return isIdentityEdge ? 280 : 100;
       },
-      gravity: 0.25,
-      numIter: 1500,
-      nodeOverlap: 40,
+      gravity: 0.08,
+      numIter: 2500,
+      nodeOverlap: 60,
       edgeElasticity: (edge: any) => {
         const isIdentityEdge = edge.data('source') === 'identity-root';
-        return isIdentityEdge ? 45 : 200;
+        return isIdentityEdge ? 20 : 300;
       },
-      padding: 60,
-      randomize: true, // Randomize for fresh layout
-      componentSpacing: 120,
+      padding: 100,
+      randomize: true, // Fresh random positions
+      componentSpacing: 180,
+      coolingFactor: 0.95,
+      initialTemp: 400,
+      minTemp: 1.0,
     } as any).run();
   }, []);
 
