@@ -75,7 +75,17 @@ export function CorrelationGraph({
     x: number;
     y: number;
     type: 'node' | 'edge';
-    content: { displayName: string; confidencePct?: number; reason?: string; isMultiReason?: boolean };
+    content: { 
+      displayName: string; 
+      confidencePct?: number; 
+      reason?: string; 
+      isMultiReason?: boolean;
+      // Enhanced node tooltip fields
+      platform?: string;
+      username?: string;
+      domain?: string;
+      connectionReasons?: string[];
+    };
   } | null>(null);
 
   // Use external focusedNodeId if provided, otherwise use internal state
@@ -793,21 +803,56 @@ export function CorrelationGraph({
         cy.elements().not(relatedElements).not(identityEdges).addClass('unhovered');
       }
 
-      // Show tooltip with displayName (never shows "Unknown")
+      // Show enhanced tooltip with platform, username, domain, confidence, connection reasons
       const pos = node.renderedPosition();
       const containerRect = containerRef.current?.getBoundingClientRect();
       if (containerRect) {
-        const displayName = node.data('displayName') || node.data('label') || 'Profile';
+        const platform = node.data('platform') || node.data('label') || 'Profile';
+        const username = node.data('username') || node.data('meta')?.username;
+        const url = node.data('url') || '';
         const confidence = node.data('confidence');
         const confidencePct = typeof confidence === 'number' ? Math.round(confidence * 100) : undefined;
+        
+        // Extract domain from URL if available
+        let domain: string | undefined;
+        if (url) {
+          try {
+            domain = new URL(url).hostname.replace('www.', '');
+          } catch {
+            domain = undefined;
+          }
+        }
+        
+        // Get connection reasons from connected correlation edges
+        const connectedEdges = node.connectedEdges();
+        const correlationEdges = connectedEdges.filter((edge: cytoscape.EdgeSingular) => 
+          edge.data('source') !== 'identity-root' && edge.data('target') !== 'identity-root'
+        );
+        
+        // Collect unique reasons from connected edges
+        const reasonSet = new Set<string>();
+        correlationEdges.forEach((edge: cytoscape.EdgeSingular) => {
+          const reasons = edge.data('reasons') || [edge.data('reason')];
+          reasons.forEach((r: string) => {
+            const config = EDGE_REASON_COLORS[r];
+            if (config) {
+              reasonSet.add(config.label);
+            }
+          });
+        });
+        const connectionReasons = Array.from(reasonSet).slice(0, 3); // Top 3 reasons
         
         setTooltipData({
           x: containerRect.left + pos.x,
           y: containerRect.top + pos.y - 50,
           type: 'node',
           content: {
-            displayName,
+            displayName: platform,
+            platform,
+            username,
+            domain,
             confidencePct,
+            connectionReasons,
           },
         });
       }
@@ -1461,15 +1506,49 @@ export function CorrelationGraph({
         >
           <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg px-3 py-2 text-xs max-w-[200px]">
             {tooltipData.type === 'node' ? (
-              <>
-                <div className="font-semibold">{tooltipData.content.displayName}</div>
-                {tooltipData.content.confidencePct !== undefined && (
-                  <div className="mt-1 text-[10px]">
-                    <span className="text-muted-foreground">Confidence:</span>{' '}
-                    <span className="font-medium">{tooltipData.content.confidencePct}%</span>
+              <div className="space-y-1.5">
+                {/* Platform/Site name */}
+                <div className="font-semibold text-foreground">{tooltipData.content.platform || 'Profile'}</div>
+                
+                {/* Username/Handle */}
+                <div className="text-[10px]">
+                  <span className="text-muted-foreground">Handle:</span>{' '}
+                  <span className="font-medium">
+                    {tooltipData.content.username || 'No username captured'}
+                  </span>
+                </div>
+                
+                {/* Domain */}
+                {tooltipData.content.domain && (
+                  <div className="text-[10px]">
+                    <span className="text-muted-foreground">Domain:</span>{' '}
+                    <span className="font-medium text-primary/80">{tooltipData.content.domain}</span>
                   </div>
                 )}
-              </>
+                
+                {/* Confidence */}
+                {tooltipData.content.confidencePct !== undefined && (
+                  <div className="text-[10px]">
+                    <span className="text-muted-foreground">Confidence:</span>{' '}
+                    <span className={cn(
+                      "font-medium",
+                      tooltipData.content.confidencePct >= 80 && "text-green-500",
+                      tooltipData.content.confidencePct >= 60 && tooltipData.content.confidencePct < 80 && "text-amber-500",
+                      tooltipData.content.confidencePct < 60 && "text-muted-foreground"
+                    )}>
+                      {tooltipData.content.confidencePct}%
+                    </span>
+                  </div>
+                )}
+                
+                {/* Connection reasons */}
+                {tooltipData.content.connectionReasons && tooltipData.content.connectionReasons.length > 0 && (
+                  <div className="text-[10px] pt-1 border-t border-border/50">
+                    <span className="text-muted-foreground">Linked by:</span>{' '}
+                    <span className="font-medium">{tooltipData.content.connectionReasons.join(', ')}</span>
+                  </div>
+                )}
+              </div>
             ) : (
               <>
                 <div className="font-semibold">{tooltipData.content.displayName}</div>
