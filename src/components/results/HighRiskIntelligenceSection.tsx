@@ -227,6 +227,35 @@ export function HighRiskIntelligenceSection({
   const hasSignals = signals.length > 0;
   const actionRequiredCount = reviewSignals.length;
 
+  // Get display config based on highest confidence level
+  const getSignalDisplay = (confidence: number) => {
+    if (confidence >= 0.7) {
+      return {
+        icon: '🚨',
+        title: 'Potential active risk detected',
+        description: 'Recent references suggest possible misuse. Review recommended.',
+        bgColor: 'bg-destructive/5 border-destructive/20',
+        textColor: 'text-destructive',
+      };
+    }
+    if (confidence >= 0.4) {
+      return {
+        icon: 'ℹ️',
+        title: 'Contextual signal identified',
+        description: 'Reference found, but relevance is unclear. No immediate action recommended.',
+        bgColor: 'bg-blue-500/5 border-blue-500/20',
+        textColor: 'text-blue-600',
+      };
+    }
+    return {
+      icon: '⚠️',
+      title: 'Historical reference detected',
+      description: 'This entity appears in older breach-related datasets with no evidence of active misuse.',
+      bgColor: 'bg-muted/50 border-border',
+      textColor: 'text-muted-foreground',
+    };
+  };
+
   return (
     <Card className={actionRequiredCount > 0 ? 'border-amber-500/20' : ''}>
       <CardHeader className="pb-3">
@@ -246,19 +275,19 @@ export function HighRiskIntelligenceSection({
             <CardTitle className="text-base">
               High-Risk Intelligence
               <span className="text-xs font-normal text-muted-foreground ml-2">
-                (LENS Filtered)
+                (AI-Filtered)
               </span>
             </CardTitle>
           </div>
           <div className="flex items-center gap-2">
             {reviewSignals.length > 0 && (
-              <Badge variant="secondary" className="text-xs bg-amber-500/10 text-amber-600">
+              <Badge variant="secondary" className="text-xs bg-destructive/10 text-destructive">
                 {reviewSignals.length} for review
               </Badge>
             )}
             {informationalSignals.length > 0 && (
-              <Badge variant="outline" className="text-xs">
-                {informationalSignals.length} informational
+              <Badge variant="outline" className="text-xs text-blue-600">
+                {informationalSignals.length} contextual
               </Badge>
             )}
             {historicalSignals.length > 0 && (
@@ -331,55 +360,56 @@ export function HighRiskIntelligenceSection({
                 </div>
               )}
 
-              {signals.map((signal, index) => (
-                <div
-                  key={index}
-                  className={`p-4 rounded-lg border ${getRiskLevelColor(signal.risk_level, signal.confidence)}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-medium text-foreground">
-                          {getSignalTypeLabel(signal.signal_type)}
-                        </span>
-                        <Badge 
-                          variant="outline" 
-                          className={`text-xs ${getConfidenceColor(signal.confidence)}`}
-                        >
-                          {getConfidenceLabel(signal.confidence)}
-                        </Badge>
-                        {signal.confidence < 0.4 && (
-                          <Badge variant="outline" className="text-xs text-muted-foreground">
-                            No action required
-                          </Badge>
+              {signals.map((signal, index) => {
+                const display = getSignalDisplay(signal.confidence);
+                
+                return (
+                  <div
+                    key={index}
+                    className={`p-4 rounded-lg border ${display.bgColor}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-base" role="img" aria-label="status">
+                            {display.icon}
+                          </span>
+                          <span className={`font-medium ${display.textColor}`}>
+                            {display.title}
+                          </span>
+                          {signal.confidence < 0.4 && (
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                              No action required
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {display.description}
+                        </p>
+                        {/* Only show raw context/links for Enterprise tier */}
+                        {canSeeRawData && showDetails && signal.context && (
+                          <p className="text-xs text-muted-foreground mt-2 italic border-t border-border pt-2 mt-3">
+                            <strong>Context:</strong> {signal.context}
+                          </p>
                         )}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {signal.summary}
-                      </p>
-                      {canSeeRawData && showDetails && signal.context && (
-                        <p className="text-xs text-muted-foreground mt-2 italic">
-                          {signal.context}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right shrink-0">
-                      <div className="text-xs text-muted-foreground">
-                        Confidence
-                      </div>
-                      <div className={`font-medium ${getConfidenceColor(signal.confidence)}`}>
-                        {Math.round(signal.confidence * 100)}%
+                      <div className="text-right shrink-0">
+                        <div className="text-xs text-muted-foreground">
+                          Confidence
+                        </div>
+                        <div className={`font-medium ${display.textColor}`}>
+                          {Math.round(signal.confidence * 100)}%
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
 
               <div className="p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground">
                 <strong>Analyst Note:</strong> High-risk intelligence sources are inherently 
-                unreliable. Confidence below 40% indicates historical or contextual data only—no 
-                action required. References above 70% suggest calm review. LENS has filtered 
-                speculative and unsubstantiated signals.
+                unreliable. References with confidence below 40% are historical only—no 
+                action required. Above 70% suggests calm review. Raw data is restricted to Enterprise tier.
               </div>
             </CollapsibleContent>
           </Collapsible>
