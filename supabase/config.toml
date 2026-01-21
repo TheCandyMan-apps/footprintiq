@@ -90,3 +90,6 @@ verify_jwt = false
 
 [functions.spamhaus-enrich]
 verify_jwt = false
+
+[functions.osint-high-risk-worker]
+verify_jwt = false

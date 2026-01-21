@@ -4,12 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Shield, User, Mail } from "lucide-react";
+import { ArrowRight, Shield, User, Mail, Sparkles } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { PhoneInput } from "@/components/scan/PhoneInput";
 import { ProviderPanel } from "@/components/scan/ProviderPanel";
 import { validatePhone } from "@/lib/phone/phoneUtils";
+import { HighRiskOptInModal } from "@/components/scan/HighRiskOptInModal";
+import { useTierGating } from "@/hooks/useTierGating";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ScanFormProps {
   onSubmit: (data: ScanFormData) => void;
@@ -22,6 +26,7 @@ export interface ScanFormData {
   phone?: string;
   username?: string;
   phoneProviders?: string[];
+  highRiskOptIn?: boolean; // High-Risk Intelligence opt-in
 }
 
 const scanFormSchema = z.object({
@@ -50,11 +55,16 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     phone: "",
     username: "",
     phoneProviders: [],
+    highRiskOptIn: false,
   });
   const [phoneProviders, setPhoneProviders] = useState<string[]>([]);
   const [phoneValid, setPhoneValid] = useState(false);
   const [normalizedPhone, setNormalizedPhone] = useState<string | null>(null);
+  const [showHighRiskModal, setShowHighRiskModal] = useState(false);
   const { toast } = useToast();
+  const { isPro, isBusiness } = useTierGating();
+  
+  const canAccessHighRisk = isPro || isBusiness;
 
   // Check if phone number is valid and should show providers
   const showPhoneProviders = useMemo(() => {
@@ -106,9 +116,14 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
       ...result.data,
       phone: normalizedPhone || result.data.phone,
       phoneProviders: showPhoneProviders ? phoneProviders : undefined,
+      highRiskOptIn: formData.highRiskOptIn,
     };
     
     onSubmit(submitData);
+  };
+
+  const handleHighRiskOptInChange = (optIn: boolean) => {
+    setFormData(prev => ({ ...prev, highRiskOptIn: optIn }));
   };
 
   return (
