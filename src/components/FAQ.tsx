@@ -38,6 +38,10 @@ const faqs = [
   {
     question: "Can FootprintIQ remove my data?",
     answer: "Free scans identify where your information is exposed. Pro provides detailed evidence and guidance you can use to submit removal requests to data brokers and platforms. We help you understand what exists so you can take action."
+  },
+  {
+    question: "Where do reputation signals come from?",
+    answer: "We combine multiple intelligence sources and internal heuristics to produce derived signals. We don't provide raw feeds or monitoring."
   }
 ];
 

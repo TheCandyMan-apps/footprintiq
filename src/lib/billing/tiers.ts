@@ -64,6 +64,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
       '100 scans per month',
       'Multi-tool OSINT (Maigret + Sherlock)',
       'IPQS Email & Phone Intelligence',
+      'Reputation & Abuse Intelligence',
       'Full results view',
       'PDF & CSV export',
       'Priority queue',
