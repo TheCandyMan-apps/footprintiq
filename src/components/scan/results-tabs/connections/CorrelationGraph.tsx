@@ -33,6 +33,20 @@ const LENS_COLORS = {
   unclear: '#6b7280',
 };
 
+// Edge colors by reason (priority order for multi-reason edges)
+const EDGE_REASON_COLORS: Record<string, { color: string; label: string; priority: number }> = {
+  image_reuse: { color: '#22c55e', label: 'Image Match', priority: 1 },     // green-500
+  same_image: { color: '#22c55e', label: 'Image Match', priority: 1 },
+  username_reuse: { color: '#8b5cf6', label: 'Username Reuse', priority: 2 }, // violet-500
+  same_username: { color: '#8b5cf6', label: 'Username Reuse', priority: 2 },
+  similar_username: { color: '#8b5cf6', label: 'Username Reuse', priority: 2 },
+  shared_link: { color: '#f97316', label: 'Shared Link', priority: 3 },      // orange-500
+  shared_domain: { color: '#f97316', label: 'Shared Link', priority: 3 },
+  bio_similarity: { color: '#3b82f6', label: 'Bio Similarity', priority: 4 }, // blue-500
+  similar_bio: { color: '#3b82f6', label: 'Bio Similarity', priority: 4 },
+  shared_email: { color: '#f59e0b', label: 'Shared Email', priority: 5 },    // amber-500
+};
+
 // Default: show identity + top N strongest connected accounts
 const NEIGHBORHOOD_SIZE = 25;
 
@@ -58,7 +72,7 @@ export function CorrelationGraph({
     x: number;
     y: number;
     type: 'node' | 'edge';
-    content: { displayName: string; confidencePct?: number; reason?: string };
+    content: { displayName: string; confidencePct?: number; reason?: string; isMultiReason?: boolean };
   } | null>(null);
 
   // Use external focusedNodeId if provided, otherwise use internal state
@@ -229,19 +243,40 @@ export function CorrelationGraph({
     }
 
     displayEdges.forEach((edge) => {
-      // Determine edge class based on reason for color coding
+      // Get all reasons for this edge
+      const reasons = edge.reasons || [edge.reason];
+      const reasonLabels = edge.reasonLabels || [edge.reasonLabel];
+      
+      // Find the strongest reason (lowest priority number) for edge color
+      let strongestReason = edge.reason;
+      let strongestPriority = 999;
+      
+      reasons.forEach((r) => {
+        const config = EDGE_REASON_COLORS[r];
+        if (config && config.priority < strongestPriority) {
+          strongestPriority = config.priority;
+          strongestReason = r;
+        }
+      });
+      
+      // Determine edge class based on strongest reason for color coding
       const reasonClasses: string[] = [];
-      if (edge.reason === 'bio_similarity' || edge.reason === 'similar_bio') {
+      if (strongestReason === 'bio_similarity' || strongestReason === 'similar_bio') {
         reasonClasses.push('reason-bio');
-      } else if (edge.reason === 'username_reuse' || edge.reason === 'same_username' || edge.reason === 'similar_username') {
+      } else if (strongestReason === 'username_reuse' || strongestReason === 'same_username' || strongestReason === 'similar_username') {
         reasonClasses.push('reason-username');
-      } else if (edge.reason === 'image_reuse' || edge.reason === 'same_image') {
+      } else if (strongestReason === 'image_reuse' || strongestReason === 'same_image') {
         reasonClasses.push('reason-image');
-      } else if (edge.reason === 'shared_email') {
+      } else if (strongestReason === 'shared_email') {
         reasonClasses.push('reason-email');
-      } else if (edge.reason === 'shared_link' || edge.reason === 'shared_domain') {
+      } else if (strongestReason === 'shared_link' || strongestReason === 'shared_domain') {
         reasonClasses.push('reason-link');
       }
+      
+      // Build combined tooltip for multi-reason edges
+      const tooltipReasons = reasons.length > 1 
+        ? reasons.map(r => EDGE_REASON_COLORS[r]?.label || r).join(' + ')
+        : edge.reasonLabel;
       
       elements.push({
         data: {
@@ -249,10 +284,14 @@ export function CorrelationGraph({
           source: edge.source,
           target: edge.target,
           reason: edge.reason,
+          reasons: reasons,
           reasonLabel: edge.reasonLabel,
+          reasonLabels: reasonLabels,
+          tooltipReasons: tooltipReasons,
           weight: edge.weight,
           confidence: edge.confidence,
           details: edge.details,
+          isMultiReason: reasons.length > 1,
         },
         classes: reasonClasses.join(' '),
       });
@@ -545,11 +584,11 @@ export function CorrelationGraph({
             'line-color': '#f59e0b', // amber-500
           },
         },
-        // Shared link/domain - Cyan
+        // Shared link/domain - Orange
         {
           selector: 'edge.reason-link',
           style: {
-            'line-color': '#06b6d4', // cyan-500
+            'line-color': '#f97316', // orange-500
           },
         },
         // Very low confidence - extra faded (applies after reason colors)
@@ -785,21 +824,25 @@ export function CorrelationGraph({
       edge.connectedNodes().addClass('neighbor');
       cy.elements().not(edge).not(edge.connectedNodes()).addClass('unhovered');
 
-      // Show edge tooltip
+      // Show edge tooltip - use tooltipReasons for multi-reason edges
       const midpoint = edge.midpoint();
       const containerRect = containerRef.current?.getBoundingClientRect();
       if (containerRect) {
-        const reasonLabel = edge.data('reasonLabel') || EDGE_REASON_CONFIG[edge.data('reason') as keyof typeof EDGE_REASON_CONFIG]?.label || 'Connection';
+        const tooltipReasons = edge.data('tooltipReasons') || edge.data('reasonLabel') || 'Connection';
         const confidence = edge.data('confidence');
         const confidencePct = typeof confidence === 'number' ? Math.round(confidence) : undefined;
+        const details = edge.data('details');
+        const isMulti = edge.data('isMultiReason');
+        
         setTooltipData({
           x: containerRect.left + midpoint.x,
           y: containerRect.top + midpoint.y - 30,
           type: 'edge',
           content: {
-            displayName: reasonLabel,
-            reason: edge.data('details'),
+            displayName: tooltipReasons,
+            reason: details,
             confidencePct,
+            isMultiReason: isMulti,
           },
         });
       }
@@ -1278,7 +1321,33 @@ export function CorrelationGraph({
       </div>
 
       {/* Bottom-right Legend */}
-      <div className="absolute bottom-3 right-3 z-10 bg-background/90 backdrop-blur-sm rounded-lg border border-border p-2 shadow-lg">
+      <div className="absolute bottom-3 right-3 z-10 bg-background/90 backdrop-blur-sm rounded-lg border border-border p-2 shadow-lg max-w-[140px]">
+        {/* Edge Colors Legend */}
+        <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+          Connection Type
+        </div>
+        <div className="flex flex-col gap-1 mb-2">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-0.5 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+            <span className="text-[10px]">Image Match</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-0.5 rounded-full" style={{ backgroundColor: '#8b5cf6' }} />
+            <span className="text-[10px]">Username</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-0.5 rounded-full" style={{ backgroundColor: '#f97316' }} />
+            <span className="text-[10px]">Shared Link</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-0.5 rounded-full" style={{ backgroundColor: '#3b82f6' }} />
+            <span className="text-[10px]">Bio Similarity</span>
+          </div>
+        </div>
+        
+        <div className="w-full h-px bg-border my-1.5" />
+        
+        {/* Node Confidence Legend */}
         <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
           Confidence
         </div>
