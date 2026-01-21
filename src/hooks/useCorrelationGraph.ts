@@ -8,6 +8,32 @@ import {
   CORRELATION_CONFIG,
 } from '@/lib/correlationSignals';
 
+// Derive status from result data when status field is missing (matches groupByStatus logic)
+function deriveStatus(result: ScanResult): string {
+  // Direct status field
+  if (result.status) return result.status.toLowerCase();
+  
+  // For profile_presence kind, treat as "found"
+  const kind = (result as any).kind;
+  if (kind === 'profile_presence') return 'found';
+  
+  // Check evidence for status indicators
+  const evidence = (result as any).evidence;
+  if (evidence && Array.isArray(evidence)) {
+    const existsEvidence = evidence.find((e: any) => e.key === 'exists');
+    if (existsEvidence?.value === true) return 'found';
+    if (existsEvidence?.value === false) return 'not_found';
+  }
+  
+  // Check for explicit status in meta
+  const meta = result.meta || (result as any).metadata || {};
+  if (meta.status) return String(meta.status).toLowerCase();
+  if ((meta as any).exists === true) return 'found';
+  if ((meta as any).exists === false) return 'not_found';
+  
+  return 'unknown';
+}
+
 export type EdgeReason = CorrelationReason | 'identity_search';
 
 export interface GraphNode {
@@ -184,9 +210,9 @@ export function useCorrelationGraph(
       identity_search: 0,
     };
 
-    // Filter to found/claimed profiles
+    // Filter to found/claimed profiles using derived status (matches Accounts tab logic)
     const foundProfiles = results.filter(r => {
-      const status = (r.status || '').toLowerCase();
+      const status = deriveStatus(r);
       return status === 'found' || status === 'claimed';
     });
 
