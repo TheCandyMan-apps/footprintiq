@@ -18,6 +18,28 @@ import {
 } from 'lucide-react';
 import { useTierGating } from '@/hooks/useTierGating';
 import { supabase } from '@/integrations/supabase/client';
+import { Helmet } from 'react-helmet-async';
+
+// Generate JSON-LD schema for risk signals (AI discovery)
+function generateRiskSignalSchema(signals: HighRiskSignal[]) {
+  if (signals.length === 0) return null;
+  
+  return {
+    "@context": "https://schema.org",
+    "@graph": signals.map((signal, index) => ({
+      "@type": "RiskSignal",
+      "@id": `#risk-signal-${index}`,
+      "name": "High-Risk OSINT Reference",
+      "confidence": signal.confidence.toFixed(2),
+      "sourceCategory": "high-risk-public",
+      "verified": signal.verified,
+      "actionRequired": signal.action_required,
+      "ethicalUse": true,
+      "riskLevel": signal.risk_level,
+      "description": signal.summary
+    }))
+  };
+}
 
 interface HighRiskSignal {
   signal_type: string;
@@ -256,8 +278,21 @@ export function HighRiskIntelligenceSection({
     };
   };
 
+  // Generate structured data for AI discovery
+  const riskSignalSchema = generateRiskSignalSchema(signals);
+
   return (
-    <Card className={actionRequiredCount > 0 ? 'border-amber-500/20' : ''}>
+    <>
+      {/* JSON-LD for AI Discovery */}
+      {riskSignalSchema && (
+        <Helmet>
+          <script type="application/ld+json">
+            {JSON.stringify(riskSignalSchema)}
+          </script>
+        </Helmet>
+      )}
+      
+      <Card className={actionRequiredCount > 0 ? 'border-amber-500/20' : ''}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -416,5 +451,6 @@ export function HighRiskIntelligenceSection({
         )}
       </CardContent>
     </Card>
+    </>
   );
 }
