@@ -52,9 +52,17 @@ export function CorrelationGraph({
   const buildElements = useCallback(() => {
     const elements: cytoscape.ElementDefinition[] = [];
 
+    // Pre-calculate node degrees (number of connections)
+    const nodeDegrees = new Map<string, number>();
+    data.edges.forEach((edge) => {
+      nodeDegrees.set(edge.source, (nodeDegrees.get(edge.source) || 0) + 1);
+      nodeDegrees.set(edge.target, (nodeDegrees.get(edge.target) || 0) + 1);
+    });
+
     data.nodes.forEach((node) => {
       const categoryConfig = CATEGORY_CONFIG[node.category] || CATEGORY_CONFIG.other;
       const lensColor = node.lensStatus ? LENS_COLORS[node.lensStatus] : LENS_COLORS.unclear;
+      const degree = nodeDegrees.get(node.id) || 1;
       
       elements.push({
         data: {
@@ -71,6 +79,7 @@ export function CorrelationGraph({
           meta: node.meta,
           result: node.result,
           username: node.meta?.username,
+          degree, // Store degree for sizing
           parent: groupByPlatform && node.type === 'account' ? `group-${node.category}` : undefined,
         },
         classes: [node.type, node.lensStatus || 'unclear'].filter(Boolean).join(' '),
@@ -94,6 +103,20 @@ export function CorrelationGraph({
     }
 
     data.edges.forEach((edge) => {
+      // Determine edge class based on reason for color coding
+      const reasonClasses: string[] = [];
+      if (edge.reason === 'bio_similarity' || edge.reason === 'similar_bio') {
+        reasonClasses.push('reason-bio');
+      } else if (edge.reason === 'username_reuse' || edge.reason === 'same_username' || edge.reason === 'similar_username') {
+        reasonClasses.push('reason-username');
+      } else if (edge.reason === 'image_reuse' || edge.reason === 'same_image') {
+        reasonClasses.push('reason-image');
+      } else if (edge.reason === 'shared_email') {
+        reasonClasses.push('reason-email');
+      } else if (edge.reason === 'shared_link' || edge.reason === 'shared_domain') {
+        reasonClasses.push('reason-link');
+      }
+      
       elements.push({
         data: {
           id: edge.id,
@@ -105,6 +128,7 @@ export function CorrelationGraph({
           confidence: edge.confidence,
           details: edge.details,
         },
+        classes: reasonClasses.join(' '),
       });
     });
 
@@ -142,7 +166,7 @@ export function CorrelationGraph({
             'text-opacity': 1,
           },
         },
-        // Account nodes - hide labels by default (show on hover/focus)
+        // Account nodes - base style
         {
           selector: 'node.account',
           style: {
@@ -156,27 +180,68 @@ export function CorrelationGraph({
             'color': 'hsl(var(--foreground))',
             'text-outline-width': 1.5,
             'text-outline-color': 'hsl(var(--background))',
-            'width': 32,
-            'height': 32,
+            'width': 30,
+            'height': 30,
             'shape': 'ellipse',
             'text-opacity': 0, // Hidden by default
             'transition-property': 'text-opacity, width, height, border-width',
             'transition-duration': 150,
           },
         },
-        // LENS status variants
+        // Low-degree nodes (1-2 connections)
+        {
+          selector: 'node.account[degree <= 2]',
+          style: {
+            'width': 28,
+            'height': 28,
+          },
+        },
+        // Medium-degree nodes (3-4 connections)
+        {
+          selector: 'node.account[degree >= 3][degree <= 4]',
+          style: {
+            'width': 36,
+            'height': 36,
+          },
+        },
+        // High-degree nodes (5-7 connections) - larger with emphasis
+        {
+          selector: 'node.account[degree >= 5][degree <= 7]',
+          style: {
+            'width': 44,
+            'height': 44,
+            'border-width': 4,
+            'font-size': 10,
+          },
+        },
+        // Very high-degree nodes (8+ connections) - largest
+        {
+          selector: 'node.account[degree >= 8]',
+          style: {
+            'width': 52,
+            'height': 52,
+            'border-width': 5,
+            'font-size': 11,
+            'font-weight': 'bold',
+          },
+        },
+        // LENS verified nodes - strong highlight with glow effect
         {
           selector: 'node.verified',
           style: {
             'border-color': LENS_COLORS.verified,
-            'border-width': 3,
+            'border-width': 4,
+            'background-opacity': 1,
+            'overlay-color': LENS_COLORS.verified,
+            'overlay-opacity': 0.15,
+            'overlay-padding': '4px',
           },
         },
         {
           selector: 'node.likely',
           style: {
             'border-color': LENS_COLORS.likely,
-            'border-width': 2,
+            'border-width': 3,
           },
         },
         {
@@ -185,6 +250,7 @@ export function CorrelationGraph({
             'border-color': LENS_COLORS.unclear,
             'border-width': 2,
             'border-style': 'dashed',
+            'background-opacity': 0.85,
           },
         },
         // Hovered node - show label and enlarge
@@ -282,51 +348,89 @@ export function CorrelationGraph({
             'z-index': 1,
           },
         },
-        // Account↔Account correlation edges (emphasized)
+        // Account↔Account correlation edges - base style with width by confidence
         {
           selector: 'edge[source != "identity-root"]',
           style: {
-            'line-color': '#3b82f6',
-            'line-opacity': 0.65,
             'line-style': 'solid',
             'z-index': 10,
+            'line-color': '#64748b', // Default slate, overridden by reason classes
           },
         },
-        // Strong correlation edges (weight >= 0.85)
+        // High confidence edges (>= 80)
         {
-          selector: 'edge[source != "identity-root"][weight >= 0.85]',
+          selector: 'edge[source != "identity-root"][confidence >= 80]',
           style: {
-            'width': 3,
-            'line-opacity': 0.8,
-            'line-color': '#2563eb',
+            'width': 3.5,
+            'line-opacity': 0.85,
           },
         },
-        // Medium correlation edges (0.7 <= weight < 0.85)
+        // Medium-high confidence edges (70-80)
         {
-          selector: 'edge[source != "identity-root"][weight >= 0.7][weight < 0.85]',
+          selector: 'edge[source != "identity-root"][confidence >= 70][confidence < 80]',
           style: {
             'width': 2.5,
             'line-opacity': 0.7,
-            'line-color': '#3b82f6',
           },
         },
-        // Low-medium correlation edges (0.6 <= weight < 0.7)
+        // Medium confidence edges (60-70)
         {
-          selector: 'edge[source != "identity-root"][weight >= 0.6][weight < 0.7]',
+          selector: 'edge[source != "identity-root"][confidence >= 60][confidence < 70]',
           style: {
             'width': 2,
             'line-opacity': 0.55,
-            'line-color': '#60a5fa',
           },
         },
-        // Weak correlation edges (weight < 0.6)
+        // Low confidence edges (< 60)
         {
-          selector: 'edge[source != "identity-root"][weight < 0.6]',
+          selector: 'edge[source != "identity-root"][confidence < 60]',
           style: {
             'width': 1.5,
-            'line-style': 'dashed',
             'line-opacity': 0.4,
-            'line-color': '#93c5fd',
+            'line-style': 'dashed',
+          },
+        },
+        // === EDGE COLORS BY REASON ===
+        // Bio similarity - Blue
+        {
+          selector: 'edge.reason-bio',
+          style: {
+            'line-color': '#3b82f6', // blue-500
+          },
+        },
+        // Username reuse - Purple
+        {
+          selector: 'edge.reason-username',
+          style: {
+            'line-color': '#8b5cf6', // violet-500
+          },
+        },
+        // Image match - Green
+        {
+          selector: 'edge.reason-image',
+          style: {
+            'line-color': '#22c55e', // green-500
+          },
+        },
+        // Email link - Amber
+        {
+          selector: 'edge.reason-email',
+          style: {
+            'line-color': '#f59e0b', // amber-500
+          },
+        },
+        // Shared link/domain - Cyan
+        {
+          selector: 'edge.reason-link',
+          style: {
+            'line-color': '#06b6d4', // cyan-500
+          },
+        },
+        // Very low confidence - extra faded (applies after reason colors)
+        {
+          selector: 'edge[source != "identity-root"][confidence < 55]',
+          style: {
+            'line-opacity': 0.3,
           },
         },
         // Selected states
