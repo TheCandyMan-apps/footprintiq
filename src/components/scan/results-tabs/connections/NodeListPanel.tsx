@@ -5,14 +5,24 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, X, List, ChevronRight } from 'lucide-react';
+import { Search, X, List, ChevronRight, Pin, PinOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface NodeListPanelProps {
   nodes: GraphNode[];
   edges: { source: string; target: string }[];
   focusedNodeId: string | null;
+  pinnedNodeIds: Set<string>;
   onNodeSelect: (node: GraphNode) => void;
+  onNodeHover: (nodeId: string | null) => void;
+  onNodePin: (nodeId: string) => void;
+  onSearchChange?: (query: string) => void;
   className?: string;
 }
 
@@ -28,10 +38,20 @@ export function NodeListPanel({
   nodes,
   edges,
   focusedNodeId,
+  pinnedNodeIds,
   onNodeSelect,
+  onNodeHover,
+  onNodePin,
+  onSearchChange,
   className,
 }: NodeListPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Handle search change and propagate to parent
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    onSearchChange?.(query);
+  };
 
   // Calculate node degrees (connection count)
   const nodeDegrees = useMemo(() => {
@@ -79,14 +99,19 @@ export function NodeListPanel({
       });
     }
     
-    // Sort by connection count (degree) descending, then by confidence
+    // Sort: pinned first, then by connection count (degree), then by confidence
     return filtered.sort((a, b) => {
+      // Pinned nodes first
+      const pinnedA = pinnedNodeIds.has(a.id) ? 1 : 0;
+      const pinnedB = pinnedNodeIds.has(b.id) ? 1 : 0;
+      if (pinnedB !== pinnedA) return pinnedB - pinnedA;
+      
       const degA = nodeDegrees.get(a.id) || 0;
       const degB = nodeDegrees.get(b.id) || 0;
       if (degB !== degA) return degB - degA;
       return b.confidence - a.confidence;
     });
-  }, [nodes, focusedNeighborhood, searchQuery, nodeDegrees]);
+  }, [nodes, focusedNeighborhood, searchQuery, nodeDegrees, pinnedNodeIds]);
 
   return (
     <div className={cn('flex flex-col bg-background/95 backdrop-blur-sm border-l border-border', className)}>
@@ -101,6 +126,12 @@ export function NodeListPanel({
             {filteredNodes.length}
           </Badge>
         </div>
+        {pinnedNodeIds.size > 0 && (
+          <Badge variant="outline" className="text-[9px] h-4 px-1.5 gap-0.5">
+            <Pin className="h-2.5 w-2.5" />
+            {pinnedNodeIds.size}
+          </Badge>
+        )}
       </div>
 
       {/* Search */}
@@ -109,7 +140,7 @@ export function NodeListPanel({
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Filter by platform or user..."
             className="h-8 pl-7 pr-7 text-xs"
           />
@@ -118,7 +149,7 @@ export function NodeListPanel({
               variant="ghost"
               size="icon"
               className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5"
-              onClick={() => setSearchQuery('')}
+              onClick={() => handleSearchChange('')}
             >
               <X className="h-3 w-3" />
             </Button>
@@ -133,53 +164,91 @@ export function NodeListPanel({
             const degree = nodeDegrees.get(node.id) || 0;
             const conf = getConfidenceLevel(node.confidence);
             const isFocused = node.id === focusedNodeId;
+            const isPinned = pinnedNodeIds.has(node.id);
             const platform = node.platform || node.category || 'unknown';
             const username = node.username || node.meta?.username || node.label || 'Unknown';
 
             return (
-              <button
+              <div
                 key={node.id}
-                onClick={() => onNodeSelect(node)}
                 className={cn(
-                  'w-full flex items-center gap-2 px-3 py-2 text-left transition-colors',
+                  'w-full flex items-center gap-2 px-3 py-2 transition-colors group',
                   'hover:bg-muted/50',
-                  isFocused && 'bg-primary/10 border-l-2 border-l-primary'
+                  isFocused && 'bg-primary/10 border-l-2 border-l-primary',
+                  isPinned && !isFocused && 'bg-amber-500/5 border-l-2 border-l-amber-500/50'
                 )}
+                onMouseEnter={() => onNodeHover(node.id)}
+                onMouseLeave={() => onNodeHover(null)}
               >
-                {/* Platform Icon */}
-                <PlatformIcon 
-                  platform={platform} 
-                  url={node.url} 
-                  size="sm" 
-                  showBorder={false}
-                />
-
-                {/* Site + Username */}
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium truncate capitalize">
-                    {platform}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground truncate">
-                    {username}
-                  </div>
-                </div>
-
-                {/* Confidence Badge */}
-                <Badge 
-                  variant={conf.variant} 
-                  className={cn('text-[9px] h-4 px-1.5 shrink-0', conf.color)}
+                {/* Click area for selection */}
+                <button
+                  onClick={() => onNodeSelect(node)}
+                  className="flex items-center gap-2 flex-1 min-w-0 text-left"
                 >
-                  {conf.label}
-                </Badge>
+                  {/* Platform Icon */}
+                  <PlatformIcon 
+                    platform={platform} 
+                    url={node.url} 
+                    size="sm" 
+                    showBorder={false}
+                  />
 
-                {/* Degree (connection count) */}
-                {degree > 0 && (
-                  <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground shrink-0">
-                    <span>{degree}</span>
-                    <ChevronRight className="h-3 w-3" />
+                  {/* Site + Username */}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium truncate capitalize">
+                      {platform}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground truncate">
+                      {username}
+                    </div>
                   </div>
-                )}
-              </button>
+
+                  {/* Confidence Badge */}
+                  <Badge 
+                    variant={conf.variant} 
+                    className={cn('text-[9px] h-4 px-1.5 shrink-0', conf.color)}
+                  >
+                    {conf.label}
+                  </Badge>
+
+                  {/* Degree (connection count) */}
+                  {degree > 0 && (
+                    <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground shrink-0">
+                      <span>{degree}</span>
+                      <ChevronRight className="h-3 w-3" />
+                    </div>
+                  )}
+                </button>
+
+                {/* Pin Button */}
+                <TooltipProvider delayDuration={300}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          'h-6 w-6 shrink-0 transition-opacity',
+                          isPinned ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        )}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNodePin(node.id);
+                        }}
+                      >
+                        {isPinned ? (
+                          <PinOff className="h-3 w-3 text-amber-500" />
+                        ) : (
+                          <Pin className="h-3 w-3 text-muted-foreground" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="text-xs">
+                      {isPinned ? 'Unpin label' : 'Pin label'}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             );
           })}
 
