@@ -24,7 +24,7 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
     priceMonthly: 0,
     stripePriceId: null,
     monthlyScanLimit: 10,
-    allowedProviders: ['maigret'],
+    allowedProviders: ['maigret', 'holehe'],
     features: [
       '10 scans per month',
       'Basic username scanning (Maigret)',
