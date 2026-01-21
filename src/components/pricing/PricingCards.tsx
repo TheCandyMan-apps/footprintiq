@@ -69,7 +69,12 @@ export function PricingCards() {
                 {plan.features.map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-2">
                     <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm">{feature}</span>
+                    <span className="text-sm group relative">
+                      {feature}
+                      {feature === 'Reputation & Abuse Intelligence' && (
+                        <span className="ml-1 text-muted-foreground cursor-help" title="Signals are advisory and designed to reduce false positives. We don't expose raw intelligence feeds.">ⓘ</span>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>
