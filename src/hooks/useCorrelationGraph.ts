@@ -629,10 +629,11 @@ export function useCorrelationGraph(
           const confidence = Math.round(effectiveScore * 70 + 25); // 25-95 range
           
           if (weight >= MIN_WEIGHT) {
-            const sharedWords = intersection.slice(0, 4).join(', ');
+            const sharedTokens = intersection.slice(0, 5).join(', ');
+            const similarityPct = Math.round(jaccardScore * 100);
             const detail = hasHighSimilarity 
-              ? `High bio similarity (${Math.round(jaccardScore * 100)}%): "${sharedWords}"`
-              : `Shared terms: "${sharedWords}"`;
+              ? `Bio similarity (${similarityPct}% match) — tokens: "${sharedTokens}"`
+              : `Bio similarity — shared tokens: "${sharedTokens}"`;
             
             collectSignal(
               bioNodeIds[i],

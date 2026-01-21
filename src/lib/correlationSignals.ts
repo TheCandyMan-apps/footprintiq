@@ -549,10 +549,12 @@ function computeCorrelation(
         ? jaccardScore 
         : Math.min(1, sharedKeywords.length / 5); // 5 shared = 100%
       
-      // Build explainable tooltip with similarity % and shared tokens
+      // Build explainable tooltip with similarity score and shared tokens (max 5)
       const similarityPct = Math.round(jaccardScore * 100);
       const sharedTermsDisplay = sharedKeywords.slice(0, 5).join(', ');
-      const details = `Bio similarity: ${similarityPct}% — shared: ${sharedTermsDisplay}`;
+      const details = sharedKeywords.length > 0
+        ? `Bio similarity (${similarityPct}% match) — tokens: "${sharedTermsDisplay}"`
+        : `Bio similarity: ${similarityPct}% match`;
       
       edges.push({
         sourceId: sig1.id,

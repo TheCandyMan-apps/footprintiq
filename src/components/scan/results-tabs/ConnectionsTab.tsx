@@ -38,7 +38,7 @@ type ConnectionReason = 'username_reuse' | 'image_match' | 'bio_similarity' | 'e
 const CONNECTION_EXPLANATIONS: Record<ConnectionReason, { label: string; description: string; icon: typeof Link2 }> = {
   username_reuse: { label: 'Username Reuse', description: 'Same or similar username', icon: Link2 },
   image_match: { label: 'Image Match', description: 'Similar profile image', icon: Image },
-  bio_similarity: { label: 'Bio Similarity', description: 'Matching bio keywords', icon: FileText },
+  bio_similarity: { label: 'Bio Similarity', description: 'High-confidence token matches', icon: FileText },
   email_link: { label: 'Email Link', description: 'Shared email address', icon: Users },
   cross_reference: { label: 'Cross-Reference', description: 'Profile references another', icon: Link2 },
 };
@@ -46,7 +46,7 @@ const CONNECTION_EXPLANATIONS: Record<ConnectionReason, { label: string; descrip
 const CONNECTION_SUMMARY: Record<ConnectionReason, string> = {
   username_reuse: 'username matches',
   image_match: 'image similarities',
-  bio_similarity: 'bio keyword overlap',
+  bio_similarity: 'bio similarity signals',
   email_link: 'shared email addresses',
   cross_reference: 'profile cross-references',
 };
@@ -145,8 +145,8 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
       .map(([reason]) => CONNECTION_SUMMARY[reason as ConnectionReason]);
     
     if (reasons.length === 0) return 'Connected by identity signals';
-    if (reasons.length === 1) return `Linked primarily by ${reasons[0]}`;
-    return `Linked by ${reasons[0]} and ${reasons[1]}`;
+    if (reasons.length === 1) return `Linked via ${reasons[0]}`;
+    return `Linked via ${reasons[0]} and ${reasons[1]}`;
   }, [connectionStats]);
 
   const handleClearFocus = useCallback(() => {
