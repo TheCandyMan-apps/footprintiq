@@ -792,22 +792,33 @@ serve(async (req) => {
       });
     }
 
+    const scanRecordPayload = {
+      id: scanId,
+      user_id: user.id,
+      workspace_id: workspaceId,
+      scan_type: scanTypeDb as any,
+      email: type === 'email' ? value : null,
+      username: type === 'username' ? value : null,
+      phone: type === 'phone' ? value : null,
+      domain: type === 'domain' ? value : null,
+      status: 'running',
+      cache_key: cacheKey,
+      provider_counts: {},
+      results_route: 'results', // ✅ Orchestrated scans always route to /results/:id
+    } as any;
+
+    console.log('[orchestrate] Creating scan record payload (target flags):', {
+      scanId,
+      type,
+      hasEmail: !!scanRecordPayload.email,
+      hasUsername: !!scanRecordPayload.username,
+      hasPhone: !!scanRecordPayload.phone,
+      hasDomain: !!scanRecordPayload.domain,
+    });
+
     const { error: scanError } = await supabaseService
       .from('scans')
-      .upsert({
-        id: scanId,
-        user_id: user.id,
-        workspace_id: workspaceId,
-        scan_type: scanTypeDb as any,
-        email: type === 'email' ? value : null,
-        username: type === 'username' ? value : null,
-        phone: type === 'phone' ? value : null,
-        domain: type === 'domain' ? value : null,
-        status: 'running',
-        cache_key: cacheKey,
-        provider_counts: {},
-        results_route: 'results',  // ✅ Orchestrated scans always route to /results/:id
-      } as any, {
+      .upsert(scanRecordPayload, {
         onConflict: 'id'
       });
     
