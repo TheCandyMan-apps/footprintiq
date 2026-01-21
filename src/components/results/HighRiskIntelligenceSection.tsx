@@ -109,24 +109,41 @@ export function HighRiskIntelligenceSection({
     }
   };
 
-  const getRiskLevelColor = (level: string) => {
+  const getRiskLevelColor = (level: string, confidence: number) => {
+    // Low confidence signals are always muted regardless of risk level
+    if (confidence < 0.4) {
+      return 'bg-muted/50 text-muted-foreground border-border';
+    }
+    
     switch (level) {
-      case 'critical': return 'bg-red-500/10 text-red-500 border-red-500/20';
-      case 'high': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
-      case 'medium': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-      case 'low': return 'bg-green-500/10 text-green-500 border-green-500/20';
+      case 'critical': return 'bg-orange-500/10 text-orange-600 border-orange-500/20';
+      case 'high': return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+      case 'medium': return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+      case 'low': return 'bg-muted/50 text-muted-foreground border-border';
       default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
+  const getConfidenceLabel = (confidence: number) => {
+    if (confidence < 0.4) return 'Historical';
+    if (confidence < 0.7) return 'Informational';
+    return 'Review Suggested';
+  };
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence < 0.4) return 'text-muted-foreground';
+    if (confidence < 0.7) return 'text-blue-600';
+    return 'text-amber-600';
+  };
+
   const getSignalTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
-      'leak': 'Data Leak Reference',
-      'breach': 'Breach Compilation',
-      'dark_web': 'Dark Web Mention',
-      'malware': 'Stealer Log Reference',
+      'leak': 'Paste Archive Reference',
+      'breach': 'Historical Compilation',
+      'dark_web': 'Indexed Archive Reference',
+      'malware': 'Aggregator Reference',
     };
-    return labels[type] || type;
+    return labels[type] || 'Indexed Reference';
   };
 
   // Not opted in - show minimal prompt
@@ -202,21 +219,26 @@ export function HighRiskIntelligenceSection({
     );
   }
 
-  const actionRequiredCount = signals.filter(s => s.action_required).length;
+  // Separate signals by confidence for display
+  const historicalSignals = signals.filter(s => s.confidence < 0.4);
+  const informationalSignals = signals.filter(s => s.confidence >= 0.4 && s.confidence < 0.7);
+  const reviewSignals = signals.filter(s => s.confidence >= 0.7);
+  
   const hasSignals = signals.length > 0;
+  const actionRequiredCount = reviewSignals.length;
 
   return (
-    <Card className={hasSignals && actionRequiredCount > 0 ? 'border-amber-500/30' : ''}>
+    <Card className={actionRequiredCount > 0 ? 'border-amber-500/20' : ''}>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className={`p-1.5 rounded-full ${
-              hasSignals && actionRequiredCount > 0 
+              actionRequiredCount > 0 
                 ? 'bg-amber-500/10' 
                 : 'bg-accent/10'
             }`}>
               <Shield className={`h-4 w-4 ${
-                hasSignals && actionRequiredCount > 0 
+                actionRequiredCount > 0 
                   ? 'text-amber-500' 
                   : 'text-accent'
               }`} />
@@ -224,22 +246,26 @@ export function HighRiskIntelligenceSection({
             <CardTitle className="text-base">
               High-Risk Intelligence
               <span className="text-xs font-normal text-muted-foreground ml-2">
-                (AI-Filtered)
+                (LENS Filtered)
               </span>
             </CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            {exposureDelta > 0 && (
-              <Badge variant="outline" className="text-xs">
-                +{exposureDelta} exposure
+            {reviewSignals.length > 0 && (
+              <Badge variant="secondary" className="text-xs bg-amber-500/10 text-amber-600">
+                {reviewSignals.length} for review
               </Badge>
             )}
-            <Badge 
-              variant={hasSignals ? 'secondary' : 'outline'} 
-              className="text-xs"
-            >
-              {signals.length} signal{signals.length !== 1 ? 's' : ''}
-            </Badge>
+            {informationalSignals.length > 0 && (
+              <Badge variant="outline" className="text-xs">
+                {informationalSignals.length} informational
+              </Badge>
+            )}
+            {historicalSignals.length > 0 && (
+              <Badge variant="outline" className="text-xs text-muted-foreground">
+                {historicalSignals.length} historical
+              </Badge>
+            )}
           </div>
         </div>
         <CardDescription className="mt-2 flex items-start gap-2">
@@ -268,8 +294,8 @@ export function HighRiskIntelligenceSection({
               >
                 <span className="text-sm">
                   {actionRequiredCount > 0 
-                    ? `${actionRequiredCount} signal${actionRequiredCount !== 1 ? 's' : ''} require${actionRequiredCount === 1 ? 's' : ''} review`
-                    : 'View all signals'
+                    ? `${actionRequiredCount} reference(s) suggest calm review`
+                    : 'View indexed references'
                   }
                 </span>
                 {expanded ? (
@@ -308,23 +334,23 @@ export function HighRiskIntelligenceSection({
               {signals.map((signal, index) => (
                 <div
                   key={index}
-                  className={`p-4 rounded-lg border ${getRiskLevelColor(signal.risk_level)}`}
+                  className={`p-4 rounded-lg border ${getRiskLevelColor(signal.risk_level, signal.confidence)}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="font-medium text-foreground">
                           {getSignalTypeLabel(signal.signal_type)}
                         </span>
-                        {signal.action_required && (
-                          <Badge variant="outline" className="text-xs border-amber-500/50 text-amber-500">
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            Review
-                          </Badge>
-                        )}
-                        {!signal.verified && (
-                          <Badge variant="outline" className="text-xs">
-                            Unverified
+                        <Badge 
+                          variant="outline" 
+                          className={`text-xs ${getConfidenceColor(signal.confidence)}`}
+                        >
+                          {getConfidenceLabel(signal.confidence)}
+                        </Badge>
+                        {signal.confidence < 0.4 && (
+                          <Badge variant="outline" className="text-xs text-muted-foreground">
+                            No action required
                           </Badge>
                         )}
                       </div>
@@ -341,7 +367,7 @@ export function HighRiskIntelligenceSection({
                       <div className="text-xs text-muted-foreground">
                         Confidence
                       </div>
-                      <div className="font-medium">
+                      <div className={`font-medium ${getConfidenceColor(signal.confidence)}`}>
                         {Math.round(signal.confidence * 100)}%
                       </div>
                     </div>
@@ -350,9 +376,10 @@ export function HighRiskIntelligenceSection({
               ))}
 
               <div className="p-3 rounded-lg bg-muted/50 text-xs text-muted-foreground">
-                <strong>Note:</strong> High-Risk Intelligence signals are inherently 
-                unreliable and require manual verification. LENS AI has filtered out 
-                low-confidence data. Finding a reference does not confirm active exposure.
+                <strong>Analyst Note:</strong> High-risk intelligence sources are inherently 
+                unreliable. Confidence below 40% indicates historical or contextual data only—no 
+                action required. References above 70% suggest calm review. LENS has filtered 
+                speculative and unsubstantiated signals.
               </div>
             </CollapsibleContent>
           </Collapsible>
