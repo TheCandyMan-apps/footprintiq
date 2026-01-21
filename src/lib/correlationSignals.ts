@@ -161,31 +161,87 @@ function normalizeBio(bio: string): string {
     .trim();
 }
 
+// Stopwords for bio keyword extraction
+const BIO_STOPWORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+  'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been',
+  'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
+  'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that',
+  'these', 'those', 'i', 'me', 'my', 'we', 'our', 'you', 'your', 'he',
+  'she', 'it', 'they', 'them', 'their', 'who', 'what', 'which', 'where',
+  'when', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more',
+  'most', 'other', 'some', 'such', 'no', 'not', 'only', 'same', 'so',
+  'than', 'too', 'very', 'just', 'also', 'now', 'here', 'there', 'about',
+  'like', 'get', 'got', 'make', 'made', 'know', 'think', 'take', 'see',
+  'come', 'want', 'look', 'use', 'find', 'give', 'tell', 'work', 'try',
+  'need', 'feel', 'become', 'leave', 'put', 'mean', 'keep', 'let', 'begin',
+  'seem', 'help', 'show', 'hear', 'play', 'run', 'move', 'live', 'believe',
+]);
+
+// Generic bio terms that appear frequently and don't indicate identity correlation
+const BIO_GENERIC_TERMS = new Set([
+  // Common interests/hobbies (too generic)
+  'music', 'love', 'lover', 'loving', 'fan', 'fans',
+  'photography', 'photographer', 'photo', 'photos',
+  'gaming', 'gamer', 'games', 'game', 'player',
+  'travel', 'traveler', 'traveling', 'travels',
+  'fitness', 'gym', 'workout', 'health', 'healthy',
+  'food', 'foodie', 'cooking', 'chef', 'cook',
+  'art', 'artist', 'creative', 'design', 'designer',
+  'tech', 'technology', 'developer', 'dev', 'coder', 'coding', 'programmer', 'programming',
+  'writer', 'writing', 'author', 'blogger', 'blog',
+  'student', 'learning', 'learner', 'studying',
+  'entrepreneur', 'business', 'founder', 'startup',
+  'engineer', 'engineering', 'software',
+  // Common descriptors
+  'passionate', 'enthusiast', 'professional', 'expert',
+  'official', 'verified', 'real', 'original',
+  'life', 'lifestyle', 'living', 'world',
+  'best', 'good', 'great', 'amazing', 'awesome',
+  'new', 'old', 'young', 'first', 'last',
+  'free', 'full', 'open', 'public', 'private',
+  'digital', 'online', 'social', 'media', 'content', 'creator',
+  // Common roles
+  'dad', 'mom', 'father', 'mother', 'parent', 'wife', 'husband',
+  'friend', 'friends', 'family',
+  // Generic actions
+  'follow', 'following', 'follower', 'followers',
+  'subscribe', 'support', 'contact', 'connect',
+  'share', 'sharing', 'post', 'posts', 'posting',
+  // Filler words
+  'just', 'really', 'thing', 'things', 'stuff', 'way', 'always', 'never',
+  'everything', 'anything', 'something', 'nothing',
+  'everyone', 'anyone', 'someone', 'nobody',
+  'everyday', 'daily', 'weekly', 'monthly', 'yearly',
+]);
+
+/**
+ * Check if a token is meaningful for bio correlation
+ * (not a stopword, not generic, and meets minimum length)
+ */
+function isMeaningfulBioToken(token: string): boolean {
+  if (token.length < 3) return false;
+  if (/^\d+$/.test(token)) return false; // Pure numbers
+  if (BIO_STOPWORDS.has(token)) return false;
+  if (BIO_GENERIC_TERMS.has(token)) return false;
+  return true;
+}
+
 /**
  * Extract keywords from bio for matching
+ * Only returns meaningful tokens that can indicate identity correlation
  */
 function extractBioKeywords(bio: string): string[] {
-  const stopwords = new Set([
-    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
-    'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been',
-    'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would',
-    'could', 'should', 'may', 'might', 'must', 'can', 'this', 'that',
-    'these', 'those', 'i', 'me', 'my', 'we', 'our', 'you', 'your', 'he',
-    'she', 'it', 'they', 'them', 'their', 'who', 'what', 'which', 'where',
-    'when', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more',
-    'most', 'other', 'some', 'such', 'no', 'not', 'only', 'same', 'so',
-    'than', 'too', 'very', 'just', 'also', 'now', 'here', 'there', 'about',
-  ]);
-
   const normalized = normalizeBio(bio);
-  const words = normalized.split(/\s+/).filter(w => 
-    w.length >= 3 && !stopwords.has(w) && !/^\d+$/.test(w)
-  );
+  const words = normalized.split(/\s+/).filter(isMeaningfulBioToken);
 
-  // Also extract potential identifiers (all caps, camelCase, etc.)
+  // Also extract potential identifiers (CamelCase, etc.) - these are high value
   const identifiers = bio.match(/\b[A-Z][a-z]+(?:[A-Z][a-z]+)+\b/g) || [];
+  const normalizedIdentifiers = identifiers
+    .map(i => i.toLowerCase())
+    .filter(i => i.length >= 4); // Identifiers should be at least 4 chars
   
-  return [...new Set([...words, ...identifiers.map(i => i.toLowerCase())])];
+  return [...new Set([...words, ...normalizedIdentifiers])];
 }
 
 /**
@@ -477,19 +533,32 @@ function computeCorrelation(
     });
   }
 
-  // Bio similarity (weak/medium)
-  if (sig1.bioKeywords.length >= 3 && sig2.bioKeywords.length >= 3) {
-    const similarity = jaccardSimilarity(sig1.bioKeywords, sig2.bioKeywords);
-    if (similarity >= 0.25) {
-      const sharedKeywords = sig1.bioKeywords.filter(k => sig2.bioKeywords.includes(k));
+  // Bio similarity - STRICT matching to avoid "everyone connected" graphs
+  // Only create edge if: Jaccard >= 0.75 OR at least 3 shared meaningful tokens
+  if (sig1.bioKeywords.length >= 2 && sig2.bioKeywords.length >= 2) {
+    const sharedKeywords = sig1.bioKeywords.filter(k => sig2.bioKeywords.includes(k));
+    const jaccardScore = jaccardSimilarity(sig1.bioKeywords, sig2.bioKeywords);
+    
+    // STRICT THRESHOLD: Require high Jaccard OR multiple shared meaningful tokens
+    const hasEnoughSharedTokens = sharedKeywords.length >= 3;
+    const hasHighSimilarity = jaccardScore >= 0.75;
+    
+    if (hasEnoughSharedTokens || hasHighSimilarity) {
+      // Calculate effective confidence based on which threshold was met
+      const effectiveScore = hasHighSimilarity 
+        ? jaccardScore 
+        : Math.min(1, sharedKeywords.length / 5); // 5 shared = 100%
+      
       edges.push({
         sourceId: sig1.id,
         targetId: sig2.id,
         reason: 'similar_bio',
-        strength: similarity >= 0.5 ? 'medium' : 'weak',
-        weight: CORRELATION_CONFIG.similar_bio.weight * (0.5 + similarity * 0.5),
-        confidence: Math.round(similarity * 60 + 20),
-        details: `Shared keywords: ${sharedKeywords.slice(0, 3).join(', ')}`,
+        strength: effectiveScore >= 0.8 ? 'strong' : 'medium',
+        weight: CORRELATION_CONFIG.similar_bio.weight * (0.6 + effectiveScore * 0.4),
+        confidence: Math.round(effectiveScore * 70 + 25), // 25-95 range
+        details: hasHighSimilarity 
+          ? `High bio similarity (${Math.round(jaccardScore * 100)}%): ${sharedKeywords.slice(0, 4).join(', ')}`
+          : `Shared meaningful terms: ${sharedKeywords.slice(0, 4).join(', ')}`,
       });
     }
   }
