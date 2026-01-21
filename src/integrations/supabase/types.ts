@@ -7361,6 +7361,7 @@ export type Database = {
           cached_from_scan_id: string | null
           completed_at: string | null
           created_at: string
+          domain: string | null
           email: string | null
           first_name: string | null
           gosearch_pending: boolean
@@ -7388,6 +7389,7 @@ export type Database = {
           cached_from_scan_id?: string | null
           completed_at?: string | null
           created_at?: string
+          domain?: string | null
           email?: string | null
           first_name?: string | null
           gosearch_pending?: boolean
@@ -7415,6 +7417,7 @@ export type Database = {
           cached_from_scan_id?: string | null
           completed_at?: string | null
           created_at?: string
+          domain?: string | null
           email?: string | null
           first_name?: string | null
           gosearch_pending?: boolean
