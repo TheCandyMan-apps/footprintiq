@@ -529,32 +529,58 @@ export function CorrelationGraph({
           style: {
             'width': 0.75,
             'line-color': '#94a3b8',
-            'line-opacity': 0.08, // Very light by default
+            'line-opacity': 0.08, // Very light by default (zoomed out)
             'curve-style': 'bezier',
             'target-arrow-shape': 'none',
+            'label': '', // No labels when zoomed out
             'transition-property': 'line-opacity, width, line-color',
             'transition-duration': 200,
           },
         },
-        // Identity→Account edges (de-emphasized - thin, very light, dashed)
+        // Identity→Account edges - straight/haystack for cleaner radial pattern
         {
           selector: 'edge[source = "identity-root"]',
           style: {
             'line-color': '#cbd5e1',
-            'line-opacity': 0.06,
+            'line-opacity': 0.05,
             'line-style': 'dashed',
             'width': 0.5,
             'z-index': 1,
+            'curve-style': 'straight', // Cleaner radial from center
           },
         },
-        // Account↔Account correlation edges - slightly stronger than identity edges
+        // Account↔Account correlation edges - bezier with control point distance
         {
           selector: 'edge[source != "identity-root"]',
           style: {
             'line-style': 'solid',
             'z-index': 10,
             'line-color': '#64748b',
-            'line-opacity': 0.12, // Slightly stronger than identity edges
+            'line-opacity': 0.1,
+            'curve-style': 'bezier',
+            'control-point-step-size': 50, // Separate overlapping edges
+          },
+        },
+        // ========== ZOOMED-IN STATE - increased visibility ==========
+        {
+          selector: 'edge.zoomed-in',
+          style: {
+            'line-opacity': 0.25,
+            'width': 1.25,
+          },
+        },
+        {
+          selector: 'edge.zoomed-in[source = "identity-root"]',
+          style: {
+            'line-opacity': 0.12,
+            'width': 0.75,
+          },
+        },
+        {
+          selector: 'edge.zoomed-in[source != "identity-root"][confidence >= 70]',
+          style: {
+            'line-opacity': 0.4,
+            'width': 2,
           },
         },
         // High confidence edges (>= 80)
@@ -1014,12 +1040,23 @@ export function CorrelationGraph({
       onNodeDoubleClick(graphNode);
     });
 
-    // ========== ZOOM-BASED HINT ==========
+    // ========== ZOOM-BASED EDGE VISIBILITY ==========
     const ZOOM_THRESHOLD = 1.3;
     
     const updateZoomState = () => {
       const zoom = cy.zoom();
-      setIsZoomedIn(zoom >= ZOOM_THRESHOLD);
+      const isZoomed = zoom >= ZOOM_THRESHOLD;
+      setIsZoomedIn(isZoomed);
+      
+      // Add/remove zoomed-in class on edges for visibility boost
+      // Don't apply if focus mode is active (focus mode has its own styling)
+      if (!activeFocusedId) {
+        if (isZoomed) {
+          cy.edges().addClass('zoomed-in');
+        } else {
+          cy.edges().removeClass('zoomed-in');
+        }
+      }
     };
     
     cy.on('zoom', updateZoomState);
