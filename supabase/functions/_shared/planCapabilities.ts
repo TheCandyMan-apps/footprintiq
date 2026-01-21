@@ -15,6 +15,7 @@ export interface PlanCapabilities {
   exportsPdfCsv: boolean;
   identityGraph: boolean;
   darkWebMonitoring: boolean;
+  highRiskIntelligence: boolean; // High-Risk Intelligence module (Pro+)
   batchScanning: boolean;
   apiAccess: boolean;
   auditLogs: boolean;
@@ -44,6 +45,7 @@ export const CAPABILITIES_BY_PLAN: Record<PlanTier, PlanCapabilities> = {
     exportsPdfCsv: false,
     identityGraph: false,
     darkWebMonitoring: false,
+    highRiskIntelligence: false,
     batchScanning: false,
     apiAccess: false,
     auditLogs: false,
@@ -67,6 +69,7 @@ export const CAPABILITIES_BY_PLAN: Record<PlanTier, PlanCapabilities> = {
     exportsPdfCsv: true,
     identityGraph: false,
     darkWebMonitoring: true,
+    highRiskIntelligence: true,
     batchScanning: false,
     apiAccess: false,
     auditLogs: false,
@@ -90,6 +93,7 @@ export const CAPABILITIES_BY_PLAN: Record<PlanTier, PlanCapabilities> = {
     exportsPdfCsv: true,
     identityGraph: true,
     darkWebMonitoring: true,
+    highRiskIntelligence: true,
     batchScanning: true,
     apiAccess: true,
     auditLogs: true,
