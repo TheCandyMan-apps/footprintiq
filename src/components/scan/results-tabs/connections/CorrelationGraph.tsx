@@ -5,7 +5,7 @@ import {
   CATEGORY_CONFIG, EDGE_REASON_CONFIG 
 } from '@/hooks/useCorrelationGraph';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -21,6 +21,7 @@ interface CorrelationGraphProps {
   focusedNodeId: string | null;
   onNodeClick: (node: GraphNode | null) => void;
   onNodeDoubleClick: (node: GraphNode) => void;
+  onFocusNode?: (nodeId: string | null) => void;
   className?: string;
 }
 
@@ -35,18 +36,23 @@ export function CorrelationGraph({
   focusedNodeId,
   onNodeClick,
   onNodeDoubleClick,
+  onFocusNode,
   className,
 }: CorrelationGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const [groupByPlatform, setGroupByPlatform] = useState(false);
+  const [internalFocusedId, setInternalFocusedId] = useState<string | null>(null);
   const [tooltipData, setTooltipData] = useState<{
     x: number;
     y: number;
     type: 'node' | 'edge';
     content: { label: string; username?: string; confidence?: number; reason?: string };
   } | null>(null);
+
+  // Use external focusedNodeId if provided, otherwise use internal state
+  const activeFocusedId = focusedNodeId ?? internalFocusedId;
 
   // Build cytoscape elements from graph data
   const buildElements = useCallback(() => {
@@ -499,6 +505,15 @@ export function CorrelationGraph({
             'z-index': 800,
           },
         },
+        // Strong correlation edges in focus mode
+        {
+          selector: 'edge.strong-correlation',
+          style: {
+            'line-opacity': 1,
+            'width': 4.5,
+            'z-index': 900,
+          },
+        },
         // Identity edges kept faint when non-root is hovered
         {
           selector: 'edge.identity-faint',
@@ -661,8 +676,9 @@ export function CorrelationGraph({
       const node = evt.target;
       if (node.data('isGroup')) return;
       
+      const nodeId = node.id();
       const graphNode: GraphNode = {
-        id: node.id(),
+        id: nodeId,
         type: node.data('type'),
         label: node.data('label'),
         category: node.data('category'),
@@ -673,11 +689,21 @@ export function CorrelationGraph({
         meta: node.data('meta'),
         result: node.data('result'),
       };
+      
+      // Trigger focus mode on click (toggle if already focused)
+      if (nodeId !== 'identity-root') {
+        setInternalFocusedId(prev => prev === nodeId ? null : nodeId);
+        onFocusNode?.(nodeId);
+      }
+      
       onNodeClick(graphNode);
     });
 
     cy.on('tap', (evt) => {
       if (evt.target === cy) {
+        // Clear focus when clicking background
+        setInternalFocusedId(null);
+        onFocusNode?.(null);
         onNodeClick(null);
       }
     });
@@ -723,37 +749,81 @@ export function CorrelationGraph({
       cy.destroy();
       cyRef.current = null;
     };
-  }, [data, groupByPlatform, buildElements, onNodeClick, onNodeDoubleClick]);
+  }, [data, groupByPlatform, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
 
-  // Handle focus mode
+  // Handle focus mode - prioritize correlation edges
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
 
-    cy.elements().removeClass('dimmed highlighted focused');
+    cy.elements().removeClass('dimmed highlighted focused strong-correlation');
 
-    if (!focusedNodeId) return;
+    if (!activeFocusedId) return;
 
-    const focusedNode = cy.getElementById(focusedNodeId);
+    const focusedNode = cy.getElementById(activeFocusedId);
     if (!focusedNode.length) return;
 
     const connectedEdges = focusedNode.connectedEdges();
     const connectedNodes = connectedEdges.connectedNodes();
-    const secondDegreeEdges = connectedNodes.connectedEdges();
+    
+    // Separate correlation edges (account↔account) from identity edges
+    const correlationEdges = connectedEdges.filter((edge: cytoscape.EdgeSingular) => 
+      edge.data('source') !== 'identity-root' && edge.data('target') !== 'identity-root'
+    );
+    const identityEdges = connectedEdges.filter((edge: cytoscape.EdgeSingular) => 
+      edge.data('source') === 'identity-root' || edge.data('target') === 'identity-root'
+    );
+    
+    // Get strongest correlation edges (confidence >= 70)
+    const strongEdges = correlationEdges.filter((edge: cytoscape.EdgeSingular) => 
+      edge.data('confidence') >= 70
+    );
+    
+    // Get neighbors via correlation edges (not identity)
+    const correlationNeighbors = correlationEdges.connectedNodes().not(focusedNode);
+    
+    // Get second-degree via strong correlations
+    const secondDegreeEdges = correlationNeighbors.connectedEdges().filter((edge: cytoscape.EdgeSingular) => 
+      edge.data('source') !== 'identity-root' && edge.data('target') !== 'identity-root'
+    );
     const secondDegreeNodes = secondDegreeEdges.connectedNodes();
 
+    // Dim everything first
     cy.elements().addClass('dimmed');
+    
+    // Highlight focused node
     focusedNode.removeClass('dimmed').addClass('focused');
-    connectedEdges.removeClass('dimmed').addClass('highlighted');
-    connectedNodes.removeClass('dimmed').addClass('highlighted');
+    
+    // Highlight correlation edges and their neighbors strongly
+    correlationEdges.removeClass('dimmed').addClass('highlighted');
+    strongEdges.addClass('strong-correlation');
+    correlationNeighbors.removeClass('dimmed').addClass('highlighted');
+    
+    // Show identity edges but keep them subtle
+    identityEdges.removeClass('dimmed');
+    
+    // Show second-degree nodes (less emphasis)
     secondDegreeNodes.removeClass('dimmed');
     
+    // Animate to focused node
     cy.animate({
       center: { eles: focusedNode },
       zoom: 1.5,
       duration: 300,
     });
-  }, [focusedNodeId]);
+  }, [activeFocusedId]);
+
+  // Clear focus handler
+  const handleClearFocus = useCallback(() => {
+    setInternalFocusedId(null);
+    onFocusNode?.(null);
+    
+    const cy = cyRef.current;
+    if (cy) {
+      cy.elements().removeClass('dimmed highlighted focused strong-correlation');
+      cy.fit(undefined, 30);
+    }
+  }, [onFocusNode]);
 
   // Control handlers
   const handleZoomIn = useCallback(() => {
@@ -825,6 +895,24 @@ export function CorrelationGraph({
 
   return (
     <div className={cn('relative flex flex-col h-full', className)}>
+      {/* Focus Mode Badge - Top Center */}
+      {activeFocusedId && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 animate-fade-in">
+          <div className="flex items-center gap-2 bg-primary text-primary-foreground px-3 py-1.5 rounded-full shadow-lg text-sm font-medium">
+            <Focus className="h-3.5 w-3.5" />
+            <span>Focus Mode</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 hover:bg-primary-foreground/20 rounded-full ml-1"
+              onClick={handleClearFocus}
+            >
+              <X className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Bottom-left Controls (SherlockEye style) */}
       <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1 bg-background/90 backdrop-blur-sm rounded-lg border border-border p-1.5 shadow-lg">
         <TooltipProvider delayDuration={300}>
