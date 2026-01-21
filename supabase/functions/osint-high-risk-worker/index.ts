@@ -80,18 +80,23 @@ async function queryHighRiskSources(
       const hasResult = Math.random() < 0.2;
       
       if (hasResult) {
+        // Generate realistic confidence distribution
+        // Most signals should be low-confidence (aggressive false positive reduction)
+        const rawConfidence = Math.random();
+        const confidence = rawConfidence < 0.6 ? rawConfidence * 0.5 : rawConfidence * 0.8; // Bias toward lower confidence
+        
         const signal: HighRiskSignal = {
           signal_type: source.category,
-          confidence: 0.4 + Math.random() * 0.4, // 0.4-0.8 range
+          confidence: Math.round(confidence * 100) / 100, // Round to 2 decimals
           risk_level: source.category === 'dark_web' ? 'high' : 'medium',
-          summary: generateSanitizedSummary(source.name, entityType),
-          context: `Reference found in ${source.name}. Details filtered through LENS AI.`,
-          verified: false, // Dark web data is unreliable by default
-          action_required: false, // Default to no action unless verified
+          summary: generateSanitizedSummary(source.name, entityType, confidence),
+          context: '', // Will be set by LENS reduction
+          verified: false, // High-risk data is unreliable by default
+          action_required: false, // Default to no action - LENS will set if warranted
         };
         
         signals.push(signal);
-        console.log(`[high-risk-worker] Signal found from ${source.name}`);
+        console.log(`[high-risk-worker] Signal found from ${source.name}, confidence: ${signal.confidence}`);
       }
     } catch (error) {
       console.error(`[high-risk-worker] Error querying ${source.name}:`, error);
@@ -103,79 +108,133 @@ async function queryHighRiskSources(
 }
 
 /**
- * Generate sanitized, non-fear-inducing summary
+ * Generate sanitized, neutral summary without fear-based language
+ * Follows ethical OSINT analyst principles
  */
-function generateSanitizedSummary(sourceName: string, entityType: string): string {
-  const summaries: Record<string, string> = {
-    'Paste Site Aggregator': `Your ${entityType} may have appeared in a public paste. Consider reviewing your exposure.`,
-    'Breach Compilations Index': `Historical breach records may reference this ${entityType}. Age and validity unknown.`,
-    'Dark Forum Mentions': `A reference matching this ${entityType} was indexed. Reliability is unverified.`,
-    'Marketplace Listings': `An indexed reference was found. This does not confirm active trading.`,
-    'Stealer Log References': `Log aggregator reference found. Recommend password rotation as precaution.`,
-  };
+function generateSanitizedSummary(sourceName: string, entityType: string, confidence: number): string {
+  // Low confidence (< 0.4): Mark as historical/contextual
+  if (confidence < 0.4) {
+    const historicalSummaries: Record<string, string> = {
+      'Paste Site Aggregator': `Historical reference in a paste archive. Age and relevance unknown. No action required.`,
+      'Breach Compilations Index': `Historical compilation entry. Data age indeterminate. Informational only.`,
+      'Dark Forum Mentions': `Archived reference of uncertain origin. Context insufficient for conclusions.`,
+      'Marketplace Listings': `Archived listing reference. Current relevance cannot be determined.`,
+      'Stealer Log References': `Historical aggregator entry. Validity unconfirmed. Contextual information only.`,
+    };
+    return historicalSummaries[sourceName] || `Historical reference found. No action required.`;
+  }
   
-  return summaries[sourceName] || `Reference found in ${sourceName}. Review recommended.`;
+  // Medium confidence (0.4-0.7): Neutral, factual
+  if (confidence < 0.7) {
+    const neutralSummaries: Record<string, string> = {
+      'Paste Site Aggregator': `Reference indexed from a public paste. Age and validity are uncertain.`,
+      'Breach Compilations Index': `Entry found in a historical compilation. Original source unverified.`,
+      'Dark Forum Mentions': `Reference indexed from a public archive. Reliability cannot be confirmed.`,
+      'Marketplace Listings': `Indexed reference found. Current status is indeterminate.`,
+      'Stealer Log References': `Aggregator reference indexed. Origin and recency unverified.`,
+    };
+    return neutralSummaries[sourceName] || `Reference indexed. Further context unavailable.`;
+  }
+  
+  // High confidence (> 0.7): Recommend calm review
+  const reviewSummaries: Record<string, string> = {
+    'Paste Site Aggregator': `Corroborated reference in indexed paste. Consider reviewing associated credentials.`,
+    'Breach Compilations Index': `Multiple source correlation suggests historical exposure. Review recommended.`,
+    'Dark Forum Mentions': `Corroborated reference with supporting context. Calm review suggested.`,
+    'Marketplace Listings': `Reference with corroborating metadata. Review for awareness.`,
+    'Stealer Log References': `Corroborated entry. Credential rotation may be prudent.`,
+  };
+  return reviewSummaries[sourceName] || `Corroborated reference found. Review recommended.`;
 }
 
 /**
- * Apply LENS AI reduction layer to filter and contextualize signals
+ * Apply LENS AI reduction layer with ethical OSINT analyst principles
+ * 
+ * Rules:
+ * - Reduce false positives aggressively
+ * - Assign confidence 0-1
+ * - Summarize neutrally and calmly
+ * - State clearly when no action required
+ * - No speculation, raw data, fear-based wording, or surveillance language
+ * - confidence < 0.4 → historical/contextual, no action
+ * - confidence > 0.7 → recommend review with grounded reasoning only
  */
 async function applyLensReduction(
   signals: HighRiskSignal[],
   planTier: PlanTier
 ): Promise<{ filteredSignals: HighRiskSignal[]; lensNotes: string; scoreDelta: number }> {
-  console.log(`[high-risk-worker] Applying LENS reduction to ${signals.length} signals`);
+  console.log(`[high-risk-worker] Applying LENS reduction to ${signals.length} raw signals`);
   
-  // Filter low-confidence signals
-  const filteredSignals = signals.filter(s => s.confidence >= 0.5);
-  
-  // Downplay low-confidence signals, escalate high-confidence with calm language
-  const processedSignals = filteredSignals.map(signal => {
-    if (signal.confidence < 0.6) {
+  // AGGRESSIVE FALSE POSITIVE REDUCTION
+  // Only surface signals with meaningful confidence
+  const processedSignals = signals.map(signal => {
+    // confidence < 0.4: Historical/contextual only, no action
+    if (signal.confidence < 0.4) {
       return {
         ...signal,
-        summary: `(Low confidence) ${signal.summary}`,
+        risk_level: 'low' as const,
+        summary: `[Historical] ${signal.summary}`,
+        context: 'This reference is historical or contextual. No action required.',
+        action_required: false,
+        verified: false,
+      };
+    }
+    
+    // confidence 0.4-0.7: Informational, generally no action
+    if (signal.confidence < 0.7) {
+      return {
+        ...signal,
+        risk_level: signal.risk_level === 'critical' ? 'medium' as const : signal.risk_level,
+        context: 'Confidence is moderate. This finding is informational.',
         action_required: false,
       };
     }
     
-    if (signal.confidence >= 0.75 && signal.risk_level === 'high') {
-      return {
-        ...signal,
-        action_required: true,
-        context: `${signal.context} We recommend reviewing this finding.`,
-      };
-    }
-    
-    return signal;
+    // confidence > 0.7: Recommend review with grounded reasoning
+    return {
+      ...signal,
+      action_required: true,
+      context: `Confidence level supports review. ${signal.context ? signal.context : 'Multiple source correlation detected.'}`,
+    };
   });
   
-  // Generate LENS notes
-  const highConfidenceCount = processedSignals.filter(s => s.confidence >= 0.7).length;
-  const actionRequiredCount = processedSignals.filter(s => s.action_required).length;
+  // Filter out very low confidence signals from display (< 0.3)
+  const filteredSignals = processedSignals.filter(s => s.confidence >= 0.3);
   
-  let lensNotes = 'High-Risk Intelligence scan complete. ';
+  // Generate LENS analyst notes - neutral, calm language
+  const highConfidenceCount = filteredSignals.filter(s => s.confidence >= 0.7).length;
+  const historicalCount = filteredSignals.filter(s => s.confidence < 0.4).length;
+  const actionRequiredCount = filteredSignals.filter(s => s.action_required).length;
   
-  if (processedSignals.length === 0) {
-    lensNotes += 'No significant signals detected. Your exposure appears minimal in monitored sources.';
+  let lensNotes = '';
+  
+  if (filteredSignals.length === 0) {
+    lensNotes = 'Analysis complete. No significant signals detected in indexed sources. No action required.';
   } else if (highConfidenceCount === 0) {
-    lensNotes += `${processedSignals.length} low-confidence signals found. These are informational and may not require action.`;
+    if (historicalCount === filteredSignals.length) {
+      lensNotes = `Analysis complete. ${historicalCount} historical reference(s) found. These are contextual only and require no action.`;
+    } else {
+      lensNotes = `Analysis complete. ${filteredSignals.length} signal(s) indexed with moderate or low confidence. No immediate action required.`;
+    }
   } else if (actionRequiredCount > 0) {
-    lensNotes += `${actionRequiredCount} finding(s) warrant review. LENS has filtered out unreliable data.`;
+    lensNotes = `Analysis complete. ${actionRequiredCount} finding(s) have sufficient confidence to warrant calm review. ${filteredSignals.length - actionRequiredCount} additional reference(s) are informational only.`;
   } else {
-    lensNotes += `${processedSignals.length} signals analyzed. No immediate action required.`;
+    lensNotes = `Analysis complete. ${filteredSignals.length} reference(s) indexed. Confidence levels do not indicate immediate concern.`;
   }
   
-  // Calculate exposure score delta based on findings
+  // Calculate exposure score delta - conservative scoring
+  // Only verified or high-confidence findings contribute meaningfully
   let scoreDelta = 0;
-  for (const signal of processedSignals) {
-    if (signal.verified) {
-      scoreDelta += signal.risk_level === 'critical' ? 25 : 
-                   signal.risk_level === 'high' ? 15 : 
-                   signal.risk_level === 'medium' ? 8 : 3;
+  for (const signal of filteredSignals) {
+    if (signal.confidence < 0.4) {
+      // Historical signals don't affect score
+      scoreDelta += 0;
+    } else if (signal.confidence < 0.7) {
+      // Moderate confidence: minimal impact
+      scoreDelta += signal.verified ? 3 : 1;
     } else {
-      // Unverified signals have reduced impact
-      scoreDelta += signal.confidence >= 0.7 ? 5 : 2;
+      // High confidence: measured impact
+      scoreDelta += signal.verified ? 8 : 4;
     }
   }
   
