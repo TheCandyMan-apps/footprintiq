@@ -84,6 +84,9 @@ const LensOsintConfidenceWrong = lazy(() => import("./pages/blog/LensOsintConfid
 const LensIntroduction = lazy(() => import("./pages/blog/LensIntroduction"));
 const LensConfidenceMeaning = lazy(() => import("./pages/blog/LensConfidenceMeaning"));
 const LensCaseStudyFalsePositive = lazy(() => import("./pages/blog/LensCaseStudyFalsePositive"));
+const DarkWebScansNoise = lazy(() => import("./pages/blog/DarkWebScansNoise"));
+const OsintToInsight = lazy(() => import("./pages/blog/OsintToInsight"));
+const EthicalOsintExposure = lazy(() => import("./pages/blog/EthicalOsintExposure"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -325,6 +328,9 @@ function RouterContent() {
           <Route path="/blog/lens-introduction" element={<LensIntroduction />} />
           <Route path="/blog/lens-confidence-meaning" element={<LensConfidenceMeaning />} />
           <Route path="/blog/lens-case-study-false-positive" element={<LensCaseStudyFalsePositive />} />
+          <Route path="/blog/dark-web-scans-noise" element={<DarkWebScansNoise />} />
+          <Route path="/blog/osint-to-insight" element={<OsintToInsight />} />
+          <Route path="/blog/ethical-osint-exposure" element={<EthicalOsintExposure />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
