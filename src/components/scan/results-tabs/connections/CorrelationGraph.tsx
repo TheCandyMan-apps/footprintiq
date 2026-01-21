@@ -6,7 +6,7 @@ import {
 } from '@/hooks/useCorrelationGraph';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw, X, Search, Eye, EyeOff, Expand, Shrink, Zap, Tag, Info } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw, X, Search, Eye, EyeOff, Expand, Shrink, Zap, Tag, Info, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -17,6 +17,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { NodeListPanel } from './NodeListPanel';
 
 interface CorrelationGraphProps {
   data: CorrelationGraphData;
@@ -69,6 +70,7 @@ export function CorrelationGraph({
   const [showStrongestOnly, setShowStrongestOnly] = useState(true); // Default ON
   const [focusHops, setFocusHops] = useState<1 | 2>(1); // 1-hop or 2-hop neighborhood
   const [isZoomedIn, setIsZoomedIn] = useState(false); // Track zoom level for label hint
+  const [showNodeList, setShowNodeList] = useState<boolean | null>(null); // null = auto (show when labels off)
   const [tooltipData, setTooltipData] = useState<{
     x: number;
     y: number;
@@ -1117,9 +1119,20 @@ export function CorrelationGraph({
       minTemp: 1.0,
     } as any).run();
   }, []);
+  // Determine if node list should be visible (auto-show when labels are off)
+  const isNodeListVisible = showNodeList === null ? labelMode === 'off' : showNodeList;
+
+  // Handle node selection from list
+  const handleNodeListSelect = useCallback((node: GraphNode) => {
+    setInternalFocusedId(node.id);
+    onFocusNode?.(node.id);
+    onNodeClick(node);
+  }, [onFocusNode, onNodeClick]);
 
   return (
-    <div className={cn('relative flex flex-col h-full', className)}>
+    <div className={cn('relative flex h-full', className)}>
+      {/* Main Graph Area */}
+      <div className="relative flex-1 flex flex-col">
       {/* Top Controls Bar - Search + Show All + Status */}
       <div className="absolute top-3 left-3 right-3 z-20 flex items-center gap-2 pointer-events-none">
         {/* Search Input */}
@@ -1351,6 +1364,30 @@ export function CorrelationGraph({
               </div>
             </TooltipContent>
           </Tooltip>
+
+          <div className="w-full h-px bg-border my-0.5" />
+
+          {/* Node List Toggle */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={isNodeListVisible ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowNodeList(prev => prev === null ? true : !prev)}
+              >
+                <List className={cn("h-4 w-4", isNodeListVisible && "text-primary")} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-xs">
+              <div className="space-y-0.5">
+                <div>{isNodeListVisible ? 'Hide' : 'Show'} Node List</div>
+                {showNodeList === null && (
+                  <div className="text-[10px] text-muted-foreground">Auto-shown when labels off</div>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
         </TooltipProvider>
       </div>
 
@@ -1457,6 +1494,18 @@ export function CorrelationGraph({
         className="flex-1 bg-gradient-to-br from-background via-background to-muted/5"
         style={{ cursor: 'grab' }}
       />
+      </div>
+
+      {/* Node List Panel - shows when labels are off or manually toggled */}
+      {isNodeListVisible && (
+        <NodeListPanel
+          nodes={displayNodes}
+          edges={displayEdges.map(e => ({ source: e.source, target: e.target }))}
+          focusedNodeId={activeFocusedId}
+          onNodeSelect={handleNodeListSelect}
+          className="w-64 shrink-0"
+        />
+      )}
     </div>
   );
 }
