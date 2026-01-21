@@ -4,6 +4,33 @@ import { SEO, organizationSchema } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 const blogPosts = [{
+  slug: "dark-web-scans-noise",
+  title: "Why Most \"Dark Web Scans\" Are Noise — And How AI Fixes That",
+  excerpt: "Dark web scanning has become a marketing buzzword. Learn why most scan results are noise, and how AI-filtered intelligence delivers calm, actionable insights instead of panic.",
+  date: "January 21, 2026",
+  readTime: "8 min read",
+  category: "Thought Leadership",
+  featured: true,
+  image: "/blog-images/dark-web-noise.webp"
+}, {
+  slug: "osint-to-insight",
+  title: "From OSINT to Insight: Reducing False Positives in Risk Intelligence",
+  excerpt: "Raw OSINT data creates noise. Learn how probabilistic analysis, confidence scoring, and multi-signal correlation transform data into actionable intelligence.",
+  date: "January 21, 2026",
+  readTime: "9 min read",
+  category: "Thought Leadership",
+  featured: false,
+  image: "/blog-images/osint-insight.webp"
+}, {
+  slug: "ethical-osint-exposure",
+  title: "Ethical OSINT: How to Assess Exposure Without Surveillance",
+  excerpt: "OSINT tools exist on a spectrum from helpful to harmful. Learn the principles that separate ethical exposure assessment from surveillance, and why transparency matters.",
+  date: "January 21, 2026",
+  readTime: "10 min read",
+  category: "Thought Leadership",
+  featured: false,
+  image: "/blog-images/ethical-osint.webp"
+}, {
   slug: "ethical-osint-standard",
   title: "Why Ethical OSINT Needs a New Standard",
   excerpt: "Ethical OSINT isn't about collecting less data — it's about claiming less certainty. Learn why interpretation, not volume, defines responsible intelligence practice.",
