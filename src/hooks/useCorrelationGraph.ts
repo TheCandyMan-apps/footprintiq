@@ -185,11 +185,18 @@ function getLensStatus(score: number): 'verified' | 'likely' | 'unclear' {
   return 'unclear';
 }
 
+export interface CorrelationGraphOptions {
+  /** Minimum confidence threshold for correlation edges (0-1). Default: 0.6 */
+  minConfidence?: number;
+}
+
 export function useCorrelationGraph(
   results: ScanResult[],
   searchedUsername: string,
-  verifiedEntities?: Map<string, any>
+  verifiedEntities?: Map<string, any>,
+  options: CorrelationGraphOptions = {}
 ): CorrelationGraphData {
+  const { minConfidence = 0.6 } = options;
   return useMemo(() => {
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
@@ -610,21 +617,54 @@ export function useCorrelationGraph(
       });
     });
 
-    // Calculate identity vs correlation edge counts
-    const identityEdges = edges.filter(e => e.source === 'identity-root' || e.target === 'identity-root').length;
-    const correlationEdges = edges.filter(e => e.source !== 'identity-root' && e.target !== 'identity-root').length;
+    // =========================================================================
+    // STEP 4: Filter correlation edges by confidence threshold
+    // =========================================================================
+    // Identity edges (identity-root → account) are always kept
+    // Correlation edges (account ↔ account) are filtered by minConfidence
+    const filteredEdges = edges.filter(edge => {
+      const isIdentityEdge = edge.source === 'identity-root' || edge.target === 'identity-root';
+      if (isIdentityEdge) return true; // Always keep identity edges
+      
+      // Correlation edges: filter by confidence (edge.confidence is 0-100, threshold is 0-1)
+      return edge.confidence >= minConfidence * 100;
+    });
+
+    // Calculate identity vs correlation edge counts from filtered edges
+    const identityEdges = filteredEdges.filter(e => e.source === 'identity-root' || e.target === 'identity-root').length;
+    const correlationEdges = filteredEdges.filter(e => e.source !== 'identity-root' && e.target !== 'identity-root').length;
+
+    // Recalculate reason stats from filtered edges only
+    const filteredReasonStats: Record<EdgeReason, number> = {
+      same_username: 0,
+      similar_username: 0,
+      same_image: 0,
+      similar_bio: 0,
+      shared_domain: 0,
+      shared_link: 0,
+      shared_email: 0,
+      shared_id: 0,
+      cross_reference: 0,
+      username_reuse: 0,
+      image_reuse: 0,
+      bio_similarity: 0,
+      identity_search: 0,
+    };
+    filteredEdges.forEach(edge => {
+      edge.reasons.forEach(r => filteredReasonStats[r]++);
+    });
 
     return {
       nodes,
-      edges,
+      edges: filteredEdges,
       stats: {
         totalNodes: nodes.length,
-        totalEdges: edges.length,
+        totalEdges: filteredEdges.length,
         identityEdges,
         correlationEdges,
         byCategory: categoryStats,
-        byReason: reasonStats,
+        byReason: filteredReasonStats,
       },
     };
-  }, [results, searchedUsername, verifiedEntities]);
+  }, [results, searchedUsername, verifiedEntities, minConfidence]);
 }
