@@ -16,8 +16,22 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Code, Key, Play, Book, Activity, Plus, Trash2, ExternalLink, Sparkles, Palette } from "lucide-react";
 
+// Type for the safe view that excludes key_hash
+interface ApiKeySafe {
+  id: string;
+  user_id: string;
+  workspace_id: string | null;
+  name: string;
+  key_prefix: string;
+  is_active: boolean | null;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 export default function DeveloperPortal() {
-  const [apiKeys, setApiKeys] = useState<any[]>([]);
+  const [apiKeys, setApiKeys] = useState<ApiKeySafe[]>([]);
   const [newKeyName, setNewKeyName] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedApiKey, setSelectedApiKey] = useState<string>();
@@ -75,13 +89,14 @@ export default function DeveloperPortal() {
   };
 
   const loadApiKeys = async () => {
+    // Use the safe view that excludes key_hash to prevent hash exposure
     const { data, error } = await supabase
-      .from("api_keys")
-      .select("*")
+      .from("api_keys_safe" as any)
+      .select("id, user_id, workspace_id, name, key_prefix, is_active, last_used_at, expires_at, created_at, updated_at")
       .order("created_at", { ascending: false });
 
     if (!error && data) {
-      setApiKeys(data);
+      setApiKeys(data as unknown as ApiKeySafe[]);
     }
   };
 

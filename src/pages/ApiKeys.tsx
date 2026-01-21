@@ -8,28 +8,42 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Key, Plus, Trash2, Copy, Eye, EyeOff } from "lucide-react";
+import { Key, Plus, Trash2, Copy } from "lucide-react";
+
+// Type for the safe view that excludes key_hash
+interface ApiKeySafe {
+  id: string;
+  user_id: string;
+  workspace_id: string | null;
+  name: string;
+  key_prefix: string;
+  is_active: boolean | null;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 export default function ApiKeys() {
   const [newKeyName, setNewKeyName] = useState("");
-  const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
   const queryClient = useQueryClient();
 
-  // Fetch API keys
+  // Fetch API keys using the safe view that excludes key_hash
   const { data: keys, isLoading } = useQuery({
     queryKey: ["api-keys"],
-    queryFn: async () => {
+    queryFn: async (): Promise<ApiKeySafe[]> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Use the safe view that excludes key_hash to prevent hash exposure
       const { data, error } = await supabase
-        .from("api_keys")
-        .select("*")
+        .from("api_keys_safe" as any)
+        .select("id, user_id, workspace_id, name, key_prefix, is_active, last_used_at, expires_at, created_at, updated_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data || [];
+      return (data as unknown as ApiKeySafe[]) || [];
     },
   });
 
@@ -96,9 +110,6 @@ export default function ApiKeys() {
     }
   };
 
-  const toggleShowKey = (id: string) => {
-    setShowKeys(prev => ({ ...prev, [id]: !prev[id] }));
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -164,25 +175,9 @@ export default function ApiKeys() {
                         <div className="font-medium">{key.name}</div>
                         <div className="flex items-center gap-2">
                           <code className="text-sm bg-muted px-2 py-1 rounded">
-                            {showKeys[key.id] ? key.key_hash : `${key.key_prefix}...${key.key_hash.slice(-4)}`}
+                            {key.key_prefix}{"•".repeat(32)}
                           </code>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleShowKey(key.id)}
-                          >
-                            {showKeys[key.id] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              navigator.clipboard.writeText(key.key_hash);
-                              toast.success("Copied to clipboard");
-                            }}
-                          >
-                            <Copy className="w-4 h-4" />
-                          </Button>
+                          <span className="text-xs text-muted-foreground">(Key is securely hashed)</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Created {new Date(key.created_at || "").toLocaleDateString()}

@@ -14,27 +14,42 @@ import { format } from "date-fns";
 import { SettingsBreadcrumb } from "@/components/settings/SettingsBreadcrumb";
 import { SettingsNav } from "@/components/settings/SettingsNav";
 
+// Type for the safe view that excludes key_hash
+interface ApiKeySafe {
+  id: string;
+  user_id: string;
+  workspace_id: string | null;
+  name: string;
+  key_prefix: string;
+  is_active: boolean | null;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 export default function APIKeys() {
   const queryClient = useQueryClient();
   const [newKeyName, setNewKeyName] = useState("");
   // Store the newly created key temporarily (only shown once)
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<{ id: string; key: string } | null>(null);
 
-  // Fetch API keys
+  // Fetch API keys using the safe view that excludes key_hash
   const { data: keys, isLoading } = useQuery({
     queryKey: ["api-keys"],
-    queryFn: async () => {
+    queryFn: async (): Promise<ApiKeySafe[]> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Use the safe view that excludes key_hash to prevent hash exposure
       const { data, error } = await supabase
-        .from("api_keys")
-        .select("*")
+        .from("api_keys_safe" as any)
+        .select("id, user_id, workspace_id, name, key_prefix, is_active, last_used_at, expires_at, created_at, updated_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return data;
+      return (data as unknown as ApiKeySafe[]) || [];
     },
   });
 
