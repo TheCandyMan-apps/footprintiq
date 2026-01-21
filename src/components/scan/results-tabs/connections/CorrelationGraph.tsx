@@ -6,7 +6,7 @@ import {
 } from '@/hooks/useCorrelationGraph';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw, X, Search, Eye, EyeOff } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw, X, Search, Eye, EyeOff, Expand, Shrink, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -52,6 +52,8 @@ export function CorrelationGraph({
   const [internalFocusedId, setInternalFocusedId] = useState<string | null>(null);
   const [showAllNodes, setShowAllNodes] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showStrongestOnly, setShowStrongestOnly] = useState(true); // Default ON
+  const [focusHops, setFocusHops] = useState<1 | 2>(1); // 1-hop or 2-hop neighborhood
   const [tooltipData, setTooltipData] = useState<{
     x: number;
     y: number;
@@ -62,12 +64,19 @@ export function CorrelationGraph({
   // Use external focusedNodeId if provided, otherwise use internal state
   const activeFocusedId = focusedNodeId ?? internalFocusedId;
 
+  // Minimum confidence for "strongest edges only" filter
+  const STRONG_EDGE_THRESHOLD = 60;
+
   // Compute neighborhood: identity-root + top N strongest connected accounts
   const { neighborhoodNodes, neighborhoodEdges, hiddenCount } = useMemo(() => {
     if (showAllNodes || data.nodes.length <= NEIGHBORHOOD_SIZE + 1) {
+      // Filter edges by strength if toggle is on
+      const edges = showStrongestOnly 
+        ? data.edges.filter(e => e.source === 'identity-root' || e.confidence >= STRONG_EDGE_THRESHOLD)
+        : data.edges;
       return { 
         neighborhoodNodes: data.nodes, 
-        neighborhoodEdges: data.edges,
+        neighborhoodEdges: edges,
         hiddenCount: 0 
       };
     }
@@ -106,16 +115,23 @@ export function CorrelationGraph({
     
     // Only include edges where both endpoints are in the neighborhood
     const nodeIdSet = new Set(filteredNodes.map(n => n.id));
-    const filteredEdges = data.edges.filter(e => 
+    let filteredEdges = data.edges.filter(e => 
       nodeIdSet.has(e.source) && nodeIdSet.has(e.target)
     );
+    
+    // Apply strongest edges filter
+    if (showStrongestOnly) {
+      filteredEdges = filteredEdges.filter(e => 
+        e.source === 'identity-root' || e.confidence >= STRONG_EDGE_THRESHOLD
+      );
+    }
 
     return {
       neighborhoodNodes: filteredNodes,
       neighborhoodEdges: filteredEdges,
       hiddenCount: accountNodes.length - topAccounts.length,
     };
-  }, [data, showAllNodes]);
+  }, [data, showAllNodes, showStrongestOnly]);
 
   // Filter nodes by search query
   const { displayNodes, displayEdges, searchMatchCount } = useMemo(() => {
@@ -892,7 +908,7 @@ export function CorrelationGraph({
     };
   }, [displayNodes, displayEdges, groupByPlatform, showAllLabels, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
 
-  // Handle focus mode - prioritize correlation edges
+  // Handle focus mode - prioritize correlation edges with hop-based neighborhood
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
@@ -920,14 +936,19 @@ export function CorrelationGraph({
       edge.data('confidence') >= 70
     );
     
-    // Get neighbors via correlation edges (not identity)
+    // Get neighbors via correlation edges (not identity) - 1-hop
     const correlationNeighbors = correlationEdges.connectedNodes().not(focusedNode);
     
-    // Get second-degree via strong correlations
-    const secondDegreeEdges = correlationNeighbors.connectedEdges().filter((edge: cytoscape.EdgeSingular) => 
-      edge.data('source') !== 'identity-root' && edge.data('target') !== 'identity-root'
-    );
-    const secondDegreeNodes = secondDegreeEdges.connectedNodes();
+    // Get second-degree via strong correlations (2-hop)
+    let secondDegreeEdges = cy.collection();
+    let secondDegreeNodes = cy.collection();
+    
+    if (focusHops === 2) {
+      secondDegreeEdges = correlationNeighbors.connectedEdges().filter((edge: cytoscape.EdgeSingular) => 
+        edge.data('source') !== 'identity-root' && edge.data('target') !== 'identity-root'
+      );
+      secondDegreeNodes = secondDegreeEdges.connectedNodes().not(focusedNode).not(correlationNeighbors);
+    }
 
     // Dim everything first
     cy.elements().addClass('dimmed');
@@ -943,16 +964,19 @@ export function CorrelationGraph({
     // Show identity edges but keep them subtle
     identityEdges.removeClass('dimmed');
     
-    // Show second-degree nodes (less emphasis)
-    secondDegreeNodes.removeClass('dimmed');
+    // Show second-degree nodes if 2-hop mode
+    if (focusHops === 2) {
+      secondDegreeNodes.removeClass('dimmed');
+      secondDegreeEdges.removeClass('dimmed');
+    }
     
     // Animate to focused node
     cy.animate({
       center: { eles: focusedNode },
-      zoom: 1.5,
+      zoom: focusHops === 2 ? 1.2 : 1.5,
       duration: 300,
     });
-  }, [activeFocusedId]);
+  }, [activeFocusedId, focusHops]);
 
   // Clear focus handler
   const handleClearFocus = useCallback(() => {
@@ -1095,12 +1119,37 @@ export function CorrelationGraph({
           </div>
         )}
 
-        {/* Focus Mode Badge - Centered */}
+        {/* Focus Mode Controls - Centered */}
         {activeFocusedId && (
           <div className="flex-1 flex justify-center pointer-events-auto">
-            <div className="flex items-center gap-2 bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-lg text-xs font-medium">
+            <div className="flex items-center gap-1.5 bg-primary text-primary-foreground px-2 py-1 rounded-full shadow-lg text-xs font-medium">
               <Focus className="h-3 w-3" />
-              <span>Focus Mode</span>
+              <span>Focus: {focusHops}-hop</span>
+              
+              {/* Hop expansion buttons */}
+              {focusHops === 1 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1.5 text-[10px] hover:bg-primary-foreground/20 rounded-full"
+                  onClick={() => setFocusHops(2)}
+                >
+                  <Expand className="h-2.5 w-2.5 mr-0.5" />
+                  2 hops
+                </Button>
+              )}
+              {focusHops === 2 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1.5 text-[10px] hover:bg-primary-foreground/20 rounded-full"
+                  onClick={() => setFocusHops(1)}
+                >
+                  <Shrink className="h-2.5 w-2.5 mr-0.5" />
+                  Collapse
+                </Button>
+              )}
+              
               <Button
                 variant="ghost"
                 size="icon"
@@ -1204,6 +1253,25 @@ export function CorrelationGraph({
             </TooltipTrigger>
             <TooltipContent side="right" className="text-xs">
               {groupByPlatform ? 'Disable' : 'Enable'} Grouping
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-center h-8 w-8">
+                <Switch
+                  id="strongest-toggle"
+                  checked={showStrongestOnly}
+                  onCheckedChange={setShowStrongestOnly}
+                  className="h-4 w-7 data-[state=checked]:bg-primary"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-xs">
+              <div className="flex items-center gap-1">
+                <Zap className="h-3 w-3" />
+                {showStrongestOnly ? 'Showing' : 'Show'} Strongest Edges Only
+              </div>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
