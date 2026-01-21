@@ -313,7 +313,7 @@ export function CorrelationGraph({
       container: containerRef.current,
       elements,
       style: [
-        // Identity (root) node - always show label
+        // Identity (root) node - always show label, fixed left position
         {
           selector: 'node.identity',
           style: {
@@ -322,74 +322,74 @@ export function CorrelationGraph({
             'border-color': 'hsl(var(--primary))',
             'label': 'data(label)',
             'text-valign': 'bottom',
-            'text-margin-y': 8,
-            'font-size': 12,
+            'text-margin-y': 6,
+            'font-size': 11,
             'font-weight': 'bold',
             'color': 'hsl(var(--foreground))',
             'text-outline-width': 2,
             'text-outline-color': 'hsl(var(--background))',
-            'width': 50,
-            'height': 50,
+            'width': 40,
+            'height': 40,
             'shape': 'diamond',
             'text-opacity': 1,
           },
         },
-        // Account nodes - base style
+        // Account nodes - base style (reduced ~25% from original 30px to 22px)
         {
           selector: 'node.account',
           style: {
             'background-color': 'data(categoryColor)',
-            'border-width': 3,
+            'border-width': 2,
             'border-color': 'data(lensColor)',
             'label': 'data(label)',
             'text-valign': 'bottom',
-            'text-margin-y': 6,
-            'font-size': 9,
+            'text-margin-y': 5,
+            'font-size': 8,
             'color': 'hsl(var(--foreground))',
             'text-outline-width': 1.5,
             'text-outline-color': 'hsl(var(--background))',
-            'width': 30,
-            'height': 30,
+            'width': 22,
+            'height': 22,
             'shape': 'ellipse',
             'text-opacity': 0, // Hidden by default
-            'transition-property': 'text-opacity, width, height, border-width',
+            'transition-property': 'text-opacity, width, height, border-width, opacity',
             'transition-duration': 150,
           },
         },
-        // Low-degree nodes (1-2 connections)
+        // Low-degree nodes (1-2 connections) - base size
         {
           selector: 'node.account[degree <= 2]',
           style: {
-            'width': 28,
-            'height': 28,
+            'width': 20,
+            'height': 20,
           },
         },
-        // Medium-degree nodes (3-4 connections)
+        // Medium-degree nodes (3-5 connections) - slight increase
         {
-          selector: 'node.account[degree >= 3][degree <= 4]',
+          selector: 'node.account[degree >= 3][degree <= 5]',
           style: {
-            'width': 36,
-            'height': 36,
+            'width': 26,
+            'height': 26,
           },
         },
-        // High-degree nodes (5-7 connections) - larger with emphasis
+        // High-degree nodes (6-9 connections) - moderate increase
         {
-          selector: 'node.account[degree >= 5][degree <= 7]',
+          selector: 'node.account[degree >= 6][degree <= 9]',
           style: {
-            'width': 44,
-            'height': 44,
-            'border-width': 4,
+            'width': 32,
+            'height': 32,
+            'border-width': 3,
+            'font-size': 9,
+          },
+        },
+        // Very high-degree nodes (10+ connections) - largest but modest
+        {
+          selector: 'node.account[degree >= 10]',
+          style: {
+            'width': 38,
+            'height': 38,
+            'border-width': 3,
             'font-size': 10,
-          },
-        },
-        // Very high-degree nodes (8+ connections) - largest
-        {
-          selector: 'node.account[degree >= 8]',
-          style: {
-            'width': 52,
-            'height': 52,
-            'border-width': 5,
-            'font-size': 11,
             'font-weight': 'bold',
           },
         },
@@ -398,43 +398,43 @@ export function CorrelationGraph({
           selector: 'node.verified',
           style: {
             'border-color': LENS_COLORS.verified,
-            'border-width': 4,
+            'border-width': 3,
             'background-opacity': 1,
             'overlay-color': LENS_COLORS.verified,
-            'overlay-opacity': 0.15,
-            'overlay-padding': '4px',
+            'overlay-opacity': 0.12,
+            'overlay-padding': '3px',
           },
         },
         {
           selector: 'node.likely',
           style: {
             'border-color': LENS_COLORS.likely,
-            'border-width': 3,
+            'border-width': 2,
           },
         },
         {
           selector: 'node.unclear',
           style: {
             'border-color': LENS_COLORS.unclear,
-            'border-width': 2,
+            'border-width': 1.5,
             'border-style': 'dashed',
-            'background-opacity': 0.85,
+            'background-opacity': 0.8,
           },
         },
-        // Hovered node - show label and enlarge
+        // Hovered node - show label and modest enlarge
         {
           selector: 'node.hovered',
           style: {
             'text-opacity': 1,
-            'width': 40,
-            'height': 40,
-            'border-width': 4,
+            'width': 32,
+            'height': 32,
+            'border-width': 3,
             'z-index': 900,
-            'font-size': 10,
+            'font-size': 9,
             'font-weight': 'bold',
           },
         },
-        // Hovered edge
+        // Hovered edge - thicker and darker
         {
           selector: 'edge.hovered',
           style: {
@@ -455,22 +455,22 @@ export function CorrelationGraph({
         {
           selector: 'edge.neighbor',
           style: {
-            'line-opacity': 0.8,
-            'width': 2.5,
+            'line-opacity': 0.7,
+            'width': 2,
           },
         },
         // Unhovered state (very dimmed when something is hovered)
         {
           selector: 'node.unhovered',
           style: {
-            'opacity': 0.25,
+            'opacity': 0.2,
             'text-opacity': 0,
           },
         },
         {
           selector: 'edge.unhovered',
           style: {
-            'opacity': 0.06,
+            'opacity': 0.04,
           },
         },
         // Group (compound) nodes
@@ -496,9 +496,9 @@ export function CorrelationGraph({
         {
           selector: 'edge',
           style: {
-            'width': 1,
+            'width': 0.75,
             'line-color': '#94a3b8',
-            'line-opacity': 0.15, // Very light by default
+            'line-opacity': 0.1, // Very light by default
             'curve-style': 'bezier',
             'target-arrow-shape': 'none',
             'transition-property': 'line-opacity, width, line-color',
@@ -510,7 +510,7 @@ export function CorrelationGraph({
           selector: 'edge[source = "identity-root"]',
           style: {
             'line-color': '#cbd5e1',
-            'line-opacity': 0.12,
+            'line-opacity': 0.08,
             'line-style': 'dashed',
             'width': 0.5,
             'z-index': 1,
@@ -529,32 +529,32 @@ export function CorrelationGraph({
         {
           selector: 'edge[source != "identity-root"][confidence >= 80]',
           style: {
-            'width': 2.5,
-            'line-opacity': 0.5,
+            'width': 2,
+            'line-opacity': 0.4,
           },
         },
         // Medium-high confidence edges (70-80)
         {
           selector: 'edge[source != "identity-root"][confidence >= 70][confidence < 80]',
           style: {
-            'width': 2,
-            'line-opacity': 0.4,
+            'width': 1.5,
+            'line-opacity': 0.3,
           },
         },
         // Medium confidence edges (60-70)
         {
           selector: 'edge[source != "identity-root"][confidence >= 60][confidence < 70]',
           style: {
-            'width': 1.5,
-            'line-opacity': 0.3,
+            'width': 1.25,
+            'line-opacity': 0.25,
           },
         },
         // Low confidence edges (< 60)
         {
           selector: 'edge[source != "identity-root"][confidence < 60]',
           style: {
-            'width': 1,
-            'line-opacity': 0.2,
+            'width': 0.75,
+            'line-opacity': 0.15,
             'line-style': 'dashed',
           },
         },
@@ -598,7 +598,7 @@ export function CorrelationGraph({
         {
           selector: 'edge[source != "identity-root"][confidence < 55]',
           style: {
-            'line-opacity': 0.3,
+            'line-opacity': 0.2,
           },
         },
         // Selected states
@@ -607,28 +607,28 @@ export function CorrelationGraph({
           style: {
             'overlay-color': 'hsl(var(--primary))',
             'overlay-opacity': 0.2,
-            'overlay-padding': '6px',
+            'overlay-padding': '5px',
           },
         },
         // Dimmed state for focus mode
         {
           selector: 'node.dimmed',
           style: {
-            'opacity': 0.2,
+            'opacity': 0.15,
             'text-opacity': 0,
           },
         },
         {
           selector: 'edge.dimmed',
           style: {
-            'opacity': 0.08,
+            'opacity': 0.05,
           },
         },
         // Highlighted state for focused paths
         {
           selector: 'node.highlighted',
           style: {
-            'border-width': 4,
+            'border-width': 3,
             'border-color': 'hsl(var(--primary))',
             'z-index': 999,
             'text-opacity': 1,
@@ -638,7 +638,7 @@ export function CorrelationGraph({
           selector: 'edge.highlighted',
           style: {
             'line-color': 'hsl(var(--primary))',
-            'line-opacity': 0.9,
+            'line-opacity': 0.85,
             'width': 3,
             'z-index': 999,
           },
@@ -647,32 +647,32 @@ export function CorrelationGraph({
         {
           selector: 'node.focused',
           style: {
-            'border-width': 5,
+            'border-width': 4,
             'border-color': 'hsl(var(--primary))',
-            'width': 48,
-            'height': 48,
-            'font-size': 12,
+            'width': 36,
+            'height': 36,
+            'font-size': 10,
             'font-weight': 'bold',
             'text-opacity': 1,
             'z-index': 1000,
           },
         },
-        // Correlation edges highlighted on hover (emphasized further)
+        // Correlation edges highlighted on hover (emphasized further) - thicker/darker
         {
           selector: 'edge.correlation-highlight',
           style: {
             'line-color': '#2563eb',
-            'line-opacity': 0.95,
-            'width': 4,
+            'line-opacity': 0.9,
+            'width': 3.5,
             'z-index': 800,
           },
         },
-        // Strong correlation edges in focus mode
+        // Strong correlation edges in focus mode - thicker/darker
         {
           selector: 'edge.strong-correlation',
           style: {
             'line-opacity': 1,
-            'width': 4.5,
+            'width': 4,
             'z-index': 900,
           },
         },
@@ -680,29 +680,29 @@ export function CorrelationGraph({
         {
           selector: 'edge.identity-faint',
           style: {
-            'line-opacity': 0.1,
+            'line-opacity': 0.06,
             'width': 0.5,
             'z-index': 0,
           },
         },
       ],
-      // SherlockEye-style layout: clear clusters, identity left/top-left, no overlap
+      // SherlockEye-style layout: clear clusters, identity left, no overlap, more whitespace
       layout: groupByPlatform 
         ? {
             name: 'cose',
             animate: true,
             animationDuration: 800,
             // Very high repulsion for clean grouped separation
-            nodeRepulsion: () => 50000,
-            idealEdgeLength: () => 200,
-            gravity: 0.15,
+            nodeRepulsion: () => 65000,
+            idealEdgeLength: () => 220,
+            gravity: 0.12,
             nestingFactor: 2.0,
             numIter: 2000,
             // Strong collision avoidance
-            nodeOverlap: 80,
-            edgeElasticity: () => 80,
-            padding: 80,
-            componentSpacing: 200,
+            nodeOverlap: 100,
+            edgeElasticity: () => 60,
+            padding: 100,
+            componentSpacing: 220,
             randomize: false,
             coolingFactor: 0.95,
             initialTemp: 300,
@@ -712,36 +712,36 @@ export function CorrelationGraph({
             name: 'cose',
             animate: true,
             animationDuration: 800,
-            // High repulsion prevents overlap and creates clear spacing
+            // Increased repulsion for more whitespace and label room
             nodeRepulsion: (node: any) => {
-              // Identity node has extra-high repulsion to stay on periphery
-              return node.id() === 'identity-root' ? 120000 : 35000;
+              // Identity node has extra-high repulsion to stay on left periphery
+              return node.id() === 'identity-root' ? 180000 : 50000;
             },
             idealEdgeLength: (edge: any) => {
-              // Long edges from identity → accounts push identity to edge
-              // Short edges between correlated accounts form tight clusters
+              // Long edges from identity → accounts push identity to left edge
+              // Moderate edges between correlated accounts for readable spacing
               const isIdentityEdge = edge.data('source') === 'identity-root';
-              return isIdentityEdge ? 280 : 100;
+              return isIdentityEdge ? 320 : 120;
             },
-            // Very low gravity keeps identity node on periphery (top-left region)
-            gravity: 0.08,
+            // Very low gravity keeps identity node on periphery (left side)
+            gravity: 0.05,
             // Many iterations for stable convergence (no jitter)
             numIter: 2500,
-            // Strong overlap removal
-            nodeOverlap: 60,
-            // High elasticity for correlation edges → tight clusters
+            // Strong overlap removal - prevent node collisions
+            nodeOverlap: 100,
+            // High elasticity for correlation edges → readable clusters
             // Low elasticity for identity edges → loose star pattern
             edgeElasticity: (edge: any) => {
               const isIdentityEdge = edge.data('source') === 'identity-root';
-              return isIdentityEdge ? 20 : 300;
+              return isIdentityEdge ? 15 : 200;
             },
-            padding: 100,
+            padding: 120,
             randomize: false,
             // Wide component spacing for disconnected clusters
-            componentSpacing: 180,
+            componentSpacing: 200,
             // Cooling parameters for stable settling
             coolingFactor: 0.95,
-            initialTemp: 400,
+            initialTemp: 450,
             minTemp: 1.0,
           },
       minZoom: 0.3,
