@@ -103,10 +103,32 @@ export function GraphInspector({
   
   const isVerifyingNow = isVerifying || localVerifying;
 
-  // Get connected edges for this node
+  // Get connected edges for this node (excluding identity edges for type breakdown)
   const connectedEdges = selectedNode 
     ? graphData.edges.filter(e => e.source === selectedNode.id || e.target === selectedNode.id)
     : [];
+  
+  // Filter to only correlation edges (not identity-search edges)
+  const correlationEdges = connectedEdges.filter(e => 
+    e.reason !== 'identity_search' && e.source !== 'identity-root' && e.target !== 'identity-root'
+  );
+  
+  // Calculate connection type breakdown: type → { count, avgConfidence }
+  const connectionTypeBreakdown = correlationEdges.reduce((acc, edge) => {
+    const key = edge.reason;
+    if (!acc[key]) {
+      acc[key] = { count: 0, totalConfidence: 0, avgConfidence: 0 };
+    }
+    acc[key].count += 1;
+    acc[key].totalConfidence += edge.confidence;
+    acc[key].avgConfidence = Math.round(acc[key].totalConfidence / acc[key].count);
+    return acc;
+  }, {} as Record<string, { count: number; totalConfidence: number; avgConfidence: number }>);
+  
+  // Check if only bio similarity exists (for showing improvement hint)
+  const connectionTypes = Object.keys(connectionTypeBreakdown);
+  const onlyBioSimilarity = connectionTypes.length === 1 && 
+    (connectionTypes[0] === 'bio_similarity' || connectionTypes[0] === 'similar_bio');
 
   // Get category config
   const categoryConfig = selectedNode 
@@ -114,7 +136,7 @@ export function GraphInspector({
     : null;
 
   const confidence = selectedNode 
-    ? getConfidenceDisplay(selectedNode.confidence)
+    ? getConfidenceDisplay(Math.round(selectedNode.confidence * 100))
     : null;
 
   return (
@@ -210,14 +232,63 @@ export function GraphInspector({
                     )}
                   </div>
 
-                  {/* Connection Reasons - "Why this match?" */}
+                  {/* Connection Types Breakdown */}
                   <div className="space-y-2">
                     <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Why this match?
+                      Connection Types
                     </h4>
                     <div className="p-2.5 rounded-lg bg-muted/40 space-y-2">
-                      {connectedEdges.length > 0 ? (
-                        connectedEdges.map((edge) => {
+                      {Object.keys(connectionTypeBreakdown).length > 0 ? (
+                        <>
+                          {Object.entries(connectionTypeBreakdown).map(([reason, data]) => {
+                            const config = EDGE_REASON_CONFIG[reason as EdgeReason];
+                            const Icon = REASON_ICONS[reason as EdgeReason] || Link2;
+                            return (
+                              <div key={reason} className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                  <span className="text-xs font-medium truncate">
+                                    {config?.label || reason.replace(/_/g, ' ')}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                                    {data.count}×
+                                  </Badge>
+                                  <span className="text-[10px] text-muted-foreground w-8 text-right">
+                                    {data.avgConfidence}%
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          
+                          {/* Hint when only bio similarity */}
+                          {onlyBioSimilarity && (
+                            <div className="mt-2 pt-2 border-t border-border/50">
+                              <p className="text-[10px] text-amber-600 dark:text-amber-400 leading-relaxed">
+                                💡 Currently linked via bio similarity only. Add stronger signals 
+                                (image reuse, username reuse, shared links) to improve confidence.
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">
+                          Direct discovery from search — no cross-account correlations detected yet.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Individual Edge Details */}
+                  {correlationEdges.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Match Details
+                      </h4>
+                      <div className="p-2.5 rounded-lg bg-muted/40 space-y-2">
+                        {correlationEdges.slice(0, 5).map((edge) => {
                           const config = EDGE_REASON_CONFIG[edge.reason];
                           const Icon = REASON_ICONS[edge.reason] || Link2;
                           return (
@@ -225,20 +296,23 @@ export function GraphInspector({
                               <Icon className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium">{config?.label || edge.reasonLabel}</p>
-                                <p className="text-[10px] text-muted-foreground">
-                                  {Math.round(edge.confidence)}% confidence
-                                </p>
+                                {edge.details && (
+                                  <p className="text-[10px] text-muted-foreground line-clamp-2">
+                                    {edge.details}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           );
-                        })
-                      ) : (
-                        <p className="text-xs text-muted-foreground italic">
-                          Direct discovery from search
-                        </p>
-                      )}
+                        })}
+                        {correlationEdges.length > 5 && (
+                          <p className="text-[10px] text-muted-foreground italic">
+                            +{correlationEdges.length - 5} more connections
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Key Fields */}
                   {selectedNode.meta && (

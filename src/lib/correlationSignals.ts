@@ -534,14 +534,14 @@ function computeCorrelation(
   }
 
   // Bio similarity - STRICT matching to avoid "everyone connected" graphs
-  // Only create edge if: Jaccard >= 0.75 OR at least 3 shared meaningful tokens
+  // Only create edge if: Jaccard >= 0.80 OR at least 3 shared meaningful tokens
   if (sig1.bioKeywords.length >= 2 && sig2.bioKeywords.length >= 2) {
     const sharedKeywords = sig1.bioKeywords.filter(k => sig2.bioKeywords.includes(k));
     const jaccardScore = jaccardSimilarity(sig1.bioKeywords, sig2.bioKeywords);
     
-    // STRICT THRESHOLD: Require high Jaccard OR multiple shared meaningful tokens
+    // STRICT THRESHOLD: Require high Jaccard (0.80) OR multiple shared meaningful tokens (3+)
     const hasEnoughSharedTokens = sharedKeywords.length >= 3;
-    const hasHighSimilarity = jaccardScore >= 0.75;
+    const hasHighSimilarity = jaccardScore >= 0.80;
     
     if (hasEnoughSharedTokens || hasHighSimilarity) {
       // Calculate effective confidence based on which threshold was met
@@ -549,16 +549,19 @@ function computeCorrelation(
         ? jaccardScore 
         : Math.min(1, sharedKeywords.length / 5); // 5 shared = 100%
       
+      // Build explainable tooltip with similarity % and shared tokens
+      const similarityPct = Math.round(jaccardScore * 100);
+      const sharedTermsDisplay = sharedKeywords.slice(0, 5).join(', ');
+      const details = `Bio similarity: ${similarityPct}% — shared: ${sharedTermsDisplay}`;
+      
       edges.push({
         sourceId: sig1.id,
         targetId: sig2.id,
-        reason: 'similar_bio',
-        strength: effectiveScore >= 0.8 ? 'strong' : 'medium',
-        weight: CORRELATION_CONFIG.similar_bio.weight * (0.6 + effectiveScore * 0.4),
+        reason: 'bio_similarity',
+        strength: effectiveScore >= 0.85 ? 'strong' : 'medium',
+        weight: CORRELATION_CONFIG.bio_similarity.weight * (0.6 + effectiveScore * 0.4),
         confidence: Math.round(effectiveScore * 70 + 25), // 25-95 range
-        details: hasHighSimilarity 
-          ? `High bio similarity (${Math.round(jaccardScore * 100)}%): ${sharedKeywords.slice(0, 4).join(', ')}`
-          : `Shared meaningful terms: ${sharedKeywords.slice(0, 4).join(', ')}`,
+        details,
       });
     }
   }
