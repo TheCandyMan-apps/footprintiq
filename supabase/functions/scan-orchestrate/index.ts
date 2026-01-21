@@ -802,6 +802,7 @@ serve(async (req) => {
         email: type === 'email' ? value : null,
         username: type === 'username' ? value : null,
         phone: type === 'phone' ? value : null,
+        domain: type === 'domain' ? value : null,
         status: 'running',
         cache_key: cacheKey,
         provider_counts: {},
