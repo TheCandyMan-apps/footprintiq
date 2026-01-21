@@ -337,25 +337,28 @@ export function CorrelationGraph({
       container: containerRef.current,
       elements,
       style: [
-        // Identity (root) node - always show label, fixed left position
+        // Identity (root) node - diamond/shield shape, larger, stronger border
         {
           selector: 'node.identity',
           style: {
             'background-color': 'hsl(var(--primary))',
-            'border-width': 3,
+            'border-width': 5,
             'border-color': 'hsl(var(--primary))',
             'label': 'data(label)',
             'text-valign': 'bottom',
-            'text-margin-y': 6,
-            'font-size': 11,
+            'text-margin-y': 8,
+            'font-size': 12,
             'font-weight': 'bold',
             'color': 'hsl(var(--foreground))',
-            'text-outline-width': 2,
+            'text-outline-width': 2.5,
             'text-outline-color': 'hsl(var(--background))',
-            'width': 40,
-            'height': 40,
+            'width': 52,
+            'height': 52,
             'shape': 'diamond',
             'text-opacity': 1,
+            'z-index': 100,
+            'transition-property': 'width, height, border-width, opacity',
+            'transition-duration': 200,
           },
         },
         // Account nodes - base style (no labels by default)
@@ -377,8 +380,8 @@ export function CorrelationGraph({
             'width': 22,
             'height': 22,
             'shape': 'ellipse',
-            'transition-property': 'width, height, border-width, opacity',
-            'transition-duration': 150,
+            'transition-property': 'width, height, border-width, opacity, background-opacity',
+            'transition-duration': 200,
           },
         },
         // Low-degree nodes (1-2 connections) - base size
@@ -520,17 +523,17 @@ export function CorrelationGraph({
             'shape': 'roundrectangle',
           },
         },
-        // Base edge styling - very light by default for clean look
+        // Base edge styling - very light by default for spotlight effect
         {
           selector: 'edge',
           style: {
             'width': 0.75,
             'line-color': '#94a3b8',
-            'line-opacity': 0.1, // Very light by default
+            'line-opacity': 0.08, // Very light by default
             'curve-style': 'bezier',
             'target-arrow-shape': 'none',
             'transition-property': 'line-opacity, width, line-color',
-            'transition-duration': 150,
+            'transition-duration': 200,
           },
         },
         // Identity→Account edges (de-emphasized - thin, very light, dashed)
@@ -538,43 +541,44 @@ export function CorrelationGraph({
           selector: 'edge[source = "identity-root"]',
           style: {
             'line-color': '#cbd5e1',
-            'line-opacity': 0.08,
+            'line-opacity': 0.06,
             'line-style': 'dashed',
             'width': 0.5,
             'z-index': 1,
           },
         },
-        // Account↔Account correlation edges - base style with width by confidence
+        // Account↔Account correlation edges - slightly stronger than identity edges
         {
           selector: 'edge[source != "identity-root"]',
           style: {
             'line-style': 'solid',
             'z-index': 10,
-            'line-color': '#64748b', // Default slate, overridden by reason classes
+            'line-color': '#64748b',
+            'line-opacity': 0.12, // Slightly stronger than identity edges
           },
         },
-        // High confidence edges (>= 80) - visible but not bold
+        // High confidence edges (>= 80)
         {
           selector: 'edge[source != "identity-root"][confidence >= 80]',
           style: {
-            'width': 2,
-            'line-opacity': 0.4,
+            'width': 1.5,
+            'line-opacity': 0.2,
           },
         },
         // Medium-high confidence edges (70-80)
         {
           selector: 'edge[source != "identity-root"][confidence >= 70][confidence < 80]',
           style: {
-            'width': 1.5,
-            'line-opacity': 0.3,
+            'width': 1.25,
+            'line-opacity': 0.15,
           },
         },
         // Medium confidence edges (60-70)
         {
           selector: 'edge[source != "identity-root"][confidence >= 60][confidence < 70]',
           style: {
-            'width': 1.25,
-            'line-opacity': 0.25,
+            'width': 1,
+            'line-opacity': 0.12,
           },
         },
         // Low confidence edges (< 60)
@@ -582,7 +586,7 @@ export function CorrelationGraph({
           selector: 'edge[source != "identity-root"][confidence < 60]',
           style: {
             'width': 0.75,
-            'line-opacity': 0.15,
+            'line-opacity': 0.08,
             'line-style': 'dashed',
           },
         },
@@ -622,73 +626,76 @@ export function CorrelationGraph({
             'line-color': '#f97316', // orange-500
           },
         },
-        // Very low confidence - extra faded (applies after reason colors)
-        {
-          selector: 'edge[source != "identity-root"][confidence < 55]',
-          style: {
-            'line-opacity': 0.2,
-          },
-        },
         // Selected states
         {
           selector: 'node:selected',
           style: {
+            'label': 'data(label)',
             'overlay-color': 'hsl(var(--primary))',
             'overlay-opacity': 0.2,
             'overlay-padding': '5px',
           },
         },
-        // Dimmed state for focus mode
+        // ========== FOCUS MODE - SPOTLIGHT EFFECT ==========
+        // Dimmed state for non-neighborhood nodes when focus active (very faded)
         {
           selector: 'node.dimmed',
           style: {
-            'opacity': 0.15,
+            'opacity': 0.08,
             'label': '',
+            'background-opacity': 0.3,
           },
         },
         {
           selector: 'edge.dimmed',
           style: {
-            'opacity': 0.05,
+            'line-opacity': 0.02,
           },
         },
-        // Highlighted state for focused paths - show labels
+        // Highlighted state for focused paths - show labels, strong visibility
         {
           selector: 'node.highlighted',
           style: {
             'label': 'data(label)',
+            'opacity': 1,
             'border-width': 3,
             'border-color': 'hsl(var(--primary))',
             'z-index': 999,
+            'text-background-color': 'hsl(var(--background))',
+            'text-background-opacity': 0.8,
+            'text-background-padding': '2px',
           },
         },
         {
           selector: 'edge.highlighted',
           style: {
             'line-color': 'hsl(var(--primary))',
-            'line-opacity': 0.85,
-            'width': 3,
+            'line-opacity': 0.9,
+            'width': 3.5,
             'z-index': 999,
           },
         },
-        // Focused node (the actual focused one) - show label with background
+        // Focused node (the actual focused one) - +40% size, strong border, spotlight
         {
           selector: 'node.focused',
           style: {
             'label': 'data(label)',
-            'border-width': 4,
+            'border-width': 5,
             'border-color': 'hsl(var(--primary))',
-            'width': 36,
-            'height': 36,
-            'font-size': 10,
+            'width': 44, // ~40% larger than base 32
+            'height': 44,
+            'font-size': 11,
             'font-weight': 'bold',
             'text-background-color': 'hsl(var(--background))',
-            'text-background-opacity': 0.85,
-            'text-background-padding': '2px',
+            'text-background-opacity': 0.9,
+            'text-background-padding': '3px',
             'z-index': 1000,
+            'overlay-color': 'hsl(var(--primary))',
+            'overlay-opacity': 0.15,
+            'overlay-padding': '6px',
           },
         },
-        // Correlation edges highlighted on hover (emphasized further) - thicker/darker
+        // Correlation edges highlighted on hover (emphasized further)
         {
           selector: 'edge.correlation-highlight',
           style: {
@@ -711,9 +718,30 @@ export function CorrelationGraph({
         {
           selector: 'edge.identity-faint',
           style: {
-            'line-opacity': 0.06,
+            'line-opacity': 0.03,
             'width': 0.5,
             'z-index': 0,
+          },
+        },
+        // Neighbor nodes in focus mode - normal size but visible
+        {
+          selector: 'node.focus-neighbor',
+          style: {
+            'label': 'data(label)',
+            'opacity': 1,
+            'background-opacity': 1,
+            'text-background-color': 'hsl(var(--background))',
+            'text-background-opacity': 0.75,
+            'text-background-padding': '2px',
+          },
+        },
+        // Neighbor edges in focus mode - strong visibility
+        {
+          selector: 'edge.focus-neighbor',
+          style: {
+            'line-opacity': 0.9,
+            'width': 3,
+            'z-index': 800,
           },
         },
       ],
@@ -1010,11 +1038,13 @@ export function CorrelationGraph({
   }, [displayNodes, displayEdges, groupByPlatform, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
 
   // Handle focus mode - prioritize correlation edges with hop-based neighborhood
+  // Creates a "spotlight" effect: focused node bright, neighbors visible, rest very dim
   useEffect(() => {
     const cy = cyRef.current;
     if (!cy) return;
 
-    cy.elements().removeClass('dimmed highlighted focused strong-correlation');
+    // Clear all focus-related classes
+    cy.elements().removeClass('dimmed highlighted focused strong-correlation focus-neighbor');
 
     if (!activeFocusedId) return;
 
@@ -1022,7 +1052,6 @@ export function CorrelationGraph({
     if (!focusedNode.length) return;
 
     const connectedEdges = focusedNode.connectedEdges();
-    const connectedNodes = connectedEdges.connectedNodes();
     
     // Separate correlation edges (account↔account) from identity edges
     const correlationEdges = connectedEdges.filter((edge: cytoscape.EdgeSingular) => 
@@ -1051,31 +1080,35 @@ export function CorrelationGraph({
       secondDegreeNodes = secondDegreeEdges.connectedNodes().not(focusedNode).not(correlationNeighbors);
     }
 
-    // Dim everything first
+    // ========== SPOTLIGHT EFFECT ==========
+    // 1. Dim everything first (opacity 0.08 for nodes, 0.02 for edges)
     cy.elements().addClass('dimmed');
     
-    // Highlight focused node
+    // 2. Spotlight the focused node (+40% size, strong border)
     focusedNode.removeClass('dimmed').addClass('focused');
     
-    // Highlight correlation edges and their neighbors strongly
-    correlationEdges.removeClass('dimmed').addClass('highlighted');
-    strongEdges.addClass('strong-correlation');
-    correlationNeighbors.removeClass('dimmed').addClass('highlighted');
+    // 3. Neighbor nodes in focus mode - normal size but fully visible with labels
+    correlationNeighbors.removeClass('dimmed').addClass('focus-neighbor');
     
-    // Show identity edges but keep them subtle
+    // 4. Neighborhood edges - strong visibility (opacity 0.9, thicker)
+    correlationEdges.removeClass('dimmed').addClass('focus-neighbor');
+    strongEdges.addClass('strong-correlation');
+    
+    // 5. Keep identity edges visible but subtle
     identityEdges.removeClass('dimmed');
     
-    // Show second-degree nodes if 2-hop mode
+    // 6. Show second-degree nodes if 2-hop mode (but less prominent)
     if (focusHops === 2) {
-      secondDegreeNodes.removeClass('dimmed');
-      secondDegreeEdges.removeClass('dimmed');
+      secondDegreeNodes.removeClass('dimmed').addClass('highlighted');
+      secondDegreeEdges.removeClass('dimmed').addClass('highlighted');
     }
     
-    // Animate to focused node
+    // Animate to focused node with smooth transition
     cy.animate({
       center: { eles: focusedNode },
       zoom: focusHops === 2 ? 1.2 : 1.5,
-      duration: 300,
+      duration: 350,
+      easing: 'ease-out-cubic',
     });
   }, [activeFocusedId, focusHops]);
 
