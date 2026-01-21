@@ -10,7 +10,7 @@ import { useState } from 'react';
 interface UpgradeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  reason?: 'provider_blocked' | 'insufficient_credits' | 'batch_blocked' | 'darkweb_blocked';
+  reason?: 'provider_blocked' | 'insufficient_credits' | 'batch_blocked' | 'darkweb_blocked' | 'email_scan_blocked' | 'phone_scan_blocked';
   blockedFeature?: string;
 }
 
@@ -68,6 +68,10 @@ export function UpgradeModal({ open, onOpenChange, reason, blockedFeature }: Upg
         return 'Batch scanning requires a Pro plan or higher.';
       case 'darkweb_blocked':
         return 'Dark web monitoring requires an Unlimited plan.';
+      case 'email_scan_blocked':
+        return 'Email intelligence is a Pro feature. Free plan supports username lookups only.';
+      case 'phone_scan_blocked':
+        return 'Phone intelligence is a Pro feature. Free plan supports username lookups only.';
       default:
         return 'Unlock premium features with an upgrade.';
     }

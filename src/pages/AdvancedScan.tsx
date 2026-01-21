@@ -122,7 +122,7 @@ export default function AdvancedScan() {
   const [usernameAllSites, setUsernameAllSites] = useState(false);
   const [usernameArtifacts, setUsernameArtifacts] = useState<string[]>([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState<'provider_blocked' | 'insufficient_credits' | 'batch_blocked' | 'darkweb_blocked'>('insufficient_credits');
+  const [upgradeReason, setUpgradeReason] = useState<'provider_blocked' | 'insufficient_credits' | 'batch_blocked' | 'darkweb_blocked' | 'email_scan_blocked' | 'phone_scan_blocked'>('insufficient_credits');
   const [phoneProviders, setPhoneProviders] = useState<string[]>([]);
   const [inputError, setInputError] = useState<string | null>(null);
   const [inputTouched, setInputTouched] = useState(false);
@@ -368,6 +368,29 @@ export default function AdvancedScan() {
       return;
     }
     
+    // ✅ PRE-SCAN TIER VALIDATION: Block email/phone scans for Free users BEFORE calling API
+    const userPlan = normalizePlanTier(workspace?.plan || workspace?.subscription_tier);
+    if (userPlan === 'free') {
+      if (scanType === 'email') {
+        setUpgradeReason('email_scan_blocked');
+        setShowUpgradeModal(true);
+        toast.warning('Email intelligence requires Pro plan', {
+          description: 'Free plan supports username lookups only.',
+          duration: 5000,
+        });
+        return;
+      }
+      if (scanType === 'phone') {
+        setUpgradeReason('phone_scan_blocked');
+        setShowUpgradeModal(true);
+        toast.warning('Phone intelligence requires Pro plan', {
+          description: 'Free plan supports username lookups only.',
+          duration: 5000,
+        });
+        return;
+      }
+    }
+    
     // Use normalized value if available
     const normalizedTarget = validation.normalizedValue || target.trim();
     
@@ -593,14 +616,23 @@ export default function AdvancedScan() {
             const classified = classifyError(error);
             console.error('[AdvancedScan] Scan error:', { error, classified });
             
-            // Log failed scan attempt
-            ActivityLogger.scanFailed(preScanId, {
-              scan_type: scanType,
-              target: targetValue,
-              error: error.message,
-              error_type: classified.type,
-              workspace_id: workspace.id,
-            }).catch(console.error);
+            // Check if this is a tier block - backend already logs scan.blocked
+            const errorMessage = error.message || '';
+            const isTierBlock = errorMessage.includes('blocked') || 
+                                errorMessage.includes('scan_blocked_by_tier') ||
+                                errorMessage.includes('no_providers_available') ||
+                                errorMessage.includes('requires Pro');
+            
+            // Only log scan.failed for non-tier errors (avoid duplicate logging)
+            if (!isTierBlock) {
+              ActivityLogger.scanFailed(preScanId, {
+                scan_type: scanType,
+                target: targetValue,
+                error: error.message,
+                error_type: classified.type,
+                workspace_id: workspace.id,
+              }).catch(console.error);
+            }
             
             // For first target failure, close dialog and reset state
             if (index === 0) {
@@ -882,12 +914,42 @@ export default function AdvancedScan() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="email">Email Address</SelectItem>
+                  <SelectItem value="email">
+                    <span className="flex items-center gap-2">
+                      Email Address
+                      {isFree && <Lock className="w-3 h-3 text-muted-foreground" />}
+                    </span>
+                  </SelectItem>
                   <SelectItem value="username">Username</SelectItem>
                   <SelectItem value="domain">Domain</SelectItem>
-                  <SelectItem value="phone">Phone Number</SelectItem>
+                  <SelectItem value="phone">
+                    <span className="flex items-center gap-2">
+                      Phone Number
+                      {isFree && <Lock className="w-3 h-3 text-muted-foreground" />}
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
+              {/* Tier restriction notice for email/phone scan types */}
+              {isFree && (scanType === 'email' || scanType === 'phone') && (
+                <Alert variant="default" className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
+                  <Lock className="h-4 w-4 text-amber-600" />
+                  <AlertDescription className="text-amber-800 dark:text-amber-300">
+                    <strong>{scanType === 'email' ? 'Email' : 'Phone'} intelligence</strong> requires Pro plan. 
+                    Free plan supports username lookups only.{' '}
+                    <Button 
+                      variant="link" 
+                      className="h-auto p-0 text-amber-700 dark:text-amber-400 underline"
+                      onClick={() => {
+                        setUpgradeReason(scanType === 'email' ? 'email_scan_blocked' : 'phone_scan_blocked');
+                        setShowUpgradeModal(true);
+                      }}
+                    >
+                      Upgrade to Pro
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
               {scanType === 'username' && (
                 <>
                   <Alert>
