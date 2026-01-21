@@ -186,9 +186,20 @@ function getLensStatus(score: number): 'verified' | 'likely' | 'unclear' {
 }
 
 export interface CorrelationGraphOptions {
-  /** Minimum confidence threshold for correlation edges (0-1). Default: 0.6 */
-  minConfidence?: number;
+  /** Minimum weight threshold for correlation edges (0-1). Default: 0.75 */
+  minWeight?: number;
+  /** Maximum correlation edges per node. Default: 8 */
+  maxEdgesPerNode?: number;
+  /** Maximum total correlation edges in graph. Default: 500 */
+  maxTotalEdges?: number;
 }
+
+/** Default pruning configuration */
+export const DEFAULT_PRUNING_OPTIONS: Required<CorrelationGraphOptions> = {
+  minWeight: 0.75,
+  maxEdgesPerNode: 8,
+  maxTotalEdges: 500,
+};
 
 export function useCorrelationGraph(
   results: ScanResult[],
@@ -196,7 +207,11 @@ export function useCorrelationGraph(
   verifiedEntities?: Map<string, any>,
   options: CorrelationGraphOptions = {}
 ): CorrelationGraphData {
-  const { minConfidence = 0.6 } = options;
+  const { 
+    minWeight = DEFAULT_PRUNING_OPTIONS.minWeight,
+    maxEdgesPerNode = DEFAULT_PRUNING_OPTIONS.maxEdgesPerNode,
+    maxTotalEdges = DEFAULT_PRUNING_OPTIONS.maxTotalEdges,
+  } = options;
   return useMemo(() => {
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
@@ -635,21 +650,58 @@ export function useCorrelationGraph(
     });
 
     // =========================================================================
-    // STEP 4: Filter correlation edges by confidence threshold
+    // STEP 4: Prune correlation edges to prevent dense "hairball" graphs
     // =========================================================================
-    // Identity edges (identity-root → account) are always kept
-    // Correlation edges (account ↔ account) are filtered by minConfidence
-    const filteredEdges = edges.filter(edge => {
+    
+    // Separate identity edges (always kept) from correlation edges (to be pruned)
+    const identityEdgesList: GraphEdge[] = [];
+    const correlationEdgesList: GraphEdge[] = [];
+    
+    edges.forEach(edge => {
       const isIdentityEdge = edge.source === 'identity-root' || edge.target === 'identity-root';
-      if (isIdentityEdge) return true; // Always keep identity edges
-      
-      // Correlation edges: filter by confidence (edge.confidence is 0-100, threshold is 0-1)
-      return edge.confidence >= minConfidence * 100;
+      if (isIdentityEdge) {
+        identityEdgesList.push(edge);
+      } else {
+        correlationEdgesList.push(edge);
+      }
     });
 
+    // Filter correlation edges by weight threshold
+    let prunedCorrelationEdges = correlationEdgesList.filter(edge => edge.weight >= minWeight);
+    
+    // Sort by weight descending for priority-based pruning
+    prunedCorrelationEdges.sort((a, b) => b.weight - a.weight);
+    
+    // Limit edges per node (keep only the N strongest per node)
+    if (maxEdgesPerNode > 0) {
+      const edgeCountPerNode = new Map<string, number>();
+      prunedCorrelationEdges = prunedCorrelationEdges.filter(edge => {
+        const sourceCount = edgeCountPerNode.get(edge.source) || 0;
+        const targetCount = edgeCountPerNode.get(edge.target) || 0;
+        
+        // If either node has reached the limit, skip this edge
+        if (sourceCount >= maxEdgesPerNode || targetCount >= maxEdgesPerNode) {
+          return false;
+        }
+        
+        // Otherwise, include the edge and increment counts
+        edgeCountPerNode.set(edge.source, sourceCount + 1);
+        edgeCountPerNode.set(edge.target, targetCount + 1);
+        return true;
+      });
+    }
+    
+    // Limit total correlation edges (already sorted by weight)
+    if (maxTotalEdges > 0 && prunedCorrelationEdges.length > maxTotalEdges) {
+      prunedCorrelationEdges = prunedCorrelationEdges.slice(0, maxTotalEdges);
+    }
+    
+    // Combine identity edges (always kept) with pruned correlation edges
+    const filteredEdges = [...identityEdgesList, ...prunedCorrelationEdges];
+
     // Calculate identity vs correlation edge counts from filtered edges
-    const identityEdges = filteredEdges.filter(e => e.source === 'identity-root' || e.target === 'identity-root').length;
-    const correlationEdges = filteredEdges.filter(e => e.source !== 'identity-root' && e.target !== 'identity-root').length;
+    const identityEdgesCount = identityEdgesList.length;
+    const correlationEdgesCount = prunedCorrelationEdges.length;
 
     // Recalculate reason stats from filtered edges only
     const filteredReasonStats: Record<EdgeReason, number> = {
@@ -677,11 +729,11 @@ export function useCorrelationGraph(
       stats: {
         totalNodes: nodes.length,
         totalEdges: filteredEdges.length,
-        identityEdges,
-        correlationEdges,
+        identityEdges: identityEdgesCount,
+        correlationEdges: correlationEdgesCount,
         byCategory: categoryStats,
         byReason: filteredReasonStats,
       },
     };
-  }, [results, searchedUsername, verifiedEntities, minConfidence]);
+  }, [results, searchedUsername, verifiedEntities, minWeight, maxEdgesPerNode, maxTotalEdges]);
 }
