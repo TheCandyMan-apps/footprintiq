@@ -15,7 +15,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Lock, Shield, AlertTriangle, CheckCircle, HelpCircle, Clock, Info } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Lock, Shield, AlertTriangle, CheckCircle, HelpCircle, Clock, Info, Mail, Server, Globe, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { format } from 'date-fns';
@@ -125,38 +133,112 @@ export function ReputationSignalsCard({ scanId }: ReputationSignalsCardProps) {
     }
   };
 
+  // State for upgrade modal
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
   // Locked teaser for free users
   if (!isPro) {
     return (
-      <Card className="relative overflow-hidden border-dashed border-2 border-muted-foreground/30">
-        <div className="absolute inset-0 backdrop-blur-sm bg-background/80 z-10 flex flex-col items-center justify-center p-6">
-          <Lock className="h-8 w-8 text-muted-foreground mb-3" />
-          <h3 className="font-semibold text-lg mb-1">Reputation & Abuse Signals</h3>
-          <p className="text-sm text-muted-foreground text-center mb-4 max-w-xs">
-            Upgrade to Pro for advanced reputation intelligence on IPs and domains discovered in your scan.
-          </p>
-          <Button onClick={() => window.location.href = '/billing'}>
-            Upgrade to Pro
-          </Button>
-        </div>
-        
-        {/* Blurred preview content */}
-        <CardHeader className="opacity-30 select-none">
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            <CardTitle className="text-base">Reputation & Abuse Signals</CardTitle>
+      <>
+        <Card className="relative overflow-hidden border-dashed border-2 border-muted-foreground/30">
+          <div className="absolute inset-0 backdrop-blur-sm bg-background/80 z-10 flex flex-col items-center justify-center p-6 text-center">
+            <Lock className="h-8 w-8 text-muted-foreground mb-3" />
+            <h3 className="font-semibold text-lg mb-1">Reputation & Abuse Signals (Pro)</h3>
+            <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+              Identify domains and infrastructure with elevated abuse indicators using trusted intelligence signals.
+            </p>
+            
+            {/* Feature bullets */}
+            <ul className="text-sm text-muted-foreground space-y-1.5 mb-4 text-left">
+              <li className="flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-primary/70" />
+                <span>Mail reputation risk</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Server className="h-3.5 w-3.5 text-primary/70" />
+                <span>Abuse infrastructure indicators</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Globe className="h-3.5 w-3.5 text-primary/70" />
+                <span>Passive DNS context</span>
+              </li>
+            </ul>
+            
+            <Button onClick={() => setShowUpgradeModal(true)}>
+              <Sparkles className="h-4 w-4 mr-2" />
+              Unlock Pro signals
+            </Button>
+            
+            <p className="text-[10px] text-muted-foreground/60 mt-3">
+              Advisory signals. No monitoring. Ethical OSINT.
+            </p>
           </div>
-          <CardDescription>Advanced reputation intelligence</CardDescription>
-        </CardHeader>
-        <CardContent className="opacity-30 select-none space-y-3">
-          <div className="h-8 w-24 bg-muted rounded" />
-          <div className="space-y-2">
-            <div className="h-4 w-full bg-muted rounded" />
-            <div className="h-4 w-3/4 bg-muted rounded" />
-            <div className="h-4 w-1/2 bg-muted rounded" />
-          </div>
-        </CardContent>
-      </Card>
+          
+          {/* Blurred preview content */}
+          <CardHeader className="opacity-30 select-none">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              <CardTitle className="text-base">Reputation & Abuse Signals</CardTitle>
+            </div>
+            <CardDescription>Advisory reputation intelligence</CardDescription>
+          </CardHeader>
+          <CardContent className="opacity-30 select-none space-y-3">
+            <div className="h-8 w-24 bg-muted rounded" />
+            <div className="space-y-2">
+              <div className="h-4 w-full bg-muted rounded" />
+              <div className="h-4 w-3/4 bg-muted rounded" />
+              <div className="h-4 w-1/2 bg-muted rounded" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Upgrade Modal */}
+        <Dialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="p-2 rounded-full bg-primary/10">
+                  <Shield className="h-5 w-5 text-primary" />
+                </div>
+                <DialogTitle>Unlock deeper reputation signals</DialogTitle>
+              </div>
+              <DialogDescription className="text-left">
+                Pro adds an intelligence layer that helps you spot risky domains, abuse infrastructure, and suspicious hosting patterns — without dumping raw lists or noisy data.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-4 space-y-3">
+              <ul className="space-y-2">
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <span className="text-sm">Derived reputation verdicts (low/medium/high)</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <span className="text-sm">Explainable categories and reasons</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                  <span className="text-sm">Passive DNS context to reduce false positives</span>
+                </li>
+              </ul>
+            </div>
+            
+            <DialogFooter className="flex-col gap-3 sm:flex-col">
+              <Button 
+                className="w-full" 
+                onClick={() => window.location.href = '/billing'}
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Upgrade to Pro
+              </Button>
+              <p className="text-[11px] text-center text-muted-foreground">
+                Ethical OSINT • Advisory only • Cancel anytime
+              </p>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     );
   }
 
