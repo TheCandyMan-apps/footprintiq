@@ -6,7 +6,7 @@ import {
 } from '@/hooks/useCorrelationGraph';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw, X, Search, Eye, EyeOff, Expand, Shrink, Zap } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw, X, Search, Eye, EyeOff, Expand, Shrink, Zap, Tag, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -62,12 +62,13 @@ export function CorrelationGraph({
   const tooltipRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const [groupByPlatform, setGroupByPlatform] = useState(false);
-  const [showAllLabels, setShowAllLabels] = useState(false);
+  const [labelMode, setLabelMode] = useState<'off' | 'focus' | 'all'>('off'); // 3-mode label visibility
   const [internalFocusedId, setInternalFocusedId] = useState<string | null>(null);
   const [showAllNodes, setShowAllNodes] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showStrongestOnly, setShowStrongestOnly] = useState(true); // Default ON
   const [focusHops, setFocusHops] = useState<1 | 2>(1); // 1-hop or 2-hop neighborhood
+  const [isZoomedIn, setIsZoomedIn] = useState(false); // Track zoom level for label hint
   const [tooltipData, setTooltipData] = useState<{
     x: number;
     y: number;
@@ -917,21 +918,31 @@ export function CorrelationGraph({
     });
 
     // ========== ZOOM-BASED LABEL VISIBILITY ==========
+    // ========== ZOOM-BASED LABEL VISIBILITY ==========
+    const ZOOM_THRESHOLD = 1.3;
+    
     const updateLabelVisibility = () => {
       const zoom = cy.zoom();
-      // Show all labels when: toggle is on, OR zoomed in past threshold (>1.3)
-      const shouldShowAll = showAllLabels || zoom > 1.3;
+      const zoomedIn = zoom >= ZOOM_THRESHOLD;
+      setIsZoomedIn(zoomedIn);
       
-      if (shouldShowAll) {
+      // Determine which labels to show based on mode + zoom
+      if (labelMode === 'all' || zoomedIn) {
+        // Show all labels (mode=all OR zoomed in)
         cy.nodes('.account').not('.dimmed').style('text-opacity', 0.85);
-      } else {
-        // Hide labels except for hovered, focused, or highlighted nodes
+      } else if (labelMode === 'focus') {
+        // Show labels only for focused/highlighted nodes and neighbors
         cy.nodes('.account')
           .not('.hovered')
           .not('.focused')
           .not('.highlighted')
           .not('.neighbor')
           .style('text-opacity', 0);
+        cy.nodes('.account.focused, .account.highlighted, .account.neighbor, .account.hovered')
+          .style('text-opacity', 0.85);
+      } else {
+        // Off mode - hide all labels except hovered
+        cy.nodes('.account').not('.hovered').style('text-opacity', 0);
       }
     };
     
@@ -949,7 +960,7 @@ export function CorrelationGraph({
       cy.destroy();
       cyRef.current = null;
     };
-  }, [displayNodes, displayEdges, groupByPlatform, showAllLabels, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
+  }, [displayNodes, displayEdges, groupByPlatform, labelMode, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
 
   // Handle focus mode - prioritize correlation edges with hop-based neighborhood
   useEffect(() => {
@@ -1267,19 +1278,42 @@ export function CorrelationGraph({
 
           <div className="w-full h-px bg-border my-0.5" />
 
+          {/* Labels Mode Selector */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center justify-center h-8 w-8">
-                <Switch
-                  id="labels-toggle"
-                  checked={showAllLabels}
-                  onCheckedChange={setShowAllLabels}
-                  className="h-4 w-7 data-[state=checked]:bg-primary"
-                />
+              <div className="flex flex-col items-center gap-0.5">
+                <Button
+                  variant={labelMode === 'off' ? 'ghost' : 'secondary'}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    // Cycle through modes: off -> focus -> all -> off
+                    if (labelMode === 'off') setLabelMode('focus');
+                    else if (labelMode === 'focus') setLabelMode('all');
+                    else setLabelMode('off');
+                  }}
+                >
+                  <Tag className={cn(
+                    "h-4 w-4",
+                    labelMode === 'all' && "text-primary",
+                    labelMode === 'focus' && "text-amber-500"
+                  )} />
+                </Button>
+                <span className="text-[8px] text-muted-foreground uppercase">
+                  {labelMode === 'off' ? 'Off' : labelMode === 'focus' ? 'Focus' : 'All'}
+                </span>
               </div>
             </TooltipTrigger>
-            <TooltipContent side="right" className="text-xs">
-              {showAllLabels ? 'Hide' : 'Show'} All Labels
+            <TooltipContent side="right" className="text-xs max-w-[180px]">
+              <div className="space-y-1">
+                <div className="font-medium">Labels: {labelMode === 'off' ? 'Off' : labelMode === 'focus' ? 'Focus Only' : 'All'}</div>
+                <div className="text-muted-foreground text-[10px]">
+                  {labelMode === 'off' && 'No labels shown (hover to see)'}
+                  {labelMode === 'focus' && 'Labels on focused node + neighbors'}
+                  {labelMode === 'all' && 'All labels visible (may be noisy)'}
+                </div>
+                <div className="text-[10px] text-muted-foreground italic">Click to cycle modes</div>
+              </div>
             </TooltipContent>
           </Tooltip>
 
@@ -1365,6 +1399,16 @@ export function CorrelationGraph({
             <span className="text-[10px]">Weak</span>
           </div>
         </div>
+        
+        {/* Zoom hint - show when labels are off and not zoomed in */}
+        {labelMode === 'off' && !isZoomedIn && (
+          <div className="mt-2 pt-2 border-t border-border/50">
+            <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+              <Info className="h-2.5 w-2.5" />
+              <span>Zoom in to reveal labels</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Custom Tooltip */}
