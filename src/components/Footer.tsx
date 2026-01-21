@@ -84,13 +84,16 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Disclaimer */}
+        {/* Legal & Compliance Disclaimer */}
         <div className="py-6 border-t border-border text-center">
           <p className="text-sm text-muted-foreground mb-2">
-            FootprintIQ provides visibility into publicly available information only.
+            FootprintIQ analyzes publicly accessible information for contextual risk assessment only.
           </p>
           <p className="text-sm text-muted-foreground mb-2">
-            It does not identify criminal activity, victims, or perpetrators.
+            We do not monitor individuals, track activity, or interact with restricted systems.
+          </p>
+          <p className="text-sm text-muted-foreground mb-2">
+            High-risk sources are evaluated cautiously and summarized by AI to reduce false positives.
           </p>
           <p className="text-sm text-muted-foreground font-medium">
             All findings require independent verification.
