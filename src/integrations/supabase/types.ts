@@ -7003,6 +7003,50 @@ export type Database = {
           },
         ]
       }
+      scan_enrichments: {
+        Row: {
+          confidence: number | null
+          created_at: string | null
+          enrichment_type: string
+          id: string
+          input_type: string
+          input_value: string
+          scan_id: string
+          signal: Json
+          verdict: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string | null
+          enrichment_type: string
+          id?: string
+          input_type: string
+          input_value: string
+          scan_id: string
+          signal: Json
+          verdict?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string | null
+          enrichment_type?: string
+          id?: string
+          input_type?: string
+          input_value?: string
+          scan_id?: string
+          signal?: Json
+          verdict?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_enrichments_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scan_events: {
         Row: {
           created_at: string | null

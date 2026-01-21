@@ -35,6 +35,9 @@ export const flags = {
   
   /** Pipl person search provider (requires PIPL_API_KEY) */
   piplProvider: import.meta.env.VITE_FLAG_PIPL_PROVIDER === "true",
+  
+  /** Spamhaus reputation & abuse enrichment (Pro-only) */
+  spamhausEnrichment: import.meta.env.VITE_FLAG_SPAMHAUS_ENRICHMENT === "true",
 } as const;
 
 /**
