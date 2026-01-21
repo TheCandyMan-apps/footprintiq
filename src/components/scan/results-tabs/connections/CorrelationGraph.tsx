@@ -48,8 +48,8 @@ const EDGE_REASON_COLORS: Record<string, { color: string; label: string; priorit
   shared_email: { color: '#f59e0b', label: 'Shared Email', priority: 5 },    // amber-500
 };
 
-// Default: show identity + top N strongest connected accounts
-const NEIGHBORHOOD_SIZE = 25;
+// Default: show identity + top N strongest connected accounts (Curated View)
+const CURATED_SIZE = 12;
 
 export function CorrelationGraph({
   data,
@@ -65,7 +65,7 @@ export function CorrelationGraph({
   const [groupByPlatform, setGroupByPlatform] = useState(false);
   const [labelMode, setLabelMode] = useState<'off' | 'focus' | 'all'>('off'); // 3-mode label visibility
   const [internalFocusedId, setInternalFocusedId] = useState<string | null>(null);
-  const [showAllNodes, setShowAllNodes] = useState(false);
+  const [curatedView, setCuratedView] = useState(true); // Curated view is default
   const [searchQuery, setSearchQuery] = useState('');
   const [showStrongestOnly, setShowStrongestOnly] = useState(true); // Default ON
   const [focusHops, setFocusHops] = useState<1 | 2>(1); // 1-hop or 2-hop neighborhood
@@ -94,44 +94,58 @@ export function CorrelationGraph({
   // Minimum confidence for "strongest edges only" filter
   const STRONG_EDGE_THRESHOLD = 60;
 
-  // Compute neighborhood: identity-root + top N strongest connected accounts
-  const { neighborhoodNodes, neighborhoodEdges, hiddenCount } = useMemo(() => {
-    if (showAllNodes || data.nodes.length <= NEIGHBORHOOD_SIZE + 1) {
-      // Filter edges by strength if toggle is on
+  // Compute curated view: identity-root + top 12 accounts by correlation weight, then degree
+  const { curatedNodes, curatedEdges, totalAccountCount, curatedCount } = useMemo(() => {
+    const accountNodes = data.nodes.filter(n => n.type === 'account');
+    const totalCount = accountNodes.length;
+    
+    // If showing all or fewer than curated size, return all
+    if (!curatedView || totalCount <= CURATED_SIZE) {
       const edges = showStrongestOnly 
         ? data.edges.filter(e => e.source === 'identity-root' || e.confidence >= STRONG_EDGE_THRESHOLD)
         : data.edges;
       return { 
-        neighborhoodNodes: data.nodes, 
-        neighborhoodEdges: edges,
-        hiddenCount: 0 
+        curatedNodes: data.nodes, 
+        curatedEdges: edges,
+        totalAccountCount: totalCount,
+        curatedCount: totalCount,
       };
     }
 
-    // Get all account nodes with their connection strength
-    const accountNodes = data.nodes.filter(n => n.type === 'account');
-    const nodeStrength = new Map<string, number>();
+    // Calculate node scores: correlation weight (primary) + degree (secondary)
+    const nodeCorrelationWeight = new Map<string, number>();
+    const nodeDegree = new Map<string, number>();
 
-    // Calculate strength as max weight of edges connected to each node
     data.edges.forEach(edge => {
+      // Count degree for all edges
+      nodeDegree.set(edge.source, (nodeDegree.get(edge.source) || 0) + 1);
+      nodeDegree.set(edge.target, (nodeDegree.get(edge.target) || 0) + 1);
+      
+      // Track max correlation weight (exclude identity edges)
       if (edge.source !== 'identity-root' && edge.target !== 'identity-root') {
-        // Correlation edge - use its weight
-        const weight = edge.weight;
-        nodeStrength.set(edge.source, Math.max(nodeStrength.get(edge.source) || 0, weight));
-        nodeStrength.set(edge.target, Math.max(nodeStrength.get(edge.target) || 0, weight));
+        const weight = edge.weight || edge.confidence / 100;
+        nodeCorrelationWeight.set(edge.source, Math.max(nodeCorrelationWeight.get(edge.source) || 0, weight));
+        nodeCorrelationWeight.set(edge.target, Math.max(nodeCorrelationWeight.get(edge.target) || 0, weight));
       }
     });
 
-    // Sort accounts by strength (correlation edge weight), then by confidence
+    // Sort accounts by: 1) highest correlation weight, 2) highest degree (fallback)
     const sortedAccounts = [...accountNodes].sort((a, b) => {
-      const strengthA = nodeStrength.get(a.id) || 0;
-      const strengthB = nodeStrength.get(b.id) || 0;
-      if (strengthB !== strengthA) return strengthB - strengthA;
+      const weightA = nodeCorrelationWeight.get(a.id) || 0;
+      const weightB = nodeCorrelationWeight.get(b.id) || 0;
+      if (weightB !== weightA) return weightB - weightA;
+      
+      // Fallback to degree centrality
+      const degreeA = nodeDegree.get(a.id) || 0;
+      const degreeB = nodeDegree.get(b.id) || 0;
+      if (degreeB !== degreeA) return degreeB - degreeA;
+      
+      // Final fallback: confidence
       return b.confidence - a.confidence;
     });
 
-    // Take top N
-    const topAccounts = sortedAccounts.slice(0, NEIGHBORHOOD_SIZE);
+    // Take top N for curated view
+    const topAccounts = sortedAccounts.slice(0, CURATED_SIZE);
     const topAccountIds = new Set(topAccounts.map(n => n.id));
 
     // Include identity-root
@@ -140,7 +154,7 @@ export function CorrelationGraph({
       ? [identityNode, ...topAccounts]
       : topAccounts;
     
-    // Only include edges where both endpoints are in the neighborhood
+    // Only include edges where both endpoints are in the curated set
     const nodeIdSet = new Set(filteredNodes.map(n => n.id));
     let filteredEdges = data.edges.filter(e => 
       nodeIdSet.has(e.source) && nodeIdSet.has(e.target)
@@ -154,18 +168,19 @@ export function CorrelationGraph({
     }
 
     return {
-      neighborhoodNodes: filteredNodes,
-      neighborhoodEdges: filteredEdges,
-      hiddenCount: accountNodes.length - topAccounts.length,
+      curatedNodes: filteredNodes,
+      curatedEdges: filteredEdges,
+      totalAccountCount: totalCount,
+      curatedCount: CURATED_SIZE,
     };
-  }, [data, showAllNodes, showStrongestOnly]);
+  }, [data, curatedView, showStrongestOnly]);
 
   // Filter nodes by search query
   const { displayNodes, displayEdges, searchMatchCount } = useMemo(() => {
     if (!searchQuery.trim()) {
       return { 
-        displayNodes: neighborhoodNodes, 
-        displayEdges: neighborhoodEdges,
+        displayNodes: curatedNodes, 
+        displayEdges: curatedEdges,
         searchMatchCount: 0 
       };
     }
@@ -192,7 +207,7 @@ export function CorrelationGraph({
       displayEdges: matchingEdges,
       searchMatchCount: matchingNodes.filter(n => n.type === 'account').length,
     };
-  }, [data, neighborhoodNodes, neighborhoodEdges, searchQuery]);
+  }, [data, curatedNodes, curatedEdges, searchQuery]);
 
   // Build cytoscape elements from displayed (filtered) graph data
   const buildElements = useCallback(() => {
@@ -1208,26 +1223,38 @@ export function CorrelationGraph({
           </Badge>
         )}
 
-        {/* Neighborhood Status / Show All Toggle */}
-        {!searchQuery && hiddenCount > 0 && (
-          <div className="flex items-center gap-2 pointer-events-auto">
-            <Badge 
-              variant={showAllNodes ? "default" : "secondary"} 
-              className="text-xs h-6 cursor-pointer"
-              onClick={() => setShowAllNodes(!showAllNodes)}
-            >
-              {showAllNodes ? (
-                <>
-                  <Eye className="h-3 w-3 mr-1" />
-                  Showing all {data.nodes.filter(n => n.type === 'account').length}
-                </>
+        {/* Curated View Status Pill */}
+        {!searchQuery && totalAccountCount > CURATED_SIZE && (
+          <div className="flex items-center gap-1.5 pointer-events-auto bg-background/95 backdrop-blur-sm border border-border rounded-full px-3 py-1 shadow-sm">
+            <span className="text-xs text-muted-foreground">
+              {curatedView ? (
+                <>Showing <span className="font-medium text-foreground">{curatedCount}</span> strongest connections ({curatedCount} of {totalAccountCount})</>
               ) : (
-                <>
-                  <EyeOff className="h-3 w-3 mr-1" />
-                  Top {NEIGHBORHOOD_SIZE} • {hiddenCount} hidden
-                </>
+                <>Showing <span className="font-medium text-foreground">all {totalAccountCount}</span> connections</>
               )}
-            </Badge>
+            </span>
+            
+            {curatedView ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 px-2 text-[10px] font-medium text-primary hover:text-primary hover:bg-primary/10"
+                onClick={() => setCuratedView(false)}
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                Show all
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-5 px-2 text-[10px] font-medium text-muted-foreground hover:text-foreground"
+                onClick={() => setCuratedView(true)}
+              >
+                <RotateCcw className="h-3 w-3 mr-1" />
+                Reset
+              </Button>
+            )}
           </div>
         )}
 
