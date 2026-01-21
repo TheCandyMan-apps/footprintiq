@@ -8034,6 +8034,78 @@ export type Database = {
           },
         ]
       }
+      spamhaus_audit: {
+        Row: {
+          action: string
+          cache_hit: boolean
+          created_at: string | null
+          error_code: string | null
+          id: string
+          input_type: string
+          input_value: string
+          scan_id: string | null
+          status_code: number | null
+          success: boolean
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          cache_hit?: boolean
+          created_at?: string | null
+          error_code?: string | null
+          id?: string
+          input_type: string
+          input_value: string
+          scan_id?: string | null
+          status_code?: number | null
+          success?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          cache_hit?: boolean
+          created_at?: string | null
+          error_code?: string | null
+          id?: string
+          input_type?: string
+          input_value?: string
+          scan_id?: string | null
+          status_code?: number | null
+          success?: boolean
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      spamhaus_cache: {
+        Row: {
+          cache_key: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          input_type: string
+          input_value: string
+          signal: Json
+        }
+        Insert: {
+          cache_key: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          input_type: string
+          input_value: string
+          signal: Json
+        }
+        Update: {
+          cache_key?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          input_type?: string
+          input_value?: string
+          signal?: Json
+        }
+        Relationships: []
+      }
       spiderfoot_scans: {
         Row: {
           completed_at: string | null
@@ -9879,6 +9951,7 @@ export type Database = {
       cleanup_expired_cache: { Args: never; Returns: undefined }
       cleanup_expired_oauth_states: { Args: never; Returns: undefined }
       cleanup_expired_rate_limits: { Args: never; Returns: undefined }
+      cleanup_expired_spamhaus_cache: { Args: never; Returns: undefined }
       cleanup_scan_pii: { Args: never; Returns: undefined }
       cleanup_stuck_scans: {
         Args: { timeout_minutes?: number }
