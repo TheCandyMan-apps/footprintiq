@@ -55,7 +55,7 @@ export function CorrelationGraph({
     x: number;
     y: number;
     type: 'node' | 'edge';
-    content: { displayName: string; username?: string; confidence?: number; reason?: string };
+    content: { displayName: string; confidencePct?: number; reason?: string };
   } | null>(null);
 
   // Use external focusedNodeId if provided, otherwise use internal state
@@ -720,8 +720,8 @@ export function CorrelationGraph({
       const containerRect = containerRef.current?.getBoundingClientRect();
       if (containerRect) {
         const displayName = node.data('displayName') || node.data('label') || 'Profile';
-        const username = node.data('username');
         const confidence = node.data('confidence');
+        const confidencePct = typeof confidence === 'number' ? Math.round(confidence * 100) : undefined;
         
         setTooltipData({
           x: containerRect.left + pos.x,
@@ -729,8 +729,7 @@ export function CorrelationGraph({
           type: 'node',
           content: {
             displayName,
-            username: displayName.includes(username) ? undefined : username, // Avoid duplication
-            confidence,
+            confidencePct,
           },
         });
       }
@@ -755,6 +754,8 @@ export function CorrelationGraph({
       const containerRect = containerRef.current?.getBoundingClientRect();
       if (containerRect) {
         const reasonLabel = edge.data('reasonLabel') || EDGE_REASON_CONFIG[edge.data('reason') as keyof typeof EDGE_REASON_CONFIG]?.label || 'Connection';
+        const confidence = edge.data('confidence');
+        const confidencePct = typeof confidence === 'number' ? Math.round(confidence) : undefined;
         setTooltipData({
           x: containerRect.left + midpoint.x,
           y: containerRect.top + midpoint.y - 30,
@@ -762,7 +763,7 @@ export function CorrelationGraph({
           content: {
             displayName: reasonLabel,
             reason: edge.data('details'),
-            confidence: edge.data('confidence'),
+            confidencePct,
           },
         });
       }
@@ -1191,13 +1192,10 @@ export function CorrelationGraph({
             {tooltipData.type === 'node' ? (
               <>
                 <div className="font-semibold">{tooltipData.content.displayName}</div>
-                {tooltipData.content.username && (
-                  <div className="text-muted-foreground">@{tooltipData.content.username}</div>
-                )}
-                {tooltipData.content.confidence !== undefined && (
+                {tooltipData.content.confidencePct !== undefined && (
                   <div className="mt-1 text-[10px]">
                     <span className="text-muted-foreground">Confidence:</span>{' '}
-                    <span className="font-medium">{tooltipData.content.confidence}%</span>
+                    <span className="font-medium">{tooltipData.content.confidencePct}%</span>
                   </div>
                 )}
               </>
@@ -1207,10 +1205,10 @@ export function CorrelationGraph({
                 {tooltipData.content.reason && (
                   <div className="text-muted-foreground mt-0.5">{tooltipData.content.reason}</div>
                 )}
-                {tooltipData.content.confidence !== undefined && (
+                {tooltipData.content.confidencePct !== undefined && (
                   <div className="mt-1 text-[10px]">
                     <span className="text-muted-foreground">Strength:</span>{' '}
-                    <span className="font-medium">{tooltipData.content.confidence}%</span>
+                    <span className="font-medium">{tooltipData.content.confidencePct}%</span>
                   </div>
                 )}
               </>
