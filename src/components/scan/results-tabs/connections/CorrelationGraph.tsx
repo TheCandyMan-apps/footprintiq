@@ -5,7 +5,7 @@ import {
   CATEGORY_CONFIG, EDGE_REASON_CONFIG 
 } from '@/hooks/useCorrelationGraph';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -409,20 +409,45 @@ export function CorrelationGraph({
         ? {
             name: 'cose',
             animate: true,
-            animationDuration: 500,
-            nodeRepulsion: () => 8000,
-            idealEdgeLength: () => 120,
-            gravity: 0.5,
-            nestingFactor: 1.2,
+            animationDuration: 600,
+            // High repulsion for grouped mode
+            nodeRepulsion: () => 15000,
+            idealEdgeLength: () => 150,
+            gravity: 0.3,
+            nestingFactor: 1.5,
+            numIter: 1000,
+            // Collision detection via node overlap removal
+            nodeOverlap: 50,
+            // Cluster interconnected nodes
+            edgeElasticity: () => 100,
           }
         : {
             name: 'cose',
             animate: true,
-            animationDuration: 500,
-            nodeRepulsion: () => 6000,
-            idealEdgeLength: () => 100,
-            gravity: 0.4,
-            padding: 50,
+            animationDuration: 600,
+            // Increased node repulsion for better spacing
+            nodeRepulsion: () => 12000,
+            idealEdgeLength: (edge: any) => {
+              // Shorter edges for correlation (to cluster connected nodes)
+              const isIdentityEdge = edge.data('source') === 'identity-root';
+              return isIdentityEdge ? 180 : 80;
+            },
+            // Lower gravity pushes identity-root slightly off-center
+            gravity: 0.25,
+            // More iterations for better convergence
+            numIter: 1500,
+            // Collision detection - minimum spacing between nodes
+            nodeOverlap: 40,
+            // Edge elasticity - stronger for correlations (pulls connected nodes together)
+            edgeElasticity: (edge: any) => {
+              const isIdentityEdge = edge.data('source') === 'identity-root';
+              return isIdentityEdge ? 45 : 200;
+            },
+            padding: 60,
+            // Randomize initial positions for varied layouts
+            randomize: false,
+            // Component spacing
+            componentSpacing: 120,
           },
       minZoom: 0.3,
       maxZoom: 3,
@@ -667,6 +692,33 @@ export function CorrelationGraph({
     }
   }, []);
 
+  const handleRelayout = useCallback(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+    
+    // Re-run the layout with fresh random positions
+    cy.layout({
+      name: 'cose',
+      animate: true,
+      animationDuration: 800,
+      nodeRepulsion: () => 12000,
+      idealEdgeLength: (edge: any) => {
+        const isIdentityEdge = edge.data('source') === 'identity-root';
+        return isIdentityEdge ? 180 : 80;
+      },
+      gravity: 0.25,
+      numIter: 1500,
+      nodeOverlap: 40,
+      edgeElasticity: (edge: any) => {
+        const isIdentityEdge = edge.data('source') === 'identity-root';
+        return isIdentityEdge ? 45 : 200;
+      },
+      padding: 60,
+      randomize: true, // Randomize for fresh layout
+      componentSpacing: 120,
+    } as any).run();
+  }, []);
+
   return (
     <div className={cn('relative flex flex-col h-full', className)}>
       {/* Bottom-left Controls (SherlockEye style) */}
@@ -708,6 +760,15 @@ export function CorrelationGraph({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="right" className="text-xs">Center on Identity</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleRelayout}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-xs">Re-layout Graph</TooltipContent>
           </Tooltip>
 
           <Tooltip>
