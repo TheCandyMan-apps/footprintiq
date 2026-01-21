@@ -193,6 +193,47 @@ export const PROVIDER_META: ProviderMeta[] = [
     ttlMs: 7 * 24 * 3600e3,
     description: 'Credential exposure summary (counts only)',
   },
+  // Spamhaus threat intelligence
+  {
+    id: 'spamhaus_ip',
+    title: 'Spamhaus IP Reputation',
+    category: 'threat',
+    supports: ['ip'],
+    cost: 'medium',
+    policy: 'enterprise',
+    ttlMs: 24 * 3600e3,
+    description: 'IP reputation and blocklist status',
+  },
+  {
+    id: 'spamhaus_domain',
+    title: 'Spamhaus Domain Reputation',
+    category: 'threat',
+    supports: ['domain'],
+    cost: 'medium',
+    policy: 'enterprise',
+    ttlMs: 24 * 3600e3,
+    description: 'Domain reputation and blocklist status',
+  },
+  {
+    id: 'spamhaus_pdns',
+    title: 'Spamhaus Passive DNS',
+    category: 'asset',
+    supports: ['domain', 'ip'],
+    cost: 'high',
+    policy: 'enterprise',
+    ttlMs: 24 * 3600e3,
+    description: 'Passive DNS history and associations',
+  },
+  {
+    id: 'spamhaus_dqs',
+    title: 'Spamhaus DQS',
+    category: 'threat',
+    supports: ['domain'],
+    cost: 'medium',
+    policy: 'enterprise',
+    ttlMs: 24 * 3600e3,
+    description: 'Content reputation and threat scoring',
+  },
 ];
 
 export function getProviderMeta(providerId: string): ProviderMeta | undefined {

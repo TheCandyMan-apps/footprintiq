@@ -53,4 +53,10 @@ export const IMPLEMENTED_PROVIDERS = new Set([
   
   // Perplexity AI (real-time web intelligence)
   'perplexity_osint',    // Live web search with citations
+  
+  // Spamhaus threat intelligence
+  'spamhaus_ip',         // IP reputation via SIA
+  'spamhaus_domain',     // Domain reputation via SIA
+  'spamhaus_pdns',       // Passive DNS lookups
+  'spamhaus_dqs',        // DQS content reputation
 ]);
