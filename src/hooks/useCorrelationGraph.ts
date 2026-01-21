@@ -40,7 +40,9 @@ export interface GraphNode {
   id: string;
   type: 'identity' | 'account' | 'signal';
   label: string;
+  displayName: string; // Primary display string for tooltips
   platform?: string;
+  username?: string;
   category: string;
   url?: string;
   imageUrl?: string;
@@ -258,6 +260,8 @@ export function useCorrelationGraph(
       id: 'identity-root',
       type: 'identity',
       label: searchedUsername,
+      displayName: `Identity: ${searchedUsername}`,
+      username: searchedUsername,
       category: 'identity',
       confidence: 100,
       lensStatus: 'verified',
@@ -293,11 +297,40 @@ export function useCorrelationGraph(
       const nodeId = `account-${result.id}`;
       nodeIdMap.set(result.id, nodeId);
       
+      // Build displayName with fallback order:
+      // 1) "${platform}: ${username}" if both exist
+      // 2) username
+      // 3) platform
+      // 4) domain/host extracted from url
+      // 5) "Profile"
+      const platform = result.site || '';
+      const username = signals.rawUsername || '';
+      let displayName: string;
+      
+      if (platform && username) {
+        displayName = `${platform}: ${username}`;
+      } else if (username) {
+        displayName = username;
+      } else if (platform) {
+        displayName = platform;
+      } else if (result.url) {
+        try {
+          const urlObj = new URL(result.url);
+          displayName = urlObj.hostname.replace(/^www\./, '');
+        } catch {
+          displayName = 'Profile';
+        }
+      } else {
+        displayName = 'Profile';
+      }
+      
       const node: GraphNode = {
         id: nodeId,
         type: 'account',
-        label: result.site || 'Unknown',
-        platform: result.site,
+        label: platform || displayName, // Short label for graph
+        displayName, // Full display name for tooltips
+        platform: platform || undefined,
+        username: username || undefined,
         category,
         url: result.url,
         imageUrl: signals.profileImageUrl,

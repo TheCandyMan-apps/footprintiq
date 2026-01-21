@@ -55,7 +55,7 @@ export function CorrelationGraph({
     x: number;
     y: number;
     type: 'node' | 'edge';
-    content: { label: string; username?: string; confidence?: number; reason?: string };
+    content: { displayName: string; username?: string; confidence?: number; reason?: string };
   } | null>(null);
 
   // Use external focusedNodeId if provided, otherwise use internal state
@@ -170,6 +170,7 @@ export function CorrelationGraph({
         data: {
           id: node.id,
           label: node.label,
+          displayName: node.displayName, // Full display name for tooltips
           type: node.type,
           category: node.category,
           categoryColor: categoryConfig.color,
@@ -180,7 +181,8 @@ export function CorrelationGraph({
           imageUrl: node.imageUrl,
           meta: node.meta,
           result: node.result,
-          username: node.meta?.username,
+          platform: node.platform,
+          username: node.username || node.meta?.username,
           degree, // Store degree for sizing
           parent: groupByPlatform && node.type === 'account' ? `group-${node.category}` : undefined,
         },
@@ -713,18 +715,22 @@ export function CorrelationGraph({
         cy.elements().not(relatedElements).not(identityEdges).addClass('unhovered');
       }
 
-      // Show tooltip
+      // Show tooltip with displayName (never shows "Unknown")
       const pos = node.renderedPosition();
       const containerRect = containerRef.current?.getBoundingClientRect();
       if (containerRect) {
+        const displayName = node.data('displayName') || node.data('label') || 'Profile';
+        const username = node.data('username');
+        const confidence = node.data('confidence');
+        
         setTooltipData({
           x: containerRect.left + pos.x,
           y: containerRect.top + pos.y - 50,
           type: 'node',
           content: {
-            label: node.data('label'),
-            username: node.data('username'),
-            confidence: node.data('confidence'),
+            displayName,
+            username: displayName.includes(username) ? undefined : username, // Avoid duplication
+            confidence,
           },
         });
       }
@@ -748,12 +754,13 @@ export function CorrelationGraph({
       const midpoint = edge.midpoint();
       const containerRect = containerRef.current?.getBoundingClientRect();
       if (containerRect) {
+        const reasonLabel = edge.data('reasonLabel') || EDGE_REASON_CONFIG[edge.data('reason') as keyof typeof EDGE_REASON_CONFIG]?.label || 'Connection';
         setTooltipData({
           x: containerRect.left + midpoint.x,
           y: containerRect.top + midpoint.y - 30,
           type: 'edge',
           content: {
-            label: edge.data('reasonLabel') || EDGE_REASON_CONFIG[edge.data('reason') as keyof typeof EDGE_REASON_CONFIG]?.label || 'Connection',
+            displayName: reasonLabel,
             reason: edge.data('details'),
             confidence: edge.data('confidence'),
           },
@@ -777,6 +784,9 @@ export function CorrelationGraph({
         id: nodeId,
         type: node.data('type'),
         label: node.data('label'),
+        displayName: node.data('displayName') || node.data('label') || 'Profile',
+        platform: node.data('platform'),
+        username: node.data('username'),
         category: node.data('category'),
         url: node.data('url'),
         imageUrl: node.data('imageUrl'),
@@ -812,6 +822,9 @@ export function CorrelationGraph({
         id: node.id(),
         type: node.data('type'),
         label: node.data('label'),
+        displayName: node.data('displayName') || node.data('label') || 'Profile',
+        platform: node.data('platform'),
+        username: node.data('username'),
         category: node.data('category'),
         url: node.data('url'),
         imageUrl: node.data('imageUrl'),
@@ -1177,7 +1190,7 @@ export function CorrelationGraph({
           <div className="bg-popover text-popover-foreground border border-border rounded-lg shadow-lg px-3 py-2 text-xs max-w-[200px]">
             {tooltipData.type === 'node' ? (
               <>
-                <div className="font-semibold">{tooltipData.content.label}</div>
+                <div className="font-semibold">{tooltipData.content.displayName}</div>
                 {tooltipData.content.username && (
                   <div className="text-muted-foreground">@{tooltipData.content.username}</div>
                 )}
@@ -1190,7 +1203,7 @@ export function CorrelationGraph({
               </>
             ) : (
               <>
-                <div className="font-semibold">{tooltipData.content.label}</div>
+                <div className="font-semibold">{tooltipData.content.displayName}</div>
                 {tooltipData.content.reason && (
                   <div className="text-muted-foreground mt-0.5">{tooltipData.content.reason}</div>
                 )}
