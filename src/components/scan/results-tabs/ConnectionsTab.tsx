@@ -1,23 +1,29 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
 import { 
   Download, ZoomIn, ZoomOut, Maximize2, 
   Link2, Image, FileText, Users, Info, PanelRightClose, PanelRightOpen, X, Crosshair,
-  Bug, AlertCircle
+  Bug, AlertCircle, SlidersHorizontal
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { useInvestigation } from '@/contexts/InvestigationContext';
 import { cn } from '@/lib/utils';
-import { useCorrelationGraph, CATEGORY_CONFIG, GraphNode } from '@/hooks/useCorrelationGraph';
+import { useCorrelationGraph, CATEGORY_CONFIG, GraphNode, DEFAULT_PRUNING_OPTIONS } from '@/hooks/useCorrelationGraph';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { ConnectionsInspector } from './connections/ConnectionsInspector';
 import { CorrelationGraph } from './connections/CorrelationGraph';
 
@@ -53,13 +59,20 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   const [inspectorOpen, setInspectorOpen] = useState(() => window.innerWidth >= 768);
   const [localVerificationResults, setLocalVerificationResults] = useState<Map<string, LensVerificationResult>>(new Map());
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+  
+  // Edge pruning threshold - controls minimum weight for correlation edges
+  const [edgeThreshold, setEdgeThreshold] = useState(DEFAULT_PRUNING_OPTIONS.minWeight);
 
   // Use global investigation context for focus state
   const { focusedEntityId, setFocusedEntity, verifiedEntities } = useInvestigation();
 
-  // Use the correlation graph hook - THIS IS THE SOURCE OF TRUTH
-  const correlationData = useCorrelationGraph(results, username, verifiedEntities);
-  
+  // Use the correlation graph hook with pruning options
+  const correlationData = useCorrelationGraph(results, username, verifiedEntities, {
+    minWeight: edgeThreshold,
+    maxEdgesPerNode: DEFAULT_PRUNING_OPTIONS.maxEdgesPerNode,
+    maxTotalEdges: DEFAULT_PRUNING_OPTIONS.maxTotalEdges,
+  });
+
   // Stats from correlation data
   const correlationStats = useMemo(() => ({
     totalNodes: correlationData.stats.totalNodes,
@@ -341,6 +354,53 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
 
             {/* Controls */}
             <div className="flex items-center gap-0.5">
+              {/* Edge Threshold Slider */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={edgeThreshold !== DEFAULT_PRUNING_OPTIONS.minWeight ? "secondary" : "ghost"}
+                    size="sm"
+                    className="h-6 gap-1 px-2 text-xs"
+                  >
+                    <SlidersHorizontal className="w-3 h-3" />
+                    <span className="hidden sm:inline">{Math.round(edgeThreshold * 100)}%</span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent side="bottom" align="end" className="w-64 p-3">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium">Edge Threshold</span>
+                      <span className="text-xs text-muted-foreground">{Math.round(edgeThreshold * 100)}%</span>
+                    </div>
+                    <Slider
+                      value={[edgeThreshold]}
+                      onValueChange={([value]) => setEdgeThreshold(value)}
+                      min={0.6}
+                      max={0.95}
+                      step={0.05}
+                      className="w-full"
+                    />
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>More edges</span>
+                      <span>Fewer edges</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      Only show correlation edges with weight ≥ threshold. Higher values reduce clutter.
+                    </p>
+                    {edgeThreshold !== DEFAULT_PRUNING_OPTIONS.minWeight && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full h-6 text-xs"
+                        onClick={() => setEdgeThreshold(DEFAULT_PRUNING_OPTIONS.minWeight)}
+                      >
+                        Reset to default ({Math.round(DEFAULT_PRUNING_OPTIONS.minWeight * 100)}%)
+                      </Button>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
