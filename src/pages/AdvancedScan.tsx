@@ -368,23 +368,15 @@ export default function AdvancedScan() {
       return;
     }
     
-    // ✅ PRE-SCAN TIER VALIDATION: Block email/phone scans for Free users BEFORE calling API
+    // ✅ PRE-SCAN TIER VALIDATION: Block phone scans for Free users BEFORE calling API
+    // Note: Email scans are allowed for Free users (holehe provider available)
     const userPlan = normalizePlanTier(workspace?.plan || workspace?.subscription_tier);
     if (userPlan === 'free') {
-      if (scanType === 'email') {
-        setUpgradeReason('email_scan_blocked');
-        setShowUpgradeModal(true);
-        toast.warning('Email intelligence requires Pro plan', {
-          description: 'Free plan supports username lookups only.',
-          duration: 5000,
-        });
-        return;
-      }
       if (scanType === 'phone') {
         setUpgradeReason('phone_scan_blocked');
         setShowUpgradeModal(true);
         toast.warning('Phone intelligence requires Pro plan', {
-          description: 'Free plan supports username lookups only.',
+          description: 'Free plan supports username and basic email lookups only.',
           duration: 5000,
         });
         return;
@@ -914,12 +906,7 @@ export default function AdvancedScan() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="email">
-                    <span className="flex items-center gap-2">
-                      Email Address
-                      {isFree && <Lock className="w-3 h-3 text-muted-foreground" />}
-                    </span>
-                  </SelectItem>
+                  <SelectItem value="email">Email Address</SelectItem>
                   <SelectItem value="username">Username</SelectItem>
                   <SelectItem value="domain">Domain</SelectItem>
                   <SelectItem value="phone">
@@ -930,23 +917,33 @@ export default function AdvancedScan() {
                   </SelectItem>
                 </SelectContent>
               </Select>
-              {/* Tier restriction notice for email/phone scan types */}
-              {isFree && (scanType === 'email' || scanType === 'phone') && (
+              {/* Tier restriction notice for phone scan type */}
+              {isFree && scanType === 'phone' && (
                 <Alert variant="default" className="border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
                   <Lock className="h-4 w-4 text-amber-600" />
                   <AlertDescription className="text-amber-800 dark:text-amber-300">
-                    <strong>{scanType === 'email' ? 'Email' : 'Phone'} intelligence</strong> requires Pro plan. 
-                    Free plan supports username lookups only.{' '}
+                    <strong>Phone intelligence</strong> requires Pro plan. 
+                    Free plan supports username and basic email lookups only.{' '}
                     <Button 
                       variant="link" 
                       className="h-auto p-0 text-amber-700 dark:text-amber-400 underline"
                       onClick={() => {
-                        setUpgradeReason(scanType === 'email' ? 'email_scan_blocked' : 'phone_scan_blocked');
+                        setUpgradeReason('phone_scan_blocked');
                         setShowUpgradeModal(true);
                       }}
                     >
                       Upgrade to Pro
                     </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              {/* Info notice for email scans on Free plan */}
+              {isFree && scanType === 'email' && (
+                <Alert variant="default" className="border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/20">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800 dark:text-blue-300">
+                    Free plan includes basic email checks via Holehe. Upgrade to Pro for breach detection, 
+                    email verification, and contact enrichment.
                   </AlertDescription>
                 </Alert>
               )}
