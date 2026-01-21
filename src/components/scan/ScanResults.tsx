@@ -314,10 +314,16 @@ export function ScanResults({ jobId }: ScanResultsProps) {
       <CardHeader className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
           <div className="flex-1">
-            <div className="mb-2 p-2.5 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
-              <div className="text-xs text-muted-foreground mb-0.5">Scanning Username:</div>
-              <div className="text-xl sm:text-2xl font-bold text-primary break-words">
-                {job.username}
+            <div className="flex items-center gap-3 mb-2 p-2.5 rounded-lg bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+              <Shield className="h-8 w-8 text-primary/60 hidden sm:block" />
+              <div className="flex-1">
+                <div className="text-xs text-muted-foreground mb-0.5">Scan Results for:</div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="default" className="text-sm sm:text-base px-3 py-1 font-semibold">
+                    {job.username}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">(Username)</span>
+                </div>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -330,7 +336,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
               <div className="flex items-center gap-1 px-2 py-0.5 rounded bg-accent/10 ring-1 ring-accent/20">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                 <Shield className="w-3 h-3 text-accent" />
-                <span className="text-[10px] font-medium text-accent">RLS secured</span>
+                <span className="text-[10px] font-medium text-accent">Secured & Compliant</span>
               </div>
             </div>
             {job.error && (
