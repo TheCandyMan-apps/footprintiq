@@ -48,6 +48,7 @@ export function CorrelationGraph({
   const tooltipRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<Core | null>(null);
   const [groupByPlatform, setGroupByPlatform] = useState(false);
+  const [showAllLabels, setShowAllLabels] = useState(false);
   const [internalFocusedId, setInternalFocusedId] = useState<string | null>(null);
   const [showAllNodes, setShowAllNodes] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -166,10 +167,15 @@ export function CorrelationGraph({
       const lensColor = node.lensStatus ? LENS_COLORS[node.lensStatus] : LENS_COLORS.unclear;
       const degree = nodeDegrees.get(node.id) || 1;
       
+      // Truncate long labels with ellipsis (max 12 chars for graph display)
+      const rawLabel = node.label || '';
+      const truncatedLabel = rawLabel.length > 12 ? rawLabel.slice(0, 11) + '…' : rawLabel;
+      
       elements.push({
         data: {
           id: node.id,
-          label: node.label,
+          label: truncatedLabel,
+          fullLabel: rawLabel, // Keep full label for tooltips
           displayName: node.displayName, // Full display name for tooltips
           type: node.type,
           category: node.category,
@@ -395,18 +401,18 @@ export function CorrelationGraph({
             'width': 2.5,
           },
         },
-        // Unhovered state (dimmed when something is hovered)
+        // Unhovered state (very dimmed when something is hovered)
         {
           selector: 'node.unhovered',
           style: {
-            'opacity': 0.4,
+            'opacity': 0.25,
             'text-opacity': 0,
           },
         },
         {
           selector: 'edge.unhovered',
           style: {
-            'opacity': 0.15,
+            'opacity': 0.06,
           },
         },
         // Group (compound) nodes
@@ -428,27 +434,27 @@ export function CorrelationGraph({
             'shape': 'roundrectangle',
           },
         },
-        // Base edge styling
+        // Base edge styling - very light by default for clean look
         {
           selector: 'edge',
           style: {
             'width': 1,
             'line-color': '#94a3b8',
-            'line-opacity': 0.25,
+            'line-opacity': 0.15, // Very light by default
             'curve-style': 'bezier',
             'target-arrow-shape': 'none',
             'transition-property': 'line-opacity, width, line-color',
             'transition-duration': 150,
           },
         },
-        // Identity→Account edges (de-emphasized - thin, light, dashed)
+        // Identity→Account edges (de-emphasized - thin, very light, dashed)
         {
           selector: 'edge[source = "identity-root"]',
           style: {
             'line-color': '#cbd5e1',
-            'line-opacity': 0.2,
+            'line-opacity': 0.12,
             'line-style': 'dashed',
-            'width': 0.75,
+            'width': 0.5,
             'z-index': 1,
           },
         },
@@ -461,36 +467,36 @@ export function CorrelationGraph({
             'line-color': '#64748b', // Default slate, overridden by reason classes
           },
         },
-        // High confidence edges (>= 80)
+        // High confidence edges (>= 80) - visible but not bold
         {
           selector: 'edge[source != "identity-root"][confidence >= 80]',
           style: {
-            'width': 3.5,
-            'line-opacity': 0.85,
+            'width': 2.5,
+            'line-opacity': 0.5,
           },
         },
         // Medium-high confidence edges (70-80)
         {
           selector: 'edge[source != "identity-root"][confidence >= 70][confidence < 80]',
           style: {
-            'width': 2.5,
-            'line-opacity': 0.7,
+            'width': 2,
+            'line-opacity': 0.4,
           },
         },
         // Medium confidence edges (60-70)
         {
           selector: 'edge[source != "identity-root"][confidence >= 60][confidence < 70]',
           style: {
-            'width': 2,
-            'line-opacity': 0.55,
+            'width': 1.5,
+            'line-opacity': 0.3,
           },
         },
         // Low confidence edges (< 60)
         {
           selector: 'edge[source != "identity-root"][confidence < 60]',
           style: {
-            'width': 1.5,
-            'line-opacity': 0.4,
+            'width': 1,
+            'line-opacity': 0.2,
             'line-style': 'dashed',
           },
         },
@@ -852,16 +858,27 @@ export function CorrelationGraph({
     });
 
     // ========== ZOOM-BASED LABEL VISIBILITY ==========
-    
-    cy.on('zoom', () => {
+    const updateLabelVisibility = () => {
       const zoom = cy.zoom();
-      // Show all labels when zoomed in enough
-      if (zoom > 1.2) {
-        cy.nodes('.account').style('text-opacity', 0.8);
+      // Show all labels when: toggle is on, OR zoomed in past threshold (>1.3)
+      const shouldShowAll = showAllLabels || zoom > 1.3;
+      
+      if (shouldShowAll) {
+        cy.nodes('.account').not('.dimmed').style('text-opacity', 0.85);
       } else {
-        cy.nodes('.account').not('.hovered').not('.focused').not('.highlighted').style('text-opacity', 0);
+        // Hide labels except for hovered, focused, or highlighted nodes
+        cy.nodes('.account')
+          .not('.hovered')
+          .not('.focused')
+          .not('.highlighted')
+          .not('.neighbor')
+          .style('text-opacity', 0);
       }
-    });
+    };
+    
+    cy.on('zoom', updateLabelVisibility);
+    // Initial visibility check
+    updateLabelVisibility();
 
     cyRef.current = cy;
 
@@ -873,7 +890,7 @@ export function CorrelationGraph({
       cy.destroy();
       cyRef.current = null;
     };
-  }, [displayNodes, displayEdges, groupByPlatform, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
+  }, [displayNodes, displayEdges, groupByPlatform, showAllLabels, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
 
   // Handle focus mode - prioritize correlation edges
   useEffect(() => {
@@ -1157,6 +1174,22 @@ export function CorrelationGraph({
           </Tooltip>
 
           <div className="w-full h-px bg-border my-0.5" />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center justify-center h-8 w-8">
+                <Switch
+                  id="labels-toggle"
+                  checked={showAllLabels}
+                  onCheckedChange={setShowAllLabels}
+                  className="h-4 w-7 data-[state=checked]:bg-primary"
+                />
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-xs">
+              {showAllLabels ? 'Hide' : 'Show'} All Labels
+            </TooltipContent>
+          </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>
