@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ExternalLink, X, Sparkles, MapPin, Calendar, User, Users,
-  Crosshair, Loader2, CheckCircle, HelpCircle, AlertCircle,
+  Crosshair, Loader2, CheckCircle, HelpCircle, AlertCircle, AlertTriangle,
   Link2, Image as ImageIcon, FileText, Mail, ArrowRight
 } from 'lucide-react';
 import { 
@@ -43,6 +43,7 @@ const REASON_ICONS: Record<EdgeReason, typeof Link2> = {
   image_reuse: ImageIcon,
   bio_similarity: FileText,
   identity_search: Users,
+  contextual_reference: AlertTriangle,
 };
 
 function getConfidenceDisplay(score: number) {

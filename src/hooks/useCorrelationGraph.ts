@@ -34,11 +34,11 @@ function deriveStatus(result: ScanResult): string {
   return 'unknown';
 }
 
-export type EdgeReason = CorrelationReason | 'identity_search';
+export type EdgeReason = CorrelationReason | 'identity_search' | 'contextual_reference';
 
 export interface GraphNode {
   id: string;
-  type: 'identity' | 'account' | 'signal';
+  type: 'identity' | 'account' | 'signal' | 'risk_signal';
   label: string;
   displayName: string; // Primary display string for tooltips
   platform?: string;
@@ -51,6 +51,11 @@ export interface GraphNode {
   lensStatus?: 'verified' | 'likely' | 'unclear' | null;
   meta?: Record<string, any>;
   result?: ScanResult;
+  // High-risk signal specific fields
+  riskSignalType?: string;
+  riskLevel?: 'low' | 'medium' | 'high' | 'critical';
+  verified?: boolean;
+  actionRequired?: boolean;
 }
 
 export interface GraphEdge {
@@ -110,6 +115,7 @@ export const EDGE_REASON_CONFIG: Record<EdgeReason, { label: string; weight: num
   image_reuse: { label: 'Image reuse', weight: 0.95, icon: '🖼️' },
   bio_similarity: { label: 'Bio similarity', weight: 0.6, icon: '📝' },
   identity_search: { label: 'Search identity', weight: 1.0, icon: '🔍' },
+  contextual_reference: { label: 'High-Risk Reference', weight: 0.5, icon: '⚠️' },
 };
 
 function categorizePlatform(site: string): string {
@@ -233,6 +239,7 @@ export function useCorrelationGraph(
       image_reuse: 0,
       bio_similarity: 0,
       identity_search: 0,
+      contextual_reference: 0,
     };
 
     // Filter to found/claimed profiles using derived status (matches Accounts tab logic)
@@ -768,6 +775,7 @@ export function useCorrelationGraph(
       image_reuse: 0,
       bio_similarity: 0,
       identity_search: 0,
+      contextual_reference: 0,
     };
     filteredEdges.forEach(edge => {
       edge.reasons.forEach(r => filteredReasonStats[r]++);
