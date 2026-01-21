@@ -526,7 +526,9 @@ export function useCorrelationGraph(
       }
     });
 
-    // 5. Bio similarity - use keyword overlap (weight: 0.60)
+    // 5. Bio similarity - STRICT matching to prevent dense graphs
+    // Uses the same strict logic as correlationSignals.ts:
+    // Only create edge if: Jaccard >= 0.75 OR at least 3 shared meaningful tokens
     const accountNodes = nodes.filter(n => n.type === 'account');
     const bioKeywordsMap = new Map<string, string[]>();
     
@@ -534,7 +536,8 @@ export function useCorrelationGraph(
       const resultId = node.result?.id;
       if (!resultId) return;
       const signals = signalsMap.get(resultId);
-      if (signals && signals.bioKeywords.length >= 3) {
+      // Require at least 2 meaningful keywords to participate
+      if (signals && signals.bioKeywords.length >= 2) {
         bioKeywordsMap.set(node.id, signals.bioKeywords);
       }
     });
@@ -548,14 +551,26 @@ export function useCorrelationGraph(
         const set2 = new Set(keywords2);
         const intersection = keywords1.filter(k => set2.has(k));
         const union = new Set([...keywords1, ...keywords2]);
+        const jaccardScore = union.size > 0 ? intersection.length / union.size : 0;
         
-        if (intersection.length >= 3) {
-          const similarity = intersection.length / union.size;
-          const weight = 0.50 + similarity * 0.25; // 0.50 - 0.75 range
-          const confidence = Math.round(50 + similarity * 40); // 50-90 range
+        // STRICT THRESHOLD: Require high Jaccard OR at least 3 shared meaningful tokens
+        const hasEnoughSharedTokens = intersection.length >= 3;
+        const hasHighSimilarity = jaccardScore >= 0.75;
+        
+        if (hasEnoughSharedTokens || hasHighSimilarity) {
+          // Calculate effective score based on which threshold was met
+          const effectiveScore = hasHighSimilarity 
+            ? jaccardScore 
+            : Math.min(1, intersection.length / 5); // 5 shared = 100%
+          
+          const weight = 0.60 + effectiveScore * 0.30; // 0.60 - 0.90 range
+          const confidence = Math.round(effectiveScore * 70 + 25); // 25-95 range
           
           if (weight >= MIN_WEIGHT) {
-            const sharedWords = intersection.slice(0, 3).join(', ');
+            const sharedWords = intersection.slice(0, 4).join(', ');
+            const detail = hasHighSimilarity 
+              ? `High bio similarity (${Math.round(jaccardScore * 100)}%): "${sharedWords}"`
+              : `Shared terms: "${sharedWords}"`;
             
             collectSignal(
               bioNodeIds[i],
@@ -563,7 +578,7 @@ export function useCorrelationGraph(
               'bio_similarity',
               weight,
               confidence,
-              `Similar bio ("${sharedWords}")`
+              detail
             );
           }
         }
