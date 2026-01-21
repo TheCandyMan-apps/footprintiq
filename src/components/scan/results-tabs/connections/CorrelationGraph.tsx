@@ -1,11 +1,12 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import cytoscape, { Core } from 'cytoscape';
 import { 
   GraphNode, CorrelationGraphData, 
   CATEGORY_CONFIG, EDGE_REASON_CONFIG 
 } from '@/hooks/useCorrelationGraph';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Layers, Focus, RefreshCw, X, Search, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -15,6 +16,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 interface CorrelationGraphProps {
   data: CorrelationGraphData;
@@ -31,6 +33,9 @@ const LENS_COLORS = {
   unclear: '#6b7280',
 };
 
+// Default: show identity + top N strongest connected accounts
+const NEIGHBORHOOD_SIZE = 25;
+
 export function CorrelationGraph({
   data,
   focusedNodeId,
@@ -44,6 +49,8 @@ export function CorrelationGraph({
   const cyRef = useRef<Core | null>(null);
   const [groupByPlatform, setGroupByPlatform] = useState(false);
   const [internalFocusedId, setInternalFocusedId] = useState<string | null>(null);
+  const [showAllNodes, setShowAllNodes] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [tooltipData, setTooltipData] = useState<{
     x: number;
     y: number;
@@ -54,18 +61,107 @@ export function CorrelationGraph({
   // Use external focusedNodeId if provided, otherwise use internal state
   const activeFocusedId = focusedNodeId ?? internalFocusedId;
 
-  // Build cytoscape elements from graph data
+  // Compute neighborhood: identity-root + top N strongest connected accounts
+  const { neighborhoodNodes, neighborhoodEdges, hiddenCount } = useMemo(() => {
+    if (showAllNodes || data.nodes.length <= NEIGHBORHOOD_SIZE + 1) {
+      return { 
+        neighborhoodNodes: data.nodes, 
+        neighborhoodEdges: data.edges,
+        hiddenCount: 0 
+      };
+    }
+
+    // Get all account nodes with their connection strength
+    const accountNodes = data.nodes.filter(n => n.type === 'account');
+    const nodeStrength = new Map<string, number>();
+
+    // Calculate strength as max weight of edges connected to each node
+    data.edges.forEach(edge => {
+      if (edge.source !== 'identity-root' && edge.target !== 'identity-root') {
+        // Correlation edge - use its weight
+        const weight = edge.weight;
+        nodeStrength.set(edge.source, Math.max(nodeStrength.get(edge.source) || 0, weight));
+        nodeStrength.set(edge.target, Math.max(nodeStrength.get(edge.target) || 0, weight));
+      }
+    });
+
+    // Sort accounts by strength (correlation edge weight), then by confidence
+    const sortedAccounts = [...accountNodes].sort((a, b) => {
+      const strengthA = nodeStrength.get(a.id) || 0;
+      const strengthB = nodeStrength.get(b.id) || 0;
+      if (strengthB !== strengthA) return strengthB - strengthA;
+      return b.confidence - a.confidence;
+    });
+
+    // Take top N
+    const topAccounts = sortedAccounts.slice(0, NEIGHBORHOOD_SIZE);
+    const topAccountIds = new Set(topAccounts.map(n => n.id));
+
+    // Include identity-root
+    const identityNode = data.nodes.find(n => n.type === 'identity');
+    const filteredNodes = identityNode 
+      ? [identityNode, ...topAccounts]
+      : topAccounts;
+    
+    // Only include edges where both endpoints are in the neighborhood
+    const nodeIdSet = new Set(filteredNodes.map(n => n.id));
+    const filteredEdges = data.edges.filter(e => 
+      nodeIdSet.has(e.source) && nodeIdSet.has(e.target)
+    );
+
+    return {
+      neighborhoodNodes: filteredNodes,
+      neighborhoodEdges: filteredEdges,
+      hiddenCount: accountNodes.length - topAccounts.length,
+    };
+  }, [data, showAllNodes]);
+
+  // Filter nodes by search query
+  const { displayNodes, displayEdges, searchMatchCount } = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return { 
+        displayNodes: neighborhoodNodes, 
+        displayEdges: neighborhoodEdges,
+        searchMatchCount: 0 
+      };
+    }
+
+    const query = searchQuery.toLowerCase().trim();
+    
+    // Find matching nodes (search in platform and username)
+    const matchingNodes = data.nodes.filter(n => {
+      if (n.type === 'identity') return true; // Always include identity
+      const platform = (n.platform || n.label || '').toLowerCase();
+      const username = (n.meta?.username || '').toLowerCase();
+      return platform.includes(query) || username.includes(query);
+    });
+
+    const matchingIds = new Set(matchingNodes.map(n => n.id));
+    
+    // Include edges only between matching nodes
+    const matchingEdges = data.edges.filter(e =>
+      matchingIds.has(e.source) && matchingIds.has(e.target)
+    );
+
+    return {
+      displayNodes: matchingNodes,
+      displayEdges: matchingEdges,
+      searchMatchCount: matchingNodes.filter(n => n.type === 'account').length,
+    };
+  }, [data, neighborhoodNodes, neighborhoodEdges, searchQuery]);
+
+  // Build cytoscape elements from displayed (filtered) graph data
   const buildElements = useCallback(() => {
     const elements: cytoscape.ElementDefinition[] = [];
 
-    // Pre-calculate node degrees (number of connections)
+    // Pre-calculate node degrees (number of connections) from displayed edges
     const nodeDegrees = new Map<string, number>();
-    data.edges.forEach((edge) => {
+    displayEdges.forEach((edge) => {
       nodeDegrees.set(edge.source, (nodeDegrees.get(edge.source) || 0) + 1);
       nodeDegrees.set(edge.target, (nodeDegrees.get(edge.target) || 0) + 1);
     });
 
-    data.nodes.forEach((node) => {
+    displayNodes.forEach((node) => {
       const categoryConfig = CATEGORY_CONFIG[node.category] || CATEGORY_CONFIG.other;
       const lensColor = node.lensStatus ? LENS_COLORS[node.lensStatus] : LENS_COLORS.unclear;
       const degree = nodeDegrees.get(node.id) || 1;
@@ -93,7 +189,7 @@ export function CorrelationGraph({
     });
 
     if (groupByPlatform) {
-      const categories = new Set(data.nodes.filter(n => n.type === 'account').map(n => n.category));
+      const categories = new Set(displayNodes.filter(n => n.type === 'account').map(n => n.category));
       categories.forEach((cat) => {
         const config = CATEGORY_CONFIG[cat] || CATEGORY_CONFIG.other;
         elements.push({
@@ -108,7 +204,7 @@ export function CorrelationGraph({
       });
     }
 
-    data.edges.forEach((edge) => {
+    displayEdges.forEach((edge) => {
       // Determine edge class based on reason for color coding
       const reasonClasses: string[] = [];
       if (edge.reason === 'bio_similarity' || edge.reason === 'similar_bio') {
@@ -139,7 +235,7 @@ export function CorrelationGraph({
     });
 
     return elements;
-  }, [data, groupByPlatform]);
+  }, [displayNodes, displayEdges, groupByPlatform]);
 
   // Initialize cytoscape
   useEffect(() => {
@@ -749,7 +845,7 @@ export function CorrelationGraph({
       cy.destroy();
       cyRef.current = null;
     };
-  }, [data, groupByPlatform, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
+  }, [displayNodes, displayEdges, groupByPlatform, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
 
   // Handle focus mode - prioritize correlation edges
   useEffect(() => {
@@ -895,23 +991,77 @@ export function CorrelationGraph({
 
   return (
     <div className={cn('relative flex flex-col h-full', className)}>
-      {/* Focus Mode Badge - Top Center */}
-      {activeFocusedId && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 animate-fade-in">
-          <div className="flex items-center gap-2 bg-primary text-primary-foreground px-3 py-1.5 rounded-full shadow-lg text-sm font-medium">
-            <Focus className="h-3.5 w-3.5" />
-            <span>Focus Mode</span>
+      {/* Top Controls Bar - Search + Show All + Status */}
+      <div className="absolute top-3 left-3 right-3 z-20 flex items-center gap-2 pointer-events-none">
+        {/* Search Input */}
+        <div className="relative pointer-events-auto">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search platform or username..."
+            className="h-8 w-48 pl-7 pr-2 text-xs bg-background/95 backdrop-blur-sm border-border"
+          />
+          {searchQuery && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-5 w-5 hover:bg-primary-foreground/20 rounded-full ml-1"
-              onClick={handleClearFocus}
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5"
+              onClick={() => setSearchQuery('')}
             >
               <X className="h-3 w-3" />
             </Button>
-          </div>
+          )}
         </div>
-      )}
+
+        {/* Search Results Badge */}
+        {searchQuery && (
+          <Badge variant="secondary" className="pointer-events-auto text-xs h-6">
+            {searchMatchCount} found
+          </Badge>
+        )}
+
+        {/* Neighborhood Status / Show All Toggle */}
+        {!searchQuery && hiddenCount > 0 && (
+          <div className="flex items-center gap-2 pointer-events-auto">
+            <Badge 
+              variant={showAllNodes ? "default" : "secondary"} 
+              className="text-xs h-6 cursor-pointer"
+              onClick={() => setShowAllNodes(!showAllNodes)}
+            >
+              {showAllNodes ? (
+                <>
+                  <Eye className="h-3 w-3 mr-1" />
+                  Showing all {data.nodes.filter(n => n.type === 'account').length}
+                </>
+              ) : (
+                <>
+                  <EyeOff className="h-3 w-3 mr-1" />
+                  Top {NEIGHBORHOOD_SIZE} • {hiddenCount} hidden
+                </>
+              )}
+            </Badge>
+          </div>
+        )}
+
+        {/* Focus Mode Badge - Centered */}
+        {activeFocusedId && (
+          <div className="flex-1 flex justify-center pointer-events-auto">
+            <div className="flex items-center gap-2 bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-lg text-xs font-medium">
+              <Focus className="h-3 w-3" />
+              <span>Focus Mode</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-4 w-4 hover:bg-primary-foreground/20 rounded-full ml-0.5"
+                onClick={handleClearFocus}
+              >
+                <X className="h-2.5 w-2.5" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Bottom-left Controls (SherlockEye style) */}
       <div className="absolute bottom-3 left-3 z-10 flex flex-col gap-1 bg-background/90 backdrop-blur-sm rounded-lg border border-border p-1.5 shadow-lg">
