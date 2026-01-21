@@ -948,7 +948,16 @@ export function CorrelationGraph({
       const containerRect = containerRef.current?.getBoundingClientRect();
       if (containerRect) {
         const platform = node.data('platform') || node.data('label') || 'Profile';
-        const username = node.data('username') || node.data('meta')?.username;
+        // Fallback for username: explicit username -> meta.username -> label (if different from platform) -> displayName
+        const rawUsername = node.data('username') || node.data('meta')?.username;
+        const label = node.data('fullLabel') || node.data('label') || '';
+        const displayName = node.data('displayName') || '';
+        // If no explicit username, use label if it looks like a handle (not same as platform)
+        const username = rawUsername || 
+          (label && label.toLowerCase() !== platform.toLowerCase() ? label : null) ||
+          (displayName && displayName !== platform ? displayName.split(':').pop()?.trim() : null) ||
+          label || 
+          platform;
         const url = node.data('url') || '';
         const confidence = node.data('confidence');
         const confidencePct = typeof confidence === 'number' ? Math.round(confidence * 100) : undefined;
