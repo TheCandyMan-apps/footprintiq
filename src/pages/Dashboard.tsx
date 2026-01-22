@@ -44,6 +44,8 @@ import { CircularMetric } from '@/components/dashboard/CircularMetric';
 import { EntityCard } from '@/components/dashboard/EntityCard';
 import { NetworkPreview } from '@/components/dashboard/NetworkPreview';
 import { SocialIntegrations } from '@/components/dashboard/SocialIntegrations';
+import { SavedViewsDialog } from '@/components/dashboard/SavedViewsDialog';
+import { useDashboardQuery } from '@/hooks/useDashboardQuery';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useLowCreditToast } from '@/hooks/useLowCreditToast';
@@ -53,7 +55,7 @@ import { useTour } from '@/hooks/useTour';
 import { TourHighlight } from '@/components/tour/TourHighlight';
 import { TOURS } from '@/lib/tour/steps';
 import { useWelcomeEmail } from '@/hooks/useWelcomeEmail';
-import { Play, Network, AlertTriangle, CheckCircle2, Clock, Eye, FileSearch, Zap, Shield, FileStack, TrendingUp, Activity, Users, Target, Webhook, Archive, X } from 'lucide-react';
+import { Play, Network, AlertTriangle, CheckCircle2, Clock, Eye, FileSearch, Zap, Shield, FileStack, TrendingUp, Activity, Users, Target, Webhook, Archive, X, Bookmark, Settings2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { DashboardBarChart, DashboardLineChart } from '@/components/dashboard/DashboardCharts';
 import type { Database } from '@/integrations/supabase/types';
@@ -112,6 +114,10 @@ const Dashboard = () => {
   const [isRescanning, setIsRescanning] = useState(false);
   const [scanSocialLinks, setScanSocialLinks] = useState<Record<string, any[]>>({});
   const [scanFindingStats, setScanFindingStats] = useState<Record<string, { total: number; high: number; medium: number; low: number }>>({});
+  const [isSavedViewsOpen, setIsSavedViewsOpen] = useState(false);
+  
+  // Dashboard query/filter hook
+  const { filters, updateFilters, resetFilters } = useDashboardQuery();
   
   // Feature suggestions based on user behavior (will check after user is set)
   useFeatureSuggestions(user?.id);
@@ -687,6 +693,10 @@ const Dashboard = () => {
         {/* Action Buttons */}
         <div className="max-w-7xl mx-auto px-6 mt-6 mb-2">
           <div className="flex flex-wrap gap-3 justify-center items-center">
+            <Button onClick={() => setIsSavedViewsOpen(true)} variant="outline" className="border-border/60">
+              <Bookmark className="h-4 w-4 mr-2" />
+              Saved Views
+            </Button>
             <Button onClick={() => navigate('/anomaly-history')} variant="outline" className="border-border/60">
               <Zap className="h-4 w-4 mr-2" />
               Anomaly History
@@ -709,6 +719,19 @@ const Dashboard = () => {
             </Button>
           </div>
         </div>
+        
+        {/* Saved Views Dialog */}
+        <SavedViewsDialog
+          open={isSavedViewsOpen}
+          onOpenChange={setIsSavedViewsOpen}
+          currentFilters={filters}
+          currentColumns={['status', 'query', 'created_at', 'result_count']}
+          currentDensity="comfortable"
+          onLoadView={(view) => {
+            updateFilters(view.filters);
+            toast({ title: 'View loaded', description: `"${view.name}" filter preset applied` });
+          }}
+        />
 
         <main className="flex-1 overflow-auto">
           <div className="max-w-7xl mx-auto px-6 py-8">

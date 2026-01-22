@@ -35,14 +35,33 @@ export default function Timeline() {
   });
   const { toast } = useToast();
 
+  // Load timeline when entityId changes
   useEffect(() => {
     if (entityId) {
       loadTimeline(entityId, setTimeline);
     }
+  }, [entityId]);
+  
+  // Load compare timeline when compareId changes  
+  useEffect(() => {
     if (compareId) {
       loadTimeline(compareId, setCompareTimeline);
     }
-  }, [entityId, compareId]);
+  }, [compareId]);
+
+  // Debounced filter reload - reload when filters change (with debounce to avoid too many requests)
+  useEffect(() => {
+    if (!entityId) return;
+    
+    const timeoutId = setTimeout(() => {
+      loadTimeline(entityId, setTimeline);
+      if (compareId) {
+        loadTimeline(compareId, setCompareTimeline);
+      }
+    }, 300); // 300ms debounce
+    
+    return () => clearTimeout(timeoutId);
+  }, [filters.severity, filters.type, filters.startDate, filters.endDate]);
 
   useEffect(() => {
     if (!playing) return;
@@ -67,16 +86,24 @@ export default function Timeline() {
       // Convert string dates to Date objects and severity/type to arrays
       const timelineFilters: any = {};
       
+      // Handle date filters properly - ensure endDate includes the full day
       if (filters.startDate) {
         timelineFilters.startDate = new Date(filters.startDate);
       }
       if (filters.endDate) {
-        timelineFilters.endDate = new Date(filters.endDate);
+        // Set end date to end of day for inclusive filtering
+        const endDate = new Date(filters.endDate);
+        endDate.setHours(23, 59, 59, 999);
+        timelineFilters.endDate = endDate;
       }
-      if (filters.severity !== "all") {
+      
+      // Only add severity filter if not "all"
+      if (filters.severity && filters.severity !== "all") {
         timelineFilters.severity = [filters.severity];
       }
-      if (filters.type !== "all") {
+      
+      // Only add type filter if not "all"
+      if (filters.type && filters.type !== "all") {
         timelineFilters.eventTypes = [filters.type];
       }
       
@@ -92,6 +119,15 @@ export default function Timeline() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      severity: "all",
+      type: "all",
+      startDate: "",
+      endDate: "",
+    });
   };
 
   const handleExport = async () => {
@@ -255,7 +291,7 @@ export default function Timeline() {
               />
             </div>
 
-            <div className="flex items-center gap-2 mt-4">
+            <div className="flex flex-wrap items-center gap-2 mt-4">
               <Button onClick={togglePlay} variant="default" size="sm">
                 {playing ? <Pause className="h-4 w-4 mr-2" /> : <Play className="h-4 w-4 mr-2" />}
                 {playing ? "Pause" : "Play"} Timeline
@@ -266,9 +302,16 @@ export default function Timeline() {
                 Export CSV
               </Button>
 
-              <div className="ml-auto text-sm text-muted-foreground">
-                {timeline.length} events
-                {playing && ` • ${currentIndex + 1}/${timeline.length}`}
+              {(filters.severity !== "all" || filters.type !== "all" || filters.startDate || filters.endDate) && (
+                <Button onClick={handleClearFilters} variant="ghost" size="sm">
+                  Clear Filters
+                </Button>
+              )}
+
+              <div className="ml-auto text-sm text-muted-foreground flex items-center gap-2">
+                {loading && <span className="text-primary">Loading...</span>}
+                <span>{timeline.length} events</span>
+                {playing && <span>• {currentIndex + 1}/{timeline.length}</span>}
               </div>
             </div>
           </CardContent>
