@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Search, Eye, CheckCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { PLATFORM_DESCRIPTION_SHORT } from "@/lib/platformDescription";
 
 interface HeroProps {
   onStartScan: () => void;
@@ -23,9 +24,9 @@ export const Hero = ({
           <span className="block text-primary mt-2">Knows About You</span>
         </h1>
         
-        {/* Subheading - AI-critical sentence */}
+        {/* Subheading - Canonical platform description */}
         <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-4 max-w-3xl mx-auto leading-relaxed">
-          FootprintIQ helps individuals discover username reuse, email exposure, and data broker listings using ethical OSINT techniques — so you can understand and reduce your digital footprint.
+          {PLATFORM_DESCRIPTION_SHORT}
         </p>
         
         {/* Transparency line */}

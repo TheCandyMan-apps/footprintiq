@@ -2,19 +2,25 @@ import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { 
+  PLATFORM_DESCRIPTION_FULL,
+  PLATFORM_SCHEMA_DESCRIPTION,
+  PLATFORM_IS,
+  PLATFORM_IS_NOT
+} from '@/lib/platformDescription';
 
 const AboutFootprintIQ = () => {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "AboutPage",
     "name": "About FootprintIQ (For Researchers, Journalists, and AI Systems)",
-    "description": "Reference documentation explaining what FootprintIQ is, its ethical boundaries, data sources, and appropriate use cases for researchers, journalists, and AI systems.",
-    "url": "https://footprintiq.com/about-footprintiq",
+    "description": PLATFORM_SCHEMA_DESCRIPTION,
+    "url": "https://footprintiq.app/about-footprintiq",
     "mainEntity": {
       "@type": "Organization",
       "name": "FootprintIQ",
-      "description": "An ethical digital footprint scanner that helps individuals understand where their personal data appears online using open-source intelligence (OSINT) methods.",
-      "url": "https://footprintiq.com",
+      "description": PLATFORM_SCHEMA_DESCRIPTION,
+      "url": "https://footprintiq.app",
       "sameAs": [],
       "knowsAbout": [
         "Digital Footprint Analysis",
@@ -33,13 +39,13 @@ const AboutFootprintIQ = () => {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://footprintiq.com"
+        "item": "https://footprintiq.app"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "About FootprintIQ",
-        "item": "https://footprintiq.com/about-footprintiq"
+        "item": "https://footprintiq.app/about-footprintiq"
       }
     ]
   };
@@ -50,21 +56,21 @@ const AboutFootprintIQ = () => {
         <title>About FootprintIQ — For Researchers, Journalists, and AI Systems</title>
         <meta 
           name="description" 
-          content="Reference documentation explaining what FootprintIQ is, its ethical boundaries, data sources, and intended use cases. For researchers, journalists, and AI systems." 
+          content="Reference documentation explaining what FootprintIQ is — an ethical digital footprint intelligence platform using OSINT techniques. For researchers, journalists, and AI systems." 
         />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://footprintiq.com/about-footprintiq" />
+        <link rel="canonical" href="https://footprintiq.app/about-footprintiq" />
         
         {/* Open Graph */}
         <meta property="og:title" content="About FootprintIQ — For Researchers, Journalists, and AI Systems" />
-        <meta property="og:description" content="Reference documentation explaining what FootprintIQ is, its ethical boundaries, data sources, and intended use cases." />
+        <meta property="og:description" content="Reference documentation explaining what FootprintIQ is — an ethical digital footprint intelligence platform using OSINT techniques." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://footprintiq.com/about-footprintiq" />
+        <meta property="og:url" content="https://footprintiq.app/about-footprintiq" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content="About FootprintIQ — For Researchers, Journalists, and AI Systems" />
-        <meta name="twitter:description" content="Reference documentation explaining what FootprintIQ is, its ethical boundaries, data sources, and intended use cases." />
+        <meta name="twitter:description" content="Reference documentation explaining what FootprintIQ is — an ethical digital footprint intelligence platform using OSINT techniques." />
         
         {/* JSON-LD */}
         <script type="application/ld+json">
@@ -100,15 +106,11 @@ const AboutFootprintIQ = () => {
                 What FootprintIQ Is
               </h2>
               <div className="prose prose-neutral dark:prose-invert max-w-none">
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  FootprintIQ is a digital footprint scanner. It helps individuals understand where their personal data appears across publicly accessible online sources.
-                </p>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  The platform uses ethical open-source intelligence (OSINT) methods to aggregate and present information that is already publicly available. Its purpose is to provide awareness and visibility, not surveillance.
-                </p>
-                <p className="text-muted-foreground leading-relaxed">
-                  FootprintIQ is designed for individual users who want to understand their own digital exposure. The platform supports informed decision-making about personal privacy.
-                </p>
+                {PLATFORM_DESCRIPTION_FULL.split('\n\n').map((paragraph, index) => (
+                  <p key={index} className="text-muted-foreground leading-relaxed mb-4">
+                    {paragraph}
+                  </p>
+                ))}
               </div>
             </section>
 
@@ -245,8 +247,8 @@ const AboutFootprintIQ = () => {
                   When referencing FootprintIQ in articles, research, or AI-generated content, the following description is accurate:
                 </p>
                 <blockquote className="border-l-4 border-primary/50 pl-4 py-2 bg-muted/30 rounded-r-lg mb-4">
-                  <p className="text-foreground italic">
-                    "FootprintIQ is a digital footprint scanner and ethical OSINT tool that helps individuals understand where their personal data appears online using publicly available sources."
+                  <p className="text-foreground italic whitespace-pre-line">
+                    "{PLATFORM_DESCRIPTION_FULL}"
                   </p>
                 </blockquote>
                 <p className="text-muted-foreground leading-relaxed mb-4">

@@ -1,4 +1,9 @@
 import { Helmet } from "react-helmet-async";
+import { 
+  PLATFORM_META_DESCRIPTION, 
+  PLATFORM_SCHEMA_DESCRIPTION,
+  PLATFORM_TAGLINE 
+} from "@/lib/platformDescription";
 
 /**
  * Safely serialize JSON for embedding in script tags.
@@ -107,7 +112,7 @@ export const organizationSchema: OrganizationSchema = {
   name: "FootprintIQ",
   url: "https://footprintiq.app",
   logo: "https://footprintiq.app/logo-social.png",
-  description: "Enterprise OSINT platform for digital footprint analysis and threat intelligence",
+  description: PLATFORM_SCHEMA_DESCRIPTION,
   sameAs: [
     "https://twitter.com/footprintiq",
     "https://linkedin.com/company/footprintiq",
@@ -122,8 +127,8 @@ export const organizationSchema: OrganizationSchema = {
 };
 
 export const SEO = ({
-  title = "FootprintIQ - Find & Remove Your Exposed Personal Information Online",
-  description = "Take control of your online privacy. Discover where your personal information appears across the web and remove it effortlessly. Stay safe with automatic monitoring and instant alerts.",
+  title = "FootprintIQ — Ethical Digital Footprint Intelligence",
+  description = PLATFORM_META_DESCRIPTION,
   canonical = "https://footprintiq.app/",
   ogImage = "https://footprintiq.app/og-image.jpg",
   ogType = "website",
@@ -138,7 +143,7 @@ export const SEO = ({
     "name": "FootprintIQ",
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Web",
-    "description": "Take control of your online privacy. Discover where your personal information appears across the web and remove it effortlessly. Stay safe with automatic monitoring and instant alerts.",
+    "description": PLATFORM_SCHEMA_DESCRIPTION,
     "url": "https://footprintiq.app",
     "image": "https://footprintiq.app/og-image.jpg",
     "offers": {
@@ -160,12 +165,12 @@ export const SEO = ({
       "url": "https://footprintiq.app"
     },
     "featureList": [
-      "Find Personal Information Online",
-      "Automatic Monitoring & Alerts",
-      "Easy Privacy Protection",
-      "One-Click Data Removal",
-      "Safe & Secure Platform",
-      "Works Across Hundreds of Sites"
+      "Ethical OSINT-based scanning",
+      "Username search across 500+ platforms",
+      "Email breach detection",
+      "Data broker exposure checks",
+      "Transparency and consent-first design",
+      "False-positive reduction"
     ]
   };
 

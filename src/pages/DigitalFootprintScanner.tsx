@@ -110,13 +110,13 @@ const DigitalFootprintScanner = () => {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://footprintiq.com"
+        "item": "https://footprintiq.app"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Digital Footprint Scanner",
-        "item": "https://footprintiq.com/digital-footprint-scanner"
+        "item": "https://footprintiq.app/digital-footprint-scanner"
       }
     ]
   };
@@ -132,13 +132,14 @@ const DigitalFootprintScanner = () => {
       "price": "0",
       "priceCurrency": "USD"
     },
-    "description": "Free ethical digital footprint scanner that checks your online exposure across usernames, emails, and public data sources using open-source intelligence methods.",
+    "description": "An ethical digital footprint scanner using open-source intelligence (OSINT) techniques to help you understand online exposure across usernames, emails, and public data sources — without surveillance or invasive data collection.",
     "featureList": [
       "Username search across 500+ platforms",
       "Email breach detection",
       "Public profile discovery",
-      "OSINT-based scanning",
-      "Privacy-focused analysis"
+      "Ethical OSINT-based scanning",
+      "Transparency and consent-first design",
+      "False-positive reduction"
     ]
   };
 
@@ -146,9 +147,9 @@ const DigitalFootprintScanner = () => {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "FootprintIQ",
-    "url": "https://footprintiq.com",
-    "logo": "https://footprintiq.com/logo.png",
-    "description": "Ethical digital footprint intelligence platform"
+    "url": "https://footprintiq.app",
+    "logo": "https://footprintiq.app/logo.png",
+    "description": "An ethical digital footprint intelligence platform using open-source intelligence (OSINT) techniques to help people understand online exposure while avoiding surveillance, monitoring, or invasive data collection."
   };
 
   const schemaHowTo = {
