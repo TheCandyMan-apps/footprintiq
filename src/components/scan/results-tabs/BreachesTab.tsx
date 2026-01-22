@@ -15,6 +15,18 @@ interface BreachesTabProps {
   breachResults: any[];
 }
 
+const detectBreachFromResult = (r: any): boolean => {
+  const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised', 'exposure'];
+  const kind = (r?.kind || '').toString().toLowerCase();
+  const provider = (r?.provider || '').toString().toLowerCase();
+  const site = (r?.site || '').toString().toLowerCase();
+  const metaStr = JSON.stringify(r?.meta || r?.metadata || {}).toLowerCase();
+  const evidenceStr = JSON.stringify(r?.evidence || {}).toLowerCase();
+  return breachKeywords.some((k) =>
+    kind.includes(k) || provider.includes(k) || site.includes(k) || metaStr.includes(k) || evidenceStr.includes(k)
+  );
+};
+
 const getDataTypeLabel = (dataType: string): string => {
   const labels: Record<string, string> = {
     'email': 'Email addresses',
@@ -87,15 +99,21 @@ const extractDataTypes = (breach: any): string[] => {
 };
 
 export function BreachesTab({ results, breachResults }: BreachesTabProps) {
+  const effectiveBreachResults = useMemo(() => {
+    if (Array.isArray(breachResults) && breachResults.length > 0) return breachResults;
+    // Fallback: derive breaches directly from results if upstream filtering produced none.
+    return (results as any[]).filter(detectBreachFromResult);
+  }, [breachResults, results]);
+
   const processedBreaches = useMemo(() => {
-    return breachResults.map((breach, idx) => ({
+    return effectiveBreachResults.map((breach, idx) => ({
       id: breach.id || idx,
       name: breach.site || breach.provider || breach.meta?.name || 'Unknown Breach',
       year: extractYear(breach),
       dataTypes: extractDataTypes(breach),
       description: breach.meta?.description || null,
     }));
-  }, [breachResults]);
+  }, [effectiveBreachResults]);
 
   const totalBreaches = processedBreaches.length;
 
