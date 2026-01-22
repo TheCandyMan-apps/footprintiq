@@ -45,7 +45,18 @@ export default function OsintBeginnersGuide() {
       "@type": "Organization",
       name: "FootprintIQ"
     },
-    publisher: organizationSchema,
+    publisher: {
+      "@type": "Organization",
+      name: "FootprintIQ",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://footprintiq.app/logo-social.png"
+      }
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": "https://footprintiq.app/blog/osint-beginners-guide"
+    },
     keywords: "OSINT, open source intelligence, cybersecurity, digital investigation, privacy"
   };
 
