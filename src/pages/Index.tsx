@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { SEO, organizationSchema } from "@/components/SEO";
+import { PLATFORM_SCHEMA_DESCRIPTION, PLATFORM_META_DESCRIPTION } from "@/lib/platformDescription";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
@@ -60,7 +61,7 @@ export default function Home() {
     "name": "FootprintIQ",
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Web",
-    "description": "FootprintIQ helps individuals discover username reuse, email exposure, and data broker listings using ethical OSINT techniques — so you can understand and reduce your digital footprint.",
+    "description": PLATFORM_SCHEMA_DESCRIPTION,
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -125,8 +126,8 @@ export default function Home() {
   return (
     <>
       <SEO
-        title="See What the Internet Knows About You — Free Digital Footprint Scan"
-        description="See where your username, email, and personal data appear online. Free scan reveals breach exposure, data broker listings, and public profiles — using public data only."
+        title="FootprintIQ — Ethical Digital Footprint Intelligence"
+        description={PLATFORM_META_DESCRIPTION}
         canonical="https://footprintiq.app/"
         ogImage="https://footprintiq.app/og-image.jpg"
         schema={{

@@ -1,16 +1,19 @@
 import { Check, X } from "lucide-react";
+import { PLATFORM_IS, PLATFORM_IS_NOT } from "@/lib/platformDescription";
 
 const whatWeAre = [
-  "Visibility into publicly observable exposure",
-  "Structured signal grouping and explanation",
-  "Support for human-led verification",
-  "Context-aware confidence scoring",
+  "Ethical digital footprint intelligence platform",
+  "Uses OSINT techniques to reveal online exposure",
+  "Designed around transparency and consent",
+  "False-positive reduction and confidence scoring",
+  "Supports structured investigations via Cases",
 ];
 
 const whatWeAreNot = [
-  "Criminal detection or prediction",
-  "Automated accusations or labels",
-  "Surveillance or private data access",
+  "A surveillance or monitoring tool",
+  "A people-search or background check site",
+  "A data broker or data resale platform",
+  "Invasive data collection",
   "A replacement for professional judgment",
 ];
 

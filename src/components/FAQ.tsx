@@ -8,8 +8,8 @@ import { HelpCircle } from "lucide-react";
 
 const faqs = [
   {
-    question: "What is a digital footprint?",
-    answer: "Your digital footprint is the trail of data you leave behind when using the internet. This includes your personal information on data broker sites, social media profiles, search results, and public records. FootprintIQ helps you see what's publicly visible about you."
+    question: "What is FootprintIQ?",
+    answer: "FootprintIQ is an ethical digital footprint intelligence platform. It uses open-source intelligence (OSINT) techniques to help people understand online exposure while avoiding surveillance, monitoring, or invasive data collection."
   },
   {
     question: "What does FootprintIQ scan?",
@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     question: "Is this legal and ethical?",
-    answer: "Yes. FootprintIQ only accesses publicly available information — the same data anyone can find through search engines and public databases. We use ethical OSINT techniques and never access private accounts or bypass authentication."
+    answer: "Yes. FootprintIQ only accesses publicly available information — the same data anyone can find through search engines and public databases. We use ethical OSINT techniques and never access private accounts or bypass authentication. FootprintIQ is designed around transparency, consent, and false-positive reduction."
   },
   {
     question: "What is OSINT and why does it matter?",
