@@ -303,28 +303,34 @@ const Dashboard = () => {
 
           if (dnaFindings && dnaFindings.length > 0) {
             // Enhanced keyword arrays for accurate categorization
-            const BREACH_KEYWORDS = ['hibp', 'breach', 'leak', 'compromised', 'breach.hit', 'pwned', 'violation', 'exposed'];
+            const BREACH_KEYWORDS = ['hibp', 'breach', 'leak', 'compromised', 'pwned', 'violation'];
             const BROKER_KEYWORDS = ['broker', 'people-search', 'background-check', 'data-aggregator', 'whitepages', 'spokeo', 'peoplesearch', 'pipl', 'radaris'];
-            const DARK_WEB_KEYWORDS = ['dark', 'tor', 'onion', 'paste', 'intelx', 'dump', 'pastebin', 'leak'];
-            const EXPOSURE_KEYWORDS = ['profile', 'presence', 'hit', 'found', 'account', 'social'];
-            const EXPOSURE_PROVIDERS = ['maigret', 'sherlock', 'gosearch', 'holehe'];
+            const DARK_WEB_KEYWORDS = ['dark', 'tor', 'onion', 'paste', 'intelx', 'dump', 'pastebin'];
+            const EXPOSURE_PROVIDERS = ['maigret', 'sherlock', 'gosearch', 'holehe', 'whatsmyname'];
+            const EXPOSURE_KINDS = ['profile_presence', 'presence.hit', 'presence', 'profile', 'found', 'account', 'social'];
 
             let breaches = 0, exposures = 0, dataBrokers = 0, darkWeb = 0;
             
-            // Filter out provider_error findings for accurate counts
+            // Filter out system/error findings for accurate counts
             const validFindings = dnaFindings.filter(f => {
               const kind = (f.kind || '').toLowerCase();
-              return kind !== 'provider_error' && !kind.includes('error');
+              const provider = (f.provider || '').toLowerCase();
+              return kind !== 'provider_error' && 
+                     !kind.includes('error') && 
+                     !kind.includes('tier_restriction') &&
+                     !kind.includes('unconfigured') &&
+                     !kind.includes('info.no_hits') &&
+                     provider !== 'system';
             });
             
             for (const f of validFindings) {
               const kind = (f.kind || '').toLowerCase();
               const provider = (f.provider || '').toLowerCase();
               
-              // Breaches: findings with breach-related keywords
-              if (BREACH_KEYWORDS.some(k => kind.includes(k) || provider.includes(k))) {
+              // Breaches: findings with breach-related keywords (check kind first for specificity)
+              if (kind.includes('breach') || BREACH_KEYWORDS.some(k => provider.includes(k))) {
                 breaches++;
-                continue; // Count as breach, skip other categories
+                continue;
               }
               
               // Data Brokers: findings matching broker keywords
@@ -339,10 +345,16 @@ const Dashboard = () => {
                 continue;
               }
               
-              // Exposures: findings from OSINT providers OR containing exposure keywords
-              // This should be the largest category for typical OSINT scans
-              if (EXPOSURE_PROVIDERS.includes(provider) || 
-                  EXPOSURE_KEYWORDS.some(k => kind.includes(k))) {
+              // Exposures: findings from OSINT providers OR matching exposure kinds
+              // This is the primary category for username/profile scans
+              if (EXPOSURE_PROVIDERS.some(p => provider.includes(p)) || 
+                  EXPOSURE_KINDS.some(k => kind.includes(k) || kind === k)) {
+                exposures++;
+                continue;
+              }
+              
+              // Fallback: count phone validations and other findings as exposures
+              if (kind.includes('phone') || kind.includes('email') || kind.includes('validation')) {
                 exposures++;
               }
             }
