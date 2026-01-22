@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { format, formatDistanceToNow, parseISO, isValid } from 'date-fns';
 import { ScanResult } from '@/hooks/useScanResultsData';
+import { supabase } from '@/integrations/supabase/client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
@@ -27,7 +28,7 @@ interface TimelineTabProps {
   isPremium?: boolean;
 }
 
-type TimelineEventType = 'account_created' | 'last_activity' | 'breach_detected' | 'profile_updated';
+type TimelineEventType = 'account_created' | 'last_activity' | 'breach_detected' | 'profile_updated' | 'provider_event';
 
 interface TimelineEvent {
   id: string;
@@ -61,7 +62,23 @@ const EVENT_CONFIG: Record<TimelineEventType, { icon: typeof Calendar; colors: {
     icon: Eye,
     colors: { bg: 'bg-purple-500/10', text: 'text-purple-600', border: 'border-purple-500/20' },
     label: 'Profile Updated'
+  },
+  provider_event: {
+    icon: Clock,
+    colors: { bg: 'bg-slate-500/10', text: 'text-slate-600', border: 'border-slate-500/20' },
+    label: 'Provider Event'
   }
+};
+
+type ProviderEventRow = {
+  id: string;
+  scan_id: string;
+  provider: string;
+  event: string;
+  message: string;
+  result_count: number | null;
+  error: any;
+  created_at: string;
 };
 
 // Extract timeline events from scan results
@@ -216,9 +233,103 @@ type FilterType = 'all' | TimelineEventType;
 export function TimelineTab({ scanId, results, username, isPremium = false }: TimelineTabProps) {
   const [filter, setFilter] = useState<FilterType>('all');
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
+  const [providerEvents, setProviderEvents] = useState<ProviderEventRow[]>([]);
 
   // Extract timeline events from results
-  const allEvents = useMemo(() => extractTimelineEvents(results, username), [results, username]);
+  const resultDerivedEvents = useMemo(() => extractTimelineEvents(results, username), [results, username]);
+
+  // Load provider execution events (always available for most scans)
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const load = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('scan_provider_events')
+          .select('*')
+          .eq('scan_id', scanId)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        setProviderEvents((data || []) as ProviderEventRow[]);
+      } catch (e) {
+        console.error('[TimelineTab] Failed to load provider events:', e);
+        setProviderEvents([]);
+      }
+    };
+
+    const subscribe = () => {
+      channel = supabase
+        .channel(`scan_provider_events_${scanId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'scan_provider_events',
+            filter: `scan_id=eq.${scanId}`,
+          },
+          (payload) => {
+            setProviderEvents((prev) => {
+              const next = [...prev, payload.new as ProviderEventRow];
+              next.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+              return next;
+            });
+          }
+        )
+        .subscribe();
+    };
+
+    load();
+    subscribe();
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [scanId]);
+
+  const providerDerivedEvents = useMemo<TimelineEvent[]>(() => {
+    return providerEvents
+      .map((e) => {
+        const date = parseDate(e.created_at);
+        if (!date) return null;
+        const provider = e.provider || 'Unknown provider';
+        const ev = (e.event || '').toLowerCase();
+
+        const title =
+          ev === 'start'
+            ? `Started ${provider}`
+            : ev === 'success'
+              ? `Completed ${provider}`
+              : ev === 'error'
+                ? `Error in ${provider}`
+                : `${provider}: ${e.event}`;
+
+        const descriptionParts: string[] = [];
+        if (e.message) descriptionParts.push(e.message);
+        if (typeof e.result_count === 'number') descriptionParts.push(`Results: ${e.result_count}`);
+        const description = descriptionParts.join(' • ') || 'Provider event';
+
+        return {
+          id: e.id,
+          date,
+          type: 'provider_event' as const,
+          platform: provider,
+          title,
+          description,
+          confidence: ev === 'error' ? 'low' : ev === 'success' ? 'high' : 'medium',
+          metadata: { event: e.event, error: e.error },
+        };
+      })
+      .filter(Boolean) as TimelineEvent[];
+  }, [providerEvents]);
+
+  const allEvents = useMemo(() => {
+    // Prefer OSINT-relevant chronological signals from result metadata, but
+    // fall back to provider execution events so the tab isn't perpetually empty.
+    const merged = [...resultDerivedEvents, ...providerDerivedEvents];
+    return merged.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [resultDerivedEvents, providerDerivedEvents]);
 
   // Filter events
   const filteredEvents = useMemo(() => {
@@ -235,7 +346,8 @@ export function TimelineTab({ scanId, results, username, isPremium = false }: Ti
       account_created: 0,
       last_activity: 0,
       breach_detected: 0,
-      profile_updated: 0
+      profile_updated: 0,
+      provider_event: 0
     };
     allEvents.forEach(e => counts[e.type]++);
     return counts;
@@ -257,11 +369,12 @@ export function TimelineTab({ scanId, results, username, isPremium = false }: Ti
   };
 
   // Initialize expanded years to show recent ones
-  useMemo(() => {
+  useEffect(() => {
     if (groupedEvents.size > 0 && expandedYears.size === 0) {
       const years = Array.from(groupedEvents.keys()).sort((a, b) => b - a);
       setExpandedYears(new Set(years.slice(0, 2))); // Expand 2 most recent years
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupedEvents]);
 
   const exportTimeline = () => {
