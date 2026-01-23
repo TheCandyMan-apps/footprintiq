@@ -62,13 +62,28 @@ export default function Home() {
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Web",
     "description": PLATFORM_SCHEMA_DESCRIPTION,
+    "url": "https://footprintiq.app/",
+    "featureList": [
+      "Case-based investigations",
+      "False-positive reduction",
+      "Consent-oriented analysis",
+      "Ethical OSINT-based scanning",
+      "Username search across 500+ platforms",
+      "Email breach detection",
+      "Data broker exposure checks",
+      "Transparency and consent-first design"
+    ],
+    "about": {
+      "@type": "DefinedTerm",
+      "name": "Ethical OSINT",
+      "url": "https://footprintiq.app/ethical-osint-for-individuals"
+    },
     "offers": {
       "@type": "Offer",
       "price": "0",
-      "priceCurrency": "USD",
+      "priceCurrency": "GBP",
       "description": "Free scan available"
-    },
-    "url": "https://footprintiq.app/"
+    }
   };
 
   const faqSchema = {
