@@ -15,7 +15,12 @@ const WebhookMetadataSchema = z.object({
   user_id: z.string().uuid(),
   workspace_id: z.string().uuid(),
   credits: z.string().regex(/^\d+$/),
-  pack_type: z.string().min(1),
+  // Accept either pack_type or pack_name (checkout sends pack_name)
+  pack_type: z.string().min(1).optional(),
+  pack_name: z.string().min(1).optional(),
+  price_id: z.string().optional(),
+}).refine(data => data.pack_type || data.pack_name, {
+  message: "Either pack_type or pack_name must be provided"
 });
 
 serve(async (req) => {
@@ -90,23 +95,24 @@ serve(async (req) => {
         });
       }
 
-      // Extract validated metadata
-      const { user_id: userId, workspace_id: workspaceId, credits: creditsStr, pack_type: packType } = validation.data;
+      // Extract validated metadata (accept either pack_type or pack_name)
+      const { user_id: userId, workspace_id: workspaceId, credits: creditsStr, pack_type: packType, pack_name: packName } = validation.data;
       const credits = parseInt(creditsStr);
+      const packLabel = packType || packName || 'unknown';
 
       console.log(`[stripe-credit-webhook] Adding ${credits} credits to workspace ${workspaceId}`);
 
-      // Add credits to the workspace
+      // Add credits to the workspace (reason must match CHECK constraint)
       const { error: creditError } = await supabase
         .from('credits_ledger')
         .insert({
           workspace_id: workspaceId,
           delta: credits,
-          reason: `Credit pack purchase: ${packType}`,
+          reason: 'purchase',
           meta: {
             stripe_session_id: session.id,
             stripe_event_id: event.id,
-            pack_type: packType,
+            pack_label: packLabel,
             payment_intent: session.payment_intent,
           },
         });
@@ -127,7 +133,7 @@ serve(async (req) => {
           action: 'credit_purchase',
           target: `${credits} credits`,
           meta: {
-            pack_type: packType,
+            pack_label: packLabel,
             stripe_session_id: session.id,
             stripe_event_id: event.id,
             amount: session.amount_total,
