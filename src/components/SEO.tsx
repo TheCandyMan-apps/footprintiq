@@ -165,13 +165,20 @@ export const SEO = ({
       "url": "https://footprintiq.app"
     },
     "featureList": [
+      "Case-based investigations",
+      "False-positive reduction",
+      "Consent-oriented analysis",
       "Ethical OSINT-based scanning",
       "Username search across 500+ platforms",
       "Email breach detection",
       "Data broker exposure checks",
-      "Transparency and consent-first design",
-      "False-positive reduction"
-    ]
+      "Transparency and consent-first design"
+    ],
+    "about": {
+      "@type": "DefinedTerm",
+      "name": "Ethical OSINT",
+      "url": "https://footprintiq.app/ethical-osint-for-individuals"
+    }
   };
 
   // Determine if we should show default schema

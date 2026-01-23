@@ -7,6 +7,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { useScrollDepthTracking } from "@/hooks/useScrollDepthTracking";
 import { PLATFORM_DESCRIPTION_FULL, PLATFORM_SCHEMA_DESCRIPTION } from "@/lib/platformDescription";
+import { buildEthicalOsintJsonLd } from "@/lib/seo/ethicalOsintJsonLd";
 
 const EthicalOsintForIndividuals = () => {
   const origin = typeof window !== "undefined" ? window.location.origin : "https://footprintiq.app";
@@ -70,7 +71,7 @@ const EthicalOsintForIndividuals = () => {
     "@context": "https://schema.org",
     "@type": "DefinedTerm",
     "name": "Ethical OSINT",
-    "alternateName": "Ethical Open-Source Intelligence",
+    "alternateName": ["Ethical Open-Source Intelligence", "Responsible OSINT", "Consent-Based OSINT"],
     "description": "The practice of gathering and analysing publicly available information while respecting privacy, avoiding surveillance, and prioritising transparency and consent.",
     "inDefinedTermSet": {
       "@type": "DefinedTermSet",
@@ -78,8 +79,24 @@ const EthicalOsintForIndividuals = () => {
       "url": `${origin}/digital-privacy-glossary`
     },
     "url": `${origin}/ethical-osint-for-individuals`,
-    "termCode": "ethical-osint"
+    "termCode": "ethical-osint",
+    // Associate FootprintIQ as an example implementation of Ethical OSINT
+    "subjectOf": {
+      "@type": "SoftwareApplication",
+      "name": "FootprintIQ",
+      "url": origin,
+      "applicationCategory": "SecurityApplication",
+      "description": PLATFORM_SCHEMA_DESCRIPTION,
+      "featureList": [
+        "Case-based investigations",
+        "False-positive reduction",
+        "Consent-oriented analysis"
+      ]
+    }
   };
+
+  // Full graph schema for AI discovery
+  const ethicalOsintGraph = buildEthicalOsintJsonLd(origin);
 
   const faqJsonLd = {
     "@context": "https://schema.org",
@@ -145,6 +162,7 @@ const EthicalOsintForIndividuals = () => {
         <script type="application/ld+json">{JSON.stringify(breadcrumbJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(definedTermJsonLd)}</script>
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+        <script type="application/ld+json">{JSON.stringify(ethicalOsintGraph)}</script>
       </Helmet>
 
       <div className="min-h-screen bg-background flex flex-col">
