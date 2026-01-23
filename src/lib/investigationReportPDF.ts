@@ -48,6 +48,63 @@ interface InvestigationReportData {
 }
 
 /**
+ * Helper to extract site/platform from a finding
+ */
+function extractSite(result: any): string {
+  // Check evidence array first
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const siteEvidence = result.evidence.find((e: any) => e.key === 'site');
+    if (siteEvidence?.value) return siteEvidence.value;
+  }
+  // Fallback to meta
+  if (result.meta?.platform) return result.meta.platform;
+  if (result.meta?.site) return result.meta.site;
+  // Fallback to direct property
+  if (result.site) return result.site;
+  return 'Unknown';
+}
+
+/**
+ * Helper to extract URL from a finding
+ */
+function extractUrl(result: any): string {
+  // Check evidence array first
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const urlEvidence = result.evidence.find((e: any) => e.key === 'url');
+    if (urlEvidence?.value) return urlEvidence.value;
+  }
+  // Fallback to direct property
+  if (result.url) return result.url;
+  return '';
+}
+
+/**
+ * Helper to derive status from a finding
+ */
+function deriveStatus(result: any): string {
+  // Direct status field
+  if (result.status) return result.status.toLowerCase();
+  
+  // For profile_presence kind, treat as "found"
+  if (result.kind === 'profile_presence') return 'found';
+  
+  // Check evidence for status indicators
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const existsEvidence = result.evidence.find((e: any) => e.key === 'exists');
+    if (existsEvidence?.value === true) return 'found';
+    if (existsEvidence?.value === false) return 'not_found';
+  }
+  
+  // Check for explicit status in meta
+  const meta = result.meta || result.metadata || {};
+  if (meta.status) return meta.status.toLowerCase();
+  if (meta.exists === true) return 'found';
+  if (meta.exists === false) return 'not_found';
+  
+  return 'unknown';
+}
+
+/**
  * Generate a comprehensive PDF investigation report
  */
 export async function generateInvestigationReport(data: InvestigationReportData): Promise<void> {
@@ -121,17 +178,23 @@ export async function generateInvestigationReport(data: InvestigationReportData)
     yPos = addPageHeader(doc, 'Account Discovery', branding);
     yPos = addSectionHeader(doc, 'Discovered Accounts', yPos);
 
-    // Found accounts table
-    const foundAccounts = results.filter(r => 
-      r.status?.toLowerCase() === 'found' || r.status?.toLowerCase() === 'claimed'
-    );
+    // Found accounts table - use deriveStatus helper for proper detection
+    const foundAccounts = results.filter(r => {
+      const status = deriveStatus(r);
+      return status === 'found' || status === 'claimed';
+    });
 
     if (foundAccounts.length > 0) {
-      const tableData = foundAccounts.slice(0, 50).map(account => [
-        account.site || 'Unknown',
-        account.status || 'N/A',
-        account.url ? (account.url.length > 40 ? account.url.substring(0, 40) + '...' : account.url) : '-',
-      ]);
+      const tableData = foundAccounts.slice(0, 50).map(account => {
+        const site = extractSite(account);
+        const url = extractUrl(account);
+        const status = deriveStatus(account);
+        return [
+          site,
+          status.charAt(0).toUpperCase() + status.slice(1),
+          url ? (url.length > 40 ? url.substring(0, 40) + '...' : url) : '-',
+        ];
+      });
 
       autoTable(doc, {
         startY: yPos,
@@ -166,7 +229,7 @@ export async function generateInvestigationReport(data: InvestigationReportData)
 
     const categories: Record<string, number> = {};
     foundAccounts.forEach(account => {
-      const platform = (account.site || 'other').toLowerCase();
+      const platform = extractSite(account).toLowerCase();
       let category = 'Other';
       
       if (['facebook', 'twitter', 'instagram', 'tiktok', 'snapchat', 'linkedin', 'reddit', 'mastodon'].some(s => platform.includes(s))) {
@@ -215,11 +278,14 @@ export async function generateInvestigationReport(data: InvestigationReportData)
     yPos += 10;
 
     // Breach table
-    const breachTableData = breachResults.slice(0, 25).map(breach => [
-      breach.site || breach.provider || 'Unknown',
-      (breach.severity || 'unknown').toUpperCase(),
-      breach.kind || 'Breach',
-    ]);
+    const breachTableData = breachResults.slice(0, 25).map(breach => {
+      const source = extractSite(breach) !== 'Unknown' ? extractSite(breach) : (breach.provider || 'Unknown');
+      return [
+        source,
+        (breach.severity || 'unknown').toUpperCase(),
+        breach.kind || 'Breach',
+      ];
+    });
 
     autoTable(doc, {
       startY: yPos,
