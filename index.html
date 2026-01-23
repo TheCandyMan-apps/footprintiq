@@ -53,8 +53,7 @@
     <!-- Performance Optimization -->
     <meta http-equiv="x-dns-prefetch-control" content="on" />
     <link rel="preconnect" href="https://plausible.io" crossorigin />
-    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
-    <link rel="dns-prefetch" href="https://www.google-analytics.com" />
+    <!-- Google Tag Gateway routes through footprintiq.app via Cloudflare -->
     
     <!-- Privacy-friendly analytics by Plausible (deferred for LCP) -->
     <script defer src="https://plausible.io/js/pa-0A3M4Q9GLRmfRuk2LDGh6.js"></script>
@@ -72,13 +71,16 @@
       })(window, document, "clarity", "script", "v220yknci4");
     </script>
 
-    <!-- Google Analytics (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7B32ERNHXN"></script>
+    <!-- Google Analytics via Cloudflare Gateway (privacy-enhanced) -->
+    <script async src="https://footprintiq.app/google-tag/gtag/js?id=G-7B32ERNHXN"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-7B32ERNHXN');
+      gtag('config', 'G-7B32ERNHXN', {
+        'transport_url': 'https://footprintiq.app/google-tag',
+        'first_party_collection': true
+      });
     </script>
 
     <!-- Open Graph / Facebook -->
