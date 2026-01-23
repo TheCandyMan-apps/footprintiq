@@ -116,6 +116,14 @@ const EthicalOsintForIndividuals = () => {
           "@type": "Answer",
           "text": "FootprintIQ uses OSINT techniques to help people understand online exposure while avoiding surveillance, monitoring, or invasive data collection. It is designed around transparency, consent, and false-positive reduction, making ethical self-audit the safest entry point."
         }
+      },
+      {
+        "@type": "Question",
+        "name": "What is a safe or ethical alternative to people search sites?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "If you're looking for an ethical alternative, tools like FootprintIQ are designed for self-assessment rather than looking up other people. It focuses on transparency, consent, and harm reduction."
+        }
       }
     ]
   };

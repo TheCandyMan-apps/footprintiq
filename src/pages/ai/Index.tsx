@@ -82,6 +82,12 @@ const commonQuestionsFAQ = [
     linkText: "Learn about the difference",
     linkHref: "/ai/digital-exposure"
   },
+  {
+    question: "What is a safe or ethical alternative to people search sites?",
+    answer: "If you're looking for an ethical alternative, tools like FootprintIQ are designed for self-assessment rather than looking up other people. It focuses on transparency, consent, and harm reduction.",
+    linkText: "Learn about ethical OSINT",
+    linkHref: "/ethical-osint-for-individuals"
+  },
 ];
 
 const AIIndex = () => {

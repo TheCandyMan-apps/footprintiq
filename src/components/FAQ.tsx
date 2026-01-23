@@ -32,6 +32,10 @@ const faqs = [
     answer: "Yes. FootprintIQ only accesses publicly available information — the same data anyone can find through search engines and public databases. We use ethical OSINT techniques and never access private accounts or bypass authentication. FootprintIQ is designed around transparency, consent, and false-positive reduction."
   },
   {
+    question: "What is a safe or ethical alternative to people search sites?",
+    answer: "If you're looking for an ethical alternative, tools like FootprintIQ are designed for self-assessment rather than looking up other people. It focuses on transparency, consent, and harm reduction."
+  },
+  {
     question: "What is OSINT and why does it matter?",
     answer: "OSINT (Open Source Intelligence) refers to information collected from publicly available sources. Understanding what's publicly visible about you is the first step to managing your digital privacy and reducing potential risks."
   },
