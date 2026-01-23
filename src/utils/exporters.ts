@@ -2,18 +2,106 @@ export interface ExportOptions {
   includeAllFields?: boolean;
 }
 
+/**
+ * Helper to extract site/platform from a finding
+ */
+function extractSite(result: any): string {
+  // Check evidence array first
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const siteEvidence = result.evidence.find((e: any) => e.key === 'site');
+    if (siteEvidence?.value) return siteEvidence.value;
+  }
+  // Fallback to meta
+  if (result.meta?.platform) return result.meta.platform;
+  if (result.meta?.site) return result.meta.site;
+  // Fallback to direct property
+  if (result.site) return result.site;
+  return '';
+}
+
+/**
+ * Helper to extract URL from a finding
+ */
+function extractUrl(result: any): string {
+  // Check evidence array first
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const urlEvidence = result.evidence.find((e: any) => e.key === 'url');
+    if (urlEvidence?.value) return urlEvidence.value;
+  }
+  // Fallback to direct property
+  if (result.url) return result.url;
+  return '';
+}
+
+/**
+ * Helper to extract username from a finding
+ */
+function extractUsername(result: any): string {
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const usernameEvidence = result.evidence.find((e: any) => e.key === 'username');
+    if (usernameEvidence?.value) return usernameEvidence.value;
+  }
+  if (result.meta?.username) return result.meta.username;
+  return '';
+}
+
+/**
+ * Helper to derive status from a finding
+ */
+function deriveStatusForExport(result: any): string {
+  if (result.status) return result.status.toLowerCase();
+  if (result.kind === 'profile_presence') return 'found';
+  
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const existsEvidence = result.evidence.find((e: any) => e.key === 'exists');
+    if (existsEvidence?.value === true) return 'found';
+    if (existsEvidence?.value === false) return 'not_found';
+  }
+  
+  const meta = result.meta || result.metadata || {};
+  if (meta.status) return meta.status.toLowerCase();
+  if (meta.exists === true) return 'found';
+  if (meta.exists === false) return 'not_found';
+  
+  return 'unknown';
+}
+
+/**
+ * Transform raw finding to a flattened, human-readable format
+ */
+function transformFinding(result: any): Record<string, any> {
+  return {
+    id: result.id,
+    site: extractSite(result),
+    status: deriveStatusForExport(result),
+    url: extractUrl(result),
+    username: extractUsername(result),
+    provider: result.provider || '',
+    severity: result.severity || '',
+    kind: result.kind || '',
+    confidence: result.confidence || '',
+    platform_description: result.meta?.description || '',
+    tool: result.meta?.tool || '',
+    created_at: result.created_at || '',
+  };
+}
+
 export function exportResultsToJSON(results: any[], jobId: string, options: ExportOptions = {}) {
   const { includeAllFields = true } = options;
   
-  // If includeAllFields is false, strip to basic fields only
-  const dataToExport = includeAllFields ? results : results.map((r) => ({
-    id: r.id,
-    site: r.site,
-    status: r.status,
-    url: r.url,
-    provider: r.provider,
-    severity: r.severity,
-  }));
+  // Transform results to include extracted fields
+  const dataToExport = results.map((r) => {
+    const transformed = transformFinding(r);
+    if (includeAllFields) {
+      // Include original nested data as well
+      return {
+        ...transformed,
+        meta: r.meta,
+        evidence: r.evidence,
+      };
+    }
+    return transformed;
+  });
   
   const json = JSON.stringify(dataToExport, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
@@ -23,32 +111,17 @@ export function exportResultsToJSON(results: any[], jobId: string, options: Expo
 export function exportResultsToCSV(results: any[], jobId: string, options: ExportOptions = {}) {
   const { includeAllFields = true } = options;
   
-  if (includeAllFields && results.length > 0) {
-    // Collect all unique keys across all results
-    const allKeys = new Set<string>();
-    results.forEach((r) => {
-      Object.keys(r).forEach((key) => {
-        // Skip complex nested objects for CSV, but include their string representation
-        const value = r[key];
-        if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-          allKeys.add(key);
-        }
-      });
-    });
+  // Transform all results to flattened format
+  const transformedResults = results.map(transformFinding);
+  
+  if (includeAllFields && transformedResults.length > 0) {
+    // Use all keys from transformed results
+    const headers = ['id', 'site', 'status', 'url', 'username', 'provider', 'severity', 'kind', 'confidence', 'platform_description', 'tool', 'created_at'];
     
-    // Sort headers alphabetically, but put common ones first
-    const priorityHeaders = ['id', 'site', 'status', 'url', 'provider', 'severity', 'kind', 'confidence', 'title', 'description'];
-    const headers = [
-      ...priorityHeaders.filter(h => allKeys.has(h)),
-      ...Array.from(allKeys).filter(h => !priorityHeaders.includes(h)).sort()
-    ];
-    
-    const rows = results.map((r) => 
+    const rows = transformedResults.map((r) => 
       headers.map((header) => {
         const value = r[header];
         if (value === null || value === undefined) return '';
-        if (Array.isArray(value)) return value.join('; ');
-        if (typeof value === 'object') return JSON.stringify(value);
         return String(value);
       })
     );
@@ -61,9 +134,8 @@ export function exportResultsToCSV(results: any[], jobId: string, options: Expor
     downloadBlob(blob, `footprintiq_scan_${jobId}.csv`);
   } else {
     // Basic export with fixed headers
-    const headers = ['ID', 'Site', 'Status', 'URL', 'Provider', 'Severity'];
-    const rows = results.map((r) => [
-      r.id?.slice(0, 8) || '',
+    const headers = ['Site', 'Status', 'URL', 'Provider', 'Severity'];
+    const rows = transformedResults.map((r) => [
       r.site || '',
       r.status || '',
       r.url || '',
@@ -72,7 +144,7 @@ export function exportResultsToCSV(results: any[], jobId: string, options: Expor
     ]);
 
     const csv = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${cell}"`).join(','))
+      .map((row) => row.map((cell) => escapeCSVField(cell)).join(','))
       .join('\n');
 
     const blob = new Blob([csv], { type: 'text/csv' });
