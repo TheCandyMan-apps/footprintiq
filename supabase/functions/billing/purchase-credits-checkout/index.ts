@@ -154,6 +154,8 @@ serve(async (req) => {
             workspace_id: workspaceId,
             credits: credits.toString(),
             price_id: priceId,
+            pack_type: 'custom',
+            pack_name: `${credits} Credits`,
           },
         });
       });
