@@ -59,4 +59,7 @@ export const IMPLEMENTED_PROVIDERS = new Set([
   'spamhaus_domain',     // Domain reputation via SIA
   'spamhaus_pdns',       // Passive DNS lookups
   'spamhaus_dqs',        // DQS content reputation
+  
+  // Predicta Search (multi-platform social & breach aggregation)
+  'predictasearch',      // Email, phone, username, name searches
 ]);

@@ -574,6 +574,218 @@ serve(async (req) => {
         
         break;
       }
+      case 'predictasearch': {
+        // Supports email, phone, username, and name queries
+        if (!['email', 'phone', 'username', 'name'].includes(type)) {
+          console.log('[PredictaSearch] Skipping - unsupported query type:', type);
+          result = { findings: [] };
+          break;
+        }
+
+        const apiKey = Deno.env.get('PREDICTA_SEARCH_API_KEY');
+        if (!apiKey) {
+          console.warn('[PredictaSearch] API key not configured');
+          const now = new Date().toISOString();
+          result = {
+            findings: [{
+              provider: 'predictasearch',
+              kind: 'provider.unconfigured',
+              severity: 'info' as const,
+              confidence: 1.0,
+              observedAt: now,
+              evidence: [
+                { key: 'message', value: 'Predicta Search API key not configured' },
+                { key: 'config_required', value: 'PREDICTA_SEARCH_API_KEY' }
+              ],
+              meta: { unconfigured: true }
+            }]
+          };
+          break;
+        }
+
+        const now = new Date().toISOString();
+        console.log(`[PredictaSearch] Querying for ${type}: ${target}`);
+
+        try {
+          const response = await safeFetch('https://dev.predictasearch.com/api/search', {
+            method: 'POST',
+            headers: {
+              'x-api-key': apiKey,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              query: target,
+              query_type: type,
+              networks: options?.networks || ['all']
+            }),
+          });
+
+          if (!response.ok) {
+            if (response.status === 402) {
+              console.warn('[PredictaSearch] API quota exhausted');
+              result = {
+                findings: [{
+                  provider: 'predictasearch',
+                  kind: 'provider.quota_exhausted',
+                  severity: 'warn' as const,
+                  confidence: 1.0,
+                  observedAt: now,
+                  evidence: [
+                    { key: 'message', value: 'Predicta Search API quota exhausted' },
+                    { key: 'retry', value: 'false' }
+                  ],
+                  meta: { quotaExhausted: true }
+                }]
+              };
+              break;
+            }
+            if (response.status === 429) {
+              console.warn('[PredictaSearch] Rate limited');
+              result = {
+                findings: [{
+                  provider: 'predictasearch',
+                  kind: 'provider.rate_limited',
+                  severity: 'warn' as const,
+                  confidence: 1.0,
+                  observedAt: now,
+                  evidence: [
+                    { key: 'message', value: 'Predicta Search API rate limited' },
+                    { key: 'retry', value: 'true' }
+                  ],
+                  meta: { rateLimited: true }
+                }]
+              };
+              break;
+            }
+            throw new Error(`Predicta Search API error: ${response.status}`);
+          }
+
+          const data = await response.json();
+          
+          // Log credit balance
+          const creditBalance = response.headers.get('x-credit-balance');
+          if (creditBalance) {
+            const credits = parseInt(creditBalance, 10);
+            console.log(`[PredictaSearch] Credits remaining: ${credits}`);
+            if (credits < 100) {
+              console.warn(`[PredictaSearch] LOW CREDITS: ${credits} remaining`);
+            }
+          }
+
+          // Normalize results to UFM findings
+          const findings: any[] = [];
+          
+          // Process profiles
+          if (data.profiles && Array.isArray(data.profiles)) {
+            data.profiles.forEach((profile: any) => {
+              findings.push({
+                provider: 'predictasearch',
+                kind: 'social.profile',
+                severity: profile.is_verified ? 'medium' : 'low' as const,
+                confidence: profile.is_verified ? 0.95 : 0.75,
+                observedAt: now,
+                evidence: [
+                  { key: 'platform', value: profile.platform || 'unknown' },
+                  { key: 'username', value: profile.username || '' },
+                  { key: 'url', value: profile.link || '' },
+                  ...(profile.name ? [{ key: 'display_name', value: profile.name }] : []),
+                  ...(profile.email ? [{ key: 'email', value: profile.email }] : []),
+                  ...(profile.is_verified ? [{ key: 'verified', value: 'true' }] : []),
+                ],
+                meta: {
+                  avatar: profile.pfp_image,
+                  followers: profile.followers_count,
+                  following: profile.following_count,
+                  userId: profile.user_id,
+                  ...profile
+                }
+              });
+            });
+          }
+
+          // Process breaches
+          if (data.breaches && Array.isArray(data.breaches)) {
+            data.breaches.forEach((breach: any) => {
+              findings.push({
+                provider: 'predictasearch',
+                kind: 'breach.exposure',
+                severity: 'high' as const,
+                confidence: 0.9,
+                observedAt: now,
+                evidence: [
+                  { key: 'breach_name', value: breach.breach_name || breach.name || 'Unknown' },
+                  { key: 'domain', value: breach.breach_domain || breach.domain || '' },
+                  { key: 'date', value: breach.date || '' },
+                  { key: 'pwn_count', value: String(breach.pwn_count || 0) },
+                  ...(breach.description ? [{ key: 'description', value: breach.description }] : []),
+                ],
+                meta: {
+                  dataClasses: breach.data_classes || [],
+                  logoPath: breach.logo_path,
+                  ...breach
+                }
+              });
+            });
+          }
+
+          // Process leaks
+          if (data.leaks && Array.isArray(data.leaks)) {
+            data.leaks.forEach((leak: any) => {
+              findings.push({
+                provider: 'predictasearch',
+                kind: 'leak.exposure',
+                severity: 'high' as const,
+                confidence: 0.85,
+                observedAt: now,
+                evidence: [
+                  { key: 'source', value: leak.source || 'unknown' },
+                  { key: 'platform', value: leak.platform || '' },
+                  ...(leak.date ? [{ key: 'date', value: leak.date }] : []),
+                ],
+                meta: leak
+              });
+            });
+          }
+
+          // Handle empty results
+          if (findings.length === 0) {
+            findings.push({
+              provider: 'predictasearch',
+              kind: 'provider.empty_results',
+              severity: 'info' as const,
+              confidence: 1.0,
+              observedAt: now,
+              evidence: [
+                { key: 'message', value: 'No results found' },
+                { key: 'query_type', value: type },
+                { key: 'target', value: target }
+              ],
+              meta: { raw: data }
+            });
+          }
+
+          console.log(`[PredictaSearch] Found ${findings.length} findings`);
+          result = { findings };
+
+        } catch (error: any) {
+          console.error('[PredictaSearch] Error:', error);
+          result = {
+            findings: [{
+              provider: 'predictasearch',
+              kind: 'provider_error',
+              severity: 'warn' as const,
+              confidence: 0.5,
+              observedAt: now,
+              evidence: [
+                { key: 'error', value: error.message || 'Unknown error' },
+                { key: 'target', value: target }
+              ],
+              meta: { error: String(error) }
+            }]
+          };
+        }
+        break;
+      }
       default:
         console.warn(`[provider-proxy] Unknown provider: ${provider}`);
         result = { findings: [] };
