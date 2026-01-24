@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeWithRetry, classifyError, getUserFriendlyMessage } from "@/lib/supabaseRetry";
@@ -63,6 +63,8 @@ import { useUsernameScan } from "@/hooks/useUsernameScan";
 import { Switch } from "@/components/ui/switch";
 import { UpgradeModal } from "@/components/UpgradeModal";
 import { ActivityLogger } from "@/lib/activityLogger";
+import { TurnstileGate, type TurnstileGateRef } from "@/components/auth/TurnstileGate";
+import { useTurnstileGating, withTurnstileToken } from "@/hooks/useTurnstileGating";
 
 export default function AdvancedScan() {
   const navigate = useNavigate();
@@ -72,6 +74,11 @@ export default function AdvancedScan() {
   const { startTracking } = useActiveScanContext();
   const { isWorkerOffline, getWorkerByName } = useWorkerStatus();
   const { isFree, checkFeatureAccess, subscriptionTier: actualSubscriptionTier } = useTierGating();
+  const { requiresTurnstile, validateToken: validateTurnstileToken } = useTurnstileGating();
+  
+  // Turnstile state
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileGateRef>(null);
   
   // ✅ ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   useLowCreditToast();

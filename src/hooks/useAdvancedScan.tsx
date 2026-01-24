@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useNavigate } from 'react-router-dom';
 
 import { getPlan } from '@/lib/billing/tiers';
+import { useTurnstileGating, withTurnstileToken } from '@/hooks/useTurnstileGating';
 
 // Custom error class for tier-related errors
 class TierRestrictionError extends Error {
@@ -117,7 +118,8 @@ export interface AdvancedScanOptions {
   darkwebDepth?: number;
   darkwebPages?: number;
   providers?: string[];
-  useN8n?: boolean; // Option to force n8n usage
+  useN8n?: boolean;
+  turnstileToken?: string | null;
 }
 
 export interface ScanProgress {
@@ -134,6 +136,7 @@ export function useAdvancedScan() {
     progress: 0,
     message: '',
   });
+  const { requiresTurnstile, validateToken, isBypassTier } = useTurnstileGating();
 
   const startAdvancedScan = async (
     scanData: {
@@ -149,6 +152,14 @@ export function useAdvancedScan() {
     setProgress({ stage: 'initializing', progress: 0, message: 'Starting scan...' });
 
     try {
+      // Validate Turnstile token if required
+      if (requiresTurnstile && !isBypassTier) {
+        const validation = validateToken(options.turnstileToken || null);
+        if (!validation.valid) {
+          throw new Error(validation.message || 'Please complete the verification to continue.');
+        }
+      }
+      
       // Create initial scan via orchestrator (expects type, value, workspaceId)
       if (!workspace?.id) {
         throw new Error('No workspace selected');
@@ -177,12 +188,14 @@ export function useAdvancedScan() {
         console.log('[useAdvancedScan] Using n8n for username scan');
         setProgress({ stage: 'initializing', progress: 5, message: 'Queuing scan via n8n...' });
         
+        const n8nBody = withTurnstileToken({
+          username: value,
+          workspaceId: workspace.id,
+          scanType: 'username',
+        }, options.turnstileToken);
+        
         const { data: n8nData, error: n8nError } = await supabase.functions.invoke('n8n-scan-trigger', {
-          body: {
-            username: value,
-            workspaceId: workspace.id,
-            scanType: 'username',
-          },
+          body: n8nBody,
         });
 
         if (n8nError) {
@@ -228,26 +241,28 @@ export function useAdvancedScan() {
           );
         }
         
-        const { data: orchestrateData, error: orchestrateError } = await supabase.functions.invoke('scan-orchestrate', {
-          body: {
-            type,
-            value: value!,
-            workspaceId: workspace.id,
-            options: {
-              includeDarkweb: !!options.deepWeb,
-              providers: providersForScan,
-              premium: {
-                socialMediaFinder: !!options.socialMedia,
-                osintScraper: !!options.osintScraper,
-                osintKeywords: options.osintKeywords,
-                darkwebScraper: !!options.darkwebScraper,
-                darkwebSearch: options.darkwebSearch,
-                darkwebUrls: options.darkwebUrls,
-                darkwebDepth: options.darkwebDepth,
-                darkwebPages: options.darkwebPages,
-              },
+        const orchestrateBody = withTurnstileToken({
+          type,
+          value: value!,
+          workspaceId: workspace.id,
+          options: {
+            includeDarkweb: !!options.deepWeb,
+            providers: providersForScan,
+            premium: {
+              socialMediaFinder: !!options.socialMedia,
+              osintScraper: !!options.osintScraper,
+              osintKeywords: options.osintKeywords,
+              darkwebScraper: !!options.darkwebScraper,
+              darkwebSearch: options.darkwebSearch,
+              darkwebUrls: options.darkwebUrls,
+              darkwebDepth: options.darkwebDepth,
+              darkwebPages: options.darkwebPages,
             },
           },
+        }, options.turnstileToken);
+        
+        const { data: orchestrateData, error: orchestrateError } = await supabase.functions.invoke('scan-orchestrate', {
+          body: orchestrateBody,
         });
 
         if (orchestrateError) {
