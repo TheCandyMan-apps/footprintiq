@@ -70,6 +70,50 @@ npm run verify:providers
 ```
 Generates HTML report at `verification/providers-report.html`
 
+## 🤖 Bot Protection (Cloudflare Turnstile)
+
+FootprintIQ uses Cloudflare Turnstile for bot protection on signup and scan flows.
+
+### Configuration
+
+1. **Client-side**: Set `VITE_TURNSTILE_SITE_KEY` in your environment
+2. **Server-side**: Set `CLOUDFLARE_TURNSTILE_SECRET` in Edge Function secrets
+
+### Gating Logic
+
+- **Free tier users**: Turnstile verification required
+- **Pro/Business/Analyst/Admin users**: Bypass verification
+- **Unauthenticated users**: Verification required
+
+### Components
+
+| File | Purpose |
+|------|---------|
+| `src/components/auth/TurnstileGate.tsx` | Reusable verification widget |
+| `src/hooks/useTurnstile.tsx` | Core hook for widget management |
+| `src/hooks/useTurnstileGating.tsx` | Plan-aware gating logic |
+
+### Usage Example
+
+```tsx
+import { TurnstileGate, TurnstileGateRef } from '@/components/auth/TurnstileGate';
+import { useTurnstileGating } from '@/hooks/useTurnstileGating';
+
+const turnstileRef = useRef<TurnstileGateRef>(null);
+const { requiresTurnstile, validateToken } = useTurnstileGating();
+
+// In JSX:
+{requiresTurnstile && (
+  <TurnstileGate
+    ref={turnstileRef}
+    onToken={setTurnstileToken}
+    theme="dark"
+    action="scan-start"
+    inline
+  />
+)}
+```
+
 ## How can I edit this code?
 
 There are several ways of editing your application.
