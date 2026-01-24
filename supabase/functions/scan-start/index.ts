@@ -3,6 +3,7 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { validateAuth } from '../_shared/auth-utils.ts';
 import { checkRateLimit } from '../_shared/rate-limiter.ts';
 import { addSecurityHeaders } from '../_shared/security-headers.ts';
+import { enforceTurnstile } from '../_shared/turnstile.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,6 +15,7 @@ const ScanStartSchema = z.object({
   platforms: z.array(z.string()).optional(),
   batch_id: z.string().uuid().optional(),
   timeout: z.number().int().min(1).max(300).optional(),
+  turnstile_token: z.string().optional(),
 });
 
 interface ScanStartRequest {
@@ -106,6 +108,14 @@ Deno.serve(async (req) => {
     }
 
     const scanRequest: ScanStartRequest = validation.data;
+
+    // ✅ TURNSTILE VERIFICATION (skip for self-test mode)
+    if (!isSelfTest) {
+      const turnstileError = await enforceTurnstile(req, body, userId, corsHeaders);
+      if (turnstileError) {
+        return turnstileError;
+      }
+    }
 
     // Rate limiting for non-selftest scans
     if (!isSelfTest) {

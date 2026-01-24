@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { enforceTurnstile } from "../_shared/turnstile.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -54,7 +55,13 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { scanId: providedScanId, username, workspaceId, scanType = "username", mode = "lean" } = body;
+    const { scanId: providedScanId, username, workspaceId, scanType = "username", mode = "lean", turnstile_token } = body;
+
+    // ✅ TURNSTILE VERIFICATION for free tier users
+    const turnstileError = await enforceTurnstile(req, body, user.id, corsHeaders);
+    if (turnstileError) {
+      return turnstileError;
+    }
 
     // ✅ STRICT USERNAME VALIDATION - Prevent "true", "false", empty, or invalid values
     if (!username || typeof username !== 'string') {

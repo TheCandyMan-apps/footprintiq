@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { enforceTurnstile } from '../_shared/turnstile.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,7 +21,8 @@ serve(async (req) => {
   }
 
   try {
-    const { target, targetType, tools, workspaceId, scanId } = await req.json();
+    const body = await req.json();
+    const { target, targetType, tools, workspaceId, scanId, turnstile_token } = body;
 
     if (!target || !targetType || !tools || !workspaceId || !scanId) {
       return new Response(
@@ -54,6 +56,12 @@ serve(async (req) => {
         JSON.stringify({ error: 'Authentication failed' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // ✅ TURNSTILE VERIFICATION for free tier users
+    const turnstileError = await enforceTurnstile(req, body, user.id, corsHeaders);
+    if (turnstileError) {
+      return turnstileError;
     }
 
     const { data: isMember } = await supabaseClient
