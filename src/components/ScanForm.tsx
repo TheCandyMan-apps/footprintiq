@@ -14,8 +14,8 @@ import { HighRiskOptInModal } from "@/components/scan/HighRiskOptInModal";
 import { useTierGating } from "@/hooks/useTierGating";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TurnstileGate, type TurnstileGateRef } from "@/components/auth/TurnstileGate";
-import { useTurnstileGating } from "@/hooks/useTurnstileGating";
+import { TurnstileWidget, type TurnstileWidgetRef } from "@/components/security/TurnstileWidget";
+import { useTurnstileRequired } from "@/hooks/useTurnstileRequired";
 
 interface ScanFormProps {
   onSubmit: (data: ScanFormData) => void;
@@ -68,10 +68,10 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
   const { isPro, isBusiness } = useTierGating();
   
   // Turnstile state
-  const turnstileRef = useRef<TurnstileGateRef>(null);
+  const turnstileRef = useRef<TurnstileWidgetRef>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
-  const { requiresTurnstile, validateToken } = useTurnstileGating();
+  const { required: requiresTurnstile } = useTurnstileRequired();
   
   const canAccessHighRisk = isPro || isBusiness;
 
@@ -98,9 +98,8 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     setTurnstileError(null);
     
     // Validate Turnstile token if required
-    const tokenValidation = validateToken(turnstileToken);
-    if (!tokenValidation.valid) {
-      setTurnstileError(tokenValidation.message || 'Please complete the verification to continue.');
+    if (requiresTurnstile && !turnstileToken) {
+      setTurnstileError('Please complete the verification to continue.');
       return;
     }
     
@@ -252,7 +251,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
           {/* Turnstile verification - only for Free/unauthenticated users */}
           {requiresTurnstile && (
             <div className="space-y-2">
-              <TurnstileGate
+              <TurnstileWidget
                 ref={turnstileRef}
                 onToken={handleTurnstileToken}
                 onError={handleTurnstileError}
