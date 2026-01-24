@@ -22,6 +22,21 @@ const normalizePhone = (phone: string): string => {
   return digits.startsWith('+') ? digits : `+${digits}`;
 };
 
+// Helper to extract breach name from HIBP logo URL path
+// e.g., "https://logos.haveibeenpwned.com/LinkedIn.png" -> "LinkedIn"
+const extractNameFromLogoPath = (logoPath: string): string | null => {
+  if (!logoPath || typeof logoPath !== 'string') return null;
+  try {
+    const url = new URL(logoPath);
+    const fileName = url.pathname.split('/').pop() || '';
+    // Remove file extension
+    const name = fileName.replace(/\.[^/.]+$/, '');
+    return name && name !== 'Email' ? name : null; // 'Email' is a generic placeholder logo
+  } catch {
+    return null;
+  }
+};
+
 const ScanRequestSchema = z.object({
   scanId: z.string().uuid({ message: "Invalid scan ID format" }),
   scanType: z.enum(['username', 'personal_details', 'both'], { 
@@ -467,15 +482,19 @@ serve(async (req) => {
               if (predictaResults.breaches) {
                 for (const breach of predictaResults.breaches) {
                   results.breaches.push(breach);
+                  // Extract breach name from multiple possible fields (HIBP vs Predicta formats)
+                  const breachName = breach.breach_name || breach.Name || breach.name || breach.Title || 
+                    (breach.logo_path ? extractNameFromLogoPath(breach.logo_path) : null) || 'Unknown Breach';
                   results.dataSources.push({
-                    name: breach.name || 'Unknown Breach',
+                    name: breachName,
                     category: 'Data Breach',
-                    url: breach.url || 'https://predictasearch.com',
+                    url: breach.url || (breach.breach_domain ? `https://${breach.breach_domain}` : 'https://predictasearch.com'),
                     risk_level: 'high',
-                    data_found: breach.data_types || [],
+                    data_found: breach.data_types || breach.data_classes || breach.DataClasses || [],
                     metadata: {
-                      breach_date: breach.date,
-                      source: 'Predicta Search',
+                      breach_date: breach.date || breach.BreachDate || breach.breach_date,
+                      breach_name: breachName,
+                      source: breach.source || 'Predicta Search',
                       ...breach,
                     },
                   });
