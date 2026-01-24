@@ -1,0 +1,315 @@
+-- ============================================
+-- Phase 1: Platform Catalog + Analysis Storage
+-- ============================================
+
+-- 1. Create platform_catalog table for dynamic category mapping
+CREATE TABLE public.platform_catalog (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  platform TEXT UNIQUE NOT NULL,
+  category TEXT NOT NULL,
+  icon_url TEXT NULL,
+  url_template TEXT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Enable RLS with public read access (catalog is reference data)
+ALTER TABLE public.platform_catalog ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can read platform catalog" 
+  ON public.platform_catalog FOR SELECT USING (true);
+
+-- 2. Seed platform catalog with 100+ platforms
+INSERT INTO public.platform_catalog (platform, category) VALUES
+-- Social Media (30+)
+('Facebook', 'Social'),
+('Instagram', 'Social'),
+('Twitter', 'Social'),
+('X', 'Social'),
+('TikTok', 'Social'),
+('LinkedIn', 'Social'),
+('Snapchat', 'Social'),
+('Pinterest', 'Social'),
+('Tumblr', 'Social'),
+('Reddit', 'Social'),
+('Mastodon', 'Social'),
+('Threads', 'Social'),
+('VK', 'Social'),
+('Weibo', 'Social'),
+('OK.ru', 'Social'),
+('Gab', 'Social'),
+('Parler', 'Social'),
+('Truth Social', 'Social'),
+('Gettr', 'Social'),
+('Minds', 'Social'),
+('MeWe', 'Social'),
+('Ello', 'Social'),
+('Plurk', 'Social'),
+('Diaspora', 'Social'),
+('Friendica', 'Social'),
+('Bluesky', 'Social'),
+('Cohost', 'Social'),
+('Post.news', 'Social'),
+('Hive Social', 'Social'),
+('BeReal', 'Social'),
+
+-- Messaging & Communication (15+)
+('Discord', 'Messaging'),
+('Telegram', 'Messaging'),
+('WhatsApp', 'Messaging'),
+('Signal', 'Messaging'),
+('Slack', 'Messaging'),
+('Skype', 'Messaging'),
+('Viber', 'Messaging'),
+('WeChat', 'Messaging'),
+('Line', 'Messaging'),
+('KakaoTalk', 'Messaging'),
+('ICQ', 'Messaging'),
+('Kik', 'Messaging'),
+('Zalo', 'Messaging'),
+('Element', 'Messaging'),
+('Matrix', 'Messaging'),
+
+-- Developer Platforms (20+)
+('GitHub', 'Developer'),
+('GitLab', 'Developer'),
+('Bitbucket', 'Developer'),
+('StackOverflow', 'Developer'),
+('Stack Overflow', 'Developer'),
+('Codepen', 'Developer'),
+('CodePen', 'Developer'),
+('Replit', 'Developer'),
+('Repl.it', 'Developer'),
+('HackerRank', 'Developer'),
+('LeetCode', 'Developer'),
+('Kaggle', 'Developer'),
+('NPM', 'Developer'),
+('PyPI', 'Developer'),
+('RubyGems', 'Developer'),
+('Crates.io', 'Developer'),
+('Docker Hub', 'Developer'),
+('Gist', 'Developer'),
+('Glitch', 'Developer'),
+('CodeSandbox', 'Developer'),
+('SourceForge', 'Developer'),
+('Launchpad', 'Developer'),
+('Dev.to', 'Developer'),
+('Hashnode', 'Developer'),
+('HackerNoon', 'Developer'),
+
+-- Gaming (25+)
+('Steam', 'Gaming'),
+('Steam Community', 'Gaming'),
+('Xbox', 'Gaming'),
+('Xbox Live', 'Gaming'),
+('PlayStation', 'Gaming'),
+('PSN', 'Gaming'),
+('Nintendo', 'Gaming'),
+('Nintendo Switch', 'Gaming'),
+('Epic Games', 'Gaming'),
+('Roblox', 'Gaming'),
+('Minecraft', 'Gaming'),
+('Twitch', 'Gaming'),
+('Battle.net', 'Gaming'),
+('Origin', 'Gaming'),
+('EA', 'Gaming'),
+('Ubisoft', 'Gaming'),
+('GOG', 'Gaming'),
+('itch.io', 'Gaming'),
+('Humble Bundle', 'Gaming'),
+('GameJolt', 'Gaming'),
+('Newgrounds', 'Gaming'),
+('Kongregate', 'Gaming'),
+('Armor Games', 'Gaming'),
+('Chess.com', 'Gaming'),
+('Lichess', 'Gaming'),
+('Realmeye', 'Gaming'),
+('NitroType', 'Gaming'),
+('Speedrun.com', 'Gaming'),
+
+-- Media & Entertainment (20+)
+('YouTube', 'Media'),
+('Spotify', 'Media'),
+('SoundCloud', 'Media'),
+('Bandcamp', 'Media'),
+('Apple Music', 'Media'),
+('Deezer', 'Media'),
+('Tidal', 'Media'),
+('Last.fm', 'Media'),
+('Vimeo', 'Media'),
+('Dailymotion', 'Media'),
+('Rumble', 'Media'),
+('Odysee', 'Media'),
+('PeerTube', 'Media'),
+('Flickr', 'Media'),
+('500px', 'Media'),
+('Unsplash', 'Media'),
+('Pexels', 'Media'),
+('Pixabay', 'Media'),
+('GIPHY', 'Media'),
+('Tenor', 'Media'),
+('Mixcloud', 'Media'),
+('Audiomack', 'Media'),
+
+-- Creative & Art (15+)
+('DeviantArt', 'Creative'),
+('Behance', 'Creative'),
+('Dribbble', 'Creative'),
+('ArtStation', 'Creative'),
+('Pixiv', 'Creative'),
+('Artfol', 'Creative'),
+('Cara', 'Creative'),
+('Newgrounds Art', 'Creative'),
+('Wattpad', 'Creative'),
+('Archive of Our Own', 'Creative'),
+('FanFiction.net', 'Creative'),
+('Patreon', 'Creative'),
+('Ko-fi', 'Creative'),
+('Buy Me a Coffee', 'Creative'),
+('Gumroad', 'Creative'),
+
+-- Professional & Business (15+)
+('AngelList', 'Professional'),
+('Wellfound', 'Professional'),
+('Crunchbase', 'Professional'),
+('Glassdoor', 'Professional'),
+('Indeed', 'Professional'),
+('Xing', 'Professional'),
+('About.me', 'Professional'),
+('Linktree', 'Professional'),
+('Carrd', 'Professional'),
+('Bento', 'Professional'),
+('Read.cv', 'Professional'),
+('Polywork', 'Professional'),
+('Contra', 'Professional'),
+('Toptal', 'Professional'),
+('Upwork', 'Professional'),
+('Fiverr', 'Professional'),
+('Freelancer', 'Professional'),
+
+-- Forums & Communities (15+)
+('Quora', 'Forums'),
+('HackerNews', 'Forums'),
+('Hacker News', 'Forums'),
+('Lobsters', 'Forums'),
+('Slashdot', 'Forums'),
+('Hubski', 'Forums'),
+('Tildes', 'Forums'),
+('Lemmy', 'Forums'),
+('Kbin', 'Forums'),
+('BoardGameGeek', 'Forums'),
+('4chan', 'Forums'),
+('Something Awful', 'Forums'),
+('Voat', 'Forums'),
+('Saidit', 'Forums'),
+
+-- E-Commerce & Marketplaces (15+)
+('eBay', 'E-Commerce'),
+('Amazon', 'E-Commerce'),
+('Etsy', 'E-Commerce'),
+('AliExpress', 'E-Commerce'),
+('Mercari', 'E-Commerce'),
+('Poshmark', 'E-Commerce'),
+('Depop', 'E-Commerce'),
+('Vinted', 'E-Commerce'),
+('Grailed', 'E-Commerce'),
+('StockX', 'E-Commerce'),
+('GOAT', 'E-Commerce'),
+('Reverb', 'E-Commerce'),
+('Discogs', 'E-Commerce'),
+('Shopify', 'E-Commerce'),
+('Redbubble', 'E-Commerce'),
+('Society6', 'E-Commerce'),
+('Teepublic', 'E-Commerce'),
+
+-- Travel & Reviews (10+)
+('Yelp', 'Travel & Reviews'),
+('TripAdvisor', 'Travel & Reviews'),
+('Google Maps', 'Travel & Reviews'),
+('Foursquare', 'Travel & Reviews'),
+('Swarm', 'Travel & Reviews'),
+('Airbnb', 'Travel & Reviews'),
+('Booking.com', 'Travel & Reviews'),
+('Couchsurfing', 'Travel & Reviews'),
+('Atlas Obscura', 'Travel & Reviews'),
+('AllTrails', 'Travel & Reviews'),
+('Strava', 'Travel & Reviews'),
+
+-- Dating (10+)
+('Tinder', 'Dating'),
+('Bumble', 'Dating'),
+('OkCupid', 'Dating'),
+('Hinge', 'Dating'),
+('Grindr', 'Dating'),
+('HER', 'Dating'),
+('Match.com', 'Dating'),
+('Plenty of Fish', 'Dating'),
+('Coffee Meets Bagel', 'Dating'),
+('Badoo', 'Dating'),
+
+-- Crypto & Web3 (10+)
+('OpenSea', 'Crypto'),
+('Etherscan', 'Crypto'),
+('CoinGecko', 'Crypto'),
+('CoinMarketCap', 'Crypto'),
+('Foundation', 'Crypto'),
+('Rarible', 'Crypto'),
+('Mirror', 'Crypto'),
+('ENS', 'Crypto'),
+('Lens Protocol', 'Crypto'),
+('Farcaster', 'Crypto'),
+
+-- Adult/NSFW (5+)
+('OnlyFans', 'NSFW'),
+('Fansly', 'NSFW'),
+('ManyVids', 'NSFW'),
+('Pornhub', 'NSFW'),
+('FetLife', 'NSFW'),
+
+-- Education & Learning (10+)
+('Coursera', 'Education'),
+('Udemy', 'Education'),
+('edX', 'Education'),
+('Khan Academy', 'Education'),
+('Skillshare', 'Education'),
+('Duolingo', 'Education'),
+('Memrise', 'Education'),
+('Goodreads', 'Education'),
+('Academia.edu', 'Education'),
+('ResearchGate', 'Education'),
+
+-- News & Blogging (10+)
+('Medium', 'Blogging'),
+('Substack', 'Blogging'),
+('WordPress', 'Blogging'),
+('Blogger', 'Blogging'),
+('Ghost', 'Blogging'),
+('LiveJournal', 'Blogging'),
+('Dreamwidth', 'Blogging'),
+('Write.as', 'Blogging'),
+('Bearblog', 'Blogging'),
+
+-- Finance & Investing (5+)
+('Robinhood', 'Finance'),
+('Webull', 'Finance'),
+('Seeking Alpha', 'Finance'),
+('StockTwits', 'Finance'),
+('TradingView', 'Finance')
+
+ON CONFLICT (platform) DO NOTHING;
+
+-- 3. Add analysis columns to scans table
+ALTER TABLE public.scans 
+  ADD COLUMN IF NOT EXISTS analysis_status TEXT DEFAULT 'none',
+  ADD COLUMN IF NOT EXISTS analysis_json JSONB NULL,
+  ADD COLUMN IF NOT EXISTS analysis_model TEXT NULL,
+  ADD COLUMN IF NOT EXISTS analysis_error TEXT NULL,
+  ADD COLUMN IF NOT EXISTS analysis_completed_at TIMESTAMPTZ NULL,
+  ADD COLUMN IF NOT EXISTS analysis_version INT DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS profile_entities_json JSONB NULL;
+
+-- 4. Create index for faster platform lookups
+CREATE INDEX IF NOT EXISTS idx_platform_catalog_platform_lower 
+  ON public.platform_catalog (LOWER(platform));
+
+CREATE INDEX IF NOT EXISTS idx_platform_catalog_category 
+  ON public.platform_catalog (category);
