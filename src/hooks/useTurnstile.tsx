@@ -90,7 +90,8 @@ export function useTurnstile(options?: Partial<TurnstileOptions>) {
   const widgetIdRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  const siteKey = options?.siteKey || import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
+  // Turnstile site key - public/publishable key (safe to embed in frontend)
+  const siteKey = options?.siteKey || import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACOjjSKdXrRWkTa-';
 
   // Initialize Turnstile
   const initialize = useCallback(async (container: HTMLDivElement) => {
