@@ -1,10 +1,10 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Shield, User, Mail, Sparkles } from "lucide-react";
+import { ArrowRight, Shield, User, Mail, AlertCircle } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { PhoneInput } from "@/components/scan/PhoneInput";
@@ -14,6 +14,8 @@ import { HighRiskOptInModal } from "@/components/scan/HighRiskOptInModal";
 import { useTierGating } from "@/hooks/useTierGating";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TurnstileGate, type TurnstileGateRef } from "@/components/auth/TurnstileGate";
+import { useTurnstileGating } from "@/hooks/useTurnstileGating";
 
 interface ScanFormProps {
   onSubmit: (data: ScanFormData) => void;
@@ -26,7 +28,8 @@ export interface ScanFormData {
   phone?: string;
   username?: string;
   phoneProviders?: string[];
-  highRiskOptIn?: boolean; // High-Risk Intelligence opt-in
+  highRiskOptIn?: boolean;
+  turnstile_token?: string; // Cloudflare Turnstile verification token
 }
 
 const scanFormSchema = z.object({
@@ -64,6 +67,12 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
   const { toast } = useToast();
   const { isPro, isBusiness } = useTierGating();
   
+  // Turnstile state
+  const turnstileRef = useRef<TurnstileGateRef>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
+  const { requiresTurnstile, validateToken } = useTurnstileGating();
+  
   const canAccessHighRisk = isPro || isBusiness;
 
   // Check if phone number is valid and should show providers
@@ -84,6 +93,16 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear previous turnstile error
+    setTurnstileError(null);
+    
+    // Validate Turnstile token if required
+    const tokenValidation = validateToken(turnstileToken);
+    if (!tokenValidation.valid) {
+      setTurnstileError(tokenValidation.message || 'Please complete the verification to continue.');
+      return;
+    }
     
     // Validate form with zod
     const result = scanFormSchema.safeParse(formData);
@@ -112,15 +131,31 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     }
     
     // Include phone providers if phone scan, use normalized phone
-    const submitData = {
+    // Include turnstile_token if present (will be sent to backend)
+    const submitData: ScanFormData = {
       ...result.data,
       phone: normalizedPhone || result.data.phone,
       phoneProviders: showPhoneProviders ? phoneProviders : undefined,
       highRiskOptIn: formData.highRiskOptIn,
+      ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
     };
     
     onSubmit(submitData);
+    
+    // Reset Turnstile after successful submit so next scan requires fresh token
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
   };
+
+  const handleTurnstileToken = useCallback((token: string) => {
+    setTurnstileToken(token);
+    setTurnstileError(null);
+  }, []);
+
+  const handleTurnstileError = useCallback((error: string) => {
+    setTurnstileToken(null);
+    setTurnstileError(error);
+  }, []);
 
   const handleHighRiskOptInChange = (optIn: boolean) => {
     setFormData(prev => ({ ...prev, highRiskOptIn: optIn }));
@@ -212,6 +247,26 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
               selectedProviders={phoneProviders}
               onSelectionChange={setPhoneProviders}
             />
+          )}
+
+          {/* Turnstile verification - only for Free/unauthenticated users */}
+          {requiresTurnstile && (
+            <div className="space-y-2">
+              <TurnstileGate
+                ref={turnstileRef}
+                onToken={handleTurnstileToken}
+                onError={handleTurnstileError}
+                theme="dark"
+                action="scan-start"
+                inline
+              />
+              {turnstileError && (
+                <div className="flex items-center gap-2 text-destructive text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>{turnstileError}</span>
+                </div>
+              )}
+            </div>
           )}
 
           <div className="pt-4 space-y-3">
