@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, Mail } from "lucide-react";
+import { Shield, Mail, AlertCircle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 
@@ -31,6 +31,7 @@ const Auth = () => {
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [showPersonaModal, setShowPersonaModal] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileGateRef>(null);
   const [pendingSignupData, setPendingSignupData] = useState<{
     email: string;
@@ -39,9 +40,25 @@ const Auth = () => {
     persona?: Persona;
   } | null>(null);
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  
+  const siteKeyConfigured = !!import.meta.env.VITE_TURNSTILE_SITE_KEY;
+
+  const handleTurnstileToken = useCallback((token: string) => {
+    setTurnstileToken(token);
+    setTurnstileError(null);
+  }, []);
+
+  const handleTurnstileError = useCallback((error: string) => {
+    setTurnstileToken(null);
+    setTurnstileError(error);
+  }, []);
+
+  const resetTurnstile = useCallback(() => {
+    setTurnstileToken(null);
+    setTurnstileError(null);
+    turnstileRef.current?.reset();
+  }, []);
   useEffect(() => {
     supabase.auth.getSession().then(({
       data: {
@@ -79,15 +96,13 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear previous turnstile error
+    setTurnstileError(null);
 
     // Validate Turnstile token (only if site key is configured)
-    const siteKeyConfigured = !!import.meta.env.VITE_TURNSTILE_SITE_KEY;
     if (siteKeyConfigured && !turnstileToken) {
-      toast({
-        title: "Verification required",
-        description: "Please complete the verification to continue.",
-        variant: "destructive"
-      });
+      setTurnstileError("Please complete the verification to continue.");
       return;
     }
 
@@ -107,12 +122,35 @@ const Auth = () => {
       return;
     }
 
-    // Check if email domain is blocklisted
     setLoading(true);
+
+    // Verify Turnstile token server-side before proceeding
+    if (siteKeyConfigured && turnstileToken) {
+      try {
+        const { data: verifyResult, error: verifyError } = await supabase.functions.invoke('turnstile-verify', {
+          body: { turnstile_token: turnstileToken }
+        });
+
+        if (verifyError || !verifyResult?.ok) {
+          setTurnstileError(verifyResult?.error || 'Verification failed. Please try again.');
+          resetTurnstile();
+          setLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.error('[Auth] Turnstile verification error:', err);
+        setTurnstileError('Verification service unavailable. Please try again.');
+        resetTurnstile();
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Check if email domain is blocklisted
     const isBlocked = await checkBlockedDomain(result.data.email);
-    setLoading(false);
     
     if (isBlocked) {
+      setLoading(false);
       toast({
         title: "Registration blocked",
         description: "This email domain is not allowed. Please use a different email address.",
@@ -120,6 +158,8 @@ const Auth = () => {
       });
       return;
     }
+
+    setLoading(false);
 
     // Store data and show GDPR consent modal
     setPendingSignupData({
@@ -187,16 +227,14 @@ const Auth = () => {
       setShowPersonaModal(false);
       setPendingSignupData(null);
       // Reset Turnstile after successful signup
-      turnstileRef.current?.reset();
-      setTurnstileToken(null);
+      resetTurnstile();
       toast({
         title: "Success!",
         description: "Your account has been created. Redirecting..."
       });
     } catch (error: any) {
       // Reset Turnstile on error to get a fresh token
-      turnstileRef.current?.reset();
-      setTurnstileToken(null);
+      resetTurnstile();
       toast({
         title: "Sign up failed",
         description: error.message,
@@ -355,12 +393,21 @@ const Auth = () => {
                 </div>
                 
                 {/* Turnstile verification for signup */}
-                <TurnstileGate
-                  ref={turnstileRef}
-                  onToken={setTurnstileToken}
-                  action="signup"
-                  inline
-                />
+                <div className="space-y-2">
+                  <TurnstileGate
+                    ref={turnstileRef}
+                    onToken={handleTurnstileToken}
+                    onError={handleTurnstileError}
+                    action="signup"
+                    inline
+                  />
+                  {turnstileError && (
+                    <div className="flex items-center gap-2 text-destructive text-sm">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{turnstileError}</span>
+                    </div>
+                  )}
+                </div>
                 
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating account..." : "Create Account"}

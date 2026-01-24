@@ -93,3 +93,6 @@ verify_jwt = false
 
 [functions.osint-high-risk-worker]
 verify_jwt = false
+
+[functions.turnstile-verify]
+verify_jwt = false
