@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,6 +9,10 @@ const corsHeaders = {
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const MAX_REQUESTS_PER_IP = 10; // 10 searches per minute
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+// Networks cache - refresh every hour
+let networksCache: { data: any; fetchedAt: number } | null = null;
+const NETWORKS_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -52,8 +55,83 @@ serve(async (req) => {
   }
 
   try {
-    const { query, queryType } = await req.json();
-    
+    const body = await req.json();
+    const { action, query, queryType, networks: selectedNetworks } = body;
+
+    const apiKey = Deno.env.get('PREDICTA_SEARCH_API_KEY');
+    if (!apiKey) {
+      throw new Error('PREDICTA_SEARCH_API_KEY not configured');
+    }
+
+    // Handle "getNetworks" action - returns available networks
+    if (action === 'getNetworks') {
+      console.log('[predicta-search] Fetching available networks');
+      
+      // Check cache first
+      const now = Date.now();
+      if (networksCache && (now - networksCache.fetchedAt) < NETWORKS_CACHE_TTL_MS) {
+        console.log('[predicta-search] Returning cached networks');
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: networksCache.data,
+            cached: true,
+            provider: 'predictasearch',
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Fetch fresh networks
+      const response = await fetch('https://dev.predictasearch.com/api/networks', {
+        method: 'GET',
+        headers: {
+          'x-api-key': apiKey,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        console.error(`[predicta-search] Networks API error: ${response.status}`);
+        throw new Error(`Networks API error: ${response.status}`);
+      }
+
+      const networksData = await response.json();
+      
+      // Cache the result
+      networksCache = { data: networksData, fetchedAt: now };
+      
+      // Log credit balance
+      const creditBalance = response.headers.get('x-credit-balance');
+      if (creditBalance) {
+        console.log(`[predicta-search] Credits remaining: ${creditBalance}`);
+      }
+
+      // Parse networks to extract useful metadata
+      const parsedNetworks = Object.entries(networksData).map(([name, config]: [string, any]) => ({
+        id: name,
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        type: config.type || 'unknown',
+        supportedInputs: config.actions?.flatMap((a: any) => a.inputs) || [],
+        supportedOutputs: config.actions?.flatMap((a: any) => a.outputs) || [],
+      }));
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            networks: parsedNetworks,
+            raw: networksData,
+            count: parsedNetworks.length,
+          },
+          cached: false,
+          provider: 'predictasearch',
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Default action: search
     if (!query || !queryType) {
       throw new Error('Missing required parameters: query and queryType');
     }
@@ -66,12 +144,7 @@ serve(async (req) => {
       throw new Error('Invalid queryType. Must be: username, email, phone, or name');
     }
 
-    const apiKey = Deno.env.get('PREDICTA_SEARCH_API_KEY');
-    if (!apiKey) {
-      throw new Error('PREDICTA_SEARCH_API_KEY not configured');
-    }
-
-    console.log(`Predicta Search request: ${queryType} - ${query}`);
+    console.log(`[predicta-search] Search request: ${queryType} - ${query}`);
 
     const response = await fetch('https://dev.predictasearch.com/api/search', {
       method: 'POST',
@@ -82,17 +155,17 @@ serve(async (req) => {
       body: JSON.stringify({
         query: query,
         query_type: queryType,
-        networks: ['all']
+        networks: selectedNetworks || ['all']
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Predicta Search API error: ${response.status} - ${errorText}`);
+      console.error(`[predicta-search] API error: ${response.status} - ${errorText}`);
       
-      // Handle quota exhausted (402) gracefully - return soft failure instead of throwing
+      // Handle quota exhausted (402) gracefully
       if (response.status === 402) {
-        console.warn('[predicta-search] API quota exhausted - returning soft failure');
+        console.warn('[predicta-search] API quota exhausted');
         return new Response(
           JSON.stringify({
             success: false,
@@ -102,7 +175,7 @@ serve(async (req) => {
             message: 'Predicta Search API quota exhausted. Please try again later.',
           }),
           {
-            status: 200, // Return 200 so the caller doesn't throw
+            status: 200,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           }
         );
@@ -110,7 +183,7 @@ serve(async (req) => {
       
       // Handle rate limiting (429) gracefully
       if (response.status === 429) {
-        console.warn('[predicta-search] API rate limited - returning soft failure');
+        console.warn('[predicta-search] API rate limited');
         return new Response(
           JSON.stringify({
             success: false,
@@ -126,19 +199,17 @@ serve(async (req) => {
         );
       }
       
-      // For other errors, throw to be caught by the catch block
       throw new Error(`Predicta Search API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const rawData = await response.json();
     
-    // Log remaining credits from response header and warn if low
+    // Log remaining credits
     const creditBalance = response.headers.get('x-credit-balance');
     if (creditBalance) {
       const credits = parseInt(creditBalance, 10);
-      console.log(`Predicta Search credits remaining: ${credits}`);
+      console.log(`[predicta-search] Credits remaining: ${credits}`);
       
-      // Warn if credits are running low
       if (credits < 100) {
         console.warn(`[predicta-search] LOW CREDITS WARNING: Only ${credits} credits remaining!`);
       } else if (credits < 500) {
@@ -146,19 +217,48 @@ serve(async (req) => {
       }
     }
 
+    // Normalize the flat array response into categorized structure
+    const results = Array.isArray(rawData) ? rawData : [];
+    const profiles: any[] = [];
+    const breaches: any[] = [];
+    const leaks: any[] = [];
+
+    results.forEach((item: any) => {
+      if (item.source === 'hudsonrock' || item.breach_name || item.date_compromised) {
+        breaches.push(item);
+      } else if (item.source === 'leak' || item.leak_source) {
+        leaks.push(item);
+      } else {
+        profiles.push(item);
+      }
+    });
+
+    console.log(`[predicta-search] Categorized: ${profiles.length} profiles, ${breaches.length} breaches, ${leaks.length} leaks`);
+
     return new Response(
       JSON.stringify({
         success: true,
-        data: data,
+        data: {
+          profiles,
+          breaches,
+          leaks,
+          raw: results,
+        },
         provider: 'predictasearch',
         cached: false,
+        summary: {
+          profiles: profiles.length,
+          breaches: breaches.length,
+          leaks: leaks.length,
+          total: results.length,
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   } catch (error) {
-    console.error('Error in predicta-search function:', error);
+    console.error('[predicta-search] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
       JSON.stringify({
