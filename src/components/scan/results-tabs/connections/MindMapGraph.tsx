@@ -6,6 +6,57 @@ import { ZoomIn, ZoomOut, Maximize2, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlatformCatalog, buildCategoryMap, getCategoryFromCatalog } from '@/hooks/usePlatformCatalog';
 
+// Helper to extract site/platform from a finding
+function extractSite(result: any): string {
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const siteEvidence = result.evidence.find((e: any) => e.key === 'site');
+    if (siteEvidence?.value) return siteEvidence.value;
+  }
+  if (result.meta?.platform) return result.meta.platform;
+  if (result.meta?.site) return result.meta.site;
+  if (result.site) return result.site;
+  return '';
+}
+
+// Helper to extract URL from a finding
+function extractUrl(result: any): string {
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const urlEvidence = result.evidence.find((e: any) => e.key === 'url');
+    if (urlEvidence?.value) return urlEvidence.value;
+  }
+  if (result.url) return result.url;
+  return '';
+}
+
+// Helper to extract username from a finding
+function extractUsername(result: any): string {
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const usernameEvidence = result.evidence.find((e: any) => e.key === 'username');
+    if (usernameEvidence?.value) return usernameEvidence.value;
+  }
+  if (result.meta?.username) return result.meta.username;
+  return '';
+}
+
+// Helper to derive status from a finding
+function deriveStatus(result: any): string {
+  if (result.status) return result.status.toLowerCase();
+  if (result.kind === 'profile_presence') return 'found';
+  
+  if (result.evidence && Array.isArray(result.evidence)) {
+    const existsEvidence = result.evidence.find((e: any) => e.key === 'exists');
+    if (existsEvidence?.value === true) return 'found';
+    if (existsEvidence?.value === false) return 'not_found';
+  }
+  
+  const meta = result.meta || result.metadata || {};
+  if (meta.status) return meta.status.toLowerCase();
+  if (meta.exists === true) return 'found';
+  if (meta.exists === false) return 'not_found';
+  
+  return 'unknown';
+}
+
 export type MindMapViewMode = 'all' | 'category';
 export type ConnectByMode = 'username' | 'email' | 'profile';
 
@@ -88,31 +139,32 @@ export function MindMapGraph({
     const seenUrls = new Set<string>();
     
     results.forEach(result => {
-      // Only include found/claimed profile_presence results
-      const status = (result.status || '').toLowerCase();
-      const kind = (result as any).kind;
+      // Use helper functions to extract nested data
+      const status = deriveStatus(result);
+      const extractedUrl = extractUrl(result);
+      const extractedSite = extractSite(result);
       
-      const isFound = status === 'found' || status === 'claimed' || status === 'exists' || 
-                      (result as any).found === true ||
-                      kind === 'profile_presence';
+      const isFound = status === 'found' || status === 'claimed' || status === 'exists';
       
-      if (!isFound || !result.url) return;
+      // Must be found and have a URL
+      if (!isFound || !extractedUrl) return;
       
       // Deduplicate by URL
-      if (seenUrls.has(result.url)) return;
-      seenUrls.add(result.url);
+      if (seenUrls.has(extractedUrl)) return;
+      seenUrls.add(extractedUrl);
       
       const meta = (result.meta || (result as any).metadata || {}) as Record<string, any>;
       const evidence = (result as any).evidence;
       
-      // Extract platform name
-      const platform = result.site || meta.platform || meta.site || (result as any).platform || 'Unknown';
+      // Extract platform name using helper
+      const platform = extractedSite || meta.platform || meta.site || 'Unknown';
       
       // Get category from catalog
       const category = getCategoryFromCatalog(platform, categoryMap);
       
-      // Extract display name
-      const displayName = meta.displayName || meta.username || meta.handle || meta.name || '';
+      // Extract display name - also check evidence
+      const extractedUsername = extractUsername(result);
+      const displayName = extractedUsername || meta.displayName || meta.username || meta.handle || meta.name || '';
       
       // Extract bio
       const bio = meta.bio || meta.description || 
@@ -127,9 +179,9 @@ export function MindMapGraph({
       const emails = textToSearch.match(emailRegex) || [];
       
       entities.push({
-        id: `${platform}__${result.url}`,
+        id: `${platform}__${extractedUrl}`,
         platform,
-        url: result.url,
+        url: extractedUrl,
         displayName,
         bio,
         avatar,
