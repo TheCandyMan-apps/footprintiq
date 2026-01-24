@@ -42,7 +42,8 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const siteKeyConfigured = !!import.meta.env.VITE_TURNSTILE_SITE_KEY;
+  // Hardcoded fallback exists in useTurnstile hook, so always treat as configured
+  const siteKeyConfigured = true;
 
   const handleTurnstileToken = useCallback((token: string) => {
     setTurnstileToken(token);
@@ -180,7 +181,8 @@ const Auth = () => {
     if (!pendingSignupData) return;
     setLoading(true);
     try {
-      // Create account
+      // Create account with persona and user_agent in metadata
+      // The database trigger will handle profile/consent creation server-side
       const {
         data: authData,
         error: signUpError
@@ -189,49 +191,31 @@ const Auth = () => {
         password: pendingSignupData.password,
         options: {
           data: {
-            full_name: pendingSignupData.fullName
+            full_name: pendingSignupData.fullName,
+            persona: persona,
+            user_agent: navigator.userAgent
           },
           emailRedirectTo: `${window.location.origin}/dashboard`
         }
       });
       if (signUpError) throw signUpError;
 
-      // Log GDPR consent and persona
-      if (authData.user) {
-        const {
-          error: consentError
-        } = await supabase.from('consents').insert({
-          user_id: authData.user.id,
-          consent_type: 'gdpr_signup',
-          consent_text: 'I consent to FootprintIQ processing my personal data for scan services only, and I have read and agree to the Privacy Policy and Terms of Service.',
-          ip_address: null,
-          user_agent: navigator.userAgent
-        });
-        if (consentError) {
-          console.error('Failed to log consent:', consentError);
-        }
-
-        // Create profile with persona
-        const {
-          error: profileError
-        } = await supabase.from('profiles').upsert({
-          user_id: authData.user.id,
-          email: pendingSignupData.email,
-          full_name: pendingSignupData.fullName,
-          persona: persona
-        });
-        if (profileError) {
-          console.error('Failed to create profile:', profileError);
-        }
-      }
       setShowPersonaModal(false);
       setPendingSignupData(null);
       // Reset Turnstile after successful signup
       resetTurnstile();
+      
       toast({
         title: "Success!",
         description: "Your account has been created. Redirecting..."
       });
+
+      // Explicit redirect fallback - don't rely solely on onAuthStateChange
+      setTimeout(() => {
+        if (authData.session) {
+          navigate('/dashboard');
+        }
+      }, 1500);
     } catch (error: any) {
       // Reset Turnstile on error to get a fresh token
       resetTurnstile();
