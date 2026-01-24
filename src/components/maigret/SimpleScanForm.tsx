@@ -7,8 +7,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { mapWorkerError, type DiagnosticsInfo } from '@/lib/maigret/errorMapper';
-import { TurnstileGate, type TurnstileGateRef } from '@/components/auth/TurnstileGate';
-import { useTurnstileGating, withTurnstileToken } from '@/hooks/useTurnstileGating';
+import { TurnstileWidget, type TurnstileWidgetRef } from '@/components/security/TurnstileWidget';
+import { useTurnstileRequired } from '@/hooks/useTurnstileRequired';
 
 export function SimpleScanForm() {
   const [username, setUsername] = useState('');
@@ -16,8 +16,8 @@ export function SimpleScanForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
-  const turnstileRef = useRef<TurnstileGateRef>(null);
-  const { requiresTurnstile, validateToken } = useTurnstileGating();
+  const turnstileRef = useRef<TurnstileWidgetRef>(null);
+  const { required: requiresTurnstile } = useTurnstileRequired();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,12 +32,9 @@ export function SimpleScanForm() {
     }
 
     // Validate Turnstile token if required
-    if (requiresTurnstile) {
-      const validation = validateToken(turnstileToken);
-      if (!validation.valid) {
-        setTurnstileError(validation.message || 'Please complete the verification to continue.');
-        return;
-      }
+    if (requiresTurnstile && !turnstileToken) {
+      setTurnstileError('Please complete the verification to continue.');
+      return;
     }
 
     // Check authentication first
@@ -64,7 +61,9 @@ export function SimpleScanForm() {
     };
     
     // Add turnstile token if present
-    const requestBody = withTurnstileToken(baseRequestBody, turnstileToken);
+    const requestBody = turnstileToken 
+      ? { ...baseRequestBody, turnstile_token: turnstileToken }
+      : baseRequestBody;
 
     const diagnostics: DiagnosticsInfo = {
       timestamp: new Date().toISOString(),
@@ -168,7 +167,7 @@ export function SimpleScanForm() {
       {/* Turnstile verification for Free tier users */}
       {requiresTurnstile && (
         <div className="space-y-2">
-          <TurnstileGate
+          <TurnstileWidget
             ref={turnstileRef}
             onToken={(token) => {
               setTurnstileToken(token);
