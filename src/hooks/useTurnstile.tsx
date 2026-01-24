@@ -1,6 +1,40 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
+ * Cloudflare Turnstile Keys
+ * - Test key always passes (for preview/development)
+ * - Production key for live domains
+ */
+const TURNSTILE_TEST_KEY = '1x00000000000000000000AA';
+const TURNSTILE_PROD_KEY = '0x4AAAAAACOjjSKdXrRWkTa-';
+
+// Production domains - Turnstile will use real verification on these
+const PRODUCTION_HOSTNAMES = [
+  'footprintiq.lovable.app',
+  'footprintiq.app',
+];
+
+/**
+ * Detect if we're on a preview/development environment
+ */
+function isPreviewEnvironment(): boolean {
+  const hostname = window.location.hostname;
+  
+  // localhost is always dev
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return true;
+  }
+  
+  // Lovable preview URLs
+  if (hostname.includes('-preview--') || hostname.includes('lovableproject.com')) {
+    return true;
+  }
+  
+  // If not in production list, treat as preview
+  return !PRODUCTION_HOSTNAMES.some(prod => hostname === prod || hostname.endsWith(`.${prod}`));
+}
+
+/**
  * Turnstile configuration and types
  */
 export interface TurnstileOptions {
@@ -114,8 +148,15 @@ export function useTurnstile(options?: Partial<TurnstileOptions>) {
   const widgetIdRef = useRef<string | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Turnstile site key - public/publishable key (safe to embed in frontend)
-  const siteKey = options?.siteKey || import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACOjjSKdXrRWkTa-';
+  // Select key based on environment - test key for preview, production key for live
+  const isPreview = isPreviewEnvironment();
+  const siteKey = options?.siteKey || 
+    import.meta.env.VITE_TURNSTILE_SITE_KEY || 
+    (isPreview ? TURNSTILE_TEST_KEY : TURNSTILE_PROD_KEY);
+
+  if (isPreview) {
+    console.debug('[Turnstile] Using TEST key for preview environment:', window.location.hostname);
+  }
 
   // Initialize Turnstile
   const initialize = useCallback(async (container: HTMLDivElement) => {
