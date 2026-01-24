@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,12 +6,17 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
-import { mapWorkerError, copyDiagnostics, type DiagnosticsInfo } from '@/lib/maigret/errorMapper';
+import { mapWorkerError, type DiagnosticsInfo } from '@/lib/maigret/errorMapper';
+import { TurnstileGate, type TurnstileGateRef } from '@/components/auth/TurnstileGate';
+import { useTurnstileGating, withTurnstileToken } from '@/hooks/useTurnstileGating';
 
 export function SimpleScanForm() {
   const [username, setUsername] = useState('');
   const [platforms, setPlatforms] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileGateRef>(null);
+  const { requiresTurnstile, validateToken } = useTurnstileGating();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,6 +25,17 @@ export function SimpleScanForm() {
     if (!username.trim()) {
       toast.error('Username is required');
       return;
+    }
+
+    // Validate Turnstile token if required
+    if (requiresTurnstile) {
+      const validation = validateToken(turnstileToken);
+      if (!validation.valid) {
+        toast.error('Verification required', {
+          description: validation.message,
+        });
+        return;
+      }
     }
 
     // Check authentication first
@@ -38,12 +54,15 @@ export function SimpleScanForm() {
     // Generate client-side job ID for tracking
     const batchId = crypto.randomUUID();
     
-    const requestBody = {
+    const baseRequestBody = {
       username: username.trim(),
       platforms: platforms ? platforms.split(',').map(p => p.trim()) : undefined,
       batch_id: batchId,
       timeout: 25, // 25s timeout for quick feedback
     };
+    
+    // Add turnstile token if present
+    const requestBody = withTurnstileToken(baseRequestBody, turnstileToken);
 
     const diagnostics: DiagnosticsInfo = {
       timestamp: new Date().toISOString(),
@@ -88,10 +107,14 @@ export function SimpleScanForm() {
           description: 'Worker is processing - results will appear shortly',
         });
       } else {
-        toast.success('Scan started successfully!', {
+      toast.success('Scan started successfully!', {
           description: 'Redirecting to results...',
         });
       }
+      
+      // Reset Turnstile after successful scan
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
       
       navigate(`/maigret/results/${jobId}`);
     } catch (err: any) {
@@ -99,6 +122,10 @@ export function SimpleScanForm() {
         message: err.message,
         type: err.name || 'Error',
       };
+      
+      // Reset Turnstile on error
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
       
       const mapped = mapWorkerError(err);
       toast.error(mapped.title, {
@@ -135,6 +162,16 @@ export function SimpleScanForm() {
           Leave empty to scan all platforms
         </p>
       </div>
+
+      {/* Turnstile verification for Free tier users */}
+      {requiresTurnstile && (
+        <TurnstileGate
+          ref={turnstileRef}
+          onToken={setTurnstileToken}
+          action="scan-start"
+          inline
+        />
+      )}
 
       <Button type="submit" disabled={isLoading} className="w-full">
         {isLoading ? (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,9 @@ import { z } from "zod";
 
 import { GDPRConsentModal } from "@/components/auth/GDPRConsentModal";
 import { PersonaSelectorModal, type Persona } from "@/components/auth/PersonaSelectorModal";
+import { TurnstileGate, type TurnstileGateRef } from "@/components/auth/TurnstileGate";
 import { logActivity } from "@/lib/activityLogger";
+
 const authSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters"),
   password: z.string().min(6, "Password must be at least 6 characters").max(72, "Password must be less than 72 characters")
@@ -28,6 +30,8 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
   const [showPersonaModal, setShowPersonaModal] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileGateRef>(null);
   const [pendingSignupData, setPendingSignupData] = useState<{
     email: string;
     password: string;
@@ -75,6 +79,17 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate Turnstile token (only if site key is configured)
+    const siteKeyConfigured = !!import.meta.env.VITE_TURNSTILE_SITE_KEY;
+    if (siteKeyConfigured && !turnstileToken) {
+      toast({
+        title: "Verification required",
+        description: "Please complete the verification to continue.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Validate form data
     const result = signUpSchema.safeParse({
@@ -171,11 +186,17 @@ const Auth = () => {
       }
       setShowPersonaModal(false);
       setPendingSignupData(null);
+      // Reset Turnstile after successful signup
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
       toast({
         title: "Success!",
         description: "Your account has been created. Redirecting..."
       });
     } catch (error: any) {
+      // Reset Turnstile on error to get a fresh token
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
       toast({
         title: "Sign up failed",
         description: error.message,
@@ -332,6 +353,15 @@ const Auth = () => {
                   <Label htmlFor="signup-password">Password</Label>
                   <Input id="signup-password" type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} maxLength={72} />
                 </div>
+                
+                {/* Turnstile verification for signup */}
+                <TurnstileGate
+                  ref={turnstileRef}
+                  onToken={setTurnstileToken}
+                  action="signup"
+                  inline
+                />
+                
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating account..." : "Create Account"}
                 </Button>
