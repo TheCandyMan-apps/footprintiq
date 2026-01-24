@@ -35,21 +35,32 @@ declare global {
   }
 }
 
-// Script loading state
+// Script loading state - module-level singleton
 let scriptLoaded = false;
 let scriptLoading = false;
 const loadCallbacks: (() => void)[] = [];
 
 /**
  * Load the Turnstile script globally (once)
+ * Includes guard against duplicate script injection
  */
 function loadTurnstileScript(): Promise<void> {
   return new Promise((resolve, reject) => {
+    // Already loaded and available
     if (scriptLoaded && window.turnstile) {
       resolve();
       return;
     }
 
+    // Check if script tag already exists (handles page reloads/HMR)
+    const existingScript = document.querySelector('script[src*="challenges.cloudflare.com/turnstile"]');
+    if (existingScript && window.turnstile) {
+      scriptLoaded = true;
+      resolve();
+      return;
+    }
+
+    // Currently loading - queue callback
     if (scriptLoading) {
       loadCallbacks.push(resolve);
       return;
@@ -66,17 +77,30 @@ function loadTurnstileScript(): Promise<void> {
       loadCallbacks.length = 0;
     };
 
-    const script = document.createElement('script');
-    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback';
-    script.async = true;
-    script.defer = true;
+    // Only inject if not already present
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback';
+      script.async = true;
+      script.defer = true;
 
-    script.onerror = () => {
-      scriptLoading = false;
-      reject(new Error('Failed to load Turnstile script'));
-    };
+      script.onerror = () => {
+        scriptLoading = false;
+        reject(new Error('Failed to load Turnstile script'));
+      };
 
-    document.head.appendChild(script);
+      document.head.appendChild(script);
+    } else {
+      // Script exists but turnstile not ready - wait for it
+      const checkInterval = setInterval(() => {
+        if (window.turnstile) {
+          clearInterval(checkInterval);
+          scriptLoaded = true;
+          scriptLoading = false;
+          resolve();
+        }
+      }, 100);
+    }
   });
 }
 
