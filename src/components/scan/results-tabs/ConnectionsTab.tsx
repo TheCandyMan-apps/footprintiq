@@ -35,7 +35,9 @@ import {
 } from '@/components/ui/select';
 import { ConnectionsInspector } from './connections/ConnectionsInspector';
 import { CorrelationGraph } from './connections/CorrelationGraph';
-import { MindMapGraph, MindMapViewMode, ConnectByMode } from './connections/MindMapGraph';
+import { MindMapGraph, MindMapViewMode, ConnectByMode, ProfileEntity, LegData } from './connections/MindMapGraph';
+import { MindMapInspector } from './connections/MindMapInspector';
+import { AnalysisSummaryCard } from './connections/AnalysisSummaryCard';
 
 interface ConnectionsTabProps {
   results: ScanResult[];
@@ -72,11 +74,16 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   
   // Graph mode: correlation (existing) or mindmap (new)
   const [graphMode, setGraphMode] = useState<'correlation' | 'mindmap'>('correlation');
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
   // Mind map specific state
   const [mindMapView, setMindMapView] = useState<MindMapViewMode>('category');
   const [connectBy, setConnectBy] = useState<ConnectByMode>('username');
   const [showMindMapConnections, setShowMindMapConnections] = useState(true);
+  
+  // Mind map inspector state
+  const [selectedMindMapEntity, setSelectedMindMapEntity] = useState<ProfileEntity | null>(null);
+  const [selectedMindMapLeg, setSelectedMindMapLeg] = useState<LegData | null>(null);
   
   // Edge pruning threshold - controls minimum weight for correlation edges
   const [edgeThreshold, setEdgeThreshold] = useState(DEFAULT_PRUNING_OPTIONS.minWeight);
@@ -167,6 +174,17 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
     return `Linked via ${reasons[0]} and ${reasons[1]}`;
   }, [connectionStats]);
 
+  // Mind map category breakdown (computed from results)
+  const mindMapCategoryBreakdown = useMemo((): Array<[string, number]> => {
+    const counts = new Map<string, number>();
+    results.forEach(r => {
+      const meta = (r.meta || (r as any).metadata || {}) as Record<string, any>;
+      const category = meta.category || 'Other';
+      counts.set(category, (counts.get(category) || 0) + 1);
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  }, [results]);
+
   const handleClearFocus = useCallback(() => {
     setFocusedEntity(null);
   }, [setFocusedEntity]);
@@ -206,6 +224,49 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
     }
   }, [selectedProfile]);
 
+  // Mind map handlers
+  const handleMindMapNodeClick = useCallback((entity: ProfileEntity | null) => {
+    setSelectedMindMapEntity(entity);
+    setSelectedMindMapLeg(null);
+    if (entity) {
+      setInspectorOpen(true);
+    }
+  }, []);
+
+  const handleMindMapLegClick = useCallback((leg: LegData | null) => {
+    setSelectedMindMapLeg(leg);
+    setSelectedMindMapEntity(null);
+    if (leg) {
+      setInspectorOpen(true);
+    }
+  }, []);
+
+  const handleMindMapDoubleClick = useCallback((entity: ProfileEntity) => {
+    if (entity.url) {
+      window.open(entity.url, '_blank');
+    }
+  }, []);
+
+  // Handle graph mode switching with transition
+  const handleGraphModeChange = useCallback((newMode: 'correlation' | 'mindmap') => {
+    if (newMode === graphMode) return;
+    
+    setIsTransitioning(true);
+    setTimeout(() => {
+      setGraphMode(newMode);
+      // Clear mind map state when switching away
+      if (newMode === 'correlation') {
+        setSelectedMindMapEntity(null);
+        setSelectedMindMapLeg(null);
+      } else {
+        setSelectedNodeId(null);
+      }
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 50);
+    }, 150);
+  }, [graphMode]);
+
   const exportAsImage = async () => {
     if (graphContainerRef.current) {
       const canvas = await html2canvas(graphContainerRef.current);
@@ -238,6 +299,11 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   }
 
   const accountNodes = correlationData.nodes.filter(n => n.type === 'account');
+  const mindMapProfileCount = results.filter(r => {
+    const status = ((r as any).status || '').toLowerCase();
+    const kind = (r as any).kind;
+    return status === 'found' || status === 'claimed' || kind === 'profile_presence';
+  }).length;
 
   return (
     <div ref={containerRef} className="flex flex-col h-[calc(100vh-320px)] min-h-[520px]">
@@ -250,7 +316,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
               variant={graphMode === 'correlation' ? 'default' : 'ghost'}
               size="sm"
               className="h-6 px-2.5 text-xs gap-1.5"
-              onClick={() => setGraphMode('correlation')}
+              onClick={() => handleGraphModeChange('correlation')}
             >
               <Network className="w-3 h-3" />
               Correlation
@@ -259,7 +325,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
               variant={graphMode === 'mindmap' ? 'default' : 'ghost'}
               size="sm"
               className="h-6 px-2.5 text-xs gap-1.5"
-              onClick={() => setGraphMode('mindmap')}
+              onClick={() => handleGraphModeChange('mindmap')}
             >
               <Workflow className="w-3 h-3" />
               Mind Map
@@ -309,16 +375,25 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
 
         {/* Right: Stats */}
         <div className="text-[11px] font-mono text-muted-foreground">
-          {correlationData.nodes.length > 0 && (
+          {graphMode === 'correlation' ? (
             <span>
               <strong className="text-foreground">{accountNodes.length}</strong> profiles
-              {graphMode === 'correlation' && correlationStats.correlationEdges > 0 && (
+              {correlationStats.correlationEdges > 0 && (
                 <> · <strong className="text-foreground">{correlationStats.correlationEdges}</strong> correlations</>
               )}
+            </span>
+          ) : (
+            <span>
+              <strong className="text-foreground">{mindMapProfileCount}</strong> profiles
             </span>
           )}
         </div>
       </div>
+
+      {/* LLM Analysis Summary Card (Mind Map only) */}
+      {graphMode === 'mindmap' && jobId && (
+        <AnalysisSummaryCard scanId={jobId} />
+      )}
 
       {/* Empty state for no correlations in correlation mode */}
       {graphMode === 'correlation' && correlationStats.correlationEdges === 0 ? (
@@ -359,147 +434,155 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
         </div>
       ) : (
         <>
-          {/* Compact Explanation Bar */}
-          <div className="flex items-center justify-between gap-2 px-2 py-1 bg-muted/30 border-b border-border">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
-                      <Info className="w-3 h-3 text-primary flex-shrink-0" />
-                      <span className="truncate">
-                        <strong className="text-foreground">{accountNodes.length}</strong> profiles · 
-                        <strong className="text-foreground ml-1">{correlationStats.correlationEdges}</strong> correlations · {explanationSummary}
-                      </span>
+          {/* Compact Explanation Bar (Correlation mode only) */}
+          {graphMode === 'correlation' && (
+            <div className="flex items-center justify-between gap-2 px-2 py-1 bg-muted/30 border-b border-border">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
+                        <Info className="w-3 h-3 text-primary flex-shrink-0" />
+                        <span className="truncate">
+                          <strong className="text-foreground">{accountNodes.length}</strong> profiles · 
+                          <strong className="text-foreground ml-1">{correlationStats.correlationEdges}</strong> correlations · {explanationSummary}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs">
+                      <p className="text-xs">
+                        This graph shows identity connections across platforms based on username reuse, image matches, bio similarities, or cross-references.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Focus indicator */}
+                {focusedEntityId && focusedProfile && (
+                  <Badge 
+                    variant="default" 
+                    className="h-5 gap-1 text-[10px] cursor-pointer hover:bg-primary/80"
+                    onClick={handleClearFocus}
+                  >
+                    <Crosshair className="w-2.5 h-2.5" />
+                    Focused: {focusedProfile.site}
+                    <X className="w-2.5 h-2.5" />
+                  </Badge>
+                )}
+
+                {/* Compact category dots */}
+                <div className="hidden sm:flex items-center gap-1 ml-auto">
+                  {Object.entries(categoryStats)
+                    .filter(([_, count]) => count > 0)
+                    .slice(0, 5)
+                    .map(([category]) => (
+                      <div
+                        key={category}
+                        className="w-2 h-2 rounded-full"
+                        style={{ backgroundColor: CATEGORY_CONFIG[category]?.color || '#6b7280' }}
+                        title={CATEGORY_CONFIG[category]?.label || category}
+                      />
+                    ))}
+                </div>
+              </div>
+
+              {/* Controls */}
+              <div className="flex items-center gap-0.5">
+                {/* Edge Threshold Slider */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={edgeThreshold !== DEFAULT_PRUNING_OPTIONS.minWeight ? "secondary" : "ghost"}
+                      size="sm"
+                      className="h-6 gap-1 px-2 text-xs"
+                    >
+                      <SlidersHorizontal className="w-3 h-3" />
+                      <span className="hidden sm:inline">{Math.round(edgeThreshold * 100)}%</span>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent side="bottom" align="end" className="w-64 p-3">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium">Edge Threshold</span>
+                        <span className="text-xs text-muted-foreground">{Math.round(edgeThreshold * 100)}%</span>
+                      </div>
+                      <Slider
+                        value={[edgeThreshold]}
+                        onValueChange={([value]) => setEdgeThreshold(value)}
+                        min={0.6}
+                        max={0.95}
+                        step={0.05}
+                        className="w-full"
+                      />
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                        <span>More edges</span>
+                        <span>Fewer edges</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        Only show correlation edges with weight ≥ threshold. Higher values reduce clutter.
+                      </p>
+                      {edgeThreshold !== DEFAULT_PRUNING_OPTIONS.minWeight && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="w-full h-6 text-xs"
+                          onClick={() => setEdgeThreshold(DEFAULT_PRUNING_OPTIONS.minWeight)}
+                        >
+                          Reset to default ({Math.round(DEFAULT_PRUNING_OPTIONS.minWeight * 100)}%)
+                        </Button>
+                      )}
                     </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="max-w-xs">
-                    <p className="text-xs">
-                      This graph shows identity connections across platforms based on username reuse, image matches, bio similarities, or cross-references.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                  </PopoverContent>
+                </Popover>
 
-              {/* Focus indicator */}
-              {focusedEntityId && focusedProfile && (
-                <Badge 
-                  variant="default" 
-                  className="h-5 gap-1 text-[10px] cursor-pointer hover:bg-primary/80"
-                  onClick={handleClearFocus}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setShowDebugPanel(!showDebugPanel)}
+                        variant={showDebugPanel ? "secondary" : "ghost"}
+                        size="icon"
+                        className="h-6 w-6"
+                      >
+                        <Bug className="w-3 h-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p className="text-xs">{showDebugPanel ? 'Hide' : 'Show'} debug panel</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <Button onClick={exportAsImage} variant="ghost" size="icon" className="h-6 w-6" title="Export">
+                  <Download className="w-3 h-3" />
+                </Button>
+                <div className="w-px h-4 bg-border mx-0.5" />
+                <Button
+                  onClick={() => setInspectorOpen(!inspectorOpen)}
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6"
+                  title={inspectorOpen ? 'Hide Inspector' : 'Show Inspector'}
                 >
-                  <Crosshair className="w-2.5 h-2.5" />
-                  Focused: {focusedProfile.site}
-                  <X className="w-2.5 h-2.5" />
-                </Badge>
-              )}
-
-              {/* Compact category dots */}
-              <div className="hidden sm:flex items-center gap-1 ml-auto">
-                {Object.entries(categoryStats)
-                  .filter(([_, count]) => count > 0)
-                  .slice(0, 5)
-                  .map(([category]) => (
-                    <div
-                      key={category}
-                      className="w-2 h-2 rounded-full"
-                      style={{ backgroundColor: CATEGORY_CONFIG[category]?.color || '#6b7280' }}
-                      title={CATEGORY_CONFIG[category]?.label || category}
-                    />
-                  ))}
+                  {inspectorOpen ? (
+                    <PanelRightClose className="w-3 h-3" />
+                  ) : (
+                    <PanelRightOpen className="w-3 h-3" />
+                  )}
+                </Button>
               </div>
             </div>
-
-            {/* Controls */}
-            <div className="flex items-center gap-0.5">
-              {/* Edge Threshold Slider */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={edgeThreshold !== DEFAULT_PRUNING_OPTIONS.minWeight ? "secondary" : "ghost"}
-                    size="sm"
-                    className="h-6 gap-1 px-2 text-xs"
-                  >
-                    <SlidersHorizontal className="w-3 h-3" />
-                    <span className="hidden sm:inline">{Math.round(edgeThreshold * 100)}%</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent side="bottom" align="end" className="w-64 p-3">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium">Edge Threshold</span>
-                      <span className="text-xs text-muted-foreground">{Math.round(edgeThreshold * 100)}%</span>
-                    </div>
-                    <Slider
-                      value={[edgeThreshold]}
-                      onValueChange={([value]) => setEdgeThreshold(value)}
-                      min={0.6}
-                      max={0.95}
-                      step={0.05}
-                      className="w-full"
-                    />
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                      <span>More edges</span>
-                      <span>Fewer edges</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground leading-relaxed">
-                      Only show correlation edges with weight ≥ threshold. Higher values reduce clutter.
-                    </p>
-                    {edgeThreshold !== DEFAULT_PRUNING_OPTIONS.minWeight && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="w-full h-6 text-xs"
-                        onClick={() => setEdgeThreshold(DEFAULT_PRUNING_OPTIONS.minWeight)}
-                      >
-                        Reset to default ({Math.round(DEFAULT_PRUNING_OPTIONS.minWeight * 100)}%)
-                      </Button>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
-
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setShowDebugPanel(!showDebugPanel)}
-                      variant={showDebugPanel ? "secondary" : "ghost"}
-                      size="icon"
-                      className="h-6 w-6"
-                    >
-                      <Bug className="w-3 h-3" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p className="text-xs">{showDebugPanel ? 'Hide' : 'Show'} debug panel</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <Button onClick={exportAsImage} variant="ghost" size="icon" className="h-6 w-6" title="Export">
-                <Download className="w-3 h-3" />
-              </Button>
-              <div className="w-px h-4 bg-border mx-0.5" />
-              <Button
-                onClick={() => setInspectorOpen(!inspectorOpen)}
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                title={inspectorOpen ? 'Hide Inspector' : 'Show Inspector'}
-              >
-                {inspectorOpen ? (
-                  <PanelRightClose className="w-3 h-3" />
-                ) : (
-                  <PanelRightOpen className="w-3 h-3" />
-                )}
-              </Button>
-            </div>
-          </div>
+          )}
 
           {/* Graph + Inspector */}
           <div className="flex flex-1 min-h-0">
-            {/* Graph Area */}
-            <div ref={graphContainerRef} className="flex-1 w-full">
+            {/* Graph Area with transition */}
+            <div 
+              ref={graphContainerRef} 
+              className={cn(
+                "flex-1 w-full transition-opacity duration-150",
+                isTransitioning && "opacity-0"
+              )}
+            >
               {graphMode === 'correlation' ? (
                 <CorrelationGraph
                   data={correlationData}
@@ -515,44 +598,43 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
                   viewMode={mindMapView}
                   connectBy={connectBy}
                   showConnections={showMindMapConnections}
-                  onNodeClick={(entity) => {
-                    if (entity) {
-                      // Find matching node for inspector
-                      const node = correlationData.nodes.find(n => n.url === entity.url);
-                      if (node) {
-                        setSelectedNodeId(node.id);
-                        setInspectorOpen(true);
-                      }
-                    } else {
-                      setSelectedNodeId(null);
-                    }
-                  }}
-                  onNodeDoubleClick={(entity) => {
-                    if (entity.url) {
-                      window.open(entity.url, '_blank');
-                    }
-                  }}
+                  onNodeClick={handleMindMapNodeClick}
+                  onNodeDoubleClick={handleMindMapDoubleClick}
+                  onLegClick={handleMindMapLegClick}
                   className="h-full w-full"
                 />
               )}
             </div>
 
-            {/* Right Inspector Panel */}
-            <ConnectionsInspector
-              isOpen={inspectorOpen}
-              onClose={() => setInspectorOpen(false)}
-              selectedProfile={selectedProfile}
-              username={username}
-              categoryStats={categoryStats}
-              connectionStats={connectionStats}
-              totalProfiles={accountNodes.length}
-              scanId={jobId}
-              isFocused={selectedProfile ? focusedEntityId === selectedProfile.id : false}
-              onFocus={handleFocusFromInspector}
-              verificationResult={selectedProfile ? (verifiedEntities.get(selectedProfile.id) || localVerificationResults.get(selectedProfile.id)) : null}
-              onVerificationComplete={handleVerificationComplete}
-              lensScore={75}
-            />
+            {/* Right Inspector Panel - contextual based on mode */}
+            {graphMode === 'correlation' ? (
+              <ConnectionsInspector
+                isOpen={inspectorOpen}
+                onClose={() => setInspectorOpen(false)}
+                selectedProfile={selectedProfile}
+                username={username}
+                categoryStats={categoryStats}
+                connectionStats={connectionStats}
+                totalProfiles={accountNodes.length}
+                scanId={jobId}
+                isFocused={selectedProfile ? focusedEntityId === selectedProfile.id : false}
+                onFocus={handleFocusFromInspector}
+                verificationResult={selectedProfile ? (verifiedEntities.get(selectedProfile.id) || localVerificationResults.get(selectedProfile.id)) : null}
+                onVerificationComplete={handleVerificationComplete}
+                lensScore={75}
+              />
+            ) : (
+              <MindMapInspector
+                isOpen={inspectorOpen}
+                onClose={() => setInspectorOpen(false)}
+                selectedEntity={selectedMindMapEntity}
+                selectedLeg={selectedMindMapLeg}
+                totalProfiles={mindMapProfileCount}
+                totalLegs={mindMapCategoryBreakdown.length}
+                categoryBreakdown={mindMapCategoryBreakdown}
+                onOpenProfile={(url) => window.open(url, '_blank')}
+              />
+            )}
           </div>
         </>
       )}

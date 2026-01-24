@@ -2,11 +2,14 @@ import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 import cytoscape, { Core } from 'cytoscape';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Maximize2, RotateCcw } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlatformCatalog, buildCategoryMap, getCategoryFromCatalog } from '@/hooks/usePlatformCatalog';
 
-// Helper to extract site/platform from a finding
+// ============= HELPER FUNCTIONS =============
+
 function extractSite(result: any): string {
   if (result.evidence && Array.isArray(result.evidence)) {
     const siteEvidence = result.evidence.find((e: any) => e.key === 'site');
@@ -18,7 +21,6 @@ function extractSite(result: any): string {
   return '';
 }
 
-// Helper to extract URL from a finding
 function extractUrl(result: any): string {
   if (result.evidence && Array.isArray(result.evidence)) {
     const urlEvidence = result.evidence.find((e: any) => e.key === 'url');
@@ -28,7 +30,6 @@ function extractUrl(result: any): string {
   return '';
 }
 
-// Helper to extract username from a finding
 function extractUsername(result: any): string {
   if (result.evidence && Array.isArray(result.evidence)) {
     const usernameEvidence = result.evidence.find((e: any) => e.key === 'username');
@@ -38,7 +39,6 @@ function extractUsername(result: any): string {
   return '';
 }
 
-// Helper to derive status from a finding
 function deriveStatus(result: any): string {
   if (result.status) return result.status.toLowerCase();
   if (result.kind === 'profile_presence') return 'found';
@@ -57,10 +57,86 @@ function deriveStatus(result: any): string {
   return 'unknown';
 }
 
+// ============= CONFIDENCE & REASONING =============
+
+export type ConfidenceLevel = 'strong' | 'medium' | 'weak';
+
+export interface ConfidenceSignals {
+  usernameMatch: boolean;
+  emailMatch: boolean;
+  displayNameReuse: boolean;
+  bioSimilarity: boolean;
+}
+
+function calculateConfidence(
+  entity: { url: string; displayName: string; bio: string; signals: { emails: string[] } },
+  searchedUsername: string
+): { score: number; level: ConfidenceLevel; signals: ConfidenceSignals } {
+  let score = 0;
+  const signals: ConfidenceSignals = { 
+    usernameMatch: false, 
+    emailMatch: false, 
+    displayNameReuse: false, 
+    bioSimilarity: false 
+  };
+  const normalized = searchedUsername.toLowerCase();
+  
+  // Username in URL, displayName, or bio: +40
+  if (entity.url.toLowerCase().includes(normalized) || 
+      entity.displayName.toLowerCase().includes(normalized) ||
+      entity.bio.toLowerCase().includes(normalized)) {
+    score += 40;
+    signals.usernameMatch = true;
+  }
+  
+  // Email found: +60
+  if (entity.signals.emails.length > 0) {
+    score += 60;
+    signals.emailMatch = true;
+  }
+  
+  // Display name present: +25 (potential reuse signal)
+  if (entity.displayName && entity.displayName.length > 2) {
+    score += 25;
+    signals.displayNameReuse = true;
+  }
+  
+  // Bio has content: +15 (potential similarity signal)
+  if (entity.bio && entity.bio.length > 20) {
+    score += 15;
+    signals.bioSimilarity = true;
+  }
+  
+  const finalScore = Math.min(score, 100);
+  const level: ConfidenceLevel = finalScore >= 70 ? 'strong' : finalScore >= 40 ? 'medium' : 'weak';
+  return { score: finalScore, level, signals };
+}
+
+function generateReasoning(
+  viewMode: 'category' | 'all', 
+  legType: string, 
+  entity: { category: string; displayName: string },
+  searchedUsername: string
+): string {
+  if (viewMode === 'category') {
+    return `Grouped under ${entity.category}`;
+  }
+  
+  switch (legType) {
+    case 'username': return `Matched username "${searchedUsername}" in profile`;
+    case 'email': return `Matched email extracted from profile text`;
+    case 'displayName': return `Matched reused display name "${entity.displayName}"`;
+    case 'unlinked': return `No strong pivot match detected`;
+    default: return `Connected via ${legType}`;
+  }
+}
+
+// ============= TYPES =============
+
 export type MindMapViewMode = 'all' | 'category';
 export type ConnectByMode = 'username' | 'email' | 'profile';
 
-interface ProfileEntity {
+export interface ProfileEntity {
   id: string;
   platform: string;
   url: string;
@@ -75,6 +151,23 @@ interface ProfileEntity {
     usernames: string[];
     displayNames: string[];
   };
+  // New enrichment fields
+  reasoning: string;
+  confidenceLevel: ConfidenceLevel;
+  confidenceScore: number;
+  confidenceSignals: ConfidenceSignals;
+  iconUrl?: string;
+  initials: string;
+}
+
+export interface LegData {
+  id: string;
+  label: string;
+  type: 'category' | 'username' | 'email' | 'displayName' | 'unlinked';
+  category: string;
+  color: string;
+  profiles: ProfileEntity[];
+  reasoning: string;
 }
 
 interface MindMapGraphProps {
@@ -85,28 +178,44 @@ interface MindMapGraphProps {
   showConnections: boolean;
   onNodeClick: (entity: ProfileEntity | null) => void;
   onNodeDoubleClick: (entity: ProfileEntity) => void;
+  onLegClick?: (leg: LegData | null) => void;
   className?: string;
 }
 
-// Category colors for legs
-const CATEGORY_COLORS: Record<string, string> = {
-  'Social': '#3b82f6',
-  'Messaging': '#8b5cf6',
-  'Developer': '#10b981',
-  'Gaming': '#f59e0b',
-  'Media': '#ec4899',
-  'Creative': '#f97316',
-  'Professional': '#6366f1',
-  'Forums': '#14b8a6',
-  'E-Commerce': '#eab308',
-  'Travel & Reviews': '#06b6d4',
-  'Dating': '#f43f5e',
-  'Crypto': '#a855f7',
-  'NSFW': '#ef4444',
-  'Education': '#22c55e',
-  'Blogging': '#64748b',
-  'Finance': '#0ea5e9',
-  'Other': '#6b7280',
+// ============= COLOR SYSTEM =============
+
+const CATEGORY_COLOR_PALETTE = [
+  '#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6',
+  '#06b6d4', '#f97316', '#22c55e', '#ef4444', '#a855f7',
+];
+
+function getCategoryColor(category: string): string {
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) {
+    hash = ((hash << 5) - hash) + category.charCodeAt(i);
+    hash |= 0;
+  }
+  return CATEGORY_COLOR_PALETTE[Math.abs(hash) % CATEGORY_COLOR_PALETTE.length];
+}
+
+const CATEGORY_ICONS: Record<string, string> = {
+  'Social': '👥',
+  'Messaging': '💬',
+  'Developer': '💻',
+  'Gaming': '🎮',
+  'Media': '📺',
+  'Creative': '🎨',
+  'Professional': '💼',
+  'Forums': '📋',
+  'E-Commerce': '🛒',
+  'Travel & Reviews': '✈️',
+  'Dating': '💕',
+  'Crypto': '🪙',
+  'NSFW': '🔞',
+  'Education': '📚',
+  'Blogging': '✍️',
+  'Finance': '💰',
+  'Other': '🌐',
 };
 
 const MAX_PROFILES_DISPLAYED = 200;
@@ -119,6 +228,7 @@ export function MindMapGraph({
   showConnections,
   onNodeClick,
   onNodeDoubleClick,
+  onLegClick,
   className,
 }: MindMapGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -126,57 +236,68 @@ export function MindMapGraph({
   const [tooltipData, setTooltipData] = useState<{
     x: number;
     y: number;
-    content: { displayName: string; category?: string; platform?: string; url?: string };
+    content: { displayName: string; category?: string; platform?: string; url?: string; reasoning?: string; confidenceLevel?: ConfidenceLevel };
   } | null>(null);
+  
+  // Focus mode state
+  const [showAllEdges, setShowAllEdges] = useState(false);
+  const [focusedLegId, setFocusedLegId] = useState<string | null>(null);
+  const [focusedProfileId, setFocusedProfileId] = useState<string | null>(null);
 
   // Fetch platform catalog for category mapping
   const { data: platformCatalog } = usePlatformCatalog();
   const categoryMap = useMemo(() => buildCategoryMap(platformCatalog), [platformCatalog]);
 
-  // Extract profile entities from scan results
+  // Extract profile entities from scan results with enrichment
   const profileEntities = useMemo((): ProfileEntity[] => {
     const entities: ProfileEntity[] = [];
     const seenUrls = new Set<string>();
     
     results.forEach(result => {
-      // Use helper functions to extract nested data
       const status = deriveStatus(result);
       const extractedUrl = extractUrl(result);
       const extractedSite = extractSite(result);
       
       const isFound = status === 'found' || status === 'claimed' || status === 'exists';
-      
-      // Must be found and have a URL
       if (!isFound || !extractedUrl) return;
       
-      // Deduplicate by URL
       if (seenUrls.has(extractedUrl)) return;
       seenUrls.add(extractedUrl);
       
       const meta = (result.meta || (result as any).metadata || {}) as Record<string, any>;
       const evidence = (result as any).evidence;
       
-      // Extract platform name using helper
       const platform = extractedSite || meta.platform || meta.site || 'Unknown';
-      
-      // Get category from catalog
       const category = getCategoryFromCatalog(platform, categoryMap);
-      
-      // Extract display name - also check evidence
       const extractedUsername = extractUsername(result);
       const displayName = extractedUsername || meta.displayName || meta.username || meta.handle || meta.name || '';
-      
-      // Extract bio
       const bio = meta.bio || meta.description || 
                   (Array.isArray(evidence) ? evidence.find((e: any) => e.key === 'bio')?.value : '') || '';
-      
-      // Extract avatar
       const avatar = meta.avatar || meta.avatarUrl || meta.profile_image || '';
       
-      // Extract emails from bio/displayName
       const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
       const textToSearch = `${displayName} ${bio}`;
       const emails = textToSearch.match(emailRegex) || [];
+      
+      // Calculate confidence
+      const entityForConfidence = { 
+        url: extractedUrl, 
+        displayName, 
+        bio, 
+        signals: { emails } 
+      };
+      const { score, level, signals } = calculateConfidence(entityForConfidence, username);
+      
+      // Get icon URL from catalog
+      const catalogEntry = platformCatalog?.find(p => 
+        p.platform.toLowerCase() === platform.toLowerCase()
+      );
+      const iconUrl = catalogEntry?.icon_url || undefined;
+      
+      // Generate initials
+      const initials = displayName 
+        ? displayName.slice(0, 2).toUpperCase()
+        : platform.slice(0, 2).toUpperCase();
       
       entities.push({
         id: `${platform}__${extractedUrl}`,
@@ -193,21 +314,27 @@ export function MindMapGraph({
           usernames: displayName ? [displayName] : [],
           displayNames: displayName ? [displayName] : [],
         },
+        reasoning: '', // Will be set per-leg context
+        confidenceLevel: level,
+        confidenceScore: score,
+        confidenceSignals: signals,
+        iconUrl,
+        initials,
       });
     });
     
-    // Cap at MAX_PROFILES_DISPLAYED
-    return entities.slice(0, MAX_PROFILES_DISPLAYED);
-  }, [results, categoryMap]);
+    // Sort by confidence score and cap
+    return entities
+      .sort((a, b) => b.confidenceScore - a.confidenceScore)
+      .slice(0, MAX_PROFILES_DISPLAYED);
+  }, [results, categoryMap, username, platformCatalog]);
 
-  // Track if we're capping
   const isCapped = results.length > MAX_PROFILES_DISPLAYED;
   const cappedCount = results.length - MAX_PROFILES_DISPLAYED;
 
-  // Build legs based on view mode
-  const legs = useMemo(() => {
+  // Build legs based on view mode with reasoning
+  const legs = useMemo((): LegData[] => {
     if (viewMode === 'category') {
-      // Group by category
       const categoryGroups = new Map<string, ProfileEntity[]>();
       
       profileEntities.forEach(entity => {
@@ -215,7 +342,10 @@ export function MindMapGraph({
         if (!categoryGroups.has(cat)) {
           categoryGroups.set(cat, []);
         }
-        categoryGroups.get(cat)!.push(entity);
+        categoryGroups.get(cat)!.push({
+          ...entity,
+          reasoning: `Grouped under ${cat}`,
+        });
       });
       
       return Array.from(categoryGroups.entries())
@@ -226,8 +356,9 @@ export function MindMapGraph({
           label: `${category} (${profiles.length})`,
           type: 'category' as const,
           category,
-          color: CATEGORY_COLORS[category] || CATEGORY_COLORS.Other,
-          profiles,
+          color: getCategoryColor(category),
+          profiles: profiles.sort((a, b) => b.confidenceScore - a.confidenceScore),
+          reasoning: `Category: ${category}`,
         }));
     } else {
       // View All - group by pivots
@@ -241,55 +372,56 @@ export function MindMapGraph({
       profileEntities.forEach(entity => {
         let assigned = false;
         
-        // Check username match
         if (connectBy === 'username' || connectBy === 'profile') {
           const entityUsername = (entity.displayName || '').toLowerCase();
           if (entityUsername.includes(normalizedUsername) || normalizedUsername.includes(entityUsername)) {
-            usernameProfiles.push(entity);
+            usernameProfiles.push({
+              ...entity,
+              reasoning: generateReasoning('all', 'username', entity, username),
+            });
             assigned = true;
           }
         }
         
-        // Check email match
         if (!assigned && (connectBy === 'email' || connectBy === 'profile')) {
           for (const email of entity.signals.emails) {
             if (!emailGroups.has(email)) {
               emailGroups.set(email, []);
             }
-            emailGroups.get(email)!.push(entity);
+            emailGroups.get(email)!.push({
+              ...entity,
+              reasoning: generateReasoning('all', 'email', entity, username),
+            });
             assigned = true;
             break;
           }
         }
         
-        // Check display name reuse
         if (!assigned && connectBy === 'profile') {
           for (const dn of entity.signals.displayNames) {
             const key = dn.toLowerCase();
             if (!displayNameGroups.has(key)) {
               displayNameGroups.set(key, []);
             }
-            displayNameGroups.get(key)!.push(entity);
+            displayNameGroups.get(key)!.push({
+              ...entity,
+              reasoning: generateReasoning('all', 'displayName', entity, username),
+            });
             assigned = true;
             break;
           }
         }
         
         if (!assigned) {
-          unlinkedProfiles.push(entity);
+          unlinkedProfiles.push({
+            ...entity,
+            reasoning: generateReasoning('all', 'unlinked', entity, username),
+          });
         }
       });
       
-      const legsResult: Array<{
-        id: string;
-        label: string;
-        type: 'username' | 'email' | 'displayName' | 'unlinked';
-        category: string;
-        color: string;
-        profiles: ProfileEntity[];
-      }> = [];
+      const legsResult: LegData[] = [];
       
-      // Username leg
       if (usernameProfiles.length > 0) {
         legsResult.push({
           id: 'leg-username',
@@ -297,11 +429,11 @@ export function MindMapGraph({
           type: 'username',
           category: 'Username',
           color: '#3b82f6',
-          profiles: usernameProfiles,
+          profiles: usernameProfiles.sort((a, b) => b.confidenceScore - a.confidenceScore),
+          reasoning: `Matched username "${username}" in URL/bio/displayName`,
         });
       }
       
-      // Email legs (max 6)
       Array.from(emailGroups.entries())
         .filter(([_, profiles]) => profiles.length > 0)
         .slice(0, 6)
@@ -312,11 +444,11 @@ export function MindMapGraph({
             type: 'email',
             category: 'Email',
             color: '#f59e0b',
-            profiles,
+            profiles: profiles.sort((a, b) => b.confidenceScore - a.confidenceScore),
+            reasoning: `Matched email "${email}" extracted from profile text`,
           });
         });
       
-      // Display name legs (reused 2+ times, max 6)
       Array.from(displayNameGroups.entries())
         .filter(([_, profiles]) => profiles.length >= 2)
         .slice(0, 6)
@@ -327,11 +459,11 @@ export function MindMapGraph({
             type: 'displayName',
             category: 'Display Name',
             color: '#8b5cf6',
-            profiles,
+            profiles: profiles.sort((a, b) => b.confidenceScore - a.confidenceScore),
+            reasoning: `Matched reused display name "${dn}" across ${profiles.length} profiles`,
           });
         });
       
-      // Unlinked leg
       if (unlinkedProfiles.length > 0) {
         legsResult.push({
           id: 'leg-unlinked',
@@ -339,7 +471,8 @@ export function MindMapGraph({
           type: 'unlinked',
           category: 'Unlinked',
           color: '#6b7280',
-          profiles: unlinkedProfiles,
+          profiles: unlinkedProfiles.sort((a, b) => b.confidenceScore - a.confidenceScore),
+          reasoning: `No strong pivot match`,
         });
       }
       
@@ -347,7 +480,7 @@ export function MindMapGraph({
     }
   }, [profileEntities, viewMode, connectBy, username]);
 
-  // Build cytoscape elements with preset positions
+  // Build cytoscape elements with enhanced styling
   const buildElements = useCallback(() => {
     const elements: cytoscape.ElementDefinition[] = [];
     
@@ -368,11 +501,12 @@ export function MindMapGraph({
     const PROFILES_PER_RING = 10;
     
     legs.forEach((leg, legIndex) => {
-      const legAngle = (2 * Math.PI * legIndex) / legs.length - Math.PI / 2; // Start from top
+      const legAngle = (2 * Math.PI * legIndex) / legs.length - Math.PI / 2;
       
-      // Leg node position
       const legX = LEG_RADIUS * Math.cos(legAngle);
       const legY = LEG_RADIUS * Math.sin(legAngle);
+      
+      const categoryIcon = CATEGORY_ICONS[leg.category] || CATEGORY_ICONS.Other;
       
       elements.push({
         data: {
@@ -382,25 +516,28 @@ export function MindMapGraph({
           category: leg.category,
           color: leg.color,
           profileCount: leg.profiles.length,
+          reasoning: leg.reasoning,
+          legType: leg.type,
+          categoryIcon,
         },
         position: { x: legX, y: legY },
         classes: 'leg-node',
       });
       
-      // Edge from root to leg
+      // Root → Leg edge (always show)
       if (showConnections) {
         elements.push({
           data: {
             id: `edge-root-${leg.id}`,
             source: 'root',
             target: leg.id,
+            edgeType: 'root-leg',
           },
           classes: 'root-edge',
         });
       }
       
-      // Profile nodes positioned along arc for this leg
-      const arcWidth = Math.PI / Math.max(3, legs.length); // Arc width per leg
+      const arcWidth = Math.PI / Math.max(3, legs.length);
       
       leg.profiles.forEach((profile, profileIndex) => {
         const ringIndex = Math.floor(profileIndex / PROFILES_PER_RING);
@@ -414,6 +551,10 @@ export function MindMapGraph({
         
         const profileX = radius * Math.cos(angle);
         const profileY = radius * Math.sin(angle);
+        
+        // Opacity based on confidence
+        const opacityLevel = profile.confidenceLevel === 'strong' ? 0.95 : 
+                            profile.confidenceLevel === 'medium' ? 0.75 : 0.55;
         
         elements.push({
           data: {
@@ -429,18 +570,26 @@ export function MindMapGraph({
             color: leg.color,
             avatar: profile.avatar,
             entity: profile,
+            reasoning: profile.reasoning,
+            confidenceLevel: profile.confidenceLevel,
+            confidenceScore: profile.confidenceScore,
+            opacityLevel,
+            iconUrl: profile.iconUrl,
+            initials: profile.initials,
+            legId: leg.id,
           },
           position: { x: profileX, y: profileY },
-          classes: 'profile-node',
+          classes: `profile-node confidence-${profile.confidenceLevel}`,
         });
         
-        // Edge from leg to profile
-        if (showConnections) {
+        // Leg → Profile edge (only show if showAllEdges is true)
+        if (showConnections && showAllEdges) {
           elements.push({
             data: {
               id: `edge-${leg.id}-${profile.id}`,
               source: leg.id,
               target: profile.id,
+              edgeType: 'leg-profile',
             },
             classes: 'leg-edge',
           });
@@ -449,9 +598,9 @@ export function MindMapGraph({
     });
     
     return elements;
-  }, [legs, username, showConnections]);
+  }, [legs, username, showConnections, showAllEdges]);
 
-  // Initialize cytoscape with preset layout
+  // Initialize cytoscape
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -460,14 +609,14 @@ export function MindMapGraph({
     const cy = cytoscape({
       container: containerRef.current,
       elements,
-      layout: { name: 'preset' }, // Use preset positions
+      layout: { name: 'preset' },
       style: [
-        // Root node - large diamond
+        // Root node - large diamond with glow effect via overlay
         {
           selector: 'node.root-node',
           style: {
             'background-color': '#3b82f6',
-            'border-width': 4,
+            'border-width': 5,
             'border-color': '#1d4ed8',
             'label': 'data(label)',
             'text-valign': 'bottom',
@@ -478,19 +627,22 @@ export function MindMapGraph({
             'text-background-color': '#ffffff',
             'text-background-opacity': 0.95,
             'text-background-padding': '4px',
-            'width': 60,
-            'height': 60,
+            'width': 70,
+            'height': 70,
             'shape': 'diamond',
             'z-index': 100,
+            'overlay-color': '#3b82f6',
+            'overlay-opacity': 0.15,
+            'overlay-padding': 8,
           },
         },
-        // Leg nodes - medium circles
+        // Leg nodes - ring colored by category
         {
           selector: 'node.leg-node',
           style: {
-            'background-color': 'data(color)',
-            'border-width': 2,
-            'border-color': '#ffffff',
+            'background-color': '#f8fafc',
+            'border-width': 4,
+            'border-color': 'data(color)',
             'label': 'data(label)',
             'text-valign': 'bottom',
             'text-margin-y': 8,
@@ -502,18 +654,18 @@ export function MindMapGraph({
             'text-background-padding': '3px',
             'text-wrap': 'wrap',
             'text-max-width': '100px',
-            'width': 40,
-            'height': 40,
+            'width': 45,
+            'height': 45,
             'shape': 'ellipse',
             'z-index': 50,
           },
         },
-        // Profile nodes - small circles
+        // Profile nodes - confidence-based styling
         {
           selector: 'node.profile-node',
           style: {
             'background-color': 'data(color)',
-            'background-opacity': 0.8,
+            'background-opacity': 'data(opacityLevel)' as any,
             'border-width': 1,
             'border-color': '#ffffff',
             'label': 'data(label)',
@@ -525,10 +677,41 @@ export function MindMapGraph({
             'text-background-color': '#ffffff',
             'text-background-opacity': 0.85,
             'text-background-padding': '2px',
-            'width': 24,
-            'height': 24,
+            'width': 26,
+            'height': 26,
             'shape': 'ellipse',
             'z-index': 10,
+          },
+        },
+        // Strong confidence - bright with pulse effect
+        {
+          selector: 'node.profile-node.confidence-strong',
+          style: {
+            'background-opacity': 1,
+            'border-width': 2,
+            'border-color': '#22c55e',
+            'width': 28,
+            'height': 28,
+          },
+        },
+        // Medium confidence
+        {
+          selector: 'node.profile-node.confidence-medium',
+          style: {
+            'background-opacity': 0.8,
+            'border-width': 1.5,
+            'border-color': '#f59e0b',
+          },
+        },
+        // Weak confidence - dimmed
+        {
+          selector: 'node.profile-node.confidence-weak',
+          style: {
+            'background-opacity': 0.5,
+            'border-width': 1,
+            'border-color': '#9ca3af',
+            'width': 22,
+            'height': 22,
           },
         },
         // Root edges
@@ -536,8 +719,8 @@ export function MindMapGraph({
           selector: 'edge.root-edge',
           style: {
             'line-color': '#6b7280',
-            'line-opacity': 0.4,
-            'width': 2,
+            'line-opacity': 0.5,
+            'width': 2.5,
             'curve-style': 'bezier',
           },
         },
@@ -558,18 +741,19 @@ export function MindMapGraph({
             'background-opacity': 1,
             'border-width': 2,
             'border-color': '#3b82f6',
-            'width': 30,
-            'height': 30,
+            'width': 32,
+            'height': 32,
             'z-index': 100,
           },
         },
         {
           selector: 'node.leg-node:hover',
           style: {
-            'border-width': 3,
+            'border-width': 4,
             'border-color': '#3b82f6',
-            'width': 48,
-            'height': 48,
+            'width': 52,
+            'height': 52,
+            'background-color': '#eff6ff',
           },
         },
         // Selected states
@@ -580,17 +764,28 @@ export function MindMapGraph({
             'border-color': '#2563eb',
           },
         },
-        // Dimmed state for non-focused
+        // Dimmed state for focus mode
         {
-          selector: 'node.dimmed',
+          selector: '.dimmed',
           style: {
-            'opacity': 0.3,
+            'opacity': 0.15,
+          },
+        },
+        // Focused path highlighting
+        {
+          selector: '.focused',
+          style: {
+            'opacity': 1,
+            'border-width': 3,
+            'border-color': '#2563eb',
           },
         },
         {
-          selector: 'edge.dimmed',
+          selector: '.selectedPath',
           style: {
-            'opacity': 0.1,
+            'opacity': 1,
+            'border-width': 3,
+            'border-color': '#2563eb',
           },
         },
         // Highlighted state
@@ -601,10 +796,16 @@ export function MindMapGraph({
             'border-color': '#2563eb',
           },
         },
+        {
+          selector: 'edge.highlighted',
+          style: {
+            'line-opacity': 0.8,
+            'width': 2,
+          },
+        },
       ],
       minZoom: 0.3,
       maxZoom: 3,
-      wheelSensitivity: 0.3,
       boxSelectionEnabled: false,
     });
 
@@ -614,7 +815,23 @@ export function MindMapGraph({
     cy.on('tap', 'node.profile-node', (e) => {
       const node = e.target;
       const entity = node.data('entity') as ProfileEntity;
+      
       if (entity) {
+        // Focus mode: highlight path
+        cy.elements().removeClass('focused selectedPath dimmed highlighted');
+        cy.elements().addClass('dimmed');
+        
+        const legId = node.data('legId');
+        const leg = cy.$(`#${legId}`);
+        const rootEdge = cy.edges(`[source = "root"][target = "${legId}"]`);
+        
+        cy.$('#root').removeClass('dimmed').addClass('selectedPath');
+        leg.removeClass('dimmed').addClass('selectedPath');
+        node.removeClass('dimmed').addClass('selectedPath');
+        rootEdge.removeClass('dimmed').addClass('highlighted');
+        
+        setFocusedProfileId(node.id());
+        setFocusedLegId(legId);
         onNodeClick(entity);
       }
     });
@@ -629,29 +846,55 @@ export function MindMapGraph({
 
     cy.on('tap', 'node.leg-node', (e) => {
       const node = e.target;
-      // Highlight this leg and its profiles
-      cy.elements().removeClass('highlighted dimmed');
+      
+      // Focus mode: highlight leg and its profiles
+      cy.elements().removeClass('focused selectedPath dimmed highlighted');
+      cy.elements().addClass('dimmed');
       
       const legId = node.id();
-      const connectedEdges = cy.edges(`[source = "${legId}"], [target = "${legId}"]`);
-      const connectedNodes = connectedEdges.connectedNodes();
+      const connectedProfiles = cy.nodes(`[legId = "${legId}"]`);
+      const rootEdge = cy.edges(`[source = "root"][target = "${legId}"]`);
       
-      node.addClass('highlighted');
-      connectedNodes.addClass('highlighted');
-      connectedEdges.removeClass('dimmed');
+      cy.$('#root').removeClass('dimmed').addClass('focused');
+      node.removeClass('dimmed').addClass('focused');
+      connectedProfiles.removeClass('dimmed').addClass('focused');
+      rootEdge.removeClass('dimmed').addClass('highlighted');
       
-      // Dim everything else
-      cy.elements().not(node).not(connectedNodes).not(connectedEdges).not('#root').addClass('dimmed');
+      // Show leg→profile edges temporarily
+      const legEdges = cy.edges(`[source = "${legId}"]`);
+      legEdges.forEach(edge => {
+        edge.removeClass('dimmed').addClass('highlighted');
+      });
+      
+      // Animate fit to branch
+      cy.animate({
+        fit: { eles: node.union(connectedProfiles), padding: 60 },
+      }, {
+        duration: 250,
+        easing: 'ease-out',
+      });
+      
+      setFocusedLegId(legId);
+      setFocusedProfileId(null);
+      
+      // Notify parent about leg selection
+      const legData = legs.find(l => l.id === legId);
+      if (legData && onLegClick) {
+        onLegClick(legData);
+      }
     });
 
     cy.on('tap', (e) => {
       if (e.target === cy) {
-        cy.elements().removeClass('highlighted dimmed');
+        cy.elements().removeClass('focused selectedPath dimmed highlighted');
+        setFocusedLegId(null);
+        setFocusedProfileId(null);
         onNodeClick(null);
+        if (onLegClick) onLegClick(null);
       }
     });
 
-    // Hover tooltips
+    // Hover tooltips with enhanced info
     cy.on('mouseover', 'node.profile-node', (e) => {
       const node = e.target;
       const renderedPos = node.renderedPosition();
@@ -666,6 +909,8 @@ export function MindMapGraph({
             platform: node.data('platform'),
             category: node.data('category'),
             url: node.data('url'),
+            reasoning: node.data('reasoning'),
+            confidenceLevel: node.data('confidenceLevel'),
           },
         });
       }
@@ -675,32 +920,54 @@ export function MindMapGraph({
       setTooltipData(null);
     });
 
-    // Fit to view
-    cy.fit(undefined, 50);
+    // Fit to view with animation
+    cy.animate({
+      fit: { eles: cy.elements(), padding: 50 },
+    }, {
+      duration: 300,
+      easing: 'ease-out',
+    });
 
     return () => {
       cy.destroy();
       cyRef.current = null;
     };
-  }, [buildElements, onNodeClick, onNodeDoubleClick]);
+  }, [buildElements, onNodeClick, onNodeDoubleClick, onLegClick, legs]);
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
-    cyRef.current?.zoom(cyRef.current.zoom() * 1.3);
+    cyRef.current?.animate({
+      zoom: (cyRef.current.zoom() * 1.3),
+      center: { eles: cyRef.current.$('#root') },
+    }, { duration: 150 });
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    cyRef.current?.zoom(cyRef.current.zoom() / 1.3);
+    cyRef.current?.animate({
+      zoom: (cyRef.current.zoom() / 1.3),
+    }, { duration: 150 });
   }, []);
 
   const handleFit = useCallback(() => {
-    cyRef.current?.fit(undefined, 50);
+    cyRef.current?.animate({
+      fit: { eles: cyRef.current.elements(), padding: 50 },
+    }, { duration: 250, easing: 'ease-out' });
   }, []);
 
   const handleReset = useCallback(() => {
-    cyRef.current?.fit(undefined, 50);
-    cyRef.current?.elements().removeClass('highlighted dimmed');
-  }, []);
+    const cy = cyRef.current;
+    if (!cy) return;
+    
+    cy.elements().removeClass('focused selectedPath dimmed highlighted');
+    cy.animate({
+      fit: { eles: cy.elements(), padding: 50 },
+    }, { duration: 250, easing: 'ease-out' });
+    
+    setFocusedLegId(null);
+    setFocusedProfileId(null);
+    onNodeClick(null);
+    if (onLegClick) onLegClick(null);
+  }, [onNodeClick, onLegClick]);
 
   return (
     <div className={cn('relative w-full h-full', className)}>
@@ -716,6 +983,20 @@ export function MindMapGraph({
           Showing {MAX_PROFILES_DISPLAYED} of {results.length} profiles (+{cappedCount} not displayed)
         </div>
       )}
+
+      {/* Edge visibility toggle */}
+      <div className="absolute top-2 left-2 flex items-center gap-2 px-2 py-1 bg-background/80 backdrop-blur-sm border border-border rounded-lg">
+        <Switch
+          id="show-all-edges"
+          checked={showAllEdges}
+          onCheckedChange={setShowAllEdges}
+          className="h-4 w-7 data-[state=checked]:bg-primary"
+        />
+        <Label htmlFor="show-all-edges" className="text-[10px] text-muted-foreground cursor-pointer flex items-center gap-1">
+          {showAllEdges ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+          All edges
+        </Label>
+      </div>
 
       {/* Zoom controls */}
       <div className="absolute bottom-3 right-3 flex flex-col gap-1 bg-background/80 backdrop-blur-sm border border-border rounded-lg p-1 shadow-lg">
@@ -734,20 +1015,50 @@ export function MindMapGraph({
         </Button>
       </div>
 
-      {/* Tooltip */}
+      {/* Focus indicator */}
+      {(focusedLegId || focusedProfileId) && (
+        <div className="absolute bottom-3 left-3 px-2.5 py-1.5 bg-primary/10 border border-primary/30 rounded-lg text-xs text-primary flex items-center gap-2">
+          <span>Focus mode active</span>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-5 px-1.5 text-[10px]" 
+            onClick={handleReset}
+          >
+            Reset
+          </Button>
+        </div>
+      )}
+
+      {/* Enhanced Tooltip */}
       {tooltipData && (
         <div
-          className="fixed z-50 px-2.5 py-1.5 bg-popover border border-border rounded-md shadow-lg text-xs pointer-events-none"
+          className="fixed z-50 px-3 py-2 bg-popover border border-border rounded-lg shadow-xl text-xs pointer-events-none max-w-[200px]"
           style={{
             left: tooltipData.x,
             top: tooltipData.y,
             transform: 'translate(-50%, -100%)',
           }}
         >
-          <div className="font-medium text-foreground">{tooltipData.content.displayName}</div>
+          <div className="font-semibold text-foreground">{tooltipData.content.displayName}</div>
           <div className="text-muted-foreground">
             {tooltipData.content.platform} • {tooltipData.content.category}
           </div>
+          {tooltipData.content.reasoning && (
+            <div className="mt-1 pt-1 border-t border-border/50 text-[10px] text-muted-foreground/80">
+              {tooltipData.content.reasoning}
+            </div>
+          )}
+          {tooltipData.content.confidenceLevel && (
+            <div className={cn(
+              'mt-1 text-[10px] font-medium',
+              tooltipData.content.confidenceLevel === 'strong' && 'text-green-600',
+              tooltipData.content.confidenceLevel === 'medium' && 'text-amber-600',
+              tooltipData.content.confidenceLevel === 'weak' && 'text-gray-500',
+            )}>
+              {tooltipData.content.confidenceLevel.charAt(0).toUpperCase() + tooltipData.content.confidenceLevel.slice(1)} confidence
+            </div>
+          )}
         </div>
       )}
     </div>
