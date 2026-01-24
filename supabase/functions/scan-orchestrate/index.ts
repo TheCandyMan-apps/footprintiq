@@ -17,6 +17,7 @@ import { isProviderDisabled } from '../_shared/providerKillSwitch.ts';
 import { getProviderCost } from '../_shared/providerCosts.ts';
 import { getProviderTimeout, formatProviderTimeout } from '../_shared/providerTimeouts.ts';
 import { logActivity } from '../_shared/activityLogger.ts';
+import { enforceTurnstile } from '../_shared/turnstile.ts';
 
 /**
  * Normalize confidence values to 0-1 range for database storage.
@@ -266,6 +267,13 @@ serve(async (req) => {
     }
 
     const { scanId: providedScanId, type, value, workspaceId, anonMode = false, options = {} } = parseResult.data;
+
+    // ✅ TURNSTILE VERIFICATION for free tier users
+    // Must be done after auth but before expensive operations
+    const turnstileError = await enforceTurnstile(req, rawBody as { turnstile_token?: string }, user.id, corsHeaders());
+    if (turnstileError) {
+      return turnstileError;
+    }
 
     // Enhanced logging for username scans with provider info
     const requestedProviders = options.providers || [];
