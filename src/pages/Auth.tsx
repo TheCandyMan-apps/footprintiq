@@ -41,6 +41,7 @@ const Auth = () => {
   } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [awaitingEmailConfirmation, setAwaitingEmailConfirmation] = useState(false);
   
   // Hardcoded fallback exists in useTurnstile hook, so always treat as configured
   const siteKeyConfigured = true;
@@ -61,24 +62,24 @@ const Auth = () => {
     turnstileRef.current?.reset();
   }, []);
   useEffect(() => {
-    supabase.auth.getSession().then(({
-      data: {
-        session
-      }
-    }) => {
-      if (session) {
-        navigate("/dashboard");
-      }
-    });
+    // Listener FIRST (prevents missing events during init)
     const {
-      data: {
-        subscription
-      }
-    } = supabase.auth.onAuthStateChange((event, session) => {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
+        setAwaitingEmailConfirmation(false);
         navigate("/dashboard");
       }
     });
+
+    // THEN read current session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setAwaitingEmailConfirmation(false);
+        navigate("/dashboard");
+      }
+    });
+
     return () => subscription.unsubscribe();
   }, [navigate]);
   const checkBlockedDomain = async (email: string): Promise<boolean> => {
@@ -207,15 +208,19 @@ const Auth = () => {
       
       toast({
         title: "Success!",
-        description: "Your account has been created. Redirecting..."
+        description: authData.session
+          ? "Your account has been created. Redirecting..."
+          : "Your account has been created. Please check your email to confirm, then you’ll be redirected."
       });
 
-      // Explicit redirect fallback - don't rely solely on onAuthStateChange
-      setTimeout(() => {
-        if (authData.session) {
-          navigate('/dashboard');
-        }
-      }, 1500);
+      // If email confirmation is enabled, session may be null.
+      // In that case we do NOT force navigation (it would just bounce back to /auth).
+      if (authData.session) {
+        setAwaitingEmailConfirmation(false);
+        setTimeout(() => navigate("/dashboard"), 250);
+      } else {
+        setAwaitingEmailConfirmation(true);
+      }
     } catch (error: any) {
       // Reset Turnstile on error to get a fresh token
       resetTurnstile();
@@ -303,6 +308,12 @@ const Auth = () => {
             Protect your privacy across the internet
           </p>
         </div>
+
+        {awaitingEmailConfirmation && (
+          <div className="mb-4 rounded-lg border border-border bg-card/50 p-3 text-sm text-muted-foreground">
+            Check your inbox to confirm your email. Once confirmed, you’ll be redirected automatically.
+          </div>
+        )}
 
         <Tabs defaultValue="signin" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
