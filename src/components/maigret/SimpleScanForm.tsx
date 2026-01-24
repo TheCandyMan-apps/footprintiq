@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
 import { mapWorkerError, type DiagnosticsInfo } from '@/lib/maigret/errorMapper';
 import { TurnstileGate, type TurnstileGateRef } from '@/components/auth/TurnstileGate';
 import { useTurnstileGating, withTurnstileToken } from '@/hooks/useTurnstileGating';
@@ -15,12 +15,16 @@ export function SimpleScanForm() {
   const [platforms, setPlatforms] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileGateRef>(null);
   const { requiresTurnstile, validateToken } = useTurnstileGating();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear previous turnstile error
+    setTurnstileError(null);
     
     if (!username.trim()) {
       toast.error('Username is required');
@@ -31,9 +35,7 @@ export function SimpleScanForm() {
     if (requiresTurnstile) {
       const validation = validateToken(turnstileToken);
       if (!validation.valid) {
-        toast.error('Verification required', {
-          description: validation.message,
-        });
+        setTurnstileError(validation.message || 'Please complete the verification to continue.');
         return;
       }
     }
@@ -165,12 +167,27 @@ export function SimpleScanForm() {
 
       {/* Turnstile verification for Free tier users */}
       {requiresTurnstile && (
-        <TurnstileGate
-          ref={turnstileRef}
-          onToken={setTurnstileToken}
-          action="scan-start"
-          inline
-        />
+        <div className="space-y-2">
+          <TurnstileGate
+            ref={turnstileRef}
+            onToken={(token) => {
+              setTurnstileToken(token);
+              setTurnstileError(null);
+            }}
+            onError={(error) => {
+              setTurnstileToken(null);
+              setTurnstileError(error);
+            }}
+            action="scan-start"
+            inline
+          />
+          {turnstileError && (
+            <div className="flex items-center gap-2 text-destructive text-sm">
+              <AlertCircle className="h-4 w-4" />
+              <span>{turnstileError}</span>
+            </div>
+          )}
+        </div>
       )}
 
       <Button type="submit" disabled={isLoading} className="w-full">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,8 +8,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useMaigretEntitlement } from '@/hooks/useMaigretEntitlement';
-import { Loader2, Info } from 'lucide-react';
+import { Loader2, Info, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { TurnstileGate, type TurnstileGateRef } from '@/components/auth/TurnstileGate';
+import { useTurnstileGating, withTurnstileToken } from '@/hooks/useTurnstileGating';
 
 const ARTIFACT_OPTIONS = [
   { id: 'html', label: 'HTML' },
@@ -31,9 +33,34 @@ export function UsernameScanForm({ onScanStarted }: UsernameScanFormProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { entitlement, isPremium, loading: entitlementLoading } = useMaigretEntitlement();
+  
+  // Turnstile state
+  const turnstileRef = useRef<TurnstileGateRef>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
+  const { requiresTurnstile, validateToken } = useTurnstileGating();
+
+  const handleTurnstileToken = useCallback((token: string) => {
+    setTurnstileToken(token);
+    setTurnstileError(null);
+  }, []);
+
+  const handleTurnstileError = useCallback((error: string) => {
+    setTurnstileToken(null);
+    setTurnstileError(error);
+  }, []);
+
+  const resetTurnstile = useCallback(() => {
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear previous turnstile error
+    setTurnstileError(null);
+    
     if (!username.trim()) {
       toast({
         title: 'Username Required',
@@ -43,15 +70,29 @@ export function UsernameScanForm({ onScanStarted }: UsernameScanFormProps) {
       return;
     }
 
+    // Validate Turnstile token if required
+    if (requiresTurnstile) {
+      const validation = validateToken(turnstileToken);
+      if (!validation.valid) {
+        setTurnstileError(validation.message || 'Please complete the verification to continue.');
+        return;
+      }
+    }
+
     setLoading(true);
     try {
+      const baseBody = {
+        username: username.trim(),
+        tags: tags.trim() || undefined,
+        all_sites: allSites,
+        artifacts: isPremium ? artifacts : [],
+      };
+      
+      // Add turnstile token if present
+      const requestBody = withTurnstileToken(baseBody, turnstileToken);
+      
       const { data, error } = await supabase.functions.invoke('enqueue-maigret-scan', {
-        body: {
-          username: username.trim(),
-          tags: tags.trim() || undefined,
-          all_sites: allSites,
-          artifacts: isPremium ? artifacts : [],
-        },
+        body: requestBody,
       });
 
       if (error) throw error;
@@ -65,10 +106,11 @@ export function UsernameScanForm({ onScanStarted }: UsernameScanFormProps) {
         onScanStarted(data.jobId);
       }
 
-      // Reset form
+      // Reset form and Turnstile
       setUsername('');
       setTags('');
       setArtifacts([]);
+      resetTurnstile();
     } catch (error: any) {
       console.error('Scan error:', error);
       toast({
@@ -76,6 +118,8 @@ export function UsernameScanForm({ onScanStarted }: UsernameScanFormProps) {
         description: error.message || 'Failed to start scan',
         variant: 'destructive',
       });
+      // Reset Turnstile on error
+      resetTurnstile();
     } finally {
       setLoading(false);
     }
@@ -194,6 +238,25 @@ export function UsernameScanForm({ onScanStarted }: UsernameScanFormProps) {
             <div className="text-xs text-muted-foreground space-y-1">
               <p>Daily limit: {entitlement.dailyJobs} scans</p>
               <p>Timeout: {Math.floor(entitlement.timeout / 60)} minutes</p>
+            </div>
+          )}
+
+          {/* Turnstile verification for Free tier users */}
+          {requiresTurnstile && (
+            <div className="space-y-2">
+              <TurnstileGate
+                ref={turnstileRef}
+                onToken={handleTurnstileToken}
+                onError={handleTurnstileError}
+                action="maigret-scan"
+                inline
+              />
+              {turnstileError && (
+                <div className="flex items-center gap-2 text-destructive text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  <span>{turnstileError}</span>
+                </div>
+              )}
             </div>
           )}
 
