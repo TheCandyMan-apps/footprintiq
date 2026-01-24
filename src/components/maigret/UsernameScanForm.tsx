@@ -10,8 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMaigretEntitlement } from '@/hooks/useMaigretEntitlement';
 import { Loader2, Info, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TurnstileGate, type TurnstileGateRef } from '@/components/auth/TurnstileGate';
-import { useTurnstileGating, withTurnstileToken } from '@/hooks/useTurnstileGating';
+import { TurnstileWidget, type TurnstileWidgetRef } from '@/components/security/TurnstileWidget';
+import { useTurnstileRequired } from '@/hooks/useTurnstileRequired';
 
 const ARTIFACT_OPTIONS = [
   { id: 'html', label: 'HTML' },
@@ -35,10 +35,10 @@ export function UsernameScanForm({ onScanStarted }: UsernameScanFormProps) {
   const { entitlement, isPremium, loading: entitlementLoading } = useMaigretEntitlement();
   
   // Turnstile state
-  const turnstileRef = useRef<TurnstileGateRef>(null);
+  const turnstileRef = useRef<TurnstileWidgetRef>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
-  const { requiresTurnstile, validateToken } = useTurnstileGating();
+  const { required: requiresTurnstile } = useTurnstileRequired();
 
   const handleTurnstileToken = useCallback((token: string) => {
     setTurnstileToken(token);
@@ -71,12 +71,9 @@ export function UsernameScanForm({ onScanStarted }: UsernameScanFormProps) {
     }
 
     // Validate Turnstile token if required
-    if (requiresTurnstile) {
-      const validation = validateToken(turnstileToken);
-      if (!validation.valid) {
-        setTurnstileError(validation.message || 'Please complete the verification to continue.');
-        return;
-      }
+    if (requiresTurnstile && !turnstileToken) {
+      setTurnstileError('Please complete the verification to continue.');
+      return;
     }
 
     setLoading(true);
@@ -89,7 +86,9 @@ export function UsernameScanForm({ onScanStarted }: UsernameScanFormProps) {
       };
       
       // Add turnstile token if present
-      const requestBody = withTurnstileToken(baseBody, turnstileToken);
+      const requestBody = turnstileToken
+        ? { ...baseBody, turnstile_token: turnstileToken }
+        : baseBody;
       
       const { data, error } = await supabase.functions.invoke('enqueue-maigret-scan', {
         body: requestBody,
@@ -244,7 +243,7 @@ export function UsernameScanForm({ onScanStarted }: UsernameScanFormProps) {
           {/* Turnstile verification for Free tier users */}
           {requiresTurnstile && (
             <div className="space-y-2">
-              <TurnstileGate
+              <TurnstileWidget
                 ref={turnstileRef}
                 onToken={handleTurnstileToken}
                 onError={handleTurnstileError}
