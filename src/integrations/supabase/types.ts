@@ -5337,6 +5337,33 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_catalog: {
+        Row: {
+          category: string
+          created_at: string | null
+          icon_url: string | null
+          id: string
+          platform: string
+          url_template: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          icon_url?: string | null
+          id?: string
+          platform: string
+          url_template?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          icon_url?: string | null
+          id?: string
+          platform?: string
+          url_template?: string | null
+        }
+        Relationships: []
+      }
       plugin_installations: {
         Row: {
           config: Json | null
@@ -7356,6 +7383,12 @@ export type Database = {
       }
       scans: {
         Row: {
+          analysis_completed_at: string | null
+          analysis_error: string | null
+          analysis_json: Json | null
+          analysis_model: string | null
+          analysis_status: string | null
+          analysis_version: number | null
           archived_at: string | null
           cache_key: string | null
           cached_from_scan_id: string | null
@@ -7373,6 +7406,7 @@ export type Database = {
           medium_risk_count: number | null
           phone: string | null
           privacy_score: number | null
+          profile_entities_json: Json | null
           provider_counts: Json | null
           results_route: string
           scan_type: Database["public"]["Enums"]["scan_type"]
@@ -7384,6 +7418,12 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          analysis_completed_at?: string | null
+          analysis_error?: string | null
+          analysis_json?: Json | null
+          analysis_model?: string | null
+          analysis_status?: string | null
+          analysis_version?: number | null
           archived_at?: string | null
           cache_key?: string | null
           cached_from_scan_id?: string | null
@@ -7401,6 +7441,7 @@ export type Database = {
           medium_risk_count?: number | null
           phone?: string | null
           privacy_score?: number | null
+          profile_entities_json?: Json | null
           provider_counts?: Json | null
           results_route?: string
           scan_type: Database["public"]["Enums"]["scan_type"]
@@ -7412,6 +7453,12 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          analysis_completed_at?: string | null
+          analysis_error?: string | null
+          analysis_json?: Json | null
+          analysis_model?: string | null
+          analysis_status?: string | null
+          analysis_version?: number | null
           archived_at?: string | null
           cache_key?: string | null
           cached_from_scan_id?: string | null
@@ -7429,6 +7476,7 @@ export type Database = {
           medium_risk_count?: number | null
           phone?: string | null
           privacy_score?: number | null
+          profile_entities_json?: Json | null
           provider_counts?: Json | null
           results_route?: string
           scan_type?: Database["public"]["Enums"]["scan_type"]

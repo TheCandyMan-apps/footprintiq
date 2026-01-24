@@ -2,10 +2,12 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { 
   Download, ZoomIn, ZoomOut, Maximize2, 
   Link2, Image, FileText, Users, Info, PanelRightClose, PanelRightOpen, X, Crosshair,
-  Bug, AlertCircle, SlidersHorizontal
+  Bug, AlertCircle, SlidersHorizontal, Network, Workflow, Eye, EyeOff
 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { ScanResult } from '@/hooks/useScanResultsData';
@@ -24,8 +26,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ConnectionsInspector } from './connections/ConnectionsInspector';
 import { CorrelationGraph } from './connections/CorrelationGraph';
+import { MindMapGraph, MindMapViewMode, ConnectByMode } from './connections/MindMapGraph';
 
 interface ConnectionsTabProps {
   results: ScanResult[];
@@ -59,6 +69,14 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   const [inspectorOpen, setInspectorOpen] = useState(() => window.innerWidth >= 768);
   const [localVerificationResults, setLocalVerificationResults] = useState<Map<string, LensVerificationResult>>(new Map());
   const [showDebugPanel, setShowDebugPanel] = useState(false);
+  
+  // Graph mode: correlation (existing) or mindmap (new)
+  const [graphMode, setGraphMode] = useState<'correlation' | 'mindmap'>('correlation');
+  
+  // Mind map specific state
+  const [mindMapView, setMindMapView] = useState<MindMapViewMode>('category');
+  const [connectBy, setConnectBy] = useState<ConnectByMode>('username');
+  const [showMindMapConnections, setShowMindMapConnections] = useState(true);
   
   // Edge pruning threshold - controls minimum weight for correlation edges
   const [edgeThreshold, setEdgeThreshold] = useState(DEFAULT_PRUNING_OPTIONS.minWeight);
@@ -223,47 +241,87 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
 
   return (
     <div ref={containerRef} className="flex flex-col h-[calc(100vh-320px)] min-h-[520px]">
-      {/* Debug Strip - always visible in dev mode */}
-      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/30 border-b border-border/50 text-[11px] font-mono text-muted-foreground">
-        {correlationData.nodes.length < 2 ? (
-          <span className="text-amber-600">No nodes available for graph</span>
-        ) : correlationData.edges.length === 0 ? (
-          <span className="text-amber-600">No edges generated — correlations not detected yet</span>
-        ) : (
-          <>
-            <span>Results: <strong className="text-foreground">{results.length}</strong></span>
-            <span className="text-muted-foreground/50">•</span>
-            <span>Nodes: <strong className="text-foreground">{correlationData.nodes.length}</strong></span>
-            <span className="text-muted-foreground/50">•</span>
-            <span>Edges: <strong className="text-foreground">{correlationData.edges.length}</strong></span>
-            <span className="text-muted-foreground/50">•</span>
-            <span className={cn(correlationStats.correlationEdges === 0 && 'text-amber-600')}>
-              Correlations: <strong className={cn(correlationStats.correlationEdges > 0 ? 'text-foreground' : 'text-amber-600')}>
-                {correlationStats.correlationEdges}
-              </strong>
+      {/* Mode Toggle Bar */}
+      <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-muted/40 border-b border-border">
+        {/* Left: Mode toggle */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-background border border-border rounded-lg p-0.5">
+            <Button
+              variant={graphMode === 'correlation' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-6 px-2.5 text-xs gap-1.5"
+              onClick={() => setGraphMode('correlation')}
+            >
+              <Network className="w-3 h-3" />
+              Correlation
+            </Button>
+            <Button
+              variant={graphMode === 'mindmap' ? 'default' : 'ghost'}
+              size="sm"
+              className="h-6 px-2.5 text-xs gap-1.5"
+              onClick={() => setGraphMode('mindmap')}
+            >
+              <Workflow className="w-3 h-3" />
+              Mind Map
+            </Button>
+          </div>
+          
+          {/* Mind map specific controls */}
+          {graphMode === 'mindmap' && (
+            <div className="flex items-center gap-2 ml-2 pl-2 border-l border-border">
+              <Select value={mindMapView} onValueChange={(v) => setMindMapView(v as MindMapViewMode)}>
+                <SelectTrigger className="h-6 w-[100px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="category">By Category</SelectItem>
+                  <SelectItem value="all">All Pivots</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {mindMapView === 'all' && (
+                <Select value={connectBy} onValueChange={(v) => setConnectBy(v as ConnectByMode)}>
+                  <SelectTrigger className="h-6 w-[90px] text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="username">Username</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="profile">Profile</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              
+              <div className="flex items-center gap-1.5">
+                <Switch
+                  id="show-connections"
+                  checked={showMindMapConnections}
+                  onCheckedChange={setShowMindMapConnections}
+                  className="h-4 w-7"
+                />
+                <Label htmlFor="show-connections" className="text-[10px] text-muted-foreground">
+                  Lines
+                </Label>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right: Stats */}
+        <div className="text-[11px] font-mono text-muted-foreground">
+          {correlationData.nodes.length > 0 && (
+            <span>
+              <strong className="text-foreground">{accountNodes.length}</strong> profiles
+              {graphMode === 'correlation' && correlationStats.correlationEdges > 0 && (
+                <> · <strong className="text-foreground">{correlationStats.correlationEdges}</strong> correlations</>
+              )}
             </span>
-            {showDebugPanel && correlationStats.correlationEdges > 0 && (
-              <span className="ml-2 text-muted-foreground/60">
-                ({Object.entries(correlationStats.byReason)
-                  .filter(([reason, count]) => count > 0 && reason !== 'identity_search')
-                  .map(([reason, count]) => `${reason}:${count}`)
-                  .join(', ') || 'none'})
-              </span>
-            )}
-          </>
-        )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-4 w-4 p-0 ml-auto opacity-50 hover:opacity-100"
-          onClick={() => setShowDebugPanel(!showDebugPanel)}
-        >
-          <Bug className={cn("w-2.5 h-2.5", showDebugPanel && "text-amber-500")} />
-        </Button>
+          )}
+        </div>
       </div>
 
-      {/* Empty state for no correlations - still show graph but with message */}
-      {correlationStats.correlationEdges === 0 ? (
+      {/* Empty state for no correlations in correlation mode */}
+      {graphMode === 'correlation' && correlationStats.correlationEdges === 0 ? (
         <div className="flex-1 flex flex-col min-h-0">
           {/* Warning banner */}
           <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border-b border-amber-500/20 text-xs text-amber-700 dark:text-amber-400">
@@ -442,13 +500,41 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
           <div className="flex flex-1 min-h-0">
             {/* Graph Area */}
             <div ref={graphContainerRef} className="flex-1 w-full">
-              <CorrelationGraph
-                data={correlationData}
-                focusedNodeId={focusedNodeId}
-                onNodeClick={handleNodeClick}
-                onNodeDoubleClick={handleNodeDoubleClick}
-                className="h-full w-full"
-              />
+              {graphMode === 'correlation' ? (
+                <CorrelationGraph
+                  data={correlationData}
+                  focusedNodeId={focusedNodeId}
+                  onNodeClick={handleNodeClick}
+                  onNodeDoubleClick={handleNodeDoubleClick}
+                  className="h-full w-full"
+                />
+              ) : (
+                <MindMapGraph
+                  results={results}
+                  username={username}
+                  viewMode={mindMapView}
+                  connectBy={connectBy}
+                  showConnections={showMindMapConnections}
+                  onNodeClick={(entity) => {
+                    if (entity) {
+                      // Find matching node for inspector
+                      const node = correlationData.nodes.find(n => n.url === entity.url);
+                      if (node) {
+                        setSelectedNodeId(node.id);
+                        setInspectorOpen(true);
+                      }
+                    } else {
+                      setSelectedNodeId(null);
+                    }
+                  }}
+                  onNodeDoubleClick={(entity) => {
+                    if (entity.url) {
+                      window.open(entity.url, '_blank');
+                    }
+                  }}
+                  className="h-full w-full"
+                />
+              )}
             </div>
 
             {/* Right Inspector Panel */}
