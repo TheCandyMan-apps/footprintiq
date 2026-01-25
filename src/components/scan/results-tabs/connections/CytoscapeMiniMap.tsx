@@ -238,22 +238,27 @@ export function CytoscapeMiniMap({
   const updateViewportRect = useCallback(() => {
     if (!mainCy || !miniCyRef.current || !viewportRef.current || !containerRef.current) return;
 
+    const mainContainer = mainCy.container();
+    if (!mainContainer) return;
+
     const mainZoom = mainCy.zoom();
     const mainPan = mainCy.pan();
     const miniZoom = miniCyRef.current.zoom();
     const miniPan = miniCyRef.current.pan();
     
-    const containerRect = containerRef.current.getBoundingClientRect();
+    const miniMapRect = containerRef.current.getBoundingClientRect();
+    const mainContainerRect = mainContainer.getBoundingClientRect();
     
-    // Main graph's viewport dimensions in model space
-    const mainViewportWidth = containerRect.width / mainZoom;
-    const mainViewportHeight = containerRect.height / mainZoom;
+    // Main graph's viewport dimensions in MODEL space (what area of the graph is visible)
+    const mainViewportModelWidth = mainContainerRect.width / mainZoom;
+    const mainViewportModelHeight = mainContainerRect.height / mainZoom;
     
-    // Convert to mini-map pixel space
-    const vpWidth = mainViewportWidth * miniZoom;
-    const vpHeight = mainViewportHeight * miniZoom;
+    // Convert viewport size to mini-map pixel space
+    const vpWidth = mainViewportModelWidth * miniZoom;
+    const vpHeight = mainViewportModelHeight * miniZoom;
     
     // Position: where the main viewport's top-left is in model coords
+    // pan is the offset of the origin from the top-left of the container
     const mainViewportModelX = -mainPan.x / mainZoom;
     const mainViewportModelY = -mainPan.y / mainZoom;
     
@@ -261,11 +266,11 @@ export function CytoscapeMiniMap({
     const vpX = mainViewportModelX * miniZoom + miniPan.x;
     const vpY = mainViewportModelY * miniZoom + miniPan.y;
     
-    // Clamp values to container bounds
-    const clampedWidth = Math.max(16, Math.min(vpWidth, containerRect.width - 2));
-    const clampedHeight = Math.max(12, Math.min(vpHeight, containerRect.height - 2));
-    const clampedX = Math.max(0, Math.min(vpX, containerRect.width - 16));
-    const clampedY = Math.max(0, Math.min(vpY, containerRect.height - 12));
+    // Clamp values to mini-map container bounds
+    const clampedWidth = Math.max(16, Math.min(vpWidth, miniMapRect.width - 2));
+    const clampedHeight = Math.max(12, Math.min(vpHeight, miniMapRect.height - 2));
+    const clampedX = Math.max(0, Math.min(vpX, miniMapRect.width - 16));
+    const clampedY = Math.max(0, Math.min(vpY, miniMapRect.height - 12));
     
     viewportRef.current.style.width = `${clampedWidth}px`;
     viewportRef.current.style.height = `${clampedHeight}px`;
