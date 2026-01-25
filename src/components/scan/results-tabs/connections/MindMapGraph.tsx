@@ -181,6 +181,7 @@ interface MindMapGraphProps {
   onNodeClick: (entity: ProfileEntity | null) => void;
   onNodeDoubleClick: (entity: ProfileEntity) => void;
   onLegClick?: (leg: LegData | null) => void;
+  onLegsComputed?: (legs: LegData[]) => void;
   className?: string;
 }
 
@@ -231,6 +232,7 @@ export function MindMapGraph({
   onNodeClick,
   onNodeDoubleClick,
   onLegClick,
+  onLegsComputed,
   className,
 }: MindMapGraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -482,6 +484,13 @@ export function MindMapGraph({
     }
   }, [profileEntities, viewMode, connectBy, username]);
 
+  // Notify parent when legs change (for accurate group count)
+  useEffect(() => {
+    if (onLegsComputed) {
+      onLegsComputed(legs);
+    }
+  }, [legs, onLegsComputed]);
+
   // Build cytoscape elements with enhanced styling
   const buildElements = useCallback(() => {
     const elements: cytoscape.ElementDefinition[] = [];
@@ -638,7 +647,7 @@ export function MindMapGraph({
             'overlay-padding': 8,
           },
         },
-        // Leg nodes - ring colored by category
+        // Leg nodes - ring colored by category (enhanced readability)
         {
           selector: 'node.leg-node',
           style: {
@@ -648,14 +657,17 @@ export function MindMapGraph({
             'label': 'data(label)',
             'text-valign': 'bottom',
             'text-margin-y': 8,
-            'font-size': 11,
-            'font-weight': 600,
+            'font-size': 13,
+            'font-weight': 700,
             'color': '#1f2937',
             'text-background-color': '#ffffff',
-            'text-background-opacity': 0.9,
-            'text-background-padding': '3px',
+            'text-background-opacity': 0.95,
+            'text-background-padding': '4px',
             'text-wrap': 'wrap',
-            'text-max-width': '100px',
+            'text-max-width': '110px',
+            'text-outline-width': 1.5,
+            'text-outline-color': '#ffffff',
+            'text-outline-opacity': 0.9,
             'width': 45,
             'height': 45,
             'shape': 'ellipse',
@@ -766,11 +778,27 @@ export function MindMapGraph({
             'border-color': '#2563eb',
           },
         },
-        // Dimmed state for focus mode
+        // Dimmed state for focus mode (click-based)
         {
           selector: '.dimmed',
           style: {
             'opacity': 0.15,
+          },
+        },
+        // Hover-based dimmed state (subtle, 30% dim)
+        {
+          selector: '.hover-dimmed',
+          style: {
+            'opacity': 0.7,
+          },
+        },
+        // Hover-based highlight state
+        {
+          selector: '.hover-highlighted',
+          style: {
+            'opacity': 1,
+            'border-width': 2.5,
+            'border-color': '#3b82f6',
           },
         },
         // Focused path highlighting
@@ -896,12 +924,13 @@ export function MindMapGraph({
       }
     });
 
-    // Hover tooltips with enhanced info
+    // Hover tooltips with enhanced info + subtle hover focus
     cy.on('mouseover', 'node.profile-node', (e) => {
       const node = e.target;
       const renderedPos = node.renderedPosition();
       const container = containerRef.current?.getBoundingClientRect();
       
+      // Show tooltip
       if (container) {
         setTooltipData({
           x: container.left + renderedPos.x,
@@ -916,10 +945,45 @@ export function MindMapGraph({
           },
         });
       }
+      
+      // Subtle hover focus (only if not in click-focus mode)
+      if (!focusedLegId && !focusedProfileId) {
+        const legId = node.data('legId');
+        cy.elements().addClass('hover-dimmed');
+        cy.$('#root').removeClass('hover-dimmed').addClass('hover-highlighted');
+        cy.$(`#${legId}`).removeClass('hover-dimmed').addClass('hover-highlighted');
+        node.removeClass('hover-dimmed').addClass('hover-highlighted');
+        // Highlight connecting edges
+        const rootEdge = cy.edges(`[source = "root"][target = "${legId}"]`);
+        rootEdge.removeClass('hover-dimmed').addClass('hover-highlighted');
+      }
+    });
+
+    // Hover focus for leg nodes
+    cy.on('mouseover', 'node.leg-node', (e) => {
+      const node = e.target;
+      
+      // Subtle hover focus (only if not in click-focus mode)
+      if (!focusedLegId && !focusedProfileId) {
+        const legId = node.id();
+        cy.elements().addClass('hover-dimmed');
+        cy.$('#root').removeClass('hover-dimmed').addClass('hover-highlighted');
+        node.removeClass('hover-dimmed').addClass('hover-highlighted');
+        // Highlight connected profiles
+        const connectedProfiles = cy.nodes(`[legId = "${legId}"]`);
+        connectedProfiles.removeClass('hover-dimmed').addClass('hover-highlighted');
+        // Highlight root edge
+        const rootEdge = cy.edges(`[source = "root"][target = "${legId}"]`);
+        rootEdge.removeClass('hover-dimmed').addClass('hover-highlighted');
+      }
     });
 
     cy.on('mouseout', 'node', () => {
       setTooltipData(null);
+      // Clear hover classes only if not in click-based focus mode
+      if (!focusedLegId && !focusedProfileId) {
+        cy.elements().removeClass('hover-dimmed hover-highlighted');
+      }
     });
 
     // Fit to view with animation

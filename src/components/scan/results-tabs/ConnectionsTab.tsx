@@ -84,6 +84,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   // Mind map inspector state
   const [selectedMindMapEntity, setSelectedMindMapEntity] = useState<ProfileEntity | null>(null);
   const [selectedMindMapLeg, setSelectedMindMapLeg] = useState<LegData | null>(null);
+  const [mindMapLegs, setMindMapLegs] = useState<LegData[]>([]);
   
   // Edge pruning threshold - controls minimum weight for correlation edges
   const [edgeThreshold, setEdgeThreshold] = useState(DEFAULT_PRUNING_OPTIONS.minWeight);
@@ -601,6 +602,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
                   onNodeClick={handleMindMapNodeClick}
                   onNodeDoubleClick={handleMindMapDoubleClick}
                   onLegClick={handleMindMapLegClick}
+                  onLegsComputed={setMindMapLegs}
                   className="h-full w-full"
                 />
               )}
@@ -630,8 +632,8 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
                 selectedEntity={selectedMindMapEntity}
                 selectedLeg={selectedMindMapLeg}
                 totalProfiles={mindMapProfileCount}
-                totalLegs={mindMapCategoryBreakdown.length}
-                categoryBreakdown={mindMapCategoryBreakdown}
+                totalLegs={mindMapLegs.length}
+                categoryBreakdown={mindMapLegs.map(leg => [leg.category, leg.profiles.length] as [string, number])}
                 onOpenProfile={(url) => window.open(url, '_blank')}
               />
             )}
