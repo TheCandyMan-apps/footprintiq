@@ -236,6 +236,8 @@ export function CytoscapeMiniMap({
   }, []);
 
   // Update viewport rectangle on main graph pan/zoom
+  // KEY FIX: Don't clamp in model-space (that causes "resize only" behavior).
+  // Instead, compute the full camera view and clamp only in pixel-space for rendering.
   const updateViewportRect = useCallback(() => {
     if (!mainCy || !miniCyRef.current || !viewportRef.current || !containerRef.current) return;
 
@@ -244,56 +246,45 @@ export function CytoscapeMiniMap({
 
     const miniCy = miniCyRef.current;
     const mainContainerRect = mainContainer.getBoundingClientRect();
-    const miniMapRect = containerRef.current.getBoundingClientRect();
-    
-    // Get the bounding box of all elements (the extent of the graph)
-    const bb = mainCy.elements().boundingBox();
-    if (bb.w === 0 || bb.h === 0) return;
+    const miniWidth = containerRef.current.clientWidth;
+    const miniHeight = containerRef.current.clientHeight;
 
     const mainZoom = mainCy.zoom();
     const mainPan = mainCy.pan();
+    const miniZoom = miniCy.zoom();
+    const miniPan = miniCy.pan();
     
-    // Calculate what model coordinates are visible in the main graph
+    // Calculate what model coordinates are visible in the main graph (full camera view)
     const visibleModelLeft = -mainPan.x / mainZoom;
     const visibleModelTop = -mainPan.y / mainZoom;
     const visibleModelRight = visibleModelLeft + mainContainerRect.width / mainZoom;
     const visibleModelBottom = visibleModelTop + mainContainerRect.height / mainZoom;
     
-    // Clamp to the graph's bounding box (we only care about visibility within the graph extent)
-    const clippedLeft = Math.max(visibleModelLeft, bb.x1);
-    const clippedTop = Math.max(visibleModelTop, bb.y1);
-    const clippedRight = Math.min(visibleModelRight, bb.x2);
-    const clippedBottom = Math.min(visibleModelBottom, bb.y2);
+    // Convert model coords directly to mini-map pixel coords (NO model-space clipping)
+    const vpLeft = visibleModelLeft * miniZoom + miniPan.x;
+    const vpTop = visibleModelTop * miniZoom + miniPan.y;
+    const vpRight = visibleModelRight * miniZoom + miniPan.x;
+    const vpBottom = visibleModelBottom * miniZoom + miniPan.y;
     
-    // If the visible area doesn't intersect the graph at all, hide viewport
-    if (clippedRight <= clippedLeft || clippedBottom <= clippedTop) {
-      viewportRef.current.style.display = 'none';
-      return;
-    }
-    viewportRef.current.style.display = 'block';
-    
-    // Convert clipped model coords to mini-map pixel coords
-    const miniZoom = miniCy.zoom();
-    const miniPan = miniCy.pan();
-    
-    const vpLeft = (clippedLeft * miniZoom) + miniPan.x;
-    const vpTop = (clippedTop * miniZoom) + miniPan.y;
-    const vpRight = (clippedRight * miniZoom) + miniPan.x;
-    const vpBottom = (clippedBottom * miniZoom) + miniPan.y;
-    
+    // Calculate width/height from the full viewport (maintains correct size)
     const vpWidth = vpRight - vpLeft;
     const vpHeight = vpBottom - vpTop;
     
     // Apply minimum sizes for visibility
-    const finalWidth = Math.max(16, vpWidth);
-    const finalHeight = Math.max(12, vpHeight);
-    const finalLeft = Math.max(0, Math.min(vpLeft, miniMapRect.width - finalWidth));
-    const finalTop = Math.max(0, Math.min(vpTop, miniMapRect.height - finalHeight));
+    const width = Math.max(16, vpWidth);
+    const height = Math.max(12, vpHeight);
     
-    viewportRef.current.style.width = `${finalWidth}px`;
-    viewportRef.current.style.height = `${finalHeight}px`;
-    viewportRef.current.style.left = `${finalLeft}px`;
-    viewportRef.current.style.top = `${finalTop}px`;
+    // Clamp position in pixel-space only (keeps box within mini-map bounds for rendering)
+    // But preserve the actual left/top so position changes are visible
+    const left = vpLeft;
+    const top = vpTop;
+    
+    // Always show the viewport (it represents the camera position)
+    viewportRef.current.style.display = 'block';
+    viewportRef.current.style.width = `${width}px`;
+    viewportRef.current.style.height = `${height}px`;
+    viewportRef.current.style.left = `${left}px`;
+    viewportRef.current.style.top = `${top}px`;
   }, [mainCy]);
 
   // Subscribe to main graph viewport changes
@@ -328,11 +319,14 @@ export function CytoscapeMiniMap({
     };
   }, [mainCy, shouldRender, isCollapsed, isInitialized, updateViewportRect, hasValidPositions]);
 
-  // Handle viewport rectangle dragging
-  const handleViewportMouseDown = useCallback((e: React.MouseEvent) => {
-    if (!mainCy) return;
+  // Handle viewport rectangle dragging using Pointer Events for robust capture
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (!mainCy || !viewportRef.current) return;
     e.preventDefault();
     e.stopPropagation();
+    
+    // Capture pointer for reliable tracking even when cursor leaves the element
+    viewportRef.current.setPointerCapture(e.pointerId);
     
     const pan = mainCy.pan();
     dragStartRef.current = {
@@ -344,7 +338,7 @@ export function CytoscapeMiniMap({
     setIsDragging(true);
   }, [mainCy]);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!isDragging || !dragStartRef.current || !mainCy || !miniCyRef.current) return;
 
     const dx = e.clientX - dragStartRef.current.x;
@@ -355,6 +349,7 @@ export function CytoscapeMiniMap({
     const miniZoom = miniCyRef.current.zoom();
     const scale = mainZoom / miniZoom;
     
+    // Move viewport box in same direction as drag (subtract to invert pan direction)
     const newPan = {
       x: dragStartRef.current.panX - dx * scale,
       y: dragStartRef.current.panY - dy * scale,
@@ -364,7 +359,10 @@ export function CytoscapeMiniMap({
     onViewportDrag?.(newPan);
   }, [isDragging, mainCy, onViewportDrag]);
 
-  const handleMouseUp = useCallback(() => {
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (viewportRef.current) {
+      viewportRef.current.releasePointerCapture(e.pointerId);
+    }
     if (isDragging) {
       justDraggedRef.current = true;
       // Reset after a short delay to allow click event to be suppressed
@@ -375,18 +373,6 @@ export function CytoscapeMiniMap({
     setIsDragging(false);
     dragStartRef.current = null;
   }, [isDragging]);
-
-  // Global mouse event listeners for dragging
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   // Click on mini-map background to pan main graph there
   const handleMiniMapClick = useCallback((e: React.MouseEvent) => {
@@ -487,11 +473,11 @@ export function CytoscapeMiniMap({
               onClick={handleMiniMapClick}
             />
             
-            {/* Viewport rectangle - separate layer for drag handling */}
+            {/* Viewport rectangle - uses Pointer Events for robust drag capture */}
             <div
               ref={viewportRef}
               className={cn(
-                'absolute rounded-sm transition-shadow select-none',
+                'absolute rounded-sm select-none touch-none',
                 isDragging 
                   ? 'cursor-grabbing shadow-lg' 
                   : 'cursor-grab hover:shadow-md'
@@ -507,7 +493,10 @@ export function CytoscapeMiniMap({
                   : 'rgba(37, 99, 235, 0.15)',
                 zIndex: 10,
               }}
-              onMouseDown={handleViewportMouseDown}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
             />
           </div>
           
