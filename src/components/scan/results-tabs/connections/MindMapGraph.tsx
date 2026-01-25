@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { ZoomIn, ZoomOut, Maximize2, RotateCcw, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { usePlatformCatalog, buildCategoryMap, getCategoryFromCatalog } from '@/hooks/usePlatformCatalog';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { CytoscapeMiniMap } from './CytoscapeMiniMap';
 
 // ============= HELPER FUNCTIONS =============
 
@@ -969,13 +971,21 @@ export function MindMapGraph({
     if (onLegClick) onLegClick(null);
   }, [onNodeClick, onLegClick]);
 
+  // Track cytoscape ready state for mini-map
+  const [isCyReady, setIsCyReady] = useState(false);
+  
+  useEffect(() => {
+    setIsCyReady(!!cyRef.current);
+  }, [buildElements]);
+
   return (
-    <div className={cn('relative w-full h-full', className)}>
-      {/* Graph container */}
-      <div 
-        ref={containerRef} 
-        className="w-full h-full bg-gradient-to-br from-background via-muted/20 to-background"
-      />
+    <TooltipProvider>
+      <div className={cn('relative w-full h-full', className)}>
+        {/* Graph container */}
+        <div 
+          ref={containerRef} 
+          className="w-full h-full bg-gradient-to-br from-background via-muted/20 to-background"
+        />
 
       {/* Capped warning */}
       {isCapped && (
@@ -997,6 +1007,15 @@ export function MindMapGraph({
           All edges
         </Label>
       </div>
+
+      {/* Mini-map overview */}
+      {isCyReady && (
+        <CytoscapeMiniMap
+          mainCy={cyRef.current}
+          graphMode="mindmap"
+          forceShow={true}
+        />
+      )}
 
       {/* Zoom controls */}
       <div className="absolute bottom-3 right-3 flex flex-col gap-1 bg-background/80 backdrop-blur-sm border border-border rounded-lg p-1 shadow-lg">
@@ -1061,7 +1080,8 @@ export function MindMapGraph({
           )}
         </div>
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
 
