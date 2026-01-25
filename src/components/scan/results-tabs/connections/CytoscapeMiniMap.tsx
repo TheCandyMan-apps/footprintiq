@@ -241,41 +241,58 @@ export function CytoscapeMiniMap({
     const mainContainer = mainCy.container();
     if (!mainContainer) return;
 
+    const miniCy = miniCyRef.current;
+    const mainContainerRect = mainContainer.getBoundingClientRect();
+    const miniMapRect = containerRef.current.getBoundingClientRect();
+    
+    // Get the bounding box of all elements (the extent of the graph)
+    const bb = mainCy.elements().boundingBox();
+    if (bb.w === 0 || bb.h === 0) return;
+
     const mainZoom = mainCy.zoom();
     const mainPan = mainCy.pan();
-    const miniZoom = miniCyRef.current.zoom();
-    const miniPan = miniCyRef.current.pan();
     
-    const miniMapRect = containerRef.current.getBoundingClientRect();
-    const mainContainerRect = mainContainer.getBoundingClientRect();
+    // Calculate what model coordinates are visible in the main graph
+    const visibleModelLeft = -mainPan.x / mainZoom;
+    const visibleModelTop = -mainPan.y / mainZoom;
+    const visibleModelRight = visibleModelLeft + mainContainerRect.width / mainZoom;
+    const visibleModelBottom = visibleModelTop + mainContainerRect.height / mainZoom;
     
-    // Main graph's viewport dimensions in MODEL space (what area of the graph is visible)
-    const mainViewportModelWidth = mainContainerRect.width / mainZoom;
-    const mainViewportModelHeight = mainContainerRect.height / mainZoom;
+    // Clamp to the graph's bounding box (we only care about visibility within the graph extent)
+    const clippedLeft = Math.max(visibleModelLeft, bb.x1);
+    const clippedTop = Math.max(visibleModelTop, bb.y1);
+    const clippedRight = Math.min(visibleModelRight, bb.x2);
+    const clippedBottom = Math.min(visibleModelBottom, bb.y2);
     
-    // Convert viewport size to mini-map pixel space
-    const vpWidth = mainViewportModelWidth * miniZoom;
-    const vpHeight = mainViewportModelHeight * miniZoom;
+    // If the visible area doesn't intersect the graph at all, hide viewport
+    if (clippedRight <= clippedLeft || clippedBottom <= clippedTop) {
+      viewportRef.current.style.display = 'none';
+      return;
+    }
+    viewportRef.current.style.display = 'block';
     
-    // Position: where the main viewport's top-left is in model coords
-    // pan is the offset of the origin from the top-left of the container
-    const mainViewportModelX = -mainPan.x / mainZoom;
-    const mainViewportModelY = -mainPan.y / mainZoom;
+    // Convert clipped model coords to mini-map pixel coords
+    const miniZoom = miniCy.zoom();
+    const miniPan = miniCy.pan();
     
-    // Convert to mini-map pixel space
-    const vpX = mainViewportModelX * miniZoom + miniPan.x;
-    const vpY = mainViewportModelY * miniZoom + miniPan.y;
+    const vpLeft = (clippedLeft * miniZoom) + miniPan.x;
+    const vpTop = (clippedTop * miniZoom) + miniPan.y;
+    const vpRight = (clippedRight * miniZoom) + miniPan.x;
+    const vpBottom = (clippedBottom * miniZoom) + miniPan.y;
     
-    // Clamp values to mini-map container bounds
-    const clampedWidth = Math.max(16, Math.min(vpWidth, miniMapRect.width - 2));
-    const clampedHeight = Math.max(12, Math.min(vpHeight, miniMapRect.height - 2));
-    const clampedX = Math.max(0, Math.min(vpX, miniMapRect.width - 16));
-    const clampedY = Math.max(0, Math.min(vpY, miniMapRect.height - 12));
+    const vpWidth = vpRight - vpLeft;
+    const vpHeight = vpBottom - vpTop;
     
-    viewportRef.current.style.width = `${clampedWidth}px`;
-    viewportRef.current.style.height = `${clampedHeight}px`;
-    viewportRef.current.style.left = `${clampedX}px`;
-    viewportRef.current.style.top = `${clampedY}px`;
+    // Apply minimum sizes for visibility
+    const finalWidth = Math.max(16, vpWidth);
+    const finalHeight = Math.max(12, vpHeight);
+    const finalLeft = Math.max(0, Math.min(vpLeft, miniMapRect.width - finalWidth));
+    const finalTop = Math.max(0, Math.min(vpTop, miniMapRect.height - finalHeight));
+    
+    viewportRef.current.style.width = `${finalWidth}px`;
+    viewportRef.current.style.height = `${finalHeight}px`;
+    viewportRef.current.style.left = `${finalLeft}px`;
+    viewportRef.current.style.top = `${finalTop}px`;
   }, [mainCy]);
 
   // Subscribe to main graph viewport changes
