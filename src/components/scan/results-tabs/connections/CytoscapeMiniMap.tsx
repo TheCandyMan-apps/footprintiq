@@ -103,6 +103,7 @@ export function CytoscapeMiniMap({
   const [isInitialized, setIsInitialized] = useState(false);
   const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dragStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  const justDraggedRef = useRef(false);
 
   // Check if mini-map should be shown
   useEffect(() => {
@@ -364,9 +365,16 @@ export function CytoscapeMiniMap({
   }, [isDragging, mainCy, onViewportDrag]);
 
   const handleMouseUp = useCallback(() => {
+    if (isDragging) {
+      justDraggedRef.current = true;
+      // Reset after a short delay to allow click event to be suppressed
+      setTimeout(() => {
+        justDraggedRef.current = false;
+      }, 100);
+    }
     setIsDragging(false);
     dragStartRef.current = null;
-  }, []);
+  }, [isDragging]);
 
   // Global mouse event listeners for dragging
   useEffect(() => {
@@ -380,9 +388,11 @@ export function CytoscapeMiniMap({
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  // Click on mini-map to pan main graph there
+  // Click on mini-map background to pan main graph there
   const handleMiniMapClick = useCallback((e: React.MouseEvent) => {
-    if (!mainCy || !miniCyRef.current || !containerRef.current || isDragging) return;
+    // Skip if we just finished dragging
+    if (justDraggedRef.current) return;
+    if (!mainCy || !miniCyRef.current || !containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -391,6 +401,10 @@ export function CytoscapeMiniMap({
     const miniZoom = miniCyRef.current.zoom();
     const miniPan = miniCyRef.current.pan();
     const mainZoom = mainCy.zoom();
+    const mainContainer = mainCy.container();
+    if (!mainContainer) return;
+    
+    const mainRect = mainContainer.getBoundingClientRect();
     
     // Convert click position to model coordinates
     const modelX = (clickX - miniPan.x) / miniZoom;
@@ -398,12 +412,12 @@ export function CytoscapeMiniMap({
     
     // Calculate new pan to center on clicked point
     const newPan = {
-      x: -(modelX * mainZoom) + rect.width / 2,
-      y: -(modelY * mainZoom) + rect.height / 2,
+      x: -(modelX * mainZoom) + mainRect.width / 2,
+      y: -(modelY * mainZoom) + mainRect.height / 2,
     };
     
     mainCy.animate({ pan: newPan }, { duration: 200 });
-  }, [mainCy, isDragging]);
+  }, [mainCy]);
 
   if (!shouldRender) return null;
 
@@ -461,45 +475,46 @@ export function CytoscapeMiniMap({
           </div>
 
           {/* Mini-map container - explicit size */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div 
-                className="relative cursor-pointer"
-                style={{ width: '200px', height: '140px' }}
-                onClick={handleMiniMapClick}
-              >
-                {/* Cytoscape container with contrasting background */}
-                <div 
-                  ref={containerRef}
-                  className="absolute inset-0 bg-slate-100 dark:bg-slate-900"
-                  style={{ width: '200px', height: '140px' }}
-                />
-                
-                {/* Viewport rectangle - highly visible */}
-                <div
-                  ref={viewportRef}
-                  className={cn(
-                    'absolute rounded-sm pointer-events-auto transition-colors',
-                    isDragging 
-                      ? 'cursor-grabbing' 
-                      : 'cursor-grab'
-                  )}
-                  style={{
-                    left: 0,
-                    top: 0,
-                    width: 40,
-                    height: 30,
-                    border: '2px solid #2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.15)',
-                  }}
-                  onMouseDown={handleViewportMouseDown}
-                />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="left" className="text-xs max-w-[150px]">
-              <p>Overview map — drag rectangle or click to pan</p>
-            </TooltipContent>
-          </Tooltip>
+          <div 
+            className="relative"
+            style={{ width: '200px', height: '140px' }}
+          >
+            {/* Cytoscape container - click to pan */}
+            <div 
+              ref={containerRef}
+              className="absolute inset-0 bg-slate-100 dark:bg-slate-900 cursor-pointer"
+              style={{ width: '200px', height: '140px' }}
+              onClick={handleMiniMapClick}
+            />
+            
+            {/* Viewport rectangle - separate layer for drag handling */}
+            <div
+              ref={viewportRef}
+              className={cn(
+                'absolute rounded-sm transition-shadow select-none',
+                isDragging 
+                  ? 'cursor-grabbing shadow-lg' 
+                  : 'cursor-grab hover:shadow-md'
+              )}
+              style={{
+                left: 0,
+                top: 0,
+                width: 40,
+                height: 30,
+                border: '2px solid #2563eb',
+                backgroundColor: isDragging 
+                  ? 'rgba(37, 99, 235, 0.25)' 
+                  : 'rgba(37, 99, 235, 0.15)',
+                zIndex: 10,
+              }}
+              onMouseDown={handleViewportMouseDown}
+            />
+          </div>
+          
+          {/* Hint text */}
+          <div className="px-2 py-1 text-[9px] text-muted-foreground text-center border-t border-border/30">
+            Drag box or click to pan
+          </div>
         </div>
       )}
     </div>
