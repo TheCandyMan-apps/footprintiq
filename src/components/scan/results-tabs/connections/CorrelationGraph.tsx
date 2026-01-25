@@ -18,6 +18,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { NodeListPanel } from './NodeListPanel';
+import { CytoscapeMiniMap } from './CytoscapeMiniMap';
 
 interface CorrelationGraphProps {
   data: CorrelationGraphData;
@@ -74,6 +75,7 @@ export function CorrelationGraph({
   const [showNodeList, setShowNodeList] = useState<boolean | null>(null); // null = auto (show when labels off)
   const [pinnedNodeIds, setPinnedNodeIds] = useState<Set<string>>(new Set());
   const [hoveredListNodeId, setHoveredListNodeId] = useState<string | null>(null);
+  const [isCyReady, setIsCyReady] = useState(false);
   const [tooltipData, setTooltipData] = useState<{
     x: number;
     y: number;
@@ -1262,6 +1264,7 @@ export function CorrelationGraph({
     updateZoomState();
 
     cyRef.current = cy;
+    setIsCyReady(true);
 
     cy.one('layoutstop', () => {
       cy.fit(undefined, 30);
@@ -1270,6 +1273,7 @@ export function CorrelationGraph({
     return () => {
       cy.destroy();
       cyRef.current = null;
+      setIsCyReady(false);
     };
   }, [displayNodes, displayEdges, groupByPlatform, buildElements, onNodeClick, onNodeDoubleClick, onFocusNode]);
 
@@ -1774,6 +1778,16 @@ export function CorrelationGraph({
           </Tooltip>
         </TooltipProvider>
       </div>
+
+      {/* Mini-map Overview */}
+      {isCyReady && (
+        <CytoscapeMiniMap
+          mainCy={cyRef.current}
+          graphMode="correlation"
+          minNodeThreshold={25}
+          className="!bottom-14 !left-3 !right-auto"
+        />
+      )}
 
       {/* Bottom-right Legend */}
       <div className="absolute bottom-3 right-3 z-10 bg-background/90 backdrop-blur-sm rounded-lg border border-border p-2 shadow-lg max-w-[140px]">
