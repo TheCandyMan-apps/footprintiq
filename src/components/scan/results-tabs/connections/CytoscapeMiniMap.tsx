@@ -23,57 +23,64 @@ interface CytoscapeMiniMapProps {
   className?: string;
 }
 
-// Simplified stylesheet for mini-map - no labels, reduced complexity
+// HIGH-CONTRAST stylesheet for mini-map - visible against dark/light backgrounds
 const MINIMAP_STYLES: cytoscape.CssStyleDeclaration[] = [
-  // All nodes - simplified dots
+  // All nodes - contrasting solid dots
   {
     selector: 'node',
     style: {
-      'background-color': '#6b7280',
-      'width': 4,
-      'height': 4,
-      'border-width': 0,
+      'background-color': '#334155',
+      'border-color': '#94a3b8',
+      'border-width': 1,
+      'width': 6,
+      'height': 6,
       'label': '',
-      'opacity': 0.6,
+      'opacity': 0.95,
     },
   },
-  // Root/Identity nodes - slightly larger
+  // Root/Identity nodes - larger and prominent
   {
     selector: 'node.root-node, node.identity',
     style: {
-      'background-color': '#3b82f6',
-      'width': 8,
-      'height': 8,
+      'background-color': '#2563eb',
+      'border-color': '#1d4ed8',
+      'border-width': 2,
+      'width': 12,
+      'height': 12,
       'opacity': 1,
     },
   },
-  // Leg/Category nodes - medium size
+  // Leg/Category nodes - medium size green
   {
     selector: 'node.leg-node, node.group-node',
     style: {
-      'background-color': '#10b981',
-      'width': 6,
-      'height': 6,
-      'opacity': 0.8,
+      'background-color': '#059669',
+      'border-color': '#047857',
+      'border-width': 1,
+      'width': 9,
+      'height': 9,
+      'opacity': 0.95,
     },
   },
-  // Profile/Account nodes - tiny
+  // Profile/Account nodes - visible dots
   {
     selector: 'node.profile-node, node.account',
     style: {
-      'background-color': '#9ca3af',
-      'width': 3,
-      'height': 3,
-      'opacity': 0.5,
+      'background-color': '#64748b',
+      'border-color': '#475569',
+      'border-width': 1,
+      'width': 5,
+      'height': 5,
+      'opacity': 0.85,
     },
   },
-  // Edges - very faint
+  // Edges - visible but subtle
   {
     selector: 'edge',
     style: {
-      'line-color': '#d1d5db',
-      'width': 0.5,
-      'opacity': 0.3,
+      'line-color': '#94a3b8',
+      'width': 1,
+      'opacity': 0.4,
       'curve-style': 'straight',
     },
   },
@@ -93,6 +100,8 @@ export function CytoscapeMiniMap({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const dragStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
 
   // Check if mini-map should be shown
@@ -106,13 +115,53 @@ export function CytoscapeMiniMap({
     setShouldRender(show);
   }, [mainCy, graphMode, minNodeThreshold, forceShow]);
 
-  // Initialize mini cytoscape instance
-  useEffect(() => {
+  // Helper to check if nodes have valid positions
+  const hasValidPositions = useCallback((cy: Core): boolean => {
+    const nodes = cy.nodes();
+    if (nodes.length === 0) return false;
+    
+    let validCount = 0;
+    nodes.forEach((node) => {
+      const pos = node.position();
+      if (pos && (pos.x !== 0 || pos.y !== 0)) {
+        validCount++;
+      }
+    });
+    
+    // Need at least some nodes with non-zero positions
+    return validCount > Math.min(3, nodes.length);
+  }, []);
+
+  // Initialize or reinitialize the mini-map
+  const initOverview = useCallback(() => {
     if (!containerRef.current || !mainCy || !shouldRender || isCollapsed) {
       return;
     }
 
-    // Get elements from main graph - clone data only (no positions for preset)
+    // Check container has real size
+    const containerRect = containerRef.current.getBoundingClientRect();
+    if (containerRect.width < 50 || containerRect.height < 50) {
+      // Container too small, retry later
+      if (initTimeoutRef.current) clearTimeout(initTimeoutRef.current);
+      initTimeoutRef.current = setTimeout(initOverview, 150);
+      return;
+    }
+
+    // Check if main cy has valid positions
+    if (!hasValidPositions(mainCy)) {
+      // No valid positions yet, retry later
+      if (initTimeoutRef.current) clearTimeout(initTimeoutRef.current);
+      initTimeoutRef.current = setTimeout(initOverview, 150);
+      return;
+    }
+
+    // Destroy existing instance
+    if (miniCyRef.current) {
+      miniCyRef.current.destroy();
+      miniCyRef.current = null;
+    }
+
+    // Get elements from main graph with positions
     const elements: ElementDefinition[] = mainCy.elements().map((ele) => ({
       data: { ...ele.data() },
       classes: ele.classes().join(' '),
@@ -123,32 +172,72 @@ export function CytoscapeMiniMap({
       container: containerRef.current,
       elements,
       style: MINIMAP_STYLES,
-      layout: { name: 'preset' }, // Use same positions as main graph
+      layout: { name: 'preset' },
       userZoomingEnabled: false,
       userPanningEnabled: false,
       boxSelectionEnabled: false,
       autoungrabify: true,
       autounselectify: true,
-      minZoom: 0.01,
-      maxZoom: 1,
+      minZoom: 0.001,
+      maxZoom: 2,
     });
 
-    // Fit mini graph to container
-    miniCy.fit(undefined, 5);
+    // Fit mini graph to container with padding
+    miniCy.fit(undefined, 8);
     
     miniCyRef.current = miniCy;
+    setIsInitialized(true);
+
+    // Update viewport rect after short delay
+    setTimeout(() => updateViewportRect(), 50);
+  }, [mainCy, shouldRender, isCollapsed]);
+
+  // Initialize after layout is ready
+  useEffect(() => {
+    if (!mainCy || !shouldRender || isCollapsed) {
+      return;
+    }
+
+    // Reset initialization state when dependencies change
+    setIsInitialized(false);
+
+    // Wait for layoutstop event
+    const handleLayoutStop = () => {
+      if (initTimeoutRef.current) clearTimeout(initTimeoutRef.current);
+      initTimeoutRef.current = setTimeout(initOverview, 100);
+    };
+
+    mainCy.one('layoutstop', handleLayoutStop);
+
+    // Fallback timer in case layoutstop already fired or never fires
+    initTimeoutRef.current = setTimeout(initOverview, 300);
 
     return () => {
-      miniCy.destroy();
-      miniCyRef.current = null;
+      mainCy.off('layoutstop', handleLayoutStop);
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current);
+        initTimeoutRef.current = null;
+      }
     };
-  }, [mainCy, shouldRender, isCollapsed]);
+  }, [mainCy, shouldRender, isCollapsed, initOverview]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (miniCyRef.current) {
+        miniCyRef.current.destroy();
+        miniCyRef.current = null;
+      }
+      if (initTimeoutRef.current) {
+        clearTimeout(initTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Update viewport rectangle on main graph pan/zoom
   const updateViewportRect = useCallback(() => {
     if (!mainCy || !miniCyRef.current || !viewportRef.current || !containerRef.current) return;
 
-    const mainExtent = mainCy.extent();
     const mainZoom = mainCy.zoom();
     const mainPan = mainCy.pan();
     const miniZoom = miniCyRef.current.zoom();
@@ -156,54 +245,65 @@ export function CytoscapeMiniMap({
     
     const containerRect = containerRef.current.getBoundingClientRect();
     
-    // Calculate viewport dimensions in mini-map coordinates
-    const viewportWidth = (containerRect.width / mainZoom) * miniZoom;
-    const viewportHeight = (containerRect.height / mainZoom) * miniZoom;
+    // Main graph's viewport dimensions in model space
+    const mainViewportWidth = containerRect.width / mainZoom;
+    const mainViewportHeight = containerRect.height / mainZoom;
     
-    // Calculate viewport position in mini-map coordinates
-    const vpX = (-mainPan.x / mainZoom) * miniZoom + miniPan.x;
-    const vpY = (-mainPan.y / mainZoom) * miniZoom + miniPan.y;
+    // Convert to mini-map pixel space
+    const vpWidth = mainViewportWidth * miniZoom;
+    const vpHeight = mainViewportHeight * miniZoom;
     
-    viewportRef.current.style.width = `${Math.max(20, Math.min(viewportWidth, containerRect.width - 4))}px`;
-    viewportRef.current.style.height = `${Math.max(15, Math.min(viewportHeight, containerRect.height - 4))}px`;
-    viewportRef.current.style.left = `${Math.max(0, Math.min(vpX, containerRect.width - 20))}px`;
-    viewportRef.current.style.top = `${Math.max(0, Math.min(vpY, containerRect.height - 15))}px`;
+    // Position: where the main viewport's top-left is in model coords
+    const mainViewportModelX = -mainPan.x / mainZoom;
+    const mainViewportModelY = -mainPan.y / mainZoom;
+    
+    // Convert to mini-map pixel space
+    const vpX = mainViewportModelX * miniZoom + miniPan.x;
+    const vpY = mainViewportModelY * miniZoom + miniPan.y;
+    
+    // Clamp values to container bounds
+    const clampedWidth = Math.max(16, Math.min(vpWidth, containerRect.width - 2));
+    const clampedHeight = Math.max(12, Math.min(vpHeight, containerRect.height - 2));
+    const clampedX = Math.max(0, Math.min(vpX, containerRect.width - 16));
+    const clampedY = Math.max(0, Math.min(vpY, containerRect.height - 12));
+    
+    viewportRef.current.style.width = `${clampedWidth}px`;
+    viewportRef.current.style.height = `${clampedHeight}px`;
+    viewportRef.current.style.left = `${clampedX}px`;
+    viewportRef.current.style.top = `${clampedY}px`;
   }, [mainCy]);
 
   // Subscribe to main graph viewport changes
   useEffect(() => {
-    if (!mainCy || !shouldRender || isCollapsed) return;
+    if (!mainCy || !shouldRender || isCollapsed || !isInitialized) return;
 
-    const handlers = {
-      'pan zoom': updateViewportRect,
-      'layoutstop': () => {
-        // Re-sync mini-map when layout changes
-        if (miniCyRef.current) {
-          const elements: ElementDefinition[] = mainCy.elements().map((ele) => ({
-            data: { ...ele.data() },
-            classes: ele.classes().join(' '),
-            position: ele.isNode() ? { ...ele.position() } : undefined,
-          }));
-          miniCyRef.current.json({ elements });
-          miniCyRef.current.fit(undefined, 5);
-          setTimeout(updateViewportRect, 50);
-        }
-      },
+    const handleViewChange = () => updateViewportRect();
+    
+    const handleLayoutStop = () => {
+      // Re-sync mini-map elements when layout changes
+      if (miniCyRef.current && hasValidPositions(mainCy)) {
+        const elements: ElementDefinition[] = mainCy.elements().map((ele) => ({
+          data: { ...ele.data() },
+          classes: ele.classes().join(' '),
+          position: ele.isNode() ? { ...ele.position() } : undefined,
+        }));
+        miniCyRef.current.json({ elements });
+        miniCyRef.current.fit(undefined, 8);
+        setTimeout(updateViewportRect, 50);
+      }
     };
 
-    Object.entries(handlers).forEach(([event, handler]) => {
-      mainCy.on(event, handler);
-    });
+    mainCy.on('pan zoom', handleViewChange);
+    mainCy.on('layoutstop', handleLayoutStop);
 
     // Initial update
-    setTimeout(updateViewportRect, 100);
+    updateViewportRect();
 
     return () => {
-      Object.entries(handlers).forEach(([event, handler]) => {
-        mainCy.off(event, handler);
-      });
+      mainCy.off('pan zoom', handleViewChange);
+      mainCy.off('layoutstop', handleLayoutStop);
     };
-  }, [mainCy, shouldRender, isCollapsed, updateViewportRect]);
+  }, [mainCy, shouldRender, isCollapsed, isInitialized, updateViewportRect, hasValidPositions]);
 
   // Handle viewport rectangle dragging
   const handleViewportMouseDown = useCallback((e: React.MouseEvent) => {
@@ -288,8 +388,9 @@ export function CytoscapeMiniMap({
   return (
     <div
       className={cn(
-        'absolute bottom-14 right-3 z-20 transition-all duration-200',
-        isCollapsed ? 'w-auto' : 'w-40',
+        'absolute bottom-14 z-20 transition-all duration-200',
+        isCollapsed ? 'w-auto' : 'w-[200px]',
+        graphMode === 'mindmap' ? 'right-3' : 'left-3',
         className
       )}
     >
@@ -301,7 +402,7 @@ export function CytoscapeMiniMap({
               variant="ghost"
               size="sm"
               onClick={() => setIsCollapsed(false)}
-              className="h-8 px-2 bg-background/80 backdrop-blur-sm border border-border shadow-md hover:bg-background/90"
+              className="h-8 px-2 bg-background/90 backdrop-blur-sm border border-border shadow-md hover:bg-background"
             >
               <Map className="w-3.5 h-3.5 mr-1" />
               <ChevronUp className="w-3 h-3" />
@@ -313,9 +414,9 @@ export function CytoscapeMiniMap({
         </Tooltip>
       ) : (
         /* Expanded state - mini-map */
-        <div className="bg-background/80 backdrop-blur-sm border border-border rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-lg overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-2 py-1 border-b border-border/50 bg-muted/30">
+          <div className="flex items-center justify-between px-2 py-1 border-b border-border/50 bg-muted/40">
             <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
               <Map className="w-3 h-3" />
               Overview
@@ -337,30 +438,37 @@ export function CytoscapeMiniMap({
             </Tooltip>
           </div>
 
-          {/* Mini-map container */}
+          {/* Mini-map container - explicit size */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div 
-                className="relative w-40 h-28 cursor-pointer"
+                className="relative cursor-pointer"
+                style={{ width: '200px', height: '140px' }}
                 onClick={handleMiniMapClick}
               >
+                {/* Cytoscape container with contrasting background */}
                 <div 
                   ref={containerRef}
-                  className="w-full h-full bg-muted/20"
+                  className="absolute inset-0 bg-slate-100 dark:bg-slate-900"
+                  style={{ width: '200px', height: '140px' }}
                 />
                 
-                {/* Viewport rectangle */}
+                {/* Viewport rectangle - highly visible */}
                 <div
                   ref={viewportRef}
                   className={cn(
-                    'absolute border-2 border-primary/70 bg-primary/10 rounded-sm pointer-events-auto transition-colors',
-                    isDragging ? 'cursor-grabbing border-primary' : 'cursor-grab hover:border-primary hover:bg-primary/20'
+                    'absolute rounded-sm pointer-events-auto transition-colors',
+                    isDragging 
+                      ? 'cursor-grabbing' 
+                      : 'cursor-grab'
                   )}
                   style={{
                     left: 0,
                     top: 0,
                     width: 40,
                     height: 30,
+                    border: '2px solid #2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.15)',
                   }}
                   onMouseDown={handleViewportMouseDown}
                 />
