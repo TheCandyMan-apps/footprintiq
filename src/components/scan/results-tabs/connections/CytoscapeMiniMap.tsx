@@ -410,9 +410,8 @@ export function CytoscapeMiniMap({
   return (
     <div
       className={cn(
-        'absolute bottom-14 z-20 transition-all duration-200',
-        isCollapsed ? 'w-auto' : 'w-[200px]',
-        graphMode === 'mindmap' ? 'right-3' : 'left-3',
+        'absolute bottom-3 left-3 z-20 transition-all duration-200',
+        isCollapsed ? 'w-auto' : 'w-[160px]',
         className
       )}
     >
@@ -424,13 +423,13 @@ export function CytoscapeMiniMap({
               variant="ghost"
               size="sm"
               onClick={() => setIsCollapsed(false)}
-              className="h-8 px-2 bg-background/90 backdrop-blur-sm border border-border shadow-md hover:bg-background"
+              className="h-7 px-2 bg-background/90 backdrop-blur-sm border border-border shadow-md hover:bg-background"
             >
-              <Map className="w-3.5 h-3.5 mr-1" />
+              <Map className="w-3 h-3 mr-1" />
               <ChevronUp className="w-3 h-3" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="left" className="text-xs">
+          <TooltipContent side="right" className="text-xs">
             Show overview map
           </TooltipContent>
         </Tooltip>
@@ -438,7 +437,7 @@ export function CytoscapeMiniMap({
         /* Expanded state - mini-map */
         <div className="bg-card/95 backdrop-blur-sm border border-border rounded-lg shadow-lg overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-2 py-1 border-b border-border/50 bg-muted/40">
+          <div className="flex items-center justify-between px-2 py-0.5 border-b border-border/50 bg-muted/40">
             <span className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
               <Map className="w-3 h-3" />
               Overview
@@ -454,22 +453,22 @@ export function CytoscapeMiniMap({
                   <ChevronDown className="w-3 h-3" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="left" className="text-xs">
+              <TooltipContent side="right" className="text-xs">
                 Collapse overview
               </TooltipContent>
             </Tooltip>
           </div>
 
-          {/* Mini-map container - explicit size */}
+          {/* Mini-map container - compact size */}
           <div 
             className="relative"
-            style={{ width: '200px', height: '140px' }}
+            style={{ width: '160px', height: '100px' }}
           >
             {/* Cytoscape container - click to pan */}
             <div 
               ref={containerRef}
               className="absolute inset-0 bg-slate-100 dark:bg-slate-900 cursor-pointer"
-              style={{ width: '200px', height: '140px' }}
+              style={{ width: '160px', height: '100px' }}
               onClick={handleMiniMapClick}
             />
             
