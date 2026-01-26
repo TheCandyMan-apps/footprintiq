@@ -286,19 +286,16 @@ export function ResultDetailDrawer({
                   </Button>
                 )}
 
-                {onRemovalRequest && (
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => onRemovalRequest(
-                      item.type === 'data_source' ? item.data.id : item.data.id,
-                      name
-                    )}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Request Removal
-                  </Button>
-                )}
+                {/* Removal guidance - disabled until fully implemented */}
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-muted-foreground cursor-not-allowed opacity-60"
+                  disabled
+                  title="Removal workflow coming soon"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Removal guidance (coming soon)
+                </Button>
               </div>
             </TabsContent>
 
