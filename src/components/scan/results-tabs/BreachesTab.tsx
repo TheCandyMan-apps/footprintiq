@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ShieldCheck, Calendar, Database, Info } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
+import { filterOutProviderHealth, isProviderHealthFinding } from '@/lib/providerHealthUtils';
 import { 
   RESULTS_SPACING, 
   RESULTS_TYPOGRAPHY, 
@@ -16,6 +17,9 @@ interface BreachesTabProps {
 }
 
 const detectBreachFromResult = (r: any): boolean => {
+  // Skip provider health findings
+  if (isProviderHealthFinding(r)) return false;
+  
   const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised', 'exposure'];
   const kind = (r?.kind || '').toString().toLowerCase();
   const provider = (r?.provider || '').toString().toLowerCase();
@@ -100,7 +104,9 @@ const extractDataTypes = (breach: any): string[] => {
 
 export function BreachesTab({ results, breachResults }: BreachesTabProps) {
   const effectiveBreachResults = useMemo(() => {
-    if (Array.isArray(breachResults) && breachResults.length > 0) return breachResults;
+    // Filter out provider health findings first
+    const filteredBreachResults = filterOutProviderHealth(breachResults);
+    if (Array.isArray(filteredBreachResults) && filteredBreachResults.length > 0) return filteredBreachResults;
     // Fallback: derive breaches directly from results if upstream filtering produced none.
     return (results as any[]).filter(detectBreachFromResult);
   }, [breachResults, results]);
