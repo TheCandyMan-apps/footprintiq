@@ -4,7 +4,25 @@
  * Completely separate results page for Free users.
  * This component NEVER mounts or renders any Advanced/Pro components.
  * 
- * Separation enforced at route level - Free users never see Advanced UI code.
+ * ALLOWED CONTENT:
+ * - Header: "Here's what we found"
+ * - Subtext: "You're viewing a limited summary of an advanced scan."
+ * - Risk Snapshot (counts only, no charts or gauges)
+ * - Profiles & Exposure summary (total count + 2-3 examples + "+ N more (Pro)")
+ * - Connections teaser (static placeholder, NOT live graph)
+ * - Inline Pro upgrade block
+ * 
+ * EXCLUDED (never mounted):
+ * - Timeline Analysis
+ * - Relationship Graph (live)
+ * - Privacy Score
+ * - Digital Footprint DNA
+ * - Catfish Detection
+ * - Data Analytics Overview
+ * - Anomaly Detection
+ * - Continuous Monitoring
+ * - Export / Share / Removal actions
+ * - Raw provider cards or metadata
  */
 
 import { useEffect, useState, useRef, useMemo } from 'react';
@@ -71,15 +89,13 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
   const totalProfiles = aggregated.counts.totalProfiles;
   const totalBreaches = aggregated.counts.totalBreaches;
   
-  // Filter to only 'found' profiles for display
+  // Filter to only 'found' profiles for display (limit to 3 for Free)
   const foundProfiles = aggregated.profiles.filter(p => p.status === 'found' || p.status === 'claimed');
   const previewProfiles = foundProfiles.slice(0, 3);
   const hiddenCount = Math.max(0, foundProfiles.length - 3);
   
-  // Connections count = unique profiles (same as signals)
+  // Connections count for teaser display
   const totalConnections = foundProfiles.length;
-  const visibleConnections = Math.min(3, totalConnections);
-  const lockedConnections = Math.max(0, totalConnections - visibleConnections);
 
   useEffect(() => {
     loadJob();
@@ -466,89 +482,35 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
 
-            {/* ===== CONNECTIONS PREVIEW ===== */}
+            {/* ===== CONNECTIONS TEASER (Static placeholder, NOT live graph) ===== */}
             {totalConnections > 0 && (
               <Card className="overflow-hidden border-border/50">
-                <CardContent className="p-0">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-                    <div className="flex items-center gap-2">
-                      <Network className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                      <h3 className="text-sm font-semibold">Connections</h3>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                        {totalConnections}
-                      </Badge>
-                    </div>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Network className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                    <h3 className="text-sm font-semibold">Connections</h3>
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                      {totalConnections}
+                    </Badge>
                   </div>
 
-                  <div className="relative min-h-[160px] bg-gradient-to-b from-muted/30 to-muted/5">
-                    <div className="flex flex-wrap gap-2 justify-center p-6 relative z-10">
-                      {Array.from({ length: visibleConnections }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted/60 border border-border/30"
-                        >
-                          <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                          <span className="text-xs text-muted-foreground">
-                            Account {i + 1}
-                          </span>
-                        </div>
-                      ))}
-
-                      {Array.from({ length: Math.min(3, lockedConnections) }).map((_, i) => (
-                        <div
-                          key={`blur-${i}`}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-muted/40 border border-border/20 blur-[2px] opacity-50"
-                        >
-                          <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30" />
-                          <span className="text-xs font-medium truncate max-w-[80px]">
-                            ••••••
-                          </span>
-                        </div>
-                      ))}
-
-                      {lockedConnections > 3 && (
-                        <div className="flex items-center gap-1 px-3 py-2 rounded-full bg-muted/20 border border-dashed border-border/30">
-                          <Lock className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground">
-                            +{lockedConnections - 3} more
-                          </span>
-                        </div>
-                      )}
+                  {/* Static placeholder - no live graph elements */}
+                  <div className="relative rounded-lg bg-muted/20 border border-dashed border-border/50 p-6 text-center">
+                    <div className="flex items-center justify-center gap-2 mb-3">
+                      <Lock className="h-4 w-4 text-muted-foreground" />
                     </div>
-
-                    <svg
-                      className="absolute inset-0 w-full h-full pointer-events-none opacity-20"
-                      xmlns="http://www.w3.org/2000/svg"
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Connections detected. Full graph available in Pro.
+                    </p>
+                    <Button 
+                      variant="default"
+                      size="sm" 
+                      className="h-8 text-xs gap-1.5"
+                      onClick={handleUpgradeClick}
                     >
-                      <defs>
-                        <linearGradient id="freeConnLineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
-                          <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="0.6" />
-                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
-                        </linearGradient>
-                      </defs>
-                      <line x1="25%" y1="35%" x2="50%" y2="50%" stroke="url(#freeConnLineGradient)" strokeWidth="1" />
-                      <line x1="75%" y1="35%" x2="50%" y2="50%" stroke="url(#freeConnLineGradient)" strokeWidth="1" />
-                      <line x1="50%" y1="50%" x2="35%" y2="75%" stroke="url(#freeConnLineGradient)" strokeWidth="1" />
-                      <line x1="50%" y1="50%" x2="65%" y2="75%" stroke="url(#freeConnLineGradient)" strokeWidth="1" />
-                    </svg>
-
-                    <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none z-20" />
-                    
-                    <div className="absolute inset-0 flex flex-col items-center justify-end pb-4 z-30">
-                      <p className="text-sm font-medium text-muted-foreground mb-3">
-                        Connections detected but hidden on Free
-                      </p>
-                      <Button 
-                        variant="default"
-                        size="sm" 
-                        className="h-8 text-xs gap-1.5"
-                        onClick={handleUpgradeClick}
-                      >
-                        Unlock full connections graph
-                        <ArrowRight className="h-3 w-3" />
-                      </Button>
-                    </div>
+                      Unlock connections graph
+                      <ArrowRight className="h-3 w-3" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
