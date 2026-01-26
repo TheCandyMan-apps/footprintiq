@@ -22,6 +22,7 @@ import { FreeResultsHeader } from './summary/FreeResultsHeader';
 import { NarrativeBucketCard, NarrativeBucketEmptyState } from './summary/NarrativeBucketCard';
 import { ProUpgradeBlock } from './summary/ProUpgradeBlock';
 import { ConnectionsPreview } from './summary/ConnectionsPreview';
+import { AdvancedModeHint } from './summary/AdvancedModeHint';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
 
 // Lazy load ReputationSignalsCard for feature-flagged rollout
@@ -273,6 +274,9 @@ export function SummaryTab({
           signalsFound={riskSnapshot.signalsFound}
           highRiskCount={breachCount}
         />
+        
+        {/* Subtle hint for Standard users to try Advanced mode */}
+        <AdvancedModeHint scanComplete={scanComplete} />
       </div>
     );
   }
@@ -401,6 +405,9 @@ export function SummaryTab({
           {resultsCount}
         </span>
       </div>
+      
+      {/* Subtle hint for Standard users to try Advanced mode */}
+      <AdvancedModeHint scanComplete={scanComplete} />
     </div>
   );
 }
