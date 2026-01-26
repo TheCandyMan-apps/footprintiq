@@ -4,18 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Shield, AlertTriangle, CheckCircle2, XCircle, Loader2, UserCheck, Lock, Info } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle2, Loader2, UserCheck, Lock, Info } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeDialog } from './UpgradeDialog';
 import { HelpIcon } from '@/components/ui/help-icon';
-import { shouldRenderCatfishDetection, canShowSeverity } from '@/lib/evidenceGating';
 
 interface CatfishDetectionProps {
   scanId: string;
   scanType?: string;
   hasUsername?: boolean;
+}
+
+interface IdentityMismatchSignal {
+  type: 'name_mismatch' | 'age_inconsistency' | 'location_conflict' | 'image_mismatch' | 'bio_conflict' | 'timeline_gap';
+  description: string;
+  sources: string[];
+  confidence: number; // 0-100
 }
 
 interface AnalysisResult {
@@ -35,7 +41,184 @@ interface AnalysisResult {
     platformPresencesCount?: number;
     identityGraph: any;
   };
+  // New: explicit mismatch signals
+  mismatchSignals?: IdentityMismatchSignal[];
 }
+
+/**
+ * Severity Calculation Rules:
+ * - Neutral: No signals detected → Don't render component
+ * - Low: Single weak signal (confidence < 50)
+ * - Medium: Multiple related signals OR single strong signal (confidence >= 50)
+ * - High: 3+ signals with at least one high-confidence
+ * - Critical: Only with corroborated evidence (4+ signals, multiple high-confidence)
+ */
+function calculateEvidenceBasedSeverity(
+  signals: IdentityMismatchSignal[],
+  identityConsistency: number | null,
+  authenticityScore: number | null
+): { severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | null; canShow: boolean } {
+  // No signals = don't show anything
+  if (!signals || signals.length === 0) {
+    return { severity: null, canShow: false };
+  }
+
+  const highConfidenceSignals = signals.filter(s => s.confidence >= 70);
+  const moderateConfidenceSignals = signals.filter(s => s.confidence >= 50 && s.confidence < 70);
+  const totalSignals = signals.length;
+
+  // Critical: 4+ signals with at least 2 high-confidence (corroborated evidence)
+  if (totalSignals >= 4 && highConfidenceSignals.length >= 2) {
+    return { severity: 'CRITICAL', canShow: true };
+  }
+
+  // High: 3+ signals with at least one high-confidence
+  if (totalSignals >= 3 && highConfidenceSignals.length >= 1) {
+    return { severity: 'HIGH', canShow: true };
+  }
+
+  // Medium: Multiple related signals OR single strong signal
+  if (totalSignals >= 2 || highConfidenceSignals.length >= 1) {
+    return { severity: 'MEDIUM', canShow: true };
+  }
+
+  // Low: Single weak signal
+  if (totalSignals === 1 && signals[0].confidence < 50) {
+    return { severity: 'LOW', canShow: true };
+  }
+
+  // Default to Medium for single moderate signal
+  if (totalSignals === 1) {
+    return { severity: 'MEDIUM', canShow: true };
+  }
+
+  return { severity: null, canShow: false };
+}
+
+/**
+ * Extract identity mismatch signals from analysis result
+ * This parses the backend response to identify actual conflicts
+ */
+function extractMismatchSignals(result: AnalysisResult): IdentityMismatchSignal[] {
+  const signals: IdentityMismatchSignal[] = [];
+  
+  // Check for explicit mismatch signals from backend
+  if (result.mismatchSignals && result.mismatchSignals.length > 0) {
+    return result.mismatchSignals;
+  }
+
+  // Derive signals from scores if not explicitly provided
+  const { identityConsistency, authenticityScore } = result.scores;
+  const correlationData = result.correlationData || {};
+  
+  // Low identity consistency indicates mismatches
+  if (identityConsistency !== null && identityConsistency < 70) {
+    signals.push({
+      type: 'name_mismatch',
+      description: 'Cross-platform identity inconsistency detected',
+      sources: ['identity_correlation'],
+      confidence: Math.max(0, 100 - identityConsistency),
+    });
+  }
+
+  // Check correlation data for specific conflicts
+  if (correlationData.nameConflicts && correlationData.nameConflicts.length > 0) {
+    signals.push({
+      type: 'name_mismatch',
+      description: `Name variations detected across ${correlationData.nameConflicts.length} platforms`,
+      sources: correlationData.nameConflicts.map((c: any) => c.platform || 'unknown'),
+      confidence: 65,
+    });
+  }
+
+  if (correlationData.ageConflicts && correlationData.ageConflicts.length > 0) {
+    signals.push({
+      type: 'age_inconsistency',
+      description: 'Conflicting age information found',
+      sources: correlationData.ageConflicts.map((c: any) => c.platform || 'unknown'),
+      confidence: 70,
+    });
+  }
+
+  if (correlationData.locationConflicts && correlationData.locationConflicts.length > 0) {
+    signals.push({
+      type: 'location_conflict',
+      description: 'Geographic location inconsistencies detected',
+      sources: correlationData.locationConflicts.map((c: any) => c.platform || 'unknown'),
+      confidence: 55,
+    });
+  }
+
+  if (correlationData.imageAnalysis?.mismatchDetected) {
+    signals.push({
+      type: 'image_mismatch',
+      description: 'Profile images may not match across platforms',
+      sources: ['image_analysis'],
+      confidence: correlationData.imageAnalysis.confidence || 60,
+    });
+  }
+
+  if (correlationData.bioConflicts && correlationData.bioConflicts.length > 0) {
+    signals.push({
+      type: 'bio_conflict',
+      description: 'Contradictory biographical information found',
+      sources: correlationData.bioConflicts.map((c: any) => c.platform || 'unknown'),
+      confidence: 50,
+    });
+  }
+
+  // Timeline gaps (e.g., account created after claimed employment)
+  if (correlationData.timelineAnomalies && correlationData.timelineAnomalies.length > 0) {
+    signals.push({
+      type: 'timeline_gap',
+      description: 'Timeline inconsistencies detected in account history',
+      sources: ['timeline_analysis'],
+      confidence: 60,
+    });
+  }
+
+  return signals;
+}
+
+const SEVERITY_CONFIG = {
+  LOW: {
+    color: 'bg-green-500/10 border-green-500/30',
+    textColor: 'text-green-600',
+    icon: CheckCircle2,
+    label: 'Low Concern',
+    description: 'Minor inconsistency detected. Likely a data quality issue rather than identity fraud.',
+  },
+  MEDIUM: {
+    color: 'bg-yellow-500/10 border-yellow-500/30',
+    textColor: 'text-yellow-600',
+    icon: AlertTriangle,
+    label: 'Moderate Concern',
+    description: 'Some profile attributes conflict. Manual verification recommended.',
+  },
+  HIGH: {
+    color: 'bg-orange-500/10 border-orange-500/30',
+    textColor: 'text-orange-600',
+    icon: AlertTriangle,
+    label: 'Elevated Concern',
+    description: 'Multiple red flags detected across sources. Exercise caution.',
+  },
+  CRITICAL: {
+    color: 'bg-destructive/10 border-destructive/30',
+    textColor: 'text-destructive',
+    icon: AlertTriangle,
+    label: 'Significant Concern',
+    description: 'Corroborated evidence of identity inconsistencies. Thorough verification strongly advised.',
+  },
+};
+
+const SIGNAL_TYPE_LABELS: Record<IdentityMismatchSignal['type'], string> = {
+  name_mismatch: 'Name Mismatch',
+  age_inconsistency: 'Age Inconsistency',
+  location_conflict: 'Location Conflict',
+  image_mismatch: 'Image Mismatch',
+  bio_conflict: 'Bio Conflict',
+  timeline_gap: 'Timeline Gap',
+};
 
 export const CatfishDetection = ({ scanId, scanType, hasUsername }: CatfishDetectionProps) => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
@@ -44,11 +227,25 @@ export const CatfishDetection = ({ scanId, scanType, hasUsername }: CatfishDetec
   const { toast } = useToast();
   const { isPremium } = useSubscription();
 
-  // Auto-run detection only for username scans (when hasUsername is true or scanType indicates username)
   const isUsernameBasedScan = hasUsername || scanType === 'username' || scanType === 'social_media';
 
+  // Extract mismatch signals from result
+  const mismatchSignals = useMemo(() => {
+    if (!result) return [];
+    return extractMismatchSignals(result);
+  }, [result]);
+
+  // Calculate evidence-based severity
+  const { severity, canShow } = useMemo(() => {
+    if (!result) return { severity: null, canShow: false };
+    return calculateEvidenceBasedSeverity(
+      mismatchSignals,
+      result.scores.identityConsistency,
+      result.scores.authenticityScore
+    );
+  }, [result, mismatchSignals]);
+
   useEffect(() => {
-    // Only auto-run for premium users with username-based scans
     if (isPremium && scanId && !result && !loading && isUsernameBasedScan) {
       runDetection();
     }
@@ -70,11 +267,10 @@ export const CatfishDetection = ({ scanId, scanType, hasUsername }: CatfishDetec
 
       setResult(data);
       
-      // Only show success toast if analysis actually ran (not for notApplicable)
       if (!data.notApplicable) {
         toast({
           title: "Analysis Complete",
-          description: "Catfish detection and identity correlation completed",
+          description: "Identity correlation analysis completed",
         });
       }
     } catch (error) {
@@ -86,36 +282,6 @@ export const CatfishDetection = ({ scanId, scanType, hasUsername }: CatfishDetec
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getRiskColor = (risk: string) => {
-    switch (risk) {
-      case 'LOW': return 'bg-green-500';
-      case 'MEDIUM': return 'bg-yellow-500';
-      case 'HIGH': return 'bg-orange-500';
-      case 'CRITICAL': return 'bg-red-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getRiskIcon = (risk: string) => {
-    switch (risk) {
-      case 'LOW': return <CheckCircle2 className="h-5 w-5 text-green-500" />;
-      case 'MEDIUM': return <AlertTriangle className="h-5 w-5 text-yellow-500" />;
-      case 'HIGH': return <AlertTriangle className="h-5 w-5 text-orange-500" />;
-      case 'CRITICAL': return <XCircle className="h-5 w-5 text-red-500" />;
-      default: return <Shield className="h-5 w-5" />;
-    }
-  };
-
-  const getRiskEmoji = (risk: string) => {
-    switch (risk) {
-      case 'LOW': return '✅';
-      case 'MEDIUM': return '⚠️';
-      case 'HIGH': return '🔴';
-      case 'CRITICAL': return '🚨';
-      default: return '🔍';
     }
   };
 
@@ -166,39 +332,61 @@ export const CatfishDetection = ({ scanId, scanType, hasUsername }: CatfishDetec
     ));
   };
 
-  // Render "Not Applicable" state for non-username scans
+  // Don't render for non-username scans that returned notApplicable
   if (result?.notApplicable) {
+    return null; // Don't render at all - not applicable
+  }
+
+  // If we have a result but no mismatch signals detected, don't render the component
+  if (result && !canShow) {
+    return null; // No identity mismatch signals = don't show catfish detection
+  }
+
+  // Pre-analysis state - show prompt to run (only for premium username scans)
+  if (!result && isPremium && isUsernameBasedScan) {
     return (
       <Card className="border-muted">
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Info className="h-6 w-6 text-muted-foreground" />
+            <UserCheck className="h-6 w-6 text-muted-foreground" />
             <div>
-              <CardTitle className="flex items-center gap-2">
-                Catfish Detection
-                <Badge variant="secondary">Not Applicable</Badge>
+              <CardTitle className="flex items-center gap-2 text-base">
+                Identity Verification Available
+                <HelpIcon helpKey="catfish_detection" />
               </CardTitle>
               <CardDescription>
-                This feature requires username scan data
+                Run analysis to check for identity inconsistencies
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent>
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>Feature Not Available for This Scan Type</AlertTitle>
-            <AlertDescription className="mt-2">
-              {result.message || 'Catfish detection requires a username scan with social media presence data.'}
-              <p className="mt-2 text-sm">
-                For email or phone scans, use the <strong>AI Analysis</strong> feature to get breach and exposure insights.
-              </p>
-            </AlertDescription>
-          </Alert>
+          <Button onClick={runDetection} disabled={loading} variant="outline" size="sm">
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Shield className="mr-2 h-4 w-4" />
+                Check for Inconsistencies
+              </>
+            )}
+          </Button>
         </CardContent>
       </Card>
     );
   }
+
+  // Non-premium or non-username scan - don't render
+  if (!result) {
+    return null;
+  }
+
+  // We have result AND mismatch signals - render the full component
+  const severityConfig = severity ? SEVERITY_CONFIG[severity] : null;
+  const SeverityIcon = severityConfig?.icon || Info;
 
   return (
     <Card className="border-primary/20">
@@ -207,218 +395,157 @@ export const CatfishDetection = ({ scanId, scanType, hasUsername }: CatfishDetec
           <UserCheck className="h-6 w-6 text-primary" />
           <div>
             <CardTitle className="flex items-center gap-2">
-              AI-Powered Catfish Detection
+              Identity Consistency Analysis
               <HelpIcon helpKey="catfish_detection" />
             </CardTitle>
             <CardDescription>
-              Identity correlation, behavioral analysis, and authenticity verification
+              {mismatchSignals.length} inconsistenc{mismatchSignals.length === 1 ? 'y' : 'ies'} detected across profiles
             </CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {!result ? (
-          <div className="text-center py-8">
-            {!isPremium && (
-              <div className="mb-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
-                <Lock className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <p className="font-semibold text-primary mb-1">Premium Feature</p>
-                <p className="text-sm text-muted-foreground">
-                  Upgrade to Pro to unlock catfish detection and identity verification
-                </p>
-              </div>
-            )}
-            {!isUsernameBasedScan && isPremium && (
-              <Alert className="mb-4 text-left">
-                <Info className="h-4 w-4" />
-                <AlertTitle>Limited Applicability</AlertTitle>
-                <AlertDescription>
-                  This scan may not have username data. Catfish detection works best with username-based scans that include social media profiles.
-                </AlertDescription>
-              </Alert>
-            )}
-            <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground mb-4">
-              Run comprehensive catfish detection to verify identity authenticity through:
-            </p>
-            <ul className="text-sm text-muted-foreground mb-6 space-y-2 text-left max-w-md mx-auto">
-              <li>✓ Cross-platform identity correlation</li>
-              <li>✓ Behavioral pattern analysis</li>
-              <li>✓ Profile age and activity verification</li>
-              <li>✓ Social media facial matching</li>
-              <li>✓ Username consistency checking</li>
-            </ul>
-            <Button onClick={runDetection} disabled={loading} size="lg">
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Analyzing Identity...
-                </>
-              ) : (
-                <>
-                  {!isPremium && <Lock className="mr-2 h-4 w-4" />}
-                  {isPremium && <Shield className="mr-2 h-4 w-4" />}
-                  {isPremium ? 'Run Catfish Detection' : 'Upgrade to Unlock'}
-                </>
-              )}
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Evidence-gated Risk Level Alert */}
-            {(() => {
-              const dataPoints = (result.scanData.socialProfilesCount ?? result.scanData.platformPresencesCount ?? 0) 
-                + (result.scanData.dataSourcesCount ?? 0);
-              const shouldShowRisk = shouldRenderCatfishDetection(
-                result.scores.catfishRisk,
-                dataPoints,
-                result.analysis
-              );
-              
-              // Check if severity can be shown based on evidence
-              const riskLevel = result.scores.catfishRisk;
-              const severityMap: Record<string, 'critical' | 'high' | 'medium' | 'low'> = {
-                'CRITICAL': 'critical',
-                'HIGH': 'high',
-                'MEDIUM': 'medium',
-                'LOW': 'low',
-              };
-              const mappedSeverity = severityMap[riskLevel] || null;
-              const canShowRiskLevel = mappedSeverity && canShowSeverity(mappedSeverity, {
-                evidenceCount: dataPoints,
-                confidence: result.scores.authenticityScore ?? 0,
-                justification: result.analysis,
-              });
-              
-              if (!shouldShowRisk || !canShowRiskLevel) {
-                // Show insufficient data message instead of risk
-                return (
-                  <Alert className="border-muted">
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>Insufficient Evidence</AlertTitle>
-                    <AlertDescription>
-                      Not enough data points to determine catfish risk. 
-                      {dataPoints} signals found — more data needed for a reliable assessment.
-                    </AlertDescription>
-                  </Alert>
-                );
-              }
-              
-              return (
-                <Alert className={`border-2 ${getRiskColor(result.scores.catfishRisk)}/20`}>
-                  <div className="flex items-center gap-2">
-                    {getRiskIcon(result.scores.catfishRisk)}
-                    <div className="flex-1">
-                      <h4 className="font-semibold flex items-center gap-2">
-                        <span>{getRiskEmoji(result.scores.catfishRisk)}</span>
-                        Catfish Risk: <strong className="text-primary">{result.scores.catfishRisk}</strong>
-                      </h4>
-                      <AlertDescription>
-                        {result.scores.catfishRisk === 'LOW' && 'Identity appears authentic with strong verification signals'}
-                        {result.scores.catfishRisk === 'MEDIUM' && 'Some inconsistencies detected, exercise caution'}
-                        {result.scores.catfishRisk === 'HIGH' && 'Multiple red flags detected, high probability of fake identity'}
-                        {result.scores.catfishRisk === 'CRITICAL' && 'Severe authenticity concerns, likely catfish profile'}
-                        {result.scores.catfishRisk === 'N/A' && 'Unable to assess risk - insufficient data'}
-                      </AlertDescription>
-                    </div>
-                  </div>
-                </Alert>
-              );
-            })()}
-
-            {/* Score Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Identity Consistency</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">
-                    {result.scores.identityConsistency === null ? 'N/A' : `${result.scores.identityConsistency}%`}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Cross-platform verification
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Authenticity Score</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">
-                    {result.scores.authenticityScore === null ? 'N/A' : `${result.scores.authenticityScore}%`}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Overall confidence level
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium">Data Points</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {(() => {
-                    const profiles = result.scanData.socialProfilesCount ?? result.scanData.platformPresencesCount ?? 0;
-                    const sources = result.scanData.dataSourcesCount ?? 0;
-                    const total = profiles + sources;
-                    return (
-                      <>
-                        <div className="text-3xl font-bold">{total}</div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {profiles} profiles, {sources} sources
-                        </p>
-                      </>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Detailed Analysis */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-md">Detailed Analysis</CardTitle>
-                <CardDescription>Expand sections to view in-depth findings</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Accordion type="multiple" className="w-full">
-                  {formatAnalysis(result.analysis)}
-                </Accordion>
-              </CardContent>
-            </Card>
-
-
-            <Button 
-              onClick={runDetection} 
-              disabled={loading}
-              variant="outline"
-              size="sm"
-              className="w-full"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Re-analyzing...
-                </>
-              ) : (
-                <>
-                  <Shield className="mr-2 h-4 w-4" />
-                  Re-run Analysis
-                </>
-              )}
-            </Button>
-          </div>
+      <CardContent className="space-y-6">
+        {/* Severity Alert - Only shown when we have signals */}
+        {severityConfig && (
+          <Alert className={`border ${severityConfig.color}`}>
+            <SeverityIcon className={`h-4 w-4 ${severityConfig.textColor}`} />
+            <AlertTitle className={severityConfig.textColor}>
+              {severityConfig.label}
+            </AlertTitle>
+            <AlertDescription className="mt-1 text-sm">
+              {severityConfig.description}
+            </AlertDescription>
+          </Alert>
         )}
-        <UpgradeDialog 
-          open={showUpgradeDialog} 
-          onOpenChange={setShowUpgradeDialog} 
-          feature="Catfish detection and identity verification"
-        />
+
+        {/* Mismatch Signals List */}
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+            Detected Inconsistencies
+          </h4>
+          <div className="space-y-2">
+            {mismatchSignals.map((signal, idx) => (
+              <div 
+                key={idx}
+                className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-border/50"
+              >
+                <div className="flex-shrink-0 mt-0.5">
+                  <Badge variant="outline" className="text-xs">
+                    {SIGNAL_TYPE_LABELS[signal.type]}
+                  </Badge>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-foreground">{signal.description}</p>
+                  {signal.sources.length > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Sources: {signal.sources.join(', ')}
+                    </p>
+                  )}
+                </div>
+                <div className="flex-shrink-0">
+                  <span className={`text-xs font-medium ${
+                    signal.confidence >= 70 ? 'text-orange-600' : 
+                    signal.confidence >= 50 ? 'text-yellow-600' : 
+                    'text-muted-foreground'
+                  }`}>
+                    {signal.confidence}%
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Score Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Identity Consistency</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {result.scores.identityConsistency === null ? '—' : `${result.scores.identityConsistency}%`}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Cross-platform match rate
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Data Points</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const profiles = result.scanData.socialProfilesCount ?? result.scanData.platformPresencesCount ?? 0;
+                const sources = result.scanData.dataSourcesCount ?? 0;
+                return (
+                  <>
+                    <div className="text-2xl font-bold">{profiles + sources}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {profiles} profiles, {sources} sources
+                    </p>
+                  </>
+                );
+              })()}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">Signals Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{mismatchSignals.length}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Identity inconsistencies
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Detailed Analysis */}
+        {result.analysis && (
+          <Card className="border-border/50">
+            <CardHeader>
+              <CardTitle className="text-sm">Detailed Analysis</CardTitle>
+              <CardDescription className="text-xs">Expand sections for findings</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="multiple" className="w-full">
+                {formatAnalysis(result.analysis)}
+              </Accordion>
+            </CardContent>
+          </Card>
+        )}
+
+        <Button 
+          onClick={runDetection} 
+          disabled={loading}
+          variant="outline"
+          size="sm"
+          className="w-full"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Re-analyzing...
+            </>
+          ) : (
+            <>
+              <Shield className="mr-2 h-4 w-4" />
+              Re-run Analysis
+            </>
+          )}
+        </Button>
       </CardContent>
+      
+      <UpgradeDialog 
+        open={showUpgradeDialog} 
+        onOpenChange={setShowUpgradeDialog} 
+        feature="Identity verification and consistency analysis"
+      />
     </Card>
   );
 };
