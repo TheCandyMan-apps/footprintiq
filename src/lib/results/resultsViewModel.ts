@@ -3,11 +3,15 @@
  * 
  * Transforms raw scan results into a view-layer model with plan-based redaction.
  * Free users see a redacted preview; Pro users see full details.
- * Raw results remain intact server-side for unlock after upgrade.
+ * 
+ * CRITICAL: Raw results are ALWAYS stored server-side unchanged.
+ * This transformer only affects UI rendering - upgrading unlocks
+ * the already-run results without re-running any providers.
  */
 
 import { type PlanTier, normalizePlanTier, hasCapability } from '@/lib/billing/planCapabilities';
 import { filterOutProviderHealth, isProviderHealthFinding } from '@/lib/providerHealthUtils';
+import { maskEmail, maskPhone, maskEvidence, maskUrl, maskUsername } from '@/lib/mask';
 
 // ============ TYPE DEFINITIONS ============
 
@@ -19,6 +23,8 @@ export interface RiskSnapshot {
   riskLevel: RiskLevel;
   signalsFound: number;
   highConfidenceCount: number;
+  /** Confidence percentage (hidden for Free) */
+  confidencePercentage: number | null;
 }
 
 export interface ViewModelFinding {
@@ -26,6 +32,7 @@ export interface ViewModelFinding {
   platform: string;
   url: string | null;
   status: string;
+  /** Confidence score (0 for Free on non-primary items) */
   confidence: number;
   /** Masked if redacted */
   evidence: string | null;
@@ -33,8 +40,12 @@ export interface ViewModelFinding {
   evidenceFull: string | null;
   /** Whether this finding is redacted */
   isRedacted: boolean;
+  /** Whether this is a preview item (first 1-2) */
+  isPreview: boolean;
   /** Additional metadata (null for Free on sensitive fields) */
   meta: Record<string, any> | null;
+  /** Provider name (hidden for Free) */
+  provider: string | null;
 }
 
 export interface ViewModelBucket {
@@ -46,19 +57,29 @@ export interface ViewModelBucket {
   totalCount: number;
   /** Number of hidden items */
   hiddenCount: number;
+  /** Example items shown in preview (1-2) */
+  previewCount: number;
   /** Upgrade prompt text */
   upgradePrompt: string | null;
 }
 
 export interface ConnectionsViewModel {
   /** Visible nodes (limited for Free) */
-  visibleNodes: Array<{ id: string; platform: string; isLocked: boolean }>;
+  visibleNodes: Array<{
+    id: string;
+    platform: string;
+    isLocked: boolean;
+    /** Label shown (masked for locked nodes) */
+    displayLabel: string | null;
+  }>;
   /** Total node count */
   totalNodes: number;
   /** Whether the graph is partially locked */
   isPartiallyLocked: boolean;
   /** Max visible nodes for current plan */
   maxVisibleNodes: number;
+  /** Number of unlabeled/blurred nodes */
+  blurredCount: number;
   /** Upgrade prompt */
   upgradePrompt: string | null;
 }
@@ -73,47 +94,39 @@ export interface ResultsViewModel {
   rawResultCount: number;
   /** Provider health findings (not redacted) */
   providerHealth: any[];
+  /** Total hidden findings across all buckets */
+  totalHiddenCount: number;
+  /** Whether user can unlock by upgrading (always true for Free) */
+  canUnlock: boolean;
 }
 
 // ============ CONSTANTS ============
 
 const FREE_BUCKET_LIMITS: Record<BucketType, number> = {
-  PublicProfiles: 3,
-  ExposureSignals: 2,
-  ReuseIndicators: 2,
-  Connections: 5,
+  PublicProfiles: 2,   // Show only 2 examples
+  ExposureSignals: 1,  // Show only 1 example
+  ReuseIndicators: 1,  // Show only 1 example
+  Connections: 3,      // Show only 3 nodes
 };
 
-const FREE_MAX_CONNECTIONS_NODES = 8;
-const SENSITIVE_PATTERNS = [
-  /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/, // emails
-  /\+?[1-9]\d{1,14}/, // phone numbers (E.164)
-  /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/, // US phone format
-];
+const FREE_PREVIEW_COUNTS: Record<BucketType, number> = {
+  PublicProfiles: 2,
+  ExposureSignals: 1,
+  ReuseIndicators: 1,
+  Connections: 3,
+};
+
+const FREE_MAX_CONNECTIONS_NODES = 5;
+const FREE_VISIBLE_CONNECTIONS = 3; // Only first 3 have labels
 
 // ============ HELPERS ============
 
+/**
+ * Mask sensitive data in evidence strings using centralized mask utilities
+ */
 function maskSensitiveData(text: string): string {
   if (!text) return text;
-  
-  let masked = text;
-  
-  // Mask emails
-  masked = masked.replace(
-    /\b([A-Za-z0-9._%+-]+)@([A-Za-z0-9.-]+\.[A-Z|a-z]{2,})\b/gi,
-    (_, local, domain) => {
-      const maskedLocal = local.substring(0, 2) + '***';
-      return `${maskedLocal}@${domain}`;
-    }
-  );
-  
-  // Mask phone numbers
-  masked = masked.replace(
-    /(\+?[1-9]\d{0,2})[\s.-]?(\d{3})[\s.-]?(\d{3})[\s.-]?(\d{4})/g,
-    '$1 *** *** $4'
-  );
-  
-  return masked;
+  return maskEvidence(text);
 }
 
 function classifyFinding(finding: any): BucketType {
@@ -198,6 +211,20 @@ function extractEvidence(finding: any): string {
 
 // ============ MAIN TRANSFORMER ============
 
+/**
+ * Transform raw scan results into a plan-aware view model
+ * 
+ * Free plan redaction rules:
+ * - Show summary counts and high-confidence indicators
+ * - Show only 1-2 example findings per category
+ * - Mask sensitive values (emails, phones, IDs)
+ * - Hide full provider lists and evidence details
+ * - Hide confidence scores and percentages
+ * - Render connections in preview mode (few unlabeled nodes, rest blurred)
+ * - Show labels like "+ N more results (Pro)" where applicable
+ * 
+ * Pro/Admin: Full unredacted access
+ */
 export function buildResultsViewModel(
   rawResults: any[],
   plan: PlanTier | string
@@ -219,6 +246,7 @@ export function buildResultsViewModel(
   
   let signalsFound = 0;
   let highConfidenceCount = 0;
+  let totalConfidence = 0;
   
   findings.forEach(finding => {
     const bucketType = classifyFinding(finding);
@@ -230,6 +258,7 @@ export function buildResultsViewModel(
     });
     
     signalsFound++;
+    totalConfidence += confidence;
     if (confidence >= 75) highConfidenceCount++;
   });
   
@@ -243,30 +272,46 @@ export function buildResultsViewModel(
     Connections: 'Connections',
   };
   
+  let totalHiddenCount = 0;
+  
   (Object.keys(bucketedFindings) as BucketType[]).forEach(bucketType => {
     const rawItems = bucketedFindings[bucketType];
     const limit = isFullAccess ? rawItems.length : FREE_BUCKET_LIMITS[bucketType];
+    const previewCount = isFullAccess ? rawItems.length : FREE_PREVIEW_COUNTS[bucketType];
     
     // Sort by confidence descending
     rawItems.sort((a, b) => (b._confidence || 0) - (a._confidence || 0));
     
     const visibleItems = rawItems.slice(0, limit);
     const hiddenCount = Math.max(0, rawItems.length - limit);
+    totalHiddenCount += hiddenCount;
     
     const items: ViewModelFinding[] = visibleItems.map((finding, index) => {
       const evidenceFull = extractEvidence(finding);
-      const isRedacted = !isFullAccess && index >= 1; // First item gets more detail
+      const isPreview = index < previewCount;
+      // For Free: only first item gets partial detail, rest are more redacted
+      const isRedacted = !isFullAccess && index >= 1;
+      
+      // Mask URL for Free users on non-preview items
+      let displayUrl = finding.url;
+      if (!isFullAccess && !isPreview && finding.url) {
+        displayUrl = maskUrl(finding.url);
+      }
       
       return {
         id: finding.id,
         platform: finding.site || 'Unknown',
-        url: isFullAccess ? finding.url : (index === 0 ? finding.url : null),
+        url: isFullAccess ? finding.url : displayUrl,
         status: finding.status || 'unknown',
-        confidence: isFullAccess ? finding._confidence : (index === 0 ? finding._confidence : 0),
+        // Hide confidence for Free users except on first item
+        confidence: isFullAccess ? finding._confidence : (isPreview ? finding._confidence : 0),
         evidence: isRedacted ? maskSensitiveData(evidenceFull) : evidenceFull,
         evidenceFull: isFullAccess ? evidenceFull : null,
         isRedacted,
+        isPreview,
         meta: isFullAccess ? (finding.meta || finding.metadata || null) : null,
+        // Hide provider names for Free users
+        provider: isFullAccess ? (finding.provider || null) : null,
       };
     });
     
@@ -276,27 +321,40 @@ export function buildResultsViewModel(
       items,
       totalCount: rawItems.length,
       hiddenCount,
+      previewCount: Math.min(previewCount, visibleItems.length),
       upgradePrompt: hiddenCount > 0 
-        ? `+ ${hiddenCount} more sources (Pro)`
+        ? `+ ${hiddenCount} more (Pro)`
         : null,
     };
   });
   
-  // Build connections view model
+  // Build connections view model with more aggressive redaction for Free
   const allProfiles = bucketedFindings.PublicProfiles;
   const connectionsLimit = isFullAccess ? allProfiles.length : FREE_MAX_CONNECTIONS_NODES;
+  const labelLimit = isFullAccess ? allProfiles.length : FREE_VISIBLE_CONNECTIONS;
   
-  const connections: ConnectionsViewModel = {
-    visibleNodes: allProfiles.slice(0, connectionsLimit).map((p, i) => ({
+  const visibleNodes = allProfiles.slice(0, connectionsLimit).map((p, i) => {
+    const isLocked = !isFullAccess && i >= labelLimit;
+    return {
       id: p.id,
       platform: p.site || 'Unknown',
-      isLocked: !isFullAccess && i >= 3, // First 3 fully visible, rest blurred
-    })),
+      isLocked,
+      // For Free: only first 3 nodes show labels, rest are blurred
+      displayLabel: isLocked ? null : (p.site || 'Unknown'),
+    };
+  });
+  
+  const blurredCount = visibleNodes.filter(n => n.isLocked).length;
+  const lockedCount = Math.max(0, allProfiles.length - connectionsLimit);
+  
+  const connections: ConnectionsViewModel = {
+    visibleNodes,
     totalNodes: allProfiles.length,
-    isPartiallyLocked: !isFullAccess && allProfiles.length > connectionsLimit,
+    isPartiallyLocked: !isFullAccess && (blurredCount > 0 || lockedCount > 0),
     maxVisibleNodes: connectionsLimit,
-    upgradePrompt: !isFullAccess && allProfiles.length > connectionsLimit
-      ? `Unlock ${allProfiles.length - connectionsLimit} more connections with Pro`
+    blurredCount,
+    upgradePrompt: !isFullAccess && allProfiles.length > labelLimit
+      ? `Unlock ${allProfiles.length - labelLimit} more connections with Pro`
       : null,
   };
   
@@ -304,11 +362,16 @@ export function buildResultsViewModel(
   const exposureCount = bucketedFindings.ExposureSignals.length;
   const riskLevel = deriveRiskLevel(signalsFound, highConfidenceCount);
   
+  // Calculate average confidence (hidden for Free)
+  const avgConfidence = signalsFound > 0 ? Math.round(totalConfidence / signalsFound) : 0;
+  
   const riskSnapshot: RiskSnapshot = {
     status: exposureCount > 0 ? 'exposed' : (signalsFound > 0 ? 'at_risk' : 'clean'),
     riskLevel,
     signalsFound,
     highConfidenceCount,
+    // Hide confidence percentage for Free users
+    confidencePercentage: isFullAccess ? avgConfidence : null,
   };
   
   return {
@@ -319,6 +382,8 @@ export function buildResultsViewModel(
     connections,
     rawResultCount: rawResults.length,
     providerHealth,
+    totalHiddenCount,
+    canUnlock: !isFullAccess && signalsFound > 0,
   };
 }
 
