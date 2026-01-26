@@ -116,10 +116,14 @@ export function ScanResults({ jobId }: ScanResultsProps) {
     return !isFree || timelineEventCount > 0;
   }, [workspace?.plan, timelineEventCount]);
 
-  // Determine if user is premium (for passing to TimelineTab)
+  // Determine if user has Pro/Admin access (for Advanced UI routing)
+  // Free users NEVER see Advanced UI - they are routed to FreeResultsView
   const isPremium = useMemo(() => {
-    const plan = workspace?.plan || 'free';
-    return plan !== 'free';
+    const plan = (workspace?.plan || 'free').toLowerCase();
+    // Only these plans get Advanced UI: pro, admin, business, enterprise
+    // Legacy names are normalized: premium, analyst, family -> pro; enterprise -> business
+    const advancedPlans = ['pro', 'admin', 'business', 'enterprise', 'premium', 'analyst', 'family'];
+    return advancedPlans.includes(plan);
   }, [workspace?.plan]);
 
   useEffect(() => {
