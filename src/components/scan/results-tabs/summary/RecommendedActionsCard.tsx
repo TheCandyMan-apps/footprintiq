@@ -2,15 +2,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   CheckCircle, Circle, ExternalLink, Lock, 
-  Search, Shield, Trash2, UserX 
+  Search, Shield, Trash2, UserX, Info 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { shouldRenderSection, canShowSeverity, type EvidencePayload } from '@/lib/evidenceGating';
 
 interface Action {
   id: string;
   label: string;
   priority: 'high' | 'medium' | 'low';
   completed?: boolean;
+  evidenceCount?: number;
 }
 
 interface RecommendedActionsCardProps {
@@ -19,10 +21,28 @@ interface RecommendedActionsCardProps {
   claimedCount: number;
 }
 
-const priorityConfig = {
-  high: 'text-destructive',
-  medium: 'text-orange-600',
-  low: 'text-muted-foreground',
+// Only show priority indicators if evidence supports it
+const getPriorityConfig = (priority: 'high' | 'medium' | 'low', evidenceCount: number) => {
+  const evidencePayload: EvidencePayload = { evidenceCount, confidence: evidenceCount > 0 ? 60 : 0 };
+  
+  // Map priority to severity
+  const severityMap: Record<string, 'critical' | 'high' | 'medium' | 'low'> = {
+    high: 'high',
+    medium: 'medium', 
+    low: 'low',
+  };
+  
+  const canShow = canShowSeverity(severityMap[priority], evidencePayload);
+  
+  if (!canShow) {
+    return 'text-muted-foreground'; // Neutral if can't show severity
+  }
+  
+  switch (priority) {
+    case 'high': return 'text-destructive';
+    case 'medium': return 'text-orange-600';
+    case 'low': return 'text-muted-foreground';
+  }
 };
 
 export function RecommendedActionsCard({ 
@@ -30,7 +50,14 @@ export function RecommendedActionsCard({
   foundCount, 
   claimedCount 
 }: RecommendedActionsCardProps) {
-  // Generate contextual actions based on scan results
+  // Evidence gating: Don't render if no data at all
+  const totalEvidence = breachCount + foundCount + claimedCount;
+  
+  if (!shouldRenderSection({ evidenceCount: totalEvidence, confidence: totalEvidence > 0 ? 50 : 0 })) {
+    return null; // Don't render if no evidence
+  }
+
+  // Generate contextual actions based on scan results - include evidence counts
   const actions: Action[] = [];
 
   if (breachCount > 0) {
@@ -38,6 +65,7 @@ export function RecommendedActionsCard({
       id: 'review-breaches',
       label: 'Review data breach exposures and change affected passwords',
       priority: 'high',
+      evidenceCount: breachCount,
     });
   }
 
@@ -46,6 +74,7 @@ export function RecommendedActionsCard({
       id: 'audit-accounts',
       label: 'Audit active accounts and remove unused ones',
       priority: 'medium',
+      evidenceCount: foundCount,
     });
   }
 
@@ -54,13 +83,16 @@ export function RecommendedActionsCard({
       id: 'claim-review',
       label: 'Review reserved usernames for potential impersonation risk',
       priority: 'low',
+      evidenceCount: claimedCount,
     });
   }
 
+  // Only show 2FA action with evidence-appropriate priority
   actions.push({
     id: 'enable-2fa',
     label: 'Enable two-factor authentication on critical accounts',
     priority: breachCount > 0 ? 'high' : 'medium',
+    evidenceCount: breachCount > 0 ? breachCount : 1,
   });
 
   if (foundCount > 0) {
@@ -68,6 +100,7 @@ export function RecommendedActionsCard({
       id: 'privacy-settings',
       label: 'Review privacy settings on discovered profiles',
       priority: 'low',
+      evidenceCount: foundCount,
     });
   }
 
@@ -78,6 +111,7 @@ export function RecommendedActionsCard({
       id: 'schedule-rescan',
       label: 'Schedule periodic re-scans to monitor changes',
       priority: 'low',
+      evidenceCount: 1,
     });
   }
 
@@ -98,7 +132,7 @@ export function RecommendedActionsCard({
             >
               <Circle className={cn(
                 'w-3 h-3 mt-0.5 shrink-0',
-                priorityConfig[action.priority]
+                getPriorityConfig(action.priority, action.evidenceCount || 1)
               )} />
               <span className="flex-1 text-foreground/90 leading-tight">
                 {action.label}

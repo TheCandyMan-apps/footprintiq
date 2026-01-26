@@ -1,7 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
+import { AlertTriangle, Sparkles, CheckCircle2, Loader2, Info } from "lucide-react";
 import { InsightData } from "@/hooks/useInsightStream";
+import { shouldRenderSection } from "@/lib/evidenceGating";
 
 interface PersonaSummaryProps {
   data: InsightData | null;
@@ -46,6 +47,39 @@ export const PersonaSummary = ({ data, isLoading, error }: PersonaSummaryProps) 
   if (!data) {
     return null;
   }
+
+  // Evidence gating: Check if we have sufficient data to render
+  const hasPersona = data.persona && data.persona.trim().length > 0;
+  const risksCount = data.risks?.length || 0;
+  const actionsCount = data.actions?.length || 0;
+  const totalEvidence = risksCount + actionsCount + (hasPersona ? 1 : 0);
+  
+  const shouldRender = shouldRenderSection({
+    evidenceCount: totalEvidence,
+    confidence: hasPersona ? 50 : 0,
+    justification: data.persona,
+  });
+  
+  if (!shouldRender) {
+    return (
+      <Card className="border-muted">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Info className="w-5 h-5 text-muted-foreground" />
+            AI Persona Analysis
+          </CardTitle>
+          <CardDescription>Insufficient data for persona analysis</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Not enough signals were found to generate a meaningful persona analysis. 
+            Try running a scan with more data points.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
 
   return (
     <Card className="border-primary/20">
