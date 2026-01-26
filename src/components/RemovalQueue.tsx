@@ -313,16 +313,15 @@ export const RemovalQueue = ({ scanId, userId }: RemovalQueueProps) => {
               Manage removal requests for data broker profiles ({dataBrokers.length} found)
             </CardDescription>
           </div>
-          {availableBrokers.length > 0 && (
-            <Button
-              onClick={handleBulkSubmit}
-              disabled={selectedItems.size === 0}
-              className="gap-2"
-            >
-              <Send className="w-4 h-4" />
-              Submit All ({selectedItems.size})
-            </Button>
-          )}
+          {/* Bulk removal - disabled until fully implemented */}
+          <Button
+            disabled
+            className="gap-2 cursor-not-allowed opacity-60"
+            title="Removal workflow coming soon"
+          >
+            <Send className="w-4 h-4" />
+            Removal guidance (coming soon)
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -392,21 +391,16 @@ export const RemovalQueue = ({ scanId, userId }: RemovalQueueProps) => {
                             <ExternalLink className="w-3 h-3" />
                             View
                           </Button>
-                          {canSubmit && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleRemovalRequest(broker)}
-                              disabled={isSubmitting}
-                              className="gap-1"
-                            >
-                              {isSubmitting ? (
-                                <Loader2 className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <Send className="w-3 h-3" />
-                              )}
-                              Remove Me
-                            </Button>
-                          )}
+                          {/* Removal guidance - disabled until fully implemented */}
+                          <Button
+                            size="sm"
+                            disabled
+                            className="gap-1 cursor-not-allowed opacity-60"
+                            title="Removal workflow coming soon"
+                          >
+                            <Send className="w-3 h-3" />
+                            Removal guidance (coming soon)
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
