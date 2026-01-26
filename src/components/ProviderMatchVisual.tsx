@@ -26,10 +26,10 @@ export function ProviderMatchVisual({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Database className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold">Provider Matches</h3>
+          <h3 className="font-semibold">Source Matches</h3>
         </div>
         <Badge variant={matchPercentage >= 60 ? "default" : "secondary"}>
-          {matchedCount}/{totalCount} Providers
+          {matchedCount}/{totalCount} Sources
         </Badge>
       </div>
 
@@ -53,7 +53,7 @@ export function ProviderMatchVisual({
         </div>
       </div>
 
-      {/* Provider List */}
+      {/* Source List - Only shown in Pro/technical details */}
       <div className="space-y-2">
         <p className="text-sm text-muted-foreground">Sources Checked:</p>
         <div className="grid grid-cols-2 gap-2">
@@ -94,9 +94,9 @@ export function ProviderMatchVisual({
         "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900"
       )}>
         <p className="text-sm">
-          {matchPercentage >= 75 && "✓ High confidence - Multiple sources confirm this data"}
-          {matchPercentage >= 50 && matchPercentage < 75 && "⚠ Moderate confidence - Data validated by some sources"}
-          {matchPercentage < 50 && "⚠ Limited validation - Consider verifying with additional sources"}
+          {matchPercentage >= 75 && "✓ High confidence — Multiple sources confirm this data"}
+          {matchPercentage >= 50 && matchPercentage < 75 && "⚠ Moderate confidence — Data validated by some sources"}
+          {matchPercentage < 50 && "⚠ Limited validation — Consider verifying with additional sources"}
         </p>
       </div>
     </Card>

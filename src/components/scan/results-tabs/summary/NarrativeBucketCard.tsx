@@ -7,7 +7,8 @@
  * - Locked indicator: "+ N more (Pro)"
  * 
  * Used in the narrative-first Free results page.
- * Does NOT show provider names anywhere.
+ * PROVIDER-AGNOSTIC: Does NOT show provider names anywhere.
+ * Uses source-attribution language from sourceAttribution.ts
  */
 
 import { Lock, ChevronRight, Globe, AlertTriangle, Link2, Users } from 'lucide-react';
@@ -16,6 +17,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { type ViewModelBucket, type BucketType } from '@/lib/results/resultsViewModel';
+import { 
+  getBucketNarrativeDescription, 
+  getBucketExampleSentence 
+} from '@/lib/sourceAttribution';
 
 interface NarrativeBucketCardProps {
   bucket: ViewModelBucket;
@@ -28,46 +33,42 @@ const BUCKET_CONFIG: Record<BucketType, {
   icon: typeof Globe; 
   color: string; 
   bgColor: string;
-  description: string;
-  examplePrefix: string;
 }> = {
   PublicProfiles: { 
     icon: Globe, 
     color: 'text-blue-600 dark:text-blue-400',
     bgColor: 'bg-blue-500/10',
-    description: 'Accounts discovered on public platforms',
-    examplePrefix: 'Found on',
   },
   ExposureSignals: { 
     icon: AlertTriangle, 
     color: 'text-destructive',
     bgColor: 'bg-destructive/10',
-    description: 'Data breach and leak exposures',
-    examplePrefix: 'Exposed in',
   },
   ReuseIndicators: { 
     icon: Link2, 
     color: 'text-amber-600 dark:text-amber-400',
     bgColor: 'bg-amber-500/10',
-    description: 'Credential reuse patterns detected',
-    examplePrefix: 'Pattern found on',
   },
   Connections: { 
     icon: Users, 
     color: 'text-purple-600 dark:text-purple-400',
     bgColor: 'bg-purple-500/10',
-    description: 'Cross-platform identity links',
-    examplePrefix: 'Linked to',
   },
 };
 
-function getExampleSentence(bucket: ViewModelBucket, config: typeof BUCKET_CONFIG[BucketType]): string {
+function getExampleSentence(bucket: ViewModelBucket): string {
   const firstItem = bucket.items[0];
   if (!firstItem) return 'No examples available';
   
   // Generate human-readable example without exposing provider
-  const platform = firstItem.platform || 'a platform';
-  return `${config.examplePrefix} ${platform}`;
+  const platform = firstItem.platform || undefined;
+  return getBucketExampleSentence(bucket.type, platform);
+}
+
+function getDescription(bucket: ViewModelBucket): string {
+  // Get unique source count from items (sources are only available for Pro, so default to 1)
+  const sourceCount = bucket.items.length > 0 ? 1 : 0;
+  return getBucketNarrativeDescription(bucket.type, bucket.totalCount, sourceCount);
 }
 
 export function NarrativeBucketCard({
@@ -82,8 +83,9 @@ export function NarrativeBucketCard({
 
   const config = BUCKET_CONFIG[bucket.type];
   const Icon = config.icon;
+  const description = getDescription(bucket);
   const hiddenCount = bucket.hiddenCount;
-  const exampleSentence = getExampleSentence(bucket, config);
+  const exampleSentence = getExampleSentence(bucket);
 
   return (
     <Card className={cn('overflow-hidden transition-all hover:shadow-md border-border/50', className)}>
@@ -101,7 +103,7 @@ export function NarrativeBucketCard({
               </Badge>
             </div>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              {config.description}
+              {description}
             </p>
           </div>
         </div>

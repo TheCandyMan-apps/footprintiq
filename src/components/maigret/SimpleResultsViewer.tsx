@@ -1045,7 +1045,7 @@ export function SimpleResultsViewer({
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-muted-foreground">
-              All providers (Maigret, Sherlock, GoSearch) completed their scans successfully, but no public profiles were found for this username.
+              Cross-source analysis completed successfully, but no public profiles were found for this username.
             </p>
             <div className="p-4 bg-muted/50 rounded-lg border border-border/50">
               <p className="text-sm font-medium mb-2">Excellent Privacy Profile! 🎉</p>

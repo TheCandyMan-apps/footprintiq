@@ -81,11 +81,11 @@ export function PricingCards() {
 
               <div className="mt-6 pt-6 border-t">
                 <div className="text-sm text-muted-foreground">
-                  <div className="font-medium mb-2">OSINT Providers:</div>
+                  <div className="font-medium mb-2">Intelligence Sources:</div>
                   <div className="flex flex-wrap gap-1">
-                    {plan.allowedProviders.map((provider) => (
-                      <Badge key={provider} variant="outline" className="text-xs">
-                        {provider}
+                    {plan.allowedProviders.map((source) => (
+                      <Badge key={source} variant="outline" className="text-xs">
+                        {source}
                       </Badge>
                     ))}
                   </div>
