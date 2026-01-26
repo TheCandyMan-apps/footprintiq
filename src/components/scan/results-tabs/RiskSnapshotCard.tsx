@@ -1,10 +1,11 @@
 /**
  * RiskSnapshotCard Component
  * 
- * Displays a compact risk assessment snapshot with plan-aware visibility.
+ * Displays a narrative-focused risk assessment with plan-aware visibility.
+ * Shows signals count and high-confidence matches in a clear, non-alarmist way.
  */
 
-import { Shield, AlertTriangle, CheckCircle2, AlertCircle, Lock } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle2, AlertCircle, Lock, TrendingUp, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -15,42 +16,118 @@ interface RiskSnapshotCardProps {
   snapshot: RiskSnapshot;
   plan: PlanTier;
   isFullAccess: boolean;
+  variant?: 'default' | 'narrative';
   className?: string;
 }
 
 const STATUS_CONFIG = {
   clean: {
     icon: CheckCircle2,
-    label: 'Clean',
+    label: 'Minimal Exposure',
+    narrative: 'Your digital footprint appears well-managed',
     color: 'text-green-600 dark:text-green-400',
     bg: 'bg-green-500/10',
+    border: 'border-green-500/20',
   },
   exposed: {
     icon: AlertTriangle,
-    label: 'Exposed',
-    color: 'text-destructive',
-    bg: 'bg-destructive/10',
+    label: 'Exposure Detected',
+    narrative: 'Some public information was discovered',
+    color: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/20',
   },
   at_risk: {
     icon: AlertCircle,
-    label: 'At Risk',
-    color: 'text-yellow-600 dark:text-yellow-400',
-    bg: 'bg-yellow-500/10',
+    label: 'Review Recommended',
+    narrative: 'Findings that may need your attention',
+    color: 'text-orange-600 dark:text-orange-400',
+    bg: 'bg-orange-500/10',
+    border: 'border-orange-500/20',
   },
 };
 
 const RISK_LEVEL_CONFIG = {
-  low: { label: 'Low', color: 'bg-green-500/20 text-green-700 dark:text-green-400' },
-  moderate: { label: 'Moderate', color: 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400' },
-  high: { label: 'High', color: 'bg-orange-500/20 text-orange-700 dark:text-orange-400' },
-  critical: { label: 'Critical', color: 'bg-destructive/20 text-destructive' },
+  low: { label: 'Low', color: 'bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30' },
+  moderate: { label: 'Moderate', color: 'bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/30' },
+  high: { label: 'High', color: 'bg-orange-500/15 text-orange-700 dark:text-orange-400 border-orange-500/30' },
+  critical: { label: 'Critical', color: 'bg-destructive/15 text-destructive border-destructive/30' },
 };
 
-export function RiskSnapshotCard({ snapshot, plan, isFullAccess, className }: RiskSnapshotCardProps) {
+export function RiskSnapshotCard({ 
+  snapshot, 
+  plan, 
+  isFullAccess, 
+  variant = 'default',
+  className 
+}: RiskSnapshotCardProps) {
   const statusConfig = STATUS_CONFIG[snapshot.status];
   const riskConfig = RISK_LEVEL_CONFIG[snapshot.riskLevel];
   const StatusIcon = statusConfig.icon;
 
+  if (variant === 'narrative') {
+    return (
+      <Card className={cn('overflow-hidden', statusConfig.border, className)}>
+        <CardContent className="p-4">
+          {/* Main narrative section */}
+          <div className="flex items-start gap-3">
+            <div className={cn('p-2 rounded-xl shrink-0', statusConfig.bg)}>
+              <StatusIcon className={cn('h-5 w-5', statusConfig.color)} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-semibold">{statusConfig.label}</h3>
+                <Badge 
+                  variant="outline"
+                  className={cn('text-[9px] px-1.5 py-0 h-4', riskConfig.color)}
+                >
+                  {riskConfig.label} Risk
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {statusConfig.narrative}
+              </p>
+            </div>
+          </div>
+
+          {/* Metrics row */}
+          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/30">
+            <div className="flex items-center gap-2">
+              <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+              <div>
+                <span className="text-lg font-bold">{snapshot.signalsFound}</span>
+                <span className="text-xs text-muted-foreground ml-1">signals found</span>
+              </div>
+            </div>
+            
+            <div className="h-6 w-px bg-border/50" />
+            
+            {isFullAccess ? (
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-3.5 w-3.5 text-primary" />
+                <div>
+                  <span className="text-lg font-bold text-primary">{snapshot.highConfidenceCount}</span>
+                  <span className="text-xs text-muted-foreground ml-1">high confidence</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 opacity-60">
+                <Lock className="h-3 w-3 text-muted-foreground" />
+                <div>
+                  <span className="text-sm text-muted-foreground">Confidence scoring</span>
+                  <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3.5 ml-1">
+                    Pro
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Default compact variant
   return (
     <Card className={cn('overflow-hidden', className)}>
       <CardContent className="p-3">
