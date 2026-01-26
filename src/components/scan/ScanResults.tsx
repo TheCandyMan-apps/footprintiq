@@ -25,6 +25,7 @@ const ConnectionsTab = lazy(() => import('./results-tabs/ConnectionsTab'));
 const TimelineTab = lazy(() => import('./results-tabs/TimelineTab'));
 const BreachesTab = lazy(() => import('./results-tabs/BreachesTab'));
 const MapTab = lazy(() => import('./results-tabs/MapTab'));
+const FreeResultsView = lazy(() => import('./results-tabs/FreeResultsView'));
 
 interface ScanResultsProps {
   jobId: string;
@@ -401,7 +402,17 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                 : 'Waiting for results...'}
             </p>
           </div>
+        ) : !isPremium ? (
+          /* ===== FREE USER: Dedicated FreeResultsView (no tabs) ===== */
+          <Suspense fallback={<TabSkeleton />}>
+            <FreeResultsView 
+              jobId={jobId}
+              job={job}
+              results={results}
+            />
+          </Suspense>
         ) : (
+          /* ===== PRO/BUSINESS USER: Full tabbed interface ===== */
           <InvestigationProvider scanId={jobId}>
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               {/* Sticky Tab Bar with Toolbar */}
