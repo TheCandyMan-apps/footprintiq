@@ -35,7 +35,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useScanResultsData, ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { ScanProgress } from './ScanProgress';
-import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Network, Check } from 'lucide-react';
+import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check } from 'lucide-react';
 import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsAggregator';
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
@@ -482,35 +482,39 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
 
-            {/* ===== CONNECTIONS TEASER (Static placeholder, NOT live graph) ===== */}
-            {totalConnections > 0 && (
+            {/* ===== CONNECTIONS TEASER (Static placeholder - NO Cytoscape/graph logic) ===== */}
+            {totalConnections > 1 && (
               <Card className="overflow-hidden border-border/50">
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Network className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    <h3 className="text-sm font-semibold">Connections</h3>
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
-                      {totalConnections}
-                    </Badge>
-                  </div>
-
-                  {/* Static placeholder - no live graph elements */}
-                  <div className="relative rounded-lg bg-muted/20 border border-dashed border-border/50 p-6 text-center">
-                    <div className="flex items-center justify-center gap-2 mb-3">
-                      <Lock className="h-4 w-4 text-muted-foreground" />
+                  {/* Static placeholder card - no graph initialization */}
+                  <div className="relative rounded-lg bg-muted/20 border border-dashed border-border/50 p-6">
+                    <div className="flex flex-col items-center text-center space-y-4">
+                      {/* Lock icon */}
+                      <div className="w-12 h-12 rounded-full bg-muted/40 flex items-center justify-center">
+                        <Lock className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      
+                      {/* Title */}
+                      <h3 className="text-base font-semibold text-foreground">
+                        Connections detected
+                      </h3>
+                      
+                      {/* Body text */}
+                      <p className="text-sm text-muted-foreground max-w-xs">
+                        Related profiles and entities were found, but details are hidden on Free.
+                      </p>
+                      
+                      {/* CTA Button */}
+                      <Button 
+                        variant="default"
+                        size="sm" 
+                        className="h-9 px-5 gap-2"
+                        onClick={handleUpgradeClick}
+                      >
+                        Unlock Pro to view connections
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Connections detected. Full graph available in Pro.
-                    </p>
-                    <Button 
-                      variant="default"
-                      size="sm" 
-                      className="h-8 text-xs gap-1.5"
-                      onClick={handleUpgradeClick}
-                    >
-                      Unlock connections graph
-                      <ArrowRight className="h-3 w-3" />
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
