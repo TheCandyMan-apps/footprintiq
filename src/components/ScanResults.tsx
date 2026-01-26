@@ -548,10 +548,13 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                             >
                               <Flag className="w-4 h-4" />
                             </Button>
+                            {/* Removal guidance - disabled until fully implemented */}
                             <Button 
-                              variant="destructive"
+                              variant="ghost"
                               size="sm"
-                              onClick={() => handleProfileRemoval(profile.id, profile.platform)}
+                              disabled
+                              className="cursor-not-allowed opacity-60"
+                              title="Removal workflow coming soon"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>

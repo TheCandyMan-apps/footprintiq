@@ -8,7 +8,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Loader2, CheckCircle2, Calendar, CreditCard } from "lucide-react";
+import { Loader2, CheckCircle2, Calendar, CreditCard, Clock } from "lucide-react";
 
 const Subscription = () => {
   const { user, subscriptionTier, isPremium, refreshSubscription } = useSubscription();
@@ -193,9 +193,9 @@ const Subscription = () => {
                     <CheckCircle2 className="w-4 h-4 text-primary" />
                     AI-powered catfish detection
                   </li>
-                  <li className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-primary" />
-                    Automated removal requests
+                  <li className="flex items-center gap-2 text-sm text-muted-foreground opacity-60">
+                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    Removal guidance (coming soon)
                   </li>
                   <li className="flex items-center gap-2 text-sm">
                     <CheckCircle2 className="w-4 h-4 text-primary" />

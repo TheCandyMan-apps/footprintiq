@@ -1865,17 +1865,16 @@ const ResultsDetail = () => {
                           <ExternalLink className="w-4 h-4 mr-1" />
                           View Profile
                         </Button>
+                        {/* Removal guidance - disabled until fully implemented */}
                         <Button 
-                          variant="destructive"
+                          variant="ghost"
                           size="sm"
-                          onClick={() => handleRemovalRequest(profile.id, profile.platform, 'social_media')}
-                          disabled={isRemovalRequested(profile.id, 'social_media')}
+                          disabled
+                          className="cursor-not-allowed opacity-60"
+                          title="Removal workflow coming soon"
                         >
-                          {isRemovalRequested(profile.id, 'social_media') ? (
-                            <CheckCircle2 className="w-4 h-4" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          <span className="text-xs">Removal guidance (coming soon)</span>
                         </Button>
                       </div>
                     </div>
@@ -1968,23 +1967,16 @@ const ResultsDetail = () => {
                       <ExternalLink className="w-4 h-4 mr-2" />
                       View Source
                     </Button>
+                    {/* Removal guidance - disabled until fully implemented */}
                     <Button 
-                      variant="destructive"
+                      variant="ghost"
                       size="sm"
-                      onClick={() => handleRemovalRequest(source.id, source.name, 'data_broker')}
-                      disabled={isRemovalRequested(source.id, 'data_broker')}
+                      disabled
+                      className="cursor-not-allowed opacity-60"
+                      title="Removal workflow coming soon"
                     >
-                      {isRemovalRequested(source.id, 'data_broker') ? (
-                        <>
-                          <CheckCircle2 className="w-4 h-4 mr-2" />
-                          Requested
-                        </>
-                      ) : (
-                        <>
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Request Removal
-                        </>
-                      )}
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Removal guidance (coming soon)
                     </Button>
                   </div>
                 </div>
