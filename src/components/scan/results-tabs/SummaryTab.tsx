@@ -146,6 +146,38 @@ export function SummaryTab({
   const scanTime = job?.finished_at || job?.started_at;
   const formattedTime = scanTime ? format(new Date(scanTime), 'MMM d, yyyy • HH:mm') : null;
 
+  // Create aggregated-based risk snapshot for consistency
+  const aggregatedRiskSnapshot = useMemo(() => {
+    const signalsFound = aggregated.counts.totalProfiles;
+    const highConfidenceCount = aggregated.counts.highConfidence;
+    
+    // Derive risk level from counts
+    let riskLevel: 'low' | 'moderate' | 'high' | 'critical' = 'low';
+    let status: 'clean' | 'exposed' | 'at_risk' = 'clean';
+    
+    if (aggregated.counts.totalBreaches > 5) {
+      riskLevel = 'critical';
+      status = 'at_risk';
+    } else if (aggregated.counts.totalBreaches > 0) {
+      riskLevel = 'high';
+      status = 'exposed';
+    } else if (signalsFound > 10) {
+      riskLevel = 'moderate';
+      status = 'exposed';
+    } else if (signalsFound > 3) {
+      riskLevel = 'low';
+      status = 'exposed';
+    }
+    
+    return {
+      status,
+      riskLevel,
+      signalsFound,
+      highConfidenceCount,
+      confidencePercentage: isFullAccess ? Math.round((highConfidenceCount / Math.max(1, signalsFound)) * 100) : null,
+    };
+  }, [aggregated, isFullAccess]);
+
   // Calculate total hidden count for upgrade prompts
   const totalHiddenCount = useMemo(() => {
     return Object.values(buckets).reduce((sum, bucket) => sum + bucket.hiddenCount, 0);
@@ -153,14 +185,14 @@ export function SummaryTab({
 
   // Show upgrade modal for Free users after scan completes (with delay)
   useEffect(() => {
-    if (!isFullAccess && scanComplete && riskSnapshot.signalsFound > 0 && !hasShownModalRef.current) {
+    if (!isFullAccess && scanComplete && aggregatedRiskSnapshot.signalsFound > 0 && !hasShownModalRef.current) {
       const timer = setTimeout(() => {
         setShowUpgradeModal(true);
         hasShownModalRef.current = true;
       }, 3000); // 3 second delay
       return () => clearTimeout(timer);
     }
-  }, [isFullAccess, scanComplete, riskSnapshot.signalsFound]);
+  }, [isFullAccess, scanComplete, aggregatedRiskSnapshot.signalsFound]);
 
   // Navigation helpers
   const navigateToTab = (tab: string) => {
@@ -210,9 +242,9 @@ export function SummaryTab({
           isFullAccess={isFullAccess}
         />
 
-        {/* Risk Snapshot Card - Signals, High-Confidence, Overall Risk */}
+        {/* Risk Snapshot Card - Using aggregated counts */}
         <RiskSnapshotCard
-          snapshot={riskSnapshot}
+          snapshot={aggregatedRiskSnapshot}
           plan={plan}
           isFullAccess={isFullAccess}
           variant="narrative"
@@ -236,21 +268,21 @@ export function SummaryTab({
           />
         )}
 
-        {/* Inline Pro Upgrade Block */}
+        {/* Inline Pro Upgrade Block - Using aggregated counts */}
         <ProUpgradeBlock
           variant="default"
-          signalsFound={riskSnapshot.signalsFound}
+          signalsFound={aggregatedRiskSnapshot.signalsFound}
           hiddenCount={totalHiddenCount}
           onUpgradeClick={handleUpgradeClick}
         />
 
-        {/* Post-Scan Upgrade Modal */}
+        {/* Post-Scan Upgrade Modal - Using aggregated counts */}
         <PostScanUpgradeModal
           open={showUpgradeModal}
           onOpenChange={setShowUpgradeModal}
           lockedSectionsCount={totalHiddenCount}
-          signalsFound={riskSnapshot.signalsFound}
-          highRiskCount={breachCount}
+          signalsFound={aggregatedRiskSnapshot.signalsFound}
+          highRiskCount={aggregated.counts.totalBreaches}
         />
         
         {/* Subtle hint for Standard users to try Advanced mode */}
@@ -293,9 +325,9 @@ export function SummaryTab({
 
       {/* Intelligence Brief - Compact card */}
       <div className="border border-border/20 rounded bg-card p-2.5 space-y-2.5">
-        {/* 0) Risk Snapshot - Plan-aware */}
+        {/* 0) Risk Snapshot - Using aggregated counts */}
         <RiskSnapshotCard
-          snapshot={riskSnapshot}
+          snapshot={aggregatedRiskSnapshot}
           plan={plan}
           isFullAccess={isFullAccess}
         />
@@ -310,12 +342,12 @@ export function SummaryTab({
           variant="compact"
         />
 
-        {/* 2) What We Found */}
+        {/* 2) What We Found - Using aggregated counts */}
         <IntelligenceBrief
           username={job?.username || 'Unknown'}
-          accountsFound={grouped.found.length}
+          accountsFound={aggregated.counts.totalProfiles}
           platformsCount={platforms.length}
-          breachCount={breachCount}
+          breachCount={aggregated.counts.totalBreaches}
           reuseScore={reuseScore}
           aliases={aliases}
           scanComplete={scanComplete}
