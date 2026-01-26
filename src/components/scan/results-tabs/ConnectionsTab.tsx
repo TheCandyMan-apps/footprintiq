@@ -38,6 +38,8 @@ import { CorrelationGraph } from './connections/CorrelationGraph';
 import { MindMapGraph, MindMapViewMode, ConnectByMode, ProfileEntity, LegData } from './connections/MindMapGraph';
 import { MindMapInspector } from './connections/MindMapInspector';
 import { AnalysisSummaryCard } from './connections/AnalysisSummaryCard';
+import { ConnectionsPreviewOverlay } from './ConnectionsPreviewOverlay';
+import { useResultsViewModel } from '@/hooks/useResultsViewModel';
 
 interface ConnectionsTabProps {
   results: ScanResult[];
@@ -98,6 +100,9 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
     maxEdgesPerNode: DEFAULT_PRUNING_OPTIONS.maxEdgesPerNode,
     maxTotalEdges: DEFAULT_PRUNING_OPTIONS.maxTotalEdges,
   });
+
+  // Get plan-aware view model for connections redaction
+  const { isFullAccess, connections: connectionsViewModel } = useResultsViewModel(results);
 
   // Stats from correlation data
   const correlationStats = useMemo(() => ({
@@ -580,7 +585,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
             <div 
               ref={graphContainerRef} 
               className={cn(
-                "flex-1 w-full transition-opacity duration-150",
+                "flex-1 w-full transition-opacity duration-150 relative",
                 isTransitioning && "opacity-0"
               )}
             >
@@ -606,6 +611,12 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
                   className="h-full w-full"
                 />
               )}
+              
+              {/* Free tier preview overlay */}
+              <ConnectionsPreviewOverlay
+                connections={connectionsViewModel}
+                isFullAccess={isFullAccess}
+              />
             </div>
 
             {/* Right Inspector Panel - contextual based on mode */}
