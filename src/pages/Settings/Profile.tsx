@@ -46,29 +46,28 @@ export default function ProfileSettings() {
     title: string;
     description: string;
     features: string[];
+    isContactSales?: boolean;
   }> = [
     {
       id: 'standard',
       icon: User,
-      title: 'Standard User',
-      description: 'Simplified interface for personal privacy',
+      title: 'Simple',
+      description: 'Recommended for most users',
       features: [
         'Quick scan interface',
-        'Essential providers only',
-        'Basic reports',
-        'Email support'
+        'Essential results only',
+        'Clean, focused reports'
       ]
     },
     {
       id: 'advanced',
       icon: Zap,
-      title: 'Advanced User',
+      title: 'Advanced',
       description: 'Full control with all features',
       features: [
-        'All scan providers',
-        'Advanced customization',
-        'Detailed analytics',
-        'Priority support'
+        'All scan providers visible',
+        'Detailed confidence scores',
+        'Advanced customization'
       ]
     },
     {
@@ -79,9 +78,9 @@ export default function ProfileSettings() {
       features: [
         'API access',
         'Bulk scanning',
-        'Team collaboration',
-        'Dedicated support'
-      ]
+        'Team collaboration'
+      ],
+      isContactSales: true
     }
   ];
 
@@ -137,12 +136,12 @@ export default function ProfileSettings() {
           </CardContent>
         </Card>
 
-        {/* Persona Selection */}
+        {/* Interface Mode Selection */}
         <Card>
           <CardHeader>
-            <CardTitle>Interface Experience</CardTitle>
+            <CardTitle>Interface Mode</CardTitle>
             <CardDescription>
-              Choose how you want to interact with FootprintIQ. This affects which features and options are visible.
+              Choose how much detail you want to see. You can change this anytime.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -150,17 +149,21 @@ export default function ProfileSettings() {
               {personas.map((p) => {
                 const Icon = p.icon;
                 const isSelected = persona === p.id;
+                const isEnterprise = p.isContactSales;
+                
                 return (
                   <Card
                     key={p.id}
-                    className={`relative cursor-pointer transition-all ${
-                      isSelected 
-                        ? 'border-primary shadow-lg' 
-                        : 'hover:border-primary/50 hover:shadow-md'
+                    className={`relative transition-all ${
+                      isEnterprise 
+                        ? 'opacity-80 border-dashed cursor-default'
+                        : isSelected 
+                          ? 'border-primary shadow-lg cursor-pointer' 
+                          : 'hover:border-primary/50 hover:shadow-md cursor-pointer'
                     }`}
-                    onClick={() => updatePersona(p.id)}
+                    onClick={() => !isEnterprise && updatePersona(p.id)}
                   >
-                    {isSelected && (
+                    {isSelected && !isEnterprise && (
                       <div className="absolute -top-2 -right-2">
                         <div className="bg-primary text-primary-foreground rounded-full p-1">
                           <Check className="w-4 h-4" />
@@ -169,11 +172,20 @@ export default function ProfileSettings() {
                     )}
                     <CardHeader className="pb-3">
                       <div className="flex items-center gap-3 mb-2">
-                        <div className={`p-2 rounded-lg ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
+                        <div className={`p-2 rounded-lg ${
+                          isEnterprise 
+                            ? 'bg-muted text-muted-foreground' 
+                            : isSelected 
+                              ? 'bg-primary text-primary-foreground' 
+                              : 'bg-primary/10 text-primary'
+                        }`}>
                           <Icon className="w-5 h-5" />
                         </div>
-                        {isSelected && (
+                        {isSelected && !isEnterprise && (
                           <Badge variant="default" className="text-xs">Active</Badge>
+                        )}
+                        {p.id === 'standard' && !isSelected && (
+                          <Badge variant="secondary" className="text-xs">Recommended</Badge>
                         )}
                       </div>
                       <CardTitle className="text-base">{p.title}</CardTitle>
@@ -182,7 +194,7 @@ export default function ProfileSettings() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <ul className="space-y-1.5">
+                      <ul className="space-y-1.5 mb-4">
                         {p.features.map((feature, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-xs">
                             <Check className="w-3 h-3 text-primary mt-0.5 flex-shrink-0" />
@@ -190,6 +202,20 @@ export default function ProfileSettings() {
                           </li>
                         ))}
                       </ul>
+                      
+                      {isEnterprise && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full text-xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open('/pricing', '_blank');
+                          }}
+                        >
+                          Contact Sales
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 );
@@ -198,7 +224,7 @@ export default function ProfileSettings() {
             
             <div className="mt-6 p-4 bg-muted rounded-lg">
               <p className="text-sm text-muted-foreground">
-                <strong>💡 Tip:</strong> Standard mode simplifies the interface by hiding advanced provider options and complex features, making it perfect for personal use.
+                <strong>💡 Tip:</strong> Simple mode is recommended for most users. Switch to Advanced if you want to see confidence scores and all provider details.
               </p>
             </div>
           </CardContent>

@@ -12,7 +12,6 @@ import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 
 import { GDPRConsentModal } from "@/components/auth/GDPRConsentModal";
-import { PersonaSelectorModal, type Persona } from "@/components/auth/PersonaSelectorModal";
 import { TurnstileGate, type TurnstileGateRef } from "@/components/auth/TurnstileGate";
 import { logActivity } from "@/lib/activityLogger";
 
@@ -29,7 +28,6 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [showConsentModal, setShowConsentModal] = useState(false);
-  const [showPersonaModal, setShowPersonaModal] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileGateRef>(null);
@@ -37,7 +35,6 @@ const Auth = () => {
     email: string;
     password: string;
     fullName: string;
-    persona?: Persona;
   } | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -173,27 +170,18 @@ const Auth = () => {
   };
   const handleConsentAccept = async () => {
     if (!pendingSignupData) return;
-
-    // Show persona selector after GDPR consent
     setShowConsentModal(false);
-    setShowPersonaModal(true);
-  };
-  const handlePersonaSelect = async (persona: Persona) => {
-    if (!pendingSignupData) return;
+    
+    // Create account immediately with default 'standard' persona
     setLoading(true);
     try {
-      // Create account with persona and user_agent in metadata
-      // The database trigger will handle profile/consent creation server-side
-      const {
-        data: authData,
-        error: signUpError
-      } = await supabase.auth.signUp({
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: pendingSignupData.email,
         password: pendingSignupData.password,
         options: {
           data: {
             full_name: pendingSignupData.fullName,
-            persona: persona,
+            persona: 'standard', // Default all new users to Standard mode
             user_agent: navigator.userAgent
           },
           emailRedirectTo: `${window.location.origin}/dashboard`
@@ -201,20 +189,16 @@ const Auth = () => {
       });
       if (signUpError) throw signUpError;
 
-      setShowPersonaModal(false);
       setPendingSignupData(null);
-      // Reset Turnstile after successful signup
       resetTurnstile();
       
       toast({
         title: "Success!",
         description: authData.session
           ? "Your account has been created. Redirecting..."
-          : "Your account has been created. Please check your email to confirm, then you’ll be redirected."
+          : "Your account has been created. Please check your email to confirm, then you'll be redirected."
       });
 
-      // If email confirmation is enabled, session may be null.
-      // In that case we do NOT force navigation (it would just bounce back to /auth).
       if (authData.session) {
         setAwaitingEmailConfirmation(false);
         setTimeout(() => navigate("/dashboard"), 250);
@@ -222,7 +206,6 @@ const Auth = () => {
         setAwaitingEmailConfirmation(true);
       }
     } catch (error: any) {
-      // Reset Turnstile on error to get a fresh token
       resetTurnstile();
       toast({
         title: "Sign up failed",
@@ -414,8 +397,6 @@ const Auth = () => {
       </Card>
 
       <GDPRConsentModal open={showConsentModal} onAccept={handleConsentAccept} onDecline={handleConsentDecline} loading={loading} />
-
-      <PersonaSelectorModal open={showPersonaModal} onSelect={handlePersonaSelect} loading={loading} />
     </div>;
 };
 export default Auth;
