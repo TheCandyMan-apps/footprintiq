@@ -84,6 +84,19 @@ export const analytics = {
     trackEvent("page_performance", { page, loadTime });
   },
 
+  // Scan entry analytics
+  scanStartClick: () => {
+    trackEvent("scan_start_click");
+  },
+
+  scanRefineOpen: () => {
+    trackEvent("scan_refine_open");
+  },
+
+  scanSubmit: (identifierType: string) => {
+    trackEvent("scan_submit", { identifier_type: identifierType });
+  },
+
   trackEvent: (eventName: string, props?: Record<string, string | number>) => {
     trackEvent(eventName, props);
   },

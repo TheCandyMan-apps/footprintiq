@@ -1,21 +1,19 @@
-import { useState, useMemo, useCallback, useRef } from "react";
+import { useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Shield, User, Mail, AlertCircle } from "lucide-react";
+import { ArrowRight, Shield, User, Mail, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { PhoneInput } from "@/components/scan/PhoneInput";
-import { ProviderPanel } from "@/components/scan/ProviderPanel";
 import { validatePhone } from "@/lib/phone/phoneUtils";
-import { HighRiskOptInModal } from "@/components/scan/HighRiskOptInModal";
-import { useTierGating } from "@/hooks/useTierGating";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { TurnstileWidget, type TurnstileWidgetRef } from "@/components/security/TurnstileWidget";
 import { useTurnstileRequired } from "@/hooks/useTurnstileRequired";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { detectIdentifierType, type IdentifierType } from "@/lib/scan/identifierDetection";
+import { analytics } from "@/lib/analytics";
 
 interface ScanFormProps {
   onSubmit: (data: ScanFormData) => void;
@@ -29,61 +27,44 @@ export interface ScanFormData {
   username?: string;
   phoneProviders?: string[];
   highRiskOptIn?: boolean;
-  turnstile_token?: string; // Cloudflare Turnstile verification token
+  turnstile_token?: string;
 }
 
-const scanFormSchema = z.object({
+// Schema for advanced/refined fields
+const advancedFieldsSchema = z.object({
   firstName: z.string().trim().max(100, "First name must be less than 100 characters").optional(),
   lastName: z.string().trim().max(100, "Last name must be less than 100 characters").optional(),
   email: z.string().trim().email("Invalid email address").max(255, "Email must be less than 255 characters").optional().or(z.literal("")),
   phone: z.string().trim().max(20, "Phone number must be less than 20 characters").optional().or(z.literal("")),
-  username: z.string().trim().min(1).max(50, "Username must be less than 50 characters").optional().or(z.literal("")),
-}).refine(
-  (data) => {
-    // Must have at least one of: username or basic info (first name + last name + email)
-    const hasUsername = !!data.username && data.username.length > 0;
-    const hasBasicInfo = !!data.firstName && !!data.lastName && !!data.email && data.email.length > 0;
-    return hasUsername || hasBasicInfo;
-  },
-  {
-    message: "Please provide either a username or your basic information (name and email)",
-  }
-);
+});
 
 export const ScanForm = ({ onSubmit }: ScanFormProps) => {
-  const [formData, setFormData] = useState<ScanFormData>({
+  // Primary single input
+  const [identifier, setIdentifier] = useState("");
+  
+  // Refine section state
+  const [showRefine, setShowRefine] = useState(false);
+  const [advancedFields, setAdvancedFields] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
-    username: "",
-    phoneProviders: [],
-    highRiskOptIn: false,
   });
-  const [phoneProviders, setPhoneProviders] = useState<string[]>([]);
+  
+  // Phone validation state (for advanced fields)
   const [phoneValid, setPhoneValid] = useState(false);
   const [normalizedPhone, setNormalizedPhone] = useState<string | null>(null);
-  const [showHighRiskModal, setShowHighRiskModal] = useState(false);
+  
   const { toast } = useToast();
-  const { isPro, isBusiness } = useTierGating();
   
   // Turnstile state
   const turnstileRef = useRef<TurnstileWidgetRef>(null);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const { required: requiresTurnstile } = useTurnstileRequired();
-  
-  const canAccessHighRisk = isPro || isBusiness;
-
-  // Check if phone number is valid and should show providers
-  const showPhoneProviders = useMemo(() => {
-    const phone = formData.phone?.trim() || "";
-    const digitCount = phone.replace(/\D/g, "").length;
-    return digitCount >= 7 && phoneValid;
-  }, [formData.phone, phoneValid]);
 
   const handlePhoneChange = useCallback((value: string) => {
-    setFormData((prev) => ({ ...prev, phone: value }));
+    setAdvancedFields((prev) => ({ ...prev, phone: value }));
   }, []);
 
   const handlePhoneValidChange = useCallback((isValid: boolean, normalized: string | null) => {
@@ -91,8 +72,18 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     setNormalizedPhone(normalized);
   }, []);
 
+  const handleRefineToggle = (open: boolean) => {
+    setShowRefine(open);
+    if (open) {
+      analytics.scanRefineOpen();
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Fire analytics for click
+    analytics.scanStartClick();
     
     // Clear previous turnstile error
     setTurnstileError(null);
@@ -103,45 +94,115 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
       return;
     }
     
-    // Validate form with zod
-    const result = scanFormSchema.safeParse(formData);
+    const trimmedIdentifier = identifier.trim();
     
-    if (!result.success) {
-      const firstError = result.error.errors[0];
+    // Check if we have any input
+    const hasIdentifier = trimmedIdentifier.length > 0;
+    const hasAdvancedInput = showRefine && (
+      advancedFields.firstName.trim() ||
+      advancedFields.lastName.trim() ||
+      advancedFields.email.trim() ||
+      advancedFields.phone.trim()
+    );
+    
+    if (!hasIdentifier && !hasAdvancedInput) {
       toast({
-        title: "Validation Error",
-        description: firstError.message,
+        title: "Missing Input",
+        description: "Please enter an identifier to search",
         variant: "destructive",
       });
       return;
     }
-
-    // Validate phone if provided
-    if (formData.phone && formData.phone.trim().length > 0) {
-      const phoneValidation = validatePhone(formData.phone);
-      if (!phoneValidation.isValid) {
+    
+    // Build submit data
+    let submitData: ScanFormData = {};
+    let detectedType: IdentifierType = 'username';
+    
+    if (hasIdentifier) {
+      const detection = detectIdentifierType(trimmedIdentifier);
+      detectedType = detection.type;
+      
+      switch (detection.type) {
+        case 'email':
+          submitData.email = detection.normalized.email;
+          break;
+        case 'phone':
+          // Validate the phone number
+          const phoneValidation = validatePhone(trimmedIdentifier);
+          if (!phoneValidation.isValid) {
+            toast({
+              title: "Invalid Phone Number",
+              description: phoneValidation.error || "Please enter a valid phone number",
+              variant: "destructive",
+            });
+            return;
+          }
+          submitData.phone = phoneValidation.normalized || trimmedIdentifier;
+          break;
+        case 'fullname':
+          submitData.firstName = detection.normalized.firstName;
+          submitData.lastName = detection.normalized.lastName;
+          break;
+        case 'username':
+        default:
+          submitData.username = detection.normalized.username;
+          break;
+      }
+    }
+    
+    // Merge advanced fields if Refine was used
+    if (showRefine) {
+      // Validate advanced fields
+      const advancedResult = advancedFieldsSchema.safeParse(advancedFields);
+      if (!advancedResult.success) {
+        const firstError = advancedResult.error.errors[0];
         toast({
-          title: "Invalid Phone Number",
-          description: phoneValidation.error || "Please enter a valid phone number",
+          title: "Validation Error",
+          description: firstError.message,
           variant: "destructive",
         });
         return;
       }
+      
+      // Validate phone in advanced fields if provided
+      if (advancedFields.phone && advancedFields.phone.trim().length > 0) {
+        const phoneValidation = validatePhone(advancedFields.phone);
+        if (!phoneValidation.isValid) {
+          toast({
+            title: "Invalid Phone Number",
+            description: phoneValidation.error || "Please enter a valid phone number",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      
+      // Override/merge with advanced fields (only non-empty values)
+      if (advancedFields.firstName.trim()) {
+        submitData.firstName = advancedFields.firstName.trim();
+      }
+      if (advancedFields.lastName.trim()) {
+        submitData.lastName = advancedFields.lastName.trim();
+      }
+      if (advancedFields.email.trim()) {
+        submitData.email = advancedFields.email.trim();
+      }
+      if (advancedFields.phone.trim()) {
+        submitData.phone = normalizedPhone || advancedFields.phone.trim();
+      }
     }
     
-    // Include phone providers if phone scan, use normalized phone
-    // Include turnstile_token if present (will be sent to backend)
-    const submitData: ScanFormData = {
-      ...result.data,
-      phone: normalizedPhone || result.data.phone,
-      phoneProviders: showPhoneProviders ? phoneProviders : undefined,
-      highRiskOptIn: formData.highRiskOptIn,
-      ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
-    };
+    // Add turnstile token if present
+    if (turnstileToken) {
+      submitData.turnstile_token = turnstileToken;
+    }
+    
+    // Fire submit analytics
+    analytics.scanSubmit(detectedType);
     
     onSubmit(submitData);
     
-    // Reset Turnstile after successful submit so next scan requires fresh token
+    // Reset Turnstile after successful submit
     setTurnstileToken(null);
     turnstileRef.current?.reset();
   };
@@ -156,8 +217,10 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
     setTurnstileError(error);
   }, []);
 
-  const handleHighRiskOptInChange = (optIn: boolean) => {
-    setFormData(prev => ({ ...prev, highRiskOptIn: optIn }));
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSubmit(e);
+    }
   };
 
   return (
@@ -171,86 +234,28 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Single Input Field */}
           <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="identifier" className="sr-only">
+              Search identifier
+            </Label>
             <Input
-              id="username"
+              id="identifier"
               type="text"
-              placeholder="Search social media profiles"
-              value={formData.username}
-              onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-              className="bg-secondary border-border"
-              maxLength={50}
-            />
-          </div>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or search by personal details</span>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                placeholder="John"
-                value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                className="bg-secondary border-border"
-                maxLength={100}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                placeholder="Doe"
-                value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                className="bg-secondary border-border"
-                maxLength={100}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="john.doe@example.com"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="bg-secondary border-border"
+              placeholder="Username, email, phone number, or full name"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="h-12 text-lg bg-secondary border-border"
               maxLength={255}
+              autoFocus
+              data-tour="scan-input"
             />
           </div>
 
-          {/* Improved phone input */}
-          <PhoneInput
-            value={formData.phone || ""}
-            onChange={handlePhoneChange}
-            onValidChange={handlePhoneValidChange}
-          />
-
-          {/* Phone provider selector - only show when phone is valid */}
-          {showPhoneProviders && (
-            <ProviderPanel
-              scanType="phone"
-              selectedProviders={phoneProviders}
-              onSelectionChange={setPhoneProviders}
-            />
-          )}
-
-          {/* Turnstile verification - only for Free/unauthenticated users */}
+          {/* Turnstile verification - de-emphasized */}
           {requiresTurnstile && (
-            <div className="space-y-2">
+            <div className="space-y-2 opacity-90">
               <TurnstileWidget
                 ref={turnstileRef}
                 onToken={handleTurnstileToken}
@@ -268,26 +273,93 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
             </div>
           )}
 
-          <div className="pt-4 space-y-3">
-            <Button 
-              type="submit" 
-              size="lg" 
-              data-tour="scan-button"
-              className="w-full"
-            >
-              Begin Scan
-              <ArrowRight className="w-5 h-5" />
-            </Button>
-            
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <Shield className="w-3 h-3 text-accent" />
-              <span>We delete queries immediately after processing</span>
-            </div>
-          </div>
+          {/* Primary CTA */}
+          <Button 
+            type="submit" 
+            size="lg" 
+            data-tour="scan-button"
+            className="w-full"
+          >
+            Run free scan
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
 
+          {/* Helper Text */}
           <p className="text-xs text-muted-foreground text-center">
-            Provide at least a username or your basic information. We respect your privacy - data is only used for the scan.
+            We only use public sources. Queries are discarded after processing.
           </p>
+
+          {/* Refine Section */}
+          <div className="flex justify-center">
+            <Collapsible open={showRefine} onOpenChange={handleRefineToggle}>
+              <CollapsibleTrigger asChild>
+                <Button 
+                  type="button" 
+                  variant="link" 
+                  size="sm" 
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  {showRefine ? (
+                    <>
+                      <ChevronUp className="w-4 h-4 mr-1" />
+                      Hide refine options
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-4 h-4 mr-1" />
+                      Refine search options
+                    </>
+                  )}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-6 space-y-4 w-full">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="John"
+                      value={advancedFields.firstName}
+                      onChange={(e) => setAdvancedFields({ ...advancedFields, firstName: e.target.value })}
+                      className="bg-secondary border-border"
+                      maxLength={100}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Doe"
+                      value={advancedFields.lastName}
+                      onChange={(e) => setAdvancedFields({ ...advancedFields, lastName: e.target.value })}
+                      className="bg-secondary border-border"
+                      maxLength={100}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="advancedEmail">Email Address</Label>
+                  <Input
+                    id="advancedEmail"
+                    type="email"
+                    placeholder="john.doe@example.com"
+                    value={advancedFields.email}
+                    onChange={(e) => setAdvancedFields({ ...advancedFields, email: e.target.value })}
+                    className="bg-secondary border-border"
+                    maxLength={255}
+                  />
+                </div>
+
+                <PhoneInput
+                  value={advancedFields.phone}
+                  onChange={handlePhoneChange}
+                  onValidChange={handlePhoneValidChange}
+                />
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
 
           {/* Related Tools Links */}
           <div className="pt-4 border-t border-border">
