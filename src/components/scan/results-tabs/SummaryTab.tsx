@@ -8,11 +8,13 @@ import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { useInvestigation } from '@/contexts/InvestigationContext';
 import { useScanNarrative } from '@/hooks/useScanNarrative';
 import { flags } from '@/lib/featureFlags';
+import { extractProviderHealthFindings, filterOutProviderHealth } from '@/lib/providerHealthUtils';
 
 import { IntelligenceBrief } from './summary/IntelligenceBrief';
 import { NextStepsPanel } from './summary/NextStepsPanel';
 import { FocusedEntityBanner } from './summary/FocusedEntityBanner';
 import { ScanNarrativeFeed } from './summary/ScanNarrativeFeed';
+import { ProviderHealthPanel } from './ProviderHealthPanel';
 
 // Lazy load ReputationSignalsCard for feature-flagged rollout
 const ReputationSignalsCard = lazy(() => import('./ReputationSignalsCard'));
@@ -92,16 +94,20 @@ export function SummaryTab({
     return results.find(r => r.id === focusedEntityId) || null;
   }, [focusedEntityId, results]);
 
-  const platforms = useMemo(() => getUniquePlatforms(results), [results]);
-  const profileImages = useMemo(() => getProfileImages(results), [results]);
+  // Filter out provider health findings for display metrics
+  const displayResults = useMemo(() => filterOutProviderHealth(results), [results]);
+  const providerHealthFindings = useMemo(() => extractProviderHealthFindings(results), [results]);
+
+  const platforms = useMemo(() => getUniquePlatforms(displayResults), [displayResults]);
+  const profileImages = useMemo(() => getProfileImages(displayResults), [displayResults]);
 
   const breachCount = useMemo(() => {
-    return results.filter((r: any) => {
+    return displayResults.filter((r: any) => {
       const kind = (r.kind || '').toLowerCase();
       const site = (r.site || '').toLowerCase();
       return kind.includes('breach') || kind.includes('leak') || site.includes('breach') || site.includes('hibp');
     }).length;
-  }, [results]);
+  }, [displayResults]);
 
   const reuseScore = useMemo(() => 
     calculateReuseScore(grouped.found.length, platforms.length),
@@ -110,7 +116,7 @@ export function SummaryTab({
 
   const aliases = useMemo(() => {
     const aliasSet = new Set<string>();
-    results.forEach(r => {
+    displayResults.forEach(r => {
       const meta = (r.meta || r.metadata || {}) as Record<string, unknown>;
       if (meta.display_name && typeof meta.display_name === 'string' && meta.display_name !== job?.username) {
         aliasSet.add(meta.display_name);
@@ -120,7 +126,7 @@ export function SummaryTab({
       }
     });
     return Array.from(aliasSet).slice(0, 5);
-  }, [results, job?.username]);
+  }, [displayResults, job?.username]);
 
   const scanComplete = (job?.status || '').toLowerCase().includes('complete');
   const scanTime = job?.finished_at || job?.started_at;
@@ -212,6 +218,11 @@ export function SummaryTab({
           profileImages={profileImages}
           verifiedCount={verifiedEntities.size}
         />
+
+        {/* Provider Health Panel - Show unconfigured providers */}
+        {providerHealthFindings.length > 0 && (
+          <ProviderHealthPanel findings={providerHealthFindings} variant="compact" />
+        )}
 
         {/* 3) Focused Entity (if active) */}
         {focusedResult && (

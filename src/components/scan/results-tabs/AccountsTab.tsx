@@ -6,9 +6,11 @@ import { ScanResult } from '@/hooks/useScanResultsData';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { useInvestigation } from '@/contexts/InvestigationContext';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
+import { extractProviderHealthFindings, filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { RESULTS_SPACING } from './styles';
 import { AccountFilters, QuickFilterOption } from './accounts/AccountFilters';
 import { AccountRow } from './accounts/AccountRow';
+import { ProviderHealthPanel } from './ProviderHealthPanel';
 
 interface AccountsTabProps {
   results: ScanResult[];
@@ -34,7 +36,11 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [quickFilter, setQuickFilter] = useState<QuickFilterOption>('all');
 
-  const lensAnalysis = useLensAnalysis(results);
+  // Filter out provider health findings
+  const displayResults = useMemo(() => filterOutProviderHealth(results), [results]);
+  const providerHealthFindings = useMemo(() => extractProviderHealthFindings(results), [results]);
+
+  const lensAnalysis = useLensAnalysis(displayResults);
   const {
     focusedEntityId,
     setFocusedEntity,
@@ -48,7 +54,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
   // Calculate filter counts
   const filterCounts = useMemo(() => {
     const counts = {
-      all: results.length,
+      all: displayResults.length,
       high_confidence: 0,
       low_confidence: 0,
       claimed: 0,
@@ -56,7 +62,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
       verified: 0,
     };
 
-    results.forEach(result => {
+    displayResults.forEach(result => {
       const score = lensAnalysis.resultScores.get(result.id)?.score || 50;
       if (score >= 75) counts.high_confidence++;
       if (score < 50) counts.low_confidence++;
@@ -73,10 +79,10 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
     });
 
     return counts;
-  }, [results, lensAnalysis.resultScores, claimedEntities, verifiedEntities]);
+  }, [displayResults, lensAnalysis.resultScores, claimedEntities, verifiedEntities]);
 
   const filteredResults = useMemo(() => {
-    let filtered = results.filter(result => {
+    let filtered = displayResults.filter(result => {
       // Text search
       const matchesSearch = searchQuery === '' || 
         result.site?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -125,7 +131,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
     });
 
     return filtered;
-  }, [results, searchQuery, statusFilter, sortBy, quickFilter, lensAnalysis.resultScores, claimedEntities, verifiedEntities]);
+  }, [displayResults, searchQuery, statusFilter, sortBy, quickFilter, lensAnalysis.resultScores, claimedEntities, verifiedEntities]);
 
 // Derive status from result data (kind field, evidence, or status)
   const deriveResultStatus = useCallback((result: ScanResult): string => {
@@ -159,12 +165,12 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
 
   const statusCounts = useMemo(() => {
     const counts = { found: 0, claimed: 0, not_found: 0 };
-    results.forEach(r => {
+    displayResults.forEach(r => {
       const status = deriveResultStatus(r);
       if (status in counts) counts[status as keyof typeof counts]++;
     });
     return counts;
-  }, [results, deriveResultStatus]);
+  }, [displayResults, deriveResultStatus]);
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedRows(prev => {
@@ -188,6 +194,11 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
 
   return (
     <div className={RESULTS_SPACING.contentMarginSm}>
+      {/* Provider Health Panel */}
+      {providerHealthFindings.length > 0 && (
+        <ProviderHealthPanel findings={providerHealthFindings} variant="compact" />
+      )}
+
       {/* Quick Filters */}
       <AccountFilters
         activeFilter={quickFilter}
@@ -212,7 +223,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all" className="text-[10px]">All ({results.length})</SelectItem>
+            <SelectItem value="all" className="text-[10px]">All ({displayResults.length})</SelectItem>
             <SelectItem value="found" className="text-[10px]">Found ({statusCounts.found})</SelectItem>
             <SelectItem value="claimed" className="text-[10px]">Claimed ({statusCounts.claimed})</SelectItem>
             <SelectItem value="not_found" className="text-[10px]">Not Found ({statusCounts.not_found})</SelectItem>
@@ -240,7 +251,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
           {statusCounts.claimed} claimed
         </span>
         <span className="text-muted-foreground/40 ml-auto text-[9px]">
-          {filteredResults.length}/{results.length}
+          {filteredResults.length}/{displayResults.length}
         </span>
       </div>
 

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useRealtimeResults } from '@/hooks/useRealtimeResults';
 import { groupByStatus } from '@/utils/exporters';
+import { filterOutProviderHealth, isProviderHealthFinding } from '@/lib/providerHealthUtils';
 
 export interface ScanResult {
   id: string;
@@ -61,14 +62,17 @@ export function useScanResultsData(jobId: string) {
     };
   }, [results]);
 
-  // Calculate counts for tab badges
+  // Calculate counts for tab badges (excluding provider health findings)
   const tabCounts = useMemo((): TabCounts => {
-    const foundCount = grouped.found.length;
-    const claimedCount = grouped.claimed.length;
+    const displayResults = filterOutProviderHealth(results as any[]);
+    const displayGrouped = groupByStatus(displayResults);
+    const foundCount = displayGrouped.found?.length || 0;
+    const claimedCount = displayGrouped.claimed?.length || 0;
 
-    // Detect breach-related findings
+    // Detect breach-related findings (excluding provider health)
     const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised'];
-    const breachResults = (results as any[]).filter(r => {
+    const breachResults = displayResults.filter(r => {
+      if (isProviderHealthFinding(r)) return false;
       const kind = (r.kind || '').toLowerCase();
       const provider = (r.provider || '').toLowerCase();
       return breachKeywords.some(k => kind.includes(k) || provider.includes(k));
@@ -81,7 +85,7 @@ export function useScanResultsData(jobId: string) {
       breaches: breachResults.length,
       map: 0, // Will be calculated based on geo data
     };
-  }, [grouped, results]);
+  }, [results]);
 
   // Detect if any results have geo data
   const hasGeoData = useMemo(() => {
@@ -138,10 +142,11 @@ export function useScanResultsData(jobId: string) {
     return locations;
   }, [results]);
 
-  // Filter breach-related results
+  // Filter breach-related results (excluding provider health)
   const breachResults = useMemo(() => {
     const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised', 'exposure'];
     return (results as any[]).filter(r => {
+      if (isProviderHealthFinding(r)) return false;
       const kind = (r.kind || '').toLowerCase();
       const provider = (r.provider || '').toLowerCase();
       const site = (r.site || '').toLowerCase();
