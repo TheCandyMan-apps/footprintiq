@@ -27,6 +27,8 @@ export interface ScanResult {
 export interface ScanJob {
   id: string;
   username: string;
+  target?: string;
+  scan_type?: string;
   status: string;
   created_at: string;
   started_at: string | null;
