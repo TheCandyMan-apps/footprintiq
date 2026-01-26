@@ -425,11 +425,15 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete, ini
 
     // Route based on scan type for the best results experience:
     // - Username scans → new tabbed results UI at /scan/usernames/:scanId
+    // - Email scans → new tabbed results UI at /scan/emails/:scanId
     // - Maigret route → basic maigret results page
     // - Everything else → full legacy results page
     if (scanType === 'username') {
       console.log('[ScanProgress] Navigating:', { to: 'username-results', path: `/scan/usernames/${scanId}` });
       navigate(`/scan/usernames/${scanId}`);
+    } else if (scanType === 'email') {
+      console.log('[ScanProgress] Navigating:', { to: 'email-results', path: `/scan/emails/${scanId}` });
+      navigate(`/scan/emails/${scanId}`);
     } else if (resultsRoute === 'maigret') {
       console.log('[ScanProgress] Navigating:', { to: 'maigret', path: `/maigret/results/${scanId}` });
       navigate(`/maigret/results/${scanId}`);
