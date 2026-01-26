@@ -245,30 +245,11 @@ export const AIInsightsCard = ({
     try {
       switch (action.type) {
         case 'removal':
-          if (action.sourceIds && action.sourceIds.length > 0) {
-            for (const sourceId of action.sourceIds) {
-              const source = dataSources.find(s => s.id === sourceId);
-              if (source) {
-                await supabase.from("removal_requests").insert({
-                  user_id: userId,
-                  scan_id: scanId,
-                  source_id: sourceId,
-                  source_name: source.name,
-                  source_type: source.category,
-                  status: 'pending',
-                });
-              }
-            }
-            toast({
-              title: "Removal Requests Initiated",
-              description: `Started removal process for ${action.sourceIds.length} source(s)`,
-            });
-          } else {
-            toast({
-              title: "Manual Action Required",
-              description: action.description,
-            });
-          }
+          // Removal actions are disabled - show coming soon message
+          toast({
+            title: "Removal Guidance Coming Soon",
+            description: "Automated removal workflows are not yet available. We'll notify you when this feature launches.",
+          });
           break;
 
         case 'monitoring':

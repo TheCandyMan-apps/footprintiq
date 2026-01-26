@@ -331,10 +331,10 @@ export const Pricing = () => {
                   <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
                 </tr>
                 <tr className="border-b border-border/50">
-                  <td className="p-4 font-medium">Automated Removal Requests</td>
-                  <td className="text-center p-4"><span className="text-destructive">✗</span></td>
-                  <td className="text-center p-4 bg-primary/5"><Check className="w-5 h-5 text-primary mx-auto" /></td>
-                  <td className="text-center p-4"><Check className="w-5 h-5 text-primary mx-auto" /></td>
+                  <td className="p-4 font-medium text-muted-foreground">Removal Guidance <span className="text-xs">(coming soon)</span></td>
+                  <td className="text-center p-4"><span className="text-muted-foreground">—</span></td>
+                  <td className="text-center p-4 bg-primary/5"><span className="text-muted-foreground">—</span></td>
+                  <td className="text-center p-4"><span className="text-muted-foreground">—</span></td>
                 </tr>
                 <tr className="border-b border-border/50">
                   <td className="p-4 font-medium">Team Members</td>

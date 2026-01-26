@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Check, Zap, Loader2 } from "lucide-react";
+import { Check, Zap, Loader2, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -101,9 +101,9 @@ export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: 
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <span className="text-sm">AI-powered catfish detection</span>
               </li>
-              <li className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-sm">Automated removal requests</span>
+              <li className="flex items-start gap-3 opacity-60">
+                <Clock className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                <span className="text-sm text-muted-foreground">Removal guidance (coming soon)</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />

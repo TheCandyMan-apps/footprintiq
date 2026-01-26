@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, Calendar, Download, CheckCircle2, Loader2, ArrowRight, Zap } from 'lucide-react';
+import { CreditCard, Calendar, Download, CheckCircle2, Loader2, ArrowRight, Zap, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { SettingsBreadcrumb } from '@/components/settings/SettingsBreadcrumb';
 import { SettingsNav } from '@/components/settings/SettingsNav';
@@ -607,11 +607,11 @@ export default function BillingSettings() {
                     <p className="text-sm text-muted-foreground">Catfish & fake profiles</p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 opacity-60">
+                  <Clock className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold">Auto Removal</p>
-                    <p className="text-sm text-muted-foreground">Automated removal requests</p>
+                    <p className="font-semibold text-muted-foreground">Removal Guidance</p>
+                    <p className="text-sm text-muted-foreground">Coming soon</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
