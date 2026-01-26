@@ -3,11 +3,14 @@
  * 
  * Displays a narrative-focused risk assessment with plan-aware visibility.
  * Shows signals count and high-confidence matches in a clear, non-alarmist way.
+ * 
+ * For Free users: Shows "Unclear" risk with tooltip explaining Pro value.
  */
 
-import { Shield, AlertTriangle, CheckCircle2, AlertCircle, Lock, TrendingUp, Eye } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle2, AlertCircle, Lock, TrendingUp, Eye, HelpCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { type RiskSnapshot } from '@/lib/results/resultsViewModel';
 import { type PlanTier } from '@/lib/billing/planCapabilities';
@@ -65,69 +68,101 @@ export function RiskSnapshotCard({
   const riskConfig = RISK_LEVEL_CONFIG[snapshot.riskLevel];
   const StatusIcon = statusConfig.icon;
 
+  // Narrative variant for Free users - shows "Risk Snapshot" card
   if (variant === 'narrative') {
     return (
-      <Card className={cn('overflow-hidden', statusConfig.border, className)}>
+      <Card className={cn('overflow-hidden border-border/50', className)}>
         <CardContent className="p-4">
-          {/* Main narrative section */}
-          <div className="flex items-start gap-3">
-            <div className={cn('p-2 rounded-xl shrink-0', statusConfig.bg)}>
-              <StatusIcon className={cn('h-5 w-5', statusConfig.color)} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-base font-semibold">{statusConfig.label}</h3>
-                <Badge 
-                  variant="outline"
-                  className={cn('text-[9px] px-1.5 py-0 h-4', riskConfig.color)}
-                >
-                  {riskConfig.label} Risk
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {statusConfig.narrative}
-              </p>
-            </div>
+          {/* Header */}
+          <div className="flex items-center gap-2 mb-4">
+            <Shield className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold">Risk Snapshot</h3>
           </div>
 
-          {/* Metrics row */}
-          <div className="flex items-center gap-4 mt-4 pt-3 border-t border-border/30">
-            <div className="flex items-center gap-2">
-              <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-              <div>
-                <span className="text-lg font-bold">{snapshot.signalsFound}</span>
-                <span className="text-xs text-muted-foreground ml-1">signals found</span>
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-3 gap-4">
+            {/* Signals Detected */}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-foreground">
+                {snapshot.signalsFound}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">
+                Signals detected
               </div>
             </div>
-            
-            <div className="h-6 w-px bg-border/50" />
-            
-            {isFullAccess ? (
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                <div>
-                  <span className="text-lg font-bold text-primary">{snapshot.highConfidenceCount}</span>
-                  <span className="text-xs text-muted-foreground ml-1">high confidence</span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 opacity-60">
-                <Lock className="h-3 w-3 text-muted-foreground" />
-                <div>
-                  <span className="text-sm text-muted-foreground">Confidence scoring</span>
-                  <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3.5 ml-1">
-                    Pro
+
+            {/* High-Confidence Matches */}
+            <div className="text-center">
+              {isFullAccess ? (
+                <>
+                  <div className="text-2xl font-bold text-primary">
+                    {snapshot.highConfidenceCount}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    High-confidence
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="text-2xl font-bold text-foreground">
+                    {snapshot.highConfidenceCount}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    High-confidence
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Overall Risk */}
+            <div className="text-center">
+              {isFullAccess ? (
+                <>
+                  <Badge 
+                    variant="outline"
+                    className={cn('text-xs px-2 py-0.5 h-auto', riskConfig.color)}
+                  >
+                    {riskConfig.label}
                   </Badge>
-                </div>
-              </div>
-            )}
+                  <div className="text-[10px] text-muted-foreground mt-1">
+                    Overall risk
+                  </div>
+                </>
+              ) : (
+                <>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="inline-flex items-center gap-1 cursor-help">
+                          <span className="text-lg font-semibold text-muted-foreground">
+                            Unclear
+                          </span>
+                          <HelpCircle className="h-3 w-3 text-muted-foreground/60" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent 
+                        side="top" 
+                        className="max-w-[220px] text-center p-3"
+                      >
+                        <p className="text-xs">
+                          Free scans confirm presence. Pro clarifies risk and relevance.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    Overall risk
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Default compact variant
+  // Default compact variant (for Pro users)
   return (
     <Card className={cn('overflow-hidden', className)}>
       <CardContent className="p-3">
