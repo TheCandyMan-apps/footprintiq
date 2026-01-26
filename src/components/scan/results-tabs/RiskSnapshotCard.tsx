@@ -4,7 +4,9 @@
  * Displays a narrative-focused risk assessment with plan-aware visibility.
  * Shows signals count and high-confidence matches in a clear, non-alarmist way.
  * 
- * For Free users: Shows "Unclear" risk with tooltip explaining Pro value.
+ * EVIDENCE GATING: Risk levels are only shown when sufficient evidence exists.
+ * - Critical/High require justification and minimum evidence thresholds
+ * - If evidence is insufficient, the section does not render severity
  */
 
 import { Shield, AlertTriangle, CheckCircle2, AlertCircle, Lock, TrendingUp, Eye, HelpCircle } from 'lucide-react';
@@ -14,6 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { type RiskSnapshot } from '@/lib/results/resultsViewModel';
 import { type PlanTier } from '@/lib/billing/planCapabilities';
+import { shouldRenderSection, clampSeverity } from '@/lib/evidenceGating';
 
 interface RiskSnapshotCardProps {
   snapshot: RiskSnapshot;
@@ -65,8 +68,31 @@ export function RiskSnapshotCard({
   className 
 }: RiskSnapshotCardProps) {
   const statusConfig = STATUS_CONFIG[snapshot.status];
-  const riskConfig = RISK_LEVEL_CONFIG[snapshot.riskLevel];
   const StatusIcon = statusConfig.icon;
+
+  // Evidence gating: check if we have enough evidence to show the risk level
+  const hasEvidence = snapshot.signalsFound > 0;
+  const evidencePayload = {
+    evidenceCount: snapshot.signalsFound,
+    confidence: snapshot.highConfidenceCount > 0 ? 70 : 30,
+    justification: snapshot.signalsFound > 0 ? 'Signals detected' : null,
+  };
+  
+  // Clamp the risk level based on evidence
+  const severityMap: Record<string, 'critical' | 'high' | 'medium' | 'low'> = {
+    critical: 'critical',
+    high: 'high',
+    moderate: 'medium',
+    low: 'low',
+  };
+  const requestedSeverity = severityMap[snapshot.riskLevel] || 'low';
+  const allowedSeverity = hasEvidence ? clampSeverity(requestedSeverity, evidencePayload) : null;
+  
+  // Get the appropriate risk config - use the clamped severity or hide it
+  const displayRiskLevel = allowedSeverity 
+    ? (allowedSeverity === 'medium' ? 'moderate' : allowedSeverity) as keyof typeof RISK_LEVEL_CONFIG
+    : null;
+  const riskConfig = displayRiskLevel ? RISK_LEVEL_CONFIG[displayRiskLevel] : null;
 
   // Narrative variant for Free users - shows "Risk Snapshot" card
   if (variant === 'narrative') {
@@ -114,9 +140,9 @@ export function RiskSnapshotCard({
               )}
             </div>
 
-            {/* Overall Risk */}
+            {/* Overall Risk - Only show if evidence supports it */}
             <div className="text-center">
-              {isFullAccess ? (
+              {isFullAccess && riskConfig ? (
                 <>
                   <Badge 
                     variant="outline"
@@ -126,6 +152,14 @@ export function RiskSnapshotCard({
                   </Badge>
                   <div className="text-[10px] text-muted-foreground mt-1">
                     Overall risk
+                  </div>
+                </>
+              ) : isFullAccess && !riskConfig ? (
+                // Has access but insufficient evidence for risk level
+                <>
+                  <span className="text-lg font-semibold text-muted-foreground">—</span>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    Insufficient data
                   </div>
                 </>
               ) : (
@@ -175,9 +209,15 @@ export function RiskSnapshotCard({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-semibold">{statusConfig.label}</span>
-                <Badge className={cn('text-[8px] px-1.5 py-0 h-4', riskConfig.color)}>
-                  {riskConfig.label} Risk
-                </Badge>
+                {riskConfig ? (
+                  <Badge className={cn('text-[8px] px-1.5 py-0 h-4', riskConfig.color)}>
+                    {riskConfig.label} Risk
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[8px] px-1.5 py-0 h-4 text-muted-foreground">
+                    Assessing
+                  </Badge>
+                )}
               </div>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {snapshot.signalsFound} signals detected

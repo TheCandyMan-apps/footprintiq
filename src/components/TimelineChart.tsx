@@ -1,12 +1,19 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TimelineEvent } from "@/lib/timeline";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
+import { shouldRenderTimeline } from "@/lib/evidenceGating";
+import { Info } from "lucide-react";
 
 interface TimelineChartProps {
   events: TimelineEvent[];
 }
 
 export const TimelineChart = ({ events }: TimelineChartProps) => {
+  // Evidence gating: Don't render if no events
+  if (!shouldRenderTimeline(events.length)) {
+    return null; // Don't render anything if no evidence
+  }
+
   // Transform events into stacked severity data
   const severityColors = {
     critical: "hsl(var(--destructive))",
@@ -35,6 +42,11 @@ export const TimelineChart = ({ events }: TimelineChartProps) => {
     date,
     ...severities,
   }));
+
+  // Evidence gating: If no data points to chart, don't render
+  if (chartData.length === 0) {
+    return null;
+  }
 
   return (
     <Card>

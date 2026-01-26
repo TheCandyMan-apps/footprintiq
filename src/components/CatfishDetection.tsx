@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSubscription } from '@/hooks/useSubscription';
 import { UpgradeDialog } from './UpgradeDialog';
 import { HelpIcon } from '@/components/ui/help-icon';
+import { shouldRenderCatfishDetection, canShowSeverity } from '@/lib/evidenceGating';
 
 interface CatfishDetectionProps {
   scanId: string;
@@ -264,25 +265,66 @@ export const CatfishDetection = ({ scanId, scanType, hasUsername }: CatfishDetec
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Risk Level Alert */}
-            <Alert className={`border-2 ${getRiskColor(result.scores.catfishRisk)}/20`}>
-              <div className="flex items-center gap-2">
-                {getRiskIcon(result.scores.catfishRisk)}
-                <div className="flex-1">
-                  <h4 className="font-semibold flex items-center gap-2">
-                    <span>{getRiskEmoji(result.scores.catfishRisk)}</span>
-                    Catfish Risk: <strong className="text-primary">{result.scores.catfishRisk}</strong>
-                  </h4>
-                  <AlertDescription>
-                    {result.scores.catfishRisk === 'LOW' && 'Identity appears authentic with strong verification signals'}
-                    {result.scores.catfishRisk === 'MEDIUM' && 'Some inconsistencies detected, exercise caution'}
-                    {result.scores.catfishRisk === 'HIGH' && 'Multiple red flags detected, high probability of fake identity'}
-                    {result.scores.catfishRisk === 'CRITICAL' && 'Severe authenticity concerns, likely catfish profile'}
-                    {result.scores.catfishRisk === 'N/A' && 'Unable to assess risk - insufficient data'}
-                  </AlertDescription>
-                </div>
-              </div>
-            </Alert>
+            {/* Evidence-gated Risk Level Alert */}
+            {(() => {
+              const dataPoints = (result.scanData.socialProfilesCount ?? result.scanData.platformPresencesCount ?? 0) 
+                + (result.scanData.dataSourcesCount ?? 0);
+              const shouldShowRisk = shouldRenderCatfishDetection(
+                result.scores.catfishRisk,
+                dataPoints,
+                result.analysis
+              );
+              
+              // Check if severity can be shown based on evidence
+              const riskLevel = result.scores.catfishRisk;
+              const severityMap: Record<string, 'critical' | 'high' | 'medium' | 'low'> = {
+                'CRITICAL': 'critical',
+                'HIGH': 'high',
+                'MEDIUM': 'medium',
+                'LOW': 'low',
+              };
+              const mappedSeverity = severityMap[riskLevel] || null;
+              const canShowRiskLevel = mappedSeverity && canShowSeverity(mappedSeverity, {
+                evidenceCount: dataPoints,
+                confidence: result.scores.authenticityScore ?? 0,
+                justification: result.analysis,
+              });
+              
+              if (!shouldShowRisk || !canShowRiskLevel) {
+                // Show insufficient data message instead of risk
+                return (
+                  <Alert className="border-muted">
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Insufficient Evidence</AlertTitle>
+                    <AlertDescription>
+                      Not enough data points to determine catfish risk. 
+                      {dataPoints} signals found — more data needed for a reliable assessment.
+                    </AlertDescription>
+                  </Alert>
+                );
+              }
+              
+              return (
+                <Alert className={`border-2 ${getRiskColor(result.scores.catfishRisk)}/20`}>
+                  <div className="flex items-center gap-2">
+                    {getRiskIcon(result.scores.catfishRisk)}
+                    <div className="flex-1">
+                      <h4 className="font-semibold flex items-center gap-2">
+                        <span>{getRiskEmoji(result.scores.catfishRisk)}</span>
+                        Catfish Risk: <strong className="text-primary">{result.scores.catfishRisk}</strong>
+                      </h4>
+                      <AlertDescription>
+                        {result.scores.catfishRisk === 'LOW' && 'Identity appears authentic with strong verification signals'}
+                        {result.scores.catfishRisk === 'MEDIUM' && 'Some inconsistencies detected, exercise caution'}
+                        {result.scores.catfishRisk === 'HIGH' && 'Multiple red flags detected, high probability of fake identity'}
+                        {result.scores.catfishRisk === 'CRITICAL' && 'Severe authenticity concerns, likely catfish profile'}
+                        {result.scores.catfishRisk === 'N/A' && 'Unable to assess risk - insufficient data'}
+                      </AlertDescription>
+                    </div>
+                  </div>
+                </Alert>
+              );
+            })()}
 
             {/* Score Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
