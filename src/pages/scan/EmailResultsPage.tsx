@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { ScanResults } from '@/components/scan/ScanResults';
+import { ScanResultsRouter } from '@/components/scan/ScanResultsRouter';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Share2, Download, Shield, Clock } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
@@ -128,7 +128,7 @@ export default function EmailResultsPage() {
               </div>
             </div>
 
-            <ScanResults jobId={jobId} />
+            <ScanResultsRouter jobId={jobId} />
           </div>
         </main>
         
