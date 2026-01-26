@@ -196,6 +196,7 @@ const MaigretSelfTest = lazy(() => import("./pages/MaigretSelfTest"));
 const MaigretMonitoring = lazy(() => import("./pages/MaigretMonitoring"));
 const UsernamesPage = lazy(() => import("./pages/scan/UsernamesPage"));
 const UsernameResultsPage = lazy(() => import("./pages/scan/UsernameResultsPage"));
+const EmailResultsPage = lazy(() => import("./pages/scan/EmailResultsPage"));
 const OpsConsole = lazy(() => import("./pages/admin/OpsConsole"));
 const AuditViewer = lazy(() => import("./pages/admin/AuditViewer"));
 const Referrals = lazy(() => import("./pages/Referrals"));
@@ -349,6 +350,7 @@ function RouterContent() {
           <Route path="/maigret/self-test" element={<MaigretSelfTest />} />
           <Route path="/scan/usernames" element={<UsernamesPage />} />
           <Route path="/scan/usernames/:jobId" element={<UsernameResultsPage />} />
+          <Route path="/scan/emails/:jobId" element={<EmailResultsPage />} />
           <Route path="/docs/api" element={<ApiDocsOld />} />
           
           <Route path="/api" element={<ApiDocs />} />
