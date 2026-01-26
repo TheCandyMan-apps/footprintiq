@@ -6,7 +6,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
-import { Lock, Mail, CheckCircle, Sparkles, ArrowRight, RefreshCw } from 'lucide-react';
+import { Lock, Mail, CheckCircle, Sparkles, ArrowRight, RefreshCw, Shield, Eye, TrendingUp, FileText } from 'lucide-react';
 import { useProPreview } from '@/hooks/useProPreview';
 import { useEmailVerification } from '@/hooks/useEmailVerification';
 import { useNavigate } from 'react-router-dom';
@@ -17,13 +17,14 @@ interface PostScanUpgradeModalProps {
   onOpenChange: (open: boolean) => void;
   lockedSectionsCount: number;
   highRiskCount?: number;
+  signalsFound?: number;
 }
 
 const BENEFITS = [
-  'See why this result exists',
-  'Reduce false positives with context',
-  'View correlation between findings',
-  'Access deeper evidence signals',
+  { icon: Eye, text: 'See why each finding exists' },
+  { icon: TrendingUp, text: 'Confidence scores on all signals' },
+  { icon: Shield, text: 'Full connection graph' },
+  { icon: FileText, text: 'Export reports & evidence packs' },
 ];
 
 export function PostScanUpgradeModal({
@@ -31,6 +32,7 @@ export function PostScanUpgradeModal({
   onOpenChange,
   lockedSectionsCount,
   highRiskCount = 0,
+  signalsFound = 0,
 }: PostScanUpgradeModalProps) {
   const navigate = useNavigate();
   const { isTrialEligible, isTrialActive, startTrialCheckout, loading: trialLoading } = useProPreview();
@@ -110,7 +112,7 @@ export function PostScanUpgradeModal({
     );
   }
 
-  // Main upgrade modal
+  // Main upgrade modal - New narrative copy
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -118,22 +120,22 @@ export function PostScanUpgradeModal({
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
             <Lock className="h-7 w-7 text-primary" />
           </div>
-          <DialogTitle className="text-xl">Want the full picture?</DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
-            Free scans show what exists.
-            <br />
-            Pro explains what it means.
+          <DialogTitle className="text-xl">
+            Want clarity on what this actually means?
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground mt-2">
+            Free shows what exists. Pro explains what it means.
           </DialogDescription>
         </DialogHeader>
 
         {/* Locked content indicator */}
-        {(lockedSectionsCount > 0 || highRiskCount > 0) && (
+        {signalsFound > 0 && (
           <div className="mt-2 text-center">
             <p className="text-xs text-muted-foreground">
-              {highRiskCount > 0 
-                ? `${highRiskCount} high-risk findings need deeper analysis`
-                : `${lockedSectionsCount} insights locked on your results`
-              }
+              {signalsFound} signal{signalsFound !== 1 ? 's' : ''} found
+              {lockedSectionsCount > 0 && (
+                <> · {lockedSectionsCount} insight{lockedSectionsCount !== 1 ? 's' : ''} locked</>
+              )}
             </p>
           </div>
         )}
@@ -141,12 +143,17 @@ export function PostScanUpgradeModal({
         {/* Benefits list */}
         <div className="mt-4 rounded-lg border border-border/50 bg-muted/30 p-4">
           <ul className="space-y-2.5">
-            {BENEFITS.map((benefit, i) => (
-              <li key={i} className="flex items-center gap-2.5 text-sm">
-                <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                <span>{benefit}</span>
-              </li>
-            ))}
+            {BENEFITS.map((benefit, i) => {
+              const Icon = benefit.icon;
+              return (
+                <li key={i} className="flex items-center gap-2.5 text-sm">
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
+                    <Icon className="h-3 w-3 text-primary" />
+                  </div>
+                  <span>{benefit.text}</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
@@ -161,7 +168,7 @@ export function PostScanUpgradeModal({
                 size="lg"
               >
                 <Sparkles className="mr-2 h-4 w-4" />
-                Start Pro Preview
+                Unlock full analysis
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               <Button
@@ -169,7 +176,7 @@ export function PostScanUpgradeModal({
                 variant="outline"
                 className="w-full"
               >
-                Upgrade to Pro
+                See Pro plans
               </Button>
             </>
           ) : (
@@ -179,7 +186,7 @@ export function PostScanUpgradeModal({
               size="lg"
             >
               <Sparkles className="mr-2 h-4 w-4" />
-              Upgrade to Pro
+              Unlock full analysis
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           )}
@@ -193,8 +200,9 @@ export function PostScanUpgradeModal({
         </div>
 
         {/* Trust line */}
-        <p className="mt-3 text-center text-[10px] text-muted-foreground/70 border-t border-border/50 pt-3">
-          Ethical OSINT only • Cancel anytime
+        <p className="mt-3 text-center text-[10px] text-muted-foreground/70 border-t border-border/50 pt-3 flex items-center justify-center gap-1.5">
+          <Shield className="h-2.5 w-2.5" />
+          Public sources only • Ethical OSINT • Cancel anytime
         </p>
       </DialogContent>
     </Dialog>

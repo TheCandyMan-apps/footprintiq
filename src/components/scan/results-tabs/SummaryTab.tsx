@@ -1,4 +1,4 @@
-import { useMemo, lazy, Suspense } from 'react';
+import { useMemo, lazy, Suspense, useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { User, Mail, Phone, Globe, Clock, CheckCircle2, FileText, Lock } from 'lucide-react';
@@ -18,6 +18,11 @@ import { ScanNarrativeFeed } from './summary/ScanNarrativeFeed';
 import { ProviderHealthPanel } from './ProviderHealthPanel';
 import { RiskSnapshotCard } from './RiskSnapshotCard';
 import { RedactedBucketView } from './RedactedBucketView';
+import { FreeResultsHeader } from './summary/FreeResultsHeader';
+import { NarrativeBucketCard, NarrativeBucketEmptyState } from './summary/NarrativeBucketCard';
+import { ProUpgradeBlock } from './summary/ProUpgradeBlock';
+import { ConnectionsPreview } from './summary/ConnectionsPreview';
+import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
 
 // Lazy load ReputationSignalsCard for feature-flagged rollout
 const ReputationSignalsCard = lazy(() => import('./ReputationSignalsCard'));
@@ -78,6 +83,10 @@ export function SummaryTab({
   const navigate = useNavigate();
   const location = useLocation();
   
+  // Post-scan upgrade modal state
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const hasShownModalRef = useRef(false);
+  
   // Investigation context
   let focusedEntityId: string | null = null;
   let setFocusedEntity: ((id: string | null) => void) | null = null;
@@ -102,7 +111,7 @@ export function SummaryTab({
   const providerHealthFindings = useMemo(() => extractProviderHealthFindings(results), [results]);
 
   // Get plan-aware view model
-  const { viewModel, plan, isFullAccess, riskSnapshot, buckets } = useResultsViewModel(results);
+  const { viewModel, plan, isFullAccess, riskSnapshot, buckets, connections } = useResultsViewModel(results);
 
   const platforms = useMemo(() => getUniquePlatforms(displayResults), [displayResults]);
   const profileImages = useMemo(() => getProfileImages(displayResults), [displayResults]);
@@ -138,11 +147,26 @@ export function SummaryTab({
   const scanTime = job?.finished_at || job?.started_at;
   const formattedTime = scanTime ? format(new Date(scanTime), 'MMM d, yyyy • HH:mm') : null;
 
+  // Calculate total hidden count for upgrade prompts
+  const totalHiddenCount = useMemo(() => {
+    return Object.values(buckets).reduce((sum, bucket) => sum + bucket.hiddenCount, 0);
+  }, [buckets]);
+
+  // Show upgrade modal for Free users after scan completes (with delay)
+  useEffect(() => {
+    if (!isFullAccess && scanComplete && riskSnapshot.signalsFound > 0 && !hasShownModalRef.current) {
+      const timer = setTimeout(() => {
+        setShowUpgradeModal(true);
+        hasShownModalRef.current = true;
+      }, 3000); // 3 second delay
+      return () => clearTimeout(timer);
+    }
+  }, [isFullAccess, scanComplete, riskSnapshot.signalsFound]);
+
   // Navigation helpers
   const navigateToTab = (tab: string) => {
     const params = new URLSearchParams(location.search);
     params.set('tab', tab);
-    // Use navigate with state to maintain scroll position
     navigate(`${location.pathname}?${params.toString()}`);
   };
 
@@ -153,6 +177,10 @@ export function SummaryTab({
     params.set('tab', 'accounts');
     if (focusedEntityId) params.set('focus', focusedEntityId);
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+  };
+
+  const handleUpgradeClick = () => {
+    navigate('/pricing');
   };
 
   // Scan type config
@@ -169,6 +197,104 @@ export function SummaryTab({
   // Scan narrative for persistent progress/completion feed
   const narrative = useScanNarrative(jobId, job?.username || '', scanType);
 
+  // Check if any buckets have data
+  const hasBucketData = Object.values(buckets).some(b => b.totalCount > 0);
+
+  // Render narrative-first layout for Free users
+  if (!isFullAccess) {
+    return (
+      <div className="space-y-4">
+        {/* Narrative Header */}
+        <FreeResultsHeader
+          username={job?.username || 'Unknown'}
+          scanType={scanType}
+          isFullAccess={isFullAccess}
+        />
+
+        {/* Risk Snapshot - Narrative variant */}
+        <RiskSnapshotCard
+          snapshot={riskSnapshot}
+          plan={plan}
+          isFullAccess={isFullAccess}
+          variant="narrative"
+        />
+
+        {/* Scan Narrative Feed */}
+        {narrative.items.length > 0 && (
+          <ScanNarrativeFeed
+            items={narrative.items}
+            summary={narrative.summary}
+            isLoading={narrative.isLoading}
+            isComplete={narrative.isComplete}
+            estimatedTimeRemaining={narrative.estimatedTimeRemaining}
+            variant="default"
+          />
+        )}
+
+        {/* Bucket Cards Grid */}
+        {hasBucketData ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <NarrativeBucketCard
+              bucket={buckets.PublicProfiles}
+              isFullAccess={isFullAccess}
+              onUpgradeClick={handleUpgradeClick}
+            />
+            <NarrativeBucketCard
+              bucket={buckets.ExposureSignals}
+              isFullAccess={isFullAccess}
+              onUpgradeClick={handleUpgradeClick}
+            />
+            <NarrativeBucketCard
+              bucket={buckets.ReuseIndicators}
+              isFullAccess={isFullAccess}
+              onUpgradeClick={handleUpgradeClick}
+            />
+            <NarrativeBucketCard
+              bucket={buckets.Connections}
+              isFullAccess={isFullAccess}
+              onUpgradeClick={handleUpgradeClick}
+            />
+          </div>
+        ) : (
+          <NarrativeBucketEmptyState />
+        )}
+
+        {/* Connections Preview */}
+        {connections.totalNodes > 0 && (
+          <ConnectionsPreview
+            connections={connections}
+            isFullAccess={isFullAccess}
+            onUpgradeClick={handleUpgradeClick}
+            onViewFullClick={() => navigateToTab('connections')}
+          />
+        )}
+
+        {/* Inline Pro Upgrade Block */}
+        <ProUpgradeBlock
+          variant="default"
+          signalsFound={riskSnapshot.signalsFound}
+          hiddenCount={totalHiddenCount}
+          onUpgradeClick={handleUpgradeClick}
+        />
+
+        {/* Provider Health Panel */}
+        {providerHealthFindings.length > 0 && (
+          <ProviderHealthPanel findings={providerHealthFindings} variant="compact" />
+        )}
+
+        {/* Post-Scan Upgrade Modal */}
+        <PostScanUpgradeModal
+          open={showUpgradeModal}
+          onOpenChange={setShowUpgradeModal}
+          lockedSectionsCount={totalHiddenCount}
+          signalsFound={riskSnapshot.signalsFound}
+          highRiskCount={breachCount}
+        />
+      </div>
+    );
+  }
+
+  // Pro/Business: Full access layout (existing)
   return (
     <div className="space-y-1.5">
       {/* Brief Header - Compact scan identifier */}
