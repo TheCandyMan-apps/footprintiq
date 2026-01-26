@@ -227,26 +227,23 @@ export function FindingCard({ finding, scanId }: FindingCardProps) {
       return platformName;
     }
     
-    // For system findings, show human-readable provider status
+    // For system findings, show generic status (not provider name)
     if (kind.startsWith('provider.')) {
       const status = kind.split('.')[1];
-      const providerName = finding.provider 
-        ? finding.provider.charAt(0).toUpperCase() + finding.provider.slice(1) 
-        : 'Unknown Provider';
       
       switch (status) {
         case 'timeout':
-          return `${providerName} timed out`;
+          return 'Source timed out';
         case 'failed':
-          return `${providerName} failed`;
+          return 'Source unavailable';
         case 'not_run':
-          return `${providerName} not run`;
+          return 'Source not queried';
         case 'disabled':
-          return `${providerName} disabled`;
+          return 'Source disabled';
         case 'empty_results':
-          return `${providerName} - no results`;
+          return 'No results from source';
         default:
-          return `${providerName} - ${status.replace(/_/g, ' ')}`;
+          return `Source — ${status.replace(/_/g, ' ')}`;
       }
     }
     
@@ -403,9 +400,12 @@ export function FindingCard({ finding, scanId }: FindingCardProps) {
               >
                 {(finding.severity || 'info').toUpperCase()}
               </Badge>
-              <span className="text-sm font-semibold text-foreground">
-                {finding.provider}
-              </span>
+              {/* Provider-agnostic: Show source attribution, not provider name */}
+              {!isFree && finding.provider && (
+                <span className="text-xs text-muted-foreground">
+                  via {finding.provider}
+                </span>
+              )}
               {category && (
                 <Badge 
                   variant="outline" 
@@ -424,7 +424,7 @@ export function FindingCard({ finding, scanId }: FindingCardProps) {
               {getSmartTitle(finding.kind, finding.evidence, finding.meta)}
             </h3>
             {(finding.kind === 'profile_presence' || finding.kind === 'presence.hit' || finding.kind === 'account.profile') && (
-              <p className="text-sm text-muted-foreground">Username profile found</p>
+              <p className="text-sm text-muted-foreground">Account presence detected</p>
             )}
             {profileUrl && (
               <p className="text-xs text-muted-foreground truncate mb-2">{profileUrl}</p>
