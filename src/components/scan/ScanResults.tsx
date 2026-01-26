@@ -139,10 +139,15 @@ export function ScanResults({ jobId }: ScanResultsProps) {
           const updatedScan = payload.new as any;
           console.debug('[ScanResults] Scan status updated:', updatedScan.status);
           
+          // Compute target from available fields
+          const target = updatedScan.username || updatedScan.email || updatedScan.phone || '';
+          
           // Map scans table fields to ScanJob interface
           const mappedJob: ScanJob = {
             id: updatedScan.id,
-            username: updatedScan.username || '',
+            username: target, // backward compat
+            target: target,
+            scan_type: updatedScan.scan_type || undefined,
             status: updatedScan.status,
             created_at: updatedScan.created_at,
             started_at: updatedScan.created_at,
@@ -198,14 +203,19 @@ export function ScanResults({ jobId }: ScanResultsProps) {
       // Try new scans table first (used by scan-orchestrate)
       const { data: scanData, error: scanError } = await supabase
         .from('scans')
-        .select('id, username, scan_type, status, created_at, completed_at, user_id')
+        .select('id, username, email, phone, scan_type, status, created_at, completed_at, user_id')
         .eq('id', jobId)
         .maybeSingle();
 
       if (scanData) {
+        // Compute target from available fields
+        const target = scanData.username || scanData.email || scanData.phone || '';
+        
         const mappedJob: ScanJob = {
           id: scanData.id,
-          username: scanData.username || '',
+          username: target, // backward compat: set username to target
+          target: target,
+          scan_type: scanData.scan_type || undefined,
           status: scanData.status,
           created_at: scanData.created_at,
           started_at: scanData.created_at,
@@ -306,7 +316,14 @@ export function ScanResults({ jobId }: ScanResultsProps) {
     });
   };
   const handleNewScan = () => {
-    window.location.href = `/scan/usernames?q=${encodeURIComponent(job.username || '')}`;
+    const target = job.target ?? job.username ?? '';
+    const scanType = job.scan_type || 'username';
+    
+    if (scanType === 'email') {
+      window.location.href = `/email-breach-check?q=${encodeURIComponent(target)}`;
+    } else {
+      window.location.href = `/scan/usernames?q=${encodeURIComponent(target)}`;
+    }
   };
 
   return (
@@ -320,9 +337,11 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                 <div className="text-xs text-muted-foreground mb-0.5">Scan Results for:</div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <Badge variant="default" className="text-sm sm:text-base px-3 py-1 font-semibold">
-                    {job.username}
+                    {job.target ?? job.username}
                   </Badge>
-                  <span className="text-xs text-muted-foreground">(Username)</span>
+                  <span className="text-xs text-muted-foreground">
+                    ({job.scan_type === 'email' ? 'Email' : job.scan_type === 'phone' ? 'Phone' : 'Username'})
+                  </span>
                 </div>
               </div>
             </div>
