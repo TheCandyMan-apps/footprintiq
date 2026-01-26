@@ -1,13 +1,20 @@
 /**
  * ProUpgradeBlock Component
  * 
- * Inline upgrade block for Free users with "Unlock the full analysis" title,
- * benefit bullets, and CTA.
+ * Inline upgrade block for Free users with conversion-optimized copy.
+ * 
+ * Title: "Unlock the full analysis"
+ * Body: "Free shows what exists. Pro explains what it means."
+ * Trust line: "Public sources only • Ethical OSINT • Cancel anytime"
+ * 
+ * Rules:
+ * - No urgency, discounts, or countdowns
+ * - Never shown during scan processing
  */
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Check, Sparkles, ArrowRight, Shield, Lock } from 'lucide-react';
+import { Check, ArrowRight, Shield, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,16 +27,17 @@ interface ProUpgradeBlockProps {
 }
 
 const BENEFITS = [
-  'See why each finding exists',
-  'Confidence scores on all signals',
-  'Full connection graph',
-  'Export reports & evidence packs',
+  'Confidence scoring & false-positive filtering',
+  'Full source list & evidence context',
+  'Labeled connections graph',
+  'Exposure timeline (historical vs active)',
+  'Recommended next steps',
 ];
 
 const COMPACT_BENEFITS = [
-  'Full confidence scoring',
-  'Complete source access',
-  'Export capabilities',
+  'Confidence scoring & filtering',
+  'Full source list',
+  'Labeled connections',
 ];
 
 export function ProUpgradeBlock({
@@ -59,10 +67,7 @@ export function ProUpgradeBlock({
           <Lock className="h-4 w-4 text-primary shrink-0" />
           <div className="min-w-0">
             <p className="text-xs font-medium text-foreground">
-              {hiddenCount > 0 
-                ? `${hiddenCount} more findings available`
-                : 'Unlock full analysis'
-              }
+              Unlock the full analysis
             </p>
             <p className="text-[10px] text-muted-foreground">
               Free shows what exists. Pro explains what it means.
@@ -70,7 +75,7 @@ export function ProUpgradeBlock({
           </div>
         </div>
         <Button size="sm" className="h-7 text-xs shrink-0" onClick={handleUpgrade}>
-          Upgrade
+          Unlock Pro
           <ArrowRight className="h-3 w-3 ml-1" />
         </Button>
       </div>
@@ -83,10 +88,13 @@ export function ProUpgradeBlock({
         <CardContent className="p-3">
           <div className="flex items-start gap-3">
             <div className="p-2 rounded-lg bg-primary/10 shrink-0">
-              <Sparkles className="h-4 w-4 text-primary" />
+              <Lock className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold mb-1">Unlock the full analysis</h3>
+              <p className="text-[10px] text-muted-foreground mb-2">
+                Free shows what exists. Pro explains what it means.
+              </p>
               <ul className="space-y-1 mb-3">
                 {COMPACT_BENEFITS.map((benefit, i) => (
                   <li key={i} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
@@ -96,8 +104,8 @@ export function ProUpgradeBlock({
                 ))}
               </ul>
               <Button size="sm" className="h-7 text-xs w-full" onClick={handleUpgrade}>
-                <Sparkles className="h-3 w-3 mr-1" />
-                Upgrade to Pro
+                Unlock Pro
+                <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
             </div>
           </div>
@@ -109,50 +117,33 @@ export function ProUpgradeBlock({
   // Default: Full upgrade block
   return (
     <Card className={cn('overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-transparent', className)}>
-      <CardContent className="p-4">
+      <CardContent className="p-5">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Sparkles className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold">Unlock the full analysis</h3>
-            <p className="text-xs text-muted-foreground">
-              Free shows what exists. Pro explains what it means.
-            </p>
-          </div>
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold mb-1">Unlock the full analysis</h3>
+          <p className="text-sm text-muted-foreground">
+            Free shows what exists. Pro explains what it means.
+          </p>
         </div>
 
         {/* Benefits */}
-        <ul className="space-y-2 mb-4">
+        <ul className="space-y-2.5 mb-5">
           {BENEFITS.map((benefit, i) => (
-            <li key={i} className="flex items-center gap-2 text-sm">
-              <Check className="h-3.5 w-3.5 text-primary shrink-0" />
+            <li key={i} className="flex items-center gap-2.5 text-sm">
+              <Check className="h-4 w-4 text-primary shrink-0" />
               <span>{benefit}</span>
             </li>
           ))}
         </ul>
 
-        {/* Stats callout */}
-        {signalsFound > 0 && (
-          <div className="flex items-center gap-2 p-2 rounded-md bg-muted/30 border border-border/30 mb-4">
-            <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">
-              {signalsFound} signal{signalsFound !== 1 ? 's' : ''} found 
-              {hiddenCount > 0 && <> · {hiddenCount} hidden</>}
-            </span>
-          </div>
-        )}
-
         {/* CTA */}
-        <Button className="w-full" onClick={handleUpgrade}>
-          <Sparkles className="h-4 w-4 mr-2" />
-          Upgrade to Pro
+        <Button className="w-full" size="lg" onClick={handleUpgrade}>
+          Unlock Pro
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
 
         {/* Trust line */}
-        <p className="mt-3 text-center text-[10px] text-muted-foreground/70 flex items-center justify-center gap-1">
+        <p className="mt-4 text-center text-[10px] text-muted-foreground/70 flex items-center justify-center gap-1.5">
           <Shield className="h-2.5 w-2.5" />
           Public sources only • Ethical OSINT • Cancel anytime
         </p>
