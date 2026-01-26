@@ -1,7 +1,7 @@
 import { useMemo, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Phone, Globe, Clock, CheckCircle2, FileText } from 'lucide-react';
+import { User, Mail, Phone, Globe, Clock, CheckCircle2, FileText, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
@@ -9,12 +9,15 @@ import { useInvestigation } from '@/contexts/InvestigationContext';
 import { useScanNarrative } from '@/hooks/useScanNarrative';
 import { flags } from '@/lib/featureFlags';
 import { extractProviderHealthFindings, filterOutProviderHealth } from '@/lib/providerHealthUtils';
+import { useResultsViewModel } from '@/hooks/useResultsViewModel';
 
 import { IntelligenceBrief } from './summary/IntelligenceBrief';
 import { NextStepsPanel } from './summary/NextStepsPanel';
 import { FocusedEntityBanner } from './summary/FocusedEntityBanner';
 import { ScanNarrativeFeed } from './summary/ScanNarrativeFeed';
 import { ProviderHealthPanel } from './ProviderHealthPanel';
+import { RiskSnapshotCard } from './RiskSnapshotCard';
+import { RedactedBucketView } from './RedactedBucketView';
 
 // Lazy load ReputationSignalsCard for feature-flagged rollout
 const ReputationSignalsCard = lazy(() => import('./ReputationSignalsCard'));
@@ -97,6 +100,9 @@ export function SummaryTab({
   // Filter out provider health findings for display metrics
   const displayResults = useMemo(() => filterOutProviderHealth(results), [results]);
   const providerHealthFindings = useMemo(() => extractProviderHealthFindings(results), [results]);
+
+  // Get plan-aware view model
+  const { viewModel, plan, isFullAccess, riskSnapshot, buckets } = useResultsViewModel(results);
 
   const platforms = useMemo(() => getUniquePlatforms(displayResults), [displayResults]);
   const profileImages = useMemo(() => getProfileImages(displayResults), [displayResults]);
@@ -196,6 +202,13 @@ export function SummaryTab({
 
       {/* Intelligence Brief - Compact card */}
       <div className="border border-border/20 rounded bg-card p-2.5 space-y-2.5">
+        {/* 0) Risk Snapshot - Plan-aware */}
+        <RiskSnapshotCard
+          snapshot={riskSnapshot}
+          plan={plan}
+          isFullAccess={isFullAccess}
+        />
+
         {/* 1) Scan Narrative Feed - What we did / Live progress */}
         <ScanNarrativeFeed
           items={narrative.items}
@@ -218,6 +231,15 @@ export function SummaryTab({
           profileImages={profileImages}
           verifiedCount={verifiedEntities.size}
         />
+
+        {/* 2.5) Exposure Signals Bucket - Redacted for Free */}
+        {buckets.ExposureSignals.totalCount > 0 && (
+          <RedactedBucketView
+            bucket={buckets.ExposureSignals}
+            isFullAccess={isFullAccess}
+            onUpgradeClick={() => navigateToTab('breaches')}
+          />
+        )}
 
         {/* Provider Health Panel - Show unconfigured providers */}
         {providerHealthFindings.length > 0 && (

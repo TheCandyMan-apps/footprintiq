@@ -1,16 +1,20 @@
 import { useMemo, useState, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, User, ArrowUpDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Search, Filter, User, ArrowUpDown, Lock, Sparkles } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { useInvestigation } from '@/contexts/InvestigationContext';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { extractProviderHealthFindings, filterOutProviderHealth } from '@/lib/providerHealthUtils';
+import { useResultsViewModel } from '@/hooks/useResultsViewModel';
 import { RESULTS_SPACING } from './styles';
 import { AccountFilters, QuickFilterOption } from './accounts/AccountFilters';
 import { AccountRow } from './accounts/AccountRow';
 import { ProviderHealthPanel } from './ProviderHealthPanel';
+import { cn } from '@/lib/utils';
 
 interface AccountsTabProps {
   results: ScanResult[];
@@ -39,6 +43,10 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
   // Filter out provider health findings
   const displayResults = useMemo(() => filterOutProviderHealth(results), [results]);
   const providerHealthFindings = useMemo(() => extractProviderHealthFindings(results), [results]);
+
+  // Get plan-aware view model for redaction
+  const { isFullAccess, buckets, plan } = useResultsViewModel(results);
+  const freeAccountLimit = isFullAccess ? Infinity : 5; // Show 5 accounts for Free users
 
   const lensAnalysis = useLensAnalysis(displayResults);
   const {
@@ -130,8 +138,13 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
       return 0;
     });
 
+    // Apply Free tier limit
+    if (!isFullAccess) {
+      filtered = filtered.slice(0, freeAccountLimit);
+    }
+
     return filtered;
-  }, [displayResults, searchQuery, statusFilter, sortBy, quickFilter, lensAnalysis.resultScores, claimedEntities, verifiedEntities]);
+  }, [displayResults, searchQuery, statusFilter, sortBy, quickFilter, lensAnalysis.resultScores, claimedEntities, verifiedEntities, isFullAccess, freeAccountLimit]);
 
 // Derive status from result data (kind field, evidence, or status)
   const deriveResultStatus = useCallback((result: ScanResult): string => {
@@ -250,6 +263,12 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
         <span className="text-muted-foreground/50">
           {statusCounts.claimed} claimed
         </span>
+        {!isFullAccess && displayResults.length > freeAccountLimit && (
+          <span className="flex items-center gap-0.5 text-muted-foreground/50 ml-1">
+            <Lock className="h-2.5 w-2.5" />
+            +{displayResults.length - freeAccountLimit} hidden
+          </span>
+        )}
         <span className="text-muted-foreground/40 ml-auto text-[9px]">
           {filteredResults.length}/{displayResults.length}
         </span>
@@ -291,6 +310,25 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
               />
             );
           })
+        )}
+        
+        {/* Free tier upgrade prompt */}
+        {!isFullAccess && displayResults.length > freeAccountLimit && (
+          <div className="p-3 bg-muted/30 border-t border-border/20 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1.5">
+              <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-xs font-medium">
+                {displayResults.length - freeAccountLimit} more accounts
+              </span>
+            </div>
+            <p className="text-[10px] text-muted-foreground mb-2">
+              Upgrade to Pro to view all accounts with full confidence scoring.
+            </p>
+            <Button size="sm" className="h-7 text-[10px] gap-1">
+              <Sparkles className="h-3 w-3" />
+              Upgrade to Pro
+            </Button>
+          </div>
         )}
       </div>
     </div>
