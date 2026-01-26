@@ -70,18 +70,22 @@ export function FreeResultsView({ jobId, job, results }: FreeResultsViewProps) {
   const scanComplete = (job?.status || '').toLowerCase().includes('complete');
   const username = job?.username || 'Unknown';
   
-  // Calculate metrics
-  const signalsFound = aggregated.counts.totalProfiles + aggregated.counts.totalExposures;
+  // Calculate metrics from aggregated data (single source of truth)
+  // signalsFound = unique profiles (exposures are a subset, not added separately)
+  const signalsFound = aggregated.counts.totalProfiles;
   const highConfidenceCount = aggregated.counts.highConfidence;
   const totalProfiles = aggregated.counts.totalProfiles;
   const totalBreaches = aggregated.counts.totalBreaches;
-  const previewProfiles = aggregated.profiles.slice(0, 3);
-  const hiddenCount = Math.max(0, totalProfiles - 3);
   
-  // Calculate connections (simplified)
-  const totalConnections = Math.min(aggregated.profiles.length, 12);
+  // Filter to only 'found' profiles for display
+  const foundProfiles = aggregated.profiles.filter(p => p.status === 'found' || p.status === 'claimed');
+  const previewProfiles = foundProfiles.slice(0, 3);
+  const hiddenCount = Math.max(0, foundProfiles.length - 3);
+  
+  // Connections count = unique profiles (same as signals)
+  const totalConnections = foundProfiles.length;
   const visibleConnections = Math.min(3, totalConnections);
-  const lockedConnections = totalConnections - visibleConnections;
+  const lockedConnections = Math.max(0, totalConnections - visibleConnections);
 
   // Show upgrade modal after scan completes (with delay)
   useEffect(() => {
