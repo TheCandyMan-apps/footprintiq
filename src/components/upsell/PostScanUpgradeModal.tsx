@@ -1,3 +1,22 @@
+/**
+ * PostScanUpgradeModal Component
+ * 
+ * Post-results modal shown once per scan after results render.
+ * 
+ * Headline: "Want clarity on what this actually means?"
+ * Body: "You're viewing a redacted summary of an advanced scan.
+ *        Unlock Pro to see full sources, confidence scores, and connections."
+ * 
+ * Buttons:
+ * - "Unlock full analysis" (primary)
+ * - "Continue with free results" (text link)
+ * 
+ * Rules:
+ * - Show modal only once per scan
+ * - Never show during scan processing
+ * - No urgency, discounts, or countdowns
+ */
+
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -6,11 +25,10 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
-import { Lock, Mail, CheckCircle, Sparkles, ArrowRight, RefreshCw, Shield, Eye, TrendingUp, FileText } from 'lucide-react';
+import { Lock, Mail, ArrowRight, RefreshCw, Shield } from 'lucide-react';
 import { useProPreview } from '@/hooks/useProPreview';
 import { useEmailVerification } from '@/hooks/useEmailVerification';
 import { useNavigate } from 'react-router-dom';
-import { cn } from '@/lib/utils';
 
 interface PostScanUpgradeModalProps {
   open: boolean;
@@ -19,13 +37,6 @@ interface PostScanUpgradeModalProps {
   highRiskCount?: number;
   signalsFound?: number;
 }
-
-const BENEFITS = [
-  { icon: Eye, text: 'See why each finding exists' },
-  { icon: TrendingUp, text: 'Confidence scores on all signals' },
-  { icon: Shield, text: 'Full connection graph' },
-  { icon: FileText, text: 'Export reports & evidence packs' },
-];
 
 export function PostScanUpgradeModal({
   open,
@@ -112,7 +123,7 @@ export function PostScanUpgradeModal({
     );
   }
 
-  // Main upgrade modal - New narrative copy
+  // Main upgrade modal
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -123,69 +134,34 @@ export function PostScanUpgradeModal({
           <DialogTitle className="text-xl">
             Want clarity on what this actually means?
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground mt-2">
-            Free shows what exists. Pro explains what it means.
+          <DialogDescription className="text-sm text-muted-foreground mt-3 space-y-2">
+            <span className="block">
+              You're viewing a redacted summary of an advanced scan.
+            </span>
+            <span className="block">
+              Unlock Pro to see full sources, confidence scores, and connections.
+            </span>
           </DialogDescription>
         </DialogHeader>
 
-        {/* Locked content indicator */}
-        {signalsFound > 0 && (
-          <div className="mt-2 text-center">
-            <p className="text-xs text-muted-foreground">
-              {signalsFound} signal{signalsFound !== 1 ? 's' : ''} found
-              {lockedSectionsCount > 0 && (
-                <> · {lockedSectionsCount} insight{lockedSectionsCount !== 1 ? 's' : ''} locked</>
-              )}
-            </p>
-          </div>
-        )}
-
-        {/* Benefits list */}
-        <div className="mt-4 rounded-lg border border-border/50 bg-muted/30 p-4">
-          <ul className="space-y-2.5">
-            {BENEFITS.map((benefit, i) => {
-              const Icon = benefit.icon;
-              return (
-                <li key={i} className="flex items-center gap-2.5 text-sm">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10">
-                    <Icon className="h-3 w-3 text-primary" />
-                  </div>
-                  <span>{benefit.text}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
         {/* CTA buttons */}
-        <div className="mt-4 space-y-3">
+        <div className="mt-6 space-y-3">
           {showTrialCTA ? (
-            <>
-              <Button
-                onClick={handleStartTrial}
-                disabled={isLoading}
-                className="w-full"
-                size="lg"
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                Unlock full analysis
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button
-                onClick={handleUpgrade}
-                variant="outline"
-                className="w-full"
-              >
-                See Pro plans
-              </Button>
-            </>
+            <Button
+              onClick={handleStartTrial}
+              disabled={isLoading}
+              className="w-full"
+              size="lg"
+            >
+              Unlock full analysis
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           ) : (
             <Button
               onClick={handleUpgrade}
               className="w-full"
               size="lg"
             >
-              <Sparkles className="mr-2 h-4 w-4" />
               Unlock full analysis
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -195,12 +171,12 @@ export function PostScanUpgradeModal({
             onClick={handleDismiss}
             className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
           >
-            Continue with limited results
+            Continue with free results
           </button>
         </div>
 
         {/* Trust line */}
-        <p className="mt-3 text-center text-[10px] text-muted-foreground/70 border-t border-border/50 pt-3 flex items-center justify-center gap-1.5">
+        <p className="mt-4 text-center text-[10px] text-muted-foreground/70 border-t border-border/50 pt-4 flex items-center justify-center gap-1.5">
           <Shield className="h-2.5 w-2.5" />
           Public sources only • Ethical OSINT • Cancel anytime
         </p>
