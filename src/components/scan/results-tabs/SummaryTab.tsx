@@ -203,15 +203,15 @@ export function SummaryTab({
   // Render narrative-first layout for Free users
   if (!isFullAccess) {
     return (
-      <div className="space-y-4">
-        {/* Narrative Header */}
+      <div className="space-y-5">
+        {/* Narrative Header - "Here's what we found" */}
         <FreeResultsHeader
           username={job?.username || 'Unknown'}
           scanType={scanType}
           isFullAccess={isFullAccess}
         />
 
-        {/* Risk Snapshot - Narrative variant */}
+        {/* Risk Snapshot Card - Signals, High-Confidence, Overall Risk */}
         <RiskSnapshotCard
           snapshot={riskSnapshot}
           plan={plan}
@@ -219,19 +219,7 @@ export function SummaryTab({
           variant="narrative"
         />
 
-        {/* Scan Narrative Feed */}
-        {narrative.items.length > 0 && (
-          <ScanNarrativeFeed
-            items={narrative.items}
-            summary={narrative.summary}
-            isLoading={narrative.isLoading}
-            isComplete={narrative.isComplete}
-            estimatedTimeRemaining={narrative.estimatedTimeRemaining}
-            variant="default"
-          />
-        )}
-
-        {/* Bucket Cards Grid */}
+        {/* 4 Human Category Cards Grid */}
         {hasBucketData ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <NarrativeBucketCard
@@ -259,7 +247,7 @@ export function SummaryTab({
           <NarrativeBucketEmptyState />
         )}
 
-        {/* Connections Preview */}
+        {/* Connections Preview - Graph with overlay */}
         {connections.totalNodes > 0 && (
           <ConnectionsPreview
             connections={connections}
@@ -276,11 +264,6 @@ export function SummaryTab({
           hiddenCount={totalHiddenCount}
           onUpgradeClick={handleUpgradeClick}
         />
-
-        {/* Provider Health Panel */}
-        {providerHealthFindings.length > 0 && (
-          <ProviderHealthPanel findings={providerHealthFindings} variant="compact" />
-        )}
 
         {/* Post-Scan Upgrade Modal */}
         <PostScanUpgradeModal

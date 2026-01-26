@@ -1,8 +1,13 @@
 /**
  * NarrativeBucketCard Component
  * 
- * Compact bucket card showing count, 1 example, and "+ N more (locked)"
- * for the narrative-first Free results page.
+ * Human-readable category card showing:
+ * - Count
+ * - One example sentence
+ * - Locked indicator: "+ N more (Pro)"
+ * 
+ * Used in the narrative-first Free results page.
+ * Does NOT show provider names anywhere.
  */
 
 import { Lock, ChevronRight, Globe, AlertTriangle, Link2, Users } from 'lucide-react';
@@ -19,28 +24,51 @@ interface NarrativeBucketCardProps {
   className?: string;
 }
 
-const BUCKET_CONFIG: Record<BucketType, { icon: typeof Globe; color: string; description: string }> = {
+const BUCKET_CONFIG: Record<BucketType, { 
+  icon: typeof Globe; 
+  color: string; 
+  bgColor: string;
+  description: string;
+  examplePrefix: string;
+}> = {
   PublicProfiles: { 
     icon: Globe, 
     color: 'text-blue-600 dark:text-blue-400',
-    description: 'Accounts discovered on public platforms'
+    bgColor: 'bg-blue-500/10',
+    description: 'Accounts discovered on public platforms',
+    examplePrefix: 'Found on',
   },
   ExposureSignals: { 
     icon: AlertTriangle, 
     color: 'text-destructive',
-    description: 'Data breach and leak exposures'
+    bgColor: 'bg-destructive/10',
+    description: 'Data breach and leak exposures',
+    examplePrefix: 'Exposed in',
   },
   ReuseIndicators: { 
     icon: Link2, 
     color: 'text-amber-600 dark:text-amber-400',
-    description: 'Credential reuse patterns detected'
+    bgColor: 'bg-amber-500/10',
+    description: 'Credential reuse patterns detected',
+    examplePrefix: 'Pattern found on',
   },
   Connections: { 
     icon: Users, 
     color: 'text-purple-600 dark:text-purple-400',
-    description: 'Cross-platform identity links'
+    bgColor: 'bg-purple-500/10',
+    description: 'Cross-platform identity links',
+    examplePrefix: 'Linked to',
   },
 };
+
+function getExampleSentence(bucket: ViewModelBucket, config: typeof BUCKET_CONFIG[BucketType]): string {
+  const firstItem = bucket.items[0];
+  if (!firstItem) return 'No examples available';
+  
+  // Generate human-readable example without exposing provider
+  const platform = firstItem.platform || 'a platform';
+  return `${config.examplePrefix} ${platform}`;
+}
 
 export function NarrativeBucketCard({
   bucket,
@@ -54,75 +82,48 @@ export function NarrativeBucketCard({
 
   const config = BUCKET_CONFIG[bucket.type];
   const Icon = config.icon;
-  const exampleItem = bucket.items[0];
   const hiddenCount = bucket.hiddenCount;
+  const exampleSentence = getExampleSentence(bucket, config);
 
   return (
-    <Card className={cn('overflow-hidden transition-all hover:shadow-md', className)}>
-      <CardContent className="p-3">
+    <Card className={cn('overflow-hidden transition-all hover:shadow-md border-border/50', className)}>
+      <CardContent className="p-4">
         {/* Header: Icon + Label + Count */}
-        <div className="flex items-center gap-2 mb-2">
-          <div className={cn('p-1.5 rounded-lg bg-muted/50', config.color)}>
-            <Icon className="h-3.5 w-3.5" />
+        <div className="flex items-start gap-3 mb-3">
+          <div className={cn('p-2 rounded-lg shrink-0', config.bgColor)}>
+            <Icon className={cn('h-4 w-4', config.color)} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-sm font-medium truncate">{bucket.label}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold">{bucket.label}</h3>
               <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 shrink-0">
                 {bucket.totalCount}
               </Badge>
             </div>
-            <p className="text-[10px] text-muted-foreground truncate">
+            <p className="text-[11px] text-muted-foreground mt-0.5">
               {config.description}
             </p>
           </div>
         </div>
 
-        {/* Example item preview */}
-        {exampleItem && (
-          <div className="pl-7 mb-2">
-            <div className="flex items-center gap-2 p-2 rounded-md bg-muted/30 border border-border/30">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium truncate">
-                  {exampleItem.platform}
-                </p>
-                {exampleItem.evidence && (
-                  <p className={cn(
-                    'text-[10px] text-muted-foreground truncate mt-0.5',
-                    exampleItem.isRedacted && 'blur-[2px]'
-                  )}>
-                    {exampleItem.evidence}
-                  </p>
-                )}
-              </div>
-              {isFullAccess && exampleItem.confidence > 0 && (
-                <Badge 
-                  variant="outline" 
-                  className={cn(
-                    'text-[9px] px-1.5 h-4 shrink-0',
-                    exampleItem.confidence >= 75 
-                      ? 'text-green-600 dark:text-green-400 border-green-500/30'
-                      : 'text-muted-foreground border-border'
-                  )}
-                >
-                  {exampleItem.confidence}%
-                </Badge>
-              )}
-            </div>
-          </div>
-        )}
+        {/* Example sentence */}
+        <div className="pl-11 mb-3">
+          <p className="text-xs text-foreground">
+            {exampleSentence}
+          </p>
+        </div>
 
-        {/* Locked items CTA */}
+        {/* Locked items indicator for Free users */}
         {hiddenCount > 0 && !isFullAccess && (
           <Button
             variant="ghost"
             size="sm"
-            className="w-full h-7 text-[10px] text-muted-foreground hover:text-primary group pl-7"
+            className="w-full h-8 text-xs text-muted-foreground hover:text-primary group justify-start pl-11"
             onClick={onUpgradeClick}
           >
-            <Lock className="h-2.5 w-2.5 mr-1 group-hover:text-primary" />
-            + {hiddenCount} more {hiddenCount === 1 ? 'source' : 'sources'} (Pro)
-            <ChevronRight className="h-2.5 w-2.5 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Lock className="h-3 w-3 mr-1.5 group-hover:text-primary" />
+            + {hiddenCount} more (Pro)
+            <ChevronRight className="h-3 w-3 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
           </Button>
         )}
 
@@ -131,11 +132,11 @@ export function NarrativeBucketCard({
           <Button
             variant="ghost"
             size="sm"
-            className="w-full h-7 text-[10px] text-muted-foreground hover:text-primary pl-7"
+            className="w-full h-8 text-xs text-muted-foreground hover:text-primary justify-start pl-11"
             onClick={onUpgradeClick}
           >
             View all {bucket.totalCount} {bucket.label.toLowerCase()}
-            <ChevronRight className="h-2.5 w-2.5 ml-auto" />
+            <ChevronRight className="h-3 w-3 ml-auto" />
           </Button>
         )}
       </CardContent>
@@ -148,12 +149,12 @@ export function NarrativeBucketCard({
  */
 export function NarrativeBucketEmptyState() {
   return (
-    <Card className="p-6 text-center">
-      <Globe className="h-8 w-8 mx-auto text-muted-foreground/50 mb-3" />
-      <h3 className="text-sm font-medium text-foreground mb-1">
+    <Card className="p-8 text-center border-border/50">
+      <Globe className="h-10 w-10 mx-auto text-muted-foreground/40 mb-4" />
+      <h3 className="text-base font-medium text-foreground mb-2">
         No signals detected
       </h3>
-      <p className="text-xs text-muted-foreground">
+      <p className="text-sm text-muted-foreground max-w-sm mx-auto">
         We didn't find any public exposure for this identifier. 
         This could mean a minimal digital footprint.
       </p>
