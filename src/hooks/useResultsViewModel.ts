@@ -3,6 +3,10 @@
  * 
  * Wraps buildResultsViewModel with subscription awareness.
  * Provides a reactive view model that updates when plan changes.
+ * 
+ * CRITICAL: Raw results are stored server-side unchanged.
+ * This hook only affects UI rendering - upgrading unlocks
+ * the already-run results without re-running providers.
  */
 
 import { useMemo } from 'react';
@@ -37,6 +41,10 @@ export interface UseResultsViewModelReturn {
   getUpgradePrompt: (feature: string) => string;
   /** Whether data is loading */
   isLoading: boolean;
+  /** Total hidden findings across all buckets */
+  totalHiddenCount: number;
+  /** Whether upgrading would unlock more content */
+  canUnlock: boolean;
 }
 
 /**
@@ -44,6 +52,11 @@ export interface UseResultsViewModelReturn {
  * 
  * @param rawResults - Raw scan results from the database
  * @returns View model with appropriate redaction for user's plan
+ * 
+ * IMPORTANT: The raw results passed here are fetched from the database
+ * where they were stored during the scan. Upgrading the user's plan
+ * will cause this hook to re-render with full access, unlocking the
+ * already-stored results without re-running any providers.
  */
 export function useResultsViewModel(rawResults: any[]): UseResultsViewModelReturn {
   const { subscriptionTier, isLoading } = useSubscription();
@@ -66,6 +79,8 @@ export function useResultsViewModel(rawResults: any[]): UseResultsViewModelRetur
     showConfidence,
     getUpgradePrompt: getFeatureUpgradePrompt,
     isLoading,
+    totalHiddenCount: viewModel.totalHiddenCount,
+    canUnlock: viewModel.canUnlock,
   };
 }
 
@@ -79,6 +94,11 @@ export function useBucketRedaction(bucket: ViewModelBucket) {
     upgradePrompt: bucket.upgradePrompt,
     visibleCount: bucket.items.length,
     totalCount: bucket.totalCount,
+    previewCount: bucket.previewCount,
+    // Items that are shown as examples
+    previewItems: bucket.items.filter(item => item.isPreview),
+    // Items that are visible but redacted
+    redactedItems: bucket.items.filter(item => item.isRedacted),
   }), [bucket]);
 }
 
@@ -89,8 +109,11 @@ export function useConnectionsRedaction(connections: ConnectionsViewModel) {
   return useMemo(() => ({
     isLocked: connections.isPartiallyLocked,
     lockedCount: connections.totalNodes - connections.visibleNodes.length,
+    blurredCount: connections.blurredCount,
     upgradePrompt: connections.upgradePrompt,
-    visibleNodes: connections.visibleNodes.filter(n => !n.isLocked),
+    // Nodes with visible labels
+    labeledNodes: connections.visibleNodes.filter(n => !n.isLocked),
+    // Nodes that appear but are blurred/unlabeled
     blurredNodes: connections.visibleNodes.filter(n => n.isLocked),
   }), [connections]);
 }
