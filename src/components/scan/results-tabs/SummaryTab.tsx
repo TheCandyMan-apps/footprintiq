@@ -10,6 +10,7 @@ import { useScanNarrative } from '@/hooks/useScanNarrative';
 import { flags } from '@/lib/featureFlags';
 import { extractProviderHealthFindings, filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { useResultsViewModel } from '@/hooks/useResultsViewModel';
+import { aggregateResults } from '@/lib/results/resultsAggregator';
 
 import { IntelligenceBrief } from './summary/IntelligenceBrief';
 import { NextStepsPanel } from './summary/NextStepsPanel';
@@ -17,9 +18,8 @@ import { FocusedEntityBanner } from './summary/FocusedEntityBanner';
 import { ScanNarrativeFeed } from './summary/ScanNarrativeFeed';
 import { ProviderHealthPanel } from './ProviderHealthPanel';
 import { RiskSnapshotCard } from './RiskSnapshotCard';
-import { RedactedBucketView } from './RedactedBucketView';
 import { FreeResultsHeader } from './summary/FreeResultsHeader';
-import { NarrativeBucketCard, NarrativeBucketEmptyState } from './summary/NarrativeBucketCard';
+import { ProfilesExposureSection } from './summary/ProfilesExposureSection';
 import { ProUpgradeBlock } from './summary/ProUpgradeBlock';
 import { ConnectionsPreview } from './summary/ConnectionsPreview';
 import { AdvancedModeHint } from './summary/AdvancedModeHint';
@@ -114,20 +114,18 @@ export function SummaryTab({
   // Get plan-aware view model
   const { viewModel, plan, isFullAccess, riskSnapshot, buckets, connections } = useResultsViewModel(results);
 
+  // Get aggregated results for authoritative counts
+  const aggregated = useMemo(() => aggregateResults(displayResults), [displayResults]);
+
   const platforms = useMemo(() => getUniquePlatforms(displayResults), [displayResults]);
   const profileImages = useMemo(() => getProfileImages(displayResults), [displayResults]);
 
-  const breachCount = useMemo(() => {
-    return displayResults.filter((r: any) => {
-      const kind = (r.kind || '').toLowerCase();
-      const site = (r.site || '').toLowerCase();
-      return kind.includes('breach') || kind.includes('leak') || site.includes('breach') || site.includes('hibp');
-    }).length;
-  }, [displayResults]);
+  // Use aggregated breach count for accuracy
+  const breachCount = aggregated.counts.totalBreaches;
 
   const reuseScore = useMemo(() => 
-    calculateReuseScore(grouped.found.length, platforms.length),
-    [grouped.found.length, platforms.length]
+    calculateReuseScore(aggregated.counts.publicProfiles, platforms.length),
+    [aggregated.counts.publicProfiles, platforms.length]
   );
 
   const aliases = useMemo(() => {
@@ -220,33 +218,13 @@ export function SummaryTab({
           variant="narrative"
         />
 
-        {/* 4 Human Category Cards Grid */}
-        {hasBucketData ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <NarrativeBucketCard
-              bucket={buckets.PublicProfiles}
-              isFullAccess={isFullAccess}
-              onUpgradeClick={handleUpgradeClick}
-            />
-            <NarrativeBucketCard
-              bucket={buckets.ExposureSignals}
-              isFullAccess={isFullAccess}
-              onUpgradeClick={handleUpgradeClick}
-            />
-            <NarrativeBucketCard
-              bucket={buckets.ReuseIndicators}
-              isFullAccess={isFullAccess}
-              onUpgradeClick={handleUpgradeClick}
-            />
-            <NarrativeBucketCard
-              bucket={buckets.Connections}
-              isFullAccess={isFullAccess}
-              onUpgradeClick={handleUpgradeClick}
-            />
-          </div>
-        ) : (
-          <NarrativeBucketEmptyState />
-        )}
+        {/* Unified Profiles & Exposure Section */}
+        <ProfilesExposureSection
+          results={displayResults}
+          isFullAccess={isFullAccess}
+          onUpgradeClick={handleUpgradeClick}
+          onViewAllClick={() => navigateToTab('accounts')}
+        />
 
         {/* Connections Preview - Graph with overlay */}
         {connections.totalNodes > 0 && (
@@ -345,14 +323,13 @@ export function SummaryTab({
           verifiedCount={verifiedEntities.size}
         />
 
-        {/* 2.5) Exposure Signals Bucket - Redacted for Free */}
-        {buckets.ExposureSignals.totalCount > 0 && (
-          <RedactedBucketView
-            bucket={buckets.ExposureSignals}
-            isFullAccess={isFullAccess}
-            onUpgradeClick={() => navigateToTab('breaches')}
-          />
-        )}
+        {/* Unified Profiles & Exposure Section */}
+        <ProfilesExposureSection
+          results={displayResults}
+          isFullAccess={isFullAccess}
+          onUpgradeClick={() => navigateToTab('breaches')}
+          onViewAllClick={() => navigateToTab('accounts')}
+        />
 
         {/* Provider Health Panel - Show unconfigured providers */}
         {providerHealthFindings.length > 0 && (
@@ -388,13 +365,13 @@ export function SummaryTab({
         )}
       </div>
 
-      {/* Compact Footer Stats - Inline */}
+      {/* Compact Footer Stats - Using aggregated counts */}
       <div className="flex items-center justify-between px-0.5 text-[9px] text-muted-foreground/50">
         <div className="flex items-center gap-2">
-          <span><strong className="text-foreground/60">{grouped.found.length}</strong> accounts</span>
+          <span><strong className="text-foreground/60">{aggregated.counts.totalProfiles}</strong> profiles</span>
           <span><strong className="text-foreground/60">{platforms.length}</strong> platforms</span>
           {breachCount > 0 && (
-            <span className="text-destructive/70"><strong>{breachCount}</strong> breaches</span>
+            <span className="text-destructive/70"><strong>{breachCount}</strong> exposures</span>
           )}
           {verifiedEntities.size > 0 && (
             <span className="text-green-600/70 dark:text-green-400/70"><strong>{verifiedEntities.size}</strong> verified</span>
@@ -402,7 +379,7 @@ export function SummaryTab({
         </div>
         <span className="flex items-center gap-0.5">
           <FileText className="w-2.5 h-2.5" />
-          {resultsCount}
+          {aggregated.counts.totalProfiles}
         </span>
       </div>
       

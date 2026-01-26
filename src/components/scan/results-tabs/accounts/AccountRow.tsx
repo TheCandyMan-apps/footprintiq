@@ -512,34 +512,20 @@ export function AccountRow({
             )}
           </div>
 
-          {/* Profile URL + Raw fields in compact footer */}
-          <div className="flex items-center justify-between gap-4 pt-2 border-t border-border/15 text-[10px]">
-            {profileUrl && (
+          {/* Profile URL */}
+          {profileUrl && (
+            <div className="pt-2 border-t border-border/15 text-[10px]">
               <a 
                 href={profileUrl} 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-primary/70 hover:text-primary hover:underline truncate flex-1"
+                className="text-primary/70 hover:text-primary hover:underline truncate block"
                 onClick={(e) => e.stopPropagation()}
               >
                 {profileUrl}
               </a>
-            )}
-            
-            {Object.keys(meta).length > 0 && (
-              <details 
-                className="shrink-0"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <summary className="text-[9px] uppercase tracking-wider text-muted-foreground/50 cursor-pointer hover:text-muted-foreground select-none font-medium">
-                  Raw OSINT
-                </summary>
-                <pre className="absolute right-4 mt-1 text-[10px] bg-popover border border-border rounded-md p-2 shadow-lg overflow-x-auto max-h-32 max-w-sm text-muted-foreground/80 leading-tight z-20">
-                  {JSON.stringify(meta, null, 2)}
-                </pre>
-              </details>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </CollapsibleContent>
 
