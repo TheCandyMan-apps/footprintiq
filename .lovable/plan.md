@@ -1,99 +1,78 @@
 
-# Fix: Scan Results Not Displaying ("Waiting for results...")
+
+# Fix: Frontend Not Displaying Social Profile Results
 
 ## Problem Summary
-A completed scan shows "Scan Complete" with 9s elapsed time, but the main results area displays "Waiting for results..." indefinitely. The scan recorded 13 sources found, but users see no actual results.
+The latest scan completed successfully with 9 social profiles stored in the database, but the UI shows "Waiting for results..." because the frontend queries the wrong table.
 
-## Root Cause Analysis
+## Root Cause
 
-### Issue 1: Database Constraint Violation (Backend)
-The Predicta API returns profile URLs in a field called `link`, but the code maps `profile.url` (which is `undefined`):
+**Data Flow Mismatch:**
 
 ```text
-Edge Function Log:
-Error storing social profiles: null value in column "profile_url" of relation 
-"social_profiles" violates not-null constraint
+Backend (osint-scan):
+  └── Writes to: social_profiles table ✅ (9 records stored)
+
+Frontend (useRealtimeResults → useScanResultsData → FreeResultsPage):
+  └── Reads from: findings table ❌ (0 records found)
 ```
 
-**Location**: `supabase/functions/osint-scan/index.ts` line 467
+The `osint-scan` edge function stores discovered profiles in `social_profiles`, but the `useRealtimeResults` hook only queries `findings`. These are separate tables with different schemas.
 
-```typescript
-// Current (broken):
-profile_url: profile.url,  // profile.url is undefined
-
-// Predicta response structure:
-{ platform: "picsart", link: "https://picsart.com/u/coralhowells", ... }
-```
-
-### Issue 2: Status Mismatch in UI (Frontend)
-The `FreeResultsPage` checks for `job.status === 'finished'` but the scan has `status: 'completed'`:
-
-**Location**: `src/components/scan/FreeResultsPage.tsx` lines 384-386
-
-```typescript
-// Current logic shows "Waiting for results..." when status isn't 'finished':
-{job.status === 'finished'
-  ? 'No results captured—try again later or adjust tags.'
-  : 'Waiting for results...'}
-```
-
-### Issue 3: No Findings Data
-Because the social profile insert failed with a constraint violation:
-- `social_profiles` table: 0 records for this scan
-- `findings` table: 0 records for this scan
-- Frontend's `useRealtimeResults` hook returns empty array
-- UI branch for `results.length === 0` is triggered
+**Database Evidence:**
+- `social_profiles` for scan `425f9eb1`: 9 records (Flickr, Instagram, Facebook, TikTok, etc.)
+- `findings` for scan `425f9eb1`: 0 records
 
 ---
 
-## Technical Fix Plan
+## Technical Solution
 
-### Step 1: Fix Predicta Profile URL Mapping (Backend)
-**File**: `supabase/functions/osint-scan/index.ts`
+### Option A: Dual-Table Query in Frontend (Recommended)
+Update `useRealtimeResults` to query **both** `findings` and `social_profiles`, then normalize the data into a unified format.
 
-Update line 467 to use the correct field with fallback:
-
-```typescript
-profile_url: profile.link || profile.url || `https://${profile.platform}.com/${profile.username}`,
-```
-
-This ensures:
-- Primary: Use `link` field (what Predicta actually returns)
-- Fallback 1: Use `url` field (for other providers)
-- Fallback 2: Generate a reasonable URL from platform/username
-
-### Step 2: Fix Status Check in FreeResultsPage (Frontend)
-**File**: `src/components/scan/FreeResultsPage.tsx`
-
-Update the status check to recognize all terminal statuses:
+**File:** `src/hooks/useRealtimeResults.ts`
 
 ```typescript
-const terminalStatuses = ['finished', 'completed', 'completed_partial', 'failed', 'failed_timeout'];
-const isTerminal = terminalStatuses.includes(job.status);
-
-// Then in the render:
-{isTerminal
-  ? 'No results captured—try again later or adjust tags.'
-  : 'Waiting for results...'}
-```
-
-### Step 3: Add Defensive Null Checks (Backend)
-**File**: `supabase/functions/osint-scan/index.ts`
-
-Filter out profiles with missing URLs before insert to prevent constraint violations:
-
-```typescript
-// Before inserting socialProfilesWithConfidence:
-const validProfiles = socialProfilesWithConfidence.filter(sp => sp.profile_url);
-
-if (validProfiles.length > 0) {
-  const { error: spError } = await supabase
-    .from('social_profiles')
-    .insert(validProfiles);
+const loadInitialResults = async () => {
+  // Query both tables in parallel
+  const [findingsResult, profilesResult] = await Promise.all([
+    supabase.from('findings').select('*').eq('scan_id', jobId),
+    supabase.from('social_profiles').select('*').eq('scan_id', jobId),
+  ]);
   
-  if (spError) console.error('Error storing social profiles:', spError);
-}
+  // Normalize social_profiles to match ScanResultRow format
+  const normalizedProfiles = (profilesResult.data || []).map(profile => ({
+    id: profile.id,
+    scan_id: profile.scan_id,
+    provider: profile.source || 'unknown',
+    kind: 'profile_presence',
+    severity: 'info',
+    site: profile.platform,
+    url: profile.profile_url,
+    status: profile.found ? 'found' : 'not_found',
+    evidence: { username: profile.username, avatar: profile.avatar_url },
+    meta: profile.metadata,
+    created_at: profile.first_seen || new Date().toISOString(),
+  }));
+  
+  // Merge and deduplicate
+  const merged = [...(findingsResult.data || []), ...normalizedProfiles];
+  setResults(merged);
+};
 ```
+
+### Option B: Backend Writes to Both Tables
+Update `osint-scan` to also create `findings` records for each social profile discovered. This maintains data consistency but requires backend changes.
+
+---
+
+## Recommended Approach
+
+**Option A (Frontend Fix)** is preferred because:
+1. Faster to implement (single file change)
+2. No edge function redeployment needed
+3. Works with existing scan data (the 9 profiles already stored)
+4. No database schema changes required
 
 ---
 
@@ -101,48 +80,76 @@ if (validProfiles.length > 0) {
 
 | File | Change |
 |------|--------|
-| `supabase/functions/osint-scan/index.ts` | Fix `profile.url` → `profile.link \|\| profile.url \|\| fallback` |
-| `supabase/functions/osint-scan/index.ts` | Add filter to exclude profiles with null URLs before insert |
-| `src/components/scan/FreeResultsPage.tsx` | Update status check to include 'completed' as terminal |
+| `src/hooks/useRealtimeResults.ts` | Query both `findings` and `social_profiles`, normalize and merge results |
+
+---
+
+## Implementation Details
+
+### Normalized Schema Mapping
+
+| `social_profiles` field | Maps to `ScanResultRow` field |
+|-------------------------|-------------------------------|
+| `id` | `id` |
+| `scan_id` | `scan_id` |
+| `source` | `provider` |
+| `platform` | `site` |
+| `profile_url` | `url` |
+| `found` | `status` ('found' / 'not_found') |
+| `username`, `avatar_url` | `evidence` object |
+| `metadata` | `meta` |
+| `first_seen` | `created_at` |
+| (constant) | `kind: 'profile_presence'` |
+| (constant) | `severity: 'info'` |
+
+### Realtime Subscription Update
+Also add a subscription to `social_profiles` table:
+
+```typescript
+// Add second channel for social_profiles
+const profilesChannel = supabase
+  .channel(`social_profiles_${jobId}`)
+  .on('postgres_changes', {
+    event: 'INSERT',
+    schema: 'public',
+    table: 'social_profiles',
+    filter: `scan_id=eq.${jobId}`,
+  }, (payload) => {
+    const normalized = normalizeProfile(payload.new);
+    setResults(prev => [...prev, normalized]);
+  })
+  .subscribe();
+```
 
 ---
 
 ## Verification Steps
 
-1. Run a username scan and confirm:
-   - Social profiles insert successfully (no constraint errors in logs)
-   - Results display after scan completes (not "Waiting for results...")
-   - Status "completed" is treated as terminal
-
-2. Check edge function logs:
-   - No `23502` (null constraint) errors
-   - Profiles stored correctly with valid URLs
+1. After implementing, reload the results page for scan `425f9eb1`
+2. Confirm 9 profiles are displayed (Flickr, Instagram, Facebook, TikTok, Pinterest, Twitch, Discord, Snapchat, Telegram)
+3. Confirm no "Waiting for results..." message appears
+4. Run a new scan and confirm results appear in real-time
 
 ---
 
-## Technical Details
+## Technical Context
 
-### Database Schema Constraint
-```sql
--- social_profiles.profile_url is NOT NULL
-profile_url is_nullable:NO
+### Current Database State for Latest Scan
+```text
+Scan ID: 425f9eb1-189d-4b3c-bec3-ed2440b1bcfa
+Username: paul.middleweek
+Status: completed
+Duration: 12 seconds
+
+social_profiles (9 records):
+├── Flickr (predicta source, verified profile)
+├── Instagram (predicta source)
+├── Facebook
+├── TikTok
+├── Pinterest
+├── Twitch
+├── Discord
+├── Snapchat
+└── Telegram
 ```
 
-### Predicta API Response Format
-```json
-{
-  "platform": "picsart",
-  "username": "coralhowells",
-  "link": "https://picsart.com/u/coralhowells",  // <-- "link" not "url"
-  "user_id": "244590113021102"
-}
-```
-
-### Status Flow Mapping
-| Backend Status | Expected UI State |
-|----------------|-------------------|
-| `running` | Show progress/scanning |
-| `completed` | Show results |
-| `completed_partial` | Show partial results |
-| `finished` | Show results (legacy) |
-| `failed`, `failed_timeout` | Show error state |
