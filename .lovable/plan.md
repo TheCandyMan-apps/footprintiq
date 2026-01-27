@@ -1,155 +1,109 @@
 
+# Fix n8n Workflow: Pass workspaceId to Canonical Results
 
-# Fix: Frontend Not Displaying Social Profile Results
+## Problem Identified
+The n8n error "workspaceId is missing or empty" occurs because the `workspaceId` field is being dropped during the n8n workflow execution. 
 
-## Problem Summary
-The latest scan completed successfully with 9 social profiles stored in the database, but the UI shows "Waiting for results..." because the frontend queries the wrong table.
+Looking at your screenshot:
+- The **input** to "Fail-fast Validate Canonical Payload" shows `scanId` and `canonicalResults` but NO `workspaceId`
+- The validation code expects `workspaceId` and fails at line 11
 
 ## Root Cause
-
-**Data Flow Mismatch:**
+The `n8n-scan-trigger` edge function correctly sends `workspaceId` in its payload to n8n:
 
 ```text
-Backend (osint-scan):
-  └── Writes to: social_profiles table ✅ (9 records stored)
-
-Frontend (useRealtimeResults → useScanResultsData → FreeResultsPage):
-  └── Reads from: findings table ❌ (0 records found)
+┌─────────────────────────────────────────────────────────────┐
+│  n8n-scan-trigger sends:                                    │
+│  {                                                          │
+│    scanId: "fdcf3d3e-...",                                 │
+│    username: "jer2020",                                     │
+│    workspaceId: "abc123...",  ← This IS sent                │
+│    userId: "...",                                           │
+│    ...                                                      │
+│  }                                                          │
+└─────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│  n8n Workflow                                               │
+│  ┌─────────┐    ┌─────────┐    ┌───────────────────────┐   │
+│  │ Webhook │ → │ Process │ → │ Normalize Canonical   │   │
+│  │ Trigger │    │  Nodes  │    │ Results               │   │
+│  └─────────┘    └─────────┘    └───────────────────────┘   │
+│                                          │                  │
+│                         workspaceId gets DROPPED here       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-The `osint-scan` edge function stores discovered profiles in `social_profiles`, but the `useRealtimeResults` hook only queries `findings`. These are separate tables with different schemas.
+## Solution: n8n Workflow Fix
 
-**Database Evidence:**
-- `social_profiles` for scan `425f9eb1`: 9 records (Flickr, Instagram, Facebook, TikTok, etc.)
-- `findings` for scan `425f9eb1`: 0 records
+You need to update the n8n workflow to preserve `workspaceId` through all nodes. Here's what to do:
 
----
+### Step 1: Locate the "Normalize Canonical Results" Node
+In your n8n workflow editor, find the node that outputs to the "Fail-fast Validate Canonical Payload" node.
 
-## Technical Solution
+### Step 2: Update the JavaScript Code
+In the "Normalize Canonical Results" node (or whichever node builds the canonical payload), ensure `workspaceId` is included:
 
-### Option A: Dual-Table Query in Frontend (Recommended)
-Update `useRealtimeResults` to query **both** `findings` and `social_profiles`, then normalize the data into a unified format.
+**Current (broken):**
+```javascript
+const input = $input.first().json;
+const { scanId, canonicalResults } = input;  // workspaceId not extracted!
+```
 
-**File:** `src/hooks/useRealtimeResults.ts`
+**Fixed:**
+```javascript
+const input = $input.first().json;
+const { scanId, workspaceId, canonicalResults } = input;
 
-```typescript
-const loadInitialResults = async () => {
-  // Query both tables in parallel
-  const [findingsResult, profilesResult] = await Promise.all([
-    supabase.from('findings').select('*').eq('scan_id', jobId),
-    supabase.from('social_profiles').select('*').eq('scan_id', jobId),
-  ]);
-  
-  // Normalize social_profiles to match ScanResultRow format
-  const normalizedProfiles = (profilesResult.data || []).map(profile => ({
-    id: profile.id,
-    scan_id: profile.scan_id,
-    provider: profile.source || 'unknown',
-    kind: 'profile_presence',
-    severity: 'info',
-    site: profile.platform,
-    url: profile.profile_url,
-    status: profile.found ? 'found' : 'not_found',
-    evidence: { username: profile.username, avatar: profile.avatar_url },
-    meta: profile.metadata,
-    created_at: profile.first_seen || new Date().toISOString(),
-  }));
-  
-  // Merge and deduplicate
-  const merged = [...(findingsResult.data || []), ...normalizedProfiles];
-  setResults(merged);
+// Return with workspaceId included
+return {
+  json: {
+    scanId,
+    workspaceId,  // ← Add this
+    canonicalResults
+  }
 };
 ```
 
-### Option B: Backend Writes to Both Tables
-Update `osint-scan` to also create `findings` records for each social profile discovered. This maintains data consistency but requires backend changes.
+### Step 3: Trace the workspaceId Through the Pipeline
+Check each node between the webhook trigger and the canonical results node. The `workspaceId` must be passed through every transformation:
 
----
+1. **Webhook Trigger** - receives `workspaceId` from edge function
+2. **Any Merge/Set nodes** - must include `workspaceId` in output
+3. **Normalize Canonical Results** - must pass `workspaceId` to output
+4. **Fail-fast Validate** - expects `workspaceId`
+5. **HTTP Request to n8n-canonical-results** - must include `workspaceId` in body
 
-## Recommended Approach
+### Step 4: Verify the Fix
+After updating, run a test scan and check:
+1. The "Fail-fast Validate" node should pass
+2. The `n8n-canonical-results` endpoint should receive all three fields:
+   - `scanId`
+   - `workspaceId`
+   - `canonicalResults`
 
-**Option A (Frontend Fix)** is preferred because:
-1. Faster to implement (single file change)
-2. No edge function redeployment needed
-3. Works with existing scan data (the 9 profiles already stored)
-4. No database schema changes required
+## Technical Details
 
----
-
-## Files to Modify
-
-| File | Change |
-|------|--------|
-| `src/hooks/useRealtimeResults.ts` | Query both `findings` and `social_profiles`, normalize and merge results |
-
----
-
-## Implementation Details
-
-### Normalized Schema Mapping
-
-| `social_profiles` field | Maps to `ScanResultRow` field |
-|-------------------------|-------------------------------|
-| `id` | `id` |
-| `scan_id` | `scan_id` |
-| `source` | `provider` |
-| `platform` | `site` |
-| `profile_url` | `url` |
-| `found` | `status` ('found' / 'not_found') |
-| `username`, `avatar_url` | `evidence` object |
-| `metadata` | `meta` |
-| `first_seen` | `created_at` |
-| (constant) | `kind: 'profile_presence'` |
-| (constant) | `severity: 'info'` |
-
-### Realtime Subscription Update
-Also add a subscription to `social_profiles` table:
-
+The edge function `n8n-canonical-results` validates at line 161:
 ```typescript
-// Add second channel for social_profiles
-const profilesChannel = supabase
-  .channel(`social_profiles_${jobId}`)
-  .on('postgres_changes', {
-    event: 'INSERT',
-    schema: 'public',
-    table: 'social_profiles',
-    filter: `scan_id=eq.${jobId}`,
-  }, (payload) => {
-    const normalized = normalizeProfile(payload.new);
-    setResults(prev => [...prev, normalized]);
-  })
-  .subscribe();
+if (!scanId || !workspaceId) {
+  console.error("[n8n-canonical-results] Missing scanId or workspaceId");
+  return new Response(
+    JSON.stringify({ error: "Missing scanId or workspaceId" }),
+    { status: 400 }
+  );
+}
 ```
 
----
+All canonical results are stored with `workspace_id` for RLS (Row Level Security) enforcement, so this field is required.
 
-## Verification Steps
+## Summary
+This is an **n8n workflow configuration issue**, not a code change in Lovable. You need to:
 
-1. After implementing, reload the results page for scan `425f9eb1`
-2. Confirm 9 profiles are displayed (Flickr, Instagram, Facebook, TikTok, Pinterest, Twitch, Discord, Snapchat, Telegram)
-3. Confirm no "Waiting for results..." message appears
-4. Run a new scan and confirm results appear in real-time
+1. Open your n8n workflow: "FootprintIQ - Universal Scan" (or similar name)
+2. Find where `workspaceId` is being dropped
+3. Update the node(s) to preserve `workspaceId` through the pipeline
+4. Test with a new scan
 
----
-
-## Technical Context
-
-### Current Database State for Latest Scan
-```text
-Scan ID: 425f9eb1-189d-4b3c-bec3-ed2440b1bcfa
-Username: paul.middleweek
-Status: completed
-Duration: 12 seconds
-
-social_profiles (9 records):
-├── Flickr (predicta source, verified profile)
-├── Instagram (predicta source)
-├── Facebook
-├── TikTok
-├── Pinterest
-├── Twitch
-├── Discord
-├── Snapchat
-└── Telegram
-```
-
+No code changes are needed in the edge functions - they're correctly sending and expecting `workspaceId`.
