@@ -1,109 +1,84 @@
 
-# Fix n8n Workflow: Pass workspaceId to Canonical Results
+# Fix: Pass Turnstile Token to n8n-scan-trigger
 
-## Problem Identified
-The n8n error "workspaceId is missing or empty" occurs because the `workspaceId` field is being dropped during the n8n workflow execution. 
+## Problem Summary
+Scans fail for free tier users with "Scan Not Found" because the Turnstile verification token is not being passed to the backend.
 
-Looking at your screenshot:
-- The **input** to "Fail-fast Validate Canonical Payload" shows `scanId` and `canonicalResults` but NO `workspaceId`
-- The validation code expects `workspaceId` and fails at line 11
+**Flow breakdown:**
+1. User completes Turnstile captcha in `ScanForm` 
+2. Token is correctly added to `scanData.turnstile_token`
+3. `ScanProgress` receives `scanData` with the token
+4. `ScanProgress` builds `requestBody` but **omits** `turnstile_token`
+5. Edge function receives request without token
+6. Turnstile validation fails: `[turnstile] Missing token for free tier user`
+7. Edge function returns 400 error (NOT 200)
+8. No scan record is created in database
+9. UI navigates to `/results/{scanId}` but that scan doesn't exist
 
-## Root Cause
-The `n8n-scan-trigger` edge function correctly sends `workspaceId` in its payload to n8n:
+## Solution
+Add `turnstile_token` to the request body in `ScanProgress.tsx` when it exists in `scanData`.
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  n8n-scan-trigger sends:                                    │
-│  {                                                          │
-│    scanId: "fdcf3d3e-...",                                 │
-│    username: "jer2020",                                     │
-│    workspaceId: "abc123...",  ← This IS sent                │
-│    userId: "...",                                           │
-│    ...                                                      │
-│  }                                                          │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│  n8n Workflow                                               │
-│  ┌─────────┐    ┌─────────┐    ┌───────────────────────┐   │
-│  │ Webhook │ → │ Process │ → │ Normalize Canonical   │   │
-│  │ Trigger │    │  Nodes  │    │ Results               │   │
-│  └─────────┘    └─────────┘    └───────────────────────┘   │
-│                                          │                  │
-│                         workspaceId gets DROPPED here       │
-└─────────────────────────────────────────────────────────────┘
-```
+## Technical Changes
 
-## Solution: n8n Workflow Fix
+### File: `src/components/ScanProgress.tsx`
 
-You need to update the n8n workflow to preserve `workspaceId` through all nodes. Here's what to do:
+**Location:** After line 104 (after phone handling, before the log statement)
 
-### Step 1: Locate the "Normalize Canonical Results" Node
-In your n8n workflow editor, find the node that outputs to the "Fail-fast Validate Canonical Payload" node.
-
-### Step 2: Update the JavaScript Code
-In the "Normalize Canonical Results" node (or whichever node builds the canonical payload), ensure `workspaceId` is included:
-
-**Current (broken):**
-```javascript
-const input = $input.first().json;
-const { scanId, canonicalResults } = input;  // workspaceId not extracted!
-```
-
-**Fixed:**
-```javascript
-const input = $input.first().json;
-const { scanId, workspaceId, canonicalResults } = input;
-
-// Return with workspaceId included
-return {
-  json: {
-    scanId,
-    workspaceId,  // ← Add this
-    canonicalResults
-  }
-};
-```
-
-### Step 3: Trace the workspaceId Through the Pipeline
-Check each node between the webhook trigger and the canonical results node. The `workspaceId` must be passed through every transformation:
-
-1. **Webhook Trigger** - receives `workspaceId` from edge function
-2. **Any Merge/Set nodes** - must include `workspaceId` in output
-3. **Normalize Canonical Results** - must pass `workspaceId` to output
-4. **Fail-fast Validate** - expects `workspaceId`
-5. **HTTP Request to n8n-canonical-results** - must include `workspaceId` in body
-
-### Step 4: Verify the Fix
-After updating, run a test scan and check:
-1. The "Fail-fast Validate" node should pass
-2. The `n8n-canonical-results` endpoint should receive all three fields:
-   - `scanId`
-   - `workspaceId`
-   - `canonicalResults`
-
-## Technical Details
-
-The edge function `n8n-canonical-results` validates at line 161:
+**Add:**
 ```typescript
-if (!scanId || !workspaceId) {
-  console.error("[n8n-canonical-results] Missing scanId or workspaceId");
-  return new Response(
-    JSON.stringify({ error: "Missing scanId or workspaceId" }),
-    { status: 400 }
-  );
+// Include turnstile token for free tier verification
+if (scanData.turnstile_token) {
+  requestBody.turnstile_token = scanData.turnstile_token;
 }
 ```
 
-All canonical results are stored with `workspace_id` for RLS (Row Level Security) enforcement, so this field is required.
+This single change will ensure the token flows through to the edge function:
 
-## Summary
-This is an **n8n workflow configuration issue**, not a code change in Lovable. You need to:
+```text
+┌──────────────────────────────────────────────────────────────┐
+│  ScanForm                                                    │
+│  ─────────                                                   │
+│  User completes Turnstile → turnstileToken stored            │
+│  On submit: scanData.turnstile_token = turnstileToken        │
+└───────────────────────────┬──────────────────────────────────┘
+                            │
+                            ▼
+┌──────────────────────────────────────────────────────────────┐
+│  ScanPage                                                    │
+│  ────────                                                    │
+│  Receives scanData, passes to ScanProgress                   │
+└───────────────────────────┬──────────────────────────────────┘
+                            │
+                            ▼
+┌──────────────────────────────────────────────────────────────┐
+│  ScanProgress (THE FIX)                                      │
+│  ─────────────────────────                                   │
+│  Builds requestBody including:                               │
+│    - scanId, scanType, workspaceId                           │
+│    - username, email, phone, etc.                            │
+│    - turnstile_token ← ADD THIS                              │
+└───────────────────────────┬──────────────────────────────────┘
+                            │
+                            ▼
+┌──────────────────────────────────────────────────────────────┐
+│  n8n-scan-trigger Edge Function                              │
+│  ──────────────────────────────                              │
+│  enforceTurnstile() receives token                           │
+│  Verification passes → scan record created                   │
+│  n8n workflow triggered successfully                         │
+└──────────────────────────────────────────────────────────────┘
+```
 
-1. Open your n8n workflow: "FootprintIQ - Universal Scan" (or similar name)
-2. Find where `workspaceId` is being dropped
-3. Update the node(s) to preserve `workspaceId` through the pipeline
-4. Test with a new scan
+## Expected Outcome
+After this fix:
+- Free tier users complete Turnstile verification
+- Token is passed through the entire flow
+- Edge function validates token successfully
+- Scan record is created in database
+- n8n workflow is triggered
+- Results display correctly
 
-No code changes are needed in the edge functions - they're correctly sending and expecting `workspaceId`.
+## Risk Assessment
+- **Low risk**: Single line addition
+- **No breaking changes**: Only adds field when present, doesn't affect Pro/Business users who bypass Turnstile
+- **Backwards compatible**: Token is optional in request body
