@@ -517,9 +517,7 @@ export const ScanResults = ({ searchData, scanId }: ScanResultsProps) => {
                             <div className="flex items-center gap-2 mb-2 flex-wrap">
                               <h4 className="font-semibold">{profile.platform}</h4>
                               <Badge variant="secondary" className="text-xs">Active</Badge>
-                              {profile.source === 'predicta' && (
-                                <Badge variant="default" className="text-xs bg-primary">Predicta Search</Badge>
-                              )}
+                              {/* Provider badge removed - findings should be source-agnostic */}
                             </div>
                             <p className="text-sm text-muted-foreground mb-1">{profile.username}</p>
                             {profile.followers && (

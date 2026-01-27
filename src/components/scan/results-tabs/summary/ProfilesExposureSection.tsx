@@ -94,21 +94,20 @@ function ProfileRow({
           </p>
         )}
         
-        {/* Source providers (Pro only) */}
+        {/* Source providers (Pro only - shown in "Sources" section) */}
         {showSources && isFullAccess && profile.sources.length > 0 && (
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-[10px] text-muted-foreground/60">via</span>
-            {profile.sources.slice(0, 2).map((source, i) => (
-              <Badge key={i} variant="outline" className="text-[9px] px-1 py-0 h-4">
-                {source}
-              </Badge>
-            ))}
-            {profile.sources.length > 2 && (
-              <span className="text-[9px] text-muted-foreground/60">
-                +{profile.sources.length - 2}
-              </span>
-            )}
-          </div>
+          <details className="mt-1 group">
+            <summary className="text-[10px] text-muted-foreground/60 cursor-pointer hover:text-muted-foreground flex items-center gap-1">
+              <span>Sources ({profile.sources.length})</span>
+            </summary>
+            <div className="flex flex-wrap gap-1 mt-1 pl-2 border-l border-border/30">
+              {profile.sources.map((source, i) => (
+                <Badge key={i} variant="outline" className="text-[9px] px-1 py-0 h-4">
+                  {source}
+                </Badge>
+              ))}
+            </div>
+          </details>
         )}
       </div>
 
@@ -216,12 +215,12 @@ export function ProfilesExposureSection({
 
   return (
     <Card className={cn('border-border/50 overflow-hidden', className)}>
-      {/* Header with authoritative counts */}
+      {/* Header with authoritative counts - Provider-agnostic language */}
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Globe className="h-4 w-4 text-primary" />
-            Profiles & Exposure
+            Public profiles found
           </CardTitle>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="text-xs">
@@ -234,6 +233,11 @@ export function ProfilesExposureSection({
             )}
           </div>
         </div>
+        
+        {/* Subtitle - Provider-agnostic language */}
+        <p className="text-xs text-muted-foreground mt-1">
+          Multiple public sources indicate this identifier appears on public platforms.
+        </p>
         
         {/* Summary stats for Pro users */}
         {isFullAccess && (

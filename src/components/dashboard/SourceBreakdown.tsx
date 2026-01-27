@@ -20,7 +20,7 @@ export function SourceBreakdown({ data, loading }: SourceBreakdownProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Provider Breakdown</CardTitle>
+          <CardTitle>Source Analysis</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="h-[300px] animate-pulse bg-muted rounded" />
@@ -32,7 +32,7 @@ export function SourceBreakdown({ data, loading }: SourceBreakdownProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Findings by Provider</CardTitle>
+        <CardTitle>Findings by Source</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[300px] w-full">

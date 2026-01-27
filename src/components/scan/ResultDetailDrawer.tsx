@@ -179,9 +179,7 @@ export function ResultDetailDrawer({
                         {item.data.riskLevel.toUpperCase()} RISK
                       </Badge>
                     )}
-                    {item.type === 'social_profile' && item.data.source === 'predicta' && (
-                      <Badge variant="secondary">Predicta Search</Badge>
-                    )}
+                    {/* Provider badge removed - findings should be source-agnostic */}
                   </div>
 
                   <Separator />
