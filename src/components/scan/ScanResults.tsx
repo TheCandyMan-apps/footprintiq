@@ -177,8 +177,9 @@ export function ScanResults({ jobId }: ScanResultsProps) {
     jobChannelRef.current = channel;
 
     // Subscribe to Maigret progress broadcasts for real-time progress bar updates
+    // IMPORTANT: Must match backend broadcast topic (n8n-scan-progress uses `scan_progress:${scanId}`)
     const progressChannel = supabase
-      .channel(`scan_progress_${jobId}`)
+      .channel(`scan_progress:${jobId}`)
       .on('broadcast', { event: 'provider_update' }, (payload) => {
         console.debug('[ScanResults] Provider update:', payload);
         if (payload.payload?.resultCount !== undefined) {
