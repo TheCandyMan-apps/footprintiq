@@ -231,9 +231,14 @@ export function LensPreviewCard({ profiles, scanId }: LensPreviewCardProps) {
           Not all findings are equally relevant. LENS helps assess whether a profile is likely connected.
         </p>
 
-        <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70">
-          <Shield className="h-2.5 w-2.5" />
-          <span>One-time free preview</span>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 text-[10px] text-muted-foreground/70">
+            <Shield className="h-2.5 w-2.5" />
+            <span>One-time free preview</span>
+          </div>
+          <p className="text-[10px] text-muted-foreground/60 leading-relaxed">
+            Powered by LENS — FootprintIQ's verification layer for reducing false positives.
+          </p>
         </div>
 
         <Button 
@@ -277,6 +282,10 @@ function LensResultDisplay({ result }: { result: LensPreviewResult }) {
         <span>•</span>
         <span>Verified {new Date(result.verifiedAt).toLocaleDateString()}</span>
       </div>
+      
+      <p className="text-[9px] text-muted-foreground/50 pt-2 border-t border-border/30">
+        Powered by LENS — FootprintIQ's verification layer for reducing false positives.
+      </p>
     </div>
   );
 }
