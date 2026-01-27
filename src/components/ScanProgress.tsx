@@ -103,6 +103,11 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           }
         }
 
+        // Include turnstile token for free tier verification
+        if (scanData.turnstile_token) {
+          requestBody.turnstile_token = scanData.turnstile_token;
+        }
+
         console.log('[ScanProgress] Invoking n8n-scan-trigger', { scanType, scanId: preScanId });
 
         // Route ALL scans through n8n-scan-trigger for reliable async processing
