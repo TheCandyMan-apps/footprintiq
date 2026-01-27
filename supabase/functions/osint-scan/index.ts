@@ -464,7 +464,7 @@ serve(async (req) => {
                   results.socialProfiles.push({
                     platform: profile.platform || 'Unknown',
                     username: profile.username || query,
-                    profile_url: profile.url,
+                    profile_url: profile.link || profile.url || `https://${profile.platform || 'unknown'}.com/${profile.username || query}`,
                     found: true,
                     source: 'predicta',
                     first_seen: new Date().toISOString(),
@@ -1009,11 +1009,18 @@ serve(async (req) => {
         };
       });
 
-      const { error: spError } = await supabase
-        .from('social_profiles')
-        .insert(socialProfilesWithConfidence);
+      // Filter out profiles with null/undefined URLs to prevent constraint violations
+      const validProfiles = socialProfilesWithConfidence.filter(sp => sp.profile_url);
+      
+      if (validProfiles.length > 0) {
+        const { error: spError } = await supabase
+          .from('social_profiles')
+          .insert(validProfiles);
 
-      if (spError) console.error('Error storing social profiles:', spError);
+        if (spError) console.error('Error storing social profiles:', spError);
+      } else if (socialProfilesWithConfidence.length > 0) {
+        console.warn(`Filtered out ${socialProfilesWithConfidence.length} profiles with missing URLs`);
+      }
     }
 
     // Calculate privacy score
