@@ -66,17 +66,20 @@ export function PricingCards() {
 
             <CardContent>
               <ul className="space-y-3">
-                {plan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                    <span className="text-sm group relative">
-                      {feature}
-                      {feature === 'Reputation & Abuse Intelligence' && (
-                        <span className="ml-1 text-muted-foreground cursor-help" title="Signals are advisory and designed to reduce false positives. We don't expose raw intelligence feeds.">ⓘ</span>
-                      )}
-                    </span>
-                  </li>
-                ))}
+                {plan.features.map((feature, idx) => {
+                  const isLensFeature = feature.includes('LENS');
+                  return (
+                    <li key={idx} className="flex items-start gap-2">
+                      <CheckCircle2 className={`h-5 w-5 flex-shrink-0 mt-0.5 ${isLensFeature ? 'text-primary' : 'text-primary'}`} />
+                      <span className={`text-sm group relative ${isLensFeature ? 'font-semibold text-foreground' : ''}`}>
+                        {isLensFeature ? feature.replace('✦ ', '') : feature}
+                        {isLensFeature && (
+                          <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">NEW</span>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
 
               <div className="mt-6 pt-6 border-t">
