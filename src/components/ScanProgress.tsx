@@ -63,78 +63,91 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         const toNullIfEmpty = (val: string | undefined | null): string | null => 
           val && val.trim() ? val.trim() : null;
 
-        const { data: scan, error: scanError } = await supabase
-          .from("scans")
-          .insert([{
-            user_id: userId,
-            workspace_id: workspaceMember?.workspace_id || null,
-            scan_type: scanType,
-            username: toNullIfEmpty(scanData.username),
-            first_name: toNullIfEmpty(scanData.firstName),
-            last_name: toNullIfEmpty(scanData.lastName),
-            email: toNullIfEmpty(scanData.email),
-            phone: toNullIfEmpty(scanData.phone),
-          }])
-          .select()
-          .single();
+        // Generate a scan ID upfront so we can track it
+        const preScanId = crypto.randomUUID();
+        createdScanId = preScanId;
 
-        if (scanError) throw scanError;
-        createdScanId = scan.id;
+        // Normalize phone to E.164 format before sending
+        const normalizePhone = (phone: string): string => {
+          const digits = phone.replace(/\D/g, '');
+          if (digits.length === 10) return `+1${digits}`;
+          if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+          return digits.startsWith('+') ? digits : `+${digits}`;
+        };
 
-        try {
-          // Normalize phone to E.164 format before sending
-          const normalizePhone = (phone: string): string => {
-            const digits = phone.replace(/\D/g, '');
-            if (digits.length === 10) return `+1${digits}`;
-            if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
-            return digits.startsWith('+') ? digits : `+${digits}`;
-          };
-
-          const body: Record<string, any> = {
-            scanId: scan.id,
-            scanType,
-          };
-          if (scanData.username && scanData.username.trim()) body.username = scanData.username.trim();
-          if (scanData.firstName && scanData.firstName.trim()) body.firstName = scanData.firstName.trim();
-          if (scanData.lastName && scanData.lastName.trim()) body.lastName = scanData.lastName.trim();
-          if (scanData.email && scanData.email.trim()) body.email = scanData.email.trim();
-          if (scanData.phone && scanData.phone.trim()) {
-            body.phone = normalizePhone(scanData.phone.trim());
-            if (scanData.phoneProviders && scanData.phoneProviders.length > 0) {
-              body.phoneProviders = scanData.phoneProviders;
-            }
+        // Build request body for n8n-scan-trigger
+        const requestBody: Record<string, any> = {
+          scanId: preScanId,
+          scanType,
+          workspaceId: workspaceMember?.workspace_id || null,
+        };
+        
+        if (scanData.username && scanData.username.trim()) requestBody.username = scanData.username.trim();
+        if (scanData.firstName && scanData.firstName.trim()) requestBody.firstName = scanData.firstName.trim();
+        if (scanData.lastName && scanData.lastName.trim()) requestBody.lastName = scanData.lastName.trim();
+        if (scanData.email && scanData.email.trim()) requestBody.email = scanData.email.trim();
+        if (scanData.phone && scanData.phone.trim()) {
+          requestBody.phone = normalizePhone(scanData.phone.trim());
+          if (scanData.phoneProviders && scanData.phoneProviders.length > 0) {
+            requestBody.phoneProviders = scanData.phoneProviders;
           }
-
-          // Actually wait for the scan to complete
-          await withTimeout(
-            supabase.functions.invoke('osint-scan', { body }),
-            90000,
-            'OSINT scan'
-          );
-        } catch (e: any) {
-          console.warn('OSINT scan error:', e?.message || e);
         }
+
+        console.log('[ScanProgress] Invoking n8n-scan-trigger', { scanType, scanId: preScanId });
+
+        // Route ALL scans through n8n-scan-trigger for reliable async processing
+        const { data, error } = await supabase.functions.invoke('n8n-scan-trigger', {
+          body: requestBody,
+        });
+
+        if (error) {
+          console.error('[ScanProgress] n8n-scan-trigger error:', error);
+          throw error;
+        }
+
+        // Use the scan ID from the response if available
+        const actualScanId = data?.scanId || data?.id || preScanId;
+        createdScanId = actualScanId;
+        
+        console.log('[ScanProgress] Scan triggered successfully:', { actualScanId, status: data?.status });
 
         if (!isMounted) return;
 
-        // Poll for actual results
+        // Poll for scan completion via scans table status
         let pollAttempts = 0;
-        const maxPollAttempts = 10;
-        let hasResults = false;
+        const maxPollAttempts = 60; // 2 minutes max polling
+        let scanComplete = false;
         
-        while (pollAttempts < maxPollAttempts && isMounted && !hasResults) {
+        const terminalStatuses = ['completed', 'completed_partial', 'failed', 'failed_timeout'];
+        
+        while (pollAttempts < maxPollAttempts && isMounted && !scanComplete) {
           await new Promise(resolve => setTimeout(resolve, 2000));
           pollAttempts++;
           
-          // Check if we have any results in either table
-          const [sourcesResult, profilesResult] = await Promise.all([
-            supabase.from('data_sources').select('id').eq('scan_id', scan.id).limit(1),
-            supabase.from('social_profiles').select('id').eq('scan_id', scan.id).limit(1)
-          ]);
+          // Check scan status
+          const { data: scanStatus } = await supabase
+            .from('scans')
+            .select('status')
+            .eq('id', actualScanId)
+            .single();
           
-          if ((sourcesResult.data && sourcesResult.data.length > 0) || 
-              (profilesResult.data && profilesResult.data.length > 0)) {
-            hasResults = true;
+          if (scanStatus && terminalStatuses.includes(scanStatus.status)) {
+            scanComplete = true;
+            console.log('[ScanProgress] Scan completed with status:', scanStatus.status);
+          }
+          
+          // Also check for results as a fallback
+          if (!scanComplete && pollAttempts % 5 === 0) {
+            const [sourcesResult, profilesResult] = await Promise.all([
+              supabase.from('data_sources').select('id').eq('scan_id', actualScanId).limit(1),
+              supabase.from('social_profiles').select('id').eq('scan_id', actualScanId).limit(1)
+            ]);
+            
+            if ((sourcesResult.data && sourcesResult.data.length > 0) || 
+                (profilesResult.data && profilesResult.data.length > 0)) {
+              scanComplete = true;
+              console.log('[ScanProgress] Scan has results, marking complete');
+            }
           }
         }
 
@@ -146,7 +159,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           setIsComplete(true);
           setTimeout(() => {
             if (isMounted) {
-              onComplete(scan.id);
+              onComplete(actualScanId);
             }
           }, 500);
         }
@@ -154,7 +167,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
       } catch (error: any) {
         if (!isMounted) return;
         
-        console.error("Scan error:", error);
+        console.error("[ScanProgress] Scan error:", error);
         
         // If scan record exists, proceed to results anyway
         if (createdScanId) {
@@ -170,14 +183,15 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
       }
     };
 
-    // Safety net: never hang more than 35s
+    // Safety net: allow up to 3 minutes for n8n workflow to complete
     const t = window.setTimeout(() => {
       if (isMounted && createdScanId) {
+        console.log('[ScanProgress] Safety timeout reached, navigating to results');
         setIsComplete(true);
         onComplete(createdScanId);
         try { navigate(`/results/${createdScanId}`); } catch {}
       }
-    }, 35000);
+    }, 180000); // 3 minutes
 
     performScan();
 
