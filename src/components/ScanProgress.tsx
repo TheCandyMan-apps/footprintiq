@@ -145,21 +145,28 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
 
         console.log('[ScanProgress] Invoking n8n-scan-trigger', { scanType, scanId: preScanId });
 
-        // Route ALL scans through n8n-scan-trigger for reliable async processing
-        const { data, error } = await supabase.functions.invoke('n8n-scan-trigger', {
-          body: requestBody,
-        });
-
-        if (error) {
-          console.error('[ScanProgress] n8n-scan-trigger error:', error);
-          throw error;
+        // Route ALL scans through n8n-scan-trigger for reliable async processing.
+        // IMPORTANT: This call must return quickly (async workflow). If it blocks, we fall back to polling.
+        let data: any = null;
+        try {
+          const invokeResult = await withTimeout(
+            supabase.functions.invoke('n8n-scan-trigger', { body: requestBody }),
+            15000,
+            'n8n-scan-trigger'
+          );
+          if (invokeResult?.error) {
+            console.error('[ScanProgress] n8n-scan-trigger error:', invokeResult.error);
+          } else {
+            data = invokeResult?.data;
+          }
+        } catch (invokeErr) {
+          console.warn('[ScanProgress] n8n-scan-trigger did not respond quickly; continuing with polling.', invokeErr);
         }
 
-        // Use the scan ID from the response if available
-        const actualScanId = data?.scanId || data?.id || preScanId;
+        // Use the scan ID from the response if available; otherwise stick with our pre-generated id.
+        const actualScanId = data?.scanId || data?.jobId || data?.id || preScanId;
         createdScanId = actualScanId;
-        
-        console.log('[ScanProgress] Scan triggered successfully:', { actualScanId, status: data?.status });
+        console.log('[ScanProgress] Scan trigger acknowledged:', { actualScanId, status: data?.status });
 
         if (!isMounted) return;
 
@@ -168,18 +175,23 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         const maxPollAttempts = 60; // 2 minutes max polling
         let scanComplete = false;
         
-        const terminalStatuses = ['completed', 'completed_partial', 'failed', 'failed_timeout'];
+        // Support legacy + n8n variants
+        const terminalStatuses = ['finished', 'error', 'cancelled', 'partial', 'completed', 'completed_partial', 'failed', 'failed_timeout', 'not_configured'];
         
         while (pollAttempts < maxPollAttempts && isMounted && !scanComplete) {
           await new Promise(resolve => setTimeout(resolve, 2000));
           pollAttempts++;
           
           // Check scan status
-          const { data: scanStatus } = await supabase
+          const { data: scanStatus, error: scanStatusError } = await supabase
             .from('scans')
             .select('status')
             .eq('id', actualScanId)
-            .single();
+            .maybeSingle();
+
+          if (scanStatusError) {
+            console.warn('[ScanProgress] Error checking scan status:', scanStatusError);
+          }
           
           if (scanStatus && terminalStatuses.includes(scanStatus.status)) {
             scanComplete = true;
@@ -201,8 +213,12 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           }
         }
 
-        // Update user streak
-        await updateStreakOnScan(userId);
+        // Update user streak (never block completion UI)
+        try {
+          await withTimeout(updateStreakOnScan(userId), 8000, 'updateStreakOnScan');
+        } catch (streakErr) {
+          console.warn('[ScanProgress] updateStreakOnScan failed/timed out; continuing.', streakErr);
+        }
 
         // Mark complete and navigate
         if (isMounted) {
@@ -210,6 +226,8 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           setTimeout(() => {
             if (isMounted) {
               onComplete(actualScanId);
+              // Safety: if parent handler does not navigate, do it here.
+              try { navigate(`/results/${actualScanId}`); } catch {}
             }
           }, 500);
         }
@@ -225,6 +243,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           setTimeout(() => {
             if (isMounted) {
               onComplete(createdScanId as string);
+              try { navigate(`/results/${createdScanId}`); } catch {}
             }
           }, 500);
         } else {
