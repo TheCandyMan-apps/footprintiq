@@ -68,6 +68,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useScanResultsData, ScanJob, ScanResult } from '@/hooks/useScanResultsData';
+import { useRealtimeResults } from '@/hooks/useRealtimeResults';
 import { ScanProgress } from './ScanProgress';
 import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User } from 'lucide-react';
 import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsAggregator';
@@ -108,6 +109,9 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
     loading: resultsLoading, 
     breachResults 
   } = useScanResultsData(jobId);
+
+  // Use realtime results hook for refetch capability
+  const { refetch } = useRealtimeResults(jobId);
 
   // Post-scan upgrade modal state
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -200,6 +204,26 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
       if (progressChannelRef.current) supabase.removeChannel(progressChannelRef.current);
     };
   }, [jobId]);
+
+  // Fallback poll for scan status (every 5 seconds)
+  useEffect(() => {
+    if (!job || ['completed', 'completed_partial', 'failed', 'failed_timeout'].includes(job.status)) {
+      return;
+    }
+    
+    const interval = setInterval(() => {
+      loadJob();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [job?.status]);
+
+  // Reload results when scan completes but we have no results
+  useEffect(() => {
+    if (job?.status === 'completed' && results.length === 0 && refetch) {
+      refetch();
+    }
+  }, [job?.status, results.length, refetch]);
 
   // Show upgrade modal after scan completes
   useEffect(() => {
