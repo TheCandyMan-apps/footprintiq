@@ -46,6 +46,10 @@ const VALID_TABS = ['summary', 'accounts', 'connections', 'timeline', 'breaches'
 type TabValue = typeof VALID_TABS[number];
 
 export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
+  // TEMP VERIFICATION LOG (remove after confirming routing split)
+  // eslint-disable-next-line no-console
+  console.log('ADVANCED RESULTS PAGE');
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [job, setJob] = useState<ScanJob | null>(null);
   const [jobLoading, setJobLoading] = useState(true);
