@@ -17,6 +17,9 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   const [isComplete, setIsComplete] = useState(false);
   const [isFailed, setIsFailed] = useState(false);
   const navigate = useNavigate();
+  
+  // Guard against double-invocation (React Strict Mode, prop changes, etc.)
+  const scanStartedRef = useRef(false);
 
   // Utility to prevent indefinite hanging
   const withTimeout = async <T,>(promise: Promise<T>, ms: number, label = 'operation'): Promise<T> => {
@@ -29,6 +32,13 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   };
 
   useEffect(() => {
+    // Prevent duplicate scan triggers
+    if (scanStartedRef.current) {
+      console.log('[ScanProgress] Scan already started, skipping duplicate invocation');
+      return;
+    }
+    scanStartedRef.current = true;
+    
     let isMounted = true;
     let createdScanId: string | null = null;
     
