@@ -50,6 +50,29 @@ function normalizeSocialProfile(profile: SocialProfile): ScanResultRow {
   };
 }
 
+// Transform findings to match expected ScanResultRow format
+function transformFinding(finding: any): ScanResultRow {
+  let site = finding.meta?.platform || '';
+  let url = '';
+  
+  if (Array.isArray(finding.evidence)) {
+    const siteEntry = finding.evidence.find((e: any) => e.key === 'site');
+    const urlEntry = finding.evidence.find((e: any) => e.key === 'url');
+    if (siteEntry?.value) site = siteEntry.value;
+    if (urlEntry?.value) url = urlEntry.value;
+  } else if (finding.evidence?.site) {
+    site = finding.evidence.site;
+    url = finding.evidence.url || '';
+  }
+  
+  return {
+    ...finding,
+    site,
+    url,
+    status: finding.meta?.status || 'found',
+  };
+}
+
 export function useRealtimeResults(jobId: string | null) {
   const [results, setResults] = useState<ScanResultRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,10 +120,13 @@ export function useRealtimeResults(jobId: string | null) {
 
       // Normalize social_profiles to match ScanResultRow format
       const normalizedProfiles = (profilesResult.data || []).map(normalizeSocialProfile);
+      
+      // Transform findings to match expected format
+      const transformedFindings = (findingsResult.data || []).map(transformFinding);
 
-      // Merge findings and normalized profiles
+      // Merge transformed findings and normalized profiles
       const merged = [
-        ...(findingsResult.data || []),
+        ...transformedFindings,
         ...normalizedProfiles,
       ];
 
@@ -129,7 +155,8 @@ export function useRealtimeResults(jobId: string | null) {
         },
         (payload) => {
           console.log('[useRealtimeResults] New finding received:', payload.new);
-          setResults((prev) => [...prev, payload.new as ScanResultRow]);
+          const transformed = transformFinding(payload.new);
+          setResults((prev) => [...prev, transformed]);
         }
       )
       .subscribe();
@@ -156,5 +183,10 @@ export function useRealtimeResults(jobId: string | null) {
     return [findingsChannel, profilesChannel];
   };
 
-  return { results, loading };
+  const refetch = async () => {
+    setLoading(true);
+    await loadInitialResults();
+  };
+
+  return { results, loading, refetch };
 }
