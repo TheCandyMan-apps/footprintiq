@@ -41,15 +41,17 @@ export const PLANS: Record<PlanId, PlanDefinition> = {
   free: {
     id: 'free',
     label: 'Free',
-    description: 'Perfect for a quick check of your digital footprint.',
+    description: 'A fast way to see what\'s publicly visible.',
     priceMonthly: 0,
     stripePriceId: null,
     monthlyScanLimit: 1, // 1 scan per month - upgrade for more
     allowedProviders: ['maigret', 'holehe'],
     features: [
-      '1 scan per month',
-      'Basic username scanning',
-      'High-level exposure summary',
+      'Single digital footprint scan',
+      'Username and alias discovery',
+      'Public profile detection',
+      'Breach exposure indicators',
+      'High-level risk summary',
     ],
   },
   pro: {
