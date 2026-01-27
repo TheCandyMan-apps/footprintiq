@@ -89,6 +89,10 @@ const PRO_BENEFITS = [
 ];
 
 export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
+  // TEMP VERIFICATION LOG (remove after confirming routing split)
+  // eslint-disable-next-line no-console
+  console.log('FREE RESULTS PAGE');
+
   const navigate = useNavigate();
   const [job, setJob] = useState<ScanJob | null>(null);
   const [jobLoading, setJobLoading] = useState(true);
