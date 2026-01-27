@@ -1,250 +1,99 @@
 
-# Replace Scan Entry UI with Single Input
+# Fix: Scan Results Not Displaying ("Waiting for results...")
 
-## Overview
-Refactor the `/scan` page's `ScanForm` component to replace the current multi-field form with a streamlined single-input interface. The input will accept any identifier type (username, email, phone, or full name), with advanced fields available through a collapsible "Refine" section.
+## Problem Summary
+A completed scan shows "Scan Complete" with 9s elapsed time, but the main results area displays "Waiting for results..." indefinitely. The scan recorded 13 sources found, but users see no actual results.
 
----
+## Root Cause Analysis
 
-## Architecture
+### Issue 1: Database Constraint Violation (Backend)
+The Predicta API returns profile URLs in a field called `link`, but the code maps `profile.url` (which is `undefined`):
 
 ```text
-ScanForm (refactored)
-├── Header: "Start Your Digital Footprint Scan"
-├── Single Input Field
-│   └── Placeholder: "Username, email, phone number, or full name"
-├── TurnstileWidget (de-emphasized, only when required)
-├── Primary CTA: "Run free scan →"
-├── Helper Text: "We only use public sources..."
-├── Refine Link → Collapsible section
-│   └── Advanced Fields (firstName, lastName, email, phone)
-└── Related Tools Links (unchanged)
+Edge Function Log:
+Error storing social profiles: null value in column "profile_url" of relation 
+"social_profiles" violates not-null constraint
 ```
 
----
-
-## Detailed Changes
-
-### 1. Update `src/components/ScanForm.tsx`
-
-**State Changes:**
-- Add `identifier: string` - the single input value
-- Add `showRefine: boolean` - controls collapsible visibility
-- Keep existing `formData` state for advanced fields (used when refined)
-
-**Type Detection Logic (new function):**
-Create `detectIdentifierType(input: string)`:
-- Contains `@` and `.` after `@` → `email`
-- Starts with `+` or contains 7+ consecutive digits → `phone`
-- Contains a space → `fullname` (split into firstName + lastName)
-- Default → `username`
-
-**Form Structure:**
-```tsx
-<form onSubmit={handleSubmit}>
-  {/* Single Input */}
-  <div className="space-y-2">
-    <Label htmlFor="identifier" className="sr-only">Search identifier</Label>
-    <Input
-      id="identifier"
-      placeholder="Username, email, phone number, or full name"
-      value={identifier}
-      onChange={(e) => setIdentifier(e.target.value)}
-      onKeyDown={(e) => e.key === 'Enter' && handleSubmit(e)}
-      className="h-12 text-lg bg-secondary border-border"
-      maxLength={255}
-      autoFocus
-    />
-  </div>
-
-  {/* Turnstile (de-emphasized) */}
-  {requiresTurnstile && (
-    <div className="opacity-80">
-      <TurnstileWidget ... />
-    </div>
-  )}
-
-  {/* Primary CTA */}
-  <Button type="submit" size="lg" className="w-full">
-    Run free scan
-    <ArrowRight className="w-5 h-5 ml-2" />
-  </Button>
-
-  {/* Helper Text */}
-  <p className="text-xs text-muted-foreground text-center">
-    We only use public sources. Queries are discarded after processing.
-  </p>
-
-  {/* Refine Section */}
-  <Collapsible open={showRefine} onOpenChange={handleRefineToggle}>
-    <CollapsibleTrigger asChild>
-      <Button variant="link" size="sm" className="text-muted-foreground">
-        {showRefine ? 'Hide' : 'Refine search options'}
-      </Button>
-    </CollapsibleTrigger>
-    <CollapsibleContent className="pt-4 space-y-4">
-      {/* Existing advanced fields: firstName, lastName, email, phone */}
-    </CollapsibleContent>
-  </Collapsible>
-</form>
-```
-
-**Submit Logic (`handleSubmit`):**
-1. Fire `scan_start_click` analytics event
-2. Validate Turnstile token if required
-3. Detect identifier type using `detectIdentifierType(identifier)`
-4. Build `ScanFormData`:
-   - If `email` detected → set `formData.email`
-   - If `phone` detected → validate and set `formData.phone`
-   - If `fullname` detected → split and set `firstName` + `lastName`
-   - If `username` detected → set `formData.username`
-5. Merge with any advanced field overrides if "Refine" was used
-6. Call `onSubmit(submitData)`
-
-**Analytics Events:**
-- `scan_start_click` - fired when CTA clicked
-- `scan_refine_open` - fired when Refine collapsible opened
-- `scan_submit` - fired on successful form validation before `onSubmit`
-
----
-
-### 2. Create `src/lib/scan/identifierDetection.ts`
-
-New utility for auto-detecting input type:
+**Location**: `supabase/functions/osint-scan/index.ts` line 467
 
 ```typescript
-export type IdentifierType = 'email' | 'phone' | 'username' | 'fullname';
+// Current (broken):
+profile_url: profile.url,  // profile.url is undefined
 
-export interface DetectionResult {
-  type: IdentifierType;
-  normalized: {
-    email?: string;
-    phone?: string;
-    username?: string;
-    firstName?: string;
-    lastName?: string;
-  };
-}
-
-export function detectIdentifierType(input: string): DetectionResult {
-  const trimmed = input.trim();
-  
-  // Email detection: contains @ with domain
-  if (/@.+\..+/.test(trimmed)) {
-    return {
-      type: 'email',
-      normalized: { email: trimmed.toLowerCase() }
-    };
-  }
-  
-  // Phone detection: starts with + or has 7+ digits
-  const digits = trimmed.replace(/\D/g, '');
-  if (trimmed.startsWith('+') || digits.length >= 7) {
-    return {
-      type: 'phone',
-      normalized: { phone: trimmed }
-    };
-  }
-  
-  // Full name detection: contains space
-  if (/\s/.test(trimmed)) {
-    const parts = trimmed.split(/\s+/);
-    const firstName = parts[0];
-    const lastName = parts.slice(1).join(' ');
-    return {
-      type: 'fullname',
-      normalized: { firstName, lastName }
-    };
-  }
-  
-  // Default: username
-  return {
-    type: 'username',
-    normalized: { username: trimmed }
-  };
-}
+// Predicta response structure:
+{ platform: "picsart", link: "https://picsart.com/u/coralhowells", ... }
 ```
 
----
+### Issue 2: Status Mismatch in UI (Frontend)
+The `FreeResultsPage` checks for `job.status === 'finished'` but the scan has `status: 'completed'`:
 
-### 3. Update `src/lib/analytics.ts`
-
-Add new analytics methods:
+**Location**: `src/components/scan/FreeResultsPage.tsx` lines 384-386
 
 ```typescript
-scanStartClick: () => {
-  trackEvent("scan_start_click");
-},
-
-scanRefineOpen: () => {
-  trackEvent("scan_refine_open");
-},
-
-scanSubmit: (identifierType: string) => {
-  trackEvent("scan_submit", { identifier_type: identifierType });
-},
+// Current logic shows "Waiting for results..." when status isn't 'finished':
+{job.status === 'finished'
+  ? 'No results captured—try again later or adjust tags.'
+  : 'Waiting for results...'}
 ```
+
+### Issue 3: No Findings Data
+Because the social profile insert failed with a constraint violation:
+- `social_profiles` table: 0 records for this scan
+- `findings` table: 0 records for this scan
+- Frontend's `useRealtimeResults` hook returns empty array
+- UI branch for `results.length === 0` is triggered
 
 ---
 
-## Visual Layout
+## Technical Fix Plan
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                                                             │
-│          Start Your Digital Footprint Scan                  │
-│    Search by username or personal details to find your      │
-│                    online presence                          │
-│                                                             │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │ Username, email, phone number, or full name           │  │
-│  └───────────────────────────────────────────────────────┘  │
-│                                                             │
-│  ┌─ Turnstile widget (subtle, only for Free users) ─────┐  │
-│  └───────────────────────────────────────────────────────┘  │
-│                                                             │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │              Run free scan →                          │  │
-│  └───────────────────────────────────────────────────────┘  │
-│                                                             │
-│   We only use public sources. Queries are discarded after   │
-│                      processing.                            │
-│                                                             │
-│                   ▸ Refine search options                   │
-│                                                             │
-│  ─────────────────────────────────────────────────────────  │
-│  Or try our focused search tools:                           │
-│  [Username Search]  [Email Breach Check]                    │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+### Step 1: Fix Predicta Profile URL Mapping (Backend)
+**File**: `supabase/functions/osint-scan/index.ts`
+
+Update line 467 to use the correct field with fallback:
+
+```typescript
+profile_url: profile.link || profile.url || `https://${profile.platform}.com/${profile.username}`,
 ```
 
-**When "Refine" is expanded:**
-```text
-│                   ▾ Hide refine options                     │
-│                                                             │
-│   ┌─────────────────┐  ┌─────────────────┐                  │
-│   │ First Name      │  │ Last Name       │                  │
-│   └─────────────────┘  └─────────────────┘                  │
-│                                                             │
-│   ┌───────────────────────────────────────┐                 │
-│   │ Email Address                         │                 │
-│   └───────────────────────────────────────┘                 │
-│                                                             │
-│   ┌───────────────────────────────────────┐                 │
-│   │ Phone Number                          │                 │
-│   └───────────────────────────────────────┘                 │
+This ensures:
+- Primary: Use `link` field (what Predicta actually returns)
+- Fallback 1: Use `url` field (for other providers)
+- Fallback 2: Generate a reasonable URL from platform/username
+
+### Step 2: Fix Status Check in FreeResultsPage (Frontend)
+**File**: `src/components/scan/FreeResultsPage.tsx`
+
+Update the status check to recognize all terminal statuses:
+
+```typescript
+const terminalStatuses = ['finished', 'completed', 'completed_partial', 'failed', 'failed_timeout'];
+const isTerminal = terminalStatuses.includes(job.status);
+
+// Then in the render:
+{isTerminal
+  ? 'No results captured—try again later or adjust tags.'
+  : 'Waiting for results...'}
 ```
 
----
+### Step 3: Add Defensive Null Checks (Backend)
+**File**: `supabase/functions/osint-scan/index.ts`
 
-## Validation Flow
+Filter out profiles with missing URLs before insert to prevent constraint violations:
 
-1. **Empty input** → Toast: "Please enter an identifier to search"
-2. **Phone detected but invalid** → Validate using existing `validatePhone`, show error
-3. **Email detected but invalid** → Validate using existing zod schema, show error
-4. **Turnstile required but missing** → Show Turnstile error message
-5. **Valid input** → Fire `scan_submit` event, call `onSubmit`
+```typescript
+// Before inserting socialProfilesWithConfidence:
+const validProfiles = socialProfilesWithConfidence.filter(sp => sp.profile_url);
+
+if (validProfiles.length > 0) {
+  const { error: spError } = await supabase
+    .from('social_profiles')
+    .insert(validProfiles);
+  
+  if (spError) console.error('Error storing social profiles:', spError);
+}
+```
 
 ---
 
@@ -252,36 +101,48 @@ scanSubmit: (identifierType: string) => {
 
 | File | Change |
 |------|--------|
-| `src/components/ScanForm.tsx` | Complete refactor with single input + Collapsible refine section |
-| `src/lib/scan/identifierDetection.ts` | New file: identifier type detection utility |
-| `src/lib/analytics.ts` | Add `scanStartClick`, `scanRefineOpen`, `scanSubmit` events |
+| `supabase/functions/osint-scan/index.ts` | Fix `profile.url` → `profile.link \|\| profile.url \|\| fallback` |
+| `supabase/functions/osint-scan/index.ts` | Add filter to exclude profiles with null URLs before insert |
+| `src/components/scan/FreeResultsPage.tsx` | Update status check to include 'completed' as terminal |
 
 ---
 
-## Technical Notes
+## Verification Steps
 
-### Keyboard Submit
-The input field has `onKeyDown` handler to trigger submit on Enter key press.
+1. Run a username scan and confirm:
+   - Social profiles insert successfully (no constraint errors in logs)
+   - Results display after scan completes (not "Waiting for results...")
+   - Status "completed" is treated as terminal
 
-### Backward Compatibility
-The `ScanFormData` interface remains unchanged. The single input is mapped to the appropriate field(s) before calling `onSubmit`, so `ScanProgress` and downstream components work without modification.
-
-### Turnstile De-emphasis
-Wrapped in a container with `opacity-80` and moved below the input but above the CTA, making it less visually prominent while remaining accessible.
-
-### Collapsible Import
-Using existing `@/components/ui/collapsible` (Radix-based) for the Refine section.
+2. Check edge function logs:
+   - No `23502` (null constraint) errors
+   - Profiles stored correctly with valid URLs
 
 ---
 
-## Acceptance Criteria
+## Technical Details
 
-- [ ] Single input field accepts username, email, phone, or full name
-- [ ] Auto-detects identifier type and maps to correct `ScanFormData` fields
-- [ ] "Run free scan →" button triggers scan
-- [ ] Enter key submits the form
-- [ ] "Refine" link opens collapsible with advanced fields
-- [ ] Turnstile appears below input (only for Free users), visually de-emphasized
-- [ ] Helper text displayed: "We only use public sources..."
-- [ ] Analytics events fire: `scan_start_click`, `scan_refine_open`, `scan_submit`
-- [ ] Existing focused search tool links remain at bottom
+### Database Schema Constraint
+```sql
+-- social_profiles.profile_url is NOT NULL
+profile_url is_nullable:NO
+```
+
+### Predicta API Response Format
+```json
+{
+  "platform": "picsart",
+  "username": "coralhowells",
+  "link": "https://picsart.com/u/coralhowells",  // <-- "link" not "url"
+  "user_id": "244590113021102"
+}
+```
+
+### Status Flow Mapping
+| Backend Status | Expected UI State |
+|----------------|-------------------|
+| `running` | Show progress/scanning |
+| `completed` | Show results |
+| `completed_partial` | Show partial results |
+| `finished` | Show results (legacy) |
+| `failed`, `failed_timeout` | Show error state |
