@@ -48,6 +48,7 @@ interface FreeResultsViewProps {
 // Pro benefits for upgrade block
 const PRO_BENEFITS = [
   'Confidence scoring & false-positive filtering',
+  'LENS identity verification',
   'Full source list & evidence context',
   'Labeled connections graph',
   'Exposure timeline (historical vs active)',
