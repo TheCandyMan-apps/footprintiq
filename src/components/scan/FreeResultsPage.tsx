@@ -69,7 +69,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useScanResultsData, ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { ScanProgress } from './ScanProgress';
-import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check } from 'lucide-react';
+import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User } from 'lucide-react';
 import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsAggregator';
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
@@ -475,17 +475,20 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
 
-            {/* ===== PROFILES & EXPOSURE ===== */}
+            {/* ===== PUBLIC PROFILES FOUND (Aggregated - No provider names) ===== */}
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <h3 className="text-sm font-semibold">Profiles & Exposure</h3>
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    <h3 className="text-sm font-semibold">Public profiles found</h3>
                     <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
                       {totalProfiles}
                     </Badge>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Multiple public sources indicate this identifier appears on public platforms.
+                  </p>
                 </div>
 
                 {previewProfiles.length > 0 ? (
@@ -499,7 +502,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                         <div className="flex items-center gap-2">
                           <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground">
-                            + {hiddenCount} more profiles
+                            + {hiddenCount} more (Pro)
                           </span>
                         </div>
                         <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
