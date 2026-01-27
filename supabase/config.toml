@@ -96,3 +96,6 @@ verify_jwt = false
 
 [functions.turnstile-verify]
 verify_jwt = false
+
+[functions.lens-verify-preview]
+verify_jwt = true

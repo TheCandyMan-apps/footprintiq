@@ -74,6 +74,7 @@ import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsA
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
 import { useNavigate } from 'react-router-dom';
+import { LensPreviewCard } from './LensPreviewCard';
 
 interface FreeResultsPageProps {
   jobId: string;
@@ -522,6 +523,11 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 )}
               </CardContent>
             </Card>
+
+            {/* ===== LENS VERIFICATION PREVIEW ===== */}
+            {foundProfiles.length > 0 && (
+              <LensPreviewCard profiles={foundProfiles} scanId={jobId} />
+            )}
 
             {/* ===== CONNECTIONS TEASER (Static placeholder - NO Cytoscape/graph logic) ===== */}
             {totalConnections > 1 && (

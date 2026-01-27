@@ -5718,6 +5718,8 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          lens_preview_used: boolean | null
+          lens_preview_used_at: string | null
           persona: string | null
           status: string
           status_changed_at: string | null
@@ -5732,6 +5734,8 @@ export type Database = {
           email: string
           full_name?: string | null
           id?: string
+          lens_preview_used?: boolean | null
+          lens_preview_used_at?: string | null
           persona?: string | null
           status?: string
           status_changed_at?: string | null
@@ -5746,6 +5750,8 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          lens_preview_used?: boolean | null
+          lens_preview_used_at?: string | null
           persona?: string | null
           status?: string
           status_changed_at?: string | null
@@ -9955,6 +9961,8 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          lens_preview_used: boolean | null
+          lens_preview_used_at: string | null
           persona: string | null
           status: string
           status_changed_at: string | null
@@ -9978,6 +9986,8 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          lens_preview_used: boolean | null
+          lens_preview_used_at: string | null
           persona: string | null
           status: string
           status_changed_at: string | null
