@@ -46,12 +46,47 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
       try {
         if (!isMounted) return;
 
-        // Fetch user's workspace
-        const { data: workspaceMember } = await supabase
+        // Fetch user's workspace - try multiple sources to ensure we have a valid workspaceId
+        let workspaceId: string | null = null;
+        
+        // First, try to get from workspace_members
+        const { data: workspaceMember, error: memberError } = await supabase
           .from('workspace_members')
           .select('workspace_id')
           .eq('user_id', userId)
-          .single();
+          .maybeSingle();  // Use maybeSingle to avoid error when no rows
+
+        if (workspaceMember?.workspace_id) {
+          workspaceId = workspaceMember.workspace_id;
+          console.log('[ScanProgress] Got workspaceId from membership:', workspaceId);
+        } else {
+          console.warn('[ScanProgress] No workspace membership found, checking owned workspaces...');
+          
+          // Fallback: Check workspaces owned by user
+          const { data: ownedWorkspace } = await supabase
+            .from('workspaces')
+            .select('id')
+            .eq('owner_id', userId)
+            .limit(1)
+            .maybeSingle();
+            
+          if (ownedWorkspace?.id) {
+            workspaceId = ownedWorkspace.id;
+            console.log('[ScanProgress] Got workspaceId from owned workspace:', workspaceId);
+          } else {
+            // Final fallback: try sessionStorage (set by useWorkspace hook)
+            const storedId = sessionStorage.getItem('current_workspace_id');
+            if (storedId) {
+              workspaceId = storedId;
+              console.log('[ScanProgress] Got workspaceId from sessionStorage:', workspaceId);
+            }
+          }
+        }
+        
+        // CRITICAL: Log error if we still don't have a workspaceId
+        if (!workspaceId) {
+          console.error('[ScanProgress] ❌ CRITICAL: No workspaceId found! Scan will fail to persist results.');
+        }
 
         // Determine scan type based on what data is provided
         const hasPhone = !!(scanData.phone && scanData.phone.trim());
@@ -89,7 +124,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         const requestBody: Record<string, any> = {
           scanId: preScanId,
           scanType,
-          workspaceId: workspaceMember?.workspace_id || null,
+          workspaceId: workspaceId,  // ✅ Uses our resolved workspaceId variable
         };
         
         if (scanData.username && scanData.username.trim()) requestBody.username = scanData.username.trim();
