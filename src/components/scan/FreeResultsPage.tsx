@@ -1,28 +1,62 @@
 /**
  * FreeResultsPage Component
  * 
- * Completely separate results page for Free users.
- * This component NEVER mounts or renders any Advanced/Pro components.
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * CONTENT CONTRACT - STRICTLY ENFORCED
+ * ═══════════════════════════════════════════════════════════════════════════════
  * 
- * ALLOWED CONTENT:
- * - Header: "Here's what we found"
- * - Subtext: "You're viewing a limited summary of an advanced scan."
- * - Risk Snapshot (counts only, no charts or gauges)
- * - Profiles & Exposure summary (total count + 2-3 examples + "+ N more (Pro)")
- * - Connections teaser (static placeholder, NOT live graph)
- * - Inline Pro upgrade block
+ * This component MUST be the ONLY page rendered for users with plan === "free".
+ * It is architecturally separate from AdvancedResultsPage.
  * 
- * EXCLUDED (never mounted):
- * - Timeline Analysis
- * - Relationship Graph (live)
- * - Privacy Score
- * - Digital Footprint DNA
- * - Catfish Detection
- * - Data Analytics Overview
- * - Anomaly Detection
- * - Continuous Monitoring
- * - Export / Share / Removal actions
- * - Raw provider cards or metadata
+ * ─────────────────────────────────────────────────────────────────────────────────
+ * ALLOWED CONTENT (exhaustive list):
+ * ─────────────────────────────────────────────────────────────────────────────────
+ * 1. Header + Subtext:
+ *    - "Here's what we found"
+ *    - "You're viewing a limited summary of an advanced scan."
+ * 
+ * 2. Risk Snapshot:
+ *    - Counts ONLY (Signals detected, High-confidence, Overall risk = "Unclear")
+ *    - NO charts, gauges, graphs, or visualizations
+ * 
+ * 3. Profiles & Exposure Summary:
+ *    - Total profile count (aggregated)
+ *    - 2–3 example profiles (max 3)
+ *    - "+ N more profiles (Pro)" indicator
+ * 
+ * 4. Connections Teaser:
+ *    - Static placeholder card only
+ *    - Text: "Connections detected" / "Related profiles and entities were found..."
+ *    - NO Cytoscape, NO graph initialization, NO live visualization
+ * 
+ * 5. Single Pro Upgrade Block:
+ *    - Benefits list
+ *    - "Unlock Pro" CTA
+ * 
+ * ─────────────────────────────────────────────────────────────────────────────────
+ * EXCLUDED CONTENT (never import, mount, or render):
+ * ─────────────────────────────────────────────────────────────────────────────────
+ * - Timeline Analysis component
+ * - Relationship Graph / Connections graph (live Cytoscape)
+ * - Digital Footprint DNA widget
+ * - Privacy Score widget
+ * - Catfish Detection component
+ * - Anomaly Detection component
+ * - Continuous Monitoring component
+ * - Data Analytics Overview charts
+ * - Data Quality & Source Analysis
+ * - Export Artifacts / Export buttons
+ * - Provider cards (Predicta, Maigret, etc.)
+ * - "View Detailed Metadata" panels
+ * - Any expandable JSON blocks
+ * - Share / Removal action buttons
+ * 
+ * ─────────────────────────────────────────────────────────────────────────────────
+ * EMPTY STATE HANDLING:
+ * ─────────────────────────────────────────────────────────────────────────────────
+ * If data is missing, show simple text empty states, NOT charts or complex UI.
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 import { useEffect, useState, useRef, useMemo } from 'react';
