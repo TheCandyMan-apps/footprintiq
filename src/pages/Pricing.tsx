@@ -156,14 +156,16 @@ const PricingPage = () => {
     "Compliance export"
   ];
 
-  const proIncludes = [
+  const proIncludes: Array<string | { text: string; isLens: boolean }> = [
     "Multiple scans per month",
     "Expanded source coverage",
-    "Confidence scoring per finding",
-    "Risk severity classification",
-    "Historical scan comparisons",
-    "Exportable reports",
-    "Priority scan processing"
+    "Confidence scoring & false-positive filtering",
+    { text: "LENS identity verification", isLens: true },
+    "Labeled connections graph",
+    "Exposure timelines (historical vs active)",
+    "Removal guidance",
+    "Continuous monitoring & alerts",
+    "Exportable reports (PDF & CSV)"
   ];
 
   const proBestFor = [
@@ -347,7 +349,7 @@ const PricingPage = () => {
                       <span className="text-muted-foreground">/month</span>
                     </div>
                     <CardDescription className="pt-4">
-                      For individuals who want ongoing visibility and control.
+                      Designed for people who want clarity, not just more data.
                     </CardDescription>
                     
                     {/* Pro Differentiator */}
@@ -362,12 +364,21 @@ const PricingPage = () => {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-3">Everything in Free, plus</p>
                       <ul className="space-y-2">
-                        {proIncludes.map((item, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm">
-                            <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                            <span>{item}</span>
-                          </li>
-                        ))}
+                        {proIncludes.map((item, i) => {
+                          const isLensItem = typeof item === 'object' && item.isLens;
+                          const text = typeof item === 'string' ? item : item.text;
+                          return (
+                            <li key={i} className="flex items-start gap-2 text-sm">
+                              <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isLensItem ? 'text-primary' : 'text-primary'}`} />
+                              <span className={isLensItem ? 'font-semibold text-foreground' : ''}>
+                                {text}
+                                {isLensItem && (
+                                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">NEW</span>
+                                )}
+                              </span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                     
