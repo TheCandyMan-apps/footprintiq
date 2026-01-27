@@ -381,7 +381,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
         ) : results.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-sm text-muted-foreground">
-              {job.status === 'finished'
+              {['finished', 'completed', 'completed_partial', 'failed', 'failed_timeout'].includes(job.status)
                 ? 'No results captured—try again later or adjust tags.'
                 : 'Waiting for results...'}
             </p>
