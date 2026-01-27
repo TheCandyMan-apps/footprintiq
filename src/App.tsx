@@ -19,6 +19,7 @@ import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { MobileCTABar } from "@/components/MobileCTABar";
 import { FloatingProgressTracker } from "@/components/FloatingProgressTracker";
 import { ActiveScanProvider } from "@/contexts/ActiveScanContext";
+import { ProUnlockWrapper } from "@/components/billing/ProUnlockWrapper";
 import "@/lib/config"; // Validate env at boot
 
 // Critical pages (loaded immediately for LCP optimization)
@@ -282,6 +283,7 @@ function RouterContent() {
       <GlobalSearch />
       <PWAInstallPrompt />
       <MobileCTABar />
+      <ProUnlockWrapper />
       <Suspense fallback={<LoadingState />}>
         <PageTransition>
           <Routes>
