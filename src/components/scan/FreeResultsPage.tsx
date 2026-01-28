@@ -615,6 +615,28 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
 
+            {/* ===== NOTABLE PATTERN INSIGHT ===== */}
+            {foundProfiles.length > 0 && (
+              <Card className="overflow-hidden border-border/50 bg-muted/5">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <Eye className="h-4 w-4 text-primary/70" />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold mb-1">One notable pattern</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {/* Rotate insight based on scan ID hash for variety */}
+                        {jobId.charCodeAt(0) % 2 === 0
+                          ? "Some profiles appear on platforms users often forget they signed up for."
+                          : "This identifier appears across different types of platforms, not just social media."}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* ===== NEW: SCAN DEPTH INDICATOR ===== */}
             <ScanDepthIndicator
               visibleCount={previewProfiles.length}
