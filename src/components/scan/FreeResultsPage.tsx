@@ -580,6 +580,41 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
 
+            {/* ===== EXPOSURE SUMMARY ===== */}
+            <Card className="overflow-hidden border-border/50">
+              <CardContent className="p-4">
+                <div className="mb-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Eye className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    <h3 className="text-sm font-semibold">Exposure summary</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Based on public sources, this identifier appears on platforms that commonly expose:
+                  </p>
+                </div>
+
+                <ul className="space-y-1.5 mb-3">
+                  <li className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="w-1 h-1 rounded-full bg-muted-foreground/60 shrink-0" />
+                    Reused usernames across sites
+                  </li>
+                  <li className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="w-1 h-1 rounded-full bg-muted-foreground/60 shrink-0" />
+                    Historical activity on inactive platforms
+                  </li>
+                  <li className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="w-1 h-1 rounded-full bg-muted-foreground/60 shrink-0" />
+                    Profiles indexed by data aggregators
+                  </li>
+                </ul>
+
+                <p className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+                  <Lock className="h-2.5 w-2.5" />
+                  Details and affected platforms are available in Pro.
+                </p>
+              </CardContent>
+            </Card>
+
             {/* ===== NEW: SCAN DEPTH INDICATOR ===== */}
             <ScanDepthIndicator
               visibleCount={previewProfiles.length}
