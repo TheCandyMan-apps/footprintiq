@@ -744,7 +744,11 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
 
-                <p className="mt-4 text-center text-[10px] text-muted-foreground/70 flex items-center justify-center gap-1.5">
+                <p className="mt-3 text-center text-xs text-muted-foreground/80">
+                  Most people upgrade after seeing how many profiles are involved.
+                </p>
+
+                <p className="mt-3 text-center text-[10px] text-muted-foreground/70 flex items-center justify-center gap-1.5">
                   <Shield className="h-2.5 w-2.5" />
                   Public sources only • Ethical OSINT • Cancel anytime
                 </p>
