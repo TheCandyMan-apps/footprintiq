@@ -1,141 +1,162 @@
-` tags. Since my previous messages were summaries of earlier responses (before you switched back to Chat mode), the plan wasn't freshly presented in this session.
 
-Let me present the plan again so you get the **"Open"** and **"Approve"** buttons:
 
-<lov-plan>
+# App.tsx Route Cleanup Plan
 
-# Fix: Scan Status and Results Not Updating on Results Page
+## Overview
+
+This plan addresses the routing issues in `src/App.tsx` identified in the platform review. The file contains **543 lines** with multiple duplicate routes and component conflicts that can cause confusion and maintenance issues.
 
 ## Problem Summary
-The user's scan shows "running" at 5% after 8+ minutes, but database records confirm:
-- Scan status: `completed`
-- Findings count: 351 records in `findings` table
-- All providers finished: sherlock, gosearch, maigret, holehe
 
-The UI is not recognizing the completed state or displaying the results.
+| Issue Type | Count | Risk Level |
+|------------|-------|------------|
+| Exact duplicate routes (same path, same component) | 3 | Very Low |
+| Conflicting routes (same path, different components) | 5 | Low-Medium |
+| Inline placeholder overriding real component | 1 | Bug |
 
-## Root Causes
+---
 
-### 1. Findings Not Mapping to Display Format
-The `findings` table stores data as:
-- `evidence`: `[{key:"site", value:"7Cups"}, {key:"url", value:"..."}]`
-- `meta`: `{platform:"7Cups", provider:"sherlock", ...}`
+## Phase 1: Remove Exact Duplicates (Zero Risk)
 
-But `ScanResultRow` expects direct properties:
-- `.site`: Direct string property
-- `.url`: Direct string property
-- `.status`: Direct string property
+These routes are defined twice with the same component. React Router uses first-match-wins, so the second definition is unreachable dead code.
 
-The hook does `select('*')` but doesn't transform the data.
+| Path | Lines | Action |
+|------|-------|--------|
+| `/auth` | 292, 293 | Remove line 293 |
+| `/404` | 520, 521 | Remove line 521 |
+| `/settings/billing` | 374, 391 | Remove line 391 |
+| `/api-docs` | 384, 394 | Remove line 394 |
+| `/settings/api-keys` | 375, 395 | Remove line 395 |
+| `/dark-web-monitoring` | 338, 393 | Remove line 393 |
 
-### 2. Status Detection Misses Completed Scans
-If a user opens the results page after a scan completes, the realtime subscription only catches future events - it misses the already-completed status.
+---
 
-### 3. Progress Shows 5%
-The progress calculation uses `results.length` which equals 0 due to the mapping issue.
+## Phase 2: Resolve Conflicting Routes
 
-## Technical Changes
+### 2.1 `/integrations` Bug (Critical)
 
-### File 1: `src/hooks/useRealtimeResults.ts`
+**Current State:**
+- Line 406: `<Route path="/integrations" element={<Integrations />} />`
+- Line 511: `<Route path="/integrations" element={<div className="...">Integrations coming soon</div>} />`
 
-**Add transformation function** (after line 42, before `useRealtimeResults`):
+**Analysis:** The `Integrations.tsx` component is a full 546-line page with webhook management, API integrations, and Slack/Discord setup. The inline "coming soon" placeholder is dead code.
 
-```typescript
-// Transform findings to match expected ScanResultRow format
-function transformFinding(finding: any): ScanResultRow {
-  let site = finding.meta?.platform || '';
-  let url = '';
-  
-  if (Array.isArray(finding.evidence)) {
-    const siteEntry = finding.evidence.find((e: any) => e.key === 'site');
-    const urlEntry = finding.evidence.find((e: any) => e.key === 'url');
-    if (siteEntry?.value) site = siteEntry.value;
-    if (urlEntry?.value) url = urlEntry.value;
-  } else if (finding.evidence?.site) {
-    site = finding.evidence.site;
-    url = finding.evidence.url || '';
-  }
-  
-  return {
-    ...finding,
-    site,
-    url,
-    status: finding.meta?.status || 'found',
-  };
-}
-```
+**Action:** Remove line 511 (inline placeholder).
 
-**Apply transformation in loadInitialResults** (around line 80):
+---
 
-```typescript
-// Transform findings before merging
-const transformedFindings = (findingsResult.data || []).map(transformFinding);
+### 2.2 `/workspaces` Conflict
 
-const merged = [
-  ...transformedFindings,
-  ...normalizedProfiles,
-];
-```
+**Current State:**
+- Line 436: `<Route path="/workspaces" element={<Workspaces />} />`
+- Line 514: `<Route path="/workspaces" element={<OrganizationNew />} />`
 
-**Apply transformation in realtime handler** (around line 108):
+**Analysis:**
+- `Workspaces.tsx` (317 lines): Full workspace management with member invitations, case management, and workspace switching.
+- `OrganizationNew.tsx` (268 lines): Workspace creation wizard focused on new workspace setup.
 
-```typescript
-const transformed = transformFinding(payload.new);
-setResults((prev) => [...prev, transformed]);
-```
+**Recommendation:** Keep `Workspaces` at `/workspaces` (line 436). If `OrganizationNew` functionality is needed, expose it at a new path like `/workspaces/new`.
 
-**Add refetch export** (around line 130):
+**Action:** Remove line 514 or change to `/workspaces/new`.
 
-```typescript
-const refetch = async () => {
-  setLoading(true);
-  await loadInitialResults();
-};
+---
 
-return { results, loading, refetch };
-```
+### 2.3 `/admin/observability` Conflict
 
-### File 2: `src/components/scan/FreeResultsPage.tsx`
+**Current State:**
+- Line 427: `<Route path="/admin/observability" element={<Observability />} />`
+- Line 459: `<Route path="/admin/observability" element={<ObservabilityDashboard />} />`
 
-**Add fallback polling** for scan status:
+**Analysis:**
+- `Observability.tsx` (422 lines): Real-time metrics, provider health charts, and performance monitoring.
+- `ObservabilityDashboard.tsx` (471 lines): SLO definitions, incident management, and alert configuration.
 
-```typescript
-// Fallback poll for scan status (every 5 seconds)
-useEffect(() => {
-  if (!job || ['completed', 'completed_partial', 'failed', 'failed_timeout'].includes(job.status)) {
-    return;
-  }
-  
-  const interval = setInterval(() => {
-    loadJob();
-  }, 5000);
-  
-  return () => clearInterval(interval);
-}, [job?.status]);
-```
+**Recommendation:** Both pages serve distinct purposes. Keep `Observability` at `/admin/observability` and move `ObservabilityDashboard` to `/admin/incidents` or `/admin/slo`.
 
-**Add results refetch when scan completes**:
+**Action:** Change line 459 to use a different path (e.g., `/admin/incidents`).
 
-```typescript
-// Reload results when scan completes but we have no results
-useEffect(() => {
-  if (job?.status === 'completed' && results.length === 0 && refetch) {
-    refetch();
-  }
-}, [job?.status, results.length]);
-```
+---
 
-## Expected Outcome
+### 2.4 `/admin/roles` Conflict
 
-After these changes:
-1. Navigating to `/results/{scanId}` for a completed scan will show `completed` status immediately
-2. The 351 findings will be fetched, transformed, and displayed with correct `site`/`url` values
-3. Progress will show 100% with "Scan Complete"
-4. The results list will populate with profile cards
-5. In-progress scans will poll for status updates every 5 seconds as a fallback
+**Current State:**
+- Line 417: `<Route path="/admin/roles" element={<RoleManagement />} />`
+- Line 474: `<Route path="/admin/roles" element={<Admin />} />`
+
+**Analysis:** `RoleManagement.tsx` is a dedicated role management page. The `Admin` component is a general admin dashboard that likely has its own roles section.
+
+**Recommendation:** Keep `RoleManagement` at `/admin/roles` (more specific). The generic `Admin` component is already at `/admin` (line 475).
+
+**Action:** Remove line 474.
+
+---
+
+## Phase 3: Implementation Steps
+
+1. **Backup first** - The changes are low-risk, but having a restore point is good practice.
+
+2. **Remove dead duplicate routes:**
+   - Delete lines: 293, 391, 393, 394, 395, 521
+
+3. **Remove inline placeholder:**
+   - Delete line 511 (`/integrations` coming soon)
+
+4. **Resolve workspace conflict:**
+   - Delete line 514 OR rename to `/workspaces/new`
+
+5. **Resolve observability conflict:**
+   - Change line 459 from `/admin/observability` to `/admin/incidents`
+
+6. **Resolve roles conflict:**
+   - Delete line 474
+
+7. **Test critical routes:**
+   - `/auth` - Login flow
+   - `/integrations` - Full integrations page loads
+   - `/workspaces` - Workspace management
+   - `/admin/observability` - Metrics dashboard
+   - `/admin/roles` - Role management
+
+---
+
+## Technical Details
+
+### Files Modified
+- `src/App.tsx` (only file)
+
+### Lines Removed (8 total)
+- 293, 391, 393, 394, 395, 474, 511, 514, 521
+
+### Lines Modified (1 total)
+- 459: Path change from `/admin/observability` to `/admin/incidents`
+
+### Estimated Time
+- Implementation: ~5 minutes
+- Testing: ~10 minutes
+
+---
 
 ## Risk Assessment
-- **Low risk**: Additive changes only
-- **Backwards compatible**: Transformation handles both array and object evidence formats
-- **No breaking changes**: Existing realtime functionality preserved
+
+| Change | Risk | Reason |
+|--------|------|--------|
+| Remove duplicate `/auth` | None | Dead code (never reached) |
+| Remove duplicate `/404` | None | Dead code (never reached) |
+| Remove duplicate settings routes | None | Dead code (never reached) |
+| Remove inline integrations placeholder | None | Bug fix (restores intended behavior) |
+| Resolve `/workspaces` | Low | Need to verify no deep links exist to OrganizationNew |
+| Resolve `/admin/observability` | Low | Admin pages, limited user access |
+| Resolve `/admin/roles` | None | Dead code (never reached) |
+
+**Overall Risk: 1-2%** - All changes either remove dead code or fix obvious bugs.
+
+---
+
+## Optional Future Improvements (Not in Scope)
+
+1. **Route Refactoring**: Extract routes into separate files (`adminRoutes.tsx`, `blogRoutes.tsx`, etc.) for better maintainability.
+
+2. **Bundle Optimization**: Group legal pages (Privacy, Terms, DPA) into a single lazy chunk to reduce network waterfall.
+
+3. **AdminNav Updates**: Ensure all admin pages use the consolidated AdminNav sidebar.
 
