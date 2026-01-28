@@ -711,27 +711,36 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </Card>
             )}
 
-            {/* ===== PRO UPGRADE BLOCK ===== */}
+            {/* ===== PERSONALIZED PRO VALUE BLOCK ===== */}
             <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
               <CardContent className="p-5">
                 <div className="mb-4">
-                  <h3 className="text-lg font-semibold mb-1">Unlock the full analysis</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Free shows what exists. Pro explains what it means.
-                  </p>
+                  <h3 className="text-lg font-semibold mb-1">
+                    What Pro would reveal for <span className="text-primary">{username}</span>
+                  </h3>
                 </div>
 
                 <ul className="space-y-2.5 mb-5">
-                  {PRO_BENEFITS.map((benefit, i) => (
-                    <li key={i} className="flex items-center gap-2.5 text-sm">
-                      <Check className="h-4 w-4 text-primary shrink-0" />
-                      <span>{benefit}</span>
-                    </li>
-                  ))}
+                  <li className="flex items-start gap-2.5 text-sm">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>All {totalProfiles} profiles and where they appear</span>
+                  </li>
+                  <li className="flex items-start gap-2.5 text-sm">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>Which profiles are likely the same person</span>
+                  </li>
+                  <li className="flex items-start gap-2.5 text-sm">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>How identifiers connect across platforms</span>
+                  </li>
+                  <li className="flex items-start gap-2.5 text-sm">
+                    <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                    <span>Which findings are likely false positives</span>
+                  </li>
                 </ul>
 
                 <Button className="w-full" size="lg" onClick={handleUpgradeClick}>
-                  Unlock Pro
+                  Unlock Pro to view full analysis
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
 
