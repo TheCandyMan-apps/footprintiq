@@ -685,14 +685,14 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                         <Lock className="h-4 w-4 text-muted-foreground" />
                       </div>
                       
-                      {/* Title with count */}
+                      {/* Title */}
                       <h3 className="text-sm font-semibold text-foreground mb-1">
-                        {totalConnections} linked accounts found
+                        Connections detected beyond the username
                       </h3>
                       
                       {/* Body text */}
                       <p className="text-xs text-muted-foreground text-center mb-3 max-w-xs">
-                        Understand how these accounts connect
+                        Some profiles share identifiers that aren't immediately visible.
                       </p>
                       
                       {/* CTA Button */}
@@ -702,7 +702,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                         className="h-8 px-4 gap-1.5"
                         onClick={handleUpgradeClick}
                       >
-                        Unlock connections graph
+                        Unlock Pro to view connections
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Button>
                     </div>
