@@ -381,14 +381,16 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
       </CardHeader>
       <Separator />
       <CardContent className="p-4 sm:p-6 md:p-8 space-y-4">
-        {/* Progress Indicator */}
-        <ScanProgress
-          startedAt={job.started_at}
-          finishedAt={job.finished_at}
-          status={job.status}
-          resultCount={Math.max(results.length, broadcastResultCount)}
-          allSites={job.all_sites || false}
-        />
+        {/* Progress Indicator - only show while scan is in progress or if complete with no results */}
+        {(!scanComplete || results.length === 0) && (
+          <ScanProgress
+            startedAt={job.started_at}
+            finishedAt={job.finished_at}
+            status={job.status}
+            resultCount={Math.max(results.length, broadcastResultCount)}
+            allSites={job.all_sites || false}
+          />
+        )}
 
         {job.status === 'pending' && job.started_at && Date.now() - new Date(job.started_at).getTime() > 120000 && (
           <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 animate-pulse">
