@@ -11,7 +11,7 @@ import { SettingsNav } from '@/components/settings/SettingsNav';
 import { Separator } from '@/components/ui/separator';
 import { useSubscription } from '@/hooks/useSubscription';
 import { StripePaymentForm } from '@/components/billing/StripePaymentForm';
-import { TestModeToggle } from '@/components/billing/TestModeToggle';
+
 import { PaymentErrorBoundary } from '@/components/billing/PaymentErrorBoundary';
 import { PurchaseVerification } from '@/components/billing/PurchaseVerification';
 import { CreditPackCard } from '@/components/CreditPackCard';
@@ -295,8 +295,6 @@ export default function BillingSettings() {
           </Button>
         </div>
 
-        {/* Test Mode Toggle */}
-        <TestModeToggle />
 
         {/* Current Subscription & Next Payment */}
         <div className="grid gap-6 lg:grid-cols-3">
