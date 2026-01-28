@@ -79,7 +79,17 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
 
   const calculateEstimatedRemaining = (): string => {
     if (['finished', 'completed', 'completed_partial', 'completed_empty', 'error', 'failed', 'timeout'].includes(status)) return '-';
-    if (resultCount === 0 || elapsedSeconds === 0) return 'Calculating...';
+    
+    // If no results yet but scan is running, show time-based estimate
+    if (resultCount === 0) {
+      // Deep scans typically take 3-10 minutes
+      const estimatedTotalSeconds = allSites ? 600 : 180; // 10 min for all sites, 3 min for popular
+      const remainingSeconds = Math.max(0, estimatedTotalSeconds - elapsedSeconds);
+      if (remainingSeconds <= 0) return 'Almost done...';
+      return formatTime(remainingSeconds);
+    }
+    
+    if (elapsedSeconds === 0) return 'Starting...';
     
     const scanRate = resultCount / elapsedSeconds; // sites per second
     const remainingSites = Math.max(0, estimatedTotal - resultCount);
@@ -89,7 +99,9 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
   };
 
   const getScanRate = (): string => {
-    if (resultCount === 0 || elapsedSeconds === 0) return '-';
+    // If no results yet, show "awaiting" status instead of confusing 0.0
+    if (resultCount === 0) return 'Awaiting data...';
+    if (elapsedSeconds === 0) return '-';
     const rate = (resultCount / elapsedSeconds).toFixed(1);
     return `${rate} sites/s`;
   };
@@ -178,12 +190,21 @@ export const ScanProgress = ({ startedAt, finishedAt, status, resultCount, allSi
 
           {/* Additional Info */}
           {isRunning && (
-            <div className="pt-2 border-t">
+            <div className="pt-2 border-t space-y-2">
               <p className="text-xs text-muted-foreground">
                 {allSites 
                   ? '⚡ Scanning all available sites. This may take several minutes.'
                   : '🎯 Scanning popular sites. Faster completion expected.'}
               </p>
+              <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
+                <p className="text-xs font-medium text-foreground">
+                  💡 Scanning 300+ platforms using multiple OSINT tools
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  We use Maigret, Sherlock, WhatsMyName, and other tools in parallel. 
+                  Deep scans can take up to 10 minutes for comprehensive results.
+                </p>
+              </div>
             </div>
           )}
         </div>
