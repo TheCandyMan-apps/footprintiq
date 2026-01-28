@@ -127,6 +127,24 @@ export function UnifiedScanProgress({
           </div>
         )}
 
+        {/* Scan scope info */}
+        <div className="bg-primary/5 rounded-lg p-4 border border-primary/10">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <span className="text-sm">💡</span>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">
+                Scanning 300+ platforms using multiple OSINT tools
+              </p>
+              <p className="text-xs text-muted-foreground">
+                We use Maigret, Sherlock, WhatsMyName, and other tools in parallel. 
+                Deep scans can take up to 10 minutes for comprehensive results.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Footer reassurance */}
         <div className="pt-4 border-t border-border/50">
           <p className="text-xs text-muted-foreground/70 text-center">
