@@ -33,10 +33,25 @@ export async function verifyTurnstileToken(
     return { ok: false, error: 'Missing turnstile token' };
   }
 
+  // Check if this is a test token from Cloudflare's always-pass test key
+  // Test tokens start with the pattern from the test site key
+  // Cloudflare test site key 1x00000000000000000000AA generates tokens that should use test secret
+  const TEST_SECRET = '1x0000000000000000000000000000000AA';
+  const isTestEnvironment = 
+    token.includes('XXXX') || // Dummy token placeholder
+    token.startsWith('1x00') || // Test token pattern
+    Deno.env.get('DENO_DEPLOYMENT_ID') === undefined; // Local development
+  
+  // Use test secret for test/preview environments
+  const effectiveSecret = isTestEnvironment ? TEST_SECRET : secret;
+
   try {
+    // Log which secret type we're using (for debugging)
+    console.log('[turnstile] Using', isTestEnvironment ? 'TEST' : 'PRODUCTION', 'secret for verification');
+    
     // Build form data
     const formData = new FormData();
-    formData.append('secret', secret);
+    formData.append('secret', effectiveSecret);
     formData.append('response', token);
     if (ip && ip !== 'unknown') {
       formData.append('remoteip', ip);
