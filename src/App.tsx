@@ -289,8 +289,7 @@ function RouterContent() {
           <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/sample-report" element={<SampleReport />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/auth" element={<Auth />} />
+            <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/scan" element={<ScanPage />} />
           <Route path="/results/:scanId" element={<ResultsDetail />} />
@@ -388,11 +387,7 @@ function RouterContent() {
           <Route path="/evidence-pack" element={<EvidencePack />} />
           <Route path="/settings/health" element={<ScanHealth />} />
           <Route path="/scan/batch" element={<BatchScan />} />
-          <Route path="/settings/billing" element={<Billing />} />
           <Route path="/buy-credits" element={<BuyCreditsPage />} />
-          <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
-          <Route path="/api-docs" element={<ApiDocs />} />
-          <Route path="/settings/api-keys" element={<APIKeys />} />
           <Route path="/partners" element={<PartnersIndex />} />
           <Route path="/partners/dashboard" element={<PartnerDashboard />} />
           <Route path="/global-index" element={<GlobalIndex />} />
@@ -456,7 +451,7 @@ function RouterContent() {
           <Route path="/admin/marketplace/review" element={<MarketplaceReview />} />
           <Route path="/admin/quality-lab" element={<QualityLab />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/observability" element={<ObservabilityDashboard />} />
+          <Route path="/admin/incidents" element={<ObservabilityDashboard />} />
           <Route path="/admin/circuit-breakers" element={<CircuitBreakers />} />
           <Route path="/admin/cost-tracking" element={<CostTracking />} />
           <Route path="/admin/workspace-audit" element={<WorkspaceAudit />} />
@@ -471,7 +466,6 @@ function RouterContent() {
           <Route path="/admin/scan-health" element={<AdminScanHealth />} />
           <Route path="/admin/database-export" element={<DatabaseExport />} />
           <Route path="/admin/users" element={<Admin />} />
-          <Route path="/admin/roles" element={<Admin />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/research" element={<Research />} />
           
@@ -508,17 +502,12 @@ function RouterContent() {
           <Route path="/ai/what-is-identity-profiling" element={<AIWhatIsIdentityProfiling />} />
           <Route path="/ai/what-are-data-brokers" element={<AIWhatAreDataBrokers />} />
           <Route path="/ethical-osint-for-individuals" element={<EthicalOsintForIndividuals />} />
-          <Route path="/integrations" element={<div className="container mx-auto py-8"><h1 className="text-3xl">Integrations coming soon</h1></div>} />
-        
-          {/* Workspace & Collaboration Routes */}
-          <Route path="/workspaces" element={<OrganizationNew />} />
           
           {/* Embeddable Widget */}
           <Route path="/embed/widget" element={<EmbedWidget />} />
           <Route path="/install" element={<InstallApp />} />
           
-                <Route path="/404" element={<NotFound />} />
-                <Route path="/404" element={<NotFound />} />
+              <Route path="/404" element={<NotFound />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </PageTransition>
