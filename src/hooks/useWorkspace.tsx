@@ -23,6 +23,7 @@ type WorkspaceRole = 'owner' | 'admin' | 'analyst' | 'viewer';
 function normalizePlan(subscription_tier: string | null | undefined): 'free' | 'pro' | 'business' {
   const tier = (subscription_tier || 'free').toLowerCase();
   if (tier === 'analyst') return 'pro';
+  if (tier === 'premium') return 'pro'; // Map legacy 'premium' tier to 'pro'
   if (tier === 'enterprise') return 'business';
   if (tier === 'pro' || tier === 'business') return tier as 'pro' | 'business';
   return 'free';
