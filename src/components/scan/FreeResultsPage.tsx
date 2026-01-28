@@ -70,12 +70,16 @@ import { useToast } from '@/hooks/use-toast';
 import { useScanResultsData, ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { useRealtimeResults } from '@/hooks/useRealtimeResults';
 import { ScanProgress } from './ScanProgress';
-import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User } from 'lucide-react';
+import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User, MapPin, Users, ExternalLink } from 'lucide-react';
 import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsAggregator';
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
 import { useNavigate } from 'react-router-dom';
 import { LensPreviewCard } from './LensPreviewCard';
+import { BlurredRiskGauge } from '@/components/results/BlurredRiskGauge';
+import { HiddenInsightsTeaser } from '@/components/results/HiddenInsightsTeaser';
+import { ScanDepthIndicator } from '@/components/results/ScanDepthIndicator';
+import { ContextualUpgradeCTA } from '@/components/results/ContextualUpgradeCTA';
 
 interface FreeResultsPageProps {
   jobId: string;
@@ -449,12 +453,31 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </div>
             </div>
 
-            {/* ===== RISK SNAPSHOT ===== */}
+            {/* ===== NEW: BLURRED RISK GAUGE (creates immediate curiosity) ===== */}
+            <BlurredRiskGauge
+              signalsCount={signalsFound}
+              highConfidenceCount={highConfidenceCount}
+              exposuresCount={totalBreaches}
+            />
+
+            {/* ===== RISK SNAPSHOT (with emotional context) ===== */}
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
                 <div className="flex items-center gap-2 mb-4">
                   <Shield className="h-4 w-4 text-primary" />
                   <h3 className="text-sm font-semibold">Risk Snapshot</h3>
+                </div>
+
+                {/* Enhanced emotional context */}
+                <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-4">
+                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                    ⚠️ {signalsFound} signals need your attention
+                  </p>
+                  {totalBreaches > 0 && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Including {totalBreaches} potential exposure{totalBreaches > 1 ? 's' : ''}
+                    </p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
@@ -502,10 +525,25 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                     </div>
                   </div>
                 </div>
+
+                {/* CTA inside risk snapshot */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full mt-4 h-8 text-xs text-primary hover:text-primary gap-1"
+                  onClick={handleUpgradeClick}
+                >
+                  <Lock className="h-3 w-3" />
+                  See which ones matter
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
               </CardContent>
             </Card>
 
-            {/* ===== PUBLIC PROFILES FOUND (Aggregated - No provider names) ===== */}
+            {/* ===== NEW: HIDDEN INSIGHTS TEASER (blurred AI summary) ===== */}
+            <HiddenInsightsTeaser signalsCount={signalsFound} />
+
+            {/* ===== PUBLIC PROFILES FOUND (Enhanced with contextual CTAs) ===== */}
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
                 <div className="mb-4">
@@ -528,17 +566,10 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                     ))}
                     
                     {hiddenCount > 0 && (
-                      <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-dashed border-border/50">
-                        <div className="flex items-center gap-2">
-                          <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            + {hiddenCount} more (Pro)
-                          </span>
-                        </div>
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                          Pro
-                        </Badge>
-                      </div>
+                      <ContextualUpgradeCTA
+                        hiddenCount={hiddenCount}
+                        context="profiles"
+                      />
                     )}
                   </div>
                 ) : (
@@ -549,41 +580,72 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               </CardContent>
             </Card>
 
+            {/* ===== NEW: SCAN DEPTH INDICATOR ===== */}
+            <ScanDepthIndicator
+              visibleCount={previewProfiles.length}
+              totalCount={foundProfiles.length}
+            />
+
             {/* ===== LENS VERIFICATION PREVIEW ===== */}
             {foundProfiles.length > 0 && (
               <LensPreviewCard profiles={foundProfiles} scanId={jobId} />
             )}
 
-            {/* ===== CONNECTIONS TEASER (Static placeholder - NO Cytoscape/graph logic) ===== */}
+            {/* ===== CONNECTIONS TEASER (Enhanced with blurred graph preview) ===== */}
             {totalConnections > 1 && (
               <Card className="overflow-hidden border-border/50">
                 <CardContent className="p-4">
-                  {/* Static placeholder card - no graph initialization */}
-                  <div className="relative rounded-lg bg-muted/20 border border-dashed border-border/50 p-6">
-                    <div className="flex flex-col items-center text-center space-y-4">
+                  {/* Enhanced teaser with visual graph placeholder */}
+                  <div className="relative rounded-lg bg-muted/20 border border-dashed border-border/50 overflow-hidden">
+                    {/* Blurred graph preview placeholder */}
+                    <div 
+                      className="h-32 flex items-center justify-center select-none pointer-events-none"
+                      style={{ filter: 'blur(4px)' }}
+                      aria-hidden="true"
+                    >
+                      {/* Simulated node positions for visual effect */}
+                      <div className="relative w-full h-full">
+                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-primary/40" />
+                        <div className="absolute top-4 left-8 w-6 h-6 rounded-full bg-blue-400/40" />
+                        <div className="absolute top-4 right-12 w-6 h-6 rounded-full bg-emerald-400/40" />
+                        <div className="absolute bottom-4 left-12 w-5 h-5 rounded-full bg-amber-400/40" />
+                        <div className="absolute bottom-6 right-8 w-5 h-5 rounded-full bg-purple-400/40" />
+                        <div className="absolute top-1/3 left-1/4 w-4 h-4 rounded-full bg-rose-400/40" />
+                        {/* Connection lines */}
+                        <svg className="absolute inset-0 w-full h-full opacity-30">
+                          <line x1="50%" y1="50%" x2="15%" y2="20%" stroke="currentColor" strokeWidth="1" />
+                          <line x1="50%" y1="50%" x2="80%" y2="15%" stroke="currentColor" strokeWidth="1" />
+                          <line x1="50%" y1="50%" x2="20%" y2="75%" stroke="currentColor" strokeWidth="1" />
+                          <line x1="50%" y1="50%" x2="85%" y2="70%" stroke="currentColor" strokeWidth="1" />
+                        </svg>
+                      </div>
+                    </div>
+                    
+                    {/* Overlay */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-transparent via-background/60 to-background/90 p-6">
                       {/* Lock icon */}
-                      <div className="w-12 h-12 rounded-full bg-muted/40 flex items-center justify-center">
-                        <Lock className="h-5 w-5 text-muted-foreground" />
+                      <div className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center mb-3">
+                        <Lock className="h-4 w-4 text-muted-foreground" />
                       </div>
                       
-                      {/* Title */}
-                      <h3 className="text-base font-semibold text-foreground">
-                        Connections detected
+                      {/* Title with count */}
+                      <h3 className="text-sm font-semibold text-foreground mb-1">
+                        {totalConnections} linked accounts found
                       </h3>
                       
                       {/* Body text */}
-                      <p className="text-sm text-muted-foreground max-w-xs">
-                        Related profiles and entities were found, but details are hidden on Free.
+                      <p className="text-xs text-muted-foreground text-center mb-3 max-w-xs">
+                        Understand how these accounts connect
                       </p>
                       
                       {/* CTA Button */}
                       <Button 
                         variant="default"
                         size="sm" 
-                        className="h-9 px-5 gap-2"
+                        className="h-8 px-4 gap-1.5"
                         onClick={handleUpgradeClick}
                       >
-                        Unlock Pro to view connections
+                        Unlock connections graph
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -639,32 +701,94 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
 }
 
 /**
- * Simple profile preview row for Free users
+ * Enhanced profile preview row for Free users
+ * Shows actual metadata when available, hides placeholder text
  */
 function ProfilePreviewRow({ profile }: { profile: AggregatedProfile }) {
   const platformInitial = profile.platform.charAt(0).toUpperCase();
   
+  // Check if we have meaningful metadata to display
+  const hasFollowers = profile.metadata.followers !== undefined && profile.metadata.followers > 0;
+  const hasLocation = profile.metadata.location && profile.metadata.location !== 'Unknown';
+  const hasUrl = !!profile.url;
+  
+  // Filter out placeholder bios
+  const isPlaceholderBio = (bio: string | null): boolean => {
+    if (!bio) return true;
+    const placeholders = [
+      'profile found on',
+      'unknown platform',
+      'no bio available',
+      'no description',
+    ];
+    const lowerBio = bio.toLowerCase();
+    return placeholders.some(p => lowerBio.includes(p));
+  };
+  
+  const displayBio = !isPlaceholderBio(profile.bio) ? profile.bio : null;
+  
+  // Generate contextual info when no bio
+  const contextualInfo = !displayBio && (hasFollowers || hasLocation);
+  
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border/30">
-      <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center shrink-0">
-        <span className="text-xs font-semibold text-muted-foreground">
+    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/20 border border-border/30 hover:bg-muted/30 transition-colors">
+      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shrink-0 ring-1 ring-primary/10">
+        <span className="text-sm font-semibold text-primary">
           {platformInitial}
         </span>
       </div>
       
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium truncate">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm font-medium capitalize">
             {profile.platform}
           </span>
-          <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">
-            {profile.username}
-          </Badge>
+          {profile.username && (
+            <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono">
+              @{profile.username}
+            </Badge>
+          )}
+          {hasUrl && (
+            <ExternalLink className="h-3 w-3 text-muted-foreground/50" />
+          )}
         </div>
-        {profile.bio && (
+        
+        {/* Show actual bio if available */}
+        {displayBio && (
           <p className="text-xs text-muted-foreground truncate mt-0.5">
-            {profile.bio.slice(0, 60)}{profile.bio.length > 60 ? '...' : ''}
+            {displayBio.slice(0, 60)}{displayBio.length > 60 ? '...' : ''}
           </p>
+        )}
+        
+        {/* Show metadata when no bio */}
+        {contextualInfo && (
+          <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
+            {hasFollowers && (
+              <span className="flex items-center gap-1">
+                <Users className="h-2.5 w-2.5" />
+                {profile.metadata.followers?.toLocaleString()} followers
+              </span>
+            )}
+            {hasLocation && (
+              <span className="flex items-center gap-1">
+                <MapPin className="h-2.5 w-2.5" />
+                {profile.metadata.location}
+              </span>
+            )}
+          </div>
+        )}
+        
+        {/* Fallback: show verification context */}
+        {!displayBio && !contextualInfo && (
+          <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
+              <Shield className="h-2.5 w-2.5" />
+              <span>Verified on {profile.sources.length} source{profile.sources.length > 1 ? 's' : ''}</span>
+            </div>
+            <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3.5">
+              Pro
+            </Badge>
+          </div>
         )}
       </div>
     </div>
