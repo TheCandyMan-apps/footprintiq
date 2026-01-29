@@ -48,18 +48,18 @@ export function ScanDepthIndicator({
           <h3 className="text-sm font-semibold">Scan Depth</h3>
         </div>
         
-        {/* Progress bar */}
+        {/* Count-based messaging */}
         <div className="space-y-2 mb-4">
           <Progress 
             value={depthPercentage} 
             className="h-2.5"
           />
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">
-              Viewing {depthPercentage}% of results
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-foreground">
+              Showing {visibleCount} verified findings
             </span>
-            <span className="font-medium text-primary">
-              {visibleCount} of {totalCount}
+            <span className="text-xs text-muted-foreground">
+              Pro reveals the full analysis across {totalCount} findings
             </span>
           </div>
         </div>
@@ -69,7 +69,7 @@ export function ScanDepthIndicator({
           <div className="flex items-center gap-2">
             <Lock className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
-              {hiddenCount} findings hidden
+              {hiddenCount} more available
             </span>
           </div>
           <Button 
@@ -78,7 +78,7 @@ export function ScanDepthIndicator({
             className="h-7 px-3 gap-1 text-primary hover:text-primary"
             onClick={() => navigate('/pricing')}
           >
-            Reveal all
+            Unlock Pro
             <ArrowRight className="h-3 w-3" />
           </Button>
         </div>
