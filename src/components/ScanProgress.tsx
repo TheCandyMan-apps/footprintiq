@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { updateStreakOnScan } from "@/lib/updateStreakOnScan";
@@ -13,13 +13,29 @@ interface ScanProgressProps {
   isAdmin?: boolean;
 }
 
+// Terminal statuses that indicate scan completion
+const TERMINAL_STATUSES = [
+  'finished',
+  'error',
+  'cancelled',
+  'partial',
+  'completed',
+  'completed_partial',
+  'completed_empty',
+  'failed',
+  'failed_timeout',
+  'not_configured',
+];
+
 export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, isAdmin = false }: ScanProgressProps) => {
   const [isComplete, setIsComplete] = useState(false);
   const [isFailed, setIsFailed] = useState(false);
+  const [scanId, setScanId] = useState<string | null>(null);
   const navigate = useNavigate();
   
-  // Guard against double-invocation (React Strict Mode, prop changes, etc.)
+  // Guards
   const scanStartedRef = useRef(false);
+  const completionHandledRef = useRef(false);
 
   // Utility to prevent indefinite hanging
   const withTimeout = async <T,>(promise: Promise<T>, ms: number, label = 'operation'): Promise<T> => {
@@ -31,8 +47,32 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
     });
   };
 
+  // Handle scan completion
+  const handleCompletion = useCallback((completedScanId: string, failed: boolean = false) => {
+    if (completionHandledRef.current) return;
+    completionHandledRef.current = true;
+    
+    console.log('[ScanProgress] ✅ Scan completed:', completedScanId, failed ? '(FAILED)' : '');
+    
+    if (failed) {
+      setIsFailed(true);
+    } else {
+      setIsComplete(true);
+      
+      // Update streak (non-blocking)
+      updateStreakOnScan(userId).catch(err => 
+        console.warn('[ScanProgress] updateStreakOnScan failed:', err)
+      );
+      
+      setTimeout(() => {
+        onComplete(completedScanId);
+        try { navigate(`/results/${completedScanId}`); } catch {}
+      }, 500);
+    }
+  }, [userId, onComplete, navigate]);
+
+  // Start the scan
   useEffect(() => {
-    // Prevent duplicate scan triggers
     if (scanStartedRef.current) {
       console.log('[ScanProgress] Scan already started, skipping duplicate invocation');
       return;
@@ -40,21 +80,19 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
     scanStartedRef.current = true;
     
     let isMounted = true;
-    let createdScanId: string | null = null;
     
     const performScan = async () => {
       try {
         if (!isMounted) return;
 
-        // Fetch user's workspace - try multiple sources to ensure we have a valid workspaceId
+        // Fetch user's workspace
         let workspaceId: string | null = null;
         
-        // First, try to get from workspace_members
-        const { data: workspaceMember, error: memberError } = await supabase
+        const { data: workspaceMember } = await supabase
           .from('workspace_members')
           .select('workspace_id')
           .eq('user_id', userId)
-          .maybeSingle();  // Use maybeSingle to avoid error when no rows
+          .maybeSingle();
 
         if (workspaceMember?.workspace_id) {
           workspaceId = workspaceMember.workspace_id;
@@ -62,7 +100,6 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         } else {
           console.warn('[ScanProgress] No workspace membership found, checking owned workspaces...');
           
-          // Fallback: Check workspaces owned by user
           const { data: ownedWorkspace } = await supabase
             .from('workspaces')
             .select('id')
@@ -74,7 +111,6 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
             workspaceId = ownedWorkspace.id;
             console.log('[ScanProgress] Got workspaceId from owned workspace:', workspaceId);
           } else {
-            // Final fallback: try sessionStorage (set by useWorkspace hook)
             const storedId = sessionStorage.getItem('current_workspace_id');
             if (storedId) {
               workspaceId = storedId;
@@ -83,12 +119,11 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           }
         }
         
-        // CRITICAL: Log error if we still don't have a workspaceId
         if (!workspaceId) {
-          console.error('[ScanProgress] ❌ CRITICAL: No workspaceId found! Scan will fail to persist results.');
+          console.error('[ScanProgress] ❌ CRITICAL: No workspaceId found!');
         }
 
-        // Determine scan type based on what data is provided
+        // Determine scan type
         const hasPhone = !!(scanData.phone && scanData.phone.trim());
         const hasUsername = !!(scanData.username && scanData.username.trim());
         const hasFirstName = !!(scanData.firstName && scanData.firstName.trim());
@@ -101,22 +136,14 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         } else if (hasUsername && !hasFirstName && !hasLastName && !hasEmail) {
           scanType = 'username';
         } else if (hasEmail && !hasUsername && !hasFirstName && !hasLastName && !hasPhone) {
-          // Email-only scan - route to HIBP/breach check
           scanType = 'email';
         } else if (hasFirstName || hasLastName || (hasEmail && (hasUsername || hasFirstName || hasLastName))) {
-          // Mixed personal details - name + email combo
           scanType = 'personal_details';
         }
 
-        // Convert empty strings to null to avoid database validation errors
-        const toNullIfEmpty = (val: string | undefined | null): string | null => 
-          val && val.trim() ? val.trim() : null;
-
-        // Generate a scan ID upfront so we can track it
         const preScanId = crypto.randomUUID();
-        createdScanId = preScanId;
+        setScanId(preScanId);
 
-        // Normalize phone to E.164 format before sending
         const normalizePhone = (phone: string): string => {
           const digits = phone.replace(/\D/g, '');
           if (digits.length === 10) return `+1${digits}`;
@@ -124,34 +151,28 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           return digits.startsWith('+') ? digits : `+${digits}`;
         };
 
-        // Build request body for n8n-scan-trigger
         const requestBody: Record<string, any> = {
           scanId: preScanId,
           scanType,
-          workspaceId: workspaceId,  // ✅ Uses our resolved workspaceId variable
+          workspaceId,
         };
         
-        if (scanData.username && scanData.username.trim()) requestBody.username = scanData.username.trim();
-        if (scanData.firstName && scanData.firstName.trim()) requestBody.firstName = scanData.firstName.trim();
-        if (scanData.lastName && scanData.lastName.trim()) requestBody.lastName = scanData.lastName.trim();
-        if (scanData.email && scanData.email.trim()) requestBody.email = scanData.email.trim();
-        if (scanData.phone && scanData.phone.trim()) {
+        if (scanData.username?.trim()) requestBody.username = scanData.username.trim();
+        if (scanData.firstName?.trim()) requestBody.firstName = scanData.firstName.trim();
+        if (scanData.lastName?.trim()) requestBody.lastName = scanData.lastName.trim();
+        if (scanData.email?.trim()) requestBody.email = scanData.email.trim();
+        if (scanData.phone?.trim()) {
           requestBody.phone = normalizePhone(scanData.phone.trim());
-          if (scanData.phoneProviders && scanData.phoneProviders.length > 0) {
+          if (scanData.phoneProviders?.length) {
             requestBody.phoneProviders = scanData.phoneProviders;
           }
         }
-
-        // Include turnstile token for free tier verification
         if (scanData.turnstile_token) {
           requestBody.turnstile_token = scanData.turnstile_token;
         }
 
         console.log('[ScanProgress] Invoking n8n-scan-trigger', { scanType, scanId: preScanId });
 
-        // Route ALL scans through n8n-scan-trigger for reliable async processing.
-        // IMPORTANT: This call must return quickly (async workflow). If it blocks, we fall back to polling.
-        let data: any = null;
         try {
           const invokeResult = await withTimeout(
             supabase.functions.invoke('n8n-scan-trigger', { body: requestBody }),
@@ -161,130 +182,100 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           if (invokeResult?.error) {
             console.error('[ScanProgress] n8n-scan-trigger error:', invokeResult.error);
           } else {
-            data = invokeResult?.data;
+            const actualScanId = invokeResult?.data?.scanId || preScanId;
+            if (actualScanId !== preScanId) {
+              setScanId(actualScanId);
+            }
+            console.log('[ScanProgress] Scan trigger acknowledged:', { actualScanId, status: invokeResult?.data?.status });
           }
         } catch (invokeErr) {
           console.warn('[ScanProgress] n8n-scan-trigger did not respond quickly; continuing with polling.', invokeErr);
         }
 
-        // Use the scan ID from the response if available; otherwise stick with our pre-generated id.
-        const actualScanId = data?.scanId || data?.jobId || data?.id || preScanId;
-        createdScanId = actualScanId;
-        console.log('[ScanProgress] Scan trigger acknowledged:', { actualScanId, status: data?.status });
-
-        if (!isMounted) return;
-
-        // Poll for scan completion via scans table status
-        let pollAttempts = 0;
-        const maxPollAttempts = 60; // 2 minutes max polling
-        let scanComplete = false;
-        
-        // Support legacy + async variants
-        // IMPORTANT: include `completed_empty` so scans with zero findings don't hang on the progress UI.
-        const terminalStatuses = [
-          'finished',
-          'error',
-          'cancelled',
-          'partial',
-          'completed',
-          'completed_partial',
-          'completed_empty',
-          'failed',
-          'failed_timeout',
-          'not_configured',
-        ];
-        
-        while (pollAttempts < maxPollAttempts && isMounted && !scanComplete) {
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          pollAttempts++;
-          
-          // Check scan status
-          const { data: scanStatus, error: scanStatusError } = await supabase
-            .from('scans')
-            .select('status')
-            .eq('id', actualScanId)
-            .maybeSingle();
-
-          if (scanStatusError) {
-            console.warn('[ScanProgress] Error checking scan status:', scanStatusError);
-          }
-          
-          if (scanStatus && terminalStatuses.includes(scanStatus.status)) {
-            scanComplete = true;
-            console.log('[ScanProgress] Scan completed with status:', scanStatus.status);
-          }
-          
-          // Also check for results as a fallback
-          if (!scanComplete && pollAttempts % 5 === 0) {
-            const [sourcesResult, profilesResult] = await Promise.all([
-              supabase.from('data_sources').select('id').eq('scan_id', actualScanId).limit(1),
-              supabase.from('social_profiles').select('id').eq('scan_id', actualScanId).limit(1)
-            ]);
-            
-            if ((sourcesResult.data && sourcesResult.data.length > 0) || 
-                (profilesResult.data && profilesResult.data.length > 0)) {
-              scanComplete = true;
-              console.log('[ScanProgress] Scan has results, marking complete');
-            }
-          }
-        }
-
-        // Update user streak (never block completion UI)
-        try {
-          await withTimeout(updateStreakOnScan(userId), 8000, 'updateStreakOnScan');
-        } catch (streakErr) {
-          console.warn('[ScanProgress] updateStreakOnScan failed/timed out; continuing.', streakErr);
-        }
-
-        // Mark complete and navigate
-        if (isMounted) {
-          setIsComplete(true);
-          setTimeout(() => {
-            if (isMounted) {
-              onComplete(actualScanId);
-              // Safety: if parent handler does not navigate, do it here.
-              try { navigate(`/results/${actualScanId}`); } catch {}
-            }
-          }, 500);
-        }
-
       } catch (error: any) {
-        if (!isMounted) return;
-        
         console.error("[ScanProgress] Scan error:", error);
-        
-        // If scan record exists, proceed to results anyway
-        if (createdScanId) {
-          setIsComplete(true);
-          setTimeout(() => {
-            if (isMounted) {
-              onComplete(createdScanId as string);
-              try { navigate(`/results/${createdScanId}`); } catch {}
-            }
-          }, 500);
-        } else {
-          setIsFailed(true);
-        }
+        setIsFailed(true);
       }
     };
-
-    // Safety net: allow up to 3 minutes for n8n workflow to complete
-    const t = window.setTimeout(() => {
-      if (isMounted && createdScanId) {
-        console.log('[ScanProgress] Safety timeout reached, navigating to results');
-        setIsComplete(true);
-        onComplete(createdScanId);
-        try { navigate(`/results/${createdScanId}`); } catch {}
-      }
-    }, 180000); // 3 minutes
 
     performScan();
 
     return () => {
       isMounted = false;
-      clearTimeout(t);
     };
-  }, [onComplete, scanData, userId, subscriptionTier, isAdmin, navigate]);
+  }, [scanData, userId, subscriptionTier, isAdmin]);
+
+  // Poll for completion + realtime subscription
+  useEffect(() => {
+    if (!scanId || completionHandledRef.current) return;
+
+    let isMounted = true;
+    let pollInterval: NodeJS.Timeout | null = null;
+
+    // Polling function
+    const checkStatus = async () => {
+      if (!isMounted || completionHandledRef.current) return;
+
+      try {
+        const { data: scanStatus, error } = await supabase
+          .from('scans')
+          .select('status')
+          .eq('id', scanId)
+          .maybeSingle();
+
+        if (error) {
+          console.warn('[ScanProgress] Poll error:', error);
+          return;
+        }
+
+        if (scanStatus && TERMINAL_STATUSES.includes(scanStatus.status)) {
+          console.log('[ScanProgress] Poll detected terminal status:', scanStatus.status);
+          const isFailed = scanStatus.status === 'failed' || scanStatus.status === 'error' || scanStatus.status === 'failed_timeout';
+          handleCompletion(scanId, isFailed);
+        }
+      } catch (err) {
+        console.warn('[ScanProgress] Poll exception:', err);
+      }
+    };
+
+    // Start polling every 2 seconds
+    checkStatus();
+    pollInterval = setInterval(checkStatus, 2000);
+
+    // Also subscribe to realtime broadcast for faster detection
+    const channel = supabase
+      .channel(`scan_progress:${scanId}`)
+      .on('broadcast', { event: 'scan_complete' }, (payload: any) => {
+        console.log('[ScanProgress] Realtime scan_complete received:', payload);
+        if (!completionHandledRef.current) {
+          const status = payload?.payload?.status;
+          const isFailed = status === 'failed' || status === 'error';
+          handleCompletion(scanId, isFailed);
+        }
+      })
+      .on('broadcast', { event: 'scan_failed' }, () => {
+        console.log('[ScanProgress] Realtime scan_failed received');
+        if (!completionHandledRef.current) {
+          handleCompletion(scanId, true);
+        }
+      })
+      .subscribe();
+
+    // Safety timeout: 3 minutes max
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && !completionHandledRef.current) {
+        console.log('[ScanProgress] Safety timeout reached, navigating to results');
+        handleCompletion(scanId, false);
+      }
+    }, 180000);
+
+    return () => {
+      isMounted = false;
+      if (pollInterval) clearInterval(pollInterval);
+      clearTimeout(safetyTimeout);
+      supabase.removeChannel(channel);
+    };
+  }, [scanId, handleCompletion]);
 
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-8">
