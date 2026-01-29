@@ -55,7 +55,17 @@ serve(async (req) => {
     }
 
     const body = await req.json();
-    const { scanId: providedScanId, username, workspaceId, scanType = "username", mode = "lean", turnstile_token } = body;
+    const { 
+      scanId: providedScanId, 
+      username, 
+      email, 
+      phone, 
+      domain,
+      workspaceId, 
+      scanType = "username", 
+      mode = "lean", 
+      turnstile_token 
+    } = body;
 
     // ✅ TURNSTILE VERIFICATION for free tier users
     const turnstileError = await enforceTurnstile(req, body, user.id, corsHeaders);
@@ -63,38 +73,68 @@ serve(async (req) => {
       return turnstileError;
     }
 
-    // ✅ STRICT USERNAME VALIDATION - Prevent "true", "false", empty, or invalid values
-    if (!username || typeof username !== 'string') {
-      console.error(`[n8n-scan-trigger] Invalid username type: ${typeof username}, value: ${username}`);
-      return new Response(JSON.stringify({ error: "Username must be a non-empty string" }), {
+    // ✅ SCAN-TYPE-AWARE VALIDATION
+    // Determine the target value and column based on scan type
+    let targetValue: string | undefined;
+    let targetColumn: string;
+
+    switch (scanType) {
+      case 'email':
+        targetValue = email?.trim() || username?.trim(); // fallback to username if email passed there
+        targetColumn = 'email';
+        break;
+      case 'phone':
+        targetValue = phone?.trim();
+        targetColumn = 'phone';
+        break;
+      case 'domain':
+        targetValue = domain?.trim();
+        targetColumn = 'domain';
+        break;
+      case 'personal_details':
+        // For personal_details, prefer email, fallback to username
+        targetValue = email?.trim() || username?.trim();
+        targetColumn = email ? 'email' : 'username';
+        break;
+      case 'username':
+      default:
+        targetValue = username?.trim();
+        targetColumn = 'username';
+        break;
+    }
+
+    // Validate target exists
+    if (!targetValue || typeof targetValue !== 'string') {
+      console.error(`[n8n-scan-trigger] Invalid ${targetColumn} type: ${typeof targetValue}, value: ${targetValue}`);
+      return new Response(JSON.stringify({ error: `${targetColumn} must be a non-empty string` }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const trimmedUsername = username.trim();
-    if (trimmedUsername.length === 0) {
-      console.error("[n8n-scan-trigger] Empty username after trim");
-      return new Response(JSON.stringify({ error: "Username cannot be empty" }), {
+    if (targetValue.length === 0) {
+      console.error(`[n8n-scan-trigger] Empty ${targetColumn} after trim`);
+      return new Response(JSON.stringify({ error: `${targetColumn} cannot be empty` }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Reject boolean-like and obviously invalid values
-    const invalidUsernames = ['true', 'false', 'null', 'undefined', 'nan', '0', '1'];
-    if (invalidUsernames.includes(trimmedUsername.toLowerCase())) {
-      console.error(`[n8n-scan-trigger] Rejected invalid username: "${trimmedUsername}"`);
-      return new Response(JSON.stringify({ error: `Invalid username: "${trimmedUsername}" is not a valid target` }), {
+    const invalidValues = ['true', 'false', 'null', 'undefined', 'nan', '0', '1'];
+    if (invalidValues.includes(targetValue.toLowerCase())) {
+      console.error(`[n8n-scan-trigger] Rejected invalid ${targetColumn}: "${targetValue}"`);
+      return new Response(JSON.stringify({ error: `Invalid ${targetColumn}: "${targetValue}" is not a valid target` }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Reject very short usernames (likely accidental)
-    if (trimmedUsername.length < 2) {
-      console.error(`[n8n-scan-trigger] Username too short: "${trimmedUsername}"`);
-      return new Response(JSON.stringify({ error: "Username must be at least 2 characters" }), {
+    // Reject very short values (likely accidental)
+    const minLength = scanType === 'email' ? 5 : 2; // emails need to be longer
+    if (targetValue.length < minLength) {
+      console.error(`[n8n-scan-trigger] ${targetColumn} too short: "${targetValue}"`);
+      return new Response(JSON.stringify({ error: `${targetColumn} must be at least ${minLength} characters` }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -105,21 +145,34 @@ serve(async (req) => {
     const scanId = providedScanId || crypto.randomUUID();
     console.log(`[n8n-scan-trigger] Using scanId: ${scanId} (provided: ${!!providedScanId})`);
 
-    console.log(`[n8n-scan-trigger] Starting scan for username: ${username.substring(0, 3)}***`);
+    console.log(`[n8n-scan-trigger] Starting ${scanType} scan for ${targetColumn}: ${targetValue.substring(0, 3)}***`);
+
+    // Build the scan insert object dynamically based on scan type
+    const scanInsertData: Record<string, unknown> = {
+      id: scanId,
+      user_id: user.id,
+      workspace_id: workspaceId,
+      scan_type: scanType,
+      status: "pending",
+      provider_counts: {},
+      results_route: "results",
+    };
+
+    // Set the appropriate column for the target value
+    if (scanType === 'email' || (scanType === 'personal_details' && targetColumn === 'email')) {
+      scanInsertData.email = targetValue;
+    } else if (scanType === 'phone') {
+      scanInsertData.phone = targetValue;
+    } else if (scanType === 'domain') {
+      scanInsertData.domain = targetValue;
+    } else {
+      scanInsertData.username = targetValue;
+    }
 
     // Create scan record with the provided scanId
     const { data: scan, error: scanError } = await supabase
       .from("scans")
-      .insert({
-        id: scanId,  // ✅ Use the scanId (provided or generated)
-        user_id: user.id,
-        workspace_id: workspaceId,
-        scan_type: scanType,
-        username: username,
-        status: "pending",
-        provider_counts: {},
-        results_route: "results",  // ✅ Advanced n8n scans always route to /results/:id
-      })
+      .insert(scanInsertData)
       .select()
       .single();
 
@@ -133,9 +186,23 @@ serve(async (req) => {
 
     console.log(`[n8n-scan-trigger] Created scan record: ${scan.id}`);
 
-    // Define providers for username scans
-    // Use providers matching what n8n workflow actually runs
-    const providers = ["sherlock", "gosearch", "maigret", "holehe", "whatsmyname"];
+    // Define providers based on scan type
+    let providers: string[];
+    switch (scanType) {
+      case 'email':
+        providers = ["holehe", "breach_check"]; // Email-specific providers
+        break;
+      case 'phone':
+        providers = ["phoneinfoga"]; // Phone-specific providers
+        break;
+      case 'domain':
+        providers = ["whois", "dns"]; // Domain-specific providers
+        break;
+      case 'username':
+      default:
+        providers = ["sherlock", "gosearch", "maigret", "holehe", "whatsmyname"];
+        break;
+    }
 
     // Create initial scan_progress record so UI can track progress
     const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -168,7 +235,13 @@ serve(async (req) => {
     // n8n should use callback tokens for authentication, not direct Supabase access
     const n8nPayload = {
       scanId: scan.id,
-      username: username,
+      scanType: scanType,
+      target: targetValue,  // The primary value being searched (regardless of type)
+      // Include specific fields for n8n workflow compatibility
+      username: scanType === 'username' ? targetValue : (username?.trim() || undefined),
+      email: scanType === 'email' ? targetValue : (email?.trim() || undefined),
+      phone: scanType === 'phone' ? targetValue : (phone?.trim() || undefined),
+      domain: scanType === 'domain' ? targetValue : (domain?.trim() || undefined),
       workspaceId: workspaceId,
       userId: user.id,
       mode,
