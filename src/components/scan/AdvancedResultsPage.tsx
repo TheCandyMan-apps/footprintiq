@@ -148,13 +148,14 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
             created_at: updatedScan.created_at,
             started_at: updatedScan.created_at,
             finished_at: updatedScan.completed_at || null,
-            error: updatedScan.error_message || null,
+            // Backward/forward compatible error column
+            error: updatedScan.analysis_error || updatedScan.error_message || null,
             all_sites: false,
             requested_by: updatedScan.user_id
           };
           setJob(mappedJob);
           
-          const terminalStatuses = ['finished', 'error', 'cancelled', 'partial', 'completed', 'completed_partial', 'failed', 'failed_timeout'];
+          const terminalStatuses = ['finished', 'error', 'cancelled', 'partial', 'completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'];
           if (terminalStatuses.includes(updatedScan.status) && jobChannelRef.current) {
             supabase.removeChannel(jobChannelRef.current);
             jobChannelRef.current = null;
@@ -333,8 +334,8 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <Badge variant={['finished', 'completed', 'completed_partial'].includes(job.status) ? 'default' : 'secondary'} className="text-xs">
-                {job.status === 'completed_partial' ? 'Partial' : job.status}
+              <Badge variant={['finished', 'completed', 'completed_partial', 'completed_empty'].includes(job.status) ? 'default' : 'secondary'} className="text-xs">
+                {job.status === 'completed_partial' ? 'Partial' : job.status === 'completed_empty' ? 'No results' : job.status}
               </Badge>
               {job.started_at && (
                 <span>Started: {new Date(job.started_at).toLocaleString()}</span>
@@ -383,7 +384,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
         ) : results.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-sm text-muted-foreground">
-              {job.status === 'finished'
+              {['finished', 'completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'].includes(job.status)
                 ? 'No results captured—try again later or adjust tags.'
                 : 'Waiting for results...'}
             </p>
