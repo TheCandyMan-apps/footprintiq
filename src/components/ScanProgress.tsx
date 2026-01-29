@@ -98,9 +98,13 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         let scanType: 'phone' | 'username' | 'personal_details' | 'both' | 'email' | 'domain' = 'both';
         if (hasPhone && !hasUsername && !hasFirstName && !hasLastName && !hasEmail) {
           scanType = 'phone';
-        } else if (hasUsername && !hasFirstName && !hasLastName) {
+        } else if (hasUsername && !hasFirstName && !hasLastName && !hasEmail) {
           scanType = 'username';
-        } else if (hasFirstName || hasLastName || hasEmail) {
+        } else if (hasEmail && !hasUsername && !hasFirstName && !hasLastName && !hasPhone) {
+          // Email-only scan - route to HIBP/breach check
+          scanType = 'email';
+        } else if (hasFirstName || hasLastName || (hasEmail && (hasUsername || hasFirstName || hasLastName))) {
+          // Mixed personal details - name + email combo
           scanType = 'personal_details';
         }
 
