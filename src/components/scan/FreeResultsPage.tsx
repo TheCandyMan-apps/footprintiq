@@ -75,7 +75,6 @@ import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsA
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
 import { useNavigate } from 'react-router-dom';
-import { LensPreviewCard } from './LensPreviewCard';
 import { BlurredRiskGauge } from '@/components/results/BlurredRiskGauge';
 import { HiddenInsightsTeaser } from '@/components/results/HiddenInsightsTeaser';
 import { ScanDepthIndicator } from '@/components/results/ScanDepthIndicator';
@@ -83,6 +82,7 @@ import { AccountRow } from './results-tabs/accounts/AccountRow';
 import { ConnectionsPreviewGraph } from './results-tabs/connections/ConnectionsPreviewGraph';
 import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
+import { InlineLensVerification, getLensEligibleIndices } from './results-tabs/accounts/InlineLensVerification';
 
 // Number of full Pro-style results to show for Free users
 const FREE_PREVIEW_LIMIT = 10;
@@ -617,30 +617,49 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
 
                 {previewProfiles.length > 0 ? (
                   <div className="space-y-0 border border-border/30 rounded-lg overflow-hidden">
-                    {/* Full Pro-style AccountRow for first 10 results */}
-                    {previewProfiles.map((profile, index) => {
-                      const scanResult = aggregatedProfileToScanResult(profile);
-                      // Generate a consistent LENS score based on profile confidence
-                      const lensScore = profile.confidence || 65;
+                    {/* Full Pro-style AccountRow for first 10 results with inline LENS */}
+                    {(() => {
+                      // Compute LENS-eligible indices once
+                      const eligibleIndices = getLensEligibleIndices(previewProfiles.length);
                       
-                      return (
-                        <AccountRow
-                          key={profile.id}
-                          result={scanResult}
-                          jobId={jobId}
-                          lensScore={lensScore}
-                          isFocused={focusedRowId === profile.id}
-                          isExpanded={expandedRowId === profile.id}
-                          verificationResult={verificationResults[profile.id] || null}
-                          claimStatus={claimStatuses[profile.id] || null}
-                          isClaimLoading={false}
-                          onFocus={() => handleFocus(profile.id)}
-                          onToggleExpand={() => handleToggleExpand(profile.id)}
-                          onVerificationComplete={(result) => handleVerificationComplete(profile.id, result)}
-                          onClaimChange={(claim) => handleClaimChange(profile.id, claim)}
-                        />
-                      );
-                    })}
+                      return previewProfiles.map((profile, index) => {
+                        const scanResult = aggregatedProfileToScanResult(profile);
+                        // Generate a consistent LENS score based on profile confidence
+                        const lensScore = profile.confidence || 65;
+                        const isLensEligible = eligibleIndices.includes(index);
+                        
+                        return (
+                          <div key={profile.id}>
+                            <AccountRow
+                              result={scanResult}
+                              jobId={jobId}
+                              lensScore={lensScore}
+                              isFocused={focusedRowId === profile.id}
+                              isExpanded={expandedRowId === profile.id}
+                              verificationResult={verificationResults[profile.id] || null}
+                              claimStatus={claimStatuses[profile.id] || null}
+                              isClaimLoading={false}
+                              onFocus={() => handleFocus(profile.id)}
+                              onToggleExpand={() => handleToggleExpand(profile.id)}
+                              onVerificationComplete={(result) => handleVerificationComplete(profile.id, result)}
+                              onClaimChange={(claim) => handleClaimChange(profile.id, claim)}
+                            />
+                            {/* Inline LENS verification for eligible profiles */}
+                            <div className="px-4 pb-2">
+                              <InlineLensVerification
+                                profileId={profile.id}
+                                platform={profile.platform}
+                                username={profile.username}
+                                url={profile.url}
+                                scanId={jobId}
+                                isEligible={isLensEligible}
+                                resultIndex={index}
+                              />
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
                     
                     {/* Lock Divider - shown after the 10th result */}
                     {hiddenCount > 0 && (
@@ -743,10 +762,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               totalCount={foundProfiles.length}
             />
 
-            {/* ===== LENS VERIFICATION PREVIEW ===== */}
-            {foundProfiles.length > 0 && (
-              <LensPreviewCard profiles={foundProfiles} scanId={jobId} />
-            )}
+            {/* LENS Verification is now inline within AccountRow results */}
 
             {/* ===== CONNECTIONS PREVIEW (Real interactive graph preview) ===== */}
             {totalConnections > 1 && (

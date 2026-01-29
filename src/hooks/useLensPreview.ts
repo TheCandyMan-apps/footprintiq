@@ -17,11 +17,13 @@ export interface UseLensPreviewReturn {
   isLoading: boolean;
   isVerifying: boolean;
   previewResult: LensPreviewResult | null;
+  /** The ID of the profile that was verified (to show result on correct row) */
+  verifiedProfileId: string | null;
   verifyProfile: (profile: {
     id: string;
     platform: string;
-    username: string;
-    url?: string;
+    username?: string;
+    url?: string | null;
     scanId: string;
   }) => Promise<LensPreviewResult | null>;
   checkPreviewStatus: () => Promise<void>;
@@ -36,6 +38,7 @@ export function useLensPreview(): UseLensPreviewReturn {
   const [isLoading, setIsLoading] = useState(true);
   const [isVerifying, setIsVerifying] = useState(false);
   const [previewResult, setPreviewResult] = useState<LensPreviewResult | null>(null);
+  const [verifiedProfileId, setVerifiedProfileId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Check if user has already used their free preview
@@ -140,6 +143,7 @@ export function useLensPreview(): UseLensPreviewReturn {
       };
 
       setPreviewResult(result);
+      setVerifiedProfileId(profile.id);
       setHasUsedPreview(true);
 
       toast({
@@ -166,6 +170,7 @@ export function useLensPreview(): UseLensPreviewReturn {
     isLoading,
     isVerifying,
     previewResult,
+    verifiedProfileId,
     verifyProfile,
     checkPreviewStatus,
   };
