@@ -208,7 +208,7 @@ serve(async (req) => {
           .from("scans")
           .update({ 
             status: "failed", 
-            error_message: `n8n webhook returned ${n8nResponse.status}`,
+            analysis_error: `n8n webhook returned ${n8nResponse.status}`,
             completed_at: new Date().toISOString()
           })
           .eq("id", scan.id);
@@ -242,7 +242,7 @@ serve(async (req) => {
         .from("scans")
         .update({ 
           status: "failed", 
-          error_message: `n8n webhook unreachable: ${errMsg}`,
+          analysis_error: `n8n webhook unreachable: ${errMsg}`,
           completed_at: new Date().toISOString()
         })
         .eq("id", scan.id);
