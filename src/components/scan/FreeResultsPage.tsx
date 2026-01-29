@@ -59,7 +59,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -79,7 +79,36 @@ import { LensPreviewCard } from './LensPreviewCard';
 import { BlurredRiskGauge } from '@/components/results/BlurredRiskGauge';
 import { HiddenInsightsTeaser } from '@/components/results/HiddenInsightsTeaser';
 import { ScanDepthIndicator } from '@/components/results/ScanDepthIndicator';
-import { ContextualUpgradeCTA } from '@/components/results/ContextualUpgradeCTA';
+import { AccountRow } from './results-tabs/accounts/AccountRow';
+import { LensVerificationResult } from '@/hooks/useForensicVerification';
+
+// Number of full Pro-style results to show for Free users
+const FREE_PREVIEW_LIMIT = 10;
+
+/**
+ * Adapter: Convert AggregatedProfile to ScanResult format for AccountRow
+ * The ScanResult type has flexible meta field that AccountRow reads
+ */
+function aggregatedProfileToScanResult(profile: AggregatedProfile): ScanResult {
+  return {
+    id: profile.id,
+    site: profile.platform,
+    status: profile.status,
+    url: profile.url || '',
+    meta: {
+      username: profile.username || undefined,
+      display_name: profile.displayName || undefined,
+      bio: profile.bio || undefined,
+      avatar_url: profile.avatarUrl || undefined,
+      followers: profile.metadata.followers,
+      following: profile.metadata.following,
+      location: profile.metadata.location,
+      joined: profile.metadata.joined,
+      website: profile.metadata.website,
+    } as ScanResult['meta'],
+    evidence: [],
+  };
+}
 
 interface FreeResultsPageProps {
   jobId: string;
@@ -136,13 +165,36 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
   const totalProfiles = aggregated.counts.totalProfiles;
   const totalBreaches = aggregated.counts.totalBreaches;
   
-  // Filter to only 'found' profiles for display (limit to 3 for Free)
+  // Filter to only 'found' profiles for display (limit to FREE_PREVIEW_LIMIT for Free)
   const foundProfiles = aggregated.profiles.filter(p => p.status === 'found' || p.status === 'claimed');
-  const previewProfiles = foundProfiles.slice(0, 3);
-  const hiddenCount = Math.max(0, foundProfiles.length - 3);
+  const previewProfiles = foundProfiles.slice(0, FREE_PREVIEW_LIMIT);
+  const hiddenCount = Math.max(0, foundProfiles.length - FREE_PREVIEW_LIMIT);
   
   // Connections count for teaser display
   const totalConnections = foundProfiles.length;
+  
+  // State for AccountRow interactions
+  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
+  const [focusedRowId, setFocusedRowId] = useState<string | null>(null);
+  const [verificationResults, setVerificationResults] = useState<Record<string, LensVerificationResult>>({});
+  const [claimStatuses, setClaimStatuses] = useState<Record<string, 'me' | 'not_me' | null>>({});
+  
+  // Handler callbacks for AccountRow
+  const handleToggleExpand = useCallback((id: string) => {
+    setExpandedRowId(prev => prev === id ? null : id);
+  }, []);
+  
+  const handleFocus = useCallback((id: string) => {
+    setFocusedRowId(prev => prev === id ? null : id);
+  }, []);
+  
+  const handleVerificationComplete = useCallback((id: string, result: LensVerificationResult) => {
+    setVerificationResults(prev => ({ ...prev, [id]: result }));
+  }, []);
+  
+  const handleClaimChange = useCallback((id: string, claim: 'me' | 'not_me' | null) => {
+    setClaimStatuses(prev => ({ ...prev, [id]: claim }));
+  }, []);
 
   useEffect(() => {
     loadJob();
@@ -545,7 +597,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
             {/* ===== NEW: HIDDEN INSIGHTS TEASER (blurred AI summary) ===== */}
             <HiddenInsightsTeaser signalsCount={signalsFound} />
 
-            {/* ===== PUBLIC PROFILES FOUND (Enhanced with contextual CTAs) ===== */}
+            {/* ===== PUBLIC PROFILES FOUND (Pro-style AccountRow for first 10) ===== */}
             <Card className="overflow-hidden border-border/50">
               <CardContent className="p-4">
                 <div className="mb-4">
@@ -557,21 +609,65 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Multiple public sources indicate this identifier appears on public platforms.
+                    Viewing first {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} findings in full detail.
                   </p>
                 </div>
 
                 {previewProfiles.length > 0 ? (
-                  <div className="space-y-2">
-                    {previewProfiles.map((profile) => (
-                      <ProfilePreviewRow key={profile.id} profile={profile} />
-                    ))}
+                  <div className="space-y-0 border border-border/30 rounded-lg overflow-hidden">
+                    {/* Full Pro-style AccountRow for first 10 results */}
+                    {previewProfiles.map((profile, index) => {
+                      const scanResult = aggregatedProfileToScanResult(profile);
+                      // Generate a consistent LENS score based on profile confidence
+                      const lensScore = profile.confidence || 65;
+                      
+                      return (
+                        <AccountRow
+                          key={profile.id}
+                          result={scanResult}
+                          jobId={jobId}
+                          lensScore={lensScore}
+                          isFocused={focusedRowId === profile.id}
+                          isExpanded={expandedRowId === profile.id}
+                          verificationResult={verificationResults[profile.id] || null}
+                          claimStatus={claimStatuses[profile.id] || null}
+                          isClaimLoading={false}
+                          onFocus={() => handleFocus(profile.id)}
+                          onToggleExpand={() => handleToggleExpand(profile.id)}
+                          onVerificationComplete={(result) => handleVerificationComplete(profile.id, result)}
+                          onClaimChange={(claim) => handleClaimChange(profile.id, claim)}
+                        />
+                      );
+                    })}
                     
+                    {/* Lock Divider - shown after the 10th result */}
                     {hiddenCount > 0 && (
-                      <ContextualUpgradeCTA
-                        hiddenCount={hiddenCount}
-                        context="profiles"
-                      />
+                      <>
+                        <div className="flex items-center justify-center gap-2 py-3 px-4 bg-muted/30 border-t border-border/30">
+                          <Lock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground font-medium">
+                            You've seen {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} findings
+                          </span>
+                        </div>
+                        
+                        {/* Locked Results Block */}
+                        <div className="p-4 bg-muted/20 border-t border-border/30 text-center space-y-3">
+                          <p className="text-sm font-medium text-foreground">
+                            {hiddenCount} more finding{hiddenCount > 1 ? 's' : ''} available in Pro
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Unlock verification, risk analysis, and full metadata
+                          </p>
+                          <Button 
+                            onClick={handleUpgradeClick}
+                            className="gap-2"
+                          >
+                            <Lock className="h-4 w-4" />
+                            Unlock Pro
+                            <ArrowRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </>
                     )}
                   </div>
                 ) : (
