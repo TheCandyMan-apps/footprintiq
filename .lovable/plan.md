@@ -47,35 +47,15 @@ Update the `n8n-scan-trigger` edge function to accept email, phone, and domain s
 - ✅ Added positive "Good news — no breaches found" messaging for email scans
 - ✅ Shows scan-type-aware empty states instead of generic "No results" text
 
-## ⚠️ PENDING: n8n Workflow Update (External)
+## ✅ COMPLETED: n8n Workflow Update (External)
 
-**Issue Identified:** The n8n workflow does NOT respect the `scanType` field and runs all username providers (Sherlock, GoSearch, Maigret) regardless of scan type.
+**Fix Applied:** The n8n workflow now implements conditional logic based on the `scanType` field:
 
-**Evidence from logs:**
-```
-🔍 Run Sherlock no results array found. Full structure: {"error":"Bad request","details":"Missing username"}
-🔍 Run GoSearch no results array found. Full structure: {"error":"Bad request","details":"Missing username"}
-🔍 Run Maigret no results array found. Full structure: {"error":"Bad request","details":"Missing username"}
-🔍 Run Holehe found results at firstItem.results (0 findings)
-```
-
-**Required n8n Workflow Fix:**
-The n8n workflow needs conditional logic to check the `scanType` field from the trigger payload:
-
-```
-IF scanType === 'email':
-  - Run ONLY: holehe, breach_check providers
-  - SKIP: sherlock, gosearch, maigret, whatsmyname
-  
-IF scanType === 'phone':
-  - Run ONLY: phoneinfoga
-  - SKIP: all username tools
-  
-IF scanType === 'username' (default):
-  - Run: sherlock, gosearch, maigret, holehe, whatsmyname
-```
-
-**Impact:** Email scans currently "work" (holehe runs and returns results), but username tools fail with "Missing username" errors, causing noisy logs and wasted Cloud Run worker calls.
+- **Switch node** routes scans based on `scanType` parameter
+- **Email scans** (`scanType === 'email'`) run only Holehe provider
+- **Username scans** (`scanType !== 'email'`) run all four providers (Sherlock, GoSearch, Maigret, Holehe)
+- **Env Switch and Configuration nodes** updated to pass through `scanType` parameter
+- **Merge node** adjusted to handle single input for email scans
 
 ## Testing Checklist
 
@@ -83,7 +63,7 @@ IF scanType === 'username' (default):
 - [x] n8n webhook accepts email scan payload
 - [x] Holehe runs and returns results for email scans
 - [x] Empty email scan shows positive "No breaches found" message
-- [ ] n8n workflow conditionally skips username providers for email scans (PENDING)
+- [x] n8n workflow conditionally skips username providers for email scans
 - [ ] Phone scan routing (if applicable)
 
 ## Files Modified
