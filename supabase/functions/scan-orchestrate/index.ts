@@ -1986,14 +1986,14 @@ serve(async (req) => {
       // Ensure scan is marked as error, not left pending
       if (scanId) {
         try {
-          const { error: statusError } = await supabaseService
-            .from('scans')
-            .update({
-              status: 'error',
-              completed_at: new Date().toISOString(),
-              error_message: finalizationError instanceof Error ? finalizationError.message : 'Finalization failed'
-            } as any)
-            .eq('id', scanId);
+        const { error: statusError } = await supabaseService
+          .from('scans')
+          .update({
+            status: 'error',
+            completed_at: new Date().toISOString(),
+            analysis_error: finalizationError instanceof Error ? finalizationError.message : 'Finalization failed'
+          })
+          .eq('id', scanId);
           
           if (statusError) {
             console.error('[orchestrate] CRITICAL: Failed to update scan status to error:', statusError);
