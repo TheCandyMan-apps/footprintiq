@@ -20,7 +20,8 @@ const detectBreachFromResult = (r: any): boolean => {
   // Skip provider health findings
   if (isProviderHealthFinding(r)) return false;
   
-  const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised', 'exposure'];
+  // Keywords match resultsAggregator.ts isExposureFinding() for consistency
+  const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised', 'exposure', 'paste', 'pastebin', 'dehashed'];
   const kind = (r?.kind || '').toString().toLowerCase();
   const provider = (r?.provider || '').toString().toLowerCase();
   const site = (r?.site || '').toString().toLowerCase();

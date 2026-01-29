@@ -143,15 +143,17 @@ export function useScanResultsData(jobId: string) {
   }, [results]);
 
   // Filter breach-related results (excluding provider health)
+  // Keywords match resultsAggregator.ts isExposureFinding() for consistency
   const breachResults = useMemo(() => {
-    const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised', 'exposure'];
+    const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised', 'exposure', 'paste', 'pastebin', 'dehashed'];
     return (results as any[]).filter(r => {
       if (isProviderHealthFinding(r)) return false;
       const kind = (r.kind || '').toLowerCase();
       const provider = (r.provider || '').toLowerCase();
       const site = (r.site || '').toLowerCase();
+      const metaStr = JSON.stringify(r.meta || {}).toLowerCase();
       return breachKeywords.some(k => 
-        kind.includes(k) || provider.includes(k) || site.includes(k)
+        kind.includes(k) || provider.includes(k) || site.includes(k) || metaStr.includes(k)
       );
     });
   }, [results]);
