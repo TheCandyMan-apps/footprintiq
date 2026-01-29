@@ -1,76 +1,111 @@
 
-# Fix Email Scan "Scan Not Found" Error
+# Plan: Transform Entity Graph to Use Mind Map Visualization
 
-## Problem Summary
+## Summary
+Replace the current Entity Graph page (`/graph`) with a cross-scan Mind Map visualization that matches the style and behavior of the Connections/Mind Map component used in individual scan results.
 
-Email scans from the Email Breach Check page are failing with "Scan Not Found" because:
+---
 
-1. The `ScanProgress` component routes **all scans** to the `n8n-scan-trigger` edge function
-2. That edge function was built only for **username scans** and strictly requires a `username` field
-3. Email-only scans don't have a username, causing a 400 error before the scan record is created
-4. Users are redirected to a results page for a scan that doesn't exist
+## What Changes
 
-## Solution
+### Current Behavior
+- **Entity Graph button** navigates to `/graph`, which displays a Cytoscape-based network of `entity_nodes` and `entity_edges` tables
+- Uses rectangular node shapes, cose layout, and entity-type-based coloring
+- Data comes from aggregated cross-scan entity tables
 
-Update the `n8n-scan-trigger` edge function to accept email, phone, and domain scans in addition to username scans. This is the cleanest fix because:
+### New Behavior
+- **Entity Graph button** will navigate to a page with Mind Map-style visualization
+- Radial/sunburst layout with central root node and category-based "legs"
+- Category grouping with deterministic color palette
+- Confidence signals, reasoning chips, and profile inspector panel
+- Same visual language as the scan-specific Connections tab
 
-- It keeps all scan routing through a single function
-- It maintains the n8n async workflow benefits (timeout resilience)
-- It avoids splitting routing logic across multiple places
+---
 
-## ✅ COMPLETED: Technical Changes
+## Implementation Steps
 
-### 1. Updated `n8n-scan-trigger` Edge Function
+### 1. Create Aggregated Data Fetcher
+Create a new hook `useAggregatedMindMapData` that:
+- Fetches all `findings` and `social_profiles` for the current user across all scans
+- Deduplicates by URL (same logic as `MindMapGraph`)
+- Returns data in the same `ScanResult` format expected by `MindMapGraph`
 
-**File:** `supabase/functions/n8n-scan-trigger/index.ts`
+### 2. Update Entity Graph Page
+Modify `src/pages/Graph.tsx` to:
+- Import and use `MindMapGraph` and `MindMapInspector` components
+- Add view mode toggles (Category / All), connect-by controls
+- Replace Cytoscape initialization with the Mind Map component
+- Keep the header, toolbar, and export functionality
 
-**Changes Made:**
-- ✅ Replaced strict `username` validation with scan-type-aware validation
-- ✅ Accepts `email`, `phone`, and `domain` as alternative target fields
-- ✅ Derives target value and column name based on scan type
-- ✅ Updates the scan record insert to use the correct column
-- ✅ Defines providers based on scan type (email → holehe, breach_check)
+### 3. Wire Inspector Panel
+Integrate `MindMapInspector` for:
+- Profile node selection (platform, confidence, reasoning)
+- Leg/category selection (group stats, member list)
+- Same interaction patterns as ConnectionsTab
 
-### 2. Updated Frontend Scan Type Detection
+### 4. Preserve Existing Functionality
+- JSON export (already exists)
+- Snapshot save (already exists)
+- Clear graph (reset aggregated data filter)
+- Zoom controls (handled by MindMapGraph)
 
-**File:** `src/components/ScanProgress.tsx`
+---
 
-**Changes Made:**
-- ✅ Added explicit email-only scan detection
-- ✅ Routes email-only scans with `scanType: 'email'` instead of `personal_details`
+## Technical Details
 
-### 3. Improved Empty Results Messaging
+### Data Flow
+```text
+User clicks "Entity Graph"
+       ↓
+/graph page mounts
+       ↓
+useAggregatedMindMapData hook fetches all user findings/profiles
+       ↓
+MindMapGraph renders with cross-scan data
+       ↓
+User interactions update MindMapInspector panel
+```
 
-**File:** `src/components/scan/FreeResultsPage.tsx`
+### Files to Modify
+| File | Change |
+|------|--------|
+| `src/pages/Graph.tsx` | Replace Cytoscape with MindMapGraph + MindMapInspector |
+| `src/hooks/useAggregatedMindMapData.ts` | **New file** - fetch cross-scan data |
 
-**Changes Made:**
-- ✅ Added positive "Good news — no breaches found" messaging for email scans
-- ✅ Shows scan-type-aware empty states instead of generic "No results" text
+### Files to Reuse (no changes)
+| File | Purpose |
+|------|---------|
+| `src/components/scan/results-tabs/connections/MindMapGraph.tsx` | Core visualization |
+| `src/components/scan/results-tabs/connections/MindMapInspector.tsx` | Side panel |
+| `src/hooks/usePlatformCatalog.ts` | Category mapping |
 
-## ✅ COMPLETED: n8n Workflow Update (External)
+---
 
-**Fix Applied:** The n8n workflow now implements conditional logic based on the `scanType` field:
+## UI Preview
 
-- **Switch node** routes scans based on `scanType` parameter
-- **Email scans** (`scanType === 'email'`) run only Holehe provider
-- **Username scans** (`scanType !== 'email'`) run all four providers (Sherlock, GoSearch, Maigret, Holehe)
-- **Env Switch and Configuration nodes** updated to pass through `scanType` parameter
-- **Merge node** adjusted to handle single input for email scans
+The new Entity Graph page will have:
+- **Header**: "Entity Graph" title + stats (X profiles, Y categories)
+- **Toolbar**: View mode toggle, Connect-by dropdown, export buttons
+- **Main area**: MindMapGraph with radial layout
+- **Right panel**: MindMapInspector (collapsible)
+
+Layout will be similar to the existing ConnectionsTab but scoped to all user data instead of a single scan.
+
+---
+
+## Edge Cases
+
+1. **No data**: Show empty state with "Run some scans to populate your graph"
+2. **Large datasets**: MindMapGraph already caps at 200 profiles with sorting by confidence
+3. **Performance**: Reuse existing memoization patterns from MindMapGraph
+
+---
 
 ## Testing Checklist
-
-- [x] Email scan creates scan record correctly
-- [x] n8n webhook accepts email scan payload
-- [x] Holehe runs and returns results for email scans
-- [x] Empty email scan shows positive "No breaches found" message
-- [x] n8n workflow conditionally skips username providers for email scans
-- [ ] Phone scan routing (if applicable)
-
-## Files Modified
-
-| File | Status | Changes |
-|------|--------|---------|
-| `supabase/functions/n8n-scan-trigger/index.ts` | ✅ Done | Multi-scan-type support, validation, payload construction |
-| `src/components/ScanProgress.tsx` | ✅ Done | Email-only scan type detection |
-| `src/components/scan/FreeResultsPage.tsx` | ✅ Done | Positive empty-state messaging for email scans |
-| n8n Workflow (external) | ⚠️ Pending | Add scanType conditional provider selection |
+- [ ] Verify Entity Graph button navigates to updated page
+- [ ] Confirm Mind Map renders with cross-scan data
+- [ ] Test category grouping and color consistency
+- [ ] Verify inspector panel opens on node/leg click
+- [ ] Test zoom controls work
+- [ ] Confirm JSON export still functions
+- [ ] Check empty state when no scans exist
