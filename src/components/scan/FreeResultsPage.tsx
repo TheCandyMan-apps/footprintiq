@@ -80,6 +80,7 @@ import { BlurredRiskGauge } from '@/components/results/BlurredRiskGauge';
 import { HiddenInsightsTeaser } from '@/components/results/HiddenInsightsTeaser';
 import { ScanDepthIndicator } from '@/components/results/ScanDepthIndicator';
 import { AccountRow } from './results-tabs/accounts/AccountRow';
+import { ConnectionsPreviewGraph } from './results-tabs/connections/ConnectionsPreviewGraph';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 
 // Number of full Pro-style results to show for Free users
@@ -746,65 +747,29 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
               <LensPreviewCard profiles={foundProfiles} scanId={jobId} />
             )}
 
-            {/* ===== CONNECTIONS TEASER (Enhanced with blurred graph preview) ===== */}
+            {/* ===== CONNECTIONS PREVIEW (Real interactive graph preview) ===== */}
             {totalConnections > 1 && (
               <Card className="overflow-hidden border-border/50">
                 <CardContent className="p-4">
-                  {/* Enhanced teaser with visual graph placeholder */}
-                  <div className="relative rounded-lg bg-muted/20 border border-dashed border-border/50 overflow-hidden">
-                    {/* Blurred graph preview placeholder */}
-                    <div 
-                      className="h-32 flex items-center justify-center select-none pointer-events-none"
-                      style={{ filter: 'blur(4px)' }}
-                      aria-hidden="true"
-                    >
-                      {/* Simulated node positions for visual effect */}
-                      <div className="relative w-full h-full">
-                        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-primary/40" />
-                        <div className="absolute top-4 left-8 w-6 h-6 rounded-full bg-blue-400/40" />
-                        <div className="absolute top-4 right-12 w-6 h-6 rounded-full bg-emerald-400/40" />
-                        <div className="absolute bottom-4 left-12 w-5 h-5 rounded-full bg-amber-400/40" />
-                        <div className="absolute bottom-6 right-8 w-5 h-5 rounded-full bg-purple-400/40" />
-                        <div className="absolute top-1/3 left-1/4 w-4 h-4 rounded-full bg-rose-400/40" />
-                        {/* Connection lines */}
-                        <svg className="absolute inset-0 w-full h-full opacity-30">
-                          <line x1="50%" y1="50%" x2="15%" y2="20%" stroke="currentColor" strokeWidth="1" />
-                          <line x1="50%" y1="50%" x2="80%" y2="15%" stroke="currentColor" strokeWidth="1" />
-                          <line x1="50%" y1="50%" x2="20%" y2="75%" stroke="currentColor" strokeWidth="1" />
-                          <line x1="50%" y1="50%" x2="85%" y2="70%" stroke="currentColor" strokeWidth="1" />
-                        </svg>
-                      </div>
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <User className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                      <h3 className="text-sm font-semibold">Connections graph</h3>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                        Preview
+                      </Badge>
                     </div>
-                    
-                    {/* Overlay */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-transparent via-background/60 to-background/90 p-6">
-                      {/* Lock icon */}
-                      <div className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center mb-3">
-                        <Lock className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      
-                      {/* Title */}
-                      <h3 className="text-sm font-semibold text-foreground mb-1">
-                        Connections detected beyond the username
-                      </h3>
-                      
-                      {/* Body text */}
-                      <p className="text-xs text-muted-foreground text-center mb-3 max-w-xs">
-                        Some profiles share identifiers that aren't immediately visible.
-                      </p>
-                      
-                      {/* CTA Button */}
-                      <Button 
-                        variant="default"
-                        size="sm" 
-                        className="h-8 px-4 gap-1.5"
-                        onClick={handleUpgradeClick}
-                      >
-                        Unlock Pro to view connections
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      See how profiles connect across platforms.
+                    </p>
                   </div>
+                  
+                  {/* Real graph preview with limited nodes */}
+                  <ConnectionsPreviewGraph
+                    results={displayResults}
+                    username={username}
+                    onUpgradeClick={handleUpgradeClick}
+                  />
                 </CardContent>
               </Card>
             )}
