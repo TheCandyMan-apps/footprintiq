@@ -179,8 +179,20 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         const maxPollAttempts = 60; // 2 minutes max polling
         let scanComplete = false;
         
-        // Support legacy + n8n variants
-        const terminalStatuses = ['finished', 'error', 'cancelled', 'partial', 'completed', 'completed_partial', 'failed', 'failed_timeout', 'not_configured'];
+        // Support legacy + async variants
+        // IMPORTANT: include `completed_empty` so scans with zero findings don't hang on the progress UI.
+        const terminalStatuses = [
+          'finished',
+          'error',
+          'cancelled',
+          'partial',
+          'completed',
+          'completed_partial',
+          'completed_empty',
+          'failed',
+          'failed_timeout',
+          'not_configured',
+        ];
         
         while (pollAttempts < maxPollAttempts && isMounted && !scanComplete) {
           await new Promise(resolve => setTimeout(resolve, 2000));
