@@ -1,111 +1,100 @@
 
-# Plan: Transform Entity Graph to Use Mind Map Visualization
+# Plan: Add Fallback Polling to AdvancedResultsPage
 
 ## Summary
-Replace the current Entity Graph page (`/graph`) with a cross-scan Mind Map visualization that matches the style and behavior of the Connections/Mind Map component used in individual scan results.
+Add a 5-second fallback polling mechanism to `AdvancedResultsPage.tsx` to ensure the UI correctly detects scan completion even when Supabase realtime events are missed.
 
 ---
 
-## What Changes
-
-### Current Behavior
-- **Entity Graph button** navigates to `/graph`, which displays a Cytoscape-based network of `entity_nodes` and `entity_edges` tables
-- Uses rectangular node shapes, cose layout, and entity-type-based coloring
-- Data comes from aggregated cross-scan entity tables
-
-### New Behavior
-- **Entity Graph button** will navigate to a page with Mind Map-style visualization
-- Radial/sunburst layout with central root node and category-based "legs"
-- Category grouping with deterministic color palette
-- Confidence signals, reasoning chips, and profile inspector panel
-- Same visual language as the scan-specific Connections tab
+## Problem
+The `AdvancedResultsPage` component (used by Pro/Business/Admin users) relies solely on Supabase realtime subscriptions to detect scan status changes. If the realtime event is missed (race condition, network hiccup, or subscription timing), the UI remains stuck showing "Scanning..." even after the backend has marked the scan as complete.
 
 ---
 
-## Implementation Steps
+## Solution
+Port the fallback polling pattern from `FreeResultsPage.tsx` (lines 268-286) to `AdvancedResultsPage.tsx`. This pattern:
+1. Polls the `scans` table every 5 seconds while scan is active
+2. Stops polling when a terminal status is detected
+3. Triggers a results refetch if scan completes with zero results
 
-### 1. Create Aggregated Data Fetcher
-Create a new hook `useAggregatedMindMapData` that:
-- Fetches all `findings` and `social_profiles` for the current user across all scans
-- Deduplicates by URL (same logic as `MindMapGraph`)
-- Returns data in the same `ScanResult` format expected by `MindMapGraph`
+---
 
-### 2. Update Entity Graph Page
-Modify `src/pages/Graph.tsx` to:
-- Import and use `MindMapGraph` and `MindMapInspector` components
-- Add view mode toggles (Category / All), connect-by controls
-- Replace Cytoscape initialization with the Mind Map component
-- Keep the header, toolbar, and export functionality
+## Changes
 
-### 3. Wire Inspector Panel
-Integrate `MindMapInspector` for:
-- Profile node selection (platform, confidence, reasoning)
-- Leg/category selection (group stats, member list)
-- Same interaction patterns as ConnectionsTab
+### File: `src/components/scan/AdvancedResultsPage.tsx`
 
-### 4. Preserve Existing Functionality
-- JSON export (already exists)
-- Snapshot save (already exists)
-- Clear graph (reset aggregated data filter)
-- Zoom controls (handled by MindMapGraph)
+**Add fallback polling useEffect (after line 189)**
+
+```typescript
+// Fallback poll for scan status (every 5 seconds)
+useEffect(() => {
+  if (!job || ['completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout', 'finished', 'error', 'cancelled'].includes(job.status)) {
+    return;
+  }
+  
+  const interval = setInterval(() => {
+    loadJob();
+  }, 5000);
+  
+  return () => clearInterval(interval);
+}, [job?.status]);
+```
+
+**Add results refetch on completion (requires accessing refetch from useScanResultsData)**
+
+```typescript
+// Reload results when scan completes but we have no results
+useEffect(() => {
+  if (job?.status && ['completed', 'completed_empty'].includes(job.status) && results.length === 0) {
+    // Trigger refetch from useScanResultsData hook
+  }
+}, [job?.status, results.length]);
+```
 
 ---
 
 ## Technical Details
 
+### Terminal Status List
+The polling will stop when status matches any of:
+- `completed`
+- `completed_partial`
+- `completed_empty`
+- `failed`
+- `failed_timeout`
+- `finished`
+- `error`
+- `cancelled`
+
 ### Data Flow
 ```text
-User clicks "Entity Graph"
-       ↓
-/graph page mounts
-       ↓
-useAggregatedMindMapData hook fetches all user findings/profiles
-       ↓
-MindMapGraph renders with cross-scan data
-       ↓
-User interactions update MindMapInspector panel
+Component mounts
+       |
+       v
+Realtime subscription active
+       |
+       +--> Event received --> Update job state --> Stop polling
+       |
+       +--> Event missed --> Fallback poll every 5s --> Detect terminal --> Stop polling
 ```
 
-### Files to Modify
+### Hook Modification
+The `useScanResultsData` hook uses `useRealtimeResults` internally, which already exports a `refetch` function. Need to verify this is exposed through `useScanResultsData` or add it.
+
+---
+
+## Files to Modify
+
 | File | Change |
 |------|--------|
-| `src/pages/Graph.tsx` | Replace Cytoscape with MindMapGraph + MindMapInspector |
-| `src/hooks/useAggregatedMindMapData.ts` | **New file** - fetch cross-scan data |
-
-### Files to Reuse (no changes)
-| File | Purpose |
-|------|---------|
-| `src/components/scan/results-tabs/connections/MindMapGraph.tsx` | Core visualization |
-| `src/components/scan/results-tabs/connections/MindMapInspector.tsx` | Side panel |
-| `src/hooks/usePlatformCatalog.ts` | Category mapping |
-
----
-
-## UI Preview
-
-The new Entity Graph page will have:
-- **Header**: "Entity Graph" title + stats (X profiles, Y categories)
-- **Toolbar**: View mode toggle, Connect-by dropdown, export buttons
-- **Main area**: MindMapGraph with radial layout
-- **Right panel**: MindMapInspector (collapsible)
-
-Layout will be similar to the existing ConnectionsTab but scoped to all user data instead of a single scan.
-
----
-
-## Edge Cases
-
-1. **No data**: Show empty state with "Run some scans to populate your graph"
-2. **Large datasets**: MindMapGraph already caps at 200 profiles with sorting by confidence
-3. **Performance**: Reuse existing memoization patterns from MindMapGraph
+| `src/components/scan/AdvancedResultsPage.tsx` | Add fallback polling useEffect |
+| `src/hooks/useScanResultsData.ts` | Expose `refetch` if not already |
 
 ---
 
 ## Testing Checklist
-- [ ] Verify Entity Graph button navigates to updated page
-- [ ] Confirm Mind Map renders with cross-scan data
-- [ ] Test category grouping and color consistency
-- [ ] Verify inspector panel opens on node/leg click
-- [ ] Test zoom controls work
-- [ ] Confirm JSON export still functions
-- [ ] Check empty state when no scans exist
+- [ ] Start a scan as Pro/Admin user
+- [ ] Verify UI updates to "Complete" within 5-10 seconds of n8n finishing
+- [ ] Verify results appear even if realtime event is missed
+- [ ] Confirm polling stops after scan reaches terminal status
+- [ ] Verify no memory leaks (interval cleared on unmount)
