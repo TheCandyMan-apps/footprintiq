@@ -70,7 +70,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useScanResultsData, ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { useRealtimeResults } from '@/hooks/useRealtimeResults';
 import { ScanProgress } from './ScanProgress';
-import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User, MapPin, Users, ExternalLink } from 'lucide-react';
+import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User, MapPin, Users, ExternalLink, Clock } from 'lucide-react';
 import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsAggregator';
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
@@ -81,6 +81,7 @@ import { HiddenInsightsTeaser } from '@/components/results/HiddenInsightsTeaser'
 import { ScanDepthIndicator } from '@/components/results/ScanDepthIndicator';
 import { AccountRow } from './results-tabs/accounts/AccountRow';
 import { ConnectionsPreviewGraph } from './results-tabs/connections/ConnectionsPreviewGraph';
+import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 
 // Number of full Pro-style results to show for Free users
@@ -766,6 +767,32 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                   
                   {/* Real graph preview with limited nodes */}
                   <ConnectionsPreviewGraph
+                    results={displayResults}
+                    username={username}
+                    onUpgradeClick={handleUpgradeClick}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
+            {/* ===== TIMELINE PREVIEW (Real data, read-only) ===== */}
+            {foundProfiles.length > 0 && (
+              <Card className="overflow-hidden border-border/50">
+                <CardContent className="p-4">
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                      <h3 className="text-sm font-semibold">Exposure timeline</h3>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                        Preview
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      When this identity appeared across the web.
+                    </p>
+                  </div>
+                  
+                  <TimelinePreview
                     results={displayResults}
                     username={username}
                     onUpgradeClick={handleUpgradeClick}
