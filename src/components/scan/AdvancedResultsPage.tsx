@@ -85,7 +85,8 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
     tabCounts, 
     hasGeoData, 
     geoLocations, 
-    breachResults 
+    breachResults,
+    refetch: refetchResults
   } = useScanResultsData(jobId);
 
   // Calculate timeline event count for conditional visibility
@@ -187,6 +188,28 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
       if (progressChannelRef.current) supabase.removeChannel(progressChannelRef.current);
     };
   }, [jobId]);
+
+  // Fallback poll for scan status (every 5 seconds) in case realtime events are missed
+  const terminalStatuses = ['completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout', 'finished', 'error', 'cancelled'];
+  
+  useEffect(() => {
+    if (!job || terminalStatuses.includes(job.status)) {
+      return;
+    }
+    
+    const interval = setInterval(() => {
+      loadJob();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [job?.status]);
+
+  // Reload results when scan completes but we have no results (handles missed realtime events)
+  useEffect(() => {
+    if (job?.status && ['completed', 'completed_empty', 'completed_partial'].includes(job.status) && results.length === 0) {
+      refetchResults();
+    }
+  }, [job?.status, results.length, refetchResults]);
 
   const loadJob = async () => {
     try {
