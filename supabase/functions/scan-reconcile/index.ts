@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     const { data: stuckScans, error: scanError } = await supabase
       .from('scans')
       .select('id, workspace_id, scan_type, status, created_at, username, email, phone')
-      .eq('status', 'running')
+      .in('status', ['pending', 'running'])
       .lt('created_at', stuckThreshold.toISOString())
       .order('created_at', { ascending: true })
       .limit(100);
