@@ -18,101 +18,79 @@ Update the `n8n-scan-trigger` edge function to accept email, phone, and domain s
 - It maintains the n8n async workflow benefits (timeout resilience)
 - It avoids splitting routing logic across multiple places
 
-## Technical Changes
+## ✅ COMPLETED: Technical Changes
 
-### 1. Update `n8n-scan-trigger` Edge Function
+### 1. Updated `n8n-scan-trigger` Edge Function
 
 **File:** `supabase/functions/n8n-scan-trigger/index.ts`
 
-**Changes:**
-- Replace strict `username` validation with scan-type-aware validation
-- Accept `email`, `phone`, and `domain` as alternative target fields
-- Derive target value and column name based on scan type
-- Update the scan record insert to use the correct column
+**Changes Made:**
+- ✅ Replaced strict `username` validation with scan-type-aware validation
+- ✅ Accepts `email`, `phone`, and `domain` as alternative target fields
+- ✅ Derives target value and column name based on scan type
+- ✅ Updates the scan record insert to use the correct column
+- ✅ Defines providers based on scan type (email → holehe, breach_check)
 
-**Logic Flow:**
+### 2. Updated Frontend Scan Type Detection
+
+**File:** `src/components/ScanProgress.tsx`
+
+**Changes Made:**
+- ✅ Added explicit email-only scan detection
+- ✅ Routes email-only scans with `scanType: 'email'` instead of `personal_details`
+
+### 3. Improved Empty Results Messaging
+
+**File:** `src/components/scan/FreeResultsPage.tsx`
+
+**Changes Made:**
+- ✅ Added positive "Good news — no breaches found" messaging for email scans
+- ✅ Shows scan-type-aware empty states instead of generic "No results" text
+
+## ⚠️ PENDING: n8n Workflow Update (External)
+
+**Issue Identified:** The n8n workflow does NOT respect the `scanType` field and runs all username providers (Sherlock, GoSearch, Maigret) regardless of scan type.
+
+**Evidence from logs:**
 ```
-1. Parse request body for scanType, username, email, phone, etc.
-2. Determine the "target" value based on scan type:
-   - If scanType is 'email' → use email field
-   - If scanType is 'phone' → use phone field  
-   - If scanType is 'username' → use username field
-   - If scanType is 'personal_details' → use email/firstName as available
-3. Validate target is present and valid
-4. Create scan record with appropriate column populated
-5. Trigger n8n webhook with normalized payload
-```
-
-### 2. Update n8n Payload Construction
-
-Ensure the n8n webhook receives the correct target information regardless of scan type:
-
-```typescript
-const n8nPayload = {
-  scanId: scan.id,
-  scanType: scanType,
-  target: targetValue,  // The actual value being searched
-  username: scanType === 'username' ? targetValue : undefined,
-  email: scanType === 'email' ? targetValue : undefined,
-  // ... other fields
-};
-```
-
-### 3. Validation Updates
-
-Current strict username validation:
-```typescript
-// REMOVE: This only works for username scans
-if (!username || typeof username !== 'string') {
-  return bad(400, "Username must be a non-empty string");
-}
+🔍 Run Sherlock no results array found. Full structure: {"error":"Bad request","details":"Missing username"}
+🔍 Run GoSearch no results array found. Full structure: {"error":"Bad request","details":"Missing username"}
+🔍 Run Maigret no results array found. Full structure: {"error":"Bad request","details":"Missing username"}
+🔍 Run Holehe found results at firstItem.results (0 findings)
 ```
 
-Replace with scan-type-aware validation:
-```typescript
-// NEW: Validate based on scan type
-let targetValue: string | undefined;
-let targetColumn: string;
+**Required n8n Workflow Fix:**
+The n8n workflow needs conditional logic to check the `scanType` field from the trigger payload:
 
-switch (scanType) {
-  case 'email':
-    targetValue = body.email?.trim();
-    targetColumn = 'email';
-    break;
-  case 'phone':
-    targetValue = body.phone?.trim();
-    targetColumn = 'phone';
-    break;
-  case 'username':
-  default:
-    targetValue = body.username?.trim();
-    targetColumn = 'username';
-    break;
-}
-
-if (!targetValue || targetValue.length < 2) {
-  return bad(400, `${targetColumn} must be a non-empty string`);
-}
+```
+IF scanType === 'email':
+  - Run ONLY: holehe, breach_check providers
+  - SKIP: sherlock, gosearch, maigret, whatsmyname
+  
+IF scanType === 'phone':
+  - Run ONLY: phoneinfoga
+  - SKIP: all username tools
+  
+IF scanType === 'username' (default):
+  - Run: sherlock, gosearch, maigret, holehe, whatsmyname
 ```
 
-## Files to Modify
+**Impact:** Email scans currently "work" (holehe runs and returns results), but username tools fail with "Missing username" errors, causing noisy logs and wasted Cloud Run worker calls.
 
-| File | Changes |
-|------|---------|
-| `supabase/functions/n8n-scan-trigger/index.ts` | Add multi-scan-type support, update validation, fix payload construction |
+## Testing Checklist
 
-## Testing Plan
+- [x] Email scan creates scan record correctly
+- [x] n8n webhook accepts email scan payload
+- [x] Holehe runs and returns results for email scans
+- [x] Empty email scan shows positive "No breaches found" message
+- [ ] n8n workflow conditionally skips username providers for email scans (PENDING)
+- [ ] Phone scan routing (if applicable)
 
-1. Test email scan from Email Breach Check page
-2. Test username scan from Scanner page (ensure no regression)
-3. Test phone scan if applicable
-4. Verify scan records are created in database
-5. Verify n8n receives correct payloads
-6. Confirm results page loads properly
+## Files Modified
 
-## Alternative Considered
-
-Routing email scans to `scan-orchestrate` instead was considered but rejected because:
-- It would require maintaining two different scan paths in the frontend
-- The n8n workflow provides better timeout handling for OSINT tools
-- Unifying all scans through one trigger is cleaner long-term
+| File | Status | Changes |
+|------|--------|---------|
+| `supabase/functions/n8n-scan-trigger/index.ts` | ✅ Done | Multi-scan-type support, validation, payload construction |
+| `src/components/ScanProgress.tsx` | ✅ Done | Email-only scan type detection |
+| `src/components/scan/FreeResultsPage.tsx` | ✅ Done | Positive empty-state messaging for email scans |
+| n8n Workflow (external) | ⚠️ Pending | Add scanType conditional provider selection |

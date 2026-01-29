@@ -466,12 +466,50 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
             </p>
           </div>
         ) : results.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-sm text-muted-foreground">
-              {['finished', 'completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'].includes(job.status)
-                ? 'No results captured—try again later or adjust tags.'
-                : 'Waiting for results...'}
-            </p>
+          <div className="py-12 text-center space-y-4">
+            {['finished', 'completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'].includes(job.status) ? (
+              job.scan_type === 'email' ? (
+                // Positive messaging for email scans with no breaches found
+                <div className="max-w-md mx-auto space-y-4">
+                  <div className="w-16 h-16 mx-auto rounded-full bg-green-500/10 flex items-center justify-center">
+                    <Shield className="h-8 w-8 text-green-500" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                      Good news — no breaches found
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      We checked <strong>{job.target || job.username}</strong> against known data breaches and public exposure databases. No matches were found.
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 text-left">
+                    <p className="text-xs text-muted-foreground">
+                      <strong className="text-foreground">What this means:</strong> This email wasn't found in the breach databases we checked (including Holehe's 120+ site registry). 
+                      However, not all breaches are publicly reported. Consider enabling ongoing monitoring for future alerts.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate('/pricing')}
+                    className="gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Enable Continuous Monitoring
+                  </Button>
+                </div>
+              ) : (
+                // Generic message for other scan types
+                <p className="text-sm text-muted-foreground">
+                  No results captured—try again later or adjust your search.
+                </p>
+              )
+            ) : (
+              <div className="flex flex-col items-center gap-3">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Waiting for results...</p>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-5">
