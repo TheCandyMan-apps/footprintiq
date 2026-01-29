@@ -225,13 +225,14 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
             created_at: updatedScan.created_at,
             started_at: updatedScan.created_at,
             finished_at: updatedScan.completed_at || null,
-            error: updatedScan.error_message || null,
+            // Backward/forward compatible error column
+            error: updatedScan.analysis_error || updatedScan.error_message || null,
             all_sites: false,
             requested_by: updatedScan.user_id
           };
           setJob(mappedJob);
           
-          const terminalStatuses = ['finished', 'error', 'cancelled', 'partial', 'completed', 'completed_partial', 'failed', 'failed_timeout'];
+          const terminalStatuses = ['finished', 'error', 'cancelled', 'partial', 'completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'];
           if (terminalStatuses.includes(updatedScan.status) && jobChannelRef.current) {
             supabase.removeChannel(jobChannelRef.current);
             jobChannelRef.current = null;
@@ -266,7 +267,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
 
   // Fallback poll for scan status (every 5 seconds)
   useEffect(() => {
-    if (!job || ['completed', 'completed_partial', 'failed', 'failed_timeout'].includes(job.status)) {
+    if (!job || ['completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'].includes(job.status)) {
       return;
     }
     
@@ -279,7 +280,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
 
   // Reload results when scan completes but we have no results
   useEffect(() => {
-    if (job?.status === 'completed' && results.length === 0 && refetch) {
+    if (job?.status && ['completed', 'completed_empty'].includes(job.status) && results.length === 0 && refetch) {
       refetch();
     }
   }, [job?.status, results.length, refetch]);
@@ -467,7 +468,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
         ) : results.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-sm text-muted-foreground">
-              {['finished', 'completed', 'completed_partial', 'failed', 'failed_timeout'].includes(job.status)
+              {['finished', 'completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'].includes(job.status)
                 ? 'No results captured—try again later or adjust tags.'
                 : 'Waiting for results...'}
             </p>
