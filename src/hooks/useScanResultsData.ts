@@ -48,7 +48,7 @@ export interface TabCounts {
 }
 
 export function useScanResultsData(jobId: string) {
-  const { results, loading } = useRealtimeResults(jobId);
+  const { results, loading, refetch } = useRealtimeResults(jobId);
 
   // Group results by status - ensure proper typing
   type GroupedResults = { found: any[]; claimed: any[]; not_found: any[]; unknown: any[] };
@@ -167,5 +167,6 @@ export function useScanResultsData(jobId: string) {
     hasGeoData,
     geoLocations,
     breachResults,
+    refetch,
   };
 }
