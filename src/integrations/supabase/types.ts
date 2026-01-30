@@ -10019,6 +10019,14 @@ export type Database = {
         Args: { _amount: number; _description: string; _workspace_id: string }
         Returns: Json
       }
+      admin_grant_test_credits: {
+        Args: { _amount?: number; _workspace_id: string }
+        Returns: Json
+      }
+      admin_reset_scan_limits: {
+        Args: { _workspace_id: string }
+        Returns: Json
+      }
       can_access_support_message: {
         Args: { message_is_internal: boolean; message_ticket_id: string }
         Returns: boolean
