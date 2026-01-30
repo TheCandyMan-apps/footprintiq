@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { updateStreakOnScan } from "@/lib/updateStreakOnScan";
 import { UnifiedScanProgress } from "@/components/scan/UnifiedScanProgress";
+import { StepProgressUI } from "@/components/scan/StepProgressUI";
+import { useStepProgress } from "@/hooks/useStepProgress";
 import type { ScanFormData } from "./ScanForm";
 
 interface ScanProgressProps {
@@ -12,6 +14,11 @@ interface ScanProgressProps {
   subscriptionTier: string;
   isAdmin?: boolean;
 }
+
+// Determine if user is on Free tier (for step-based UI)
+const isFreeTier = (tier: string): boolean => {
+  return tier === 'free' || tier === '' || !tier;
+};
 
 // Terminal statuses that indicate scan completion
 const TERMINAL_STATUSES = [
@@ -32,6 +39,12 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   const [isFailed, setIsFailed] = useState(false);
   const [scanId, setScanId] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  // Determine if Free tier for step-based UI
+  const showStepProgress = isFreeTier(subscriptionTier) && !isAdmin;
+  
+  // Use step progress hook for Free tier
+  const stepProgress = useStepProgress(showStepProgress ? scanId : null);
   
   // Guards
   const scanStartedRef = useRef(false);
@@ -155,6 +168,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           scanId: preScanId,
           scanType,
           workspaceId,
+          tier: subscriptionTier || 'free',  // Pass tier for routing to correct n8n workflow
         };
         
         if (scanData.username?.trim()) requestBody.username = scanData.username.trim();
@@ -171,7 +185,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           requestBody.turnstile_token = scanData.turnstile_token;
         }
 
-        console.log('[ScanProgress] Invoking n8n-scan-trigger', { scanType, scanId: preScanId });
+        console.log('[ScanProgress] Invoking n8n-scan-trigger', { scanType, scanId: preScanId, tier: subscriptionTier });
 
         try {
           const invokeResult = await withTimeout(
@@ -277,15 +291,36 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
     };
   }, [scanId, handleCompletion]);
 
+  // Derive target username for display
+  const targetUsername = scanData.username?.trim() || scanData.email?.trim() || 'target';
+  
+  // Check if step progress indicates completion (for Free tier)
+  const stepComplete = stepProgress.isComplete || stepProgress.isFailed;
+  const effectiveComplete = isComplete || (showStepProgress && stepProgress.isComplete);
+  const effectiveFailed = isFailed || (showStepProgress && stepProgress.isFailed);
+
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-8">
       <div className="w-full max-w-xl">
-        <UnifiedScanProgress 
-          isComplete={isComplete} 
-          isFailed={isFailed} 
-        />
+        {showStepProgress && scanId ? (
+          <StepProgressUI
+            scanId={scanId}
+            username={targetUsername}
+            currentStep={stepProgress.currentStep}
+            totalSteps={stepProgress.totalSteps}
+            steps={stepProgress.steps}
+            percentComplete={stepProgress.percentComplete}
+            isComplete={effectiveComplete}
+            isFailed={effectiveFailed}
+          />
+        ) : (
+          <UnifiedScanProgress 
+            isComplete={effectiveComplete} 
+            isFailed={effectiveFailed} 
+          />
+        )}
         
-        {isFailed && (
+        {effectiveFailed && (
           <div className="mt-4 text-center">
             <button
               className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"

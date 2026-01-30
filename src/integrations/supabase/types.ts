@@ -7234,13 +7234,17 @@ export type Database = {
           created_at: string | null
           current_provider: string | null
           current_providers: string[] | null
+          current_step: number | null
           error: boolean | null
           findings_count: number | null
           id: string
           message: string | null
           scan_id: string
           status: string
+          step_description: string | null
+          step_title: string | null
           total_providers: number | null
+          total_steps: number | null
           updated_at: string | null
         }
         Insert: {
@@ -7248,13 +7252,17 @@ export type Database = {
           created_at?: string | null
           current_provider?: string | null
           current_providers?: string[] | null
+          current_step?: number | null
           error?: boolean | null
           findings_count?: number | null
           id?: string
           message?: string | null
           scan_id: string
           status: string
+          step_description?: string | null
+          step_title?: string | null
           total_providers?: number | null
+          total_steps?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -7262,13 +7270,17 @@ export type Database = {
           created_at?: string | null
           current_provider?: string | null
           current_providers?: string[] | null
+          current_step?: number | null
           error?: boolean | null
           findings_count?: number | null
           id?: string
           message?: string | null
           scan_id?: string
           status?: string
+          step_description?: string | null
+          step_title?: string | null
           total_providers?: number | null
+          total_steps?: number | null
           updated_at?: string | null
         }
         Relationships: [
