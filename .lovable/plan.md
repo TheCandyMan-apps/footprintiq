@@ -1,159 +1,194 @@
 
+# Fix Plan: n8n Free Tier Quick Scan Workflow
 
-# Integration Verification and Fixes
+## Issue Summary
 
-## Current Status
+The StepProgressUI displayed correctly for 1-2 minutes, confirming:
+- Tier routing works (Free → quick scan workflow)
+- UI component renders properly for Free users
+- Webhook trigger was received by n8n
 
-The Free Tier Quick Scan implementation is complete, with the n8n workflow created and MCP access enabled. However, there are **two configuration issues** that need to be resolved before the system will work end-to-end.
+But then it reverted because the n8n workflow **silently failed** after the webhook trigger. No progress updates were ever sent back.
 
----
+## Root Cause Analysis
 
-## Issue 1: Authorization Header Mismatch
+The workflow has **three critical bugs** preventing it from completing:
 
-### Problem
-The n8n workflow progress nodes send the callback token using the `Authorization` header:
+### Bug 1: Data Context Lost After WhatsMyName Request
+
+The workflow uses `$json` to reference webhook data throughout. But after the "Run WhatsMyName" HTTP request executes, `$json` gets **overwritten** with the WhatsMyName response.
+
+**Before WhatsMyName:**
 ```
-Authorization: {{ $json.callbackToken }}
-```
-
-But the `n8n-scan-progress` edge function expects the `x-callback-token` header:
-```typescript
-const callbackToken = req.headers.get('x-callback-token');
-```
-
-### Solution Options
-
-**Option A (Recommended): Update the n8n workflow**
-Change all progress nodes to use `x-callback-token` header instead of `Authorization`.
-
-For each HTTP Request node (Progress: Checking reputation, Progress: Searching platforms, etc.):
-- Change header from `Authorization` → `x-callback-token`
-- Value remains: `={{ $json.callbackToken }}`
-
-**Option B: Update the edge function**
-Modify `n8n-scan-progress` to check both headers:
-```typescript
-const callbackToken = 
-  req.headers.get('x-callback-token') || 
-  req.headers.get('Authorization')?.replace('Bearer ', '');
+$json = { scanId, username, progressWebhookUrl, callbackToken, workerToken, ... }
 ```
 
-I recommend **Option A** (updating n8n) because:
-- It's consistent with the existing Unified OSINT workflow
-- No code deployment required for header consistency
-- The `Authorization` header has semantic meaning in HTTP that doesn't match this use case
-
----
-
-## Issue 2: Worker URL Configuration
-
-### Problem
-The workflow has a placeholder value for the OSINT Worker URL:
+**After WhatsMyName:**
 ```
-"value":"<__PLACEHOLDER_VALUE__OSINT Worker API URL__>"
+$json = { sites: [...], status: "success", ... }  // WhatsMyName response
 ```
 
-### Solution
-Update the "Workflow Configuration" Set node in n8n to use the actual worker URL:
-```
-https://osint-multitool-worker-iikvulknua-ew.a.run.app
-```
+All subsequent progress nodes fail because:
+- `$json.progressWebhookUrl` → undefined
+- `$json.scanId` → undefined
+- `$json.callbackToken` → undefined
 
-This is the same URL used by the Unified OSINT workflow.
+### Bug 2: Missing Authorization on Worker Request
 
----
-
-## Verification Checklist
-
-Once the fixes are applied, here's what should happen when a Free user runs a scan:
+The "Run WhatsMyName" node calls the OSINT worker but has **no Authorization header**:
 
 ```text
-1. User submits scan (Free tier)
-      │
-      ▼
-2. ScanProgress passes tier='free' to edge function
-      │
-      ▼
-3. n8n-scan-trigger routes to N8N_FREE_SCAN_WEBHOOK_URL
-      │
-      ▼
-4. n8n Quick Scan workflow:
-   ├── Step 1: POST progress (reputation_check)
-   ├── Step 2: POST progress (platform_search)
-   ├── Call WhatsMyName via worker
-   ├── Step 3: POST progress (cross_reference)
-   ├── Step 4: POST progress (entity_mapping)
-   ├── Step 5: POST progress (georeferencing)
-   ├── Step 6: POST progress (timeline)
-   ├── POST results to n8n-scan-results
-   └── POST final complete status
-      │
-      ▼
-5. Frontend receives step_update broadcasts
-      │
-      ▼
-6. StepProgressUI shows checklist with checkmarks
-      │
-      ▼
-7. User sees engaging 6-step progress in ~10 seconds
+Current Configuration:
+┌──────────────────────────────────┐
+│ Run WhatsMyName                  │
+│ URL: {{ workerUrl }}/scan        │
+│ Body: { tool, username }         │
+│ Headers: (none)          ← BUG   │
+└──────────────────────────────────┘
 ```
 
----
+The worker returns 401 Unauthorized, causing silent failure.
 
-## Next Steps
+### Bug 3: Expression Syntax Issues
 
-### Your action in n8n:
-
-1. **Open the "Free Tier Username Reputation and Platform Scan" workflow**
-
-2. **Update each HTTP Request progress node** to use correct header:
-   - Change `Authorization` → `x-callback-token`
-   - Nodes to update:
-     - Progress: Checking reputation
-     - Progress: Searching platforms
-     - Progress: Cross-referencing
-     - Progress: Mapping entities
-     - Progress: Georeferencing
-     - Progress: Building timeline
-     - Progress: Complete
-
-3. **Update the "Workflow Configuration" Set node**:
-   - Change `workerUrl` from placeholder to:
-     `https://osint-multitool-worker-iikvulknua-ew.a.run.app`
-
-4. **Add Authorization header to "Run WhatsMyName" node** (if not present):
-   - Header: `Authorization`
-   - Value: `Bearer {{ $json.workerToken }}`
-
-5. **Verify "Send Results" node** calls the correct endpoint:
-   - URL: `{{ $json.resultsWebhookUrl }}`
-   - Should resolve to: `https://byuzgvauaeldjqxlrjci.supabase.co/functions/v1/n8n-scan-results`
-
----
-
-## Alternative: Code Fix
-
-If you prefer, I can update the edge function to accept both header formats. This would be a quick code change:
-
-```typescript
-// Accept both x-callback-token and Authorization headers
-const callbackToken = 
-  req.headers.get('x-callback-token') || 
-  req.headers.get('Authorization');
+The JSON body uses partial expression syntax:
+```
+jsonBody: "={ \"scanId\": $json.scanId, ... }"
 ```
 
-Let me know which approach you'd prefer:
-- **Fix in n8n** (change headers to x-callback-token)
-- **Fix in code** (accept both Authorization and x-callback-token)
+Should be:
+```
+jsonBody: "={{ JSON.stringify({ scanId: $json.scanId, ... }) }}"
+```
+
+Or use n8n's structured JSON body mode instead of raw string.
 
 ---
 
-## Testing
+## Fix Instructions (Manual in n8n)
 
-After fixes are applied, test by:
-1. Sign out and sign in as a Free tier user (or use incognito)
-2. Run a username scan
-3. Verify the StepProgressUI shows the 6-step checklist
-4. Confirm scan completes in ~10-15 seconds
-5. Check results appear on FreeResultsPage
+### Step 1: Update Workflow Configuration Node
 
+Change the "Workflow Configuration" Set node to explicitly store ALL incoming data:
+
+| Assignment | Value |
+|------------|-------|
+| workerUrl | `https://osint-multitool-worker-iikvulknua-ew.a.run.app` |
+| scanId | `={{ $json.body.scanId }}` |
+| username | `={{ $json.body.username }}` |
+| progressWebhookUrl | `={{ $json.body.progressWebhookUrl }}` |
+| resultsWebhookUrl | `={{ $json.body.resultsWebhookUrl }}` |
+| callbackToken | `={{ $json.body.callbackToken }}` |
+| workerToken | `={{ $json.body.workerToken }}` |
+
+Keep `includeOtherFields: false` (we're explicitly mapping everything).
+
+### Step 2: Update Run WhatsMyName Node
+
+Add Authorization header:
+- Enable "Send Headers"
+- Add header: `Authorization` = `Bearer {{ $('Workflow Configuration').first().json.workerToken }}`
+- Update JSON body to use stored config:
+  ```json
+  {
+    "tool": "whatsmyname",
+    "username": "={{ $('Workflow Configuration').first().json.username }}"
+  }
+  ```
+
+### Step 3: Update All Progress Nodes After WhatsMyName
+
+For each of these nodes:
+- Progress: Cross-referencing
+- Progress: Mapping entities
+- Progress: Georeferencing
+- Progress: Building timeline
+- Send Results
+- Progress: Complete
+
+Change URL from:
+```
+={{ $json.progressWebhookUrl }}
+```
+To:
+```
+={{ $('Workflow Configuration').first().json.progressWebhookUrl }}
+```
+
+Change Authorization header from:
+```
+={{ $json.callbackToken }}
+```
+To:
+```
+={{ $('Workflow Configuration').first().json.callbackToken }}
+```
+
+Change JSON body scanId references from:
+```
+$json.scanId
+```
+To:
+```
+$('Workflow Configuration').first().json.scanId
+```
+
+### Step 4: Fix First Two Progress Nodes Too
+
+For consistency, update "Progress: Checking reputation" and "Progress: Searching platforms" to also use the stored config instead of `$json`:
+
+```
+URL: {{ $('Workflow Configuration').first().json.progressWebhookUrl }}
+Header: {{ $('Workflow Configuration').first().json.callbackToken }}
+Body.scanId: {{ $('Workflow Configuration').first().json.scanId }}
+```
+
+This ensures the entire workflow uses consistent data references.
+
+### Step 5: Verify Send Results Node
+
+Ensure it:
+- Uses `{{ $('Workflow Configuration').first().json.resultsWebhookUrl }}`
+- Sends `x-callback-token` header (or `Authorization`)
+- Includes WhatsMyName results from `$json` (this is correct since it follows Run WhatsMyName)
+- Includes `scanId` from stored config
+
+---
+
+## Summary of Required n8n Changes
+
+| Node | Change Required |
+|------|-----------------|
+| **Workflow Configuration** | Add explicit assignments for scanId, username, progressWebhookUrl, resultsWebhookUrl, callbackToken, workerToken (from `$json.body`) |
+| **Run WhatsMyName** | Add `Authorization: Bearer {{ config.workerToken }}` header |
+| **Progress: Cross-referencing** | Change all references from `$json.*` to `$('Workflow Configuration').first().json.*` |
+| **Progress: Mapping entities** | Same as above |
+| **Progress: Georeferencing** | Same as above |
+| **Progress: Building timeline** | Same as above |
+| **Send Results** | Same as above |
+| **Progress: Complete** | Same as above |
+
+---
+
+## Verification
+
+After applying fixes, test by:
+
+1. Run a Free tier username scan in the preview
+2. Watch the StepProgressUI - should see checkmarks progressing 1 through 6
+3. Scan should complete in approximately 10-15 seconds
+4. Results should appear on FreeResultsPage
+
+You can also check the n8n execution history for the workflow to see if any nodes are failing.
+
+---
+
+## Why the UI Reverted
+
+The StepProgressUI showed for 1-2 minutes because:
+1. Initial state renders correctly (all steps pending, 0%)
+2. Polling every 1 second finds `current_step: 0` (no updates from n8n)
+3. User waited, eventually navigated away or the 3-minute safety timeout triggered
+4. On the results page, a different component renders (not ScanProgress)
+
+The UI itself is correct - the issue is purely in the n8n workflow not sending progress callbacks.
