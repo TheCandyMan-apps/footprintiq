@@ -6,6 +6,8 @@ import { ScanForm, type ScanFormData } from "@/components/ScanForm";
 import { ScanProgress } from "@/components/ScanProgress";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import { canRunScan } from "@/lib/billing/quotas";
 import type { User } from "@supabase/supabase-js";
 
 type Step = "form" | "scanning";
@@ -15,9 +17,9 @@ const ScanPage = () => {
   const [currentStep, setCurrentStep] = useState<Step>("form");
   const [scanData, setScanData] = useState<ScanFormData | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
-  const [scanCount, setScanCount] = useState<number>(0);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState<boolean>(false);
+  const { workspace } = useWorkspace();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -57,13 +59,8 @@ const ScanPage = () => {
         setIsAdmin(false);
       }
       
-      // Get scan count
-      const { count } = await supabase
-        .from("scans")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", session.user.id);
-      
-      setScanCount(count || 0);
+      // NOTE: Scan gating is evaluated via workspace monthly limits (UX-only).
+      // Server-side enforcement still occurs in backend functions and RLS.
     };
 
     initializeUser();
@@ -86,9 +83,24 @@ const ScanPage = () => {
      * DO NOT rely on this for security - it only improves UX by showing upgrade dialog.
      * Backend will reject unauthorized requests regardless of client state.
      */
-    if (!isAdmin && subscriptionTier === "free" && scanCount >= 1) {
-      setShowUpgradeDialog(true);
-      return;
+    if (!isAdmin) {
+      const quota = canRunScan(workspace ? {
+        plan: workspace.plan,
+        scans_used_monthly: workspace.scans_used_monthly ?? 0,
+        scan_limit_monthly: workspace.scan_limit_monthly ?? null,
+      } : null);
+
+      if (!quota.allowed) {
+        setShowUpgradeDialog(true);
+        if (quota.message) {
+          toast({
+            title: "Upgrade required",
+            description: quota.message,
+            variant: "destructive",
+          });
+        }
+        return;
+      }
     }
     
     setScanData(data);
