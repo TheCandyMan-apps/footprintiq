@@ -97,7 +97,11 @@ serve(async (req) => {
 
     if (status) {
       updateData.status = status;
-    } else if (!currentProgress) {
+    } else if (currentProgress?.status) {
+      // Preserve existing status when not explicitly provided
+      updateData.status = currentProgress.status;
+    } else {
+      // Default for new records
       updateData.status = 'running';
     }
 
