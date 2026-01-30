@@ -17,6 +17,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const n8nWebhookUrl = Deno.env.get("N8N_SCAN_WEBHOOK_URL");
+    const n8nFreeScanWebhookUrl = Deno.env.get("N8N_FREE_SCAN_WEBHOOK_URL");
     const workerUrl = Deno.env.get("OSINT_WORKER_URL");
     const workerToken = Deno.env.get("OSINT_WORKER_TOKEN");
 
@@ -64,8 +65,12 @@ serve(async (req) => {
       workspaceId, 
       scanType = "username", 
       mode = "lean", 
-      turnstile_token 
+      turnstile_token,
+      tier = "free"  // Accept tier parameter from frontend
     } = body;
+    
+    // Determine if this is a Free tier quick scan
+    const isFreeTierScan = tier === "free" && n8nFreeScanWebhookUrl;
 
     // ✅ TURNSTILE VERIFICATION for free tier users
     const turnstileError = await enforceTurnstile(req, body, user.id, corsHeaders);
@@ -186,45 +191,67 @@ serve(async (req) => {
 
     console.log(`[n8n-scan-trigger] Created scan record: ${scan.id}`);
 
-    // Define providers based on scan type
+    // Define providers based on scan type and tier
     let providers: string[];
-    switch (scanType) {
-      case 'email':
-        providers = ["holehe", "breach_check"]; // Email-specific providers
-        break;
-      case 'phone':
-        providers = ["phoneinfoga"]; // Phone-specific providers
-        break;
-      case 'domain':
-        providers = ["whois", "dns"]; // Domain-specific providers
-        break;
-      case 'username':
-      default:
-        providers = ["sherlock", "gosearch", "maigret", "holehe", "whatsmyname"];
-        break;
+    let totalSteps = 0;
+    
+    if (isFreeTierScan && scanType === 'username') {
+      // Free tier quick scan: only WhatsMyName, but we show 6 synthetic steps
+      providers = ["whatsmyname"];
+      totalSteps = 6; // Synthetic steps for engaging UX
+    } else {
+      switch (scanType) {
+        case 'email':
+          providers = ["holehe", "breach_check"]; // Email-specific providers
+          break;
+        case 'phone':
+          providers = ["phoneinfoga"]; // Phone-specific providers
+          break;
+        case 'domain':
+          providers = ["whois", "dns"]; // Domain-specific providers
+          break;
+        case 'username':
+        default:
+          providers = ["sherlock", "gosearch", "maigret", "holehe", "whatsmyname"];
+          break;
+      }
     }
 
     // Create initial scan_progress record so UI can track progress
     const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    
+    // Build initial progress record with step tracking for Free tier
+    const progressRecord: Record<string, unknown> = {
+      scan_id: scan.id,
+      status: "running",
+      total_providers: providers.length,
+      completed_providers: 0,
+      current_providers: providers,
+      findings_count: 0,
+      message: isFreeTierScan 
+        ? "Starting quick scan..." 
+        : `Starting scan with ${providers.length} providers...`,
+      error: false,
+      updated_at: new Date().toISOString(),
+    };
+    
+    // Add step tracking fields for Free tier scans
+    if (isFreeTierScan && totalSteps > 0) {
+      progressRecord.current_step = 0;
+      progressRecord.total_steps = totalSteps;
+      progressRecord.step_title = "Initializing scan...";
+      progressRecord.step_description = "Preparing to analyze your digital footprint...";
+    }
+    
     const { error: progressError } = await serviceClient.from("scan_progress").upsert(
-      {
-        scan_id: scan.id,
-        status: "running",
-        total_providers: providers.length,
-        completed_providers: 0,
-        current_providers: providers,
-        findings_count: 0,
-        message: `Starting scan with ${providers.length} providers...`,
-        error: false,
-        updated_at: new Date().toISOString(),
-      },
+      progressRecord,
       { onConflict: "scan_id" },
     );
 
     if (progressError) {
       console.error("[n8n-scan-trigger] Failed to create scan_progress:", progressError);
     } else {
-      console.log(`[n8n-scan-trigger] Created scan_progress for ${scan.id}`);
+      console.log(`[n8n-scan-trigger] Created scan_progress for ${scan.id} (Free tier: ${isFreeTierScan})`);
     }
 
     // Get callback token for n8n to post results back
@@ -245,13 +272,18 @@ serve(async (req) => {
       workspaceId: workspaceId,
       userId: user.id,
       mode,
+      tier,  // Pass tier to n8n for conditional workflow logic
       workerUrl: workerUrl || "",
       workerToken: workerToken || "",
       callbackToken: callbackToken || "",
       progressWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-progress`,
       resultsWebhookUrl: `${supabaseUrl}/functions/v1/n8n-scan-results`,
     };
+    
+    // Select webhook URL based on tier
+    const webhookUrl = isFreeTierScan ? n8nFreeScanWebhookUrl : n8nWebhookUrl;
 
+    console.log(`[n8n-scan-trigger] Tier: ${tier}, using ${isFreeTierScan ? 'FREE' : 'STANDARD'} workflow`);
     console.log(`[n8n-scan-trigger] Payload workerUrl: ${workerUrl ? "set" : "MISSING"}`);
     console.log(
       `[n8n-scan-trigger] Payload workerToken: ${workerToken ? `SET (${workerToken.length} chars)` : "MISSING"}`,
@@ -259,14 +291,14 @@ serve(async (req) => {
     console.log(`[n8n-scan-trigger] Payload callbackToken: ${callbackToken ? "set" : "MISSING"}`);
 
     // Fire n8n webhook - wait briefly to catch immediate failures
-    console.log(`[n8n-scan-trigger] Calling n8n webhook for scan ${scan.id}`);
+    console.log(`[n8n-scan-trigger] Calling n8n webhook for scan ${scan.id} (URL: ${webhookUrl ? 'configured' : 'MISSING'})`);
 
     // Use AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for initial connection
 
     try {
-      const n8nResponse = await fetch(n8nWebhookUrl, {
+      const n8nResponse = await fetch(webhookUrl!, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(n8nPayload),

@@ -48,7 +48,12 @@ serve(async (req) => {
       message, 
       completedProviders, 
       currentProviders,
-      findingsCount 
+      findingsCount,
+      // Step-based progress for Free tier UI
+      step,
+      totalSteps,
+      stepTitle,
+      stepDescription
     } = body;
 
     // Sanitize scanId - strip leading '=' from n8n expression artifacts
@@ -108,6 +113,21 @@ serve(async (req) => {
       updateData.findings_count = findingsCount;
     }
 
+    // Handle step-based progress for Free tier scans
+    if (typeof step === 'number') {
+      updateData.current_step = step;
+      console.log(`[n8n-scan-progress] Step update: ${step}/${totalSteps || 6}`);
+    }
+    if (typeof totalSteps === 'number') {
+      updateData.total_steps = totalSteps;
+    }
+    if (stepTitle) {
+      updateData.step_title = stepTitle;
+    }
+    if (stepDescription) {
+      updateData.step_description = stepDescription;
+    }
+
     // Preserve total_providers if it exists
     if (currentProgress?.total_providers) {
       updateData.total_providers = currentProgress.total_providers;
@@ -162,9 +182,28 @@ serve(async (req) => {
             status: status === 'started' ? 'loading' : status === 'completed' ? 'success' : status === 'failed' ? 'failed' : status,
             message: message || `${provider}: ${status}`,
             resultCount: findingsCount,
+            // Include step data for Free tier UI
+            step,
+            stepTitle,
+            stepDescription,
           },
         });
         console.log(`[n8n-scan-progress] Broadcast sent: ${provider} -> ${status}`);
+      }
+      
+      // Broadcast step update for Free tier UI (separate event)
+      if (typeof step === 'number' && step > 0) {
+        await channel.send({
+          type: 'broadcast',
+          event: 'step_update',
+          payload: {
+            step,
+            totalSteps: totalSteps || 6,
+            stepTitle,
+            stepDescription,
+          },
+        });
+        console.log(`[n8n-scan-progress] Step broadcast sent: step ${step}`);
       }
 
       // Broadcast scan completion if status is final
