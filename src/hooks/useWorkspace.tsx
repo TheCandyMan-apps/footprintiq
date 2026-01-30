@@ -14,6 +14,8 @@ type Workspace = {
   settings: any;
   created_at: string;
   updated_at: string;
+  scans_used_monthly?: number;
+  scan_limit_monthly?: number | null;
   free_any_scan_credits?: number; // Free-tier onboarding credit
 };
 
