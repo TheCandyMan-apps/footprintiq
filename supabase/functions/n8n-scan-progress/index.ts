@@ -19,9 +19,15 @@ serve(async (req) => {
   try {
     // Validate authentication token - accept both x-callback-token and Authorization headers
     // for compatibility with different n8n workflow configurations
-    const callbackToken = 
+    let callbackToken = 
       req.headers.get('x-callback-token') || 
       req.headers.get('Authorization');
+    
+    // Strip "Bearer " prefix if present for flexibility with different n8n configurations
+    if (callbackToken?.startsWith('Bearer ')) {
+      callbackToken = callbackToken.slice(7);
+    }
+    
     const expectedToken = Deno.env.get('N8N_CALLBACK_TOKEN');
     
     if (!expectedToken) {
@@ -33,6 +39,7 @@ serve(async (req) => {
     }
     
     if (!callbackToken || callbackToken !== expectedToken) {
+      console.error('[n8n-scan-progress] Token mismatch. Received:', callbackToken?.substring(0, 10) + '...');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
