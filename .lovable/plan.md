@@ -1,75 +1,134 @@
 
 
-# Investigation Plan: n8n Progress Callbacks Not Reaching Edge Functions
+# Fix: n8n Progress Updates Not Working
 
-## Current Status
+## Summary
+Progress updates from the n8n workflow to the `n8n-scan-progress` edge function are failing due to a database constraint violation. The edge function has a bug where it doesn't preserve the existing `status` field during updates, and the n8n Progress nodes may not be sending a `status` value.
 
-The Free tier scan (`cf6eb731-60fb-42f8-898c-768a308269ef` for `TestUser2026`) was triggered successfully:
-- `n8n-scan-trigger` logs confirm the workflow was called and accepted (HTTP 200)
-- `scan_progress` record exists with `current_step: 0`, `total_steps: 6`
-- But `n8n-scan-progress` and `n8n-scan-results` edge functions have **zero logs**
+## Root Cause Analysis
 
-This means n8n is not successfully calling back to the progress endpoint.
+### Database Constraint
+```
+null value in column "status" of relation "scan_progress" violates not-null constraint
+```
 
-## Possible Causes
+### Edge Function Logic Bug
+The current code in `n8n-scan-progress/index.ts` lines 98-102:
+```typescript
+if (status) {
+  updateData.status = status;
+} else if (!currentProgress) {
+  updateData.status = 'running';
+}
+// Problem: If status is NOT provided AND currentProgress EXISTS,
+// status is never set, but upsert replaces the entire row
+```
 
-1. **n8n Workflow Still Failing**: A node before or during progress updates is erroring
-2. **Incorrect Webhook URL**: The `progressWebhookUrl` in the Workflow Configuration node is empty or malformed
-3. **Network/Firewall**: n8n cannot reach the Supabase edge function URL
-4. **Header Issues**: Even with Bearer prefix fix, there may be other header problems
+The upsert with `onConflict: 'scan_id'` replaces the row, so any field not in `updateData` becomes NULL.
 
-## Next Steps
+## Solution
 
-### Option 1: Check n8n Execution History (Manual)
+### Technical Changes
 
-Please share screenshots of the "FootprintIQ - Quick Scan" workflow's latest execution showing:
-- The execution status (success/failed/running)
-- Which node is currently executing or failed
-- The output of the "Workflow Configuration" node (verify `progressWebhookUrl` is captured)
-- The input/output of any "Progress: Checking reputation" node
+**File: `supabase/functions/n8n-scan-progress/index.ts`**
 
-### Option 2: Add Enhanced Logging to Edge Function
+Update the status handling logic (lines 98-102) to always preserve or provide a status:
 
-I can update `n8n-scan-progress` to log ALL incoming requests, even invalid ones, to confirm if n8n is attempting to call it at all.
+```text
+BEFORE:
+if (status) {
+  updateData.status = status;
+} else if (!currentProgress) {
+  updateData.status = 'running';
+}
 
-### Option 3: Test Edge Function Directly
-
-I can simulate an n8n callback by calling `n8n-scan-progress` directly with a test payload to verify:
-- The endpoint is reachable
-- Token authentication works
-- Database updates succeed
-
-## Recommended Action
-
-**Option 3 is fastest** - let me test the edge function directly to confirm it's working, then we can narrow down whether the issue is in n8n.
-
-### Test Payload for `n8n-scan-progress`
-
-```json
-{
-  "scanId": "cf6eb731-60fb-42f8-898c-768a308269ef",
-  "step": 1,
-  "stepTitle": "Test Progress Update",
-  "stepDescription": "Verifying edge function connectivity",
-  "workspaceId": "aa9d6a0d-4e31-480d-bbdc-622301ad3ad0"
+AFTER:
+if (status) {
+  updateData.status = status;
+} else if (currentProgress?.status) {
+  // Preserve existing status when not explicitly provided
+  updateData.status = currentProgress.status;
+} else {
+  // Default for new records
+  updateData.status = 'running';
 }
 ```
 
-With the header:
+This ensures:
+1. If n8n sends a status → use it
+2. If updating an existing record → preserve the current status  
+3. If creating a new record → default to 'running'
+
+## Architecture Flow
+
+```text
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                          n8n Quick Scan Workflow                              │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────────┐    │
+│  │ Webhook Trigger │ ──▶ │ Workflow Config  │ ──▶ │ Run WhatsMyName     │    │
+│  │ (receives scan) │     │ (stores tokens)  │     │ (OSINT worker call) │    │
+│  └─────────────────┘     └──────────────────┘     └─────────────────────┘    │
+│                                                             │                 │
+│                                                             ▼                 │
+│  ┌───────────────────────────────────────────────────────────────────────┐   │
+│  │                    Progress HTTP Nodes (Steps 1-6)                    │   │
+│  │                                                                       │   │
+│  │  POST /n8n-scan-progress                                              │   │
+│  │  Headers: Authorization: Bearer {{ callbackToken }}                   │   │
+│  │  Body: { scanId, step, stepTitle, stepDescription }                   │   │
+│  │                                                                       │   │
+│  │  ✓ Authorization header now has Bearer prefix                        │   │
+│  │  ✗ Missing status field → Fixed in edge function                     │   │
+│  └───────────────────────────────────────────────────────────────────────┘   │
+│                                                             │                 │
+│                                                             ▼                 │
+│  ┌─────────────────────────────────────────────────────────────────────┐     │
+│  │                         Send Results                                 │     │
+│  │  POST /n8n-scan-results (final results + findings)                   │     │
+│  └─────────────────────────────────────────────────────────────────────┘     │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                        Edge Function: n8n-scan-progress                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  1. Validate x-callback-token or Authorization header                        │
+│  2. Parse scanId, step, stepTitle, stepDescription                           │
+│  3. Fetch current scan_progress record                                       │
+│  4. Build updateData with status fallback (THE FIX)                          │
+│  5. Upsert to scan_progress table                                            │
+│  6. Broadcast realtime update to frontend                                    │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              Frontend (ScanProgress)                          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                               │
+│  useStepProgress hook:                                                       │
+│  - Polls scan_progress every 1s                                              │
+│  - Listens for realtime broadcasts on scan_progress:${scanId}                │
+│  - Updates UI with step progress (1-6)                                       │
+│                                                                               │
+└──────────────────────────────────────────────────────────────────────────────┘
 ```
-Authorization: Bearer <N8N_CALLBACK_TOKEN>
-```
 
-## Expected Outcome
+## Testing Plan
 
-After testing:
-- If direct call works: Issue is in n8n workflow (needs workflow debugging)
-- If direct call fails: Issue is in edge function (needs code fix)
+After the fix is deployed:
+1. Trigger a new Free tier scan from the UI
+2. Verify `n8n-scan-progress` logs show successful updates without errors
+3. Confirm `scan_progress.current_step` increments from 1 to 6
+4. Validate the frontend progress UI updates in real-time
 
----
+## Risk Assessment
 
-**Approval of this plan** will:
-1. Directly test the `n8n-scan-progress` edge function using the actual callback token
-2. Verify database update works
-3. Provide clear next steps based on results
+- **Low Risk**: Single conditional logic change
+- **No Breaking Changes**: Existing behavior preserved when status is provided
+- **Backward Compatible**: n8n workflows don't need modification
 
