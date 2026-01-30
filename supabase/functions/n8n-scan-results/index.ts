@@ -100,13 +100,24 @@ serve(async (req) => {
     // Extract findings from multiple possible locations
     let findings = body.findings;
     if (!Array.isArray(findings) || findings.length === 0) {
-      // Try alternative locations
-      if (Array.isArray(body.json?.findings)) findings = body.json.findings;
-      else if (Array.isArray(body.data?.findings)) findings = body.data.findings;
-      else if (Array.isArray(body.results)) findings = body.results;
-      else if (Array.isArray(body.data?.results)) findings = body.data.results;
-      else if (Array.isArray(body.items)) findings = body.items;
-      else if (Array.isArray(body) && body[0]?.findings) findings = body[0].findings;
+      // Try alternative locations - ordered by most likely for n8n Quick Scan workflow
+      if (Array.isArray(body.results?.results)) {
+        // n8n Quick Scan sends: { results: { tool: "sherlock", results: [...] } }
+        findings = body.results.results;
+        console.log('[n8n-scan-results] Found findings in body.results.results');
+      } else if (Array.isArray(body.json?.findings)) {
+        findings = body.json.findings;
+      } else if (Array.isArray(body.data?.findings)) {
+        findings = body.data.findings;
+      } else if (Array.isArray(body.results)) {
+        findings = body.results;
+      } else if (Array.isArray(body.data?.results)) {
+        findings = body.data.results;
+      } else if (Array.isArray(body.items)) {
+        findings = body.items;
+      } else if (Array.isArray(body) && body[0]?.findings) {
+        findings = body[0].findings;
+      }
     }
 
     // Extract status and providerResults similarly
@@ -154,46 +165,61 @@ serve(async (req) => {
 
     // Process and store findings
     if (findings && Array.isArray(findings) && findings.length > 0) {
-      const findingsToInsert = findings.map((finding: Record<string, unknown>) => {
-        // Normalize kind - account.profile should become profile_presence
-        const normalizedKind = finding.kind === 'account.profile' ? 'profile_presence' : (finding.kind || 'profile_presence');
-        
-        // Build evidence array, only including non-empty values
-        const evidenceArray: Array<{key: string, value: string}> = [];
-        const urlValue = finding.url || finding.primary_url;
-        if (urlValue) evidenceArray.push({ key: 'url', value: String(urlValue) });
-        if (finding.site) evidenceArray.push({ key: 'site', value: String(finding.site) });
-        if (finding.username) evidenceArray.push({ key: 'username', value: String(finding.username) });
-        
-        // Append any additional evidence from n8n, filtering empty values
-        if (Array.isArray(finding.evidence)) {
-          for (const e of finding.evidence as Array<{key?: string, value?: unknown}>) {
-            if (e.key && e.value) {
-              evidenceArray.push({ key: String(e.key), value: String(e.value) });
+      const findingsToInsert = findings
+        // Filter out negative results (found === false)
+        .filter((finding: Record<string, unknown>) => finding.found !== false)
+        .map((finding: Record<string, unknown>) => {
+          // Normalize kind - account.profile should become profile_presence
+          const normalizedKind = finding.kind === 'account.profile' ? 'profile_presence' : (finding.kind || 'profile_presence');
+          
+          // Extract provider from meta or default to tool name or 'whatsmyname'
+          const provider = finding.provider || 
+            (finding.meta as Record<string, unknown>)?.provider || 
+            body.results?.tool ||  // n8n Quick Scan includes tool name
+            'whatsmyname';
+          
+          // Build evidence array, only including non-empty values
+          const evidenceArray: Array<{key: string, value: string}> = [];
+          const urlValue = finding.url || finding.primary_url;
+          if (urlValue) evidenceArray.push({ key: 'url', value: String(urlValue) });
+          if (finding.site) evidenceArray.push({ key: 'site', value: String(finding.site) });
+          if (finding.username || body.username) {
+            evidenceArray.push({ key: 'username', value: String(finding.username || body.username) });
+          }
+          
+          // Append any additional evidence from n8n, filtering empty values
+          if (Array.isArray(finding.evidence)) {
+            for (const e of finding.evidence as Array<{key?: string, value?: unknown}>) {
+              if (e.key && e.value) {
+                evidenceArray.push({ key: String(e.key), value: String(e.value) });
+              }
             }
           }
-        }
-        
-        return {
-          scan_id: scanId,
-          workspace_id: scan.workspace_id,
-          provider: finding.provider || (finding.meta as Record<string, unknown>)?.provider || 'n8n',
-          kind: normalizedKind,
-          severity: finding.severity || 'info',
-          confidence: normalizeConfidence(finding.confidence),
-          observed_at: new Date().toISOString(),
-          evidence: evidenceArray,
-          meta: {
-            ...(finding.meta as Record<string, unknown> || {}),
-            title: finding.title || finding.site || 'Unknown',
-            description: finding.description || `Profile found on ${finding.site || 'unknown platform'}`,
-            url: finding.url || finding.primary_url,
-            site: finding.site,
-            source: 'n8n',
-          },
-          created_at: new Date().toISOString(),
-        };
-      });
+          
+          // Determine severity based on NSFW flag
+          const severity = finding.nsfw ? 'warning' : (finding.severity || 'info');
+          
+          return {
+            scan_id: scanId,
+            workspace_id: scan.workspace_id,
+            provider: provider,
+            kind: normalizedKind,
+            severity: severity,
+            confidence: normalizeConfidence(finding.confidence),
+            observed_at: new Date().toISOString(),
+            evidence: evidenceArray,
+            meta: {
+              ...(finding.meta as Record<string, unknown> || {}),
+              title: finding.title || finding.site || 'Unknown',
+              description: finding.description || `Profile found on ${finding.site || 'unknown platform'}`,
+              url: finding.url || finding.primary_url,
+              site: finding.site,
+              nsfw: finding.nsfw || false,
+              source: 'n8n',
+            },
+            created_at: new Date().toISOString(),
+          };
+        });
 
       console.log(`[n8n-scan-results] Inserting ${findingsToInsert.length} findings`);
 
