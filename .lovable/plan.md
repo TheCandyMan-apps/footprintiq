@@ -1,194 +1,183 @@
 
-# Fix Plan: n8n Free Tier Quick Scan Workflow
+# Fix Plan: n8n Callback Token Authorization Issue
 
-## Issue Summary
+## Problem Identified
 
-The StepProgressUI displayed correctly for 1-2 minutes, confirming:
-- Tier routing works (Free → quick scan workflow)
-- UI component renders properly for Free users
-- Webhook trigger was received by n8n
+The n8n workflow has the correct structure, but there's a **token format mismatch** between what n8n sends and what the edge function expects.
 
-But then it reverted because the n8n workflow **silently failed** after the webhook trigger. No progress updates were ever sent back.
+### Evidence
+- Scan `c9c8b91f-edc6-4bc9-8424-2161bbc6b824` stuck at `current_step: 0`
+- **Zero scan_events** for this scan (no provider updates received)
+- **No logs** for `n8n-scan-progress` (n8n callbacks never reach the function OR they're rejected as 401)
 
-## Root Cause Analysis
+### Root Cause: Authorization Header Mismatch
 
-The workflow has **three critical bugs** preventing it from completing:
+The `n8n-scan-progress` edge function compares tokens using **exact string match**:
 
-### Bug 1: Data Context Lost After WhatsMyName Request
+```typescript
+const callbackToken = 
+  req.headers.get('x-callback-token') || 
+  req.headers.get('Authorization');
+const expectedToken = Deno.env.get('N8N_CALLBACK_TOKEN');
 
-The workflow uses `$json` to reference webhook data throughout. But after the "Run WhatsMyName" HTTP request executes, `$json` gets **overwritten** with the WhatsMyName response.
-
-**Before WhatsMyName:**
-```
-$json = { scanId, username, progressWebhookUrl, callbackToken, workerToken, ... }
-```
-
-**After WhatsMyName:**
-```
-$json = { sites: [...], status: "success", ... }  // WhatsMyName response
+if (callbackToken !== expectedToken) {
+  return 401 Unauthorized;
+}
 ```
 
-All subsequent progress nodes fail because:
-- `$json.progressWebhookUrl` → undefined
-- `$json.scanId` → undefined
-- `$json.callbackToken` → undefined
+If `N8N_CALLBACK_TOKEN = "my-secret-token"`:
+- n8n sends `Authorization: my-secret-token` → Matches
+- n8n sends `Authorization: Bearer my-secret-token` → Does NOT match
+- n8n sends `x-callback-token: Bearer my-secret-token` → Does NOT match
 
-### Bug 2: Missing Authorization on Worker Request
+---
 
-The "Run WhatsMyName" node calls the OSINT worker but has **no Authorization header**:
+## Solution Options
 
+### Option A: Update n8n Workflow (Recommended)
+In the n8n workflow, ensure the progress nodes send the callback token **without** "Bearer " prefix:
+
+**Current (likely incorrect):**
 ```text
-Current Configuration:
-┌──────────────────────────────────┐
-│ Run WhatsMyName                  │
-│ URL: {{ workerUrl }}/scan        │
-│ Body: { tool, username }         │
-│ Headers: (none)          ← BUG   │
-└──────────────────────────────────┘
+Header: Authorization = Bearer {{ $('Workflow Configuration').first().json.callbackToken }}
 ```
 
-The worker returns 401 Unauthorized, causing silent failure.
-
-### Bug 3: Expression Syntax Issues
-
-The JSON body uses partial expression syntax:
-```
-jsonBody: "={ \"scanId\": $json.scanId, ... }"
+**Correct:**
+```text
+Header: x-callback-token = {{ $('Workflow Configuration').first().json.callbackToken }}
 ```
 
-Should be:
-```
-jsonBody: "={{ JSON.stringify({ scanId: $json.scanId, ... }) }}"
+OR:
+```text
+Header: Authorization = {{ $('Workflow Configuration').first().json.callbackToken }}
 ```
 
-Or use n8n's structured JSON body mode instead of raw string.
+### Option B: Update Edge Function to Handle "Bearer " Prefix
+Modify the edge function to strip "Bearer " prefix before comparison:
+
+```typescript
+// In n8n-scan-progress/index.ts
+let callbackToken = 
+  req.headers.get('x-callback-token') || 
+  req.headers.get('Authorization');
+
+// Strip "Bearer " prefix if present
+if (callbackToken?.startsWith('Bearer ')) {
+  callbackToken = callbackToken.slice(7);
+}
+
+if (!callbackToken || callbackToken !== expectedToken) {
+  return 401;
+}
+```
+
+This is more flexible as it handles both formats.
 
 ---
 
-## Fix Instructions (Manual in n8n)
+## Recommended Approach
 
-### Step 1: Update Workflow Configuration Node
+**Implement Option B** - This is more robust because:
+1. It handles both `Authorization: Bearer <token>` and `Authorization: <token>`
+2. It also handles `x-callback-token: Bearer <token>` if accidentally configured
+3. It doesn't require changing the n8n workflow
 
-Change the "Workflow Configuration" Set node to explicitly store ALL incoming data:
+### Changes Required
 
-| Assignment | Value |
-|------------|-------|
-| workerUrl | `https://osint-multitool-worker-iikvulknua-ew.a.run.app` |
-| scanId | `={{ $json.body.scanId }}` |
-| username | `={{ $json.body.username }}` |
-| progressWebhookUrl | `={{ $json.body.progressWebhookUrl }}` |
-| resultsWebhookUrl | `={{ $json.body.resultsWebhookUrl }}` |
-| callbackToken | `={{ $json.body.callbackToken }}` |
-| workerToken | `={{ $json.body.workerToken }}` |
+**File: `supabase/functions/n8n-scan-progress/index.ts`**
 
-Keep `includeOtherFields: false` (we're explicitly mapping everything).
+Update lines 20-40 to handle Bearer prefix:
 
-### Step 2: Update Run WhatsMyName Node
+```typescript
+// Validate authentication token - accept both x-callback-token and Authorization headers
+// for compatibility with different n8n workflow configurations
+let callbackToken = 
+  req.headers.get('x-callback-token') || 
+  req.headers.get('Authorization');
 
-Add Authorization header:
-- Enable "Send Headers"
-- Add header: `Authorization` = `Bearer {{ $('Workflow Configuration').first().json.workerToken }}`
-- Update JSON body to use stored config:
-  ```json
-  {
-    "tool": "whatsmyname",
-    "username": "={{ $('Workflow Configuration').first().json.username }}"
-  }
-  ```
+// Strip "Bearer " prefix if present for flexibility
+if (callbackToken?.startsWith('Bearer ')) {
+  callbackToken = callbackToken.slice(7);
+}
 
-### Step 3: Update All Progress Nodes After WhatsMyName
+const expectedToken = Deno.env.get('N8N_CALLBACK_TOKEN');
 
-For each of these nodes:
-- Progress: Cross-referencing
-- Progress: Mapping entities
-- Progress: Georeferencing
-- Progress: Building timeline
-- Send Results
-- Progress: Complete
+if (!expectedToken) {
+  console.error('[n8n-scan-progress] N8N_CALLBACK_TOKEN not configured');
+  return new Response(JSON.stringify({ error: 'Server misconfiguration' }), {
+    status: 500,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 
-Change URL from:
+if (!callbackToken || callbackToken !== expectedToken) {
+  console.error('[n8n-scan-progress] Token mismatch. Received:', callbackToken?.substring(0, 10) + '...');
+  return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    status: 401,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
 ```
-={{ $json.progressWebhookUrl }}
-```
-To:
-```
-={{ $('Workflow Configuration').first().json.progressWebhookUrl }}
-```
-
-Change Authorization header from:
-```
-={{ $json.callbackToken }}
-```
-To:
-```
-={{ $('Workflow Configuration').first().json.callbackToken }}
-```
-
-Change JSON body scanId references from:
-```
-$json.scanId
-```
-To:
-```
-$('Workflow Configuration').first().json.scanId
-```
-
-### Step 4: Fix First Two Progress Nodes Too
-
-For consistency, update "Progress: Checking reputation" and "Progress: Searching platforms" to also use the stored config instead of `$json`:
-
-```
-URL: {{ $('Workflow Configuration').first().json.progressWebhookUrl }}
-Header: {{ $('Workflow Configuration').first().json.callbackToken }}
-Body.scanId: {{ $('Workflow Configuration').first().json.scanId }}
-```
-
-This ensures the entire workflow uses consistent data references.
-
-### Step 5: Verify Send Results Node
-
-Ensure it:
-- Uses `{{ $('Workflow Configuration').first().json.resultsWebhookUrl }}`
-- Sends `x-callback-token` header (or `Authorization`)
-- Includes WhatsMyName results from `$json` (this is correct since it follows Run WhatsMyName)
-- Includes `scanId` from stored config
 
 ---
 
-## Summary of Required n8n Changes
+## Additional Fix: n8n-scan-results Endpoint
 
-| Node | Change Required |
-|------|-----------------|
-| **Workflow Configuration** | Add explicit assignments for scanId, username, progressWebhookUrl, resultsWebhookUrl, callbackToken, workerToken (from `$json.body`) |
-| **Run WhatsMyName** | Add `Authorization: Bearer {{ config.workerToken }}` header |
-| **Progress: Cross-referencing** | Change all references from `$json.*` to `$('Workflow Configuration').first().json.*` |
-| **Progress: Mapping entities** | Same as above |
-| **Progress: Georeferencing** | Same as above |
-| **Progress: Building timeline** | Same as above |
-| **Send Results** | Same as above |
-| **Progress: Complete** | Same as above |
+The same issue likely affects `n8n-scan-results`. Apply the same fix there to ensure results are received.
+
+**File: `supabase/functions/n8n-scan-results/index.ts`**
+
+Apply identical Bearer prefix stripping logic.
 
 ---
 
-## Verification
+## Verification Steps
 
-After applying fixes, test by:
+After applying the fix:
 
-1. Run a Free tier username scan in the preview
-2. Watch the StepProgressUI - should see checkmarks progressing 1 through 6
-3. Scan should complete in approximately 10-15 seconds
-4. Results should appear on FreeResultsPage
-
-You can also check the n8n execution history for the workflow to see if any nodes are failing.
+1. Deploy edge functions
+2. Run a new Free tier scan
+3. Check `n8n-scan-progress` logs - should see incoming requests
+4. Watch `scan_progress` table - `current_step` should increment from 0 to 6
+5. StepProgressUI should show checkmarks progressing
 
 ---
 
-## Why the UI Reverted
+## Technical Details
 
-The StepProgressUI showed for 1-2 minutes because:
-1. Initial state renders correctly (all steps pending, 0%)
-2. Polling every 1 second finds `current_step: 0` (no updates from n8n)
-3. User waited, eventually navigated away or the 3-minute safety timeout triggered
-4. On the results page, a different component renders (not ScanProgress)
+### Token Flow
+```text
+n8n-scan-trigger
+    ↓
+    callbackToken = Deno.env.get('N8N_CALLBACK_TOKEN')  // e.g. "abc123"
+    ↓
+    Sends to n8n: { callbackToken: "abc123", ... }
+    ↓
+n8n Workflow Configuration
+    ↓
+    Stores: callbackToken = "abc123"
+    ↓
+Progress Nodes send:
+    Authorization: Bearer abc123  ← Note the "Bearer " prefix added by n8n!
+    ↓
+n8n-scan-progress receives:
+    req.headers.get('Authorization') = "Bearer abc123"
+    ↓
+Comparison: "Bearer abc123" !== "abc123"  ← MISMATCH!
+    ↓
+Returns 401 Unauthorized
+```
 
-The UI itself is correct - the issue is purely in the n8n workflow not sending progress callbacks.
+### Why This Happens
+n8n's HTTP Request node often adds "Bearer " prefix automatically when using Authorization headers. The workflow might look correct but the actual HTTP request includes the prefix.
+
+---
+
+## Summary
+
+| File | Change |
+|------|--------|
+| `supabase/functions/n8n-scan-progress/index.ts` | Strip "Bearer " prefix from Authorization header before comparing to N8N_CALLBACK_TOKEN |
+| `supabase/functions/n8n-scan-results/index.ts` | Same fix for results endpoint |
+
+This is a backend-only fix that will make the edge functions more flexible in accepting token formats, resolving the 401 errors that are preventing n8n from sending progress updates.
