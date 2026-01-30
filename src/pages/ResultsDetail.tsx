@@ -4,6 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { normalizePlanTier } from '@/lib/billing/planCapabilities';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 import FreeResultsPage from '@/components/scan/FreeResultsPage';
 
 // IMPORTANT: AdvancedResultsPage is lazy-loaded so it is never imported/evaluated for Free users.
@@ -30,38 +32,66 @@ export default function ResultsDetail() {
 
   if (!scanId) {
     return (
-      <Card className="rounded-2xl shadow-sm">
-        <CardContent className="py-10 text-center text-sm text-muted-foreground">Invalid scan ID</CardContent>
-      </Card>
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <Card className="rounded-2xl shadow-sm">
+            <CardContent className="py-10 text-center text-sm text-muted-foreground">Invalid scan ID</CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   if (subscriptionLoading) {
     return (
-      <Card className="rounded-2xl shadow-sm">
-        <CardContent className="flex items-center justify-center py-10">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <Card className="rounded-2xl shadow-sm">
+            <CardContent className="flex items-center justify-center py-10">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </main>
+        <Footer />
+      </div>
     );
   }
 
   // EARLY RETURN HARD SPLIT (required)
   if (plan === 'free') {
-    return <FreeResultsPage jobId={scanId} />;
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Header />
+        <main className="flex-1">
+          <FreeResultsPage jobId={scanId} />
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   return (
-    <Suspense
-      fallback={
-        <Card className="rounded-2xl shadow-sm">
-          <CardContent className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-          </CardContent>
-        </Card>
-      }
-    >
-      <AdvancedResultsPage jobId={scanId} />
-    </Suspense>
+    <div className="min-h-screen bg-background flex flex-col">
+      <Header />
+      <main className="flex-1">
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center py-20">
+              <Card className="rounded-2xl shadow-sm">
+                <CardContent className="flex items-center justify-center py-10">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </CardContent>
+              </Card>
+            </div>
+          }
+        >
+          <AdvancedResultsPage jobId={scanId} />
+        </Suspense>
+      </main>
+      <Footer />
+    </div>
   );
 }
