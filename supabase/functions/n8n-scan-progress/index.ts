@@ -17,8 +17,11 @@ serve(async (req) => {
   }
 
   try {
-    // Validate authentication token
-    const callbackToken = req.headers.get('x-callback-token');
+    // Validate authentication token - accept both x-callback-token and Authorization headers
+    // for compatibility with different n8n workflow configurations
+    const callbackToken = 
+      req.headers.get('x-callback-token') || 
+      req.headers.get('Authorization');
     const expectedToken = Deno.env.get('N8N_CALLBACK_TOKEN');
     
     if (!expectedToken) {
