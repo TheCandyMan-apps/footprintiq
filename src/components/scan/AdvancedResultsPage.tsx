@@ -189,8 +189,11 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
   // Fallback poll for scan status (every 5 seconds) in case realtime events are missed
   const terminalStatuses = ['completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout', 'finished', 'error', 'cancelled'];
   
+  // Determine if scan is in a terminal state
+  const isTerminalStatus = job?.status ? terminalStatuses.includes(job.status) : false;
+  
   useEffect(() => {
-    if (!job || terminalStatuses.includes(job.status)) {
+    if (!job || isTerminalStatus) {
       return;
     }
     
@@ -199,7 +202,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
     }, 5000);
     
     return () => clearInterval(interval);
-  }, [job?.status]);
+  }, [job?.status, isTerminalStatus]);
 
   // Reload results when scan completes but we have no results (handles missed realtime events)
   useEffect(() => {
@@ -394,7 +397,8 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
           </div>
         )}
 
-        {resultsLoading && results.length === 0 ? (
+        {/* Only show loading state if scan is still in progress - never for terminal statuses */}
+        {resultsLoading && results.length === 0 && !isTerminalStatus ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
             <p className="text-sm text-muted-foreground">
@@ -404,7 +408,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
         ) : results.length === 0 ? (
           <div className="py-12 text-center">
             <p className="text-sm text-muted-foreground">
-              {['finished', 'completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'].includes(job.status)
+              {isTerminalStatus
                 ? 'No results captured—try again later or adjust tags.'
                 : 'Waiting for results...'}
             </p>
