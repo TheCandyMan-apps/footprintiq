@@ -1,75 +1,92 @@
 
 
-## Email Scan Failure Fix — Plan
+## HIBP Breach Detection Fix
 
 ### Problem Summary
-Email scans on free tier are failing with `400 Bad Request: Missing username` because:
-1. The backend routes **all** free-tier scans to the Quick Scan n8n workflow
-2. That workflow only runs WhatsMyName, which requires a `username` (not an email)
-3. When an email scan is triggered, WhatsMyName receives `username: null` and fails
+Email scans are returning "no breaches found" because **Have I Been Pwned (HIBP) is not being called**. The investigation revealed:
 
-### Root Cause
-In `n8n-scan-trigger/index.ts`:
-```text
-Line 73:  isFreeTierScan = tier === "free" && n8nFreeScanWebhookUrl
-Line 284: webhookUrl = isFreeTierScan ? n8nFreeScanWebhookUrl : n8nWebhookUrl
+| Issue | Current State | Impact |
+|-------|--------------|--------|
+| Wrong provider name | `breach_check` in trigger | Provider doesn't exist - silently fails |
+| Missing HIBP | Not in email provider list | Breach detection skipped entirely |
+| Tier restriction | HIBP set to `minTier: 'pro'` | Free users blocked (if we want it for free tier) |
+
+### Root Cause Details
+
+**File: `supabase/functions/n8n-scan-trigger/index.ts` (line 206)**
+```typescript
+// CURRENT (broken):
+providers = ["holehe", "abstract_email", "ipqs_email", "breach_check"];
+//                                                      ^^^^^^^^^^^^
+// "breach_check" does NOT exist in provider-proxy - it's silently ignored!
 ```
-This sends **all** free-tier scans (including email) to the quick scan workflow, but that workflow only supports usernames.
+
+**File: `src/lib/providers/registry.ts` (line 241)**
+```typescript
+// HIBP is set to Pro tier only:
+minTier: 'pro',  // Should be 'free' if you want it available to all users
+```
 
 ---
 
 ### Proposed Fix
 
-#### Option A: Backend-Only Fix (Recommended)
-Restrict the free quick scan workflow to username scans only.
+#### 1. Add HIBP to Email Provider List
+**File:** `supabase/functions/n8n-scan-trigger/index.ts`
 
-**File: `supabase/functions/n8n-scan-trigger/index.ts`**
-
-Change line 73 from:
+Change line 206 from:
 ```typescript
-const isFreeTierScan = tier === "free" && n8nFreeScanWebhookUrl;
+providers = ["holehe", "abstract_email", "ipqs_email", "breach_check"];
 ```
 To:
 ```typescript
-const isFreeTierScan = tier === "free" && scanType === "username" && n8nFreeScanWebhookUrl;
+providers = ["holehe", "abstract_email", "ipqs_email", "hibp"];
 ```
 
-This ensures:
-- Username scans on free tier → Quick Scan workflow (WhatsMyName)
-- Email/phone/domain scans on free tier → Standard workflow (with Holehe, etc.)
+#### 2. Make HIBP Available to Free Tier (Optional)
+**File:** `src/lib/providers/registry.ts`
 
-#### Alternative Option B: n8n Workflow Update
-Add conditional routing in n8n to select the correct tool based on `scanType`:
-- If `scanType === 'username'` → Run WhatsMyName node
-- If `scanType === 'email'` → Run Holehe node
+Change HIBP's `minTier` from `'pro'` to `'free'`:
+```typescript
+{
+  id: 'hibp',
+  name: 'Have I Been Pwned',
+  ...
+  minTier: 'free',  // Changed from 'pro'
+}
+```
 
-This requires manual changes in the n8n workflow editor.
+---
+
+### What Already Works
+- HIBP API key is configured (`HIBP_API_KEY` exists in secrets)
+- HIBP handler exists in `provider-proxy/index.ts` (lines 54-55, 1127-1176)
+- The handler properly calls `https://haveibeenpwned.com/api/v3/breachedaccount/`
 
 ---
 
 ### Technical Details
 
-| Aspect | Current Behavior | Fixed Behavior |
-|--------|------------------|----------------|
-| Free + Username | Quick Scan (WhatsMyName) ✅ | Quick Scan (WhatsMyName) ✅ |
-| Free + Email | Quick Scan (WhatsMyName) ❌ | Standard Scan (Holehe) ✅ |
-| Free + Phone | Quick Scan (WhatsMyName) ❌ | Standard Scan (PhoneInfoga) ✅ |
+**Provider-proxy HIBP handler (already exists):**
+```text
+Lines 54-55:   case 'hibp': result = await callHIBP(target); break;
+Lines 1127-1176: callHIBP function with proper HIBP API integration
+```
+
+**After fix, email scans will call:**
+1. Holehe - Email registration checks
+2. Abstract Email - Validation & deliverability
+3. IPQS Email - Fraud scoring & disposable detection
+4. HIBP - **Breach database lookup** (the missing piece!)
 
 ---
 
 ### Files to Modify
-1. `supabase/functions/n8n-scan-trigger/index.ts` — Add `scanType === "username"` condition to `isFreeTierScan`
+1. `supabase/functions/n8n-scan-trigger/index.ts` - Replace `breach_check` with `hibp`
+2. `src/lib/providers/registry.ts` - Change HIBP `minTier` to `'free'` (if desired)
 
-### Impact
-- Email scans on free tier will now route to the standard n8n workflow
-- Those scans will use the appropriate email provider (Holehe) instead of WhatsMyName
-- No changes required to the n8n workflow itself
-
----
-
-### Testing Steps
-1. Run a free-tier email scan (e.g., `test@example.com`)
-2. Verify it routes to the standard workflow (not quick scan)
-3. Confirm Holehe is called with the email parameter
-4. Verify results are returned correctly
+### Testing
+1. Run email scan for `robin.s.clifford@gmail.com`
+2. Check n8n-scan-trigger logs for `hibp` provider call
+3. Verify breach results appear in scan output
 
