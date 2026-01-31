@@ -16,20 +16,18 @@ interface ProviderResult {
   message?: string;
 }
 
+// Finding interface matching the actual database schema
 interface Finding {
   id: string;
   scan_id: string;
   workspace_id: string;
   provider: string;
   kind: string;
-  type: string;
-  title: string;
-  description: string;
   severity: string;
   confidence: number;
   evidence: Array<{ key: string; value: string }>;
   observed_at: string;
-  raw_data?: Record<string, unknown>;
+  meta: Record<string, unknown>;
 }
 
 // Generate unique finding ID
@@ -133,13 +131,15 @@ serve(async (req) => {
               workspace_id: workspaceId,
               provider: 'hibp',
               kind: 'breach.none',
-              type: 'breach_check',
-              title: 'No Breaches Found',
-              description: 'This email was not found in any known data breaches.',
               severity: 'info',
               confidence: 0.9,
               evidence: [{ key: 'Email', value: email }, { key: 'Status', value: 'Clean' }],
               observed_at: new Date().toISOString(),
+              meta: {
+                type: 'breach_check',
+                title: 'No Breaches Found',
+                description: 'This email was not found in any known data breaches.',
+              },
             });
             providerResults['hibp'] = { status: 'success', findingsCount: 1, latencyMs: latency };
             await logScanEvent('hibp', 'execution', 'success');
@@ -157,9 +157,6 @@ serve(async (req) => {
                 workspace_id: workspaceId,
                 provider: 'hibp',
                 kind: 'breach.hit',
-                type: 'breach_check',
-                title: `Breach: ${breach.Name}`,
-                description: `Email found in ${breach.Name} breach from ${breach.BreachDate || 'unknown date'}. ${breach.Description?.slice(0, 200) || ''}`,
                 severity: hasSensitiveData ? 'high' : 'medium',
                 confidence: 0.95,
                 evidence: [
@@ -172,7 +169,12 @@ serve(async (req) => {
                   { key: 'Is Verified', value: String(!!breach.IsVerified) },
                 ],
                 observed_at: new Date().toISOString(),
-                raw_data: breach,
+                meta: {
+                  type: 'breach_check',
+                  title: `Breach: ${breach.Name}`,
+                  description: `Email found in ${breach.Name} breach from ${breach.BreachDate || 'unknown date'}. ${breach.Description?.slice(0, 200) || ''}`,
+                  raw_data: breach,
+                },
               });
             }
 
@@ -229,9 +231,6 @@ serve(async (req) => {
               workspace_id: workspaceId,
               provider: 'abstract_email',
               kind: 'email.validation',
-              type: 'email_intelligence',
-              title: `Email Validation: ${data.deliverability || 'Unknown'}`,
-              description: `Email format is ${data.is_valid_format?.value ? 'valid' : 'invalid'}. Deliverability: ${data.deliverability || 'unknown'}.`,
               severity,
               confidence: data.quality_score ? parseFloat(data.quality_score) : 0.7,
               evidence: [
@@ -247,7 +246,12 @@ serve(async (req) => {
                 { key: 'SMTP Valid', value: String(!!data.is_smtp_valid?.value) },
               ],
               observed_at: new Date().toISOString(),
-              raw_data: data,
+              meta: {
+                type: 'email_intelligence',
+                title: `Email Validation: ${data.deliverability || 'Unknown'}`,
+                description: `Email format is ${data.is_valid_format?.value ? 'valid' : 'invalid'}. Deliverability: ${data.deliverability || 'unknown'}.`,
+                raw_data: data,
+              },
             });
 
             providerResults['abstract_email'] = { status: 'success', findingsCount: 1, latencyMs: latency };
@@ -302,9 +306,6 @@ serve(async (req) => {
                 workspace_id: workspaceId,
                 provider: 'ipqs_email',
                 kind: 'email.fraud',
-                type: 'email_intelligence',
-                title: `Fraud Score: ${data.fraud_score || 0}/100`,
-                description: `Email risk assessment: ${data.fraud_score >= 85 ? 'High risk' : data.fraud_score >= 60 ? 'Medium risk' : data.fraud_score >= 40 ? 'Low risk' : 'Low risk'}. ${data.disposable ? 'Disposable email detected.' : ''} ${data.leaked ? 'Found in data leaks.' : ''}`,
                 severity,
                 confidence: 0.85,
                 evidence: [
@@ -324,7 +325,12 @@ serve(async (req) => {
                   { key: 'First Seen', value: data.first_seen?.human || 'Unknown' },
                 ],
                 observed_at: new Date().toISOString(),
-                raw_data: data,
+                meta: {
+                  type: 'email_intelligence',
+                  title: `Fraud Score: ${data.fraud_score || 0}/100`,
+                  description: `Email risk assessment: ${data.fraud_score >= 85 ? 'High risk' : data.fraud_score >= 60 ? 'Medium risk' : data.fraud_score >= 40 ? 'Low risk' : 'Low risk'}. ${data.disposable ? 'Disposable email detected.' : ''} ${data.leaked ? 'Found in data leaks.' : ''}`,
+                  raw_data: data,
+                },
               });
 
               providerResults['ipqs_email'] = { status: 'success', findingsCount: 1, latencyMs: latency };

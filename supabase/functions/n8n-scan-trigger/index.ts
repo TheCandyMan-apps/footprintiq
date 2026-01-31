@@ -407,6 +407,42 @@ serve(async (req) => {
       }
     }
 
+    // ==================== PHONE-INTEL PARALLEL CALL ====================
+    // For phone scans, also call phone-intel to run API providers (Abstract, IPQS, NumVerify)
+    // This runs in parallel with n8n which handles PhoneInfoga
+    if (scanType === 'phone' && targetValue) {
+      console.log(`[n8n-scan-trigger] Triggering phone-intel for ${targetValue.slice(0, 5)}***`);
+      
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      
+      try {
+        // Fire phone-intel edge function (don't await - fire and forget)
+        fetch(`${supabaseUrl}/functions/v1/phone-intel`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({
+            scanId: scan.id,
+            phone: targetValue,
+            workspaceId: workspaceId,
+            providers: ['abstract_phone', 'ipqs_phone', 'numverify'],
+            userPlan: tier,
+          }),
+        }).then(res => {
+          console.log(`[n8n-scan-trigger] phone-intel responded: ${res.status}`);
+        }).catch(err => {
+          console.error(`[n8n-scan-trigger] phone-intel error: ${err.message}`);
+        });
+        
+        console.log(`[n8n-scan-trigger] phone-intel triggered (fire-and-forget)`);
+      } catch (phoneIntelError) {
+        console.error('[n8n-scan-trigger] Failed to trigger phone-intel:', phoneIntelError);
+        // Don't fail the whole scan - n8n/PhoneInfoga can still run
+      }
+    }
+
     // Return immediately with scan ID
     return new Response(
       JSON.stringify({

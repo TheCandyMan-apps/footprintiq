@@ -796,13 +796,16 @@ serve(async (req) => {
       }
     }
 
-    // Store findings in database
+    // Store findings in database - only use columns that exist in the schema
     if (findings.length > 0) {
+      console.log(`[phone-intel] Storing ${findings.length} findings for scan ${scanId}`);
+      
       const { error: insertError } = await supabase
         .from('findings')
         .insert(findings.map(f => ({
+          id: f.id,  // Use 'id' not 'finding_id'
           scan_id: scanId,
-          finding_id: f.id,
+          workspace_id: workspaceId,  // Add workspace_id
           provider: f.provider,
           kind: f.providerCategory === 'Carrier Intelligence' ? 'carrier_intel' 
             : f.providerCategory === 'Risk Intelligence' ? 'risk_signal'
@@ -810,18 +813,24 @@ serve(async (req) => {
             : 'phone_presence',
           severity: f.severity,
           confidence: f.confidence,
-          title: f.title,
-          description: f.description,
           evidence: f.evidence,
-          impact: f.impact,
-          remediation: f.remediation,
-          tags: f.tags,
           observed_at: f.observedAt,
-          meta: { type: f.type, providerCategory: f.providerCategory },
+          meta: {
+            type: f.type,
+            title: f.title,
+            description: f.description,
+            impact: f.impact,
+            remediation: f.remediation,
+            tags: f.tags,
+            providerCategory: f.providerCategory,
+            raw: f.raw,
+          },
         })));
 
       if (insertError) {
         console.error('[phone-intel] Failed to store findings:', insertError);
+      } else {
+        console.log(`[phone-intel] Successfully stored ${findings.length} findings`);
       }
     }
 
