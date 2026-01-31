@@ -1,20 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { getStepsForScanType, type ScanStepType } from '@/lib/scan/freeScanSteps';
 
 interface UnifiedScanProgressProps {
   isComplete?: boolean;
   isFailed?: boolean;
   className?: string;
+  scanType?: ScanStepType;
 }
-
-const STATUS_MESSAGES = [
-  "Searching public platforms…",
-  "Checking historical exposure…",
-  "Analyzing reuse and patterns…",
-  "Finalizing results…",
-];
 
 const ROTATION_INTERVAL = 2500; // 2.5 seconds
 const LONG_SCAN_THRESHOLD = 45000; // 45 seconds
@@ -22,22 +17,29 @@ const LONG_SCAN_THRESHOLD = 45000; // 45 seconds
 export function UnifiedScanProgress({ 
   isComplete = false, 
   isFailed = false,
-  className 
+  className,
+  scanType = 'username'
 }: UnifiedScanProgressProps) {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isTakingLong, setIsTakingLong] = useState(false);
   const startTimeRef = useRef(Date.now());
+
+  // Get scan-type-specific status messages from centralized steps
+  const statusMessages = useMemo(() => {
+    const steps = getStepsForScanType(scanType);
+    return steps.map(step => step.title);
+  }, [scanType]);
 
   // Rotate status messages
   useEffect(() => {
     if (isComplete || isFailed) return;
 
     const interval = setInterval(() => {
-      setCurrentMessageIndex(prev => (prev + 1) % STATUS_MESSAGES.length);
+      setCurrentMessageIndex(prev => (prev + 1) % statusMessages.length);
     }, ROTATION_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [isComplete, isFailed]);
+  }, [isComplete, isFailed, statusMessages.length]);
 
   // Check for long-running scan
   useEffect(() => {
@@ -114,7 +116,7 @@ export function UnifiedScanProgress({
             key={currentMessageIndex}
             className="text-sm text-muted-foreground animate-fade-in"
           >
-            {STATUS_MESSAGES[currentMessageIndex]}
+            {statusMessages[currentMessageIndex]}
           </span>
         </div>
 
