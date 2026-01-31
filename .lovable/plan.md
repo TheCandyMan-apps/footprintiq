@@ -1,142 +1,211 @@
 
-# Email & Phone Scan Provider Fix
 
-## Problem Summary
+# Fix Email and Phone Provider Scans
 
-Email and phone scans are not calling the API providers (HIBP, Abstract Email, IPQS Email, Abstract Phone, IPQS Phone, NumVerify) because:
+## Problem Identified
 
-| Scan Type | What n8n-scan-trigger Lists | What n8n Actually Calls | What's Missing |
-|-----------|----------------------------|------------------------|----------------|
-| Email | holehe, abstract_email, ipqs_email, hibp | Holehe only | abstract_email, ipqs_email, **hibp** |
-| Phone | phoneinfoga, abstract_phone, numverify, ipqs_phone | PhoneInfoga only | abstract_phone, numverify, ipqs_phone |
+Two critical issues are preventing findings from being stored:
 
-The n8n workflow only calls OSINT worker tools via HTTP requests to the OSINT worker service. It doesn't call the Supabase `provider-proxy` edge function which handles all the API providers.
+### Issue 1: Database Schema Mismatch
 
----
+The `email-intel` and `phone-intel` edge functions are trying to insert columns that **don't exist** in the `findings` table.
 
-## Root Cause
-
-The architecture has two provider execution paths:
-
-```text
-Path A: OSINT Worker Tools (Sherlock, Maigret, GoSearch, Holehe, WhatsMyName, PhoneInfoga)
-  n8n-scan-trigger → n8n workflow → OSINT Worker HTTP API → n8n-scan-results
-
-Path B: API Providers (HIBP, Abstract, IPQS, NumVerify)  
-  Phone: phone-intel edge function → Direct API calls → Database writes
-  Email: ❌ NO HANDLER EXISTS
+**Error from logs:**
+```
+Failed to store findings: {
+  code: "PGRST204",
+  message: "Could not find the 'description' column of 'findings' in the schema cache"
+}
 ```
 
-Phone scans work because `phone-intel` edge function exists and directly calls the API providers.
-Email scans fail because there's no equivalent `email-intel` edge function.
+| Column Used in Code | Exists in Table? |
+|---------------------|------------------|
+| `id` | Yes |
+| `scan_id` | Yes |
+| `workspace_id` | Yes |
+| `provider` | Yes |
+| `kind` | Yes |
+| `severity` | Yes |
+| `confidence` | Yes |
+| `evidence` | Yes |
+| `observed_at` | Yes |
+| `meta` | Yes |
+| `type` | No |
+| `title` | No |
+| `description` | No |
+| `raw_data` | No |
+| `impact` | No |
+| `remediation` | No |
+| `tags` | No |
+| `finding_id` | No |
+
+### Issue 2: Missing phone-intel Trigger
+
+The `n8n-scan-trigger` function calls `email-intel` for email scans but does **not** call `phone-intel` for phone scans. This means phone API providers (Abstract Phone, IPQS Phone, NumVerify) are never invoked.
 
 ---
 
-## Proposed Solution
+## Solution
 
-Create a new `email-intel` edge function that mirrors `phone-intel` structure:
+### Part 1: Fix email-intel Schema Mapping
 
-### New File: `supabase/functions/email-intel/index.ts`
+Update `supabase/functions/email-intel/index.ts` to only insert columns that exist:
 
-This function will:
-1. Accept scanId, email, workspaceId, and providers list
-2. Call each provider directly via their APIs:
-   - **HIBP** - Have I Been Pwned breach database
-   - **Abstract Email** - Email validation and deliverability
-   - **IPQS Email** - Fraud scoring and disposable detection
-3. Store findings directly in the database
-4. Broadcast real-time progress updates
-5. Update scan status when complete
-
-### Update n8n-scan-trigger
-
-For email scans, instead of sending to n8n (which only handles Holehe), call:
-1. n8n workflow for Holehe (worker tool)
-2. email-intel edge function for API providers (parallel)
-
----
-
-## Technical Implementation
-
-### 1. Create `email-intel` Edge Function
-
-Structure (following phone-intel pattern):
-
-```text
-- Accept: { scanId, email, workspaceId, providers, userPlan }
-- Providers to implement:
-  - hibp: Call haveibeenpwned.com/api/v3/breachedaccount/{email}
-  - abstract_email: Call emailvalidation.abstractapi.com/v1/
-  - ipqs_email: Call ipqualityscore.com/api/json/email/
-- Store findings in 'findings' table
-- Track provider status in 'scan_events' table
-- Broadcast progress via realtime channel
-- Return: { success, findingsCount, providerResults }
+**Current (broken):**
+```typescript
+findings.push({
+  id: generateFindingId(...),
+  scan_id: scanId,
+  workspace_id: workspaceId,
+  provider: 'hibp',
+  kind: 'breach.hit',
+  type: 'breach_check',         // NOT IN TABLE
+  title: 'Breach: ...',         // NOT IN TABLE
+  description: '...',           // NOT IN TABLE
+  severity: 'high',
+  confidence: 0.95,
+  evidence: [...],
+  observed_at: new Date().toISOString(),
+  raw_data: breach,             // NOT IN TABLE
+});
 ```
 
-### 2. Update n8n-scan-trigger
+**Fixed:**
+```typescript
+findings.push({
+  id: generateFindingId(...),
+  scan_id: scanId,
+  workspace_id: workspaceId,
+  provider: 'hibp',
+  kind: 'breach.hit',
+  severity: 'high',
+  confidence: 0.95,
+  evidence: [...],
+  observed_at: new Date().toISOString(),
+  meta: {                       // Store extra data in 'meta' column
+    type: 'breach_check',
+    title: 'Breach: ...',
+    description: '...',
+    raw_data: breach,
+  },
+});
+```
 
-For email scans, add parallel call to email-intel:
+### Part 2: Fix phone-intel Schema Mapping
+
+Update `supabase/functions/phone-intel/index.ts` to only insert columns that exist:
+
+**Current (broken):**
+```typescript
+.insert(findings.map(f => ({
+  scan_id: scanId,
+  finding_id: f.id,             // NOT IN TABLE
+  provider: f.provider,
+  kind: ...,
+  severity: f.severity,
+  confidence: f.confidence,
+  title: f.title,               // NOT IN TABLE
+  description: f.description,   // NOT IN TABLE
+  evidence: f.evidence,
+  impact: f.impact,             // NOT IN TABLE
+  remediation: f.remediation,   // NOT IN TABLE
+  tags: f.tags,                 // NOT IN TABLE
+  observed_at: f.observedAt,
+  meta: {...},
+})))
+```
+
+**Fixed:**
+```typescript
+.insert(findings.map(f => ({
+  id: f.id,                     // Use 'id' not 'finding_id'
+  scan_id: scanId,
+  workspace_id: workspaceId,    // Add workspace_id
+  provider: f.provider,
+  kind: ...,
+  severity: f.severity,
+  confidence: f.confidence,
+  evidence: f.evidence,
+  observed_at: f.observedAt,
+  meta: {
+    type: f.type,
+    title: f.title,
+    description: f.description,
+    impact: f.impact,
+    remediation: f.remediation,
+    tags: f.tags,
+    providerCategory: f.providerCategory,
+  },
+})))
+```
+
+### Part 3: Add phone-intel Trigger
+
+Update `supabase/functions/n8n-scan-trigger/index.ts` to call `phone-intel` for phone scans (same pattern as email-intel):
 
 ```typescript
-case 'email':
-  // Fire n8n webhook for Holehe (worker tool)
-  await triggerN8nWorkflow(n8nPayload);
+// For phone scans, also call phone-intel to run API providers
+if (scanType === 'phone' && targetValue) {
+  console.log(`[n8n-scan-trigger] Triggering phone-intel for ${targetValue.slice(0, 5)}***`);
   
-  // Also call email-intel for API providers
-  const emailIntelResponse = await supabase.functions.invoke('email-intel', {
-    body: {
-      scanId: scan.id,
-      email: targetValue,
-      workspaceId,
-      providers: ["hibp", "abstract_email", "ipqs_email"],
-      userPlan: tier
-    }
-  });
-  break;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  
+  try {
+    fetch(`${supabaseUrl}/functions/v1/phone-intel`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${serviceRoleKey}`,
+      },
+      body: JSON.stringify({
+        scanId: scan.id,
+        phone: targetValue,
+        workspaceId: workspaceId,
+        providers: ['abstract_phone', 'ipqs_phone', 'numverify'],
+        userPlan: tier,
+      }),
+    }).then(res => {
+      console.log(`[n8n-scan-trigger] phone-intel responded: ${res.status}`);
+    }).catch(err => {
+      console.error(`[n8n-scan-trigger] phone-intel error: ${err.message}`);
+    });
+  } catch (phoneIntelError) {
+    console.error('[n8n-scan-trigger] Failed to trigger phone-intel:', phoneIntelError);
+  }
+}
 ```
-
-### 3. Required Secrets Check
-
-The following API keys must be configured:
-- `HIBP_API_KEY` - Have I Been Pwned
-- `ABSTRACTAPI_EMAIL_VALIDATION_KEY` - Abstract Email
-- `IPQS_API_KEY` - IPQualityScore
 
 ---
 
-## Files to Create/Modify
+## Files to Modify
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `supabase/functions/email-intel/index.ts` | CREATE | New edge function for email API providers |
-| `supabase/functions/n8n-scan-trigger/index.ts` | MODIFY | Add parallel call to email-intel for email scans |
+| File | Changes |
+|------|---------|
+| `supabase/functions/email-intel/index.ts` | Fix schema mapping - move extra fields to `meta` column |
+| `supabase/functions/phone-intel/index.ts` | Fix schema mapping - move extra fields to `meta` column |
+| `supabase/functions/n8n-scan-trigger/index.ts` | Add phone-intel parallel call for phone scans |
+
+---
+
+## Expected Results After Fix
+
+### Email Scans
+- HIBP breach data stored correctly in findings table
+- Abstract Email validation data stored
+- IPQS Email fraud score data stored
+
+### Phone Scans  
+- Abstract Phone carrier intelligence stored
+- IPQS Phone risk data stored
+- NumVerify validation data stored
 
 ---
 
 ## Testing Steps
 
 1. Run email scan for `katherinegrapsas@hotmail.com`
-2. Check edge function logs for `email-intel`
-3. Verify HIBP breach data appears in findings
-4. Confirm Abstract/IPQS validation data is stored
-5. Run phone scan to verify it still works with `phone-intel`
+2. Verify findings appear in database
+3. Run phone scan for `+447951925681`
+4. Verify phone findings appear in database
+5. Check edge function logs for successful storage
 
----
-
-## Expected Results After Fix
-
-| Email Scan | Provider | Data Returned |
-|------------|----------|---------------|
-| katherinegrapsas@hotmail.com | hibp | Breach records (multiple breaches expected) |
-| | abstract_email | Validation, deliverability, format |
-| | ipqs_email | Fraud score, disposable check, leak status |
-| | holehe | Registration checks (via n8n) |
-
----
-
-## Notes
-
-- The `phone-intel` function already works correctly - no changes needed there
-- Both email and phone scans will run API providers in parallel with worker tools
-- Free tier will have access to all these providers based on your earlier request
