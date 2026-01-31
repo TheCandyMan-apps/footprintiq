@@ -1,10 +1,10 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Shield, User, Mail, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowRight, Shield, User, Mail, AlertCircle, ChevronDown, ChevronUp, Phone, UserCircle, Info } from "lucide-react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { PhoneInput } from "@/components/scan/PhoneInput";
@@ -12,8 +12,9 @@ import { validatePhone } from "@/lib/phone/phoneUtils";
 import { TurnstileWidget, type TurnstileWidgetRef } from "@/components/security/TurnstileWidget";
 import { useTurnstileRequired } from "@/hooks/useTurnstileRequired";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { detectIdentifierType, type IdentifierType } from "@/lib/scan/identifierDetection";
+import { detectIdentifierType, type IdentifierType, getIdentifierLabel } from "@/lib/scan/identifierDetection";
 import { analytics } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 
 interface ScanFormProps {
   onSubmit: (data: ScanFormData) => void;
@@ -62,6 +63,37 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const { required: requiresTurnstile } = useTurnstileRequired();
+
+  // Live detection of identifier type for user feedback
+  const detectedType = useMemo(() => {
+    const trimmed = identifier.trim();
+    if (!trimmed) return null;
+    return detectIdentifierType(trimmed);
+  }, [identifier]);
+
+  // Format hints for each type
+  const formatHints: Record<IdentifierType, { icon: React.ReactNode; hint: string; example: string }> = {
+    email: {
+      icon: <Mail className="h-3.5 w-3.5" />,
+      hint: 'Email detected',
+      example: 'e.g., john.doe@gmail.com'
+    },
+    phone: {
+      icon: <Phone className="h-3.5 w-3.5" />,
+      hint: 'Phone detected',
+      example: 'Include country code: +1 555 123 4567'
+    },
+    fullname: {
+      icon: <UserCircle className="h-3.5 w-3.5" />,
+      hint: 'Full name detected',
+      example: 'e.g., John Doe'
+    },
+    username: {
+      icon: <User className="h-3.5 w-3.5" />,
+      hint: 'Username detected',
+      example: 'e.g., johndoe123'
+    }
+  };
 
   const handlePhoneChange = useCallback((value: string) => {
     setAdvancedFields((prev) => ({ ...prev, phone: value }));
@@ -235,7 +267,7 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Single Input Field */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label htmlFor="identifier" className="sr-only">
               Search identifier
             </Label>
@@ -251,6 +283,29 @@ export const ScanForm = ({ onSubmit }: ScanFormProps) => {
               autoFocus
               data-tour="scan-input"
             />
+            
+            {/* Dynamic type detection hint */}
+            {detectedType ? (
+              <div className={cn(
+                "flex items-center gap-2 text-xs px-3 py-2 rounded-lg transition-all",
+                detectedType.type === 'phone' ? "bg-blue-500/10 text-blue-400 border border-blue-500/20" :
+                detectedType.type === 'email' ? "bg-green-500/10 text-green-400 border border-green-500/20" :
+                detectedType.type === 'fullname' ? "bg-purple-500/10 text-purple-400 border border-purple-500/20" :
+                "bg-muted/50 text-muted-foreground border border-border"
+              )}>
+                {formatHints[detectedType.type].icon}
+                <span className="font-medium">{formatHints[detectedType.type].hint}</span>
+                <span className="text-muted-foreground">—</span>
+                <span className="opacity-80">{formatHints[detectedType.type].example}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground px-3 py-2 rounded-lg bg-muted/30 border border-border/50">
+                <Info className="h-3.5 w-3.5" />
+                <span>
+                  <strong>Phone format:</strong> Include country code (+1, +44, etc.) for best results
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Turnstile verification - de-emphasized */}
