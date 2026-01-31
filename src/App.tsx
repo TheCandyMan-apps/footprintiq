@@ -198,6 +198,7 @@ const MaigretMonitoring = lazy(() => import("./pages/MaigretMonitoring"));
 const UsernamesPage = lazy(() => import("./pages/scan/UsernamesPage"));
 const UsernameResultsPage = lazy(() => import("./pages/scan/UsernameResultsPage"));
 const EmailResultsPage = lazy(() => import("./pages/scan/EmailResultsPage"));
+const PhoneResultsPage = lazy(() => import("./pages/scan/PhoneResultsPage"));
 const OpsConsole = lazy(() => import("./pages/admin/OpsConsole"));
 const AuditViewer = lazy(() => import("./pages/admin/AuditViewer"));
 const Referrals = lazy(() => import("./pages/Referrals"));
@@ -352,6 +353,7 @@ function RouterContent() {
           <Route path="/scan/usernames" element={<UsernamesPage />} />
           <Route path="/scan/usernames/:jobId" element={<UsernameResultsPage />} />
           <Route path="/scan/emails/:jobId" element={<EmailResultsPage />} />
+          <Route path="/scan/phones/:jobId" element={<PhoneResultsPage />} />
           <Route path="/docs/api" element={<ApiDocsOld />} />
           
           <Route path="/api" element={<ApiDocs />} />
