@@ -16,9 +16,8 @@ interface ProviderResult {
   message?: string;
 }
 
-// Finding interface matching the actual database schema
+// Finding interface matching the actual database schema (id omitted - DB auto-generates UUID)
 interface Finding {
-  id: string;
   scan_id: string;
   workspace_id: string;
   provider: string;
@@ -30,8 +29,8 @@ interface Finding {
   meta: Record<string, unknown>;
 }
 
-// Generate unique finding ID
-function generateFindingId(provider: string, kind: string, unique: string): string {
+// Generate deterministic finding key for deduplication (stored in meta, NOT as id)
+function generateFindingKey(provider: string, kind: string, unique: string): string {
   return `${provider}_${kind}_${unique.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20)}`;
 }
 
@@ -126,7 +125,6 @@ serve(async (req) => {
           if (response.status === 404) {
             // No breaches found - this is a success case
             findings.push({
-              id: generateFindingId('hibp', 'no_breach', email),
               scan_id: scanId,
               workspace_id: workspaceId,
               provider: 'hibp',
@@ -136,6 +134,7 @@ serve(async (req) => {
               evidence: [{ key: 'Email', value: email }, { key: 'Status', value: 'Clean' }],
               observed_at: new Date().toISOString(),
               meta: {
+                finding_key: generateFindingKey('hibp', 'no_breach', email),
                 type: 'breach_check',
                 title: 'No Breaches Found',
                 description: 'This email was not found in any known data breaches.',
@@ -152,7 +151,6 @@ serve(async (req) => {
               const hasSensitiveData = breach.IsSensitive || breach.DataClasses?.includes('Passwords');
               
               findings.push({
-                id: generateFindingId('hibp', 'breach', `${email}_${breach.Name}`),
                 scan_id: scanId,
                 workspace_id: workspaceId,
                 provider: 'hibp',
@@ -170,6 +168,7 @@ serve(async (req) => {
                 ],
                 observed_at: new Date().toISOString(),
                 meta: {
+                  finding_key: generateFindingKey('hibp', 'breach', `${email}_${breach.Name}`),
                   type: 'breach_check',
                   title: `Breach: ${breach.Name}`,
                   description: `Email found in ${breach.Name} breach from ${breach.BreachDate || 'unknown date'}. ${breach.Description?.slice(0, 200) || ''}`,
@@ -226,7 +225,6 @@ serve(async (req) => {
             }
 
             findings.push({
-              id: generateFindingId('abstract_email', 'validation', email),
               scan_id: scanId,
               workspace_id: workspaceId,
               provider: 'abstract_email',
@@ -247,6 +245,7 @@ serve(async (req) => {
               ],
               observed_at: new Date().toISOString(),
               meta: {
+                finding_key: generateFindingKey('abstract_email', 'validation', email),
                 type: 'email_intelligence',
                 title: `Email Validation: ${data.deliverability || 'Unknown'}`,
                 description: `Email format is ${data.is_valid_format?.value ? 'valid' : 'invalid'}. Deliverability: ${data.deliverability || 'unknown'}.`,
@@ -301,7 +300,6 @@ serve(async (req) => {
               else if (data.fraud_score >= 40) severity = 'low';
 
               findings.push({
-                id: generateFindingId('ipqs_email', 'fraud', email),
                 scan_id: scanId,
                 workspace_id: workspaceId,
                 provider: 'ipqs_email',
@@ -326,6 +324,7 @@ serve(async (req) => {
                 ],
                 observed_at: new Date().toISOString(),
                 meta: {
+                  finding_key: generateFindingKey('ipqs_email', 'fraud', email),
                   type: 'email_intelligence',
                   title: `Fraud Score: ${data.fraud_score || 0}/100`,
                   description: `Email risk assessment: ${data.fraud_score >= 85 ? 'High risk' : data.fraud_score >= 60 ? 'Medium risk' : data.fraud_score >= 40 ? 'Low risk' : 'Low risk'}. ${data.disposable ? 'Disposable email detected.' : ''} ${data.leaked ? 'Found in data leaks.' : ''}`,
@@ -355,15 +354,25 @@ serve(async (req) => {
     }
 
     // ==================== Store Findings ====================
+    let storedCount = 0;
     if (findings.length > 0) {
-      console.log(`[email-intel] Storing ${findings.length} findings`);
+      console.log(`[email-intel] Storing ${findings.length} findings...`);
       
-      const { error: insertError } = await supabase.from('findings').insert(findings);
+      const { data: insertedData, error: insertError } = await supabase
+        .from('findings')
+        .insert(findings)
+        .select('id');
       
       if (insertError) {
-        console.error('[email-intel] Failed to store findings:', insertError);
+        console.error('[email-intel] Failed to store findings:', JSON.stringify(insertError));
+        // Update scan_progress with error
+        await supabase.from('scan_progress').update({
+          message: `Email intel error: ${insertError.message || 'Failed to store findings'}`,
+          updated_at: new Date().toISOString(),
+        }).eq('scan_id', scanId);
       } else {
-        console.log(`[email-intel] Successfully stored ${findings.length} findings`);
+        storedCount = insertedData?.length || 0;
+        console.log(`[email-intel] Successfully stored ${storedCount} findings`);
       }
     }
 

@@ -796,16 +796,17 @@ serve(async (req) => {
       }
     }
 
-    // Store findings in database - only use columns that exist in the schema
+    // Store findings in database - omit 'id' to let DB generate UUID, store finding key in meta
+    let storedCount = 0;
     if (findings.length > 0) {
-      console.log(`[phone-intel] Storing ${findings.length} findings for scan ${scanId}`);
+      console.log(`[phone-intel] Storing ${findings.length} findings for scan ${scanId}...`);
       
-      const { error: insertError } = await supabase
+      const { data: insertedData, error: insertError } = await supabase
         .from('findings')
         .insert(findings.map(f => ({
-          id: f.id,  // Use 'id' not 'finding_id'
+          // DO NOT include 'id' - let DB auto-generate UUID
           scan_id: scanId,
-          workspace_id: workspaceId,  // Add workspace_id
+          workspace_id: workspaceId,
           provider: f.provider,
           kind: f.providerCategory === 'Carrier Intelligence' ? 'carrier_intel' 
             : f.providerCategory === 'Risk Intelligence' ? 'risk_signal'
@@ -816,6 +817,7 @@ serve(async (req) => {
           evidence: f.evidence,
           observed_at: f.observedAt,
           meta: {
+            finding_key: f.id,  // Store deterministic key here for deduplication
             type: f.type,
             title: f.title,
             description: f.description,
@@ -825,12 +827,19 @@ serve(async (req) => {
             providerCategory: f.providerCategory,
             raw: f.raw,
           },
-        })));
+        })))
+        .select('id');
 
       if (insertError) {
-        console.error('[phone-intel] Failed to store findings:', insertError);
+        console.error('[phone-intel] Failed to store findings:', JSON.stringify(insertError));
+        // Update scan_progress with error
+        await supabase.from('scan_progress').update({
+          message: `Phone intel error: ${insertError.message || 'Failed to store findings'}`,
+          updated_at: new Date().toISOString(),
+        }).eq('scan_id', scanId);
       } else {
-        console.log(`[phone-intel] Successfully stored ${findings.length} findings`);
+        storedCount = insertedData?.length || 0;
+        console.log(`[phone-intel] Successfully stored ${storedCount} findings`);
       }
     }
 
