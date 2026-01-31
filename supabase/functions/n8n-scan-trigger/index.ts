@@ -371,6 +371,42 @@ serve(async (req) => {
       });
     }
 
+    // ==================== EMAIL-INTEL PARALLEL CALL ====================
+    // For email scans, also call email-intel to run API providers (HIBP, Abstract, IPQS)
+    // This runs in parallel with n8n which handles Holehe
+    if (scanType === 'email' && targetValue) {
+      console.log(`[n8n-scan-trigger] Triggering email-intel for ${targetValue.slice(0, 5)}***`);
+      
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      
+      try {
+        // Fire email-intel edge function (don't await - fire and forget)
+        fetch(`${supabaseUrl}/functions/v1/email-intel`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({
+            scanId: scan.id,
+            email: targetValue,
+            workspaceId: workspaceId,
+            providers: ['hibp', 'abstract_email', 'ipqs_email'],
+            userPlan: tier,
+          }),
+        }).then(res => {
+          console.log(`[n8n-scan-trigger] email-intel responded: ${res.status}`);
+        }).catch(err => {
+          console.error(`[n8n-scan-trigger] email-intel error: ${err.message}`);
+        });
+        
+        console.log(`[n8n-scan-trigger] email-intel triggered (fire-and-forget)`);
+      } catch (emailIntelError) {
+        console.error('[n8n-scan-trigger] Failed to trigger email-intel:', emailIntelError);
+        // Don't fail the whole scan - n8n/Holehe can still run
+      }
+    }
+
     // Return immediately with scan ID
     return new Response(
       JSON.stringify({
