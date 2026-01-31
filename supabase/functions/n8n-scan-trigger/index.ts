@@ -69,8 +69,8 @@ serve(async (req) => {
       tier = "free"  // Accept tier parameter from frontend
     } = body;
     
-    // Determine if this is a Free tier quick scan
-    const isFreeTierScan = tier === "free" && n8nFreeScanWebhookUrl;
+    // Determine if this is a Free tier quick scan (only username scans use quick workflow)
+    const isFreeTierScan = tier === "free" && scanType === "username" && n8nFreeScanWebhookUrl;
 
     // ✅ TURNSTILE VERIFICATION for free tier users
     const turnstileError = await enforceTurnstile(req, body, user.id, corsHeaders);
