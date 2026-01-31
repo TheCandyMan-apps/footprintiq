@@ -155,6 +155,9 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
   // Get aggregated results for authoritative counts
   const aggregated = useMemo(() => aggregateResults(displayResults), [displayResults]);
   
+  // Define terminal statuses once for consistent checking
+  const terminalStatuses = ['finished', 'error', 'cancelled', 'partial', 'completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'];
+  const isTerminalStatus = job?.status ? terminalStatuses.includes(job.status) : false;
   const scanComplete = (job?.status || '').toLowerCase().includes('complete');
   const username = job?.username || job?.target || 'Unknown';
   
@@ -455,7 +458,8 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
           </div>
         )}
 
-        {resultsLoading && results.length === 0 ? (
+        {/* Only show loading state if scan is still in progress - never for terminal statuses */}
+        {resultsLoading && results.length === 0 && !isTerminalStatus ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-4" />
             <p className="text-sm text-muted-foreground">
@@ -464,7 +468,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
           </div>
         ) : results.length === 0 ? (
           <div className="py-12 text-center space-y-4">
-            {['finished', 'completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'].includes(job.status) ? (
+            {isTerminalStatus ? (
               job.scan_type === 'email' ? (
                 // Positive messaging for email scans with no breaches found
                 <div className="max-w-md mx-auto space-y-4">
