@@ -203,7 +203,7 @@ serve(async (req) => {
       switch (scanType) {
         case 'email':
           // Email providers: Holehe + Abstract Email + IPQS Email + Breach Check
-          providers = ["holehe", "abstract_email", "ipqs_email", "breach_check"];
+          providers = ["holehe", "abstract_email", "ipqs_email", "hibp"];
           break;
         case 'phone':
           // Phone providers: PhoneInfoga + Abstract Phone + NumVerify + IPQS Phone

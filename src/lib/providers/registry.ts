@@ -238,7 +238,7 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
     description: 'Breach database lookup',
     scanType: 'email',
     creditCost: 2,
-    minTier: 'pro',
+    minTier: 'free',
     category: 'breach',
     requiresKey: 'HIBP_API_KEY',
     enabled: true,
