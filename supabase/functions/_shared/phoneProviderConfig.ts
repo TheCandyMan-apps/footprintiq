@@ -22,40 +22,40 @@ export interface PhoneProviderConfig {
  * - category: provider category for UI grouping
  */
 export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
-  // Carrier Intelligence (mostly free tier)
+  // Carrier Intelligence (Pro tier - API-based)
   {
     id: 'abstract_phone',
     name: 'AbstractAPI Phone',
-    minTier: 'free',
+    minTier: 'pro',
     requiresKey: 'ABSTRACTAPI_PHONE_VALIDATION_KEY',
     category: 'carrier',
     enabled: true,
-    creditCost: 1,
+    creditCost: 2,
   },
   {
     id: 'numverify',
     name: 'Numverify',
-    minTier: 'free',
+    minTier: 'pro',
     requiresKey: 'NUMVERIFY_API_KEY',
     category: 'carrier',
     enabled: true,
-    creditCost: 1,
+    creditCost: 2,
   },
   {
     id: 'twilio_lookup',
     name: 'Twilio Lookup',
-    minTier: 'free',
+    minTier: 'pro',
     requiresKey: 'TWILIO_API_KEY',
     category: 'carrier',
     enabled: true,
     creditCost: 2,
   },
 
-  // Risk Intelligence (free tier)
+  // Risk Intelligence (Pro tier - API-based)
   {
     id: 'ipqs_phone',
     name: 'IPQS Phone',
-    minTier: 'free',
+    minTier: 'pro',
     requiresKey: 'IPQS_API_KEY',
     category: 'risk',
     enabled: true,
