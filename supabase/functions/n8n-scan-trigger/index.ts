@@ -62,6 +62,8 @@ serve(async (req) => {
       email, 
       phone, 
       domain,
+      firstName,
+      lastName,
       workspaceId, 
       scanType = "username", 
       mode = "lean", 
@@ -81,7 +83,7 @@ serve(async (req) => {
     // ✅ SCAN-TYPE-AWARE VALIDATION
     // Determine the target value and column based on scan type
     let targetValue: string | undefined;
-    let targetColumn: string;
+    let targetColumn: string = 'target'; // Default value to avoid uninitialized error
 
     switch (scanType) {
       case 'email':
@@ -97,9 +99,20 @@ serve(async (req) => {
         targetColumn = 'domain';
         break;
       case 'personal_details':
-        // For personal_details, prefer email, fallback to username
-        targetValue = email?.trim() || username?.trim();
-        targetColumn = email ? 'email' : 'username';
+        // For personal_details, prefer email, then username, then construct from first/last name
+        if (email?.trim()) {
+          targetValue = email.trim();
+          targetColumn = 'email';
+        } else if (username?.trim()) {
+          targetValue = username.trim();
+          targetColumn = 'username';
+        } else if (firstName?.trim() || lastName?.trim()) {
+          // Construct a combined name for searching
+          targetValue = [firstName?.trim(), lastName?.trim()].filter(Boolean).join(' ');
+          targetColumn = 'username'; // Store in username column as it's a name-based search
+        } else {
+          targetColumn = 'personal_details'; // For error messaging
+        }
         break;
       case 'username':
       default:
