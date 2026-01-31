@@ -1,131 +1,159 @@
 
-## What’s actually happening (confirmed)
+# Fix Scan Progress Labels and Provider Tier Restrictions
 
-Your UI shows “0 results” because **no rows are being inserted into `public.findings`**, even though `email-intel` runs.
-
-Evidence from backend logs:
-
-- `email-intel` runs and then fails insert with:
-  - `invalid input syntax for type uuid: "hibp_breach_robinscliffordgmailc"`
-- Database schema confirms:
-  - `findings.id` is **UUID** with default `gen_random_uuid()`
-- Current `email-intel` / `phone-intel` code generates IDs like:
-  - `hibp_breach_<...>` (string), which **cannot** be stored in a UUID column.
-- Direct DB check for your scan:
-  - `select * from findings where scan_id = <scanId>` returns **0 rows**.
-
-So the providers are being called, but **results never persist**, so the UI correctly shows empty.
+## Summary
+Two changes are needed:
+1. Update the scan progress UI to show scan-type-aware step descriptions instead of always saying "username"
+2. Change API providers (Abstract, IPQS, HIBP, NumVerify) to Pro tier while keeping worker tools (Holehe, Maigret) on Free
 
 ---
 
-## Root cause
+## Part 1: Dynamic Scan Progress Steps
 
-### 1) Wrong ID type on inserts
-Both functions build findings with `id: generateFindingId(...)` where `generateFindingId()` returns a string.
-But `public.findings.id` is `uuid NOT NULL DEFAULT gen_random_uuid()`.
+### Problem
+The step progress UI always shows "username" in the step descriptions regardless of scan type:
+- "Checking **username** reputation..."
+- "Detecting the **username** across social networks..."
+- "Linking the **username** to emails..."
 
-Result: the insert fails with `22P02`.
+### Solution
+Create scan-type-specific step definitions that use the correct terminology:
 
-### 2) Misleading “Completed” log messages
-`email-intel` logs “Completed scan … 13 findings” even when insertion fails. That makes it look like it worked when it didn’t.
+| Scan Type | Term Used |
+|-----------|-----------|
+| username | "username" |
+| email | "email address" |
+| phone | "phone number" |
 
----
+### Files to Modify
 
-## Fix strategy (safe + minimal)
+**`src/lib/scan/freeScanSteps.ts`**
+- Add scan-type-specific step generators
+- Create `getStepsForScanType(scanType: 'username' | 'email' | 'phone')` function
+- Keep username steps as default/fallback
 
-### A) Stop supplying `id` for findings inserts
-Let the database generate UUIDs automatically.
+**`src/hooks/useStepProgress.ts`** (if it exists) or **`src/components/ScanProgress.tsx`**
+- Pass the scan type to the step generator
+- Derive scan type from `scanData`
 
-- In `email-intel`:
-  - Remove `id` field from each `Finding` object we insert, or transform before insert:
-    - `{ ...finding, id: undefined }` and insert only the allowed columns without `id`.
-- In `phone-intel`:
-  - Don’t map `id: f.id` into the insert payload.
-  - Let `id` be omitted so `gen_random_uuid()` runs.
+### New Step Definitions
 
-### B) Preserve deterministic IDs for dedupe/debug (optional but recommended)
-Currently `generateFindingId()` was being used as a deterministic “key”.
-We’ll keep that value, but store it inside `meta`, e.g.:
+```text
+Email Steps:
+- "Checking email reputation..." 
+- "Scanning breach databases..."
+- "Cross-referencing related accounts..."
+- "Mapping associated identities..."
+- "Analyzing registration patterns..."
+- "Building exposure timeline..."
 
-- `meta.finding_key = generateFindingId(provider, kind, unique)`
-
-This gives you:
-- repeatable identifiers for dedupe
-- UUID compliance for database storage
-
-### C) Make success/empty status reflect real persistence
-Update both functions so:
-
-- Only log “Successfully stored X findings” if insert succeeded.
-- Only set `scan_progress.findings_count` based on what actually inserted.
-- If insert fails:
-  - log the error
-  - update scan_progress with `error=true` and an actionable message like:
-    - “Email intel failed to store results (id format)” (or the real reason)
-
-### D) Add a lightweight dedupe guard (recommended)
-Because these are “fire-and-forget” calls, users may re-run or n8n may retry.
-We can prevent duplicate inserts per scan by:
-
-1. Fetch existing `meta->>'finding_key'` for the scan (or at least for the same provider)
-2. Filter out any new findings whose `meta.finding_key` already exists
-3. Insert only new ones
-
-This avoids duplicates without needing schema changes.
+Phone Steps:
+- "Validating phone format..."
+- "Checking carrier intelligence..."
+- "Scanning messaging platforms..."
+- "Cross-referencing public records..."
+- "Analyzing risk indicators..."
+- "Building intelligence summary..."
+```
 
 ---
 
-## Files to change
+## Part 2: Move API Providers to Pro Tier
 
-1) `supabase/functions/email-intel/index.ts`
-- Remove UUID-invalid `id` usage
-- Store deterministic key in `meta.finding_key`
-- Make logging + `scan_progress` updates truthful (based on insert success)
-- Add dedupe filtering by `meta.finding_key` (optional but recommended)
+### Current State (Free)
+| Provider | Scan Type | Current Tier |
+|----------|-----------|--------------|
+| abstract_phone | phone | free |
+| numverify | phone | free |
+| ipqs_phone | phone | free |
+| twilio_lookup | phone | free |
+| abstract_email | email | free |
+| ipqs_email | email | free |
+| hibp | email | free |
+| holehe | email | free |
+| maigret | username | free |
 
-2) `supabase/functions/phone-intel/index.ts`
-- Remove `id: f.id` mapping in the insert payload
-- Store deterministic key in `meta.finding_key` (or reuse existing `f.id` but as `meta.finding_key`)
-- Same logging + progress correctness improvements
+### Target State
+| Provider | Scan Type | New Tier | Reason |
+|----------|-----------|----------|--------|
+| abstract_phone | phone | **pro** | API provider |
+| numverify | phone | **pro** | API provider |
+| ipqs_phone | phone | **pro** | API provider |
+| twilio_lookup | phone | **pro** | API provider |
+| abstract_email | email | **pro** | API provider |
+| ipqs_email | email | **pro** | API provider |
+| hibp | email | **pro** | API provider (breach data) |
+| holehe | email | free | Worker tool (basic check) |
+| maigret | username | free | Worker tool (basic check) |
 
-(3) Optional: `supabase/functions/n8n-scan-trigger/index.ts`
-- No functional change required for this particular bug; it’s already triggering both intel functions.
-- Only adjust if we want to log the response body/status more clearly for debugging.
+### Files to Modify
+
+**`src/lib/providers/registry.ts`**
+- Change `minTier: 'free'` to `minTier: 'pro'` for:
+  - `abstract_phone`
+  - `numverify`
+  - `ipqs_phone`
+  - `twilio_lookup`
+  - `abstract_email`
+  - `ipqs_email`
+  - `hibp`
+
+**`src/lib/billing/tiers.ts`** (if needed)
+- Verify `allowedProviders` arrays match the new tier restrictions
+
+**`supabase/functions/_shared/phoneProviderConfig.ts`** (if exists)
+- Update minTier for phone providers to match registry
 
 ---
 
-## Verification plan (what we’ll check after changes)
+## Technical Details
 
-### 1) End-to-end run
-- Run an email scan (e.g., the same one that currently shows empty).
-- Run a phone scan as well.
+### Step Progress Integration
+The `ScanProgress.tsx` component already has access to `scanData` which includes:
+- `scanData.email`
+- `scanData.phone`
+- `scanData.username`
 
-### 2) Backend logs
-- Confirm `email-intel` logs:
-  - “Storing N findings…”
-  - “Successfully stored N findings”
-  - No `22P02` UUID errors
-- Confirm `phone-intel` logs similarly.
+It calculates `scanType` for the request body. We need to:
+1. Pass this scan type to the step progress hook
+2. Use it to select the appropriate step definitions
 
-### 3) Database truth check
-Run:
-- `select count(*) from findings where scan_id = '<scanId>'::uuid;`
-Expect: > 0
+### Provider Registry Changes
+Simple one-line changes per provider in the registry:
+```typescript
+// Before
+minTier: 'free',
 
-### 4) UI behavior
-- Results page should show findings without needing a rescan after they insert (the page already polls/refetches and subscribes).
+// After  
+minTier: 'pro',
+```
 
----
-
-## Notes (important)
-- This fix does not change your tiers. It keeps “email and phone providers on free” as you requested.
-- It stays within ethical OSINT boundaries (these providers are legitimate risk/validation and breach lookups; no scraping behind logins).
-- No schema migration is required; this is purely fixing incorrect inserts.
+### Backend Enforcement
+The `phone-intel` and `email-intel` edge functions already use `enforceProviderAccess()` which checks `minTier`. Once the registry is updated, Free users will be automatically blocked from these providers with a `tier_restricted` status.
 
 ---
 
-## Implementation order
-1) Fix `email-intel` insert payload (remove `id`, add `meta.finding_key`, improve logging)
-2) Fix `phone-intel` insert payload the same way
-3) Deploy updated backend functions
-4) Run test scans + verify DB rows + verify UI renders findings
+## Files Summary
+
+| File | Change |
+|------|--------|
+| `src/lib/scan/freeScanSteps.ts` | Add email/phone step definitions + getter function |
+| `src/components/ScanProgress.tsx` | Pass scanType to step progress |
+| `src/hooks/useStepProgress.ts` | Accept scanType parameter |
+| `src/lib/providers/registry.ts` | Update 7 providers to `minTier: 'pro'` |
+| `supabase/functions/_shared/phoneProviderConfig.ts` | Update phone providers to `minTier: 'pro'` |
+
+---
+
+## Expected Behavior After Fix
+
+### Free Tier
+- **Username scans**: Maigret only (basic profile detection)
+- **Email scans**: Holehe only (registration checks)
+- **Phone scans**: No API providers (need Pro)
+- **Progress UI**: Shows correct terminology ("email address" / "phone number")
+
+### Pro Tier
+- Full access to all API providers (HIBP, Abstract, IPQS, NumVerify)
+- Enhanced intelligence and breach data
+- Same progress UI with correct terminology
