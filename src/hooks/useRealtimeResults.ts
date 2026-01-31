@@ -52,17 +52,50 @@ function normalizeSocialProfile(profile: SocialProfile): ScanResultRow {
 
 // Transform findings to match expected ScanResultRow format
 function transformFinding(finding: any): ScanResultRow {
-  let site = finding.meta?.platform || '';
+  let site = '';
   let url = '';
   
+  // Priority 1: Extract from evidence array (most common for breach findings)
   if (Array.isArray(finding.evidence)) {
-    const siteEntry = finding.evidence.find((e: any) => e.key === 'site');
-    const urlEntry = finding.evidence.find((e: any) => e.key === 'url');
-    if (siteEntry?.value) site = siteEntry.value;
+    // Look for breach name first (for HIBP findings)
+    const breachNameEntry = finding.evidence.find((e: any) => e.key === 'Breach Name');
+    const siteEntry = finding.evidence.find((e: any) => e.key === 'site' || e.key === 'Site');
+    const urlEntry = finding.evidence.find((e: any) => e.key === 'url' || e.key === 'Url' || e.key === 'URL');
+    const domainEntry = finding.evidence.find((e: any) => e.key === 'Domain');
+    
+    // Use breach name if available (for breach findings)
+    if (breachNameEntry?.value) {
+      site = breachNameEntry.value;
+    } else if (siteEntry?.value) {
+      site = siteEntry.value;
+    } else if (domainEntry?.value && domainEntry.value !== 'N/A') {
+      site = domainEntry.value;
+    }
+    
     if (urlEntry?.value) url = urlEntry.value;
   } else if (finding.evidence?.site) {
     site = finding.evidence.site;
     url = finding.evidence.url || '';
+  }
+  
+  // Priority 2: Extract from meta.title (common for breach findings: "Breach: SiteName")
+  if (!site && finding.meta?.title) {
+    const breachMatch = finding.meta.title.match(/^Breach:\s*(.+)$/i);
+    if (breachMatch) {
+      site = breachMatch[1].trim();
+    } else {
+      site = finding.meta.title;
+    }
+  }
+  
+  // Priority 3: Fall back to meta.platform
+  if (!site && finding.meta?.platform) {
+    site = finding.meta.platform;
+  }
+  
+  // Priority 4: Use provider name as last resort (better than "unknown")
+  if (!site && finding.provider) {
+    site = finding.provider.charAt(0).toUpperCase() + finding.provider.slice(1);
   }
   
   return {
