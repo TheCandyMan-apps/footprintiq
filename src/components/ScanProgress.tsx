@@ -328,7 +328,8 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         ) : (
           <UnifiedScanProgress 
             isComplete={effectiveComplete} 
-            isFailed={effectiveFailed} 
+            isFailed={effectiveFailed}
+            scanType={derivedScanType}
           />
         )}
         

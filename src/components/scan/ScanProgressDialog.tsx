@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { X, Eye, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { getStepsForScanType, type ScanStepType } from '@/lib/scan/freeScanSteps';
 
 interface ScanProgressDialogProps {
   open: boolean;
@@ -24,14 +25,6 @@ const isTerminalStatus = (s?: string) =>
   s === 'completed' || s === 'completed_empty' || s === 'completed_partial' || s === 'failed' || s === 'timeout';
 
 const isFailedStatus = (s?: string) => s === 'failed' || s === 'timeout';
-
-// Rotating status messages
-const STATUS_MESSAGES = [
-  "Searching public platforms…",
-  "Checking historical exposure…",
-  "Analyzing reuse and patterns…",
-  "Finalizing results…",
-];
 
 const ROTATION_INTERVAL = 2500; // 2.5 seconds
 const LONG_SCAN_THRESHOLD = 45000; // 45 seconds
@@ -54,6 +47,13 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isTakingLong, setIsTakingLong] = useState(false);
   const startTimeRef = useRef(Date.now());
+  
+  // Get scan-type-specific status messages from centralized steps
+  const statusMessages = useMemo(() => {
+    const effectiveScanType = (scanType as ScanStepType) || 'username';
+    const steps = getStepsForScanType(effectiveScanType);
+    return steps.map(step => step.title);
+  }, [scanType]);
 
   // Keep phaseRef in sync
   useEffect(() => {
@@ -77,11 +77,11 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
     if (!open || phase !== 'running') return;
 
     const interval = setInterval(() => {
-      setCurrentMessageIndex(prev => (prev + 1) % STATUS_MESSAGES.length);
+      setCurrentMessageIndex(prev => (prev + 1) % statusMessages.length);
     }, ROTATION_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [open, phase]);
+  }, [open, phase, statusMessages.length]);
 
   // Check for long-running scan
   useEffect(() => {
@@ -356,7 +356,7 @@ export function ScanProgressDialog({ open, onOpenChange, scanId, onComplete }: S
                   key={currentMessageIndex}
                   className="text-sm text-muted-foreground animate-fade-in"
                 >
-                  {STATUS_MESSAGES[currentMessageIndex]}
+                  {statusMessages[currentMessageIndex]}
                 </span>
               </div>
 
