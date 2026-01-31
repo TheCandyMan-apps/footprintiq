@@ -68,9 +68,9 @@ export const CAPABILITIES_BY_PLAN: Record<PlanTier, PlanCapabilities> = {
     contextEnrichment: false,
     
     // Limits
-    phoneProvidersMax: 2,
+    phoneProvidersMax: 4,
     usernameProvidersMax: 1,
-    emailProvidersMax: 1,
+    emailProvidersMax: 4,
     scansPerMonth: 1,
     monitorsPerWorkspace: 1,
     teamMembers: 1,
