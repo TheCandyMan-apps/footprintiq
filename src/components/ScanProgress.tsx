@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { updateStreakOnScan } from "@/lib/updateStreakOnScan";
@@ -6,6 +6,7 @@ import { UnifiedScanProgress } from "@/components/scan/UnifiedScanProgress";
 import { StepProgressUI } from "@/components/scan/StepProgressUI";
 import { useStepProgress } from "@/hooks/useStepProgress";
 import type { ScanFormData } from "./ScanForm";
+import type { ScanStepType } from "@/lib/scan/freeScanSteps";
 
 interface ScanProgressProps {
   onComplete: (scanId: string) => void;
@@ -43,8 +44,19 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   // Determine if Free tier for step-based UI
   const showStepProgress = isFreeTier(subscriptionTier) && !isAdmin;
   
-  // Use step progress hook for Free tier
-  const stepProgress = useStepProgress(showStepProgress ? scanId : null);
+  // Derive scan type for step progress labels
+  const derivedScanType = useMemo((): ScanStepType => {
+    if (scanData.email?.trim() && !scanData.username?.trim() && !scanData.phone?.trim()) {
+      return 'email';
+    }
+    if (scanData.phone?.trim() && !scanData.username?.trim() && !scanData.email?.trim()) {
+      return 'phone';
+    }
+    return 'username';
+  }, [scanData.email, scanData.phone, scanData.username]);
+  
+  // Use step progress hook for Free tier with correct scan type
+  const stepProgress = useStepProgress(showStepProgress ? scanId : null, derivedScanType);
   
   // Guards
   const scanStartedRef = useRef(false);

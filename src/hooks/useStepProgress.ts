@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { FREE_SCAN_STEPS, TOTAL_FREE_SCAN_STEPS } from '@/lib/scan/freeScanSteps';
+import { getStepsForScanType, getTotalStepsForScanType, type ScanStepType } from '@/lib/scan/freeScanSteps';
 
 export interface StepStatus {
   id: string;
@@ -31,14 +31,17 @@ const TERMINAL_STATUSES = [
   'cancelled',
 ];
 
-export function useStepProgress(scanId: string | null) {
+export function useStepProgress(scanId: string | null, scanType: ScanStepType = 'username') {
+  const stepsForType = getStepsForScanType(scanType);
+  const totalSteps = getTotalStepsForScanType(scanType);
+
   const [state, setState] = useState<StepProgressState>({
-    steps: FREE_SCAN_STEPS.map(step => ({
+    steps: stepsForType.map(step => ({
       ...step,
       status: 'pending' as const,
     })),
     currentStep: 0,
-    totalSteps: TOTAL_FREE_SCAN_STEPS,
+    totalSteps,
     percentComplete: 0,
     isComplete: false,
     isFailed: false,
@@ -48,10 +51,28 @@ export function useStepProgress(scanId: string | null) {
 
   const completionHandledRef = useRef(false);
 
+  // Reset state when scan type changes
+  useEffect(() => {
+    const newSteps = getStepsForScanType(scanType);
+    const newTotal = getTotalStepsForScanType(scanType);
+    
+    setState(prev => ({
+      ...prev,
+      steps: newSteps.map(step => ({
+        ...step,
+        status: 'pending' as const,
+      })),
+      totalSteps: newTotal,
+    }));
+  }, [scanType]);
+
   // Update step statuses based on current step number
   const updateStepStatuses = useCallback((currentStep: number, stepTitle?: string, stepDescription?: string) => {
     setState(prev => {
-      const newSteps = FREE_SCAN_STEPS.map((step, index) => {
+      const currentSteps = getStepsForScanType(scanType);
+      const currentTotal = getTotalStepsForScanType(scanType);
+      
+      const newSteps = currentSteps.map((step, index) => {
         const stepNumber = index + 1;
         let status: 'pending' | 'active' | 'completed' = 'pending';
         
@@ -64,33 +85,36 @@ export function useStepProgress(scanId: string | null) {
         return { ...step, status };
       });
 
-      const percentComplete = Math.round((currentStep / TOTAL_FREE_SCAN_STEPS) * 100);
+      const percentComplete = Math.round((currentStep / currentTotal) * 100);
 
       return {
         ...prev,
         steps: newSteps,
         currentStep,
+        totalSteps: currentTotal,
         percentComplete: Math.min(percentComplete, 100),
         stepTitle: stepTitle || prev.stepTitle,
         stepDescription: stepDescription || prev.stepDescription,
       };
     });
-  }, []);
+  }, [scanType]);
 
   // Handle completion
   const handleCompletion = useCallback((failed: boolean = false) => {
     if (completionHandledRef.current) return;
     completionHandledRef.current = true;
 
+    const currentTotal = getTotalStepsForScanType(scanType);
+
     setState(prev => ({
       ...prev,
       steps: prev.steps.map(step => ({ ...step, status: 'completed' as const })),
-      currentStep: TOTAL_FREE_SCAN_STEPS,
+      currentStep: currentTotal,
       percentComplete: 100,
       isComplete: !failed,
       isFailed: failed,
     }));
-  }, []);
+  }, [scanType]);
 
   // Subscribe to realtime updates and poll for progress
   useEffect(() => {
@@ -175,7 +199,7 @@ export function useStepProgress(scanId: string | null) {
       if (pollInterval) clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
-  }, [scanId, updateStepStatuses, handleCompletion]);
+  }, [scanId, scanType, updateStepStatuses, handleCompletion]);
 
   return state;
 }
