@@ -92,7 +92,7 @@ serve(async (req) => {
       scanType = "username", 
       mode = "lean", 
       turnstile_token,
-      tier = "free"  // Accept tier parameter from frontend
+      tier: requestedTier = "free"  // Accept tier parameter from frontend (not trusted)
     } = body;
     
     // ==================== TIER & EMAIL VERIFICATION GATING ====================
@@ -111,11 +111,19 @@ serve(async (req) => {
         .single();
       
       if (workspace) {
-        workspacePlan = normalizePlanTier(workspace.plan || workspace.subscription_tier);
+        // IMPORTANT: Prefer subscription_tier over plan.
+        // This supports Hybrid test mode where plan='free' (UI rendering) but subscription_tier='pro' (backend execution).
+        workspacePlan = normalizePlanTier(workspace.subscription_tier || workspace.plan);
       }
     }
     
-    console.log(`[n8n-scan-trigger] Workspace plan: ${workspacePlan}, scanType: ${scanType}`);
+    // Never trust the client-provided tier for enforcement.
+    // Use workspace-derived tier for all backend gating and workflow routing.
+    const effectiveTier = workspacePlan;
+
+    console.log(
+      `[n8n-scan-trigger] Workspace tier: ${workspacePlan}, requestedTier: ${requestedTier}, scanType: ${scanType}`,
+    );
     
     // For non-username scans on Free tier, check email verification and scan credits
     if (workspacePlan === 'free' && (scanType === 'email' || scanType === 'phone')) {
@@ -384,7 +392,7 @@ serve(async (req) => {
       workspaceId: workspaceId,
       userId: user.id,
       mode,
-      tier,  // Pass tier to n8n for conditional workflow logic
+      tier: effectiveTier, // Pass effective tier to workflow for conditional logic
       workerUrl: workerUrl || "",
       workerToken: workerToken || "",
       callbackToken: callbackToken || "",
@@ -395,7 +403,7 @@ serve(async (req) => {
     // Select webhook URL based on tier
     const webhookUrl = isFreeTierScan ? n8nFreeScanWebhookUrl : n8nWebhookUrl;
 
-    console.log(`[n8n-scan-trigger] Tier: ${tier}, using ${isFreeTierScan ? 'FREE' : 'STANDARD'} workflow`);
+    console.log(`[n8n-scan-trigger] Tier: ${effectiveTier}, using ${isFreeTierScan ? 'FREE' : 'STANDARD'} workflow`);
     console.log(`[n8n-scan-trigger] Payload workerUrl: ${workerUrl ? "set" : "MISSING"}`);
     console.log(
       `[n8n-scan-trigger] Payload workerToken: ${workerToken ? `SET (${workerToken.length} chars)` : "MISSING"}`,
@@ -502,7 +510,7 @@ serve(async (req) => {
             email: targetValue,
             workspaceId: workspaceId,
             providers: ['hibp', 'abstract_email', 'ipqs_email'],
-            userPlan: tier,
+            userPlan: effectiveTier,
           }),
         }).then(res => {
           console.log(`[n8n-scan-trigger] email-intel responded: ${res.status}`);
@@ -538,7 +546,7 @@ serve(async (req) => {
             phone: targetValue,
             workspaceId: workspaceId,
             providers: ['abstract_phone', 'ipqs_phone', 'numverify'],
-            userPlan: tier,
+            userPlan: effectiveTier,
           }),
         }).then(res => {
           console.log(`[n8n-scan-trigger] phone-intel responded: ${res.status}`);
