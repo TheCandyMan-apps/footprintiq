@@ -160,7 +160,7 @@ const ScanPage = () => {
         }}
       />
       <main className="min-h-screen bg-background">
-        {currentStep === "form" && <UnifiedScanForm onSubmit={handleFormSubmit} />}
+        {currentStep === "form" && <UnifiedScanForm onSubmit={handleFormSubmit} subscriptionTier={subscriptionTier} />}
         {currentStep === "scanning" && scanData && (
           <ScanProgress 
             onComplete={handleScanComplete} 

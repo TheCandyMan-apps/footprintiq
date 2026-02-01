@@ -15,6 +15,9 @@ export function useKeyboardShortcuts(shortcuts: KeyboardShortcut[], enabled = tr
     if (!enabled) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Guard against undefined event.key (can happen with some input methods)
+      if (!event.key) return;
+      
       for (const shortcut of shortcuts) {
         if (!shortcut.key) continue;
         const ctrlMatch = shortcut.ctrl === undefined || shortcut.ctrl === (event.ctrlKey || event.metaKey);
