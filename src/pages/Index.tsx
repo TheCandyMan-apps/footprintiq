@@ -52,7 +52,7 @@ export default function Home() {
   };
 
   const handleAdvancedScan = () => {
-    navigate('/scan/advanced');
+    navigate('/scan');
   };
 
   const softwareAppSchema = {

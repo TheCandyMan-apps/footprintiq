@@ -325,7 +325,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
             <li>System error during scan creation</li>
           </ul>
           <div className="flex gap-2 pt-4">
-            <Button onClick={() => window.location.href = '/scan/advanced'}>
+            <Button onClick={() => window.location.href = '/scan'}>
               Start New Scan
             </Button>
             <Button variant="outline" onClick={() => window.location.href = '/billing'}>

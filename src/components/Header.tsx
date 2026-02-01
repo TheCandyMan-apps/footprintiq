@@ -224,7 +224,7 @@ export const Header = () => {
                   <Link to="/dashboard" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">Dashboard</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/scan/advanced" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">Advanced Scan</Link>
+                  <Link to="/scan" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">Start Scan</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to="/graph" className="cursor-pointer transition-[var(--transition-smooth)] hover:bg-[hsl(var(--muted)/0.5)]">Entity Graph</Link>

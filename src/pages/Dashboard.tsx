@@ -709,9 +709,9 @@ const Dashboard = () => {
               <FileStack className="h-4 w-4 mr-2" />
               Batch Scan
             </Button>
-            <Button data-tour="advanced-scan-btn" onClick={() => navigate('/scan/advanced')} variant="outline" className="border-border/60">
+            <Button data-tour="advanced-scan-btn" onClick={() => navigate('/scan')} variant="outline" className="border-border/60">
               <Zap className="h-4 w-4 mr-2" />
-              Advanced Scan
+              Start Scan
             </Button>
             <Button onClick={() => navigate('/scan')}>
               <Play className="h-4 w-4 mr-2" />
@@ -1041,9 +1041,9 @@ const Dashboard = () => {
                         <Play className="h-4 w-4 mr-2" />
                         Quick Scan
                       </Button>
-                      <Button onClick={() => navigate('/scan/advanced')} variant="outline" className="shadow-lg hover:shadow-glow transition-all duration-300">
+                      <Button onClick={() => navigate('/scan')} variant="outline" className="shadow-lg hover:shadow-glow transition-all duration-300">
                         <Zap className="h-4 w-4 mr-2" />
-                        Advanced Scan
+                        Start Scan
                       </Button>
                     </div>
                   </div> : <div className="space-y-3">
