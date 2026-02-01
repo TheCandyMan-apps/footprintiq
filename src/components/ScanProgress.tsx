@@ -5,7 +5,7 @@ import { updateStreakOnScan } from "@/lib/updateStreakOnScan";
 import { UnifiedScanProgress } from "@/components/scan/UnifiedScanProgress";
 import { StepProgressUI } from "@/components/scan/StepProgressUI";
 import { useStepProgress } from "@/hooks/useStepProgress";
-import { classifyError, isTierBlockError, getUserFriendlyMessage } from "@/lib/supabaseRetry";
+import { classifyErrorAsync, isTierBlockError, getUserFriendlyMessage } from "@/lib/supabaseRetry";
 import { toast } from "sonner";
 import { ActivityLogger } from "@/lib/activityLogger";
 import type { ScanFormData } from "./ScanForm";
@@ -224,8 +224,8 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           if (invokeResult?.error) {
             console.error('[ScanProgress] n8n-scan-trigger error:', invokeResult.error);
             
-            // Classify the error to determine if it's a block or real failure
-            const classified = classifyError(invokeResult.error);
+            // Classify the error async to properly read FunctionsHttpError response body
+            const classified = await classifyErrorAsync(invokeResult.error);
             const isBlock = isTierBlockError(classified);
             
             if (isBlock) {
