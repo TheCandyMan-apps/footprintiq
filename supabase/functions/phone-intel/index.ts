@@ -166,15 +166,52 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Auth
-    const authResult = await validateAuth(req);
-    if (!authResult.valid || !authResult.context) {
-      return new Response(
-        JSON.stringify({ error: authResult.error || 'Unauthorized' }),
-        { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
-      );
+    // Auth - detect if this is an internal service call (from n8n-scan-trigger)
+    const authHeader = req.headers.get('Authorization');
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    const isInternalCall = authHeader === `Bearer ${serviceRoleKey}`;
+    
+    let userId: string;
+    
+    if (isInternalCall) {
+      // Internal call from n8n-scan-trigger - trust the payload
+      console.log('[phone-intel] Internal service call detected, bypassing user auth');
+      
+      // Parse body early for internal calls to get scanId
+      const body = await req.clone().json();
+      if (!body.scanId) {
+        return new Response(
+          JSON.stringify({ error: 'Missing scanId for internal call' }),
+          { status: 400, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+        );
+      }
+      
+      // Get userId from scan record (trusted internal flow)
+      const { data: scan, error: scanError } = await supabase
+        .from('scans')
+        .select('user_id')
+        .eq('id', body.scanId)
+        .single();
+      
+      if (scanError || !scan?.user_id) {
+        console.error('[phone-intel] Failed to get user_id from scan:', scanError);
+        return new Response(
+          JSON.stringify({ error: 'Invalid scan ID' }),
+          { status: 400, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+        );
+      }
+      userId = scan.user_id;
+    } else {
+      // External call - require user auth
+      const authResult = await validateAuth(req);
+      if (!authResult.valid || !authResult.context) {
+        return new Response(
+          JSON.stringify({ error: authResult.error || 'Unauthorized' }),
+          { status: 401, headers: addSecurityHeaders({ ...corsHeaders, 'Content-Type': 'application/json' }) }
+        );
+      }
+      userId = authResult.context.userId;
     }
-    const userId = authResult.context.userId;
 
     // Rate limit
     const rateLimitResult = await checkRateLimit(userId, 'user', 'phone-intel', {
