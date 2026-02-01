@@ -117,11 +117,42 @@ export function useStepProgress(scanId: string | null, scanType: ScanStepType = 
   }, [scanType]);
 
   // Subscribe to realtime updates and poll for progress
+  // Also simulate step progress when n8n doesn't send step updates
   useEffect(() => {
     if (!scanId || completionHandledRef.current) return;
 
     let isMounted = true;
     let pollInterval: NodeJS.Timeout | null = null;
+    let simulationInterval: NodeJS.Timeout | null = null;
+    let hasReceivedRealSteps = false;
+    let simulatedStep = 0;
+    const simulationStartTime = Date.now();
+
+    // Simulate step progress when n8n doesn't send step updates
+    // This keeps the UI responsive during long-running scans
+    const simulateProgress = () => {
+      if (!isMounted || completionHandledRef.current || hasReceivedRealSteps) return;
+      
+      const elapsedSeconds = (Date.now() - simulationStartTime) / 1000;
+      const currentTotal = getTotalStepsForScanType(scanType);
+      
+      // Progress through steps over ~3 minutes (180s), but never reach 100%
+      // Step timing: 5s, 15s, 35s, 60s, 100s, 150s (cumulative)
+      const stepThresholds = [5, 15, 35, 60, 100, 150];
+      let newStep = 0;
+      for (let i = 0; i < stepThresholds.length && i < currentTotal; i++) {
+        if (elapsedSeconds >= stepThresholds[i]) {
+          newStep = i + 1;
+        }
+      }
+      
+      // Don't simulate past step 5 (leave final step for actual completion)
+      if (newStep > 0 && newStep < currentTotal && newStep !== simulatedStep) {
+        simulatedStep = newStep;
+        updateStepStatuses(newStep);
+        console.log(`[useStepProgress] Simulated step: ${newStep} (elapsed: ${Math.round(elapsedSeconds)}s)`);
+      }
+    };
 
     // Poll scan_progress for step updates
     const pollProgress = async () => {
@@ -147,8 +178,9 @@ export function useStepProgress(scanId: string | null, scanType: ScanStepType = 
             return;
           }
 
-          // Update step progress if we have step data
+          // Update step progress if we have real step data from backend
           if (data.current_step && data.current_step > 0) {
+            hasReceivedRealSteps = true;
             updateStepStatuses(data.current_step, data.step_title, data.step_description);
           }
         }
@@ -160,6 +192,11 @@ export function useStepProgress(scanId: string | null, scanType: ScanStepType = 
     // Start polling
     pollProgress();
     pollInterval = setInterval(pollProgress, 1000);
+    
+    // Start simulation (runs alongside polling, stops if real steps arrive)
+    simulationInterval = setInterval(simulateProgress, 2000);
+    // Initial simulation after 5 seconds
+    setTimeout(simulateProgress, 5000);
 
     // Subscribe to realtime broadcast for immediate updates
     const channel = supabase
@@ -169,6 +206,7 @@ export function useStepProgress(scanId: string | null, scanType: ScanStepType = 
         
         const { step, stepTitle, stepDescription } = payload?.payload || {};
         if (step && step > 0) {
+          hasReceivedRealSteps = true;
           updateStepStatuses(step, stepTitle, stepDescription);
         }
       })
@@ -178,6 +216,7 @@ export function useStepProgress(scanId: string | null, scanType: ScanStepType = 
         // Handle provider updates from n8n (step data embedded)
         const { step, stepTitle, stepDescription } = payload?.payload || {};
         if (step && step > 0) {
+          hasReceivedRealSteps = true;
           updateStepStatuses(step, stepTitle, stepDescription);
         }
       })
@@ -197,6 +236,7 @@ export function useStepProgress(scanId: string | null, scanType: ScanStepType = 
     return () => {
       isMounted = false;
       if (pollInterval) clearInterval(pollInterval);
+      if (simulationInterval) clearInterval(simulationInterval);
       supabase.removeChannel(channel);
     };
   }, [scanId, scanType, updateStepStatuses, handleCompletion]);
