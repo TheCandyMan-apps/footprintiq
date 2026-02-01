@@ -1,114 +1,369 @@
-✅ COMPLETED
 
-Goal
-- Stop “scan.failed / Edge Function returned a non‑2xx status code” from appearing for scans that are actually expected “blocked” outcomes (free-tier restrictions / email verification).
-- Prevent free-tier phone/email scans from starting (and then completing_empty) when the user isn’t eligible.
-- Make the UI show clear, actionable guidance (Verify email / Upgrade) instead of silently failing or hanging.
+# Unified Scan UI Implementation Plan
 
-What I found (from your screenshot + database reads)
-1) The recent failures in Activity Logs are email scans on FREE workspaces.
-   - Workspaces in the screenshot are plan=free, subscription_tier=free.
-   - Those scan IDs do not exist in the scans table → meaning the frontend generated a “preScanId”, the edge function returned non‑2xx before creating a scan record, and the frontend logged scan.failed anyway.
+## Executive Summary
 
-2) scan-orchestrate already returns structured 403 JSON for free-tier blocks:
-   - email_verification_required (403)
-   - free_any_scan_exhausted (403)
-   It also logs scan.blocked server-side.
-   But the frontend (AdvancedScan) currently treats these as generic failures and logs scan.failed.
+This plan consolidates the current dual-scan architecture (`/scan` + `/advanced`) into a single, tier-aware scan interface at `/scan`. The UI will progressively reveal "Enhance this scan" options based on detected input type, with Pro-only options appearing locked (greyed out with 🔒) for Free users.
 
-3) Phone scans are also showing completed_empty on FREE accounts.
-   - scan_events show providers were tier_restricted (Abstract/IPQS/Numverify require Pro).
-   - This isn’t a crash; it’s a plan restriction presented as “empty results”, which is confusing UX.
+**Estimated effort**: 4-6 hours
 
-Root causes
-A) Frontend error parsing is too weak
-- supabase-js “non‑2xx” function errors often don’t set error.status in the way your classifyError() expects.
-- So your classifyError() returns “unknown”, and AdvancedScan logs scan.failed even for a structured 403 block.
+## Current State Analysis
 
-B) ScanProgress (the /scan flow) doesn’t handle trigger errors properly
-- ScanProgress calls n8n-scan-trigger and:
-  - Logs invokeResult.error, but does not set failed state or show the user why.
-  - Can leave users “stuck” or navigate to results for a scan that never existed.
+### Existing Components
+- `src/components/ScanForm.tsx` (443 lines) - Simple form with single input + refine options
+- `src/pages/AdvancedScan.tsx` (1544 lines) - Complex form with tool selectors, providers, batch mode
+- `src/components/ScanProgress.tsx` (459 lines) - Handles scan execution and tier-based routing
+- `src/lib/scan/identifierDetection.ts` - Already detects email/phone/username/fullname
+- `src/hooks/useTierGating.tsx` - Provides `isFree`, `isPro`, `checkFeatureAccess`
+- `src/components/UpgradeDialog.tsx` - Existing upgrade modal
 
-C) n8n-scan-trigger does not enforce the same free-tier gating rules as scan-orchestrate
-- So free users can start phone/email scans that they shouldn’t be able to run (unless they have the “free any-scan credit” and verified email).
-- This leads to completed_empty outcomes and inconsistent behavior vs AdvancedScan.
+### Backend Routing (already tier-aware)
+The `n8n-scan-trigger` edge function already:
+- Routes Free tier username scans to `N8N_FREE_SCAN_WEBHOOK_URL` (quick WhatsMyName-only)
+- Routes Pro/email/phone scans to `N8N_SCAN_WEBHOOK_URL` (full multi-provider)
+- Blocks phone scans for Free tier with `scan_blocked_by_tier`
+- Allows email scans for Free tier (Holehe provider available)
 
-Plan (implementation)
-1) Add robust function-error parsing on the frontend (shared utility)
-- Create a helper that extracts:
-  - HTTP status (from error.context?.status or similar)
-  - JSON body (from error.context?.body, or parse error.message if it contains JSON)
-  - error code (code/error fields) and message
-- Update src/lib/supabaseRetry.ts classifyError() to use this extracted status + code.
-  - Ensure 401/403 blocks are recognized even when status isn’t in error.status.
+## Architecture Overview
 
-2) Fix AdvancedScan behavior for “blocked” outcomes (not “failed”)
-- In src/pages/AdvancedScan.tsx:
-  - Expand “tier block” detection to include:
-    - email_verification_required
-    - free_any_scan_exhausted
-    - scan_blocked_by_tier / no_providers_available_for_tier
-  - When blocked:
-    - Do NOT ActivityLogger.scanFailed(...)
-    - Show a toast with the right CTA:
-      - email_verification_required → “Verify email” + action to resend verification (reuse existing useEmailVerification hook pattern used elsewhere)
-      - free_any_scan_exhausted → “Upgrade required” + navigate to billing/settings
-    - Close the progress modal cleanly.
+```text
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         UNIFIED SCAN FLOW                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  /scan (ScanPage.tsx)                                                       │
+│  ┌───────────────────────────────────────────────────────────────────────┐  │
+│  │                     UnifiedScanForm.tsx                               │  │
+│  │  ┌─────────────────────────────────────────────────────────────────┐  │  │
+│  │  │  "Start Your Digital Footprint Scan"                            │  │  │
+│  │  │  ┌───────────────────────────────────────────────────────────┐  │  │  │
+│  │  │  │ [Username, email, phone number, or full name]             │  │  │  │
+│  │  │  └───────────────────────────────────────────────────────────┘  │  │  │
+│  │  │  Phone format: include country code (+1, +44, etc.)             │  │  │
+│  │  │                                                                 │  │  │
+│  │  │  [ Run scan ]                                                   │  │  │
+│  │  │                                                                 │  │  │
+│  │  │  We only use public sources. Queries are discarded after...    │  │  │
+│  │  └─────────────────────────────────────────────────────────────────┘  │  │
+│  │                                                                       │  │
+│  │  ┌─────────────────────────────────────────────────────────────────┐  │  │
+│  │  │  ProOptionsPanel (shown when input detected)                   │  │  │
+│  │  │  "Enhance this scan"                                           │  │  │
+│  │  │                                                                 │  │  │
+│  │  │  [For username detected:]                                       │  │  │
+│  │  │  ☐ Deep profile sweep               [PRO] 🔒                   │  │  │
+│  │  │  ☐ Connections graph                [PRO] 🔒                   │  │  │
+│  │  │  ☐ Higher confidence signals        [PRO] 🔒                   │  │  │
+│  │  │                                                                 │  │  │
+│  │  │  [For email detected:]                                          │  │  │
+│  │  │  ☐ Breach context & verification    [PRO] 🔒                   │  │  │
+│  │  │  ☐ Reputation / risk signals        [PRO] 🔒                   │  │  │
+│  │  │                                                                 │  │  │
+│  │  │  "Upgrade to Pro to unlock deeper sources..."                  │  │  │
+│  │  └─────────────────────────────────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                             │
+│                               │                                             │
+│                               ▼                                             │
+│                    ScanProgress.tsx                                         │
+│                    (passes scanMode + enhancers to backend)                 │
+│                               │                                             │
+│                               ▼                                             │
+│                    n8n-scan-trigger                                         │
+│                    (routes to correct workflow)                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
-3) Fix /scan flow (ScanProgress) to stop silent failures and hanging
-- In src/components/ScanProgress.tsx:
-  - If n8n-scan-trigger returns invokeResult.error:
-    - Parse the structured error (same helper as above)
-    - If blocked → show Verify/Upgrade CTA and end the scan flow (set failed, stop polling)
-    - If real failure → show a “Scan failed” message and log scan.failed with useful metadata (include parsed status/code).
-  - Also handle the case “scan record was never created”:
-    - If n8n-scan-trigger fails, do not continue polling a non-existent scanId.
+## Implementation Details
 
-4) Enforce consistent gating in backend trigger (n8n-scan-trigger)
-- Update supabase/functions/n8n-scan-trigger/index.ts to mirror scan-orchestrate’s free-tier rules for non-username scans:
-  - Fetch workspace plan/tier from DB (service role or user client appropriately)
-  - Check email_confirmed_at
-  - Check free_any_scan_credits (if your schema supports it; scan-orchestrate expects it on workspace)
-  - If blocked:
-    - Return 403 with the same structured payload shape:
-      { error, code, message, scanType }
-    - Log scan.blocked (server-side) for audit visibility
-    - Crucially: do NOT create a scan row or scan_progress row.
+### Phase 1: Type Definitions and Utilities
 
-5) (Optional but recommended) Harden internal-call detection in phone-intel
-- Your current change uses strict equality:
-  authHeader === `Bearer ${serviceRoleKey}`
-- Make it tolerant of formatting differences:
-  - Accept “Bearer <token>” case-insensitively, trim whitespace, compare only token values.
-- This prevents reintroducing the original 401 issue due to minor header formatting differences.
+**File: `src/lib/scan/unifiedScanTypes.ts` (NEW)**
 
-How we’ll verify (end-to-end)
-1) Free user, unverified email:
-   - Attempt email scan (AdvancedScan + /scan flow)
-   - Expected: blocked message “Verify your email” + resend CTA
-   - Expected: NO scan.failed log; scan.blocked should be logged.
+Define the scan contract:
 
-2) Free user, verified email, free_any_scan_credits = 0:
-   - Attempt email/phone scan
-   - Expected: “Upgrade required” flow; no scan created; no completed_empty.
+```typescript
+export type ScanMode = "free_fast" | "standard" | "pro_deep";
 
-3) Pro user:
-   - Email + Phone scans should create scans and proceed normally.
+export type EnhancerKey =
+  | "deep_coverage"
+  | "connections_graph"
+  | "confidence_signals"
+  | "breach_context"
+  | "carrier_intel"
+  | "risk_signals"
+  | "expanded_sources"
+  | "disambiguation";
 
-4) Admin Activity Logs:
-   - Confirm fewer scan.failed entries with “non‑2xx”, replaced by scan.blocked with clear metadata.
+export type DetectedType = "username" | "email" | "phone" | "name";
 
-Files involved
-Frontend
-- src/lib/supabaseRetry.ts (improve error parsing/classification)
-- src/pages/AdvancedScan.tsx (treat blocked outcomes correctly; stop logging scan.failed for them)
-- src/components/ScanProgress.tsx (handle trigger errors; stop hanging/polling non-existent scanId)
+export interface UnifiedScanConfig {
+  query: string;
+  detectedType: DetectedType;
+  scanMode: ScanMode;
+  enhancers: EnhancerKey[];
+  turnstile_token?: string;
+}
 
-Backend (Lovable Cloud functions)
-- supabase/functions/n8n-scan-trigger/index.ts (add tier/email verification gating consistent with scan-orchestrate)
-- supabase/functions/phone-intel/index.ts (optional: make internal auth detection more robust)
+// Enhancer definitions by detected type
+export const ENHANCERS_BY_TYPE: Record<DetectedType, EnhancerConfig[]> = {
+  username: [
+    { key: "deep_coverage", label: "Deep profile sweep", description: "Search 500+ platforms including social media, forums, gaming sites" },
+    { key: "connections_graph", label: "Connections graph", description: "Visualize relationships between discovered profiles" },
+    { key: "confidence_signals", label: "Higher confidence signals", description: "Advanced verification to reduce false positives" },
+  ],
+  email: [
+    { key: "breach_context", label: "Breach context & verification", description: "Full breach history with password exposure details" },
+    { key: "risk_signals", label: "Reputation / risk signals", description: "Email deliverability, fraud scoring, and spam detection" },
+  ],
+  phone: [
+    { key: "carrier_intel", label: "Carrier & line intelligence", description: "Carrier lookup, line type, and geographic data" },
+    { key: "risk_signals", label: "Reputation / risk signals", description: "Fraud scoring and spam detection" },
+  ],
+  name: [
+    { key: "expanded_sources", label: "Expanded sources", description: "Search across people databases and public records" },
+    { key: "disambiguation", label: "Disambiguation signals", description: "Cross-reference to reduce false matches" },
+  ],
+};
+```
 
-Notes / risks
-- This plan doesn’t weaken security; it improves consistency and prevents users from initiating scans they can’t run.
-- If free_any_scan_credits isn’t actually present in workspaces in your current DB schema, we’ll adapt the gating to “free users cannot run phone/email” (or whatever rule you prefer), but we should keep the error codes stable so the UI can reliably handle them.
+### Phase 2: ProOptionsPanel Component
+
+**File: `src/components/scan/ProOptionsPanel.tsx` (NEW)**
+
+```typescript
+interface ProOptionsPanelProps {
+  detectedType: DetectedType;
+  isFree: boolean;
+  selectedEnhancers: EnhancerKey[];
+  onChangeEnhancer: (key: EnhancerKey, enabled: boolean) => void;
+  onRequestUpgrade: () => void;
+}
+```
+
+Features:
+- Renders only enhancers relevant to `detectedType`
+- Each row shows:
+  - Checkbox (disabled for Free)
+  - Label + description
+  - Lock icon + "Pro" badge for Free users
+- Clicking a locked row triggers `onRequestUpgrade()` (does NOT toggle state)
+- Footer text for Free: "Upgrade to Pro to unlock deeper sources, confidence signals, and connections."
+
+### Phase 3: UnifiedScanForm Component
+
+**File: `src/components/scan/UnifiedScanForm.tsx` (NEW)**
+
+Merge the best of `ScanForm.tsx` with tier-aware enhancements:
+
+1. **Header**: "Start Your Digital Footprint Scan"
+
+2. **Single Input**:
+   - Placeholder: "Username, email, phone number, or full name"
+   - Helper text: "Phone format: include country code (+1, +44, etc.)"
+   - Uses existing `detectIdentifierType()` from `identifierDetection.ts`
+
+3. **Type Detection Badge**: Colored pill showing detected type (email=green, phone=blue, etc.)
+
+4. **Turnstile Widget**: Existing component, shown when required
+
+5. **Primary CTA**: "Run scan" button
+
+6. **Trust Line**: "We only use public sources. Queries are discarded after processing."
+
+7. **ProOptionsPanel**: Shown only when input is non-empty
+   - Progressive disclosure: appears after user types something
+   - Options filtered by `detectedType`
+   - Locked state for Free tier
+
+8. **Submit Logic**:
+   ```typescript
+   const handleSubmit = () => {
+     // Derive scanMode
+     let scanMode: ScanMode;
+     let finalEnhancers = selectedEnhancers;
+     
+     if (isFree) {
+       // HARD GUARDRAIL: Strip any Pro enhancers for Free users
+       if (finalEnhancers.length > 0) {
+         toast.info("Pro-only options removed. Upgrade to enable.");
+         finalEnhancers = [];
+       }
+       scanMode = detectedType === "username" ? "free_fast" : "standard";
+     } else {
+       // Pro user
+       scanMode = finalEnhancers.length > 0 ? "pro_deep" : "standard";
+     }
+     
+     const config: UnifiedScanConfig = {
+       query: identifier.trim(),
+       detectedType,
+       scanMode,
+       enhancers: finalEnhancers,
+       turnstile_token: turnstileToken,
+     };
+     
+     onSubmit(config);
+   };
+   ```
+
+### Phase 4: Update ScanPage
+
+**File: `src/pages/ScanPage.tsx` (MODIFY)**
+
+Changes:
+1. Import `UnifiedScanForm` instead of `ScanForm`
+2. Update `handleFormSubmit` to accept `UnifiedScanConfig`
+3. Convert config to `ScanFormData` for `ScanProgress`:
+   ```typescript
+   const handleFormSubmit = (config: UnifiedScanConfig) => {
+     // Existing quota check...
+     
+     // Convert to ScanFormData
+     const scanData: ScanFormData = {
+       turnstile_token: config.turnstile_token,
+     };
+     
+     switch (config.detectedType) {
+       case "email":
+         scanData.email = config.query;
+         break;
+       case "phone":
+         scanData.phone = config.query;
+         break;
+       case "name":
+         const parts = config.query.split(/\s+/);
+         scanData.firstName = parts[0];
+         scanData.lastName = parts.slice(1).join(" ");
+         break;
+       case "username":
+       default:
+         scanData.username = config.query;
+         break;
+     }
+     
+     // Store scanMode and enhancers for ScanProgress
+     setScanData({ ...scanData, scanMode: config.scanMode, enhancers: config.enhancers });
+     setCurrentStep("scanning");
+   };
+   ```
+
+### Phase 5: Update ScanProgress
+
+**File: `src/components/ScanProgress.tsx` (MODIFY)**
+
+Changes:
+1. Extend `ScanFormData` interface to include optional `scanMode` and `enhancers`
+2. Pass these to `n8n-scan-trigger` in the request body:
+   ```typescript
+   const requestBody = {
+     ...existing,
+     scanMode: scanData.scanMode || "standard",
+     enhancers: scanData.enhancers || [],
+   };
+   ```
+
+### Phase 6: Backend Enhancement (Optional - Future)
+
+**File: `supabase/functions/n8n-scan-trigger/index.ts` (MODIFY)**
+
+Add logging for transparency:
+```typescript
+const { scanMode = "standard", enhancers = [] } = body;
+
+console.log(`[n8n-scan-trigger] scanMode: ${scanMode}, enhancers: ${enhancers.join(",")}`);
+
+// Include in n8nPayload
+const n8nPayload = {
+  ...existing,
+  scanMode,
+  enhancers,
+};
+```
+
+The n8n workflow can use these to conditionally enable/disable providers.
+
+### Phase 7: Routing Redirect
+
+**File: `src/App.tsx` (MODIFY)**
+
+Add redirect from `/advanced` to `/scan`:
+```typescript
+<Route path="/advanced" element={<Navigate to="/scan" replace />} />
+```
+
+### Phase 8: Deprecate AdvancedScan
+
+**File: `src/pages/AdvancedScan.tsx` (MODIFY - add deprecation notice)**
+
+Add comment at top:
+```typescript
+/**
+ * @deprecated This page is deprecated. All scan functionality has been
+ * consolidated into /scan (UnifiedScanForm). This file is kept for reference
+ * and will be removed in a future release.
+ */
+```
+
+## File Summary
+
+| File | Action | Description |
+|------|--------|-------------|
+| `src/lib/scan/unifiedScanTypes.ts` | **CREATE** | Type definitions and enhancer configs |
+| `src/components/scan/ProOptionsPanel.tsx` | **CREATE** | Tier-gated enhancement options panel |
+| `src/components/scan/UnifiedScanForm.tsx` | **CREATE** | Main unified form component (~300 lines) |
+| `src/pages/ScanPage.tsx` | **MODIFY** | Switch to UnifiedScanForm |
+| `src/components/ScanProgress.tsx` | **MODIFY** | Pass scanMode + enhancers |
+| `src/App.tsx` | **MODIFY** | Add /advanced redirect |
+| `src/pages/AdvancedScan.tsx` | **MODIFY** | Add deprecation comment |
+
+## Safety Guardrails
+
+1. **No wasted scans for Free users**:
+   - Pro enhancers are visually disabled (cannot be toggled)
+   - Even if UI state is stale, submit handler strips enhancers with toast
+   - Backend already blocks restricted scans (phone for Free)
+
+2. **No accidental form submits**:
+   - Clicking locked option row triggers upgrade modal, NOT form submit
+   - Button explicitly separated from option clicks
+
+3. **Deterministic routing**:
+   - `scanMode` is derived from tier + enhancers, sent to backend
+   - Backend logs `scanMode` and `enhancers` for debugging
+
+## UX Copy
+
+| Element | Copy |
+|---------|------|
+| Title | "Start Your Digital Footprint Scan" |
+| Input placeholder | "Username, email, phone number, or full name" |
+| Phone hint | "Phone format: include country code (+1, +44, etc.)" |
+| CTA button | "Run scan" |
+| Enhancers header | "Enhance this scan" |
+| Locked badge | "Pro" |
+| Free footer | "Upgrade to Pro to unlock deeper sources, confidence signals, and connections." |
+| Trust line | "We only use public sources. Queries are discarded after processing." |
+| Toast (stripped enhancers) | "Pro-only options removed. Upgrade to enable." |
+
+## Acceptance Criteria Checklist
+
+- [ ] Single `/scan` entry point for all users
+- [ ] Free user can complete username scan without losing allowance from locked options
+- [ ] Free users see locked Pro enhancements with 🔒 icon
+- [ ] Clicking locked option opens upgrade modal (not toggle)
+- [ ] Pro users can enable enhancements and submit
+- [ ] Requests include `scanMode` and `enhancers`
+- [ ] `/advanced` redirects to `/scan`
+- [ ] ScanProgress shows progress updates normally
+- [ ] Phone scans blocked for Free tier with upgrade prompt
+
+## Testing Plan
+
+1. **Free user - username scan**: Should work with quick workflow
+2. **Free user - click locked option**: Upgrade modal appears, option stays unchecked
+3. **Free user - email scan**: Should work with Holehe provider
+4. **Free user - phone scan**: Should show upgrade prompt (blocked by backend)
+5. **Pro user - username with enhancers**: Full multi-tool scan
+6. **Pro user - email with enhancers**: Full email intel scan
+7. **Visit /advanced**: Redirects to /scan
