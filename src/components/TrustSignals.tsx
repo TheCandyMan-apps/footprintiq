@@ -1,4 +1,5 @@
 import { Shield } from "lucide-react";
+import scamadviserLogo from "@/assets/scamadviser-logo.jpg";
 
 export const TrustSignals = () => {
   const items = [
@@ -30,6 +31,19 @@ export const TrustSignals = () => {
         <p className="text-base text-muted-foreground">
           All findings represent publicly observable information. <span className="text-foreground font-medium">Verification is always required.</span>
         </p>
+        
+        <a 
+          href="https://www.scamadviser.com/check-website/footprintiq.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block mt-6 opacity-60 hover:opacity-100 transition-opacity"
+        >
+          <img 
+            src={scamadviserLogo} 
+            alt="Verified by ScamAdviser" 
+            className="h-6 w-auto"
+          />
+        </a>
       </div>
     </section>
   );
