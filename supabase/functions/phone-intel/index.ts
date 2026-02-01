@@ -169,7 +169,9 @@ serve(async (req) => {
     // Auth - detect if this is an internal service call (from n8n-scan-trigger)
     const authHeader = req.headers.get('Authorization');
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-    const isInternalCall = authHeader === `Bearer ${serviceRoleKey}`;
+    // Make comparison more robust: trim whitespace, handle case variations
+    const authToken = authHeader?.replace(/^bearer\s+/i, '').trim() || '';
+    const isInternalCall = authToken === serviceRoleKey;
     
     let userId: string;
     

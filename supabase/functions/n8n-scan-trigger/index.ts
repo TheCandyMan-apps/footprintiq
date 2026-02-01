@@ -1,11 +1,34 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { enforceTurnstile } from "../_shared/turnstile.ts";
+import { normalizePlanTier } from "../_shared/planCapabilities.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Block reason codes for consistent frontend handling
+type BlockReasonCode = 
+  | 'email_verification_required'
+  | 'free_any_scan_exhausted'
+  | 'scan_blocked_by_tier'
+  | 'no_providers_available_for_tier';
+
+interface BlockResponse {
+  error: string;
+  code: BlockReasonCode;
+  message: string;
+  scanType: string;
+}
+
+function createBlockResponse(block: BlockResponse): Response {
+  console.log(`[n8n-scan-trigger] Scan blocked: ${block.code} - ${block.message}`);
+  return new Response(JSON.stringify(block), {
+    status: 403,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -16,6 +39,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const n8nWebhookUrl = Deno.env.get("N8N_SCAN_WEBHOOK_URL");
     const n8nFreeScanWebhookUrl = Deno.env.get("N8N_FREE_SCAN_WEBHOOK_URL");
     const workerUrl = Deno.env.get("OSINT_WORKER_URL");
@@ -71,8 +95,81 @@ serve(async (req) => {
       tier = "free"  // Accept tier parameter from frontend
     } = body;
     
+    // ==================== TIER & EMAIL VERIFICATION GATING ====================
+    // Enforce same rules as scan-orchestrate for non-username scans
+    
+    // Create service client for workspace lookup
+    const serviceClient = createClient(supabaseUrl, serviceRoleKey);
+    
+    // Get workspace plan/tier
+    let workspacePlan = 'free';
+    if (workspaceId) {
+      const { data: workspace } = await serviceClient
+        .from('workspaces')
+        .select('plan, subscription_tier')
+        .eq('id', workspaceId)
+        .single();
+      
+      if (workspace) {
+        workspacePlan = normalizePlanTier(workspace.plan || workspace.subscription_tier);
+      }
+    }
+    
+    console.log(`[n8n-scan-trigger] Workspace plan: ${workspacePlan}, scanType: ${scanType}`);
+    
+    // For non-username scans on Free tier, check email verification and scan credits
+    if (workspacePlan === 'free' && (scanType === 'email' || scanType === 'phone')) {
+      // Check if user email is verified
+      if (!user.email_confirmed_at) {
+        // Log scan.blocked event
+        await serviceClient.from('activity_logs').insert({
+          user_id: user.id,
+          action: 'scan.blocked',
+          entity_type: 'scan',
+          metadata: {
+            scan_type: scanType,
+            reason: 'email_verification_required',
+            workspace_id: workspaceId,
+          },
+        });
+        
+        return createBlockResponse({
+          error: 'email_verification_required',
+          code: 'email_verification_required',
+          message: 'Please verify your email address to use this scan type.',
+          scanType,
+        });
+      }
+      
+      // For phone scans on Free tier - always block (no free providers available)
+      if (scanType === 'phone') {
+        await serviceClient.from('activity_logs').insert({
+          user_id: user.id,
+          action: 'scan.blocked',
+          entity_type: 'scan',
+          metadata: {
+            scan_type: scanType,
+            reason: 'scan_blocked_by_tier',
+            workspace_id: workspaceId,
+            message: 'Phone intelligence requires Pro plan',
+          },
+        });
+        
+        return createBlockResponse({
+          error: 'scan_blocked_by_tier',
+          code: 'scan_blocked_by_tier',
+          message: 'Phone intelligence requires a Pro subscription. Upgrade to access carrier lookup, fraud detection, and more.',
+          scanType,
+        });
+      }
+      
+      // For email scans - check if user has free_any_scan_credits OR allow holehe-only scan
+      // (Holehe is available on Free tier, so we allow email scans to proceed)
+      // The email-intel function will filter providers by tier
+    }
+    
     // Determine if this is a Free tier quick scan (only username scans use quick workflow)
-    const isFreeTierScan = tier === "free" && scanType === "username" && n8nFreeScanWebhookUrl;
+    const isFreeTierScan = workspacePlan === "free" && scanType === "username" && n8nFreeScanWebhookUrl;
 
     // ✅ TURNSTILE VERIFICATION for free tier users
     const turnstileError = await enforceTurnstile(req, body, user.id, corsHeaders);
@@ -233,7 +330,7 @@ serve(async (req) => {
     }
 
     // Create initial scan_progress record so UI can track progress
-    const serviceClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    // (serviceClient already created above for tier gating)
     
     // Build initial progress record with step tracking for Free tier
     const progressRecord: Record<string, unknown> = {
