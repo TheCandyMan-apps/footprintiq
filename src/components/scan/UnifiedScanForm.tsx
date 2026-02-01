@@ -24,6 +24,8 @@ import { cn } from "@/lib/utils";
 
 interface UnifiedScanFormProps {
   onSubmit: (config: UnifiedScanConfig) => void;
+  /** User's subscription tier (from user_roles) - used to gate Pro features */
+  subscriptionTier?: string;
 }
 
 // Type detection function
@@ -75,7 +77,7 @@ const FORMAT_HINTS: Record<DetectedType, { icon: React.ReactNode; label: string;
   }
 };
 
-export function UnifiedScanForm({ onSubmit }: UnifiedScanFormProps) {
+export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: UnifiedScanFormProps) {
   // Input state
   const [identifier, setIdentifier] = useState("");
   const [selectedEnhancers, setSelectedEnhancers] = useState<EnhancerKey[]>([]);
@@ -90,7 +92,15 @@ export function UnifiedScanForm({ onSubmit }: UnifiedScanFormProps) {
   
   const { toast } = useToast();
   const { required: requiresTurnstile } = useTurnstileRequired();
-  const { isFree, isPro, isBusiness, subscriptionTier } = useTierGating();
+  
+  // Use prop tier if provided, otherwise fall back to hook
+  // This ensures consistency with what ScanPage sends to the backend
+  const tierFromHook = useTierGating();
+  const normalizedTier = (tierProp || tierFromHook.subscriptionTier || 'free').toLowerCase();
+  const isFree = normalizedTier === 'free';
+  const isProUser = normalizedTier === 'pro' || normalizedTier === 'business' || 
+                   normalizedTier === 'premium' || normalizedTier === 'enterprise' ||
+                   normalizedTier === 'analyst';
   
   // Detect input type
   const detectedType = useMemo((): DetectedType | null => {
@@ -101,9 +111,6 @@ export function UnifiedScanForm({ onSubmit }: UnifiedScanFormProps) {
   
   // Has input - for progressive disclosure
   const hasInput = identifier.trim().length > 0;
-  
-  // Pro user check
-  const isProUser = isPro || isBusiness;
 
   const handleChangeEnhancer = useCallback((key: EnhancerKey, enabled: boolean) => {
     setSelectedEnhancers(prev => 
