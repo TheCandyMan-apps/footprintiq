@@ -123,6 +123,10 @@ export interface ParsedEdgeFunctionError {
   body?: Record<string, unknown>;
 }
 
+/**
+ * Synchronously parse what we can from the error object.
+ * For FunctionsHttpError, use parseEdgeFunctionErrorAsync for the full body.
+ */
 export function parseEdgeFunctionError(error: any): ParsedEdgeFunctionError {
   if (!error) return {};
   
@@ -192,18 +196,56 @@ export function parseEdgeFunctionError(error: any): ParsedEdgeFunctionError {
 }
 
 /**
- * Classify an error for better handling
+ * Async version that properly reads the Response body from FunctionsHttpError.
+ * Call this when you have a FunctionsHttpError with error.context being a Response.
  */
-export function classifyError(error: any): ClassifiedError {
-  if (!error) {
-    return { type: 'unknown', message: 'Unknown error', retryable: false };
+export async function parseEdgeFunctionErrorAsync(error: any): Promise<ParsedEdgeFunctionError> {
+  if (!error) return {};
+  
+  const result: ParsedEdgeFunctionError = {};
+  
+  // Check if error.context is a Response object (FunctionsHttpError case)
+  if (error?.context && typeof error.context.json === 'function') {
+    try {
+      const bodyData = await error.context.json();
+      if (bodyData && typeof bodyData === 'object') {
+        result.body = bodyData;
+        result.code = (bodyData.code as string) || (bodyData.error as string);
+        result.message = (bodyData.message as string);
+        result.error = (bodyData.error as string);
+        result.scanType = (bodyData.scanType as string);
+        result.status = error.context.status || 403;
+      }
+    } catch {
+      // Failed to read JSON from context
+    }
   }
+  
+  // If we got data from the async read, return it
+  if (result.code || result.message) {
+    return result;
+  }
+  
+  // Fall back to sync version
+  return parseEdgeFunctionError(error);
+}
 
-  // Parse the error to extract structured data
-  const parsed = parseEdgeFunctionError(error);
+/**
+ * Async version of classifyError that properly extracts FunctionsHttpError body
+ */
+export async function classifyErrorAsync(error: any): Promise<ClassifiedError> {
+  // First try async parsing (for FunctionsHttpError with Response context)
+  const parsed = await parseEdgeFunctionErrorAsync(error);
+  return classifyFromParsed(parsed, error);
+}
+
+/**
+ * Internal helper to classify from already-parsed data
+ */
+function classifyFromParsed(parsed: ParsedEdgeFunctionError, originalError: any): ClassifiedError {
   const status = parsed.status;
   const code = parsed.code;
-  const message = parsed.message || error?.message || String(error);
+  const message = parsed.message || originalError?.message || String(originalError);
   const lowerMessage = message.toLowerCase();
 
   // Check for tier/verification blocks FIRST (most specific)
@@ -242,7 +284,7 @@ export function classifyError(error: any): ClassifiedError {
 
   // Check for timeout
   if (lowerMessage.includes('timeout') || lowerMessage.includes('aborted') || 
-      error?.name === 'AbortError') {
+      originalError?.name === 'AbortError') {
     return { 
       type: 'timeout', 
       message: 'Request timed out. The scan is taking longer than expected.',
@@ -329,6 +371,19 @@ export function classifyError(error: any): ClassifiedError {
     retryable: false,
     code: status
   };
+}
+
+/**
+ * Classify an error for better handling (sync version - use classifyErrorAsync for FunctionsHttpError)
+ */
+export function classifyError(error: any): ClassifiedError {
+  if (!error) {
+    return { type: 'unknown', message: 'Unknown error', retryable: false };
+  }
+
+  // Parse the error synchronously to extract structured data
+  const parsed = parseEdgeFunctionError(error);
+  return classifyFromParsed(parsed, error);
 }
 
 /**
