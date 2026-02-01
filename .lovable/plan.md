@@ -1,159 +1,138 @@
 
-# Fix Scan Progress Labels and Provider Tier Restrictions
 
-## Summary
-Two changes are needed:
-1. Update the scan progress UI to show scan-type-aware step descriptions instead of always saying "username"
-2. Change API providers (Abstract, IPQS, HIBP, NumVerify) to Pro tier while keeping worker tools (Holehe, Maigret) on Free
+# Phone Scan Pipeline Fix
 
----
+## Problem Identified
 
-## Part 1: Dynamic Scan Progress Steps
+**All phone scans are failing** because the `phone-intel` edge function is rejecting calls from the `n8n-scan-trigger` function with a **401 Unauthorized** error.
 
-### Problem
-The step progress UI always shows "username" in the step descriptions regardless of scan type:
-- "Checking **username** reputation..."
-- "Detecting the **username** across social networks..."
-- "Linking the **username** to emails..."
+### Root Cause
 
-### Solution
-Create scan-type-specific step definitions that use the correct terminology:
+When `n8n-scan-trigger` triggers a phone scan, it calls `phone-intel` with the service role key:
 
-| Scan Type | Term Used |
-|-----------|-----------|
-| username | "username" |
-| email | "email address" |
-| phone | "phone number" |
-
-### Files to Modify
-
-**`src/lib/scan/freeScanSteps.ts`**
-- Add scan-type-specific step generators
-- Create `getStepsForScanType(scanType: 'username' | 'email' | 'phone')` function
-- Keep username steps as default/fallback
-
-**`src/hooks/useStepProgress.ts`** (if it exists) or **`src/components/ScanProgress.tsx`**
-- Pass the scan type to the step generator
-- Derive scan type from `scanData`
-
-### New Step Definitions
-
-```text
-Email Steps:
-- "Checking email reputation..." 
-- "Scanning breach databases..."
-- "Cross-referencing related accounts..."
-- "Mapping associated identities..."
-- "Analyzing registration patterns..."
-- "Building exposure timeline..."
-
-Phone Steps:
-- "Validating phone format..."
-- "Checking carrier intelligence..."
-- "Scanning messaging platforms..."
-- "Cross-referencing public records..."
-- "Analyzing risk indicators..."
-- "Building intelligence summary..."
+```typescript
+fetch(`${supabaseUrl}/functions/v1/phone-intel`, {
+  headers: {
+    'Authorization': `Bearer ${serviceRoleKey}`,  // Service role key
+  },
+  ...
+})
 ```
 
+However, `phone-intel` uses `validateAuth(req)` which attempts to decode this as a **user JWT** token:
+
+```typescript
+const authResult = await validateAuth(req);  // Fails with service role key
+if (!authResult.valid) {
+  return 401 Unauthorized;  // Always returns this!
+}
+```
+
+This means every phone scan immediately fails authentication and produces zero findings.
+
+**Evidence:**
+- Edge function logs show: `phone-intel responded: 401`
+- All 10 recent phone scans have status: `completed_empty`
+- No findings exist for any phone scans
+
 ---
 
-## Part 2: Move API Providers to Pro Tier
+## Solution
 
-### Current State (Free)
-| Provider | Scan Type | Current Tier |
-|----------|-----------|--------------|
-| abstract_phone | phone | free |
-| numverify | phone | free |
-| ipqs_phone | phone | free |
-| twilio_lookup | phone | free |
-| abstract_email | email | free |
-| ipqs_email | email | free |
-| hibp | email | free |
-| holehe | email | free |
-| maigret | username | free |
+Update `phone-intel` to handle **internal service-to-service calls** the same way `email-intel` does (which works correctly).
 
-### Target State
-| Provider | Scan Type | New Tier | Reason |
-|----------|-----------|----------|--------|
-| abstract_phone | phone | **pro** | API provider |
-| numverify | phone | **pro** | API provider |
-| ipqs_phone | phone | **pro** | API provider |
-| twilio_lookup | phone | **pro** | API provider |
-| abstract_email | email | **pro** | API provider |
-| ipqs_email | email | **pro** | API provider |
-| hibp | email | **pro** | API provider (breach data) |
-| holehe | email | free | Worker tool (basic check) |
-| maigret | username | free | Worker tool (basic check) |
+### Changes Required
 
-### Files to Modify
+**File: `supabase/functions/phone-intel/index.ts`**
 
-**`src/lib/providers/registry.ts`**
-- Change `minTier: 'free'` to `minTier: 'pro'` for:
-  - `abstract_phone`
-  - `numverify`
-  - `ipqs_phone`
-  - `twilio_lookup`
-  - `abstract_email`
-  - `ipqs_email`
-  - `hibp`
+1. **Add detection for internal calls**
+   - Check if request is using service role key
+   - Allow internal calls to bypass user auth
 
-**`src/lib/billing/tiers.ts`** (if needed)
-- Verify `allowedProviders` arrays match the new tier restrictions
+2. **Modify authentication logic**
+   - If service role key detected, extract userId from request body instead
+   - If user token provided, validate normally via `validateAuth()`
 
-**`supabase/functions/_shared/phoneProviderConfig.ts`** (if exists)
-- Update minTier for phone providers to match registry
+3. **Pattern match email-intel**
+   - `email-intel` simply uses the service role key directly and trusts the payload
+   - Apply same pattern for consistency
 
 ---
 
 ## Technical Details
 
-### Step Progress Integration
-The `ScanProgress.tsx` component already has access to `scanData` which includes:
-- `scanData.email`
-- `scanData.phone`
-- `scanData.username`
+### Current (Broken) Code
 
-It calculates `scanType` for the request body. We need to:
-1. Pass this scan type to the step progress hook
-2. Use it to select the appropriate step definitions
-
-### Provider Registry Changes
-Simple one-line changes per provider in the registry:
 ```typescript
-// Before
-minTier: 'free',
-
-// After  
-minTier: 'pro',
+// phone-intel/index.ts line 169-177
+const authResult = await validateAuth(req);
+if (!authResult.valid || !authResult.context) {
+  return new Response(
+    JSON.stringify({ error: authResult.error || 'Unauthorized' }),
+    { status: 401, headers: ... }
+  );
+}
+const userId = authResult.context.userId;
 ```
 
-### Backend Enforcement
-The `phone-intel` and `email-intel` edge functions already use `enforceProviderAccess()` which checks `minTier`. Once the registry is updated, Free users will be automatically blocked from these providers with a `tier_restricted` status.
+### Fixed Code
+
+```typescript
+// Detect if this is an internal service call (from n8n-scan-trigger)
+const authHeader = req.headers.get('Authorization');
+const isInternalCall = authHeader?.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '');
+
+let userId: string;
+
+if (isInternalCall) {
+  // Internal call from n8n-scan-trigger - trust the payload
+  const body = await req.json();
+  if (!body.scanId || !body.phone) {
+    return new Response(
+      JSON.stringify({ error: 'Missing required fields for internal call' }),
+      { status: 400, ... }
+    );
+  }
+  // Get userId from scan record (trusted internal flow)
+  const { data: scan } = await supabase
+    .from('scans')
+    .select('user_id')
+    .eq('id', body.scanId)
+    .single();
+  
+  if (!scan?.user_id) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid scan ID' }),
+      { status: 400, ... }
+    );
+  }
+  userId = scan.user_id;
+} else {
+  // External call - require user auth
+  const authResult = await validateAuth(req);
+  if (!authResult.valid || !authResult.context) {
+    return 401 Unauthorized;
+  }
+  userId = authResult.context.userId;
+}
+```
 
 ---
 
-## Files Summary
+## Verification Steps
+
+After the fix:
+
+1. Re-run a phone scan
+2. Check `scan_provider_events` table for provider activity
+3. Check `findings` table for phone intelligence results
+4. Verify scan status changes from `completed_empty` to `completed`
+
+---
+
+## Affected Files
 
 | File | Change |
 |------|--------|
-| `src/lib/scan/freeScanSteps.ts` | Add email/phone step definitions + getter function |
-| `src/components/ScanProgress.tsx` | Pass scanType to step progress |
-| `src/hooks/useStepProgress.ts` | Accept scanType parameter |
-| `src/lib/providers/registry.ts` | Update 7 providers to `minTier: 'pro'` |
-| `supabase/functions/_shared/phoneProviderConfig.ts` | Update phone providers to `minTier: 'pro'` |
+| `supabase/functions/phone-intel/index.ts` | Add internal call detection and bypass auth for service-to-service calls |
 
----
-
-## Expected Behavior After Fix
-
-### Free Tier
-- **Username scans**: Maigret only (basic profile detection)
-- **Email scans**: Holehe only (registration checks)
-- **Phone scans**: No API providers (need Pro)
-- **Progress UI**: Shows correct terminology ("email address" / "phone number")
-
-### Pro Tier
-- Full access to all API providers (HIBP, Abstract, IPQS, NumVerify)
-- Enhanced intelligence and breach data
-- Same progress UI with correct terminology
