@@ -12,7 +12,18 @@ export type ScanErrorType =
   | 'server_error' 
   | 'client_error'
   | 'provider_unconfigured'
+  | 'tier_blocked'          // New: Free tier restrictions
+  | 'email_verification_required'  // New: Email not verified
+  | 'scan_limit_exhausted'  // New: Free scan credits used
   | 'unknown';
+
+// Block reason codes returned by backend
+export type BlockReasonCode = 
+  | 'email_verification_required'
+  | 'free_any_scan_exhausted'
+  | 'scan_blocked_by_tier'
+  | 'no_providers_available_for_tier'
+  | 'tier_restricted';
 
 export interface ClassifiedError {
   type: ScanErrorType;
@@ -20,6 +31,8 @@ export interface ClassifiedError {
   retryable: boolean;
   code?: number;
   provider?: string;
+  blockReason?: BlockReasonCode;  // New: Specific reason for blocks
+  scanType?: string;               // New: Scan type that was blocked
 }
 
 interface RetryOptions {
@@ -41,8 +54,14 @@ const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'onRetry' | 'context'>> = {
     // Retry on network errors, timeouts, and 5xx server errors
     if (!error) return false;
     
-    const status = error?.status || error?.code;
+    const parsed = parseEdgeFunctionError(error);
+    const status = parsed.status;
     const message = error?.message?.toLowerCase() || '';
+    
+    // Never retry tier blocks or verification requirements
+    if (parsed.code && isTierBlockCode(parsed.code)) {
+      return false;
+    }
     
     // Network/timeout errors - always retry
     if (message.includes('timeout') || message.includes('network') || 
@@ -52,7 +71,7 @@ const DEFAULT_OPTIONS: Required<Omit<RetryOptions, 'onRetry' | 'context'>> = {
     }
     
     // Don't retry client errors (4xx) except 429 (rate limit)
-    if (status >= 400 && status < 500 && status !== 429) {
+    if (status && status >= 400 && status < 500 && status !== 429) {
       return false;
     }
     
@@ -78,6 +97,101 @@ function calculateDelay(attempt: number, baseDelay: number, maxDelay: number): n
 }
 
 /**
+ * Check if error code indicates a tier/verification block
+ */
+export function isTierBlockCode(code: string): boolean {
+  const blockCodes: BlockReasonCode[] = [
+    'email_verification_required',
+    'free_any_scan_exhausted',
+    'scan_blocked_by_tier',
+    'no_providers_available_for_tier',
+    'tier_restricted',
+  ];
+  return blockCodes.includes(code as BlockReasonCode);
+}
+
+/**
+ * Parse Supabase edge function error to extract status and JSON body
+ * Handles various error shapes from supabase-js
+ */
+export interface ParsedEdgeFunctionError {
+  status?: number;
+  code?: string;
+  message?: string;
+  error?: string;
+  scanType?: string;
+  body?: Record<string, unknown>;
+}
+
+export function parseEdgeFunctionError(error: any): ParsedEdgeFunctionError {
+  if (!error) return {};
+  
+  const result: ParsedEdgeFunctionError = {};
+  
+  // Try to get status from various locations
+  result.status = 
+    error?.status ||
+    error?.code ||
+    error?.context?.status ||
+    (error?.message?.match(/status[:\s]+(\d{3})/i)?.[1] ? parseInt(error.message.match(/status[:\s]+(\d{3})/i)[1]) : undefined);
+  
+  // Try to extract JSON body from error.context or error.message
+  let bodyData: Record<string, unknown> | null = null;
+  
+  // Check error.context.body (some supabase-js versions)
+  if (error?.context?.body) {
+    if (typeof error.context.body === 'string') {
+      try {
+        bodyData = JSON.parse(error.context.body);
+      } catch {
+        // Not valid JSON
+      }
+    } else if (typeof error.context.body === 'object') {
+      bodyData = error.context.body;
+    }
+  }
+  
+  // Check if error.message contains JSON (common pattern: "Edge Function returned a non-2xx status code" + JSON)
+  if (!bodyData && error?.message && typeof error.message === 'string') {
+    // Look for JSON in the message
+    const jsonMatch = error.message.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        bodyData = JSON.parse(jsonMatch[0]);
+      } catch {
+        // Not valid JSON
+      }
+    }
+  }
+  
+  // Check error.data (another possible location)
+  if (!bodyData && error?.data && typeof error.data === 'object') {
+    bodyData = error.data;
+  }
+  
+  // Extract fields from body
+  if (bodyData) {
+    result.body = bodyData;
+    result.code = (bodyData.code as string) || (bodyData.error as string);
+    result.message = (bodyData.message as string) || result.message;
+    result.error = (bodyData.error as string);
+    result.scanType = (bodyData.scanType as string);
+    
+    // Update status from body if not already set
+    if (!result.status && typeof bodyData.status === 'number') {
+      result.status = bodyData.status;
+    }
+  }
+  
+  // Fall back to error.message for message
+  if (!result.message) {
+    result.message = error?.message || String(error);
+  }
+  
+  return result;
+}
+
+/**
  * Classify an error for better handling
  */
 export function classifyError(error: any): ClassifiedError {
@@ -85,9 +199,46 @@ export function classifyError(error: any): ClassifiedError {
     return { type: 'unknown', message: 'Unknown error', retryable: false };
   }
 
-  const status = error?.status || error?.code;
-  const message = error?.message || String(error);
+  // Parse the error to extract structured data
+  const parsed = parseEdgeFunctionError(error);
+  const status = parsed.status;
+  const code = parsed.code;
+  const message = parsed.message || error?.message || String(error);
   const lowerMessage = message.toLowerCase();
+
+  // Check for tier/verification blocks FIRST (most specific)
+  if (code === 'email_verification_required' || lowerMessage.includes('verify your email') || lowerMessage.includes('email_verification_required')) {
+    return {
+      type: 'email_verification_required',
+      message: 'Please verify your email address to continue.',
+      retryable: false,
+      code: status || 403,
+      blockReason: 'email_verification_required',
+      scanType: parsed.scanType,
+    };
+  }
+
+  if (code === 'free_any_scan_exhausted' || lowerMessage.includes('free scan') || lowerMessage.includes('scan_exhausted')) {
+    return {
+      type: 'scan_limit_exhausted',
+      message: 'You\'ve used your free scan. Upgrade to continue scanning.',
+      retryable: false,
+      code: status || 403,
+      blockReason: 'free_any_scan_exhausted',
+      scanType: parsed.scanType,
+    };
+  }
+
+  if (code === 'scan_blocked_by_tier' || code === 'no_providers_available_for_tier' || code === 'tier_restricted') {
+    return {
+      type: 'tier_blocked',
+      message: message || 'This scan type requires an upgrade.',
+      retryable: false,
+      code: status || 403,
+      blockReason: code as BlockReasonCode,
+      scanType: parsed.scanType,
+    };
+  }
 
   // Check for timeout
   if (lowerMessage.includes('timeout') || lowerMessage.includes('aborted') || 
@@ -121,14 +272,23 @@ export function classifyError(error: any): ClassifiedError {
     };
   }
 
-  // Check for auth errors
-  if (status === 401 || status === 403 || lowerMessage.includes('unauthorized') ||
-      lowerMessage.includes('forbidden') || lowerMessage.includes('token')) {
+  // Check for auth errors (but NOT tier blocks which return 403)
+  if (status === 401 || lowerMessage.includes('unauthorized') || lowerMessage.includes('token expired')) {
     return {
       type: 'auth_error',
       message: 'Authentication required. Please log in again.',
       retryable: false,
       code: status
+    };
+  }
+
+  // 403 without a recognized block code - generic forbidden
+  if (status === 403) {
+    return {
+      type: 'auth_error',
+      message: message || 'Access denied.',
+      retryable: false,
+      code: 403
     };
   }
 
@@ -144,7 +304,7 @@ export function classifyError(error: any): ClassifiedError {
   }
 
   // Server errors (5xx)
-  if (status >= 500) {
+  if (status && status >= 500) {
     return {
       type: 'server_error',
       message: 'Server error. Our team has been notified. Please try again.',
@@ -154,7 +314,7 @@ export function classifyError(error: any): ClassifiedError {
   }
 
   // Client errors (4xx)
-  if (status >= 400 && status < 500) {
+  if (status && status >= 400 && status < 500) {
     return {
       type: 'client_error',
       message: message || 'Invalid request. Please check your input.',
@@ -324,6 +484,12 @@ export const scanInvoke = createRetryWrapper({
  */
 export function getUserFriendlyMessage(classified: ClassifiedError): string {
   switch (classified.type) {
+    case 'email_verification_required':
+      return 'Please verify your email to unlock scanning features.';
+    case 'scan_limit_exhausted':
+      return 'You\'ve used your free scan. Upgrade for unlimited access.';
+    case 'tier_blocked':
+      return classified.message || 'This feature requires an upgrade.';
     case 'timeout':
       return 'The scan is taking longer than expected. Results will appear when ready.';
     case 'network_error':
@@ -341,4 +507,15 @@ export function getUserFriendlyMessage(classified: ClassifiedError): string {
     default:
       return 'An unexpected error occurred. Please try again.';
   }
+}
+
+/**
+ * Check if a classified error represents a tier/verification block (not a failure)
+ */
+export function isTierBlockError(classified: ClassifiedError): boolean {
+  return (
+    classified.type === 'email_verification_required' ||
+    classified.type === 'scan_limit_exhausted' ||
+    classified.type === 'tier_blocked'
+  );
 }

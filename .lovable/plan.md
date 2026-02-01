@@ -1,3 +1,4 @@
+✅ COMPLETED
 
 Goal
 - Stop “scan.failed / Edge Function returned a non‑2xx status code” from appearing for scans that are actually expected “blocked” outcomes (free-tier restrictions / email verification).

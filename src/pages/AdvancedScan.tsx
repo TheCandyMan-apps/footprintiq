@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { invokeWithRetry, classifyError, getUserFriendlyMessage } from "@/lib/supabaseRetry";
+import { invokeWithRetry, classifyError, getUserFriendlyMessage, isTierBlockError } from "@/lib/supabaseRetry";
 import { Header } from "@/components/Header";
 import { SEO } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
@@ -616,15 +616,12 @@ export default function AdvancedScan() {
             const classified = classifyError(error);
             console.error('[AdvancedScan] Scan error:', { error, classified });
             
-            // Check if this is a tier block - backend already logs scan.blocked
-            const errorMessage = error.message || '';
-            const isTierBlock = errorMessage.includes('blocked') || 
-                                errorMessage.includes('scan_blocked_by_tier') ||
-                                errorMessage.includes('no_providers_available') ||
-                                errorMessage.includes('requires Pro');
+            // Check if this is a tier/verification block (NOT a failure)
+            const isBlock = isTierBlockError(classified);
             
-            // Only log scan.failed for non-tier errors (avoid duplicate logging)
-            if (!isTierBlock) {
+            // Only log scan.failed for real failures, NOT tier blocks
+            // Backend already logs scan.blocked for tier blocks
+            if (!isBlock) {
               ActivityLogger.scanFailed(preScanId, {
                 scan_type: scanType,
                 target: targetValue,
@@ -640,7 +637,41 @@ export default function AdvancedScan() {
               setCurrentScanId(null);
               setIsScanning(false);
               
-              // Handle specific error types
+              // Handle tier blocks with specific CTAs
+              if (classified.type === 'email_verification_required') {
+                toast.error('Email verification required', {
+                  description: 'Please verify your email address to continue scanning.',
+                  action: {
+                    label: 'Resend verification',
+                    onClick: async () => {
+                      const { data: { user } } = await supabase.auth.getUser();
+                      if (user?.email) {
+                        const { error } = await supabase.auth.resend({
+                          type: 'signup',
+                          email: user.email,
+                        });
+                        if (!error) {
+                          toast.success('Verification email sent!');
+                        }
+                      }
+                    }
+                  },
+                  duration: 10000
+                });
+                return { success: false, blocked: true, reason: 'email_verification' };
+              }
+              
+              if (classified.type === 'scan_limit_exhausted' || classified.type === 'tier_blocked') {
+                setUpgradeReason(scanType === 'email' ? 'email_scan_blocked' : scanType === 'phone' ? 'phone_scan_blocked' : 'provider_blocked');
+                setShowUpgradeModal(true);
+                toast.warning('Upgrade required', {
+                  description: classified.message || 'This scan type requires a Pro subscription.',
+                  duration: 6000
+                });
+                return { success: false, blocked: true, reason: 'tier_block' };
+              }
+              
+              // Handle other error types
               switch (classified.type) {
                 case 'rate_limit':
                   toast.error('Too many scans', { 
@@ -695,25 +726,10 @@ export default function AdvancedScan() {
                   break;
                   
                 default:
-                  // Check for specific monetization/plan errors in message
-                  const errorMessage = error.message || '';
-                  if (errorMessage.includes('insufficient') || errorMessage.includes('credits')) {
-                    setUpgradeReason('insufficient_credits');
-                    setShowUpgradeModal(true);
-                  } else if (errorMessage.includes('no_providers_available_for_tier') || 
-                             errorMessage.includes('requires') || 
-                             errorMessage.includes('blocked')) {
-                    setUpgradeReason('provider_blocked');
-                    setShowUpgradeModal(true);
-                  } else if (errorMessage.includes('limit reached') || errorMessage.includes('quota')) {
-                    setUpgradeReason('insufficient_credits');
-                    setShowUpgradeModal(true);
-                  } else {
-                    toast.error('Scan failed', { 
-                      description: getUserFriendlyMessage(classified),
-                      duration: 5000
-                    });
-                  }
+                  toast.error('Scan failed', { 
+                    description: getUserFriendlyMessage(classified),
+                    duration: 5000
+                  });
               }
             }
             throw error;

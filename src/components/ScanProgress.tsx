@@ -5,6 +5,9 @@ import { updateStreakOnScan } from "@/lib/updateStreakOnScan";
 import { UnifiedScanProgress } from "@/components/scan/UnifiedScanProgress";
 import { StepProgressUI } from "@/components/scan/StepProgressUI";
 import { useStepProgress } from "@/hooks/useStepProgress";
+import { classifyError, isTierBlockError, getUserFriendlyMessage } from "@/lib/supabaseRetry";
+import { toast } from "sonner";
+import { ActivityLogger } from "@/lib/activityLogger";
 import type { ScanFormData } from "./ScanForm";
 import type { ScanStepType } from "@/lib/scan/freeScanSteps";
 
@@ -35,10 +38,22 @@ const TERMINAL_STATUSES = [
   'not_configured',
 ];
 
+// Blocked error codes from backend
+const BLOCKED_CODES = [
+  'email_verification_required',
+  'free_any_scan_exhausted',
+  'scan_blocked_by_tier',
+  'no_providers_available_for_tier',
+  'tier_restricted',
+];
+
 export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, isAdmin = false }: ScanProgressProps) => {
   const [isComplete, setIsComplete] = useState(false);
   const [isFailed, setIsFailed] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);  // New: tier/verification block
+  const [blockedMessage, setBlockedMessage] = useState<string | null>(null);
   const [scanId, setScanId] = useState<string | null>(null);
+  const [triggerFailed, setTriggerFailed] = useState(false);  // New: track if trigger failed
   const navigate = useNavigate();
   
   // Determine if Free tier for step-based UI
@@ -56,7 +71,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   }, [scanData.email, scanData.phone, scanData.username]);
   
   // Use step progress hook for Free tier with correct scan type
-  const stepProgress = useStepProgress(showStepProgress ? scanId : null, derivedScanType);
+  const stepProgress = useStepProgress(showStepProgress && !triggerFailed ? scanId : null, derivedScanType);
   
   // Guards
   const scanStartedRef = useRef(false);
@@ -205,17 +220,78 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
             15000,
             'n8n-scan-trigger'
           );
+          
           if (invokeResult?.error) {
             console.error('[ScanProgress] n8n-scan-trigger error:', invokeResult.error);
-          } else {
-            const actualScanId = invokeResult?.data?.scanId || preScanId;
-            if (actualScanId !== preScanId) {
-              setScanId(actualScanId);
+            
+            // Classify the error to determine if it's a block or real failure
+            const classified = classifyError(invokeResult.error);
+            const isBlock = isTierBlockError(classified);
+            
+            if (isBlock) {
+              // This is a tier/verification block - show appropriate message
+              console.log('[ScanProgress] Scan blocked:', classified.type, classified.blockReason);
+              setIsBlocked(true);
+              setBlockedMessage(classified.message);
+              setTriggerFailed(true);
+              
+              // Show appropriate toast based on block type
+              if (classified.type === 'email_verification_required') {
+                toast.error('Email verification required', {
+                  description: 'Please verify your email to continue scanning.',
+                  action: {
+                    label: 'Resend',
+                    onClick: async () => {
+                      const { data: { user } } = await supabase.auth.getUser();
+                      if (user?.email) {
+                        await supabase.auth.resend({ type: 'signup', email: user.email });
+                        toast.success('Verification email sent!');
+                      }
+                    }
+                  },
+                  duration: 10000
+                });
+              } else {
+                toast.warning('Upgrade required', {
+                  description: classified.message || 'This scan type requires a Pro subscription.',
+                  action: {
+                    label: 'Upgrade',
+                    onClick: () => navigate('/settings')
+                  },
+                  duration: 8000
+                });
+              }
+              
+              // Do NOT log scan.failed for blocks - backend logs scan.blocked
+              return;
             }
-            console.log('[ScanProgress] Scan trigger acknowledged:', { actualScanId, status: invokeResult?.data?.status });
+            
+            // Real failure - log it
+            setIsFailed(true);
+            setTriggerFailed(true);
+            
+            await ActivityLogger.scanFailed(preScanId, {
+              scan_type: scanType,
+              error: invokeResult.error?.message || 'Trigger failed',
+              error_type: classified.type,
+            });
+            
+            toast.error('Scan failed to start', {
+              description: getUserFriendlyMessage(classified),
+            });
+            return;
           }
+          
+          // Success - update scanId if different
+          const actualScanId = invokeResult?.data?.scanId || preScanId;
+          if (actualScanId !== preScanId) {
+            setScanId(actualScanId);
+          }
+          console.log('[ScanProgress] Scan trigger acknowledged:', { actualScanId, status: invokeResult?.data?.status });
+          
         } catch (invokeErr) {
           console.warn('[ScanProgress] n8n-scan-trigger did not respond quickly; continuing with polling.', invokeErr);
+          // Don't set failed - the scan may still be running
         }
 
       } catch (error: any) {
@@ -231,9 +307,9 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
     };
   }, [scanData, userId, subscriptionTier, isAdmin]);
 
-  // Poll for completion + realtime subscription
+  // Poll for completion + realtime subscription (only if trigger didn't fail)
   useEffect(() => {
-    if (!scanId || completionHandledRef.current) return;
+    if (!scanId || completionHandledRef.current || triggerFailed) return;
 
     let isMounted = true;
     let pollInterval: NodeJS.Timeout | null = null;
@@ -301,7 +377,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
       clearTimeout(safetyTimeout);
       supabase.removeChannel(channel);
     };
-  }, [scanId, handleCompletion]);
+  }, [scanId, handleCompletion, triggerFailed]);
 
   // Derive target username for display
   const targetUsername = scanData.username?.trim() || scanData.email?.trim() || 'target';
@@ -311,10 +387,44 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
   const effectiveComplete = isComplete || (showStepProgress && stepProgress.isComplete);
   const effectiveFailed = isFailed || (showStepProgress && stepProgress.isFailed);
 
+  // Handle blocked state - show message and actions
+  if (isBlocked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6 py-8">
+        <div className="w-full max-w-xl text-center space-y-6">
+          <div className="p-6 rounded-lg border border-amber-500/30 bg-amber-500/10">
+            <div className="text-amber-500 mb-4">
+              <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Scan Blocked</h3>
+            <p className="text-muted-foreground mb-4">{blockedMessage || 'This scan requires an upgrade.'}</p>
+          </div>
+          
+          <div className="flex items-center justify-center gap-3">
+            <button
+              className="px-4 py-2 rounded-md border border-input hover:bg-accent transition-colors"
+              onClick={() => navigate('/scan')}
+            >
+              Return to scanner
+            </button>
+            <button
+              className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              onClick={() => navigate('/settings')}
+            >
+              View Plans
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center px-6 py-8">
       <div className="w-full max-w-xl">
-        {showStepProgress && scanId ? (
+        {showStepProgress && scanId && !triggerFailed ? (
           <StepProgressUI
             scanId={scanId}
             username={targetUsername}
@@ -328,12 +438,12 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
         ) : (
           <UnifiedScanProgress 
             isComplete={effectiveComplete} 
-            isFailed={effectiveFailed}
+            isFailed={effectiveFailed || triggerFailed}
             scanType={derivedScanType}
           />
         )}
         
-        {effectiveFailed && (
+        {(effectiveFailed || triggerFailed) && (
           <div className="mt-4 text-center">
             <button
               className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
