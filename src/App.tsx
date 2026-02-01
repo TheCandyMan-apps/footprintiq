@@ -386,7 +386,7 @@ function RouterContent() {
           <Route path="/api-docs" element={<ApiDocs />} />
           <Route path="/context-enrichment" element={<ContextEnrichment />} />
           <Route path="/legal/dpa" element={<DPA />} />
-          <Route path="/scan/advanced" element={<AdvancedScan />} />
+          <Route path="/scan/advanced" element={<Navigate to="/scan" replace />} />
           <Route path="/evidence-pack" element={<EvidencePack />} />
           <Route path="/settings/health" element={<ScanHealth />} />
           <Route path="/scan/batch" element={<BatchScan />} />

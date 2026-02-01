@@ -228,9 +228,9 @@ export default function SimpleMaigretResults() {
           <div className="space-y-4 animate-fade-in">
             <Button 
               variant="ghost" 
-              onClick={() => navigate('/scan/advanced')}
+              onClick={() => navigate('/scan')}
               className="hover:bg-primary/10 transition-all hover:scale-105"
-              aria-label="Return to advanced scanner"
+              aria-label="Return to scanner"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Scanner
