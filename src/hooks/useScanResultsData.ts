@@ -69,12 +69,22 @@ export function useScanResultsData(jobId: string) {
     const foundCount = displayGrouped.found?.length || 0;
     const claimedCount = displayGrouped.claimed?.length || 0;
 
-    // Detect breach-related findings (excluding provider health)
+    // Detect breach-related findings (excluding provider health and "no breach" findings)
     const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised'];
+    // Patterns that indicate NO breach was found (should be excluded)
+    const noBreachPatterns = ['breach.none', 'no_breach', 'no breach', 'not found', 'clean'];
     const breachResults = displayResults.filter(r => {
       if (isProviderHealthFinding(r)) return false;
       const kind = (r.kind || '').toLowerCase();
       const provider = (r.provider || '').toLowerCase();
+      const metaTitle = (r.meta?.title || '').toLowerCase();
+      const metaStr = JSON.stringify(r.meta || {}).toLowerCase();
+      
+      // Exclude "no breach" findings
+      if (noBreachPatterns.some(p => kind.includes(p) || metaTitle.includes(p))) {
+        return false;
+      }
+      
       return breachKeywords.some(k => kind.includes(k) || provider.includes(k));
     });
 
@@ -142,16 +152,25 @@ export function useScanResultsData(jobId: string) {
     return locations;
   }, [results]);
 
-  // Filter breach-related results (excluding provider health)
+  // Filter breach-related results (excluding provider health and "no breach" findings)
   // Keywords match resultsAggregator.ts isExposureFinding() for consistency
   const breachResults = useMemo(() => {
     const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised', 'exposure', 'paste', 'pastebin', 'dehashed'];
+    // Patterns that indicate NO breach was found (should be excluded)
+    const noBreachPatterns = ['breach.none', 'no_breach', 'no breach', 'not found', 'clean'];
     return (results as any[]).filter(r => {
       if (isProviderHealthFinding(r)) return false;
       const kind = (r.kind || '').toLowerCase();
       const provider = (r.provider || '').toLowerCase();
       const site = (r.site || '').toLowerCase();
+      const metaTitle = (r.meta?.title || '').toLowerCase();
       const metaStr = JSON.stringify(r.meta || {}).toLowerCase();
+      
+      // Exclude "no breach" findings (e.g., kind: 'breach.none', title: 'No Breaches Found')
+      if (noBreachPatterns.some(p => kind.includes(p) || metaTitle.includes(p))) {
+        return false;
+      }
+      
       return breachKeywords.some(k => 
         kind.includes(k) || provider.includes(k) || site.includes(k) || metaStr.includes(k)
       );
