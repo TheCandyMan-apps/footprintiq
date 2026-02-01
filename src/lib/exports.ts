@@ -86,9 +86,14 @@ export function exportAsCSV(findings: Finding[], redactPII: boolean = true): voi
 /**
  * Export findings as PDF using @react-pdf/renderer with professional formatting
  */
-export async function exportAsPDF(findings: Finding[], redactPII: boolean = true): Promise<void> {
-  // Use the new React PDF implementation
-  return exportReactPDF(findings, redactPII);
+export async function exportAsPDF(
+  findings: Finding[], 
+  redactPII: boolean = true,
+  scanTarget?: string,
+  scanId?: string
+): Promise<void> {
+  // Use the new React PDF implementation with enhanced formatting
+  return exportReactPDF(findings, redactPII, scanTarget, scanId);
 }
 
 /**
