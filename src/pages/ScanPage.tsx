@@ -145,8 +145,8 @@ const ScanPage = () => {
   return (
     <>
       <SEO
-        title="Scan Your Digital Footprint — FootprintIQ OSINT Scanner"
-        description="Free OSINT scanner for emails, usernames, domains, phones and IPs. Check data breaches with Have I Been Pwned, Shodan, VirusTotal and more."
+        title="Free Digital Footprint Scanner — Check Your Online Presence | FootprintIQ"
+        description="Scan your username, email, or phone number across 500+ platforms. Free OSINT tool to check data breaches, find public profiles, and discover where your personal information appears online."
         canonical="https://footprintiq.app/scan"
         schema={{
           breadcrumbs: {

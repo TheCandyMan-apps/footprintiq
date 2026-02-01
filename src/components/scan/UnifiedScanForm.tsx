@@ -205,17 +205,32 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center px-6 py-20">
-        <Card className="w-full max-w-2xl p-8 bg-gradient-card border-border shadow-card">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-2 mb-3">
-              <Shield className="h-7 w-7 text-primary" />
-              <h2 className="text-3xl font-bold">Start Your Digital Footprint Scan</h2>
-            </div>
-            <p className="text-muted-foreground">
-              Enter a username, email, phone number, or full name to discover your online presence
+      <div className="min-h-screen flex flex-col">
+        {/* SEO Header - provides H1 and content for crawlers */}
+        <header className="bg-muted/30 border-b border-border">
+          <div className="max-w-4xl mx-auto px-6 py-8 text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
+              Free Digital Footprint Scanner
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Check where your personal information appears online. Scan usernames across 500+ platforms, 
+              detect email breaches, verify phone exposure, and discover your digital presence using ethical OSINT methods.
             </p>
           </div>
+        </header>
+
+        {/* Main Form */}
+        <main className="flex-1 flex items-center justify-center px-6 py-12">
+          <Card className="w-full max-w-2xl p-8 bg-gradient-card border-border shadow-card">
+            <div className="text-center mb-8">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Shield className="h-7 w-7 text-primary" />
+                <h2 className="text-2xl font-semibold">Start Your Scan</h2>
+              </div>
+              <p className="text-muted-foreground">
+                Enter a username, email, phone number, or full name to discover your online presence
+              </p>
+            </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Single Input Field */}
@@ -312,6 +327,35 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
             )}
           </form>
         </Card>
+      </main>
+
+      {/* SEO Footer Content - adds more text for crawlers */}
+      <footer className="bg-muted/20 border-t border-border">
+        <div className="max-w-4xl mx-auto px-6 py-10">
+          <div className="grid md:grid-cols-2 gap-8 text-sm text-muted-foreground">
+            <div>
+              <h3 className="font-semibold text-foreground mb-2">What We Scan</h3>
+              <ul className="space-y-1">
+                <li>• Social media platforms (Instagram, TikTok, Reddit, X/Twitter, etc.)</li>
+                <li>• Professional networks (LinkedIn, GitHub, Behance)</li>
+                <li>• Gaming platforms (Steam, PlayStation, Xbox)</li>
+                <li>• Forums, communities, and creative sites</li>
+                <li>• Known data breach databases</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground mb-2">Privacy Promise</h3>
+              <p className="mb-3">
+                FootprintIQ only accesses publicly available information. We never store your queries, 
+                track your activity, or sell your data. Scans are user-initiated and results are yours alone.
+              </p>
+              <p>
+                <a href="/responsible-use" className="text-primary hover:underline">Read our Responsible Use Policy</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
       </div>
       
       {/* Upgrade Dialog */}
