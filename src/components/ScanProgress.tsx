@@ -10,10 +10,11 @@ import { toast } from "sonner";
 import { ActivityLogger } from "@/lib/activityLogger";
 import type { ScanFormData } from "./ScanForm";
 import type { ScanStepType } from "@/lib/scan/freeScanSteps";
+import type { ScanMode, EnhancerKey } from "@/lib/scan/unifiedScanTypes";
 
 interface ScanProgressProps {
   onComplete: (scanId: string) => void;
-  scanData: ScanFormData;
+  scanData: ScanFormData & { scanMode?: ScanMode; enhancers?: EnhancerKey[] };
   userId: string;
   subscriptionTier: string;
   isAdmin?: boolean;
@@ -196,6 +197,8 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           scanType,
           workspaceId,
           tier: subscriptionTier || 'free',  // Pass tier for routing to correct n8n workflow
+          scanMode: scanData.scanMode || 'standard',  // Pass scan mode from unified form
+          enhancers: scanData.enhancers || [],  // Pass selected enhancers
         };
         
         if (scanData.username?.trim()) requestBody.username = scanData.username.trim();
@@ -212,7 +215,13 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           requestBody.turnstile_token = scanData.turnstile_token;
         }
 
-        console.log('[ScanProgress] Invoking n8n-scan-trigger', { scanType, scanId: preScanId, tier: subscriptionTier });
+        console.log('[ScanProgress] Invoking n8n-scan-trigger', { 
+          scanType, 
+          scanId: preScanId, 
+          tier: subscriptionTier,
+          scanMode: scanData.scanMode,
+          enhancers: scanData.enhancers
+        });
 
         try {
           const invokeResult = await withTimeout(
