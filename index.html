@@ -154,7 +154,44 @@
     <!-- Cloudflare Turnstile (explicit render mode) -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
     
-    <div id="root"></div>
+    <div id="root">
+      <!-- SSR fallback for JS-disabled crawlers (SEMRUSH, etc.) -->
+      <noscript>
+        <header style="max-width: 800px; margin: 0 auto; padding: 60px 20px; text-align: center; font-family: system-ui, sans-serif;">
+          <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #1a1a2e;">FootprintIQ — Ethical Digital Footprint Intelligence</h1>
+          <p style="font-size: 1.25rem; color: #64748b; margin-bottom: 2rem;">
+            FootprintIQ is an ethical digital footprint scanner. We scan usernames across 500+ platforms, 
+            detect email breaches, identify data broker listings, and provide probability-based confidence 
+            analysis — all using publicly available data with full transparency.
+          </p>
+          <nav style="margin: 2rem 0;">
+            <a href="/scan" style="display: inline-block; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; margin: 0.5rem;">Run a Free Scan</a>
+            <a href="/pricing" style="display: inline-block; padding: 12px 24px; border: 2px solid #7c3aed; color: #7c3aed; text-decoration: none; border-radius: 8px; margin: 0.5rem;">View Pricing</a>
+          </nav>
+          <section style="text-align: left; margin-top: 3rem;">
+            <h2 style="font-size: 1.5rem; color: #1a1a2e;">What We Scan</h2>
+            <ul style="color: #475569; line-height: 1.8;">
+              <li>Username search across 500+ social platforms and forums</li>
+              <li>Email breach detection via Have I Been Pwned and other sources</li>
+              <li>Data broker exposure identification</li>
+              <li>Phone number lookups (Pro)</li>
+              <li>Name-based people search aggregation</li>
+            </ul>
+            <h2 style="font-size: 1.5rem; color: #1a1a2e; margin-top: 2rem;">Our Principles</h2>
+            <ul style="color: #475569; line-height: 1.8;">
+              <li>Public data only — we never access private accounts</li>
+              <li>No surveillance or monitoring of individuals</li>
+              <li>User-initiated scans with full consent</li>
+              <li>LENS provides probability-based analysis, not identity confirmation</li>
+            </ul>
+          </section>
+          <footer style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #e2e8f0; color: #94a3b8; font-size: 0.875rem;">
+            <p>FootprintIQ — Ethical OSINT for personal awareness and education.</p>
+            <p><a href="/privacy-policy" style="color: #7c3aed;">Privacy Policy</a> · <a href="/terms-of-service" style="color: #7c3aed;">Terms of Service</a> · <a href="/responsible-use" style="color: #7c3aed;">Responsible Use</a></p>
+          </footer>
+        </header>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
