@@ -1,3 +1,10 @@
+/**
+ * @deprecated This page is deprecated. All scan functionality has been
+ * consolidated into /scan (UnifiedScanForm). This file is kept for reference
+ * and will be removed in a future release.
+ * 
+ * The /advanced route now redirects to /scan automatically.
+ */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";

@@ -293,6 +293,7 @@ function RouterContent() {
             <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/scan" element={<ScanPage />} />
+          <Route path="/advanced" element={<Navigate to="/scan" replace />} />
           <Route path="/results/:scanId" element={<ResultsDetail />} />
           <Route path="/anomaly-history" element={<AnomalyHistory />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />

@@ -2,20 +2,22 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { supabase } from "@/integrations/supabase/client";
-import { ScanForm, type ScanFormData } from "@/components/ScanForm";
+import { UnifiedScanForm } from "@/components/scan/UnifiedScanForm";
 import { ScanProgress } from "@/components/ScanProgress";
 import { UpgradeDialog } from "@/components/UpgradeDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { canRunScan } from "@/lib/billing/quotas";
 import type { User } from "@supabase/supabase-js";
+import type { UnifiedScanConfig, ScanMode, EnhancerKey } from "@/lib/scan/unifiedScanTypes";
+import type { ScanFormData } from "@/components/ScanForm";
 
 type Step = "form" | "scanning";
 
 const ScanPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [currentStep, setCurrentStep] = useState<Step>("form");
-  const [scanData, setScanData] = useState<ScanFormData | null>(null);
+  const [scanData, setScanData] = useState<ScanFormData & { scanMode?: ScanMode; enhancers?: EnhancerKey[] } | null>(null);
   const [subscriptionTier, setSubscriptionTier] = useState<string>("free");
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState<boolean>(false);
@@ -76,7 +78,7 @@ const ScanPage = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  const handleFormSubmit = (data: ScanFormData) => {
+  const handleFormSubmit = (config: UnifiedScanConfig) => {
     /**
      * UI-ONLY validation for display purposes.
      * SECURITY: Server enforces actual limits via RLS policies and edge functions.
@@ -103,7 +105,32 @@ const ScanPage = () => {
       }
     }
     
-    setScanData(data);
+    // Convert UnifiedScanConfig to ScanFormData for ScanProgress
+    const formData: ScanFormData & { scanMode?: ScanMode; enhancers?: EnhancerKey[] } = {
+      turnstile_token: config.turnstile_token,
+      scanMode: config.scanMode,
+      enhancers: config.enhancers,
+    };
+    
+    switch (config.detectedType) {
+      case "email":
+        formData.email = config.query;
+        break;
+      case "phone":
+        formData.phone = config.query;
+        break;
+      case "name":
+        const parts = config.query.split(/\s+/);
+        formData.firstName = parts[0];
+        formData.lastName = parts.slice(1).join(" ");
+        break;
+      case "username":
+      default:
+        formData.username = config.query;
+        break;
+    }
+    
+    setScanData(formData);
     setCurrentStep("scanning");
   };
 
@@ -133,7 +160,7 @@ const ScanPage = () => {
         }}
       />
       <main className="min-h-screen bg-background">
-        {currentStep === "form" && <ScanForm onSubmit={handleFormSubmit} />}
+        {currentStep === "form" && <UnifiedScanForm onSubmit={handleFormSubmit} />}
         {currentStep === "scanning" && scanData && (
           <ScanProgress 
             onComplete={handleScanComplete} 
