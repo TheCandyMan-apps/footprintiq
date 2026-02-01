@@ -1,138 +1,113 @@
 
+Goal
+- Stop “scan.failed / Edge Function returned a non‑2xx status code” from appearing for scans that are actually expected “blocked” outcomes (free-tier restrictions / email verification).
+- Prevent free-tier phone/email scans from starting (and then completing_empty) when the user isn’t eligible.
+- Make the UI show clear, actionable guidance (Verify email / Upgrade) instead of silently failing or hanging.
 
-# Phone Scan Pipeline Fix
+What I found (from your screenshot + database reads)
+1) The recent failures in Activity Logs are email scans on FREE workspaces.
+   - Workspaces in the screenshot are plan=free, subscription_tier=free.
+   - Those scan IDs do not exist in the scans table → meaning the frontend generated a “preScanId”, the edge function returned non‑2xx before creating a scan record, and the frontend logged scan.failed anyway.
 
-## Problem Identified
+2) scan-orchestrate already returns structured 403 JSON for free-tier blocks:
+   - email_verification_required (403)
+   - free_any_scan_exhausted (403)
+   It also logs scan.blocked server-side.
+   But the frontend (AdvancedScan) currently treats these as generic failures and logs scan.failed.
 
-**All phone scans are failing** because the `phone-intel` edge function is rejecting calls from the `n8n-scan-trigger` function with a **401 Unauthorized** error.
+3) Phone scans are also showing completed_empty on FREE accounts.
+   - scan_events show providers were tier_restricted (Abstract/IPQS/Numverify require Pro).
+   - This isn’t a crash; it’s a plan restriction presented as “empty results”, which is confusing UX.
 
-### Root Cause
+Root causes
+A) Frontend error parsing is too weak
+- supabase-js “non‑2xx” function errors often don’t set error.status in the way your classifyError() expects.
+- So your classifyError() returns “unknown”, and AdvancedScan logs scan.failed even for a structured 403 block.
 
-When `n8n-scan-trigger` triggers a phone scan, it calls `phone-intel` with the service role key:
+B) ScanProgress (the /scan flow) doesn’t handle trigger errors properly
+- ScanProgress calls n8n-scan-trigger and:
+  - Logs invokeResult.error, but does not set failed state or show the user why.
+  - Can leave users “stuck” or navigate to results for a scan that never existed.
 
-```typescript
-fetch(`${supabaseUrl}/functions/v1/phone-intel`, {
-  headers: {
-    'Authorization': `Bearer ${serviceRoleKey}`,  // Service role key
-  },
-  ...
-})
-```
+C) n8n-scan-trigger does not enforce the same free-tier gating rules as scan-orchestrate
+- So free users can start phone/email scans that they shouldn’t be able to run (unless they have the “free any-scan credit” and verified email).
+- This leads to completed_empty outcomes and inconsistent behavior vs AdvancedScan.
 
-However, `phone-intel` uses `validateAuth(req)` which attempts to decode this as a **user JWT** token:
+Plan (implementation)
+1) Add robust function-error parsing on the frontend (shared utility)
+- Create a helper that extracts:
+  - HTTP status (from error.context?.status or similar)
+  - JSON body (from error.context?.body, or parse error.message if it contains JSON)
+  - error code (code/error fields) and message
+- Update src/lib/supabaseRetry.ts classifyError() to use this extracted status + code.
+  - Ensure 401/403 blocks are recognized even when status isn’t in error.status.
 
-```typescript
-const authResult = await validateAuth(req);  // Fails with service role key
-if (!authResult.valid) {
-  return 401 Unauthorized;  // Always returns this!
-}
-```
+2) Fix AdvancedScan behavior for “blocked” outcomes (not “failed”)
+- In src/pages/AdvancedScan.tsx:
+  - Expand “tier block” detection to include:
+    - email_verification_required
+    - free_any_scan_exhausted
+    - scan_blocked_by_tier / no_providers_available_for_tier
+  - When blocked:
+    - Do NOT ActivityLogger.scanFailed(...)
+    - Show a toast with the right CTA:
+      - email_verification_required → “Verify email” + action to resend verification (reuse existing useEmailVerification hook pattern used elsewhere)
+      - free_any_scan_exhausted → “Upgrade required” + navigate to billing/settings
+    - Close the progress modal cleanly.
 
-This means every phone scan immediately fails authentication and produces zero findings.
+3) Fix /scan flow (ScanProgress) to stop silent failures and hanging
+- In src/components/ScanProgress.tsx:
+  - If n8n-scan-trigger returns invokeResult.error:
+    - Parse the structured error (same helper as above)
+    - If blocked → show Verify/Upgrade CTA and end the scan flow (set failed, stop polling)
+    - If real failure → show a “Scan failed” message and log scan.failed with useful metadata (include parsed status/code).
+  - Also handle the case “scan record was never created”:
+    - If n8n-scan-trigger fails, do not continue polling a non-existent scanId.
 
-**Evidence:**
-- Edge function logs show: `phone-intel responded: 401`
-- All 10 recent phone scans have status: `completed_empty`
-- No findings exist for any phone scans
+4) Enforce consistent gating in backend trigger (n8n-scan-trigger)
+- Update supabase/functions/n8n-scan-trigger/index.ts to mirror scan-orchestrate’s free-tier rules for non-username scans:
+  - Fetch workspace plan/tier from DB (service role or user client appropriately)
+  - Check email_confirmed_at
+  - Check free_any_scan_credits (if your schema supports it; scan-orchestrate expects it on workspace)
+  - If blocked:
+    - Return 403 with the same structured payload shape:
+      { error, code, message, scanType }
+    - Log scan.blocked (server-side) for audit visibility
+    - Crucially: do NOT create a scan row or scan_progress row.
 
----
+5) (Optional but recommended) Harden internal-call detection in phone-intel
+- Your current change uses strict equality:
+  authHeader === `Bearer ${serviceRoleKey}`
+- Make it tolerant of formatting differences:
+  - Accept “Bearer <token>” case-insensitively, trim whitespace, compare only token values.
+- This prevents reintroducing the original 401 issue due to minor header formatting differences.
 
-## Solution
+How we’ll verify (end-to-end)
+1) Free user, unverified email:
+   - Attempt email scan (AdvancedScan + /scan flow)
+   - Expected: blocked message “Verify your email” + resend CTA
+   - Expected: NO scan.failed log; scan.blocked should be logged.
 
-Update `phone-intel` to handle **internal service-to-service calls** the same way `email-intel` does (which works correctly).
+2) Free user, verified email, free_any_scan_credits = 0:
+   - Attempt email/phone scan
+   - Expected: “Upgrade required” flow; no scan created; no completed_empty.
 
-### Changes Required
+3) Pro user:
+   - Email + Phone scans should create scans and proceed normally.
 
-**File: `supabase/functions/phone-intel/index.ts`**
+4) Admin Activity Logs:
+   - Confirm fewer scan.failed entries with “non‑2xx”, replaced by scan.blocked with clear metadata.
 
-1. **Add detection for internal calls**
-   - Check if request is using service role key
-   - Allow internal calls to bypass user auth
+Files involved
+Frontend
+- src/lib/supabaseRetry.ts (improve error parsing/classification)
+- src/pages/AdvancedScan.tsx (treat blocked outcomes correctly; stop logging scan.failed for them)
+- src/components/ScanProgress.tsx (handle trigger errors; stop hanging/polling non-existent scanId)
 
-2. **Modify authentication logic**
-   - If service role key detected, extract userId from request body instead
-   - If user token provided, validate normally via `validateAuth()`
+Backend (Lovable Cloud functions)
+- supabase/functions/n8n-scan-trigger/index.ts (add tier/email verification gating consistent with scan-orchestrate)
+- supabase/functions/phone-intel/index.ts (optional: make internal auth detection more robust)
 
-3. **Pattern match email-intel**
-   - `email-intel` simply uses the service role key directly and trusts the payload
-   - Apply same pattern for consistency
-
----
-
-## Technical Details
-
-### Current (Broken) Code
-
-```typescript
-// phone-intel/index.ts line 169-177
-const authResult = await validateAuth(req);
-if (!authResult.valid || !authResult.context) {
-  return new Response(
-    JSON.stringify({ error: authResult.error || 'Unauthorized' }),
-    { status: 401, headers: ... }
-  );
-}
-const userId = authResult.context.userId;
-```
-
-### Fixed Code
-
-```typescript
-// Detect if this is an internal service call (from n8n-scan-trigger)
-const authHeader = req.headers.get('Authorization');
-const isInternalCall = authHeader?.includes(Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '');
-
-let userId: string;
-
-if (isInternalCall) {
-  // Internal call from n8n-scan-trigger - trust the payload
-  const body = await req.json();
-  if (!body.scanId || !body.phone) {
-    return new Response(
-      JSON.stringify({ error: 'Missing required fields for internal call' }),
-      { status: 400, ... }
-    );
-  }
-  // Get userId from scan record (trusted internal flow)
-  const { data: scan } = await supabase
-    .from('scans')
-    .select('user_id')
-    .eq('id', body.scanId)
-    .single();
-  
-  if (!scan?.user_id) {
-    return new Response(
-      JSON.stringify({ error: 'Invalid scan ID' }),
-      { status: 400, ... }
-    );
-  }
-  userId = scan.user_id;
-} else {
-  // External call - require user auth
-  const authResult = await validateAuth(req);
-  if (!authResult.valid || !authResult.context) {
-    return 401 Unauthorized;
-  }
-  userId = authResult.context.userId;
-}
-```
-
----
-
-## Verification Steps
-
-After the fix:
-
-1. Re-run a phone scan
-2. Check `scan_provider_events` table for provider activity
-3. Check `findings` table for phone intelligence results
-4. Verify scan status changes from `completed_empty` to `completed`
-
----
-
-## Affected Files
-
-| File | Change |
-|------|--------|
-| `supabase/functions/phone-intel/index.ts` | Add internal call detection and bypass auth for service-to-service calls |
-
+Notes / risks
+- This plan doesn’t weaken security; it improves consistency and prevents users from initiating scans they can’t run.
+- If free_any_scan_credits isn’t actually present in workspaces in your current DB schema, we’ll adapt the gating to “free users cannot run phone/email” (or whatever rule you prefer), but we should keep the error codes stable so the UI can reliably handle them.
