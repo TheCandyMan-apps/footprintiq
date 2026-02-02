@@ -15,6 +15,7 @@ import { StripePaymentForm } from '@/components/billing/StripePaymentForm';
 import { PaymentErrorBoundary } from '@/components/billing/PaymentErrorBoundary';
 import { PurchaseVerification } from '@/components/billing/PurchaseVerification';
 import { CreditPackCard } from '@/components/CreditPackCard';
+import { CreditsVsProComparison } from '@/components/billing/CreditsVsProComparison';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SUBSCRIPTION_PLANS, CREDIT_PACKS } from '@/config/stripe';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -411,6 +412,12 @@ export default function BillingSettings() {
             </Card>
           )}
         </div>
+
+        {/* Credits vs Pro Comparison */}
+        <CreditsVsProComparison 
+          onUpgrade={() => handleUpgrade('pro')} 
+          isPremium={isPremium} 
+        />
 
         {/* Credit Packs */}
         <Card className="p-6">
