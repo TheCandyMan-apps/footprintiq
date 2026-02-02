@@ -59,11 +59,11 @@ const faqItems = [
 ];
 
 const platformCategories = [
-  { icon: Globe, label: "Social Media", description: "Twitter, Instagram, TikTok, Reddit, and more" },
-  { icon: Gamepad2, label: "Gaming Networks", description: "Steam, Discord, Xbox, PlayStation" },
-  { icon: Code, label: "Developer Platforms", description: "GitHub, GitLab, Stack Overflow" },
-  { icon: Briefcase, label: "Professional Networks", description: "LinkedIn, Behance, Dribbble" },
-  { icon: Users, label: "Forums & Communities", description: "500+ forums and communities" }
+  { icon: Globe, label: "Social Media Platforms", description: "Find social accounts on Twitter, Instagram, TikTok, Reddit, and more" },
+  { icon: Gamepad2, label: "Gaming Networks", description: "Steam, Discord, Xbox, PlayStation gaming profiles" },
+  { icon: Code, label: "Developer Platforms", description: "GitHub, GitLab, Stack Overflow developer accounts" },
+  { icon: Briefcase, label: "Professional Networks", description: "LinkedIn, Behance, Dribbble professional profiles" },
+  { icon: Users, label: "Forums & Communities", description: "500+ forums to map your complete online presence" }
 ];
 
 const differentiators = [
@@ -91,8 +91,8 @@ export default function UsernamePage() {
   return (
     <>
       <SEO
-        title="Free Username Search & Lookup — Find People by Username Online"
-        description="Free username search and lookup tool to find people by username. Deep user search across 500+ social media platforms and forums. No login required."
+        title="Free Username Search Tool — Find Social Media Accounts Online"
+        description="Free username search tool to find social media accounts and online presence. Open source intelligence search across 500+ social media platforms. No login required."
         canonical="https://footprintiq.app/username-search"
         schema={{
           breadcrumbs: {
@@ -117,15 +117,19 @@ export default function UsernamePage() {
             </Badge>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-              Free Username Search & Lookup Tool
+              Free Username Search Tool — Find Social Accounts Online
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">
-              Discover where any username appears across hundreds of public platforms — including social media, gaming sites, forums, and professional networks. Our open source intelligence search tool helps you find social accounts and online presence.
+              Use our free username search tool to find social media profiles across 500+ platforms. 
+              Discover your complete online presence — from social media accounts to gaming networks, 
+              forums, and professional communities.
             </p>
 
             <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-8">
-              FootprintIQ is a username search tool that helps individuals discover where their usernames appear across public platforms using ethical OSINT techniques. Find people by username and understand your complete digital footprint.
+              FootprintIQ is an open source intelligence (OSINT) search tool that helps you find social 
+              accounts linked to any username. Whether you're auditing your own online presence or 
+              conducting ethical research, our platform uses publicly accessible data only.
             </p>
             
             <Button size="lg" asChild className="text-lg px-8 py-6">
@@ -141,9 +145,10 @@ export default function UsernamePage() {
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">How Username Search Works</h2>
+              <h2 className="text-3xl font-bold mb-4">How Our Username Search Tool Works</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                FootprintIQ checks public profile pages across 500+ platforms to see if a username is registered. 
+                Our open source intelligence search tool checks public profile pages across 500+ social media 
+                platforms, forums, and communities to find social accounts linked to a username. 
                 We use ethical OSINT techniques — only querying publicly accessible URLs that anyone can visit.
               </p>
             </div>
@@ -244,9 +249,11 @@ export default function UsernamePage() {
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">Beyond Basic Username Search</h2>
+              <h2 className="text-3xl font-bold mb-4">Beyond Basic Username Search Tools</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                Most free username search tools simply tell you "found" or "not found" — they don't explain what that means for your digital exposure. FootprintIQ goes further.
+                Most free username search tools simply tell you "found" or "not found" — they don't explain 
+                what that means for your online presence or digital exposure. FootprintIQ uses open source 
+                intelligence methods to find social accounts and provide actionable context.
               </p>
             </div>
 
