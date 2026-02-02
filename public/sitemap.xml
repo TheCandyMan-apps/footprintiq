@@ -144,6 +144,14 @@
     <priority>0.7</priority>
   </url>
   
+  <!-- Research Reports -->
+  <url>
+    <loc>https://footprintiq.app/research/username-reuse-report-2026</loc>
+    <lastmod>2026-02-02</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
   <!-- Blog -->
   <url>
     <loc>https://footprintiq.app/blog</loc>

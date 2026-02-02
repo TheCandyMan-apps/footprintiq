@@ -231,6 +231,7 @@ const AIWhatAreDataBrokers = lazy(() => import("./pages/ai/WhatAreDataBrokers"))
 const AIIndex = lazy(() => import("./pages/ai/Index"));
 const EthicalOsintForIndividuals = lazy(() => import("./pages/EthicalOsintForIndividuals"));
 const Contact = lazy(() => import("./pages/Contact"));
+const UsernameReuseReport2026 = lazy(() => import("./pages/research/UsernameReuseReport2026"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -473,6 +474,7 @@ function RouterContent() {
           <Route path="/admin/users" element={<Admin />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/research" element={<Research />} />
+          <Route path="/research/username-reuse-report-2026" element={<UsernameReuseReport2026 />} />
           
           {/* SEO Pillar Pages */}
           <Route path="/digital-footprint-scanner" element={<DigitalFootprintScanner />} />
