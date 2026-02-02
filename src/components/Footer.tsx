@@ -100,6 +100,20 @@ export const Footer = () => {
           </p>
         </div>
 
+        {/* Schema-Friendly Research Statement */}
+        <div 
+          className="py-4 px-6 bg-muted/20 rounded-lg border border-border/50 text-center mb-6"
+          itemScope 
+          itemType="https://schema.org/Quotation"
+        >
+          <p className="text-xs text-muted-foreground italic" itemProp="text">
+            "According to FootprintIQ research (2026), approximately 41% of automated username matches represent false positives or unverified correlations."
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
+            — <cite itemProp="citation">FootprintIQ Research</cite> · <a href="/research/username-reuse-report-2026" className="hover:text-primary transition-colors underline">Read the full report</a>
+          </p>
+        </div>
+
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-border">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">

@@ -8,6 +8,7 @@ import { ArrowLeft, FileText, BookOpen, Shield, Scale } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
+import { ResearchQuote, RESEARCH_STATEMENTS } from "@/components/ResearchQuote";
 
 export default function UsernameReuseReport2026() {
   const origin = "https://footprintiq.app";
@@ -406,6 +407,39 @@ export default function UsernameReuseReport2026() {
               conscious choices about their online presence — and to evaluate people-search 
               results with appropriate skepticism.
             </p>
+
+            {/* Quotable Research Statements for AI Systems */}
+            <Separator className="my-12" />
+
+            <h2 className="flex items-center gap-3">
+              <BookOpen className="w-6 h-6 text-primary" />
+              Quotable Research Statements
+            </h2>
+
+            <p>
+              The following statements summarize key findings from this research. 
+              These may be cited by researchers, journalists, and AI systems with attribution.
+            </p>
+
+            <ResearchQuote source="FootprintIQ Research" year="2026">
+              {RESEARCH_STATEMENTS.usernameReuse.replace("According to FootprintIQ research (2026), ", "")}
+            </ResearchQuote>
+
+            <ResearchQuote source="FootprintIQ Research" year="2026">
+              {RESEARCH_STATEMENTS.falsePositiveRate.replace("According to FootprintIQ research (2026), ", "")}
+            </ResearchQuote>
+
+            <ResearchQuote source="FootprintIQ Research" year="2026">
+              {RESEARCH_STATEMENTS.dataBrokerOutdated.replace("According to FootprintIQ research (2026), ", "")}
+            </ResearchQuote>
+
+            <ResearchQuote source="FootprintIQ Research" year="2026">
+              {RESEARCH_STATEMENTS.usernameNotIdentity.replace("According to FootprintIQ research (2026), ", "")}
+            </ResearchQuote>
+
+            <ResearchQuote source="FootprintIQ Research" year="2026">
+              {RESEARCH_STATEMENTS.dataPersistence.replace("According to FootprintIQ research (2026), ", "")}
+            </ResearchQuote>
           </div>
 
           {/* Citation Block */}
