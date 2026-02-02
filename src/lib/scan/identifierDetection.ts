@@ -49,9 +49,14 @@ export function detectIdentifierType(input: string): DetectionResult {
     };
   }
   
-  // Phone detection: starts with + or has 7+ digits total
+  // Phone detection: starts with + OR is primarily numeric
+  // Must start with + OR contain only digits and phone separators (spaces, dashes, parens, dots)
+  // This prevents usernames like "matchu12181990" from being detected as phone numbers
   const digits = trimmed.replace(/\D/g, '');
-  if (trimmed.startsWith('+') || digits.length >= 7) {
+  const isPhoneLike = trimmed.startsWith('+') || 
+    (digits.length >= 7 && /^[\d\s\-().+]+$/.test(trimmed));
+  
+  if (isPhoneLike) {
     return {
       type: 'phone',
       normalized: { phone: trimmed }

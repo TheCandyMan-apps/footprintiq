@@ -38,9 +38,12 @@ function detectType(input: string): DetectedType {
     return "email";
   }
   
-  // Phone: starts with + or has 7+ digits
+  // Phone: starts with + OR is primarily numeric (only digits and phone separators)
+  // This prevents usernames like "matchu12181990" from being detected as phone numbers
   const digits = trimmed.replace(/\D/g, '');
-  if (trimmed.startsWith('+') || digits.length >= 7) {
+  const isPhoneLike = trimmed.startsWith('+') || 
+    (digits.length >= 7 && /^[\d\s\-().+]+$/.test(trimmed));
+  if (isPhoneLike) {
     return "phone";
   }
   
