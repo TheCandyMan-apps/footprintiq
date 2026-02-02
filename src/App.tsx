@@ -234,6 +234,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const UsernameReuseReport2026 = lazy(() => import("./pages/research/UsernameReuseReport2026"));
 const HowUsernameSearchToolsWork = lazy(() => import("./pages/guides/HowUsernameSearchToolsWork"));
 const EthicalOsint = lazy(() => import("./pages/EthicalOsint"));
+const Press = lazy(() => import("./pages/Press"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -513,6 +514,8 @@ function RouterContent() {
           <Route path="/ai/what-are-data-brokers" element={<AIWhatAreDataBrokers />} />
           <Route path="/ethical-osint-for-individuals" element={<EthicalOsintForIndividuals />} />
           <Route path="/ethical-osint" element={<EthicalOsint />} />
+          <Route path="/press" element={<Press />} />
+          <Route path="/media" element={<Press />} />
           
           {/* Embeddable Widget */}
           <Route path="/embed/widget" element={<EmbedWidget />} />
