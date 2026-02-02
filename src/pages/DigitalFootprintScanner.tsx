@@ -189,22 +189,22 @@ const DigitalFootprintScanner = () => {
   return (
     <>
       <Helmet>
-        <title>Free Digital Footprint Checker — Find Your Digital Footprint Online | FootprintIQ</title>
+        <title>Free Digital Footprint Checker — Digital Footprint Intelligence & Finder | FootprintIQ</title>
         <meta 
           name="description" 
-          content="Free digital footprint checker to find your digital footprint online. See how to find the digital footprint of someone using ethical OSINT methods. Checks 500+ sources for social media, email breaches, and personal data exposure." 
+          content="Free digital footprint checker and digital footprint finder to locate your online exposure. Our digital footprint intelligence platform helps you find your digital footprint using ethical OSINT methods. Checks 500+ sources for social media, email breaches, and personal data exposure." 
         />
-        <meta name="keywords" content="digital footprint checker, free digital footprint checker, find digital footprint, find my digital footprint, how to find the digital footprint of someone, personal data exposure, trail of data, ethical OSINT tools, username scanner, email breach scanner, internet footprint" />
-        <link rel="canonical" href="https://footprintiq.com/digital-footprint-scanner" />
+        <meta name="keywords" content="digital footprint checker, free digital footprint checker, digital footprint finder, digital footprint intelligence, find digital footprint, find your digital footprint, find my digital footprint, how to find the digital footprint of someone, personal data exposure, trail of data, ethical OSINT tools, username scanner, email breach scanner, internet footprint" />
+        <link rel="canonical" href="https://footprintiq.app/digital-footprint-scanner" />
         
-        <meta property="og:title" content="Free Digital Footprint Checker — Find Your Digital Footprint Online" />
-        <meta property="og:description" content="Free digital footprint checker to find your digital footprint online. Searches 500+ public sources for social media, email addresses, and data broker listings." />
-        <meta property="og:url" content="https://footprintiq.com/digital-footprint-scanner" />
+        <meta property="og:title" content="Free Digital Footprint Checker — Digital Footprint Intelligence & Finder" />
+        <meta property="og:description" content="Free digital footprint checker and digital footprint finder. Our digital footprint intelligence platform searches 500+ public sources for social media, email addresses, and data broker listings." />
+        <meta property="og:url" content="https://footprintiq.app/digital-footprint-scanner" />
         <meta property="og:type" content="website" />
         
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Free Digital Footprint Checker — Find Your Digital Footprint Online" />
-        <meta name="twitter:description" content="Free digital footprint checker using ethical OSINT methods. Find your trail of data across social media, data breaches, and data brokers." />
+        <meta name="twitter:title" content="Free Digital Footprint Checker — Digital Footprint Intelligence & Finder" />
+        <meta name="twitter:description" content="Free digital footprint checker and digital footprint finder using ethical OSINT methods. Find your digital footprint across social media, data breaches, and data brokers." />
         
         <script type="application/ld+json">{JSON.stringify(schemaFAQ)}</script>
         <script type="application/ld+json">{JSON.stringify(schemaBreadcrumb)}</script>
@@ -229,29 +229,29 @@ const DigitalFootprintScanner = () => {
           {/* Hero Section */}
           <section className="mb-16">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              Free Digital Footprint Checker — Find Your Online Footprint
+              Free Digital Footprint Checker — Digital Footprint Intelligence & Finder
             </h1>
             
             {/* Lead-in subtitle with keyword variations */}
             <p className="text-xl text-primary/80 font-medium mb-6">
-              Our free digital footprint checker helps you discover where your personal data appears across the web—including social media, email addresses, and data broker listings—no surveillance, no data selling.
+              Our free digital footprint checker and digital footprint finder helps you discover where your personal data appears across the web—using advanced digital footprint intelligence to scan social media, email addresses, and data broker listings.
             </p>
             
             <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
               <p className="text-xl text-muted-foreground leading-relaxed">
-                A digital footprint checker is a tool that helps you understand where your personal information appears online. It searches public sources—websites, social media platforms, data aggregators, and breach databases—to show you what others can find about you. Your footprint includes every trail of data you leave behind.
+                A digital footprint checker is a tool that helps you understand where your personal information appears online. As a digital footprint finder, it searches public sources—websites, social media platforms, data aggregators, and breach databases—to show you what others can find about you. Your footprint includes every trail of data you leave behind.
               </p>
               
               <p>
-                Most people don't realize how much of their information is publicly accessible. Over years of internet use, personal data accumulates across dozens or hundreds of sites. Old forum accounts, forgotten social profiles, exposed email addresses, and breached passwords all contribute to your digital footprint. A free digital footprint checker reveals this accumulated exposure in minutes.
+                Most people don't realize how much of their information is publicly accessible. Over years of internet use, personal data accumulates across dozens or hundreds of sites. Old forum accounts, forgotten social profiles, exposed email addresses, and breached passwords all contribute to your digital footprint. A free digital footprint checker reveals this accumulated exposure in minutes using digital footprint intelligence techniques.
               </p>
               
               <p>
-                The important thing to understand: most exposure isn't caused by hacking. It comes from normal internet use over time. Account sign-ups, public posts, data broker collection, and third-party data sharing all create visibility. Search engines index this personal data, making it accessible to anyone. A web presence scanner helps you see what's already out there.
+                The important thing to understand: most exposure isn't caused by hacking. It comes from normal internet use over time. Account sign-ups, public posts, data broker collection, and third-party data sharing all create visibility. Search engines index this personal data, making it accessible to anyone. Our digital footprint finder helps you see what's already out there.
               </p>
               
               <p>
-                Before you can reduce your exposure, you need to understand it. Want to know how to find the digital footprint of someone? Start with a free scan—showing you what exists so you can make informed decisions about what matters.
+                Before you can reduce your exposure, you need to understand it. Want to find your digital footprint or learn how to find the digital footprint of someone? Start with a free scan—our digital footprint intelligence platform shows you what exists so you can make informed decisions about what matters.
               </p>
             </div>
 

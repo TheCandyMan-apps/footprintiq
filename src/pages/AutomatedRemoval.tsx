@@ -117,8 +117,8 @@ export default function AutomatedRemoval() {
   return (
     <>
       <SEO 
-        title="Automated Data Removal — Remove Personal Data from 100+ Sites | FootprintIQ"
-        description="Automatically remove your personal information from data brokers and people search sites. Continuous monitoring and removal across 100+ platforms."
+        title="Free Data Broker Removal — Automated Personal Data Removal | FootprintIQ"
+        description="Free data broker removal tool to automatically remove your personal information from data brokers and people search sites. Our automated removal system handles opt-out requests across 100+ platforms."
         canonical="https://footprintiq.app/automated-removal"
         schema={{
           breadcrumbs: {
@@ -126,7 +126,7 @@ export default function AutomatedRemoval() {
             "@type": "BreadcrumbList",
             itemListElement: [
               { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
-              { "@type": "ListItem", position: 2, name: "Automated Removal", item: "https://footprintiq.app/automated-removal" }
+              { "@type": "ListItem", position: 2, name: "Free Data Broker Removal", item: "https://footprintiq.app/automated-removal" }
             ]
           }
         }}
@@ -135,9 +135,9 @@ export default function AutomatedRemoval() {
         <div className="max-w-6xl mx-auto space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold mb-2">Automated Removal</h1>
+              <h1 className="text-4xl font-bold mb-2">Free Data Broker Removal</h1>
               <p className="text-muted-foreground">
-                Automate removal requests and track success rates
+                Automated data broker removal to opt-out from people search sites and data aggregators
               </p>
             </div>
             <Button onClick={createCampaign}>
