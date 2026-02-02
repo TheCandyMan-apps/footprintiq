@@ -1,7 +1,13 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Zap, Check } from "lucide-react";
+import { Zap, Check, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CreditPackCardProps {
   name: string;
@@ -69,8 +75,25 @@ export function CreditPackCard({
           </div>
         </div>
 
+        {/* Important clarification about credits vs Pro */}
+        <TooltipProvider>
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border/50 text-left">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[250px]">
+                <p>Credits are for scan usage. To unlock additional OSINT providers (Sherlock, HIBP, phone tools) and premium features (AI insights, exports), you need a Pro subscription.</p>
+              </TooltipContent>
+            </Tooltip>
+            <p className="text-xs text-muted-foreground">
+              <strong className="text-foreground">Credits only.</strong> Does not unlock Pro features or additional providers.
+            </p>
+          </div>
+        </TooltipProvider>
+
         <Button 
-          className="w-full mt-6" 
+          className="w-full mt-2" 
           size="lg"
           onClick={onPurchase}
           disabled={loading}
