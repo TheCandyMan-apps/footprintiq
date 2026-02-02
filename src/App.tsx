@@ -230,6 +230,7 @@ const AIWhatIsIdentityProfiling = lazy(() => import("./pages/ai/WhatIsIdentityPr
 const AIWhatAreDataBrokers = lazy(() => import("./pages/ai/WhatAreDataBrokers"));
 const AIIndex = lazy(() => import("./pages/ai/Index"));
 const EthicalOsintForIndividuals = lazy(() => import("./pages/EthicalOsintForIndividuals"));
+const Contact = lazy(() => import("./pages/Contact"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -304,6 +305,7 @@ function RouterContent() {
           <Route path="/data-sources" element={<DataSources />} />
           <Route path="/how-we-source-data" element={<DataSources />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/support/confirmation" element={<SupportConfirmation />} />
           <Route path="/my-tickets" element={<MyTickets />} />
           <Route path="/blog" element={<Blog />} />

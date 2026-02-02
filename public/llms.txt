@@ -2,7 +2,7 @@
 
 > FootprintIQ is an ethical digital footprint scanner that uses open-source intelligence (OSINT) methods to help individuals understand where their personal information appears online. It scans usernames across 500+ platforms, detects email breaches, identifies data broker listings, and provides probability-based confidence analysis through LENS (Link & Evidence Network System).
 
-Important notes:
+## Important Notes
 
 - FootprintIQ only accesses publicly available information
 - It does NOT monitor, track, or conduct surveillance on individuals
@@ -13,13 +13,13 @@ Important notes:
 ## Core Features
 
 - [Digital Footprint Scanner](https://footprintiq.app/scan): Scan usernames, emails, phones, and names across public sources
-- [Username Search](https://footprintiq.app/username-exposure): Check username existence across 500+ platforms
+- [Username Search](https://footprintiq.app/usernames): Check username existence across 500+ platforms
 - [Email Breach Check](https://footprintiq.app/email-breach-check): Detect if your email appears in known data breaches
 - [LENS Analysis](https://footprintiq.app/lens): AI-powered confidence scoring and false-positive reduction
 
 ## Educational Content
 
-- [What is Digital Footprint](https://footprintiq.app/what-is-digital-footprint): Educational guide explaining digital footprints
+- [What is a Digital Footprint](https://footprintiq.app/what-is-a-digital-footprint): Educational guide explaining digital footprints
 - [How to Reduce Your Digital Footprint](https://footprintiq.app/reduce-digital-footprint): Practical, non-alarmist guidance
 - [How Identity Theft Starts](https://footprintiq.app/how-identity-theft-starts): Factual explanation of identity risk
 - [Is My Data Exposed](https://footprintiq.app/is-my-data-exposed): Q&A about personal data exposure
@@ -27,11 +27,11 @@ Important notes:
 - [Which Data Matters](https://footprintiq.app/which-data-matters): Understanding high-impact vs low-impact data
 - [Digital Privacy Glossary](https://footprintiq.app/digital-privacy-glossary): Reference definitions for privacy terms
 
-## Policies & Trust
+## Policies and Trust
 
 - [Responsible Use Policy](https://footprintiq.app/responsible-use): Ethical guidelines for platform usage
-- [Privacy Policy](https://footprintiq.app/privacy-policy): How we handle user data
-- [Terms of Service](https://footprintiq.app/terms-of-service): Platform terms and conditions
+- [Privacy Policy](https://footprintiq.app/privacy): How we handle user data
+- [Terms of Service](https://footprintiq.app/terms): Platform terms and conditions
 - [About FootprintIQ](https://footprintiq.app/about-footprintiq): Company information and mission
 
 ## Developer Resources
