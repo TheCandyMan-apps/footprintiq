@@ -127,9 +127,9 @@ export default function CreditsSettings() {
                   </div>
 
                   <div className="w-full space-y-2 text-sm text-muted-foreground mb-6">
-                    <p>• {Math.floor(pack.credits / 1)} basic scans</p>
-                    <p>• {Math.floor(pack.credits / 5)} advanced scans</p>
-                    <p>• {Math.floor(pack.credits / 10)} dark web scans</p>
+                    <p>• Use credits with any available provider</p>
+                    <p>• Provider costs range from 1-3 credits</p>
+                    <p>• Select providers per scan for cost control</p>
                   </div>
 
                   <Button 
@@ -258,31 +258,138 @@ export default function CreditsSettings() {
 
           <Card className="p-6">
             <h3 className="text-lg font-semibold mb-4">Credit Usage Guide</h3>
-            <div className="space-y-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Credits are deducted per provider, not per scan. You select which providers to run.
+            </p>
+            
+            <div className="space-y-6">
+              {/* Username Scans */}
               <div>
-                <h4 className="font-medium mb-2">Basic Scan (1 credit)</h4>
-                <p className="text-sm text-muted-foreground">
-                  Includes HIBP, DeHashed, and basic data broker checks
-                </p>
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary"></span>
+                  Username Scans
+                </h4>
+                <div className="space-y-2 pl-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Maigret <span className="text-muted-foreground">(500+ platforms)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">1 credit</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Free</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Sherlock <span className="text-muted-foreground">(Social media)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">1 credit</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">Pro</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>GoSearch <span className="text-muted-foreground">(Advanced OSINT)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">2 credits</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent-foreground">Business</span>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Email Scans */}
               <div>
-                <h4 className="font-medium mb-2">Advanced Scan (5 credits)</h4>
-                <p className="text-sm text-muted-foreground">
-                  Includes all basic sources plus Pipl, FullContact, Clearbit, Shodan
-                </p>
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary"></span>
+                  Email Scans
+                </h4>
+                <div className="space-y-2 pl-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Holehe <span className="text-muted-foreground">(Registration checks)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">1 credit</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Free</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Abstract Email <span className="text-muted-foreground">(Validation)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">1 credit</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">Pro</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>IPQS Email <span className="text-muted-foreground">(Fraud scoring)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">2 credits</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">Pro</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Have I Been Pwned <span className="text-muted-foreground">(Breaches)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">2 credits</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">Pro</span>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Phone Scans */}
               <div>
-                <h4 className="font-medium mb-2">Dark Web Scan (10 credits)</h4>
-                <p className="text-sm text-muted-foreground">
-                  Comprehensive dark web monitoring including paste sites, forums, and marketplaces
-                </p>
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary"></span>
+                  Phone Scans <span className="text-xs text-muted-foreground">(Pro & Business only)</span>
+                </h4>
+                <div className="space-y-2 pl-4">
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Carrier Intel <span className="text-muted-foreground">(Line type & carrier)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">2 credits</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">Pro</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>NumVerify <span className="text-muted-foreground">(Validation)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">2 credits</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">Pro</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>IPQS Phone <span className="text-muted-foreground">(Fraud scoring)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">3 credits</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">Pro</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Twilio Lookup <span className="text-muted-foreground">(Carrier data)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">3 credits</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">Pro</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>WhatsApp/Telegram/Signal <span className="text-muted-foreground">(Presence)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">1-2 credits</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">Pro</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>TrueCaller / Phone OSINT <span className="text-muted-foreground">(Advanced)</span></span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">2-3 credits</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent-foreground">Business</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h4 className="font-medium mb-2">Dating/NSFW Sites (3 credits each)</h4>
-                <p className="text-sm text-muted-foreground">
-                  Specialized scans for dating platforms and adult content sites
-                </p>
-              </div>
+            </div>
+
+            <div className="mt-6 p-3 rounded-lg bg-muted/50 border border-border/50">
+              <p className="text-xs text-muted-foreground">
+                <strong className="text-foreground">Important:</strong> Credits only cover scan usage. 
+                To access Pro-tier providers, you need an active Pro subscription.
+              </p>
             </div>
           </Card>
         </TabsContent>
