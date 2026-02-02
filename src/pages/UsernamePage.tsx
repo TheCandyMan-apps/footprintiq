@@ -85,8 +85,8 @@ export default function UsernamePage() {
   return (
     <>
       <SEO
-        title="Free Username Search — See Where Your Username Appears Online"
-        description="Check where your username appears across 500+ platforms including social media, gaming, and forums. Free search — no login required, public data only."
+        title="Free Username Search & Lookup — Find People by Username Online"
+        description="Free username search and lookup tool to find people by username. Deep user search across 500+ social media platforms and forums. No login required."
         canonical="https://footprintiq.app/username-search"
         schema={{
           breadcrumbs: {
@@ -111,15 +111,15 @@ export default function UsernamePage() {
             </Badge>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-              Free Username Search
+              Free Username Search & Lookup Tool
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">
-              Discover where any username appears across hundreds of public platforms — including social media, gaming sites, forums, and professional networks.
+              Discover where any username appears across hundreds of public platforms — including social media, gaming sites, forums, and professional networks. Our open source intelligence search tool helps you find social accounts and online presence.
             </p>
 
             <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-8">
-              FootprintIQ is a username search tool that helps individuals discover where their usernames appear across public platforms using ethical OSINT techniques.
+              FootprintIQ is a username search tool that helps individuals discover where their usernames appear across public platforms using ethical OSINT techniques. Find people by username and understand your complete digital footprint.
             </p>
             
             <Button size="lg" asChild className="text-lg px-8 py-6">
@@ -325,8 +325,56 @@ export default function UsernamePage() {
           </div>
         </section>
 
+        {/* How to Lookup a Username Section - NEW SEO CONTENT */}
+        <section className="py-16 px-6">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6">How to Lookup a Username</h2>
+            <div className="prose prose-lg dark:prose-invert max-w-none">
+              <p className="text-muted-foreground mb-4">
+                Looking up a username across the internet is a common OSINT (open source intelligence) technique used to find social media accounts and online presence. Here's how to perform a deep user search:
+              </p>
+              <ol className="space-y-4 text-muted-foreground">
+                <li><strong>Enter the username:</strong> Type the exact username you want to search. Our tool checks social media platforms, gaming networks, forums, and professional sites.</li>
+                <li><strong>Wait for results:</strong> Our search tool queries 500+ platforms simultaneously to find where the username is registered.</li>
+                <li><strong>Review findings:</strong> Each result includes the platform name, profile URL, and confidence level. This helps you find people by username effectively.</li>
+                <li><strong>Analyse your online presence:</strong> See which accounts are linked together through username reuse — a key part of understanding digital exposure.</li>
+              </ol>
+            </div>
+          </div>
+        </section>
+
+        {/* What a Deep Username Search Reveals - NEW SEO CONTENT */}
+        <section className="py-16 px-6 bg-muted/30">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold mb-6">What a Deep Username Search Reveals</h2>
+            <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
+              <p className="text-muted-foreground">
+                A comprehensive username lookup reveals more than just account existence. When you search for a username, you can discover:
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="p-6">
+                <h3 className="font-semibold mb-2">Social Media Accounts</h3>
+                <p className="text-sm text-muted-foreground">Find social profiles across Twitter, Instagram, TikTok, Reddit, and 100+ other social media platforms.</p>
+              </Card>
+              <Card className="p-6">
+                <h3 className="font-semibold mb-2">Gaming Profiles</h3>
+                <p className="text-sm text-muted-foreground">Discover accounts on Steam, Discord, Xbox, PlayStation, and gaming communities.</p>
+              </Card>
+              <Card className="p-6">
+                <h3 className="font-semibold mb-2">Professional Presence</h3>
+                <p className="text-sm text-muted-foreground">Locate professional profiles on LinkedIn, GitHub, Behance, and developer platforms.</p>
+              </Card>
+              <Card className="p-6">
+                <h3 className="font-semibold mb-2">Online Presence Patterns</h3>
+                <p className="text-sm text-muted-foreground">Understand how accounts link together through shared usernames, revealing digital footprint exposure.</p>
+              </Card>
+            </div>
+          </div>
+        </section>
+
         {/* Related Tools Section */}
-        <section className="py-12 px-6 bg-muted/30">
+        <section className="py-12 px-6">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold mb-4 text-center">Explore More OSINT Tools</h2>
             <p className="text-center text-muted-foreground mb-8">
@@ -344,14 +392,36 @@ export default function UsernamePage() {
                   </p>
                 </Card>
               </Link>
-              <Link to="/scan" className="group">
+              <Link to="/digital-footprint-scanner" className="group">
                 <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
                   <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
-                    Full Digital Footprint Scan
+                    Digital Footprint Scanner
                     <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     Combine username, email, phone, and name searches for complete exposure analysis
+                  </p>
+                </Card>
+              </Link>
+              <Link to="/username-search-tools" className="group">
+                <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
+                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
+                    Username OSINT Tools Explained
+                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Compare Sherlock, Maigret, and other open source intelligence tools
+                  </p>
+                </Card>
+              </Link>
+              <Link to="/blog/what-is-osint-risk" className="group">
+                <Card className="p-6 h-full hover:shadow-lg transition-shadow border-l-4 border-l-primary">
+                  <h3 className="font-semibold mb-2 group-hover:text-primary transition-colors flex items-center gap-2">
+                    What is OSINT Risk?
+                    <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Understand how open source intelligence exposes your digital footprint
                   </p>
                 </Card>
               </Link>

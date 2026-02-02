@@ -4,7 +4,7 @@ import { SEO, organizationSchema } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Shield, AlertCircle, Database, Bell, Lock, CheckCircle, Search, Users, Key } from "lucide-react";
+import { ArrowLeft, ArrowRight, Shield, AlertCircle, Database, Bell, Lock, CheckCircle, Search, Users, Key } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
@@ -84,15 +84,15 @@ export default function WhatIsOsintRisk() {
   return (
     <div className="min-h-screen flex flex-col">
       <SEO 
-        title="What is OSINT Risk? Understanding Your Digital Exposure | FootprintIQ"
-        description="Learn what OSINT risk means for your business, how threat actors use open-source intelligence, and practical steps to reduce your digital attack surface."
+        title="OSINT Industries Digital Footprint Risk — Understanding Your Exposure | FootprintIQ"
+        description="Learn about OSINT industries and digital footprint risk. Understand how real time monitoring of email and phone number exposure, online presence, API access, and user base analysis reveals your attack surface."
         canonical="https://footprintiq.app/blog/what-is-osint-risk"
         ogImage="https://footprintiq.app/blog-images/osint.webp"
         article={{
           publishedTime: "2025-01-31T09:00:00Z",
           modifiedTime: "2025-01-31T09:00:00Z",
           author: "FootprintIQ",
-          tags: ["OSINT", "Cybersecurity", "Threat Intelligence"]
+          tags: ["OSINT", "Cybersecurity", "Threat Intelligence", "OSINT Industries", "Digital Footprint"]
         }}
         schema={{
           organization: organizationSchema,
@@ -116,11 +116,11 @@ export default function WhatIsOsintRisk() {
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-4">
                 <Badge>Cybersecurity</Badge>
-                <Badge variant="outline">OSINT</Badge>
+                <Badge variant="outline">OSINT Industries</Badge>
                 <span className="text-sm text-muted-foreground">8 min read</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                What is OSINT Risk? Understanding Your Digital Exposure
+                OSINT Industries & Digital Footprint Risk Explained
               </h1>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <time dateTime="2025-01-31">January 31, 2025</time>
@@ -128,12 +128,35 @@ export default function WhatIsOsintRisk() {
                 <span>By FootprintIQ Security Team</span>
               </div>
             </div>
+            
+            {/* Internal Links Section - NEW */}
+            <div className="bg-muted/30 rounded-lg p-6 mb-8">
+              <h2 className="text-lg font-semibold mb-4">Related Resources</h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Link to="/digital-footprint-scanner" className="flex items-center gap-2 text-primary hover:underline">
+                  <ArrowRight className="h-4 w-4" />
+                  Scan Your Digital Footprint
+                </Link>
+                <Link to="/usernames" className="flex items-center gap-2 text-primary hover:underline">
+                  <ArrowRight className="h-4 w-4" />
+                  Username Search
+                </Link>
+                <Link to="/email-breach-check" className="flex items-center gap-2 text-primary hover:underline">
+                  <ArrowRight className="h-4 w-4" />
+                  Email Breach Check
+                </Link>
+                <Link to="/blog/remove-data-brokers" className="flex items-center gap-2 text-primary hover:underline">
+                  <ArrowRight className="h-4 w-4" />
+                  Remove Data from Brokers
+                </Link>
+              </div>
+            </div>
 
             {/* Featured Image */}
             <div className="mb-12 rounded-lg overflow-hidden">
               <img 
                 src="/blog-images/osint.webp" 
-                alt="OSINT Risk Visualization - Digital footprint analysis"
+                alt="OSINT Industries Digital Footprint Risk - Online presence analysis"
                 className="w-full h-auto"
                 loading="eager"
               />
@@ -142,10 +165,11 @@ export default function WhatIsOsintRisk() {
             {/* Introduction */}
             <div className="prose prose-lg max-w-none mb-12">
               <p className="text-xl leading-relaxed text-muted-foreground">
-                In today's interconnected digital landscape, information about your organization, employees, 
-                and infrastructure is more accessible than ever. This accessibility creates what security 
-                professionals call <strong>"OSINT risk"</strong> — the potential for threat actors to exploit publicly 
-                available information to compromise your security posture.
+                In today's interconnected digital landscape, the OSINT industries have grown rapidly as information about 
+                your organization, employees, and infrastructure becomes more accessible. Your digital footprint—including 
+                email and phone number exposure, online presence, and API access patterns—creates what security 
+                professionals call <strong>"OSINT risk"</strong>. Threat actors use real time monitoring to exploit publicly 
+                available information and compromise your security posture, growing their user base of targets continuously.
               </p>
             </div>
 

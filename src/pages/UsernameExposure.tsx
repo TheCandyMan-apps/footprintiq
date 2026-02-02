@@ -15,7 +15,8 @@ import {
   Database,
   Layers,
   CheckCircle2,
-  XCircle
+  XCircle,
+  ArrowRight
 } from "lucide-react";
 import {
   Accordion,
@@ -186,23 +187,23 @@ const UsernameExposure = () => {
   return (
     <>
       <Helmet>
-        <title>Username Exposure: How Accounts Get Linked Across the Internet | FootprintIQ</title>
+        <title>Username Footprint Scan — How Your Online Accounts Get Linked | FootprintIQ</title>
         <meta 
           name="description" 
-          content="Learn how reused usernames quietly link your accounts across the internet. Understand what OSINT reveals about usernames and how to manage your exposure." 
+          content="Understand username footprint scans and how reused usernames link your accounts across social media. Learn what OSINT reveals about personal information and identity theft risks." 
         />
-        <meta name="keywords" content="username exposure, account linking, OSINT usernames, username privacy, digital footprint, username search, online visibility" />
+        <meta name="keywords" content="username footprint scan, username exposure, account linking, OSINT usernames, username privacy, digital footprint, social media, personal data, personal information, email addresses, identity theft, public record" />
         <link rel="canonical" href="https://footprintiq.app/username-exposure" />
         
         {/* Open Graph */}
-        <meta property="og:title" content="Username Exposure: How Accounts Get Linked Across the Internet" />
-        <meta property="og:description" content="Learn how reused usernames quietly link your accounts across the internet and what you can do about it." />
+        <meta property="og:title" content="Username Footprint Scan — How Your Online Accounts Get Linked" />
+        <meta property="og:description" content="Learn how reused usernames link your social media accounts and expose personal information across the internet." />
         <meta property="og:url" content="https://footprintiq.app/username-exposure" />
         <meta property="og:type" content="article" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Username Exposure: How Accounts Get Linked" />
+        <meta name="twitter:title" content="Username Footprint Scan: How Accounts Get Linked" />
         <meta name="twitter:description" content="Learn how reused usernames quietly link your accounts across the internet." />
         
         {/* Schemas */}
@@ -223,7 +224,7 @@ const UsernameExposure = () => {
                 <ChevronRight className="h-4 w-4" />
                 <Link to="/digital-footprint-scanner" className="hover:text-foreground transition-colors">Digital Footprint Scanner</Link>
                 <ChevronRight className="h-4 w-4" />
-                <span className="text-foreground">Username Exposure</span>
+                <span className="text-foreground">Username Footprint Scan</span>
               </nav>
             </div>
           </div>
@@ -238,19 +239,35 @@ const UsernameExposure = () => {
                 </div>
                 
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-                  Username Exposure: How Accounts Get Linked Across the Internet
+                  Username Footprint Scan: How Accounts Get Linked
                 </h1>
                 
                 <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-                  Usernames are public identifiers that travel across the internet. When you use the same handle 
-                  on multiple platforms, your accounts become connected—quietly and automatically—without anyone 
-                  actively tracking you.
+                  Usernames are public identifiers that travel across social media and the internet. When you use the same handle 
+                  on multiple platforms, your accounts become connected—exposing personal information and personal data 
+                  without anyone actively tracking you.
                 </p>
 
-                <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  This guide explains how username exposure works, what it reveals, and practical steps 
-                  you can take to manage your visibility online.
+                <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+                  This guide explains how username footprint scans work, what they reveal about your email addresses and public record, 
+                  and practical steps to reduce identity theft risks.
                 </p>
+                
+                {/* Internal Links - NEW */}
+                <div className="flex flex-wrap justify-center gap-4">
+                  <Link to="/usernames" className="text-primary hover:underline flex items-center gap-1">
+                    <ArrowRight className="h-4 w-4" />
+                    Scan Your Username
+                  </Link>
+                  <Link to="/username-search-tools" className="text-primary hover:underline flex items-center gap-1">
+                    <ArrowRight className="h-4 w-4" />
+                    Compare OSINT Tools
+                  </Link>
+                  <Link to="/digital-footprint-scanner" className="text-primary hover:underline flex items-center gap-1">
+                    <ArrowRight className="h-4 w-4" />
+                    Full Footprint Analysis
+                  </Link>
+                </div>
               </div>
             </div>
           </section>
