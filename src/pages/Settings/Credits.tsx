@@ -7,7 +7,13 @@ import { CreditsAnalyticsDashboard } from "@/components/credits/CreditsAnalytics
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { CreditCard, Package, Zap, Loader2, BarChart3 } from "lucide-react";
+import { CreditCard, Package, Zap, Loader2, BarChart3, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { SettingsBreadcrumb } from "@/components/settings/SettingsBreadcrumb";
 import { SettingsNav } from "@/components/settings/SettingsNav";
 import { trackPaymentError } from "@/lib/sentry";
@@ -126,11 +132,28 @@ export default function CreditsSettings() {
                     )}
                   </div>
 
-                  <div className="w-full space-y-2 text-sm text-muted-foreground mb-6">
+                  <div className="w-full space-y-2 text-sm text-muted-foreground mb-4">
                     <p>• Use credits with any available provider</p>
                     <p>• Provider costs range from 1-3 credits</p>
                     <p>• Select providers per scan for cost control</p>
                   </div>
+
+                  {/* Important clarification about credits vs Pro */}
+                  <TooltipProvider>
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border border-border/50 text-left w-full mb-4">
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[250px]">
+                          <p>Credits are for scan usage. To unlock additional OSINT providers (Sherlock, HIBP, phone tools) and premium features (AI insights, exports), you need a Pro subscription.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <p className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">Credits only.</strong> Does not unlock Pro features or additional providers.
+                      </p>
+                    </div>
+                  </TooltipProvider>
 
                   <Button 
                     className="w-full" 
