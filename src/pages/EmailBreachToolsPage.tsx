@@ -70,14 +70,14 @@ const EmailBreachToolsPage = () => {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="Firefox Monitor vs HIBP: Email Breach Check Tools Compared | FootprintIQ"
-        description="Compare Firefox Monitor email breach check tools with HIBP. Learn how to check breaches and protect your email addresses from data leaks."
+        title="Firefox Monitor Check Breaches — Email Breach Check Tools Compared | FootprintIQ"
+        description="Firefox Monitor check breaches and Firefox Monitor email breach check tools compared with HIBP. Learn how to check breaches using Mozilla Monitor and protect your email addresses from data leaks."
         canonical={canonicalUrl}
         article={{
           publishedTime: "2026-01-14T10:00:00Z",
           modifiedTime: "2026-01-14T10:00:00Z",
           author: "FootprintIQ",
-          tags: ["Email Breach Check", "Firefox Monitor", "Mozilla Monitor", "Have I Been Pwned", "HIBP", "Data Breach", "Troy Hunt"]
+          tags: ["Firefox Monitor Check Breaches", "Firefox Monitor Email Breach Check", "Email Breach Check", "Mozilla Monitor", "Have I Been Pwned", "HIBP", "Data Breach", "Troy Hunt"]
         }}
       />
       
@@ -108,24 +108,24 @@ const EmailBreachToolsPage = () => {
         <section className="container mx-auto px-4 py-12 max-w-4xl">
           <div className="text-center mb-12">
             <h1 className="text-3xl md:text-4xl font-bold mb-4">
-              Email Breach Check Tools: Firefox Monitor, HIBP & More
+              Firefox Monitor Check Breaches — Email Breach Check Tools Compared
             </h1>
             <p className="text-xl text-muted-foreground mb-6">
-              Firefox Monitor vs Mozilla Monitor vs Have I Been Pwned
+              Firefox Monitor Email Breach Check vs Mozilla Monitor vs Have I Been Pwned
             </p>
           </div>
 
           {/* Introduction */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-12">
             <p className="text-lg leading-relaxed">
-              Checking whether your email address has appeared in data breaches is a fundamental 
-              security practice. Firefox Monitor (formerly Mozilla Monitor), created by Troy Hunt's HIBP database, 
-              helps individuals and organisations identify when email addresses and passwords have been exposed.
+              Using Firefox Monitor to check breaches is a fundamental security practice. This Firefox Monitor email breach check guide 
+              compares breach checking approaches including Firefox Monitor (Mozilla Monitor), created using Troy Hunt's HIBP database, 
+              to help individuals and organisations identify when email addresses and passwords have been exposed.
             </p>
             <p className="text-muted-foreground">
-              This guide explains the main Firefox Monitor email breach check tools, including how to 
-              enter your email address and use a password manager to protect against credential stuffing. 
-              Works with any Firefox browser.
+              Learn how Firefox Monitor check breaches functionality works, including how to enter your email address 
+              and use a password manager to protect against credential stuffing. This Firefox Monitor email breach check 
+              guide works with any Firefox browser version.
             </p>
           </div>
           

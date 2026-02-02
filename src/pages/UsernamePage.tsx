@@ -91,8 +91,8 @@ export default function UsernamePage() {
   return (
     <>
       <SEO
-        title="Free Username Search Tool — Find Social Media Accounts Online"
-        description="Free username search tool to find social media accounts and online presence. Open source intelligence search across 500+ social media platforms. No login required."
+        title="Free Social Media Username Search — Find People by Username | FootprintIQ"
+        description="Free social media username search to find people by username across 500+ platforms. Deep username search using open source intelligence. Find social media accounts online — no login required."
         canonical="https://footprintiq.app/username-search"
         schema={{
           breadcrumbs: {
@@ -100,7 +100,7 @@ export default function UsernamePage() {
             "@type": "BreadcrumbList",
             itemListElement: [
               { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
-              { "@type": "ListItem", position: 2, name: "Username Search", item: "https://footprintiq.app/username-search" }
+              { "@type": "ListItem", position: 2, name: "Free Social Media Username Search", item: "https://footprintiq.app/username-search" }
             ]
           },
           faq: faqSchema
@@ -117,19 +117,19 @@ export default function UsernamePage() {
             </Badge>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-              Free Username Search Tool — Find Social Accounts Online
+              Free Social Media Username Search — Find People by Username
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">
-              Use our free username search tool to find social media profiles across 500+ platforms. 
-              Discover your complete online presence — from social media accounts to gaming networks, 
-              forums, and professional communities.
+              Use our free social media username search to find people by username across 500+ platforms. 
+              Our deep username search discovers your complete online presence — from social media accounts 
+              to gaming networks, forums, and professional communities.
             </p>
 
             <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-8">
-              FootprintIQ is an open source intelligence (OSINT) search tool that helps you find social 
-              accounts linked to any username. Whether you're auditing your own online presence or 
-              conducting ethical research, our platform uses publicly accessible data only.
+              FootprintIQ is an open source intelligence (OSINT) tool that helps you find people by username. 
+              Whether you're auditing your own online presence or conducting ethical research, our deep username 
+              search platform uses publicly accessible data only — a true free social media username search.
             </p>
             
             <Button size="lg" asChild className="text-lg px-8 py-6">
@@ -145,11 +145,11 @@ export default function UsernamePage() {
         <section className="py-16 px-6 bg-muted/30">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold mb-4">How Our Username Search Tool Works</h2>
+              <h2 className="text-3xl font-bold mb-4">How Our Deep Username Search Works</h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-                Our open source intelligence search tool checks public profile pages across 500+ social media 
-                platforms, forums, and communities to find social accounts linked to a username. 
-                We use ethical OSINT techniques — only querying publicly accessible URLs that anyone can visit.
+                Our free social media username search checks public profile pages across 500+ platforms 
+                to find people by username. This deep username search uses ethical OSINT techniques — 
+                only querying publicly accessible URLs that anyone can visit.
               </p>
             </div>
 
