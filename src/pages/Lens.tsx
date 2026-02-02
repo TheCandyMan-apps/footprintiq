@@ -101,7 +101,7 @@ export default function Lens() {
   return (
     <div className="min-h-screen flex flex-col">
       <SEO 
-        title="LENS™ — The Ethical OSINT Analysis Layer | FootprintIQ"
+        title="LENS — The Ethical OSINT Analysis Layer | FootprintIQ"
         description="Understand what public data means — without speculation, surveillance, or overreach. LENS analyzes public OSINT findings to explain confidence, context, and reliability."
         canonical={`${origin}/lens`}
       />
@@ -119,7 +119,7 @@ export default function Lens() {
             </div>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
-              LENS™ — The Ethical<br />
+              LENS — The Ethical<br />
               <span className="text-primary">OSINT Analysis Layer</span>
             </h1>
             
