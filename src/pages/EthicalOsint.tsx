@@ -1,5 +1,6 @@
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { CitationWidget } from "@/components/CitationWidget";
 import { SEO, organizationSchema } from "@/components/SEO";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -573,6 +574,14 @@ export default function EthicalOsint() {
               </div>
             </div>
           </div>
+
+          {/* Citation Widget */}
+          <CitationWidget 
+            title="Ethical OSINT Principles"
+            path="/ethical-osint"
+            year="2026"
+            className="mt-12"
+          />
         </article>
       </main>
 

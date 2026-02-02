@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { ResearchQuote, RESEARCH_STATEMENTS } from "@/components/ResearchQuote";
+import { CitationWidget } from "@/components/CitationWidget";
 
 export default function UsernameReuseReport2026() {
   const origin = "https://footprintiq.app";
@@ -502,6 +503,14 @@ export default function UsernameReuseReport2026() {
               </Link>
             </div>
           </div>
+
+          {/* Citation Widget */}
+          <CitationWidget 
+            title="The State of Username Reuse & Digital Exposure"
+            path="/research/username-reuse-report-2026"
+            year="2026"
+            className="mt-12"
+          />
         </article>
       </main>
       
