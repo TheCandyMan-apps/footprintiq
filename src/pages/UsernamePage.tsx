@@ -19,7 +19,13 @@ import {
   Code,
   Briefcase,
   Users,
-  Lock
+  Lock,
+  Search,
+  Filter,
+  FileText,
+  HelpCircle,
+  BookOpen,
+  Scale
 } from "lucide-react";
 
 import {
@@ -322,6 +328,287 @@ export default function UsernamePage() {
                 </AccordionItem>
               ))}
             </Accordion>
+            
+            <p className="text-sm text-muted-foreground mt-6 text-center">
+              For a deeper dive into how these tools work, read our{" "}
+              <Link to="/guides/how-username-search-tools-work" className="text-primary hover:underline font-medium">
+                technical guide to username search tools
+              </Link>.
+            </p>
+          </div>
+        </section>
+
+        {/* NEW: How It Works - Step by Step */}
+        <section className="py-16 px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">How Username Search Works: Step by Step</h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                Understanding the process helps you interpret results correctly and set realistic expectations.
+              </p>
+            </div>
+
+            <div className="grid gap-6">
+              <Card className="p-6 border-l-4 border-l-primary">
+                <div className="flex items-start gap-4">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold shrink-0">
+                    1
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                      <Search className="w-5 h-5 text-primary" />
+                      You Enter a Username
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Type the exact username you want to check. The tool doesn't require an account, 
+                      payment, or personal information to run a basic scan.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 border-l-4 border-l-primary">
+                <div className="flex items-start gap-4">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold shrink-0">
+                    2
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                      <Globe className="w-5 h-5 text-primary" />
+                      We Query Public Profile URLs
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Our system checks publicly accessible profile pages across 500+ platforms. 
+                      We're essentially visiting <code className="bg-muted px-1 rounded">platform.com/username</code> and 
+                      analysing the response — the same thing anyone could do manually, but automated.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 border-l-4 border-l-primary">
+                <div className="flex items-start gap-4">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold shrink-0">
+                    3
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                      <Filter className="w-5 h-5 text-primary" />
+                      Results Are Filtered for Accuracy
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Raw results often include false positives. Our system applies confidence scoring 
+                      to distinguish likely matches from coincidental ones. Learn more in our{" "}
+                      <Link to="/research/username-reuse-report-2026" className="text-primary hover:underline">
+                        username reuse research
+                      </Link>.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6 border-l-4 border-l-primary">
+                <div className="flex items-start gap-4">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-primary-foreground font-bold shrink-0">
+                    4
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-primary" />
+                      You Review Contextualised Findings
+                    </h3>
+                    <p className="text-muted-foreground">
+                      Each result includes the platform, profile URL, and confidence level. 
+                      We explain what findings mean — not just whether a username exists, but 
+                      what that might indicate for your digital exposure.
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* NEW: Common Misconceptions */}
+        <section className="py-16 px-6 bg-muted/30">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4 flex items-center justify-center gap-3">
+                <HelpCircle className="w-8 h-8 text-primary" />
+                Common Misconceptions About Username Search
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                Many assumptions about username lookup tools are wrong. Here's what people often misunderstand.
+              </p>
+            </div>
+
+            <div className="space-y-6">
+              <Card className="p-6">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-destructive" />
+                  Misconception: "If a username is found, it definitely belongs to the person I'm looking for"
+                </h3>
+                <p className="text-muted-foreground mb-3">
+                  <strong className="text-foreground">Reality:</strong> Common usernames like "alex," "gaming," or "john123" 
+                  exist on every platform — owned by different, unrelated people. A username match is a 
+                  <em> hypothesis</em>, not a conclusion. Our{" "}
+                  <Link to="/guides/how-username-search-tools-work" className="text-primary hover:underline">
+                    technical guide
+                  </Link>{" "}
+                  explains why approximately 41% of automated matches are false positives.
+                </p>
+              </Card>
+
+              <Card className="p-6">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-destructive" />
+                  Misconception: "More results means a better tool"
+                </h3>
+                <p className="text-muted-foreground">
+                  <strong className="text-foreground">Reality:</strong> Volume isn't quality. A tool that returns 
+                  200 matches with no filtering is less useful than one that returns 30 verified, contextualised 
+                  results. Mass data without accuracy creates confusion, not clarity.
+                </p>
+              </Card>
+
+              <Card className="p-6">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-destructive" />
+                  Misconception: "Username search can find anyone's private information"
+                </h3>
+                <p className="text-muted-foreground">
+                  <strong className="text-foreground">Reality:</strong> Ethical username search only accesses 
+                  publicly visible data — profile pages that anyone can visit without logging in. 
+                  It cannot bypass privacy settings, access private accounts, or retrieve hidden information.
+                </p>
+              </Card>
+
+              <Card className="p-6">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-destructive" />
+                  Misconception: "If no results are found, the username doesn't exist anywhere"
+                </h3>
+                <p className="text-muted-foreground">
+                  <strong className="text-foreground">Reality:</strong> No tool checks every platform on the internet. 
+                  Some sites actively block automated queries. A "not found" result means the username wasn't 
+                  detected on the platforms checked — not that it doesn't exist elsewhere.
+                </p>
+              </Card>
+
+              <Card className="p-6">
+                <h3 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  <XCircle className="w-5 h-5 text-destructive" />
+                  Misconception: "Old accounts don't matter"
+                </h3>
+                <p className="text-muted-foreground">
+                  <strong className="text-foreground">Reality:</strong> Abandoned accounts often remain indexed 
+                  and searchable. A dormant profile from 2015 can still appear in search results, 
+                  potentially with outdated but still-public information. Understanding this temporal dimension 
+                  is key to interpreting results correctly.
+                </p>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* NEW: Accuracy & Ethics */}
+        <section className="py-16 px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4 flex items-center justify-center gap-3">
+                <Scale className="w-8 h-8 text-primary" />
+                Accuracy & Ethics: Our Approach
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                We believe ethical OSINT requires transparency about methods, honest acknowledgment of 
+                limitations, and respect for privacy boundaries.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 mb-12">
+              <Card className="p-6 bg-primary/5 border-primary/20">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-primary" />
+                  Our Accuracy Commitments
+                </h3>
+                <ul className="space-y-3 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-primary mt-1 shrink-0" />
+                    <span>Confidence scores on every result — not just "found/not found"</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-primary mt-1 shrink-0" />
+                    <span>False positive filtering to reduce noise from coincidental matches</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-primary mt-1 shrink-0" />
+                    <span>Transparent source attribution — you know where data comes from</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-primary mt-1 shrink-0" />
+                    <span>Clear limitations — we tell you what we can't determine</span>
+                  </li>
+                </ul>
+              </Card>
+
+              <Card className="p-6 bg-primary/5 border-primary/20">
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-primary" />
+                  Our Ethical Principles
+                </h3>
+                <ul className="space-y-3 text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-primary mt-1 shrink-0" />
+                    <span>Self-audit focus — designed for checking your own exposure</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-primary mt-1 shrink-0" />
+                    <span>Public data only — no hacking, scraping, or unauthorised access</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-primary mt-1 shrink-0" />
+                    <span>Data minimisation — we don't store or sell your search queries</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-4 h-4 text-primary mt-1 shrink-0" />
+                    <span>No fear-based marketing — honest information, not alarm</span>
+                  </li>
+                </ul>
+              </Card>
+            </div>
+
+            <Card className="p-6 border-l-4 border-l-primary bg-muted/30">
+              <div className="flex items-start gap-4">
+                <BookOpen className="w-6 h-6 text-primary shrink-0 mt-1" />
+                <div>
+                  <h4 className="font-semibold mb-2">Learn More About Ethical OSINT</h4>
+                  <p className="text-muted-foreground mb-4">
+                    We've published detailed resources explaining our methodology, the limitations 
+                    of username search, and the principles that guide ethical open-source intelligence.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Link 
+                      to="/ethical-osint" 
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline font-medium"
+                    >
+                      What Is Ethical OSINT? <ArrowRight className="w-3 h-3" />
+                    </Link>
+                    <Link 
+                      to="/guides/how-username-search-tools-work" 
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline font-medium"
+                    >
+                      How Username Tools Work <ArrowRight className="w-3 h-3" />
+                    </Link>
+                    <Link 
+                      to="/responsible-use" 
+                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline font-medium"
+                    >
+                      Responsible Use Policy <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </Card>
           </div>
         </section>
 
