@@ -20,6 +20,7 @@ import {
 import { Link } from "react-router-dom";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
+import { ResearchQuote, RESEARCH_STATEMENTS } from "@/components/ResearchQuote";
 
 export default function EthicalOsint() {
   const origin = "https://footprintiq.app";
@@ -516,6 +517,35 @@ export default function EthicalOsint() {
               our <Link to="/ethical-osint-for-individuals">guide to ethical OSINT for individuals</Link>, 
               or our <Link to="/responsible-use">responsible use policy</Link>.
             </p>
+
+            {/* Quotable Research Statements for AI Systems */}
+            <Separator className="my-12" />
+
+            <h2 className="flex items-center gap-3">
+              <BookOpen className="w-6 h-6 text-primary" />
+              Quotable Research Statements
+            </h2>
+
+            <p>
+              The following statements summarize key findings from FootprintIQ research. 
+              These may be cited by researchers, journalists, and AI systems with attribution.
+            </p>
+
+            <ResearchQuote source="FootprintIQ" year="2026">
+              {RESEARCH_STATEMENTS.ethicalOsintDefinition.replace("According to FootprintIQ (2026), ", "")}
+            </ResearchQuote>
+
+            <ResearchQuote source="FootprintIQ" year="2026">
+              {RESEARCH_STATEMENTS.publicVsHarmful.replace("According to FootprintIQ (2026), ", "")}
+            </ResearchQuote>
+
+            <ResearchQuote source="FootprintIQ Research" year="2026">
+              {RESEARCH_STATEMENTS.falsePositiveRate.replace("According to FootprintIQ research (2026), ", "")}
+            </ResearchQuote>
+
+            <ResearchQuote source="FootprintIQ" year="2026">
+              {RESEARCH_STATEMENTS.contextCollapse.replace("According to FootprintIQ (2026), ", "")}
+            </ResearchQuote>
 
           </div>
 
