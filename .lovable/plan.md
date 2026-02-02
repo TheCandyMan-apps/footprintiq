@@ -1,95 +1,108 @@
 
 
-# Plan: Credits vs. Pro Subscription Comparison Table
+# Plan: Fix Misleading Credit Usage Guide
 
-## Overview
+## Problem Summary
 
-Add a clear, informative comparison table to the Billing page that helps users understand the key difference between:
-1. **Buying credits** (one-time purchase, no feature unlock)
-2. **Upgrading to Pro** (subscription that unlocks premium features + providers)
+The current Credit Usage Guide advertises a scan tier system that **does not exist**:
 
-This addresses user confusion where people might buy credits expecting Pro-level access.
+| What's Claimed | Reality |
+|----------------|---------|
+| Basic Scan (1 credit): HIBP, DeHashed | HIBP is Pro-only (2 credits). DeHashed is not active. |
+| Advanced Scan (5 credits): Pipl, FullContact, Clearbit, Shodan | None of these providers exist in the codebase |
+| Dark Web Scan (10 credits): Paste sites, forums, marketplaces | No dedicated dark web scan tier exists |
+| Dating/NSFW Sites (3 credits) | Not implemented |
+
+This is a **compliance and trust issue** that could expose you to false advertising claims.
 
 ---
 
-## What the Table Will Show
+## Solution: Rewrite Credit Usage Guide to Match Reality
 
-| Aspect | Credit Pack (e.g., OSINT Starter £9) | Pro Subscription (£14.99/mo) |
-|--------|--------------------------------------|------------------------------|
-| **What you get** | 500 credits (one-time) | 100 scans/month + premium features |
-| **Plan tier** | Stays on Free | Upgrades to Pro |
-| **Username providers** | Maigret only | Maigret + Sherlock |
-| **Email providers** | Holehe only | Holehe + IPQS + HIBP |
-| **Phone providers** | ❌ None | ✓ All Pro-tier providers |
-| **AI Insights** | ❌ | ✓ |
-| **PDF/CSV Export** | ❌ | ✓ |
-| **Risk Scoring** | ❌ | ✓ |
-| **Priority Queue** | ❌ | ✓ |
-| **Context Enrichment** | ❌ | ✓ |
-| **LENS Verification** | ❌ | ✓ |
+Replace the fictional tier system with an **accurate per-provider credit breakdown** that matches `src/lib/providers/registry.ts`.
+
+### New Credit Usage Guide Content
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  Credit Usage Guide                                              │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  USERNAME SCANS                                                  │
+│  ├─ Maigret (500+ platforms)          1 credit   [Free]         │
+│  ├─ Sherlock (Social media)           1 credit   [Pro]          │
+│  └─ GoSearch (Advanced OSINT)         2 credits  [Business]     │
+│                                                                  │
+│  EMAIL SCANS                                                     │
+│  ├─ Holehe (Registration checks)      1 credit   [Free]         │
+│  ├─ Abstract Email (Validation)       1 credit   [Pro]          │
+│  ├─ IPQS Email (Fraud scoring)        2 credits  [Pro]          │
+│  └─ Have I Been Pwned (Breaches)      2 credits  [Pro]          │
+│                                                                  │
+│  PHONE SCANS (Pro & Business)                                    │
+│  ├─ Carrier Intel                     2 credits  [Pro]          │
+│  ├─ NumVerify                         2 credits  [Pro]          │
+│  ├─ IPQS Phone (Fraud scoring)        3 credits  [Pro]          │
+│  ├─ Twilio Lookup                     3 credits  [Pro]          │
+│  ├─ WhatsApp/Telegram/Signal          1-2 credits [Pro]         │
+│  └─ TrueCaller, Phone OSINT           2-3 credits [Business]    │
+│                                                                  │
+│  Note: You select which providers to run. Credits are           │
+│  deducted per provider, not per scan.                           │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `src/pages/Settings/Credits.tsx` | Replace the fictional Credit Usage Guide (lines 259-286) with accurate provider-based breakdown |
+
+---
+
+## Additional Cleanup Needed
+
+Also remove misleading text from the credit package cards (lines 129-133):
+
+**Current (misleading):**
+```tsx
+<p>• {Math.floor(pack.credits / 1)} basic scans</p>
+<p>• {Math.floor(pack.credits / 5)} advanced scans</p>
+<p>• {Math.floor(pack.credits / 10)} dark web scans</p>
+```
+
+**Replacement (accurate):**
+```tsx
+<p>• Use credits with any available provider</p>
+<p>• Provider costs range from 1-3 credits</p>
+<p>• Select providers per scan for cost control</p>
+```
 
 ---
 
 ## Implementation Details
 
-### New Component
-**File:** `src/components/billing/CreditsVsProComparison.tsx`
+### New Component Structure
 
-A self-contained card component with:
-- Clear header explaining the purpose
-- Two-column comparison table using the existing `Table` UI components
-- Visual checkmarks (✓) and crosses (✗) for features
-- Subtle styling to highlight the Pro column as the recommended option
+The updated Credit Usage Guide will:
+1. Group providers by scan type (Username / Email / Phone)
+2. Show credit cost per provider
+3. Display tier requirement (Free / Pro / Business)
+4. Include a note explaining the per-provider billing model
 
-### Integration Point
-**File:** `src/pages/Settings/Billing.tsx`
+### Styling
 
-Insert the comparison component **above** the Credit Packs section (around line 415), so users see the comparison before making a purchase decision.
-
----
-
-## Component Structure
-
-```text
-┌─────────────────────────────────────────────────────────┐
-│  📊 Credits vs. Pro: What's the Difference?             │
-├─────────────────────────────────────────────────────────┤
-│  A brief explanation that credit packs add scan         │
-│  credits but don't unlock premium features.             │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  ┌───────────────┬──────────────┬───────────────────┐   │
-│  │ Feature       │ Credits Only │ Pro Subscription  │   │
-│  ├───────────────┼──────────────┼───────────────────┤   │
-│  │ Plan Tier     │ Free         │ Pro               │   │
-│  │ Username Tools│ 1 (Maigret)  │ 2 (+ Sherlock)    │   │
-│  │ Email Tools   │ 1 (Holehe)   │ 4 (+ IPQS, HIBP…) │   │
-│  │ Phone Tools   │ ✗            │ ✓ All Pro tools   │   │
-│  │ AI Insights   │ ✗            │ ✓                 │   │
-│  │ Exports       │ ✗            │ ✓                 │   │
-│  │ Risk Scoring  │ ✗            │ ✓                 │   │
-│  │ LENS          │ ✗            │ ✓                 │   │
-│  └───────────────┴──────────────┴───────────────────┘   │
-│                                                         │
-│  [ Upgrade to Pro → ]                                   │
-└─────────────────────────────────────────────────────────┘
-```
-
----
-
-## Files to Create/Modify
-
-| File | Action |
-|------|--------|
-| `src/components/billing/CreditsVsProComparison.tsx` | **Create** - New comparison table component |
-| `src/pages/Settings/Billing.tsx` | **Modify** - Import and render the component above Credit Packs |
+- Use a clean table or grouped list format
+- Tier badges match existing UI (muted for Free, primary for Pro, accent for Business)
+- Responsive layout for mobile
 
 ---
 
 ## Technical Notes
 
-- Uses existing UI components: `Card`, `Table`, `TableHeader`, `TableRow`, `TableHead`, `TableCell`, `TableBody`, `Badge`, `Button`
+- Data sourced directly from `PROVIDER_REGISTRY` in `src/lib/providers/registry.ts`
+- Could optionally be made dynamic (import registry and generate UI) for future-proofing
 - No new dependencies required
-- Data sourced from existing `planCapabilities.ts` and `registry.ts` for accuracy
-- Includes a subtle CTA button linking to the Pro upgrade action
 
