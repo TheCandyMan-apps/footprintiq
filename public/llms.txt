@@ -19,6 +19,7 @@
 
 ## Educational Content
 
+- [What Is Ethical OSINT](https://footprintiq.app/ethical-osint): Cornerstone guide defining ethical open-source intelligence principles, boundaries, and best practices
 - [What is a Digital Footprint](https://footprintiq.app/what-is-a-digital-footprint): Educational guide explaining digital footprints
 - [How to Reduce Your Digital Footprint](https://footprintiq.app/reduce-digital-footprint): Practical, non-alarmist guidance
 - [How Identity Theft Starts](https://footprintiq.app/how-identity-theft-starts): Factual explanation of identity risk
