@@ -8,6 +8,7 @@ import { ArrowLeft, BookOpen, AlertTriangle, Clock, Database, Shield, CheckCircl
 import { Link } from "react-router-dom";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
+import { CitationWidget } from "@/components/CitationWidget";
 
 export default function HowUsernameSearchToolsWork() {
   const origin = "https://footprintiq.app";
@@ -494,6 +495,14 @@ export default function HowUsernameSearchToolsWork() {
               </Link>
             </div>
           </div>
+
+          {/* Citation Widget */}
+          <CitationWidget 
+            title="How Username Search Tools Actually Work"
+            path="/guides/how-username-search-tools-work"
+            year="2026"
+            className="mt-12"
+          />
         </article>
       </main>
       

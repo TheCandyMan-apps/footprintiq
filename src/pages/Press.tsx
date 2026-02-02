@@ -3,6 +3,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { CitationWidget } from "@/components/CitationWidget";
 import { Link } from "react-router-dom";
 import { 
   PLATFORM_DESCRIPTION_SHORT, 
@@ -210,6 +211,14 @@ export default function Press() {
                 </Card>
               ))}
             </div>
+
+            {/* Citation Widget */}
+            <CitationWidget 
+              title="FootprintIQ Research"
+              path="/research/username-reuse-report-2026"
+              year="2026"
+              className="mt-8"
+            />
           </section>
 
           {/* Resources */}
