@@ -232,6 +232,7 @@ const AIIndex = lazy(() => import("./pages/ai/Index"));
 const EthicalOsintForIndividuals = lazy(() => import("./pages/EthicalOsintForIndividuals"));
 const Contact = lazy(() => import("./pages/Contact"));
 const UsernameReuseReport2026 = lazy(() => import("./pages/research/UsernameReuseReport2026"));
+const FactSheet = lazy(() => import("./pages/research/FactSheet"));
 const HowUsernameSearchToolsWork = lazy(() => import("./pages/guides/HowUsernameSearchToolsWork"));
 const EthicalOsint = lazy(() => import("./pages/EthicalOsint"));
 const Press = lazy(() => import("./pages/Press"));
@@ -478,6 +479,7 @@ function RouterContent() {
           <Route path="/admin" element={<Admin />} />
           <Route path="/research" element={<Research />} />
           <Route path="/research/username-reuse-report-2026" element={<UsernameReuseReport2026 />} />
+          <Route path="/research/fact-sheet" element={<FactSheet />} />
           <Route path="/guides/how-username-search-tools-work" element={<HowUsernameSearchToolsWork />} />
           
           {/* SEO Pillar Pages */}

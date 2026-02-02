@@ -75,6 +75,12 @@ export default function Press() {
 
   const resources = [
     {
+      title: "Research Fact Sheet (PDF)",
+      description: "One-page summary of key findings for journalists and educators. Downloadable PDF.",
+      url: "/research/fact-sheet",
+      icon: FileText
+    },
+    {
       title: "Username Reuse Research Report (2026)",
       description: "Analysis of username reuse patterns, correlation risks, and data persistence across platforms.",
       url: "/research/username-reuse-report-2026",
