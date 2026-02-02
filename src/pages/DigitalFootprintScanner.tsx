@@ -189,22 +189,22 @@ const DigitalFootprintScanner = () => {
   return (
     <>
       <Helmet>
-        <title>Digital Footprint Scanner – Free & Ethical Online Exposure Check | FootprintIQ</title>
+        <title>Free Digital Footprint Checker — Find Your Digital Footprint Online | FootprintIQ</title>
         <meta 
           name="description" 
-          content="Free footprint scanner to check your online exposure. Our digital footprint scanner searches 500+ public sources for usernames, email breaches, and data broker listings—ethically and privately." 
+          content="Free digital footprint checker to find your digital footprint online. See how to find the digital footprint of someone using ethical OSINT methods. Checks 500+ sources for social media, email breaches, and personal data exposure." 
         />
-        <meta name="keywords" content="digital footprint scanner, online footprint scanner, free footprint scanner, digital footprint check, find my digital footprint, personal data exposure, ethical OSINT tools, username scanner, email breach scanner, internet footprint" />
+        <meta name="keywords" content="digital footprint checker, free digital footprint checker, find digital footprint, find my digital footprint, how to find the digital footprint of someone, personal data exposure, trail of data, ethical OSINT tools, username scanner, email breach scanner, internet footprint" />
         <link rel="canonical" href="https://footprintiq.com/digital-footprint-scanner" />
         
-        <meta property="og:title" content="Digital Footprint Scanner – Free & Ethical Online Exposure Check" />
-        <meta property="og:description" content="Free footprint scanner to check your online exposure. Searches 500+ public sources for usernames, email breaches, and data broker listings." />
+        <meta property="og:title" content="Free Digital Footprint Checker — Find Your Digital Footprint Online" />
+        <meta property="og:description" content="Free digital footprint checker to find your digital footprint online. Searches 500+ public sources for social media, email addresses, and data broker listings." />
         <meta property="og:url" content="https://footprintiq.com/digital-footprint-scanner" />
         <meta property="og:type" content="website" />
         
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Digital Footprint Scanner – Free & Ethical Online Exposure Check" />
-        <meta name="twitter:description" content="Free footprint scanner to check your online exposure. Ethical OSINT methods, no surveillance." />
+        <meta name="twitter:title" content="Free Digital Footprint Checker — Find Your Digital Footprint Online" />
+        <meta name="twitter:description" content="Free digital footprint checker using ethical OSINT methods. Find your trail of data across social media, data breaches, and data brokers." />
         
         <script type="application/ld+json">{JSON.stringify(schemaFAQ)}</script>
         <script type="application/ld+json">{JSON.stringify(schemaBreadcrumb)}</script>
@@ -229,29 +229,29 @@ const DigitalFootprintScanner = () => {
           {/* Hero Section */}
           <section className="mb-16">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              Digital Footprint Scanner – Free & Ethical Online Exposure Check
+              Free Digital Footprint Checker — Find Your Online Footprint
             </h1>
             
             {/* Lead-in subtitle with keyword variations */}
             <p className="text-xl text-primary/80 font-medium mb-6">
-              Our free online footprint scanner helps you discover where your personal information appears across the web—no surveillance, no data selling.
+              Our free digital footprint checker helps you discover where your personal data appears across the web—including social media, email addresses, and data broker listings—no surveillance, no data selling.
             </p>
             
             <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
               <p className="text-xl text-muted-foreground leading-relaxed">
-                A digital footprint scanner is a tool that helps you understand where your personal information appears online. It searches public sources—websites, social platforms, data aggregators, and breach databases—to show you what others can find about you.
+                A digital footprint checker is a tool that helps you understand where your personal information appears online. It searches public sources—websites, social media platforms, data aggregators, and breach databases—to show you what others can find about you. Your footprint includes every trail of data you leave behind.
               </p>
               
               <p>
-                Most people don't realize how much of their information is publicly accessible. Over years of internet use, data accumulates across dozens or hundreds of sites. Old forum accounts, forgotten social profiles, and breached passwords all contribute to your digital footprint. An online footprint scanner reveals this accumulated exposure in minutes.
+                Most people don't realize how much of their information is publicly accessible. Over years of internet use, personal data accumulates across dozens or hundreds of sites. Old forum accounts, forgotten social profiles, exposed email addresses, and breached passwords all contribute to your digital footprint. A free digital footprint checker reveals this accumulated exposure in minutes.
               </p>
               
               <p>
-                The important thing to understand: most exposure isn't caused by hacking. It comes from normal internet use over time. Account sign-ups, public posts, data broker collection, and third-party data sharing all create visibility that most people never think about. A web presence scanner helps you see what's already out there.
+                The important thing to understand: most exposure isn't caused by hacking. It comes from normal internet use over time. Account sign-ups, public posts, data broker collection, and third-party data sharing all create visibility. Search engines index this personal data, making it accessible to anyone. A web presence scanner helps you see what's already out there.
               </p>
               
               <p>
-                Before you can reduce your exposure, you need to understand it. A footprint scan gives you that visibility—showing you what exists so you can make informed decisions about what matters.
+                Before you can reduce your exposure, you need to understand it. Want to know how to find the digital footprint of someone? Start with a free scan—showing you what exists so you can make informed decisions about what matters.
               </p>
             </div>
 
@@ -259,24 +259,24 @@ const DigitalFootprintScanner = () => {
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 mb-8">
               <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
                 <Zap className="h-5 w-5 text-primary" />
-                What This Footprint Scanner Does in 30 Seconds
+                What This Digital Footprint Checker Does in 30 Seconds
               </h2>
               <ul className="grid sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                  Searches 500+ public platforms for your usernames
+                  Searches 500+ social media platforms for your usernames
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                  Checks breach databases for exposed emails
+                  Checks data breach databases for exposed email addresses
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                  Identifies data broker listings
+                  Identifies data broker listings with your personal data
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-                  Provides a structured exposure report
+                  Provides a structured exposure report with IP address and search engine findings
                 </li>
               </ul>
             </div>
@@ -291,6 +291,29 @@ const DigitalFootprintScanner = () => {
               <Button asChild variant="outline" size="lg">
                 <Link to="/sample-report">View Sample Report</Link>
               </Button>
+            </div>
+          </section>
+          
+          {/* Internal Links Section - NEW */}
+          <section className="mb-16 bg-muted/30 rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">Related Tools & Resources</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              <Link to="/usernames" className="flex items-center gap-2 text-primary hover:underline">
+                <ArrowRight className="h-4 w-4" />
+                Free Username Search
+              </Link>
+              <Link to="/email-breach-check" className="flex items-center gap-2 text-primary hover:underline">
+                <ArrowRight className="h-4 w-4" />
+                Email Breach Check
+              </Link>
+              <Link to="/blog/remove-data-brokers" className="flex items-center gap-2 text-primary hover:underline">
+                <ArrowRight className="h-4 w-4" />
+                How to Remove Data from Data Brokers
+              </Link>
+              <Link to="/username-exposure" className="flex items-center gap-2 text-primary hover:underline">
+                <ArrowRight className="h-4 w-4" />
+                Understanding Username Exposure
+              </Link>
             </div>
           </section>
 

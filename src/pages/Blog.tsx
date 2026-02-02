@@ -218,8 +218,8 @@ const Blog = () => {
   };
   return <>
       <SEO 
-        title="Blog - Digital Privacy & OSINT Guides | FootprintIQ" 
-        description="Learn about digital footprints, OSINT, data breaches, and online privacy protection. Expert guides and tutorials for staying safe online." 
+        title="Digital Footprint Intelligence Blog — Privacy & OSINT Guides | FootprintIQ" 
+        description="Digital footprint intelligence guides covering threat intelligence, how to continuously monitor digital assets, and reduce your attack surface. Expert OSINT and privacy tutorials." 
         canonical="https://footprintiq.app/blog" 
         schema={{
           organization: organizationSchema,
@@ -233,14 +233,14 @@ const Blog = () => {
         <div className="max-w-6xl mx-auto px-6 py-16">
           <div className="text-center mb-16">
             <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary via-primary-glow to-accent bg-clip-text text-transparent my-0 px-0">
-              Privacy & Security Blog
-
-
-
-
+              Digital Footprint Intelligence & Privacy Blog
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Expert guides on digital footprints, OSINT, and online privacy protection
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-6">
+              Expert guides on threat intelligence, OSINT, and privacy protection
+            </p>
+            <p className="text-muted-foreground max-w-3xl mx-auto">
+              Learn how to continuously monitor your digital assets, understand your attack surface, and reduce exposure. 
+              Our digital footprint intelligence resources help you stay ahead of threats with actionable insights.
             </p>
           </div>
 

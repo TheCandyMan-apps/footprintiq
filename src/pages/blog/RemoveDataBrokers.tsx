@@ -3,7 +3,7 @@ import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Shield, Search, Ban, CheckCircle2, AlertTriangle, TrendingUp } from "lucide-react";
+import { ArrowLeft, ArrowRight, Shield, Search, Ban, CheckCircle2, AlertTriangle, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
@@ -37,14 +37,14 @@ export default function RemoveDataBrokers() {
   return (
     <>
       <SEO
-        title="Remove Your Data from Data Brokers | Complete 2024 Guide"
-        description="Learn how to remove your personal information from data broker sites. Step-by-step guide with proven methods to protect your privacy."
+        title="Free Data Broker Removal Guide — Remove Personal Information Online | FootprintIQ"
+        description="Free data broker removal guide to remove personal information from data broker sites. Protect family members from identity theft with automated data removal services."
         canonical="https://footprintiq.app/blog/remove-data-brokers"
         article={{
           publishedTime: "2024-01-15",
           modifiedTime: "2024-01-15",
           author: "FootprintIQ",
-          tags: ["Privacy", "Data Brokers", "Security"]
+          tags: ["Privacy", "Data Brokers", "Security", "Free Data Broker Removal", "Personal Data", "Identity Theft"]
         }}
         schema={{
           breadcrumbs: breadcrumbSchema,
@@ -66,7 +66,7 @@ export default function RemoveDataBrokers() {
               <div className="mb-8 rounded-2xl overflow-hidden shadow-2xl">
                 <img 
                   src={heroImage} 
-                  alt="Data broker removal concept illustration"
+                  alt="Free data broker removal concept illustration"
                   className="w-full h-[400px] object-cover"
                   loading="eager"
                 />
@@ -75,7 +75,7 @@ export default function RemoveDataBrokers() {
 
             <header className="mb-12">
               <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent leading-tight">
-                How to Remove Your Data from Data Brokers: Complete 2024 Guide
+                Free Data Broker Removal: Complete Guide
               </h1>
               <div className="flex items-center gap-4 text-muted-foreground">
                 <time dateTime="2024-01-15">January 15, 2024</time>
@@ -86,12 +86,30 @@ export default function RemoveDataBrokers() {
 
             <div className="prose prose-lg max-w-none">
               <p className="text-xl text-muted-foreground leading-relaxed mb-8">
-                Data brokers collect and sell your personal information without your knowledge, contributing significantly to your overall <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link>. This comprehensive guide shows you exactly how to find and remove your data from these companies.
+                Data brokers collect and sell your personal information and personal data without your knowledge, contributing significantly to your overall <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link>. This comprehensive free data broker removal guide shows you exactly how to find and remove your data from these companies, protecting your email addresses and family members from identity theft.
               </p>
+              
+              {/* Internal Links Section - NEW */}
+              <div className="bg-muted/30 rounded-lg p-6 mb-8 not-prose">
+                <h2 className="text-lg font-semibold mb-4">Related Resources</h2>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <Link to="/digital-footprint-scanner" className="flex items-center gap-2 text-primary hover:underline">
+                    <ArrowRight className="h-4 w-4" />
+                    Scan Your Digital Footprint
+                  </Link>
+                  <Link to="/email-breach-check" className="flex items-center gap-2 text-primary hover:underline">
+                    <ArrowRight className="h-4 w-4" />
+                    Check Email Breaches
+                  </Link>
+                  <Link to="/blog/what-is-osint-risk" className="flex items-center gap-2 text-primary hover:underline">
+                    <ArrowRight className="h-4 w-4" />
+                    Understanding OSINT Risk
+                  </Link>
+                </div>
+              </div>
 
               <BlogCallout type="warning" title="The Data Broker Problem">
-                Over 4,000 data broker companies operate in the US alone, collecting and selling personal information about billions of people worldwide. Your data is likely on dozens of these sites right now.
-              </BlogCallout>
+                Over 4,000 data broker companies operate in the US alone, collecting and selling personal information about billions of people worldwide. Your personal data is likely on dozens of these sites right now. Many offer removal services, but automated data removal is often more effective.</BlogCallout>
 
               <section className="mb-12">
                 <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
