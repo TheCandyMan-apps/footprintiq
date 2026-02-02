@@ -1,21 +1,14 @@
-import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { SEO } from "@/components/SEO";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Search, 
   CheckCircle, 
   XCircle, 
   AlertCircle, 
-  ExternalLink, 
-  Upload,
   Shield,
   Eye,
   Zap,
@@ -26,12 +19,9 @@ import {
   Code,
   Briefcase,
   Users,
-  Lock,
-  ChevronDown
+  Lock
 } from "lucide-react";
-import { checkUsernameAvailability, usernameSources, UsernameCheckResult } from "@/lib/usernameSources";
-import { useToast } from "@/hooks/use-toast";
-import { UpgradeDialog } from "@/components/UpgradeDialog";
+
 import {
   Accordion,
   AccordionContent,
@@ -78,59 +68,6 @@ const differentiators = [
 ];
 
 export default function UsernamePage() {
-  const [username, setUsername] = useState("");
-  const [bulkUsernames, setBulkUsernames] = useState("");
-  const [results, setResults] = useState<UsernameCheckResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [showUpgrade, setShowUpgrade] = useState(false);
-  const { toast } = useToast();
-  const searchFormRef = useRef<HTMLDivElement>(null);
-
-  const categories = ["all", ...new Set(usernameSources.map(s => s.category))];
-
-  const scrollToSearch = () => {
-    searchFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-
-  const handleSearch = async () => {
-    if (!username.trim()) {
-      toast({ title: "Please enter a username", variant: "destructive" });
-      return;
-    }
-
-    setIsSearching(true);
-    try {
-      const checkResults = await checkUsernameAvailability(username.trim());
-      setResults(checkResults);
-      toast({ title: `Found ${checkResults.filter(r => r.status === 'found').length} matches` });
-    } catch (error) {
-      toast({ title: "Search failed", description: "Please try again", variant: "destructive" });
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleBulkSearch = async () => {
-    setShowUpgrade(true);
-    toast({ 
-      title: "Pro Feature", 
-      description: "Bulk username checking is available in Pro plan",
-      variant: "default"
-    });
-  };
-
-  const filteredResults = selectedCategory === "all" 
-    ? results 
-    : results.filter(r => r.source.category === selectedCategory);
-
-  const statusIcon = (status: string) => {
-    switch (status) {
-      case 'found': return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'suspicious': return <AlertCircle className="w-5 h-5 text-yellow-500" />;
-      default: return <XCircle className="w-5 h-5 text-muted-foreground" />;
-    }
-  };
 
   const faqSchema = {
     "@context": "https://schema.org" as const,
@@ -185,9 +122,11 @@ export default function UsernamePage() {
               FootprintIQ is a username search tool that helps individuals discover where their usernames appear across public platforms using ethical OSINT techniques.
             </p>
             
-            <Button size="lg" onClick={scrollToSearch} className="text-lg px-8 py-6">
-              Run a Free Username Scan
-              <ChevronDown className="ml-2 w-5 h-5" />
+            <Button size="lg" asChild className="text-lg px-8 py-6">
+              <Link to="/scan">
+                Run a Free Username Scan
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Link>
             </Button>
           </div>
         </section>
@@ -255,118 +194,22 @@ export default function UsernamePage() {
           </div>
         </section>
 
-        {/* Search Form */}
-        <section className="py-16 px-6" ref={searchFormRef}>
-          <div className="max-w-4xl mx-auto">
-            <Card className="p-6 md:p-8 shadow-lg border-2">
-              <Tabs defaultValue="single" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="single">Single Username</TabsTrigger>
-                  <TabsTrigger value="bulk">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Bulk Check (Pro)
-                  </TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="single" className="space-y-4">
-                  <div className="flex gap-4">
-                    <Input
-                      placeholder="Enter username to search..."
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                      className="flex-1 text-lg py-6"
-                    />
-                    <Button onClick={handleSearch} disabled={isSearching} size="lg" className="px-8">
-                      <Search className="w-4 h-4 mr-2" />
-                      {isSearching ? "Searching..." : "Search"}
-                    </Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground text-center">
-                    Enter any username to check where it appears across 500+ platforms
-                  </p>
-                </TabsContent>
-
-                <TabsContent value="bulk" className="space-y-4">
-                  <Textarea
-                    placeholder="Enter usernames (one per line or comma-separated)..."
-                    value={bulkUsernames}
-                    onChange={(e) => setBulkUsernames(e.target.value)}
-                    className="min-h-[120px]"
-                  />
-                  <Button onClick={handleBulkSearch} disabled={isSearching} size="lg" className="w-full">
-                    <Upload className="w-4 h-4 mr-2" />
-                    Check All Usernames
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    💎 Pro feature: Check up to 100 usernames at once
-                  </p>
-                </TabsContent>
-              </Tabs>
-            </Card>
+        {/* CTA Section */}
+        <section className="py-16 px-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-2xl font-bold mb-4">Ready to discover your digital footprint?</h2>
+            <p className="text-muted-foreground mb-6">
+              Start a free scan to see where your username appears across 500+ platforms.
+            </p>
+            <Button size="lg" asChild className="text-lg px-8 py-6">
+              <Link to="/scan">
+                Run a Free Username Scan
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Link>
+            </Button>
           </div>
         </section>
 
-        {/* Results Display */}
-        {results.length > 0 && (
-          <section className="pb-16 px-6">
-            <div className="max-w-6xl mx-auto">
-              <div className="flex flex-wrap gap-2 mb-6">
-                {categories.map(cat => (
-                  <Badge
-                    key={cat}
-                    variant={selectedCategory === cat ? "default" : "outline"}
-                    className="cursor-pointer"
-                    onClick={() => setSelectedCategory(cat)}
-                  >
-                    {cat} ({cat === "all" ? results.length : results.filter(r => r.source.category === cat).length})
-                  </Badge>
-                ))}
-              </div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredResults.map((result, idx) => (
-                  <Card key={idx} className="p-4 hover:shadow-lg transition-shadow">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        {result.source.favicon && (
-                          <img 
-                            src={result.source.favicon} 
-                            alt={result.source.name}
-                            className="w-6 h-6"
-                            onError={(e) => e.currentTarget.style.display = 'none'}
-                          />
-                        )}
-                        <div>
-                          <h3 className="font-semibold">{result.source.name}</h3>
-                          <Badge variant="secondary" className="text-xs">
-                            {result.source.category}
-                          </Badge>
-                        </div>
-                      </div>
-                      {statusIcon(result.status)}
-                    </div>
-                    
-                    {result.status === 'found' && (
-                      <a
-                        href={result.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-primary hover:underline"
-                      >
-                        View Profile <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                    
-                    {result.status === 'suspicious' && (
-                      <p className="text-xs text-muted-foreground">Rate limited or access restricted</p>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
 
         {/* Why Username Reuse Matters */}
         <section className="py-12 px-6">
@@ -566,11 +409,6 @@ export default function UsernamePage() {
         </section>
       </main>
       <Footer />
-      <UpgradeDialog 
-        open={showUpgrade} 
-        onOpenChange={setShowUpgrade}
-        feature="Bulk username checking"
-      />
     </>
   );
 }
