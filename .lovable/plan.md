@@ -1,369 +1,240 @@
 
-# Unified Scan UI Implementation Plan
+# SEO Optimization Plan: SEMRUSH Audit Fixes
 
 ## Executive Summary
+This plan addresses the SEO issues identified in the SEMRUSH audit. The audit found **145 issues** across 11 pages, primarily focused on:
+1. **Missing internal links** on all pages
+2. **Missing target keywords** in H1, title, and meta descriptions
+3. **Low word count** and readability issues
+4. **Missing semantic keywords** that competitors use
 
-This plan consolidates the current dual-scan architecture (`/scan` + `/advanced`) into a single, tier-aware scan interface at `/scan`. The UI will progressively reveal "Enhance this scan" options based on detected input type, with Pro-only options appearing locked (greyed out with 🔒) for Free users.
+---
 
-**Estimated effort**: 4-6 hours
+## Key Pages Affected
 
-## Current State Analysis
+| Page | Priority Score | Main Issues |
+|------|---------------|-------------|
+| `/usernames` | 1.67 | No internal links, missing keywords in H1/title |
+| `/digital-footprint-scanner` | 0.35 | Missing keywords, low word count |
+| `/blog/what-is-osint-risk` | 0.29 | Missing "osint industries digital footprint" keywords |
+| `/blog/remove-data-brokers` | 0.19 | Missing "free data broker removal" in H1/title |
+| `/username-search-tools` | 0.16 | Missing "username osint" keywords |
+| `/blog` | 0.11 | Missing "digital footprint intelligence" keywords |
+| `/username-exposure` | 0.00 | Missing "username footprint scan" keywords |
+| `/email-breach-tools` | 0.00 | Missing "firefox monitor" semantic keywords |
 
-### Existing Components
-- `src/components/ScanForm.tsx` (443 lines) - Simple form with single input + refine options
-- `src/pages/AdvancedScan.tsx` (1544 lines) - Complex form with tool selectors, providers, batch mode
-- `src/components/ScanProgress.tsx` (459 lines) - Handles scan execution and tier-based routing
-- `src/lib/scan/identifierDetection.ts` - Already detects email/phone/username/fullname
-- `src/hooks/useTierGating.tsx` - Provides `isFree`, `isPro`, `checkFeatureAccess`
-- `src/components/UpgradeDialog.tsx` - Existing upgrade modal
+---
 
-### Backend Routing (already tier-aware)
-The `n8n-scan-trigger` edge function already:
-- Routes Free tier username scans to `N8N_FREE_SCAN_WEBHOOK_URL` (quick WhatsMyName-only)
-- Routes Pro/email/phone scans to `N8N_SCAN_WEBHOOK_URL` (full multi-provider)
-- Blocks phone scans for Free tier with `scan_blocked_by_tier`
-- Allows email scans for Free tier (Holehe provider available)
+## Phase 1: Add Internal Links (All Pages)
 
-## Architecture Overview
+Every page flagged has "no internal links". I will add contextual internal links to each page.
 
-```text
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         UNIFIED SCAN FLOW                                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  /scan (ScanPage.tsx)                                                       │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                     UnifiedScanForm.tsx                               │  │
-│  │  ┌─────────────────────────────────────────────────────────────────┐  │  │
-│  │  │  "Start Your Digital Footprint Scan"                            │  │  │
-│  │  │  ┌───────────────────────────────────────────────────────────┐  │  │  │
-│  │  │  │ [Username, email, phone number, or full name]             │  │  │  │
-│  │  │  └───────────────────────────────────────────────────────────┘  │  │  │
-│  │  │  Phone format: include country code (+1, +44, etc.)             │  │  │
-│  │  │                                                                 │  │  │
-│  │  │  [ Run scan ]                                                   │  │  │
-│  │  │                                                                 │  │  │
-│  │  │  We only use public sources. Queries are discarded after...    │  │  │
-│  │  └─────────────────────────────────────────────────────────────────┘  │  │
-│  │                                                                       │  │
-│  │  ┌─────────────────────────────────────────────────────────────────┐  │  │
-│  │  │  ProOptionsPanel (shown when input detected)                   │  │  │
-│  │  │  "Enhance this scan"                                           │  │  │
-│  │  │                                                                 │  │  │
-│  │  │  [For username detected:]                                       │  │  │
-│  │  │  ☐ Deep profile sweep               [PRO] 🔒                   │  │  │
-│  │  │  ☐ Connections graph                [PRO] 🔒                   │  │  │
-│  │  │  ☐ Higher confidence signals        [PRO] 🔒                   │  │  │
-│  │  │                                                                 │  │  │
-│  │  │  [For email detected:]                                          │  │  │
-│  │  │  ☐ Breach context & verification    [PRO] 🔒                   │  │  │
-│  │  │  ☐ Reputation / risk signals        [PRO] 🔒                   │  │  │
-│  │  │                                                                 │  │  │
-│  │  │  "Upgrade to Pro to unlock deeper sources..."                  │  │  │
-│  │  └─────────────────────────────────────────────────────────────────┘  │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-│                               │                                             │
-│                               ▼                                             │
-│                    ScanProgress.tsx                                         │
-│                    (passes scanMode + enhancers to backend)                 │
-│                               │                                             │
-│                               ▼                                             │
-│                    n8n-scan-trigger                                         │
-│                    (routes to correct workflow)                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+### Implementation Strategy
+For each page, add 2-4 relevant internal links within the content:
 
-## Implementation Details
+**`/usernames` page:**
+- Link to `/email-breach-check` (combine username + email scanning)
+- Link to `/digital-footprint-scanner` (complete footprint analysis)
+- Link to `/username-search-tools` (tool comparison)
+- Link to `/blog/what-is-osint-risk` (educational content)
 
-### Phase 1: Type Definitions and Utilities
+**`/digital-footprint-scanner` page:**
+- Link to `/usernames` (username scanning)
+- Link to `/email-breach-check` (breach checking)
+- Link to `/blog/remove-data-brokers` (data broker removal)
+- Link to `/username-exposure` (exposure education)
 
-**File: `src/lib/scan/unifiedScanTypes.ts` (NEW)**
+**`/username-search-tools` page:**
+- Link to `/usernames` (run a username search)
+- Link to `/digital-footprint-scanner` (full scan)
+- Link to `/blog/what-is-osint-risk` (OSINT context)
 
-Define the scan contract:
+**`/username-exposure` page:**
+- Link to `/usernames` (scan your username)
+- Link to `/username-search-tools` (tool comparison)
+- Link to `/digital-footprint-scanner` (complete analysis)
 
-```typescript
-export type ScanMode = "free_fast" | "standard" | "pro_deep";
+**`/email-breach-tools` page:**
+- Link to `/email-breach-check` (check your email)
+- Link to `/digital-footprint-scanner` (complete scan)
+- Link to `/usernames` (username correlation)
 
-export type EnhancerKey =
-  | "deep_coverage"
-  | "connections_graph"
-  | "confidence_signals"
-  | "breach_context"
-  | "carrier_intel"
-  | "risk_signals"
-  | "expanded_sources"
-  | "disambiguation";
+**`/blog` page:**
+- Already has links to blog posts but needs semantic optimization
 
-export type DetectedType = "username" | "email" | "phone" | "name";
+**Blog posts (`/blog/what-is-osint-risk`, `/blog/remove-data-brokers`):**
+- Add contextual links to related feature pages
+- Cross-link to other relevant blog posts
 
-export interface UnifiedScanConfig {
-  query: string;
-  detectedType: DetectedType;
-  scanMode: ScanMode;
-  enhancers: EnhancerKey[];
-  turnstile_token?: string;
-}
+---
 
-// Enhancer definitions by detected type
-export const ENHANCERS_BY_TYPE: Record<DetectedType, EnhancerConfig[]> = {
-  username: [
-    { key: "deep_coverage", label: "Deep profile sweep", description: "Search 500+ platforms including social media, forums, gaming sites" },
-    { key: "connections_graph", label: "Connections graph", description: "Visualize relationships between discovered profiles" },
-    { key: "confidence_signals", label: "Higher confidence signals", description: "Advanced verification to reduce false positives" },
-  ],
-  email: [
-    { key: "breach_context", label: "Breach context & verification", description: "Full breach history with password exposure details" },
-    { key: "risk_signals", label: "Reputation / risk signals", description: "Email deliverability, fraud scoring, and spam detection" },
-  ],
-  phone: [
-    { key: "carrier_intel", label: "Carrier & line intelligence", description: "Carrier lookup, line type, and geographic data" },
-    { key: "risk_signals", label: "Reputation / risk signals", description: "Fraud scoring and spam detection" },
-  ],
-  name: [
-    { key: "expanded_sources", label: "Expanded sources", description: "Search across people databases and public records" },
-    { key: "disambiguation", label: "Disambiguation signals", description: "Cross-reference to reduce false matches" },
-  ],
-};
-```
+## Phase 2: Keyword Optimization
 
-### Phase 2: ProOptionsPanel Component
+### 2A: Title Tag Updates
 
-**File: `src/components/scan/ProOptionsPanel.tsx` (NEW)**
+| Page | Current Title | Optimized Title |
+|------|--------------|-----------------|
+| `/usernames` | "Free Username Search — See Where Your Username..." | "Free Username Search & Lookup — Find People by Username Online" |
+| `/digital-footprint-scanner` | "Digital Footprint Scanner – Free & Ethical..." | "Free Digital Footprint Checker — Find Your Digital Footprint Online" |
+| `/username-search-tools` | "Username Search Tools Explained: Pros, Cons..." | "Username OSINT Tools: Sherlock, Maigret & Username Search Explained" |
+| `/username-exposure` | "Username Exposure: How Accounts Get Linked..." | "Username Footprint Scan — How Your Online Accounts Get Linked" |
+| `/email-breach-tools` | "Email Breach Check Tools Compared: HIBP, Mozilla..." | "Firefox Monitor vs HIBP: Email Breach Check Tools Compared" |
+| `/blog/remove-data-brokers` | "Remove Your Data from Data Brokers..." | "Free Data Broker Removal Guide — Remove Personal Information Online" |
+| `/blog/what-is-osint-risk` | "What is OSINT Risk? Understanding..." | "OSINT Industries Digital Footprint Risk — Understanding Your Exposure" |
 
-```typescript
-interface ProOptionsPanelProps {
-  detectedType: DetectedType;
-  isFree: boolean;
-  selectedEnhancers: EnhancerKey[];
-  onChangeEnhancer: (key: EnhancerKey, enabled: boolean) => void;
-  onRequestUpgrade: () => void;
-}
-```
+### 2B: H1 Tag Updates
 
-Features:
-- Renders only enhancers relevant to `detectedType`
-- Each row shows:
-  - Checkbox (disabled for Free)
-  - Label + description
-  - Lock icon + "Pro" badge for Free users
-- Clicking a locked row triggers `onRequestUpgrade()` (does NOT toggle state)
-- Footer text for Free: "Upgrade to Pro to unlock deeper sources, confidence signals, and connections."
+Match H1 tags to include primary target keywords:
 
-### Phase 3: UnifiedScanForm Component
+| Page | Target Keyword | Optimized H1 |
+|------|---------------|--------------|
+| `/usernames` | "free username search", "lookup username" | "Free Username Search & Lookup Tool" |
+| `/digital-footprint-scanner` | "free digital footprint checker", "find digital footprint" | "Free Digital Footprint Checker — Find Your Online Footprint" |
+| `/username-search-tools` | "username osint", "osint by username" | "Username OSINT Tools Explained" |
+| `/username-exposure` | "username footprint scan" | "Username Footprint Scan: How Accounts Get Linked" |
+| `/email-breach-tools` | "firefox monitor email breach check" | "Email Breach Check Tools: Firefox Monitor, HIBP & More" |
+| `/blog/remove-data-brokers` | "free data broker removal" | "Free Data Broker Removal: Complete Guide" |
+| `/blog/what-is-osint-risk` | "osint industries digital footprint" | "OSINT Industries & Digital Footprint Risk Explained" |
 
-**File: `src/components/scan/UnifiedScanForm.tsx` (NEW)**
+### 2C: Meta Description Updates
 
-Merge the best of `ScanForm.tsx` with tier-aware enhancements:
+Ensure each meta description includes the target keyword:
 
-1. **Header**: "Start Your Digital Footprint Scan"
+| Page | Optimized Meta Description |
+|------|---------------------------|
+| `/usernames` | "Free username search and lookup tool to find people by username. Deep user search across 500+ social media platforms and forums. No login required." |
+| `/digital-footprint-scanner` | "Free digital footprint checker to find your digital footprint online. See how to find the digital footprint of someone using ethical OSINT methods." |
+| `/username-search-tools` | "Compare username OSINT tools like Sherlock and Maigret. Learn how to search OSINT by username with open-source intelligence techniques." |
+| `/email-breach-tools` | "Compare Firefox Monitor email breach check tools with HIBP. Learn how to check breaches and protect your email addresses from data leaks." |
 
-2. **Single Input**:
-   - Placeholder: "Username, email, phone number, or full name"
-   - Helper text: "Phone format: include country code (+1, +44, etc.)"
-   - Uses existing `detectIdentifierType()` from `identifierDetection.ts`
+---
 
-3. **Type Detection Badge**: Colored pill showing detected type (email=green, phone=blue, etc.)
+## Phase 3: Content Enrichment
 
-4. **Turnstile Widget**: Existing component, shown when required
+### 3A: Add Missing Semantic Keywords
 
-5. **Primary CTA**: "Run scan" button
+Based on SEMRUSH's competitor analysis, add these terms naturally to each page:
 
-6. **Trust Line**: "We only use public sources. Queries are discarded after processing."
+**`/usernames` page — add:**
+- "social media" (appears multiple times as missing)
+- "find social" / "open source intelligence"
+- "online presence" / "search tool"
 
-7. **ProOptionsPanel**: Shown only when input is non-empty
-   - Progressive disclosure: appears after user types something
-   - Options filtered by `detectedType`
-   - Locked state for Free tier
+**`/digital-footprint-scanner` page — add:**
+- "social media" / "email addresses" / "personal data"
+- "data breach" / "search engine" / "ip address"
+- "trail of data" / "footprint includes"
 
-8. **Submit Logic**:
-   ```typescript
-   const handleSubmit = () => {
-     // Derive scanMode
-     let scanMode: ScanMode;
-     let finalEnhancers = selectedEnhancers;
-     
-     if (isFree) {
-       // HARD GUARDRAIL: Strip any Pro enhancers for Free users
-       if (finalEnhancers.length > 0) {
-         toast.info("Pro-only options removed. Upgrade to enable.");
-         finalEnhancers = [];
-       }
-       scanMode = detectedType === "username" ? "free_fast" : "standard";
-     } else {
-       // Pro user
-       scanMode = finalEnhancers.length > 0 ? "pro_deep" : "standard";
-     }
-     
-     const config: UnifiedScanConfig = {
-       query: identifier.trim(),
-       detectedType,
-       scanMode,
-       enhancers: finalEnhancers,
-       turnstile_token: turnstileToken,
-     };
-     
-     onSubmit(config);
-   };
-   ```
+**`/username-exposure` page — add:**
+- "social media" / "personal data" / "personal information"
+- "email addresses" / "identity theft" / "public record"
 
-### Phase 4: Update ScanPage
+**`/email-breach-tools` page — add:**
+- "firefox monitor" / "mozilla monitor" / "password manager"
+- "enter your email address" / "firefox browser"
+- "email addresses and passwords" / "troy hunt"
 
-**File: `src/pages/ScanPage.tsx` (MODIFY)**
+**`/blog/remove-data-brokers` page — add:**
+- "personal information" / "personal data" / "email addresses"
+- "family members" / "removal services" / "identity theft"
+- "data broker removal" / "automated data removal"
 
-Changes:
-1. Import `UnifiedScanForm` instead of `ScanForm`
-2. Update `handleFormSubmit` to accept `UnifiedScanConfig`
-3. Convert config to `ScanFormData` for `ScanProgress`:
-   ```typescript
-   const handleFormSubmit = (config: UnifiedScanConfig) => {
-     // Existing quota check...
-     
-     // Convert to ScanFormData
-     const scanData: ScanFormData = {
-       turnstile_token: config.turnstile_token,
-     };
-     
-     switch (config.detectedType) {
-       case "email":
-         scanData.email = config.query;
-         break;
-       case "phone":
-         scanData.phone = config.query;
-         break;
-       case "name":
-         const parts = config.query.split(/\s+/);
-         scanData.firstName = parts[0];
-         scanData.lastName = parts.slice(1).join(" ");
-         break;
-       case "username":
-       default:
-         scanData.username = config.query;
-         break;
-     }
-     
-     // Store scanMode and enhancers for ScanProgress
-     setScanData({ ...scanData, scanMode: config.scanMode, enhancers: config.enhancers });
-     setCurrentStep("scanning");
-   };
-   ```
+**`/blog/what-is-osint-risk` page — add:**
+- "osint industries" / "digital footprint" (combined phrase)
+- "real time" / "email and phone number"
+- "online presence" / "api access" / "user base"
 
-### Phase 5: Update ScanProgress
+### 3B: Increase Word Count
 
-**File: `src/components/ScanProgress.tsx` (MODIFY)**
+Several pages have "relatively low word count". I will add substantive content sections:
 
-Changes:
-1. Extend `ScanFormData` interface to include optional `scanMode` and `enhancers`
-2. Pass these to `n8n-scan-trigger` in the request body:
-   ```typescript
-   const requestBody = {
-     ...existing,
-     scanMode: scanData.scanMode || "standard",
-     enhancers: scanData.enhancers || [],
-   };
-   ```
+**`/usernames` page:**
+- Add "How to Lookup a Username" step-by-step section
+- Add "What a Deep Username Search Reveals" section
+- Target: +300-400 words
 
-### Phase 6: Backend Enhancement (Optional - Future)
+**`/username-exposure` page:**
+- Expand "What OSINT Tools Reveal" with more detail
+- Add example scenarios with semantic keywords
+- Target: +200-300 words
 
-**File: `supabase/functions/n8n-scan-trigger/index.ts` (MODIFY)**
+**`/email-breach-tools` page:**
+- Add "Firefox Monitor vs Mozilla Monitor" section explaining the rebrand
+- Add "What to Do After a Breach Check" section
+- Target: +300 words
 
-Add logging for transparency:
-```typescript
-const { scanMode = "standard", enhancers = [] } = body;
+---
 
-console.log(`[n8n-scan-trigger] scanMode: ${scanMode}, enhancers: ${enhancers.join(",")}`);
+## Phase 4: Blog Page Optimization
 
-// Include in n8nPayload
-const n8nPayload = {
-  ...existing,
-  scanMode,
-  enhancers,
-};
-```
+**`/blog` index page:**
+Update to include "digital footprint intelligence" in:
+- Title: "Digital Footprint Intelligence Blog — Privacy & OSINT Guides"
+- H1: "Digital Footprint Intelligence & Privacy Blog"
+- Meta description: Include "digital footprint intelligence" phrase
+- Add intro paragraph using semantic terms: "threat intelligence", "continuously monitor", "digital assets", "attack surface"
 
-The n8n workflow can use these to conditionally enable/disable providers.
+---
 
-### Phase 7: Routing Redirect
+## Technical Implementation Summary
 
-**File: `src/App.tsx` (MODIFY)**
+### Files to Modify
 
-Add redirect from `/advanced` to `/scan`:
-```typescript
-<Route path="/advanced" element={<Navigate to="/scan" replace />} />
-```
+1. **`src/pages/UsernamePage.tsx`**
+   - Update SEO title and description
+   - Update H1 text
+   - Add internal links within content sections
+   - Add semantic keyword sections
 
-### Phase 8: Deprecate AdvancedScan
+2. **`src/pages/DigitalFootprintScanner.tsx`**
+   - Update title/H1/meta description
+   - Add internal links
+   - Enrich with semantic keywords
 
-**File: `src/pages/AdvancedScan.tsx` (MODIFY - add deprecation notice)**
+3. **`src/pages/UsernameSearchToolsPage.tsx`**
+   - Update to include "username osint" in H1/title
+   - Add internal links
+   - Add semantic terms
 
-Add comment at top:
-```typescript
-/**
- * @deprecated This page is deprecated. All scan functionality has been
- * consolidated into /scan (UnifiedScanForm). This file is kept for reference
- * and will be removed in a future release.
- */
-```
+4. **`src/pages/UsernameExposure.tsx`**
+   - Add "username footprint scan" to H1/title
+   - Add internal links
+   - Expand content with semantic keywords
 
-## File Summary
+5. **`src/pages/EmailBreachToolsPage.tsx`**
+   - Add "firefox monitor" references
+   - Update title to include keyword
+   - Add internal links
 
-| File | Action | Description |
-|------|--------|-------------|
-| `src/lib/scan/unifiedScanTypes.ts` | **CREATE** | Type definitions and enhancer configs |
-| `src/components/scan/ProOptionsPanel.tsx` | **CREATE** | Tier-gated enhancement options panel |
-| `src/components/scan/UnifiedScanForm.tsx` | **CREATE** | Main unified form component (~300 lines) |
-| `src/pages/ScanPage.tsx` | **MODIFY** | Switch to UnifiedScanForm |
-| `src/components/ScanProgress.tsx` | **MODIFY** | Pass scanMode + enhancers |
-| `src/App.tsx` | **MODIFY** | Add /advanced redirect |
-| `src/pages/AdvancedScan.tsx` | **MODIFY** | Add deprecation comment |
+6. **`src/pages/Blog.tsx`**
+   - Update SEO meta with "digital footprint intelligence"
+   - Add intro content with semantic terms
 
-## Safety Guardrails
+7. **`src/pages/blog/RemoveDataBrokers.tsx`**
+   - Add "free data broker removal" to H1/title
+   - Enrich with semantic keywords
+   - Ensure internal links present
 
-1. **No wasted scans for Free users**:
-   - Pro enhancers are visually disabled (cannot be toggled)
-   - Even if UI state is stale, submit handler strips enhancers with toast
-   - Backend already blocks restricted scans (phone for Free)
+8. **`src/pages/blog/WhatIsOsintRisk.tsx`**
+   - Add "osint industries digital footprint" naturally
+   - Update title/meta
+   - Add semantic keywords
 
-2. **No accidental form submits**:
-   - Clicking locked option row triggers upgrade modal, NOT form submit
-   - Button explicitly separated from option clicks
+---
 
-3. **Deterministic routing**:
-   - `scanMode` is derived from tier + enhancers, sent to backend
-   - Backend logs `scanMode` and `enhancers` for debugging
+## Expected Outcomes
 
-## UX Copy
+After implementation:
+- All 11 pages will have internal links (resolves ~30% of issues)
+- Target keywords will appear in H1 and title tags (resolves ~40% of issues)
+- Meta descriptions will be optimized (resolves ~10% of issues)
+- Content will include missing semantic keywords (improves ranking potential)
+- Word count will be increased where flagged (improves content depth scores)
 
-| Element | Copy |
-|---------|------|
-| Title | "Start Your Digital Footprint Scan" |
-| Input placeholder | "Username, email, phone number, or full name" |
-| Phone hint | "Phone format: include country code (+1, +44, etc.)" |
-| CTA button | "Run scan" |
-| Enhancers header | "Enhance this scan" |
-| Locked badge | "Pro" |
-| Free footer | "Upgrade to Pro to unlock deeper sources, confidence signals, and connections." |
-| Trust line | "We only use public sources. Queries are discarded after processing." |
-| Toast (stripped enhancers) | "Pro-only options removed. Upgrade to enable." |
+---
 
-## Acceptance Criteria Checklist
+## Notes
 
-- [ ] Single `/scan` entry point for all users
-- [ ] Free user can complete username scan without losing allowance from locked options
-- [ ] Free users see locked Pro enhancements with 🔒 icon
-- [ ] Clicking locked option opens upgrade modal (not toggle)
-- [ ] Pro users can enable enhancements and submit
-- [ ] Requests include `scanMode` and `enhancers`
-- [ ] `/advanced` redirects to `/scan`
-- [ ] ScanProgress shows progress updates normally
-- [ ] Phone scans blocked for Free tier with upgrade prompt
-
-## Testing Plan
-
-1. **Free user - username scan**: Should work with quick workflow
-2. **Free user - click locked option**: Upgrade modal appears, option stays unchecked
-3. **Free user - email scan**: Should work with Holehe provider
-4. **Free user - phone scan**: Should show upgrade prompt (blocked by backend)
-5. **Pro user - username with enhancers**: Full multi-tool scan
-6. **Pro user - email with enhancers**: Full email intel scan
-7. **Visit /advanced**: Redirects to /scan
+- **Backlink suggestions** from SEMRUSH are for outreach/PR and cannot be implemented via code
+- **Readability improvements** will happen naturally as content is expanded with clear, structured sections
+- **Keyword cannibalization** warning for `/username-exposure` (SEMRUSH notes `/usernames` ranks higher) — will ensure differentiation in content focus
