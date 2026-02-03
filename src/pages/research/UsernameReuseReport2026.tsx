@@ -10,10 +10,15 @@ import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
 import { ResearchQuote, RESEARCH_STATEMENTS } from "@/components/ResearchQuote";
 import { CitationWidget } from "@/components/CitationWidget";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { buildUsernameResearchJsonLd } from "@/lib/seo/usernameResearchJsonLd";
 
 export default function UsernameReuseReport2026() {
   const origin = "https://footprintiq.app";
   const publishDate = "2026-02-02T00:00:00Z";
+  
+  // Use comprehensive research JSON-LD with Dataset, Report, and ScholarlyArticle types
+  const researchJsonLd = buildUsernameResearchJsonLd(origin);
   
   const breadcrumbs = {
     "@context": "https://schema.org" as const,
@@ -39,37 +44,6 @@ export default function UsernameReuseReport2026() {
     ]
   };
 
-  const reportSchema = {
-    "@context": "https://schema.org",
-    "@type": "Report",
-    name: "The State of Username Reuse & Digital Exposure (2026)",
-    headline: "The State of Username Reuse & Digital Exposure (2026)",
-    description: "An evidence-based analysis of username reuse patterns and their role in digital exposure, conducted using ethical OSINT methodology.",
-    datePublished: publishDate,
-    dateModified: publishDate,
-    author: {
-      "@type": "Organization",
-      name: "FootprintIQ Research"
-    },
-    publisher: organizationSchema,
-    inLanguage: "en",
-    isAccessibleForFree: true,
-    keywords: "username reuse, digital exposure, OSINT research, privacy analysis, data brokers, ethical intelligence",
-    about: [
-      { "@type": "Thing", name: "Username reuse patterns" },
-      { "@type": "Thing", name: "Digital exposure" },
-      { "@type": "Thing", name: "Ethical OSINT methodology" },
-      { "@type": "Thing", name: "Data broker records" },
-      { "@type": "Thing", name: "False positive analysis" }
-    ],
-    funding: {
-      "@type": "MonetaryGrant",
-      name: "Independent research",
-      description: "Self-funded research by FootprintIQ"
-    },
-    citation: "FootprintIQ Research. (2026). The State of Username Reuse & Digital Exposure."
-  };
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-muted/20">
       <SEO 
@@ -86,10 +60,11 @@ export default function UsernameReuseReport2026() {
         }}
         schema={{
           organization: organizationSchema,
-          breadcrumbs: breadcrumbs,
-          custom: reportSchema
+          breadcrumbs: breadcrumbs
         }}
       />
+      {/* Enhanced JSON-LD with Report, Dataset, and ScholarlyArticle types */}
+      <JsonLd data={researchJsonLd} />
       <Header />
       
       <main className="flex-1">
