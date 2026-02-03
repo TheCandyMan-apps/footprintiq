@@ -26,16 +26,48 @@ export const INDEXNOW_URLS = [
   "/contact",
   "/careers",
   "/lens",
+  "/trust",
+  "/support",
+  "/global-index",
+  "/partners",
+  "/resources",
+  "/resources/webinars",
+  "/sample-report",
   // Pillar pages
   "/digital-footprint-scanner",
   "/username-search",
   "/email-breach-check",
+  "/username-search-tools",
+  "/email-breach-tools",
   "/what-is-a-digital-footprint",
   "/username-exposure",
   "/what-is-osint",
-  // Reference pages
-  "/ai-answers-hub",
+  // Educational pages
+  "/reduce-digital-footprint",
+  "/how-identity-theft-starts",
+  "/digital-privacy-glossary",
+  "/is-my-data-exposed",
+  "/old-data-breaches",
+  "/which-data-matters",
+  "/stay-private-online",
   "/about-footprintiq",
+  "/ethical-osint-for-individuals",
+  "/ethical-osint",
+  "/editorial-ethics-policy",
+  // Research pages
+  "/research/username-reuse-report-2026",
+  "/research/fact-sheet",
+  "/press",
+  // Guides
+  "/guides/how-username-search-tools-work",
+  // AI Hub
+  "/ai",
+  "/ai/digital-exposure",
+  "/ai/digital-footprint",
+  "/ai/what-is-osint",
+  "/ai/what-is-identity-profiling",
+  "/ai/what-are-data-brokers",
+  "/ai-answers-hub",
 ];
 
 /**

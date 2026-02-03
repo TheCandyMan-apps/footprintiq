@@ -9,6 +9,7 @@ import {
   PLATFORM_DESCRIPTION_SHORT, 
   PLATFORM_SCHEMA_DESCRIPTION 
 } from "@/lib/platformDescription";
+import { buildPressPageJsonLd } from "@/lib/seo/pressPageJsonLd";
 import { 
   FileText, 
   BookOpen, 
@@ -22,18 +23,8 @@ import {
 } from "lucide-react";
 
 export default function Press() {
-  const organizationSchema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    "name": "FootprintIQ",
-    "url": "https://footprintiq.app",
-    "description": PLATFORM_SCHEMA_DESCRIPTION,
-    "contactPoint": {
-      "@type": "ContactPoint",
-      "email": "support@footprintiq.app",
-      "contactType": "media inquiries"
-    }
-  };
+  const origin = "https://footprintiq.app";
+  const pressPageSchema = buildPressPageJsonLd(origin);
 
   const researchTopics = [
     {
@@ -111,7 +102,7 @@ export default function Press() {
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href="https://footprintiq.app/press" />
       </Helmet>
-      <JsonLd data={organizationSchema} />
+      <JsonLd data={pressPageSchema} />
 
       <div className="min-h-screen bg-background">
         <Header />
