@@ -45,7 +45,7 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { scanId, email, workspaceId, providers = ['hibp', 'abstract_email', 'ipqs_email'], userPlan = 'free' } = body;
+    const { scanId, email, workspaceId, providers = ['hibp', 'abstract_email', 'abstract_email_reputation', 'ipqs_email'], userPlan = 'free' } = body;
 
     if (!email || !scanId) {
       return new Response(
@@ -351,6 +351,86 @@ serve(async (req) => {
         }
       }
       await broadcastProgress('Fraud analysis complete', Object.keys(providerResults).length);
+    }
+
+    // ==================== Abstract Email Reputation Provider ====================
+    if (providers.includes('abstract_email_reputation')) {
+      const startTime = Date.now();
+      const ABSTRACT_REPUTATION_KEY = Deno.env.get('ABSTRACTAPI_EMAIL_REPUTATION_KEY');
+
+      if (!ABSTRACT_REPUTATION_KEY) {
+        console.log('[email-intel] ABSTRACTAPI_EMAIL_REPUTATION_KEY not configured');
+        providerResults['abstract_email_reputation'] = { status: 'not_configured', findingsCount: 0, latencyMs: 0, message: 'API key not configured' };
+        await logScanEvent('abstract_email_reputation', 'execution', 'not_configured', 'ABSTRACTAPI_EMAIL_REPUTATION_KEY not set');
+      } else {
+        try {
+          console.log(`[email-intel] Calling Abstract Email Reputation API for ${email.slice(0, 5)}***`);
+          
+          const response = await fetch(
+            `https://emailreputation.abstractapi.com/v1/?api_key=${ABSTRACT_REPUTATION_KEY}&email=${encodeURIComponent(email)}`
+          );
+
+          const latency = Date.now() - startTime;
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log(`[email-intel] Abstract Email Reputation response:`, JSON.stringify(data).slice(0, 200));
+
+            // Determine severity based on quality score
+            let severity = 'info';
+            const qualityScore = data.email_quality?.score || 0;
+            if (qualityScore < 0.3) severity = 'high';
+            else if (qualityScore < 0.5) severity = 'medium';
+            else if (qualityScore < 0.7) severity = 'low';
+
+            // Build evidence array
+            const evidence = [
+              { key: 'Email', value: email },
+              { key: 'Quality Score', value: String(qualityScore) },
+              { key: 'Deliverability', value: data.email_deliverability?.status || 'Unknown' },
+              { key: 'Status Detail', value: data.email_deliverability?.status_detail || 'N/A' },
+              { key: 'Valid Format', value: String(!!data.is_format_valid) },
+              { key: 'SMTP Valid', value: String(!!data.is_smtp_valid) },
+              { key: 'MX Valid', value: String(!!data.is_mx_valid) },
+            ];
+
+            // Add MX records if available
+            if (data.mx_records?.length > 0) {
+              evidence.push({ key: 'MX Records', value: data.mx_records.slice(0, 3).join(', ') });
+            }
+
+            findings.push({
+              scan_id: scanId,
+              workspace_id: workspaceId,
+              provider: 'abstract_email_reputation',
+              kind: 'email.reputation',
+              severity,
+              confidence: qualityScore,
+              evidence,
+              observed_at: new Date().toISOString(),
+              meta: {
+                finding_key: generateFindingKey('abstract_email_reputation', 'reputation', email),
+                type: 'email_intelligence',
+                title: `Email Quality: ${Math.round(qualityScore * 100)}%`,
+                description: `Email quality score is ${Math.round(qualityScore * 100)}%. Deliverability: ${data.email_deliverability?.status || 'unknown'}.`,
+                raw_data: data,
+              },
+            });
+
+            providerResults['abstract_email_reputation'] = { status: 'success', findingsCount: 1, latencyMs: latency };
+            await logScanEvent('abstract_email_reputation', 'execution', 'success');
+          } else {
+            console.error(`[email-intel] Abstract Email Reputation API error: ${response.status}`);
+            providerResults['abstract_email_reputation'] = { status: 'failed', findingsCount: 0, latencyMs: latency, message: `HTTP ${response.status}` };
+            await logScanEvent('abstract_email_reputation', 'execution', 'failed', `HTTP ${response.status}`);
+          }
+        } catch (error) {
+          console.error('[email-intel] Abstract Email Reputation error:', error);
+          providerResults['abstract_email_reputation'] = { status: 'failed', findingsCount: 0, latencyMs: Date.now() - startTime, message: error instanceof Error ? error.message : 'Unknown error' };
+          await logScanEvent('abstract_email_reputation', 'execution', 'failed', error instanceof Error ? error.message : 'Unknown error');
+        }
+      }
+      await broadcastProgress('Email reputation complete', Object.keys(providerResults).length);
     }
 
     // ==================== Store Findings ====================

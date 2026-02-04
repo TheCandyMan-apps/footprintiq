@@ -243,6 +243,17 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
     requiresKey: 'HIBP_API_KEY',
     enabled: true,
   },
+  {
+    id: 'abstract_email_reputation',
+    name: 'Email Reputation',
+    description: 'Quality scoring, abuse & spam trap detection',
+    scanType: 'email',
+    creditCost: 1,
+    minTier: 'free',
+    category: 'risk',
+    requiresKey: 'ABSTRACTAPI_EMAIL_REPUTATION_KEY',
+    enabled: true,
+  },
 ];
 
 // ============ UTILITY FUNCTIONS ============
