@@ -48,35 +48,92 @@ export function useAggregatedMindMapData() {
         // Parse evidence to extract URL and other data
         const evidence = finding.evidence as any;
         const meta = finding.meta as any;
+        const kind = finding.kind || '';
         
         // Try to get URL from evidence or meta
         let url = '';
-        if (Array.isArray(evidence)) {
-          const urlEv = evidence.find((e: any) => e.key === 'url');
-          url = urlEv?.value || '';
-        } else if (typeof evidence === 'object' && evidence?.url) {
-          url = evidence.url;
+        let platform = '';
+        let displayName = '';
+        let category = 'Other';
+        
+        // Handle breach findings
+        if (kind === 'breach.hit' || kind === 'breach') {
+          category = 'Data Breach';
+          if (Array.isArray(evidence)) {
+            const breachName = evidence.find((e: any) => e.key === 'Breach Name');
+            const domain = evidence.find((e: any) => e.key === 'Domain');
+            if (breachName?.value) {
+              platform = breachName.value;
+              displayName = breachName.value;
+            }
+            if (domain?.value && domain.value !== 'N/A') {
+              url = `https://${domain.value}`;
+            } else if (breachName?.value) {
+              url = `https://haveibeenpwned.com/account/${breachName.value}`;
+            }
+          }
+          if (!platform && meta?.raw_data?.Name) {
+            platform = meta.raw_data.Name;
+            displayName = meta.raw_data.Name;
+          }
+          if (!url && meta?.raw_data?.Domain) {
+            url = `https://${meta.raw_data.Domain}`;
+          }
         }
-        if (!url && meta?.url) url = meta.url;
-        if (!url && meta?.profile_url) url = meta.profile_url;
+        // Handle email validation/reputation
+        else if (kind === 'email.validation' || kind === 'email.reputation') {
+          category = 'Email Intelligence';
+          if (Array.isArray(evidence)) {
+            const deliverability = evidence.find((e: any) => e.key === 'Deliverability');
+            const email = evidence.find((e: any) => e.key === 'Email');
+            if (deliverability?.value) {
+              platform = `Email Validation: ${deliverability.value}`;
+              displayName = platform;
+            }
+            if (email?.value) {
+              url = `email-validation://${email.value}`;
+            }
+          }
+          if (!url) url = `email-validation://${finding.id}`;
+        }
+        // Handle phone intelligence
+        else if (kind.startsWith('phone.')) {
+          category = 'Phone Intelligence';
+          platform = meta?.platform || 'Phone Intel';
+          displayName = platform;
+          url = `phone-intel://${finding.id}`;
+        }
+        // Standard profile handling
+        else {
+          if (Array.isArray(evidence)) {
+            const urlEv = evidence.find((e: any) => e.key === 'url');
+            url = urlEv?.value || '';
+          } else if (typeof evidence === 'object' && evidence?.url) {
+            url = evidence.url;
+          }
+          if (!url && meta?.url) url = meta.url;
+          if (!url && meta?.profile_url) url = meta.profile_url;
+          
+          // Extract platform/site
+          if (Array.isArray(evidence)) {
+            const siteEv = evidence.find((e: any) => e.key === 'site');
+            platform = siteEv?.value || '';
+          }
+          if (!platform) platform = meta?.platform || meta?.site || '';
+          if (!platform) platform = extractSiteFromUrl(url);
+          
+          // Extract username/displayName
+          if (Array.isArray(evidence)) {
+            const usernameEv = evidence.find((e: any) => e.key === 'username');
+            displayName = usernameEv?.value || '';
+          }
+          if (!displayName) displayName = meta?.username || '';
+          
+          category = meta?.category || 'Other';
+        }
         
         if (!url || seenUrls.has(url)) return;
         seenUrls.add(url);
-
-        // Extract platform/site
-        let platform = meta?.platform || meta?.site || '';
-        if (!platform && Array.isArray(evidence)) {
-          const siteEv = evidence.find((e: any) => e.key === 'site');
-          platform = siteEv?.value || '';
-        }
-        if (!platform) platform = extractSiteFromUrl(url);
-
-        // Extract username
-        let username = meta?.username || '';
-        if (!username && Array.isArray(evidence)) {
-          const usernameEv = evidence.find((e: any) => e.key === 'username');
-          username = usernameEv?.value || '';
-        }
 
         results.push({
           id: finding.id,
@@ -87,11 +144,11 @@ export function useAggregatedMindMapData() {
           site: platform,
           meta: {
             platform,
-            username,
-            displayName: meta?.displayName || meta?.display_name || username || '',
+            username: displayName,
+            displayName: meta?.displayName || meta?.display_name || displayName || '',
             bio: meta?.bio || '',
             avatar: meta?.avatar || meta?.avatar_url || '',
-            category: meta?.category || 'Other',
+            category,
             confidence: finding.confidence || 0.7,
           } as any,
           evidence: Array.isArray(evidence) ? evidence : [
