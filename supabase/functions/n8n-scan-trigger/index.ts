@@ -330,6 +330,11 @@ serve(async (req) => {
         case 'domain':
           providers = ["whois", "dns"]; // Domain-specific providers
           break;
+        case 'personal_details':
+          // Name/personal_details searches use PredictaSearch (supports name queries)
+          // Also try username tools with sanitized name (no spaces → underscores)
+          providers = ["predictasearch"];
+          break;
         case 'username':
         default:
           providers = ["sherlock", "gosearch", "maigret", "holehe", "whatsmyname"];
@@ -389,6 +394,8 @@ serve(async (req) => {
       email: scanType === 'email' ? targetValue : (email?.trim() || undefined),
       phone: scanType === 'phone' ? targetValue : (phone?.trim() || undefined),
       domain: scanType === 'domain' ? targetValue : (domain?.trim() || undefined),
+      // For personal_details (name searches), pass as 'name' field for PredictaSearch
+      name: scanType === 'personal_details' ? targetValue : undefined,
       workspaceId: workspaceId,
       userId: user.id,
       mode,
@@ -558,6 +565,41 @@ serve(async (req) => {
       } catch (phoneIntelError) {
         console.error('[n8n-scan-trigger] Failed to trigger phone-intel:', phoneIntelError);
         // Don't fail the whole scan - n8n/PhoneInfoga can still run
+      }
+    }
+
+    // ==================== NAME-INTEL CALL (personal_details scans) ====================
+    // For personal_details (name) scans, call name-intel to run PredictaSearch
+    // This is the PRIMARY handler for name searches (n8n not used for this scan type)
+    if (scanType === 'personal_details' && targetValue) {
+      console.log(`[n8n-scan-trigger] Triggering name-intel for "${targetValue.slice(0, 10)}***"`);
+      
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      
+      try {
+        // Fire name-intel edge function (don't await - fire and forget)
+        fetch(`${supabaseUrl}/functions/v1/name-intel`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({
+            scanId: scan.id,
+            name: targetValue,
+            workspaceId: workspaceId,
+            providers: ['predictasearch'],
+            userPlan: effectiveTier,
+          }),
+        }).then(res => {
+          console.log(`[n8n-scan-trigger] name-intel responded: ${res.status}`);
+        }).catch(err => {
+          console.error(`[n8n-scan-trigger] name-intel error: ${err.message}`);
+        });
+        
+        console.log(`[n8n-scan-trigger] name-intel triggered (fire-and-forget)`);
+      } catch (nameIntelError) {
+        console.error('[n8n-scan-trigger] Failed to trigger name-intel:', nameIntelError);
       }
     }
 
