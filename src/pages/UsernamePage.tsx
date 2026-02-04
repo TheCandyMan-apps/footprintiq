@@ -91,9 +91,9 @@ export default function UsernamePage() {
   return (
     <>
       <SEO
-        title="Free Social Media Username Search — Find People by Username | FootprintIQ"
-        description="Free social media username search to find people by username across 500+ platforms. Deep username search using open source intelligence. Find social media accounts online — no login required."
-        canonical="https://footprintiq.app/username-search"
+        title="Find People by Username — Free Social Media Username Search | FootprintIQ"
+        description="Find people by username with our free social media username search. Search 500+ platforms to discover where a username appears online. Free username lookup tool using ethical OSINT methods."
+        canonical="https://footprintiq.app/usernames"
         schema={{
           breadcrumbs: {
             "@context": "https://schema.org",
@@ -117,27 +117,128 @@ export default function UsernamePage() {
             </Badge>
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 tracking-tight">
-              Free Social Media Username Search — Find People by Username
+              Find People by Username — Free Social Media Username Search
             </h1>
             
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6">
               Use our free social media username search to find people by username across 500+ platforms. 
-              Our deep username search discovers your complete online presence — from social media accounts 
-              to gaming networks, forums, and professional communities.
-            </p>
-
-            <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-8">
-              FootprintIQ is an open source intelligence (OSINT) tool that helps you find people by username. 
-              Whether you're auditing your own online presence or conducting ethical research, our deep username 
-              search platform uses publicly accessible data only — a true free social media username search.
+              Discover where a username appears online — from social media accounts to gaming networks, 
+              forums, and professional communities.
             </p>
             
-            <Button size="lg" asChild className="text-lg px-8 py-6">
+            <Button size="lg" asChild className="text-lg px-8 py-6 mb-8">
               <Link to="/scan">
                 Run a Free Username Scan
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
             </Button>
+          </div>
+        </section>
+
+        {/* Long-form Content Section for SEO */}
+        <section className="py-12 px-6">
+          <div className="max-w-4xl mx-auto prose prose-lg dark:prose-invert">
+            <h2>How to Find People by Username Online</h2>
+            
+            <p>
+              Looking to find people by username? A username search tool scans public profile pages across 
+              social media platforms, gaming networks, and online communities to show you where a specific 
+              handle appears. This is useful for auditing your own digital footprint, verifying online 
+              identities, or understanding username reuse patterns.
+            </p>
+            
+            <p>
+              Most people use the same username across multiple sites. This creates a traceable pattern 
+              that anyone can follow. A username you created years ago on a gaming forum might still be 
+              indexed by search engines—even if you've forgotten about it entirely.
+            </p>
+
+            <h3>What Is a Username Search?</h3>
+            
+            <p>
+              A username search is a lookup that checks whether a specific handle exists on various 
+              websites. When you run a username search, the tool visits public profile URLs like 
+              <code>twitter.com/username</code> or <code>github.com/username</code> and checks if the 
+              page exists. This is the same information anyone could find manually, but automated to 
+              save hours of work.
+            </p>
+
+            <p>
+              Free social media username search tools like FootprintIQ check over 500 platforms 
+              simultaneously. We search major social networks like Twitter, Instagram, and TikTok. 
+              We also check gaming platforms like Steam and Discord, developer sites like GitHub and 
+              Stack Overflow, and hundreds of forums and niche communities.
+            </p>
+
+            <h3>Why Find People by Username?</h3>
+            
+            <p>
+              There are several legitimate reasons to find people by username:
+            </p>
+            
+            <ol>
+              <li>
+                <strong>Audit your own exposure.</strong> See where your usernames appear online. 
+                Discover forgotten accounts that still contain your personal information.
+              </li>
+              <li>
+                <strong>Verify online identities.</strong> Check if someone you're interacting with 
+                has a consistent online presence across platforms.
+              </li>
+              <li>
+                <strong>Research for security purposes.</strong> Understand how usernames can be 
+                correlated to build a profile of someone's online activity.
+              </li>
+              <li>
+                <strong>Claim your brand identity.</strong> Check if a username is available across 
+                platforms before committing to it for business purposes.
+              </li>
+            </ol>
+
+            <h3>Free vs. Paid Username Search Tools</h3>
+            
+            <p>
+              Free username search tools provide basic lookup functionality. You enter a username, 
+              and the tool tells you where it was found. This works well for simple queries and 
+              personal audits.
+            </p>
+            
+            <p>
+              Paid tools add features like batch searching (checking multiple usernames at once), 
+              historical data (seeing when accounts were created), and correlation analysis 
+              (understanding how different usernames might belong to the same person). FootprintIQ 
+              offers both free single searches and Pro features for deeper investigation.
+            </p>
+
+            <h3>Understanding False Positives</h3>
+            
+            <p>
+              Not every match is meaningful. Common usernames like "alex" or "gaming123" exist on 
+              nearly every platform—owned by completely different people. This creates false positives: 
+              results that match your query but belong to someone else entirely.
+            </p>
+            
+            <p>
+              Quality username search tools filter these false positives using confidence scoring. 
+              A high-confidence match on an unusual username is more significant than a low-confidence 
+              match on a common one. Always verify results before drawing conclusions.
+            </p>
+
+            <h3>Ethical Username Search Practices</h3>
+            
+            <p>
+              Ethical OSINT tools only access publicly available information. We don't bypass login 
+              screens, guess passwords, or access private accounts. If a profile is set to private, 
+              we can detect that the username exists but not see its contents—exactly like any 
+              visitor to that platform.
+            </p>
+            
+            <p>
+              This matters because privacy is a right. Username search is a tool for understanding 
+              public exposure, not for surveillance or stalking. We encourage users to search their 
+              own usernames to understand their digital footprint, and to use results responsibly 
+              when researching others.
+            </p>
           </div>
         </section>
 
