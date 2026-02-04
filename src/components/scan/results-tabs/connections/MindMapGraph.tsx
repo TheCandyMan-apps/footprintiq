@@ -13,6 +13,31 @@ import { CytoscapeMiniMap } from './CytoscapeMiniMap';
 // ============= HELPER FUNCTIONS =============
 
 function extractSite(result: any): string {
+  const kind = result.kind || '';
+  
+  // For breach findings, extract breach name from evidence
+  if (kind === 'breach.hit' || kind === 'breach') {
+    if (result.evidence && Array.isArray(result.evidence)) {
+      const breachName = result.evidence.find((e: any) => e.key === 'Breach Name');
+      if (breachName?.value) return breachName.value;
+    }
+    if (result.meta?.raw_data?.Name) return result.meta.raw_data.Name;
+    if (result.meta?.title) {
+      const match = result.meta.title.match(/Breach:\s*(.+)/);
+      if (match) return match[1];
+    }
+  }
+  
+  // For email validation findings
+  if (kind === 'email.validation' || kind === 'email.reputation') {
+    if (result.evidence && Array.isArray(result.evidence)) {
+      const deliverability = result.evidence.find((e: any) => e.key === 'Deliverability');
+      if (deliverability?.value) return `Email Validation: ${deliverability.value}`;
+    }
+    return 'Email Validation';
+  }
+  
+  // Standard profile extraction
   if (result.evidence && Array.isArray(result.evidence)) {
     const siteEvidence = result.evidence.find((e: any) => e.key === 'site');
     if (siteEvidence?.value) return siteEvidence.value;
@@ -24,6 +49,38 @@ function extractSite(result: any): string {
 }
 
 function extractUrl(result: any): string {
+  const kind = result.kind || '';
+  
+  // For breach findings, construct a haveibeenpwned URL or use domain
+  if (kind === 'breach.hit' || kind === 'breach') {
+    if (result.meta?.raw_data?.Domain && result.meta.raw_data.Domain !== '') {
+      return `https://${result.meta.raw_data.Domain}`;
+    }
+    if (result.meta?.raw_data?.Name) {
+      return `https://haveibeenpwned.com/account/${result.meta.raw_data.Name}`;
+    }
+    if (result.evidence && Array.isArray(result.evidence)) {
+      const domain = result.evidence.find((e: any) => e.key === 'Domain');
+      if (domain?.value && domain.value !== 'N/A') {
+        return `https://${domain.value}`;
+      }
+      const breachName = result.evidence.find((e: any) => e.key === 'Breach Name');
+      if (breachName?.value) {
+        return `https://haveibeenpwned.com/account/${breachName.value}`;
+      }
+    }
+  }
+  
+  // For email validation, use a pseudo-URL for deduplication
+  if (kind === 'email.validation' || kind === 'email.reputation') {
+    if (result.evidence && Array.isArray(result.evidence)) {
+      const email = result.evidence.find((e: any) => e.key === 'Email');
+      if (email?.value) return `email-validation://${email.value}`;
+    }
+    return `email-validation://${result.id || 'unknown'}`;
+  }
+  
+  // Standard URL extraction
   if (result.evidence && Array.isArray(result.evidence)) {
     const urlEvidence = result.evidence.find((e: any) => e.key === 'url');
     if (urlEvidence?.value) return urlEvidence.value;
@@ -42,8 +99,19 @@ function extractUsername(result: any): string {
 }
 
 function deriveStatus(result: any): string {
+  const kind = result.kind || '';
+  
+  // Breach hits are always "found" for display purposes
+  if (kind === 'breach.hit' || kind === 'breach') return 'found';
+  
+  // Email validation findings are always "found"
+  if (kind === 'email.validation' || kind === 'email.reputation') return 'found';
+  
+  // Email intelligence findings
+  if (kind.startsWith('email.') || kind.startsWith('phone.')) return 'found';
+  
   if (result.status) return result.status.toLowerCase();
-  if (result.kind === 'profile_presence') return 'found';
+  if (kind === 'profile_presence') return 'found';
   
   if (result.evidence && Array.isArray(result.evidence)) {
     const existsEvidence = result.evidence.find((e: any) => e.key === 'exists');
@@ -219,6 +287,10 @@ const CATEGORY_ICONS: Record<string, string> = {
   'Blogging': '✍️',
   'Finance': '💰',
   'Other': '🌐',
+  // Email/Phone scan categories
+  'Data Breach': '🔓',
+  'Email Intelligence': '📧',
+  'Phone Intelligence': '📱',
 };
 
 const MAX_PROFILES_DISPLAYED = 200;
@@ -261,6 +333,7 @@ export function MindMapGraph({
       const status = deriveStatus(result);
       const extractedUrl = extractUrl(result);
       const extractedSite = extractSite(result);
+      const kind = (result as any).kind || '';
       
       const isFound = status === 'found' || status === 'claimed' || status === 'exists';
       if (!isFound || !extractedUrl) return;
@@ -271,13 +344,53 @@ export function MindMapGraph({
       const meta = (result.meta || (result as any).metadata || {}) as Record<string, any>;
       const evidence = (result as any).evidence;
       
-      const platform = extractedSite || meta.platform || meta.site || 'Unknown';
-      const category = getCategoryFromCatalog(platform, categoryMap);
-      const extractedUsername = extractUsername(result);
-      const displayName = extractedUsername || meta.displayName || meta.username || meta.handle || meta.name || '';
-      const bio = meta.bio || meta.description || 
-                  (Array.isArray(evidence) ? evidence.find((e: any) => e.key === 'bio')?.value : '') || '';
-      const avatar = meta.avatar || meta.avatarUrl || meta.profile_image || '';
+      // Determine platform and category based on finding kind
+      let platform = extractedSite || meta.platform || meta.site || 'Unknown';
+      let category = getCategoryFromCatalog(platform, categoryMap);
+      let displayName = '';
+      let bio = '';
+      let avatar = '';
+      
+      // Handle breach findings specially
+      if (kind === 'breach.hit' || kind === 'breach') {
+        category = 'Data Breach';
+        displayName = platform; // breach name
+        // Extract breach description
+        if (meta.raw_data?.Description) {
+          bio = meta.raw_data.Description.replace(/<[^>]*>/g, '').slice(0, 200);
+        }
+        // Use breach logo if available
+        if (meta.raw_data?.LogoPath) {
+          avatar = meta.raw_data.LogoPath;
+        }
+      } 
+      // Handle email validation findings
+      else if (kind === 'email.validation' || kind === 'email.reputation') {
+        category = 'Email Intelligence';
+        displayName = platform;
+        // Extract validation details for bio
+        if (Array.isArray(evidence)) {
+          const details: string[] = [];
+          const deliverability = evidence.find((e: any) => e.key === 'Deliverability');
+          const qualityScore = evidence.find((e: any) => e.key === 'Quality Score');
+          if (deliverability?.value) details.push(`Deliverability: ${deliverability.value}`);
+          if (qualityScore?.value) details.push(`Quality: ${qualityScore.value}`);
+          bio = details.join(', ');
+        }
+      }
+      // Handle phone intelligence
+      else if (kind.startsWith('phone.')) {
+        category = 'Phone Intelligence';
+        displayName = platform;
+      }
+      // Standard profile handling
+      else {
+        const extractedUsername = extractUsername(result);
+        displayName = extractedUsername || meta.displayName || meta.username || meta.handle || meta.name || '';
+        bio = meta.bio || meta.description || 
+                    (Array.isArray(evidence) ? evidence.find((e: any) => e.key === 'bio')?.value : '') || '';
+        avatar = meta.avatar || meta.avatarUrl || meta.profile_image || '';
+      }
       
       const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
       const textToSearch = `${displayName} ${bio}`;
@@ -292,11 +405,16 @@ export function MindMapGraph({
       };
       const { score, level, signals } = calculateConfidence(entityForConfidence, username);
       
-      // Get icon URL from catalog
-      const catalogEntry = platformCatalog?.find(p => 
-        p.platform.toLowerCase() === platform.toLowerCase()
-      );
-      const iconUrl = catalogEntry?.icon_url || undefined;
+      // Get icon URL from catalog (for profiles, not breaches)
+      let iconUrl: string | undefined;
+      if (kind !== 'breach.hit' && kind !== 'breach') {
+        const catalogEntry = platformCatalog?.find(p => 
+          p.platform.toLowerCase() === platform.toLowerCase()
+        );
+        iconUrl = catalogEntry?.icon_url || undefined;
+      } else if (avatar) {
+        iconUrl = avatar; // Use breach logo
+      }
       
       // Generate initials
       const initials = displayName 
@@ -311,7 +429,7 @@ export function MindMapGraph({
         bio,
         avatar,
         provider: (result as any).provider || 'unknown',
-        confidence: meta.confidence || 0.7,
+        confidence: meta.confidence || (result as any).confidence || 0.7,
         category,
         signals: {
           emails,
