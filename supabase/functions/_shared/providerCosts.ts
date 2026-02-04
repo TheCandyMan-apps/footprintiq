@@ -43,8 +43,8 @@ export const PROVIDER_COSTS: Record<string, number> = {
   ipqs_url: 1,
   ipqs_darkweb: 1,
 
-  // Phone intelligence providers (higher cost due to premium APIs)
-  abstract_phone: 2,
+  // Phone intelligence providers
+  abstract_phone: 1,   // Available on Free tier
   ipqs_phone: 3,
   numverify: 2,
   twilio_lookup: 3,
