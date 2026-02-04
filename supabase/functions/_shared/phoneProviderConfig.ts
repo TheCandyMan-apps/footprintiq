@@ -22,15 +22,15 @@ export interface PhoneProviderConfig {
  * - category: provider category for UI grouping
  */
 export const PHONE_PROVIDERS: PhoneProviderConfig[] = [
-  // Carrier Intelligence (Pro tier - API-based)
+  // Carrier Intelligence (Free tier - AbstractAPI)
   {
     id: 'abstract_phone',
-    name: 'AbstractAPI Phone',
-    minTier: 'pro',
+    name: 'Phone Intelligence',
+    minTier: 'free',
     requiresKey: 'ABSTRACTAPI_PHONE_VALIDATION_KEY',
     category: 'carrier',
     enabled: true,
-    creditCost: 2,
+    creditCost: 1,
   },
   {
     id: 'numverify',

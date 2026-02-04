@@ -45,14 +45,14 @@ export function isTerminalStatus(status: ProviderStatus): boolean {
  */
 export const PROVIDER_REGISTRY: ProviderConfig[] = [
   // ============ PHONE PROVIDERS ============
-  // Pro tier (API-based carrier intelligence)
+  // Free tier (carrier intelligence)
   {
     id: 'abstract_phone',
-    name: 'Carrier Intel',
+    name: 'Phone Intelligence',
     description: 'Line type, country, carrier identification',
     scanType: 'phone',
-    creditCost: 2,
-    minTier: 'pro',
+    creditCost: 1,
+    minTier: 'free',
     category: 'carrier',
     requiresKey: 'ABSTRACTAPI_PHONE_VALIDATION_KEY',
     enabled: true,
