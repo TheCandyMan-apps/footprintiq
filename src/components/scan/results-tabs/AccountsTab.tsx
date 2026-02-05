@@ -3,13 +3,15 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search, Filter, User, ArrowUpDown, Lock, Sparkles } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Search, Filter, User, ArrowUpDown, Lock, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { useInvestigation } from '@/contexts/InvestigationContext';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { extractProviderHealthFindings, filterOutProviderHealth } from '@/lib/providerHealthUtils';
 import { useResultsViewModel } from '@/hooks/useResultsViewModel';
+import { filterFindings } from '@/lib/findingFilters';
 import { RESULTS_SPACING } from './styles';
 import { AccountFilters, QuickFilterOption } from './accounts/AccountFilters';
 import { AccountRow } from './accounts/AccountRow';
@@ -39,10 +41,20 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
   const [sortBy, setSortBy] = useState<SortOption>('confidence');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [quickFilter, setQuickFilter] = useState<QuickFilterOption>('all');
+  const [focusMode, setFocusMode] = useState(true); // Focus Mode ON by default
 
   // Filter out provider health findings
-  const displayResults = useMemo(() => filterOutProviderHealth(results), [results]);
+  const baseResults = useMemo(() => filterOutProviderHealth(results), [results]);
   const providerHealthFindings = useMemo(() => extractProviderHealthFindings(results), [results]);
+
+  // Apply Focus Mode filtering
+  const displayResults = useMemo(() => {
+    if (!focusMode) return baseResults;
+    return filterFindings(baseResults as any, { hideSearch: true, focusMode: true }) as ScanResult[];
+  }, [baseResults, focusMode]);
+
+  // Count hidden items for UI feedback
+  const hiddenByFocusMode = baseResults.length - displayResults.length;
 
   // Get plan-aware view model for redaction
   const { isFullAccess, buckets, plan } = useResultsViewModel(results);
@@ -219,8 +231,30 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
         counts={filterCounts}
       />
 
-      {/* Search + Sort Controls - Compact */}
-      <div className="flex flex-col sm:flex-row gap-1">
+      {/* Focus Mode Toggle + Search/Sort Controls */}
+      <div className="flex flex-col sm:flex-row gap-1 items-start sm:items-center">
+        {/* Focus Mode Toggle */}
+        <div className="flex items-center gap-1.5 mr-2 shrink-0">
+          <Switch 
+            checked={focusMode} 
+            onCheckedChange={setFocusMode}
+            className="scale-75 data-[state=checked]:bg-primary"
+          />
+          <div className="flex items-center gap-0.5">
+            {focusMode ? (
+              <Eye className="h-2.5 w-2.5 text-primary" />
+            ) : (
+              <EyeOff className="h-2.5 w-2.5 text-muted-foreground" />
+            )}
+            <span className="text-[10px] text-muted-foreground">Focus</span>
+          </div>
+          {focusMode && hiddenByFocusMode > 0 && (
+            <span className="text-[9px] text-amber-600">
+              {hiddenByFocusMode} hidden
+            </span>
+          )}
+        </div>
+
         <div className="relative flex-1">
           <Search className="absolute left-1.5 top-1/2 -translate-y-1/2 h-2.5 w-2.5 text-muted-foreground" />
           <Input

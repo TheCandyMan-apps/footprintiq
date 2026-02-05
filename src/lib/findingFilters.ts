@@ -60,6 +60,10 @@ export interface FilterableItem {
   confidence?: number;
   severity?: string;
   verdict?: string;
+
+  // ScanResultRow fields (from useRealtimeResults)
+  url?: string;
+  site?: string;
   
   raw?: {
     severity?: string;
@@ -68,6 +72,7 @@ export interface FilterableItem {
     page_type?: string;
     primary_url?: string;
     platform_name?: string;
+    url?: string;
   };
 }
 
@@ -79,7 +84,9 @@ function getItemUrl(item: FilterableItem): string {
     item.platformUrl ?? 
     item.platform_url ?? 
     item.primary_url ?? 
+    item.url ??
     (item as any).raw?.primary_url ?? 
+    (item as any).raw?.url ??
     ''
   );
 }
@@ -91,6 +98,7 @@ function getPlatformNameEarly(item: FilterableItem): string {
   return (
     item.platformName ??
     item.platform_name ??
+    item.site ??
     (item as any).raw?.platform_name ??
     (item as any).raw?.platformName ??
     ''
