@@ -220,16 +220,12 @@ function getPlatformName(item: FilterableItem): string {
 /**
  * Check if an item passes the focus mode filter
  * 
- * FOCUS MODE RULES (in order):
- * 1. Always exclude search/lookup results
- * 2. If verdict exists → include only 'high' or 'medium'
- * 3. If severity is critical/high → include
- * 4. If confidence >= 0.90 → include
- * 5. If multi-provider (2+) AND confidence >= 0.80 → include
- * 6. If platformName is NOT "other" AND confidence >= 0.85 → include
- * 7. If platformName IS "other" AND confidence < 0.90 → exclude (noise)
- * 8. Legacy safety: no verdict, no confidence, no severity → include
- * 9. Default: exclude (info severity with moderate confidence = noise)
+ * FOCUS MODE RULES:
+ * 1. Exclude search/lookup results (gaming lookup sites, search URLs)
+ * 2. Include everything else (profiles are valid findings)
+ * 
+ * The goal is to remove "rubbish" like OP.GG regional duplicates,
+ * NOT to aggressively filter by confidence thresholds.
  */
 function passesFocusModeFilter(item: FilterableItem): boolean {
   // Rule 1: Always exclude search/lookup results
@@ -237,60 +233,8 @@ function passesFocusModeFilter(item: FilterableItem): boolean {
     return false;
   }
 
-  // Rule 2: If verdict exists, use it (future-proof)
-  const verdict = (item.verdict ?? (item as any).raw?.verdict ?? '').toLowerCase();
-  if (verdict && verdict !== '') {
-    return ['high', 'medium'].includes(verdict);
-  }
-
-  // Get fields with defensive access
-  const confidence = item.confidence;
-  const severity = (item.severity ?? (item as any).raw?.severity ?? '').toLowerCase();
-  const platformName = getPlatformName(item);
-  const url = item.platformUrl ?? item.platform_url ?? item.primary_url ?? (item as any).raw?.primary_url;
-  const isOther = platformName === 'other' || platformName === 'unknown' || platformName === '';
-  const multiProvider = hasProviderAgreement(item);
-
-  // Rule 3: Always include critical/high severity
-  if (severity && ['critical', 'high'].includes(severity)) {
-    return true;
-  }
-
-  // Rule 4: Very high confidence always passes
-  if (confidence !== undefined && confidence !== null && confidence >= 0.90) {
-    return true;
-  }
-
-  // Rule 5: Multi-provider with good confidence
-  if (multiProvider && confidence !== undefined && confidence !== null && confidence >= 0.80) {
-    return true;
-  }
-
-  // Rule 6: Non-"Other" platform with high-ish confidence
-  if (!isOther && confidence !== undefined && confidence !== null && confidence >= 0.85) {
-    return true;
-  }
-
-  // Rule 7: "Other" platforms need very high confidence
-  if (isOther && (confidence === undefined || confidence === null || confidence < 0.90)) {
-    return false;
-  }
-
-  // Rule 8: Exclude generic URLs
-  if (isGenericUrl(url)) {
-    return false;
-  }
-
-  // Rule 9: Legacy safety - no confidence AND no severity = include
-  const hasConfidence = confidence !== undefined && confidence !== null;
-  const hasSeverity = severity !== '';
-  
-  if (!hasConfidence && !hasSeverity) {
-    return true; // Don't hide legacy data
-  }
-
-  // Rule 10: Default exclude (info severity with moderate confidence = noise)
-  return false;
+  // Rule 2: Include everything else - valid profile findings
+  return true;
 }
 
 /**
