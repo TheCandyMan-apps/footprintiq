@@ -4,6 +4,37 @@
  * Works with both raw and normalized findings
  */
 
+/**
+ * Known gaming/lookup sites that generate regional duplicates
+ * These are search engines or lookup tools, not actual user profiles
+ */
+const GAMING_LOOKUP_SITES = [
+  'op.gg',
+  'u.gg',
+  'blitz.gg',
+  'mobalytics',
+  'tracker.gg',
+  'dotabuff',
+  'stratz',
+  'overbuff',
+  'r6tracker',
+  'destinytracker',
+];
+
+/**
+ * URL patterns that indicate a search/lookup page, not a profile
+ */
+const SEARCH_URL_PATTERNS = [
+  /\/search\?/i,
+  /\/lookup\//i,
+  /\/summoners?\//i,  // League of Legends summoner lookup
+  /\/players?\//i,    // Generic player lookup
+  /\?q=/i,
+  /\?query=/i,
+  /\?username=/i,
+  /\?search=/i,
+];
+
 export interface FilterOptions {
   hideSearch: boolean;
   focusMode: boolean;
@@ -41,6 +72,64 @@ export interface FilterableItem {
 }
 
 /**
+ * Get URL with fallbacks (defined early for use by other functions)
+ */
+function getItemUrl(item: FilterableItem): string {
+  return (
+    item.platformUrl ?? 
+    item.platform_url ?? 
+    item.primary_url ?? 
+    (item as any).raw?.primary_url ?? 
+    ''
+  );
+}
+
+/**
+ * Get platform name with fallbacks (defined early for use by other functions)
+ */
+function getPlatformNameEarly(item: FilterableItem): string {
+  return (
+    item.platformName ??
+    item.platform_name ??
+    (item as any).raw?.platform_name ??
+    (item as any).raw?.platformName ??
+    ''
+  ).toLowerCase();
+}
+
+/**
+ * Check if a platform/URL is a known gaming lookup site
+ */
+function isGamingLookupSite(item: FilterableItem): boolean {
+  const platformName = getPlatformNameEarly(item);
+  const url = getItemUrl(item).toLowerCase();
+
+  // Check if platform name matches known gaming lookup sites
+  for (const site of GAMING_LOOKUP_SITES) {
+    if (platformName.includes(site) || url.includes(site)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Check if URL matches search/lookup patterns
+ */
+function hasSearchUrlPattern(url: string | undefined | null): boolean {
+  if (!url) return false;
+  
+  for (const pattern of SEARCH_URL_PATTERNS) {
+    if (pattern.test(url)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
  * Check if an item is a search/lookup result
  * Supports both pageType and page_type schemas
  */
@@ -54,12 +143,15 @@ export function isSearchResult(item: FilterableItem): boolean {
   ).toLowerCase();
   
   const tags = item.tags ?? [];
+  const url = getItemUrl(item);
   
   return (
     pageType === 'search' ||
     pageType === 'lookup' ||
     tags.includes('search-result') ||
-    tags.includes('lookup')
+    tags.includes('lookup') ||
+    isGamingLookupSite(item) ||
+    hasSearchUrlPattern(url)
   );
 }
 
