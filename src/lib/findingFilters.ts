@@ -111,10 +111,13 @@ function getPlatformNameEarly(item: FilterableItem): string {
 function isGamingLookupSite(item: FilterableItem): boolean {
   const platformName = getPlatformNameEarly(item);
   const url = getItemUrl(item).toLowerCase();
+  
+  // Also check meta.platform which is commonly used
+  const metaPlatform = ((item as any).meta?.platform || '').toLowerCase();
 
   // Check if platform name matches known gaming lookup sites
   for (const site of GAMING_LOOKUP_SITES) {
-    if (platformName.includes(site) || url.includes(site)) {
+    if (platformName.includes(site) || url.includes(site) || metaPlatform.includes(site)) {
       return true;
     }
   }
