@@ -246,6 +246,16 @@ export const REGISTRY: ProviderMeta[] = [
     unitCost: 0.003,
     description: "Real-time web intelligence with live citations",
   },
+  
+  // Web Index Verification (LENS corroboration)
+  {
+    id: "brave_search",
+    title: "Web Index Verification",
+    supports: ["username"],
+    ttlMs: 24 * 3600e3,
+    unitCost: 0,
+    description: "Verifies profiles in independent web index for LENS scoring",
+  },
 ];
 
 export function getProviderMeta(providerId: string): ProviderMeta | undefined {
