@@ -232,6 +232,96 @@ serve(async (req) => {
         // Continue anyway - we'll still update scan status
       } else {
         console.log(`[n8n-scan-results] Successfully inserted ${findingsToInsert.length} findings`);
+        
+        // ====== BRAVE SEARCH ENRICHMENT FOR LENS CORROBORATION ======
+        // After inserting primary findings, run Brave Search to verify profiles in web index
+        // This adds +12 LENS confidence points for verified findings
+        try {
+          // Extract username from body payload
+          const username = body.username || body.json?.username || body.data?.username || '';
+          
+          if (username) {
+            console.log(`[n8n-scan-results] Running Brave Search enrichment for username: ${username}`);
+            
+            // Extract unique profile sites from findings (limit to top 5 for efficiency)
+            const profileSites = findingsToInsert
+              .filter((f: { kind?: string; meta?: { url?: string } }) => 
+                f.kind === 'profile_presence' && f.meta?.url
+              )
+              .slice(0, 5)
+              .map((f: { meta?: { site?: string; url?: string } }) => ({
+                site: f.meta?.site || 'unknown',
+                url: f.meta?.url,
+              }));
+            
+            if (profileSites.length > 0) {
+              // Call brave-search edge function with service role auth
+              const braveResponse = await fetch(
+                `${supabaseUrl}/functions/v1/brave-search`,
+                {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${serviceRoleKey}`,
+                  },
+                  body: JSON.stringify({
+                    target: username,
+                    type: 'username',
+                    searchType: 'web',
+                    count: 10,
+                  }),
+                }
+              );
+              
+              if (braveResponse.ok) {
+                const braveData = await braveResponse.json();
+                console.log(`[n8n-scan-results] Brave Search returned ${braveData.findings?.length || 0} findings`);
+                
+                // Insert Brave findings as web_index.hit/miss for LENS scoring
+                if (braveData.findings && Array.isArray(braveData.findings) && braveData.findings.length > 0) {
+                  const braveFindingsToInsert = braveData.findings.map((f: {
+                    provider?: string;
+                    kind?: string;
+                    severity?: string;
+                    confidence?: number;
+                    evidence?: Array<{key: string; value: string}>;
+                    meta?: Record<string, unknown>;
+                  }) => ({
+                    scan_id: scanId,
+                    workspace_id: scan.workspace_id,
+                    provider: f.provider || 'brave_search',
+                    kind: f.kind || 'web_index.hit',
+                    severity: f.severity || 'info',
+                    confidence: normalizeConfidence(f.confidence ?? 0.8),
+                    observed_at: new Date().toISOString(),
+                    evidence: f.evidence || [],
+                    meta: {
+                      ...(f.meta || {}),
+                      source: 'brave_search_enrichment',
+                      corroboration: true,
+                    },
+                    created_at: new Date().toISOString(),
+                  }));
+                  
+                  const { error: braveInsertError } = await supabase
+                    .from('findings')
+                    .insert(braveFindingsToInsert);
+                  
+                  if (braveInsertError) {
+                    console.error('[n8n-scan-results] Error inserting Brave findings:', braveInsertError);
+                  } else {
+                    console.log(`[n8n-scan-results] Inserted ${braveFindingsToInsert.length} Brave web index findings`);
+                  }
+                }
+              } else {
+                console.warn(`[n8n-scan-results] Brave Search returned status ${braveResponse.status}`);
+              }
+            }
+          }
+        } catch (braveErr) {
+          console.error('[n8n-scan-results] Brave enrichment failed (non-fatal):', braveErr);
+          // Non-fatal - scan continues without enrichment
+        }
       }
     }
 
