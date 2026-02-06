@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { Search, Eye, CheckCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Eye, CheckCircle } from "lucide-react";
 import { PLATFORM_DESCRIPTION_SHORT } from "@/lib/platformDescription";
+import { HeroInputField } from "@/components/HeroInputField";
 
 interface HeroProps {
-  onStartScan: () => void;
+  onStartScan?: () => void;
   onAdvancedScan?: () => void;
 }
 
@@ -34,23 +34,17 @@ export const Hero = ({
           We provide visibility. You make the decisions.
         </p>
         
-        {/* CTAs */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-          <Button 
-            size="lg" 
-            onClick={onStartScan} 
-            className="w-full sm:w-auto text-lg px-8 py-6 h-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm" 
-            asChild
-          >
-            <Link to="/scan">
-              <Search className="w-5 h-5 mr-2" />
-              Run a Free Scan
-            </Link>
-          </Button>
+        {/* Inline Hero Input - reduces friction */}
+        <div className="mb-8">
+          <HeroInputField />
+        </div>
+        
+        {/* Secondary CTA */}
+        <div className="flex justify-center mb-12">
           <Button 
             size="lg" 
             variant="outline" 
-            className="w-full sm:w-auto text-lg px-8 py-6 h-auto border-2 hover:bg-muted" 
+            className="text-lg px-8 py-6 h-auto border-2 hover:bg-muted" 
             asChild
           >
             <a href="#how-it-works">
