@@ -5,6 +5,7 @@ import { Resend } from "https://esm.sh/resend@4.0.0";
 import { checkRateLimit } from "../_shared/rate-limiter.ts";
 import { addSecurityHeaders } from "../_shared/security-headers.ts";
 import { logSecurityEvent } from "../_shared/security-validation.ts";
+import { resolvePriceId, getKnownPriceIds } from "../_shared/stripePlans.ts";
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2025-08-27.basil",
@@ -16,40 +17,6 @@ const supabase = createClient(
 );
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-// ============================================
-// HARDCODED PRICE TO TIER MAPPING
-// Single source of truth - matches billing-checkout and src/config/stripe.ts
-// ============================================
-const PRICE_TO_TIER: Record<string, "free" | "basic" | "premium" | "enterprise"> = {
-  // Pro Monthly - maps to 'premium' tier in user_roles (which is 'pro' plan in workspaces)
-  'price_1ShgNPA3ptI9drLW40rbWMjq': 'premium',
-  
-  // Pro Annual
-  'price_1Si2vkA3ptI9drLWCQrxU4Dc': 'premium',
-  
-  // Business - maps to 'enterprise' tier
-  'price_1ShdxJA3ptI9drLWjndMjptw': 'enterprise',
-  
-  // Legacy Enterprise price
-  'price_1SQh9JPNdM5SAyj722p376Qh': 'enterprise',
-};
-
-// Maps tier to workspace plan name
-const TIER_TO_PLAN: Record<string, string> = {
-  'free': 'free',
-  'basic': 'pro',
-  'premium': 'pro',
-  'enterprise': 'business',
-};
-
-// Maps tier to scan limits
-const TIER_TO_SCAN_LIMIT: Record<string, number | null> = {
-  'free': 10,
-  'basic': 50,
-  'premium': 100,
-  'enterprise': null, // unlimited
-};
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const timestamp = new Date().toISOString();
@@ -88,16 +55,13 @@ serve(async (req) => {
       });
       return new Response(
         JSON.stringify({ error: "Missing signature" }), 
-        { 
-          status: 400,
-          headers: addSecurityHeaders({ "Content-Type": "application/json" })
-        }
+        { status: 400, headers: addSecurityHeaders({ "Content-Type": "application/json" }) }
       );
     }
 
     const body = await req.text();
     
-    // Validate webhook signature (Stripe's own security mechanism)
+    // Validate webhook signature
     let event: Stripe.Event;
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
@@ -114,10 +78,7 @@ serve(async (req) => {
       });
       return new Response(
         JSON.stringify({ error: "Invalid signature" }), 
-        { 
-          status: 400,
-          headers: addSecurityHeaders({ "Content-Type": "application/json" })
-        }
+        { status: 400, headers: addSecurityHeaders({ "Content-Type": "application/json" }) }
       );
     }
 
@@ -149,11 +110,9 @@ serve(async (req) => {
           metadata: session.metadata 
         });
         
-        // Handle subscription checkout
         if (session.mode === 'subscription') {
           await handleSubscriptionCheckout(session);
         } else {
-          // Handle credit purchase
           await handleCreditPurchase(session);
         }
         break;
@@ -201,20 +160,15 @@ serve(async (req) => {
     const errMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR: Webhook handler failed", { error: errMessage });
     return new Response(
-      JSON.stringify({
-        error: error instanceof Error ? error.message : "Webhook handler failed",
-      }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      }
+      JSON.stringify({ error: error instanceof Error ? error.message : "Webhook handler failed" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
     );
   }
 });
 
-// ============================================
+// ════════════════════════════════════════════════════════════════════════════════
 // HANDLER: Subscription Checkout Completed
-// ============================================
+// ════════════════════════════════════════════════════════════════════════════════
 async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
   const customerId = session.customer as string;
   const subscriptionId = session.subscription as string;
@@ -260,18 +214,39 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
     periodEnd: new Date(subscription.current_period_end * 1000).toISOString()
   });
   
-  // Map price to tier using hardcoded mapping
-  const tier = PRICE_TO_TIER[priceId] || 'free';
-  const plan = TIER_TO_PLAN[tier] || 'free';
-  const scanLimit = TIER_TO_SCAN_LIMIT[tier];
+  // ════════════════════════════════════════════════════════════════════════════════
+  // USE CANONICAL MAPPING
+  // ════════════════════════════════════════════════════════════════════════════════
+  const resolution = resolvePriceId(priceId);
   
-  logStep("Mapped price to tier", { priceId, tier, plan, scanLimit });
+  logStep("Resolved price to tier", { 
+    priceId, 
+    tier: resolution.tier, 
+    plan: resolution.plan, 
+    scanLimit: resolution.scanLimit,
+    known: resolution.known 
+  });
   
-  if (tier === 'free') {
-    logStep("WARNING: Price ID not found in mapping, defaulting to free", { priceId, knownPrices: Object.keys(PRICE_TO_TIER) });
+  // Handle unknown price ID
+  if (!resolution.known) {
+    logStep("WARNING: Unknown price ID - logging to system_errors", { 
+      priceId, 
+      knownPrices: getKnownPriceIds() 
+    });
+    
+    await supabase.from('system_errors').insert({
+      error_code: 'UNKNOWN_STRIPE_PRICE',
+      error_message: `Unknown Stripe price ID in webhook: ${priceId}`,
+      function_name: 'stripe-webhook',
+      user_id: user.id,
+      severity: 'error',
+      metadata: { priceId, subscriptionId, customerId, event: 'checkout.session.completed' },
+    });
   }
   
-  // UPSERT user_roles (create if missing, update if exists)
+  const { tier, plan, scanLimit } = resolution;
+  
+  // UPSERT user_roles
   const { error: roleError } = await supabase
     .from("user_roles")
     .upsert({
@@ -279,9 +254,7 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
       role: 'user',
       subscription_tier: tier,
       subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
-    }, {
-      onConflict: 'user_id',
-    });
+    }, { onConflict: 'user_id' });
   
   if (roleError) {
     logStep("ERROR: Failed to upsert user_roles", { error: roleError.message, userId: user.id });
@@ -336,16 +309,14 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
     workspaceId = newWorkspace.id;
     logStep("Created workspace", { workspaceId, workspaceName });
     
-    // Add user as admin member (trigger should handle this, but ensure it)
+    // Add user as admin member
     await supabase
       .from("workspace_members")
       .upsert({
         workspace_id: workspaceId,
         user_id: user.id,
         role: 'admin',
-      }, {
-        onConflict: 'workspace_id,user_id',
-      });
+      }, { onConflict: 'workspace_id,user_id' });
     
     logStep("Added user as workspace admin", { workspaceId, userId: user.id });
   } else {
@@ -361,7 +332,7 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
         plan: plan,
         scan_limit_monthly: scanLimit,
         subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
-        trial_status: 'converted', // Mark trial as converted when they subscribe
+        trial_status: 'converted',
       })
       .eq("id", workspaceId);
     
@@ -373,8 +344,7 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
         customerId, 
         subscriptionId,
         tier,
-        plan,
-        trial_status: 'converted'
+        plan
       });
     }
   }
@@ -392,9 +362,7 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
       scans_used_monthly: 0,
       current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
       current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-    }, {
-      onConflict: 'workspace_id',
-    });
+    }, { onConflict: 'workspace_id' });
   
   if (subError) {
     logStep("ERROR: Failed to upsert subscription record", { error: subError.message, workspaceId });
@@ -411,12 +379,30 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
     meta: { tier, plan, priceId, customerId },
   });
   
+  // Grant monthly credits for premium tiers
+  if (resolution.monthlyCredits > 0) {
+    const { error: creditsError } = await supabase
+      .from('credits_ledger')
+      .insert({
+        workspace_id: workspaceId,
+        delta: resolution.monthlyCredits,
+        reason: 'monthly_subscription',
+        meta: { subscription_id: subscriptionId, tier },
+      });
+    
+    if (creditsError) {
+      logStep("ERROR: Failed to grant monthly credits", { error: creditsError.message });
+    } else {
+      logStep("Granted monthly credits", { workspaceId, credits: resolution.monthlyCredits });
+    }
+  }
+  
   logStep("✅ Subscription checkout processed successfully", { userId: user.id, tier, plan });
 }
 
-// ============================================
+// ════════════════════════════════════════════════════════════════════════════════
 // HANDLER: Subscription Created/Updated
-// ============================================
+// ════════════════════════════════════════════════════════════════════════════════
 async function handleSubscriptionChange(subscription: Stripe.Subscription, eventType: string) {
   const customerId = subscription.customer as string;
   const priceId = subscription.items.data[0]?.price.id;
@@ -444,21 +430,42 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
     return;
   }
 
-  // Map Stripe price to subscription tier using HARDCODED mapping
-  const tier = PRICE_TO_TIER[priceId] || 'free';
-  const plan = TIER_TO_PLAN[tier] || 'free';
-  const scanLimit = TIER_TO_SCAN_LIMIT[tier];
+  // ════════════════════════════════════════════════════════════════════════════════
+  // USE CANONICAL MAPPING
+  // ════════════════════════════════════════════════════════════════════════════════
+  const resolution = resolvePriceId(priceId);
   
-  logStep("Mapped price to tier", { priceId, tier, plan, scanLimit });
+  logStep("Resolved price to tier", { 
+    priceId, 
+    tier: resolution.tier, 
+    plan: resolution.plan,
+    known: resolution.known 
+  });
   
-  if (tier === 'free' && priceId) {
-    logStep("WARNING: Unknown price ID, defaulting to free tier", { 
+  // Handle unknown price ID - log but don't downgrade
+  if (!resolution.known && priceId) {
+    logStep("WARNING: Unknown price ID - logging to system_errors", { 
       priceId, 
-      knownPrices: Object.keys(PRICE_TO_TIER) 
+      knownPrices: getKnownPriceIds() 
     });
+    
+    await supabase.from('system_errors').insert({
+      error_code: 'UNKNOWN_STRIPE_PRICE',
+      error_message: `Unknown Stripe price ID in webhook: ${priceId}`,
+      function_name: 'stripe-webhook',
+      user_id: user.id,
+      severity: 'error',
+      metadata: { priceId, subscriptionId: subscription.id, customerId, event: eventType },
+    });
+    
+    // Don't proceed with unknown price - keep existing tier
+    logStep("Skipping update due to unknown price ID");
+    return;
   }
 
-  // UPSERT user subscription in user_roles (create if missing)
+  const { tier, plan, scanLimit } = resolution;
+
+  // UPSERT user subscription in user_roles
   const { error: updateError } = await supabase
     .from("user_roles")
     .upsert({
@@ -466,9 +473,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
       role: 'user',
       subscription_tier: tier,
       subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
-    }, {
-      onConflict: 'user_id',
-    });
+    }, { onConflict: 'user_id' });
 
   if (updateError) {
     logStep("ERROR: Failed to upsert user_roles", { error: updateError.message, userId: user.id });
@@ -526,9 +531,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
         workspace_id: workspaceId,
         user_id: user.id,
         role: 'admin',
-      }, {
-        onConflict: 'workspace_id,user_id',
-      });
+      }, { onConflict: 'workspace_id,user_id' });
   } else {
     // Update existing workspace
     const { error: wsError } = await supabase
@@ -540,14 +543,14 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
         plan: plan,
         scan_limit_monthly: scanLimit,
         subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
-        trial_status: 'converted', // Mark trial as converted
+        trial_status: 'converted',
       })
       .eq("id", workspaceId);
     
     if (wsError) {
       logStep("ERROR: Failed to update workspace", { error: wsError.message, workspaceId });
     } else {
-      logStep("Updated workspace", { workspaceId, tier, plan, trial_status: 'converted' });
+      logStep("Updated workspace", { workspaceId, tier, plan });
     }
   }
 
@@ -563,9 +566,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
       scan_limit_monthly: scanLimit,
       current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
       current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-    }, {
-      onConflict: 'workspace_id',
-    });
+    }, { onConflict: 'workspace_id' });
   
   if (subError) {
     logStep("ERROR: Failed to upsert subscription record", { error: subError.message });
@@ -576,9 +577,9 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
   logStep("✅ Subscription change processed", { email, tier, eventType });
 }
 
-// ============================================
+// ════════════════════════════════════════════════════════════════════════════════
 // HANDLER: Subscription Cancelled
-// ============================================
+// ════════════════════════════════════════════════════════════════════════════════
 async function handleSubscriptionCancellation(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
   
@@ -664,9 +665,9 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription)
   logStep("✅ Subscription cancellation processed", { email });
 }
 
-// ============================================
+// ════════════════════════════════════════════════════════════════════════════════
 // HANDLER: Credit Purchase
-// ============================================
+// ════════════════════════════════════════════════════════════════════════════════
 async function handleCreditPurchase(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.user_id;
   const workspaceId = session.metadata?.workspace_id;
