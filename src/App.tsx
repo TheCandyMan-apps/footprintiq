@@ -241,6 +241,10 @@ const JobSeekersLandingPage = lazy(() => import("./pages/for/JobSeekers"));
 const DevelopersLandingPage = lazy(() => import("./pages/for/Developers"));
 const ExecutivesLandingPage = lazy(() => import("./pages/for/Executives"));
 const ScanShare = lazy(() => import("./pages/share/ScanShare"));
+const SearchUsernamePage = lazy(() => import("./pages/SearchUsername"));
+const TikTokUsernameSearchPage = lazy(() => import("./pages/TikTokUsernameSearch"));
+const InstagramUsernameSearchPage = lazy(() => import("./pages/InstagramUsernameSearch"));
+const TwitterUsernameSearchPage = lazy(() => import("./pages/TwitterUsernameSearch"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -532,6 +536,12 @@ function RouterContent() {
           
           {/* Share Pages */}
           <Route path="/share/:scanId" element={<ScanShare />} />
+          
+          {/* Platform-Specific Username Search Pages */}
+          <Route path="/search-username" element={<SearchUsernamePage />} />
+          <Route path="/tiktok-username-search" element={<TikTokUsernameSearchPage />} />
+          <Route path="/instagram-username-search" element={<InstagramUsernameSearchPage />} />
+          <Route path="/twitter-username-search" element={<TwitterUsernameSearchPage />} />
           
           {/* Embeddable Widget */}
           <Route path="/embed/widget" element={<EmbedWidget />} />

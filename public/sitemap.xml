@@ -468,6 +468,58 @@
     <priority>0.6</priority>
   </url>
   
+  <!-- Niche Landing Pages -->
+  <url>
+    <loc>https://footprintiq.app/for/crypto</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/for/job-seekers</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/for/developers</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/for/executives</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Platform-Specific Search Pages -->
+  <url>
+    <loc>https://footprintiq.app/search-username</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/tiktok-username-search</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/instagram-username-search</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/twitter-username-search</loc>
+    <lastmod>2026-02-06</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
   <!-- Legal & Policy Pages -->
   <url>
     <loc>https://footprintiq.app/privacy</loc>
