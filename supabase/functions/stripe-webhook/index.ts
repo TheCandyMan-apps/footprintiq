@@ -23,6 +23,22 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
   console.log(`[stripe-webhook][${timestamp}] ${step}`, details ? JSON.stringify(details) : '');
 };
 
+// Helper to safely convert Stripe timestamps (seconds since epoch) to ISO strings
+function safeTimestampToISO(timestamp: number | null | undefined): string | null {
+  if (timestamp === null || timestamp === undefined || isNaN(timestamp)) {
+    return null;
+  }
+  try {
+    const date = new Date(timestamp * 1000);
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    return date.toISOString();
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   try {
     // Rate limiting by IP to prevent webhook flooding
@@ -211,7 +227,7 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
     subscriptionId, 
     priceId, 
     status: subscription.status,
-    periodEnd: new Date(subscription.current_period_end * 1000).toISOString()
+    periodEnd: safeTimestampToISO(subscription.current_period_end)
   });
   
   // ════════════════════════════════════════════════════════════════════════════════
@@ -253,7 +269,7 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
       user_id: user.id,
       role: 'user',
       subscription_tier: tier,
-      subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+      subscription_expires_at: safeTimestampToISO(subscription.current_period_end),
     }, { onConflict: 'user_id' });
   
   if (roleError) {
@@ -296,7 +312,7 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
         scan_limit_monthly: scanLimit,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscriptionId,
-        subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+        subscription_expires_at: safeTimestampToISO(subscription.current_period_end),
       })
       .select("id")
       .single();
@@ -331,7 +347,7 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
         subscription_tier: tier,
         plan: plan,
         scan_limit_monthly: scanLimit,
-        subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+        subscription_expires_at: safeTimestampToISO(subscription.current_period_end),
         trial_status: 'converted',
       })
       .eq("id", workspaceId);
@@ -360,8 +376,8 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
       status: subscription.status,
       scan_limit_monthly: scanLimit,
       scans_used_monthly: 0,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_start: safeTimestampToISO(subscription.current_period_start),
+      current_period_end: safeTimestampToISO(subscription.current_period_end),
     }, { onConflict: 'workspace_id' });
   
   if (subError) {
@@ -472,7 +488,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
       user_id: user.id,
       role: 'user',
       subscription_tier: tier,
-      subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+      subscription_expires_at: safeTimestampToISO(subscription.current_period_end),
     }, { onConflict: 'user_id' });
 
   if (updateError) {
@@ -511,7 +527,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
         scan_limit_monthly: scanLimit,
         stripe_customer_id: customerId,
         stripe_subscription_id: subscription.id,
-        subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+        subscription_expires_at: safeTimestampToISO(subscription.current_period_end),
       })
       .select("id")
       .single();
@@ -542,7 +558,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
         subscription_tier: tier,
         plan: plan,
         scan_limit_monthly: scanLimit,
-        subscription_expires_at: new Date(subscription.current_period_end * 1000).toISOString(),
+        subscription_expires_at: safeTimestampToISO(subscription.current_period_end),
         trial_status: 'converted',
       })
       .eq("id", workspaceId);
@@ -564,8 +580,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
       plan: plan,
       status: subscription.status,
       scan_limit_monthly: scanLimit,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+      current_period_start: safeTimestampToISO(subscription.current_period_start),
+      current_period_end: safeTimestampToISO(subscription.current_period_end),
     }, { onConflict: 'workspace_id' });
   
   if (subError) {
