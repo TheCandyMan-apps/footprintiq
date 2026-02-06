@@ -37,6 +37,7 @@ import { cn } from '@/lib/utils';
 import { ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsAggregator';
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
+import { filterFindings } from '@/lib/findingFilters';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
 
 interface FreeResultsViewProps {
@@ -62,8 +63,11 @@ export function FreeResultsView({ jobId, job, results }: FreeResultsViewProps) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const hasShownModalRef = useRef(false);
 
-  // Filter out provider health findings for display
-  const displayResults = useMemo(() => filterOutProviderHealth(results), [results]);
+  // Filter out provider health findings AND apply Focus Mode filtering (hide gaming lookup sites like OP.GG)
+  const displayResults = useMemo(() => {
+    const healthFiltered = filterOutProviderHealth(results);
+    return filterFindings(healthFiltered as any, { hideSearch: true, focusMode: true }) as ScanResult[];
+  }, [results]);
   
   // Get aggregated results for authoritative counts
   const aggregated = useMemo(() => aggregateResults(displayResults), [displayResults]);
