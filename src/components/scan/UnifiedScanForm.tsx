@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,9 +82,20 @@ const FORMAT_HINTS: Record<DetectedType, { icon: React.ReactNode; label: string;
 };
 
 export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: UnifiedScanFormProps) {
+  const [searchParams] = useSearchParams();
+  
   // Input state
   const [identifier, setIdentifier] = useState("");
   const [selectedEnhancers, setSelectedEnhancers] = useState<EnhancerKey[]>([]);
+  
+  // Pre-fill from URL query param ?q=
+  useEffect(() => {
+    const queryValue = searchParams.get('q');
+    if (queryValue && !identifier) {
+      setIdentifier(queryValue);
+      analytics.trackEvent('scan_prefill_from_hero', { type: detectType(queryValue) });
+    }
+  }, [searchParams]);
   
   // Upgrade dialog state
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);

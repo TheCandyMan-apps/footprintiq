@@ -236,6 +236,11 @@ const FactSheet = lazy(() => import("./pages/research/FactSheet"));
 const HowUsernameSearchToolsWork = lazy(() => import("./pages/guides/HowUsernameSearchToolsWork"));
 const EthicalOsint = lazy(() => import("./pages/EthicalOsint"));
 const Press = lazy(() => import("./pages/Press"));
+const CryptoLandingPage = lazy(() => import("./pages/for/Crypto"));
+const JobSeekersLandingPage = lazy(() => import("./pages/for/JobSeekers"));
+const DevelopersLandingPage = lazy(() => import("./pages/for/Developers"));
+const ExecutivesLandingPage = lazy(() => import("./pages/for/Executives"));
+const ScanShare = lazy(() => import("./pages/share/ScanShare"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -518,6 +523,15 @@ function RouterContent() {
           <Route path="/ethical-osint" element={<EthicalOsint />} />
           <Route path="/press" element={<Press />} />
           <Route path="/media" element={<Press />} />
+          
+          {/* Niche Landing Pages */}
+          <Route path="/for/crypto" element={<CryptoLandingPage />} />
+          <Route path="/for/job-seekers" element={<JobSeekersLandingPage />} />
+          <Route path="/for/developers" element={<DevelopersLandingPage />} />
+          <Route path="/for/executives" element={<ExecutivesLandingPage />} />
+          
+          {/* Share Pages */}
+          <Route path="/share/:scanId" element={<ScanShare />} />
           
           {/* Embeddable Widget */}
           <Route path="/embed/widget" element={<EmbedWidget />} />

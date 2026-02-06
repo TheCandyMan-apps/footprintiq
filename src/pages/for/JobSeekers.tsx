@@ -1,0 +1,204 @@
+import { Helmet } from "react-helmet-async";
+import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
+import { HeroInputField } from "@/components/HeroInputField";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { Shield, Briefcase, Search, Users, Eye, CheckCircle, ArrowRight, Linkedin } from "lucide-react";
+
+const PAIN_POINTS = [
+  {
+    icon: <Search className="h-5 w-5" />,
+    title: "Employer background checks",
+    description: "Recruiters Google you. Old profiles and forum posts can affect your candidacy.",
+  },
+  {
+    icon: <Linkedin className="h-5 w-5" />,
+    title: "LinkedIn isn't everything",
+    description: "Your professional brand extends beyond LinkedIn to every platform you've used.",
+  },
+  {
+    icon: <Users className="h-5 w-5" />,
+    title: "Username traceability",
+    description: "That gaming username from 2015 might still link to your real identity.",
+  },
+  {
+    icon: <Eye className="h-5 w-5" />,
+    title: "Data broker listings",
+    description: "People-search sites may show your address, phone, and relatives to anyone.",
+  },
+];
+
+const SCAN_SOURCES = [
+  "Professional networks (LinkedIn, GitHub)",
+  "Social media profiles",
+  "Forum and community accounts",
+  "People-search sites",
+  "Data broker databases",
+  "Public records aggregators",
+];
+
+const FAQS = [
+  {
+    question: "What will employers actually find?",
+    answer: "We show you the same publicly accessible information that background check services and recruiters can find when they search your name, email, or usernames.",
+  },
+  {
+    question: "Can this help me get a job?",
+    answer: "By knowing what's publicly visible, you can proactively address or remove outdated or unflattering information before it affects your candidacy.",
+  },
+  {
+    question: "Is my search private?",
+    answer: "Yes. We don't store your queries, and your scan results are only visible to you. We never share or sell data.",
+  },
+];
+
+export default function JobSeekersLandingPage() {
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: FAQS.map(faq => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+
+  return (
+    <>
+      <Helmet>
+        <title>See What Employers Find — Digital Reputation Check | FootprintIQ</title>
+        <meta name="description" content="Free scan shows what recruiters and employers see when they search your name. Check your digital reputation before your next interview." />
+        <link rel="canonical" href="https://footprintiq.app/for/job-seekers" />
+        <meta property="og:title" content="Digital Reputation Check for Job Seekers | FootprintIQ" />
+        <meta property="og:description" content="See what employers find when they Google you. Free digital footprint scan." />
+        <script type="application/ld+json">{JSON.stringify(faqSchema)}</script>
+      </Helmet>
+
+      <Header />
+
+      <main>
+        {/* Hero */}
+        <section className="relative py-20 md:py-28 bg-gradient-to-b from-background via-muted/20 to-background">
+          <div className="max-w-4xl mx-auto px-6 text-center">
+            <Badge variant="outline" className="mb-6 text-primary border-primary/30">
+              <Briefcase className="h-3 w-3 mr-1.5" />
+              For Job Seekers
+            </Badge>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+              See What Employers Find
+              <span className="block text-primary mt-2">When They Google You</span>
+            </h1>
+            <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              Recruiters check more than your resume. Discover your digital reputation 
+              across social media, forums, and people-search sites.
+            </p>
+            <HeroInputField />
+            <div className="mt-6 flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle className="h-4 w-4 text-primary" />
+                Free basic scan
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle className="h-4 w-4 text-primary" />
+                Private & secure
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle className="h-4 w-4 text-primary" />
+                Actionable insights
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* Pain Points */}
+        <section className="py-16 bg-muted/30">
+          <div className="max-w-5xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
+              What Affects Your Digital Reputation
+            </h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              {PAIN_POINTS.map((point, idx) => (
+                <Card key={idx} className="border-border/50">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
+                        {point.icon}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold mb-1">{point.title}</h3>
+                        <p className="text-sm text-muted-foreground">{point.description}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* What We Scan */}
+        <section className="py-16">
+          <div className="max-w-4xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">
+              What We Check
+            </h2>
+            <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
+              We scan the same sources recruiters and background check services use.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3">
+              {SCAN_SOURCES.map((source, idx) => (
+                <Badge key={idx} variant="secondary" className="text-sm py-1.5 px-4">
+                  {source}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section className="py-16 bg-muted/30">
+          <div className="max-w-3xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
+              Frequently Asked Questions
+            </h2>
+            <div className="space-y-6">
+              {FAQS.map((faq, idx) => (
+                <div key={idx} className="p-6 rounded-xl bg-background border border-border">
+                  <h3 className="font-semibold mb-2">{faq.question}</h3>
+                  <p className="text-sm text-muted-foreground">{faq.answer}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="py-20">
+          <div className="max-w-3xl mx-auto px-6 text-center">
+            <Shield className="h-12 w-12 text-primary mx-auto mb-6" />
+            <h2 className="text-3xl font-bold mb-4">
+              Prepare for Your Next Opportunity
+            </h2>
+            <p className="text-muted-foreground mb-8">
+              Know what employers see before they see it. Free scan, instant results.
+            </p>
+            <Button size="lg" asChild>
+              <Link to="/scan">
+                Check My Digital Reputation
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
+    </>
+  );
+}

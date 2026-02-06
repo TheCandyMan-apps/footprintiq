@@ -102,3 +102,6 @@ verify_jwt = true
 
 [functions.brave-search]
 verify_jwt = true
+
+[functions.og-share-image]
+verify_jwt = false
