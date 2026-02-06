@@ -286,7 +286,7 @@ const Auth = () => {
       <Card className="w-full max-w-md p-8 bg-gradient-card border-border shadow-card">
         <div className="text-center mb-8">
           <img src="/logo-dark.png" alt="FootprintIQ Logo" className="w-212 h-32 mx-auto mb-4" />
-          
+          <h1 className="text-xl font-semibold text-foreground mb-1">Sign in to FootprintIQ</h1>
           <p className="text-muted-foreground">
             Protect your privacy across the internet
           </p>
