@@ -68,6 +68,16 @@ export const INDEXNOW_URLS = [
   "/ai/what-is-identity-profiling",
   "/ai/what-are-data-brokers",
   "/ai-answers-hub",
+  // Platform-specific search pages
+  "/search-username",
+  "/tiktok-username-search",
+  "/instagram-username-search",
+  "/twitter-username-search",
+  // Persona landing pages
+  "/for/crypto",
+  "/for/job-seekers",
+  "/for/developers",
+  "/for/executives",
 ];
 
 /**
