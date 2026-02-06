@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Shield, Phone, Mail, AlertTriangle, Lock, Eye, CheckCircle, ArrowRight } from "lucide-react";
+import { Shield, Phone, Mail, AlertTriangle, Lock, Eye, CheckCircle, ArrowRight, Smartphone, Wallet, ShieldAlert } from "lucide-react";
 
 const PAIN_POINTS = [
   {
@@ -53,7 +53,39 @@ const FAQS = [
     question: "How does this help prevent SIM swaps?",
     answer: "By showing you where your phone number and email appear publicly, you can take action before attackers use that information to social engineer your carrier.",
   },
+  {
+    question: "What if my phone number is exposed on data broker sites?",
+    answer: "Our Pro plan includes removal recommendations for major data brokers. For phone numbers specifically, consider using a dedicated number for 2FA that isn't linked to your identity.",
+  },
+  {
+    question: "Should I scan my exchange email or my crypto username?",
+    answer: "Both. Your exchange email may appear in breaches, while your crypto username (Twitter handle, Discord name) may link to forums where you've discussed holdings. A complete picture requires scanning both.",
+  },
+  {
+    question: "How often should crypto holders run exposure scans?",
+    answer: "We recommend quarterly scans at minimum, or immediately after any public crypto activity (tweets about holdings, forum posts, conference attendance) that could increase your attack surface.",
+  },
 ];
+
+const WHY_THIS_MATTERS = {
+  title: "Why Crypto Security Starts With OPSEC",
+  content: `The FBI's Internet Crime Complaint Center (IC3) reported over $68 million in SIM swap losses in 2021, with crypto holders being primary targets. These attacks don't require sophisticated hacking—attackers simply need enough personal information to convince your mobile carrier to port your number.
+
+That information comes from public sources: data broker listings that expose your phone number and address, forum posts where you discussed your holdings, exchange breaches that leaked your email, and social media profiles that connect your crypto persona to your real identity.
+
+FootprintIQ scans the same sources attackers use, giving you visibility into your exposure before it becomes a liability. By understanding what's publicly known about your crypto-linked identities, you can take targeted action to reduce your attack surface.`,
+};
+
+const HOW_IT_WORKS = {
+  title: "How to Use FootprintIQ for Crypto Security",
+  steps: [
+    "Enter your exchange-linked email address to check for breach exposure",
+    "Scan your crypto username (Twitter handle, Discord name) to find linked accounts",
+    "Check your phone number to see if it appears on data broker sites",
+    "Review your exposure score and prioritize high-risk findings",
+    "Take action: update 2FA methods, remove data broker listings, use unique identifiers",
+  ],
+};
 
 export default function CryptoLandingPage() {
   const faqSchema = {
@@ -73,7 +105,7 @@ export default function CryptoLandingPage() {
     <>
       <Helmet>
         <title>Crypto Security Scan — Protect Against SIM Swaps & Doxxing | FootprintIQ</title>
-        <meta name="description" content="Free OSINT scan for crypto users. Check if your phone, email, or wallet-linked identifiers are exposed before hackers find them." />
+        <meta name="description" content="Free OSINT scan for crypto users. Check if your phone, email, or wallet-linked identifiers are exposed before hackers find them. Prevent SIM swap attacks." />
         <link rel="canonical" href="https://footprintiq.app/for/crypto" />
         <meta property="og:title" content="Crypto Security Scan | FootprintIQ" />
         <meta property="og:description" content="Check your digital exposure before bad actors do. Free scan for crypto holders." />
@@ -116,6 +148,22 @@ export default function CryptoLandingPage() {
           </div>
         </section>
 
+        {/* Why This Matters */}
+        <section className="py-16">
+          <div className="max-w-4xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
+              {WHY_THIS_MATTERS.title}
+            </h2>
+            <div className="prose prose-lg dark:prose-invert mx-auto">
+              {WHY_THIS_MATTERS.content.split('\n\n').map((paragraph, idx) => (
+                <p key={idx} className="text-muted-foreground leading-relaxed mb-4">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Pain Points */}
         <section className="py-16 bg-muted/30">
           <div className="max-w-5xl mx-auto px-6">
@@ -142,8 +190,30 @@ export default function CryptoLandingPage() {
           </div>
         </section>
 
-        {/* What We Scan */}
+        {/* How It Works */}
         <section className="py-16">
+          <div className="max-w-4xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">
+              {HOW_IT_WORKS.title}
+            </h2>
+            <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
+              A step-by-step approach to auditing your crypto security posture.
+            </p>
+            <div className="space-y-4">
+              {HOW_IT_WORKS.steps.map((step, idx) => (
+                <div key={idx} className="flex items-start gap-4 p-4 rounded-lg bg-muted/50 border border-border/50">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
+                    {idx + 1}
+                  </div>
+                  <p className="text-sm text-muted-foreground pt-1">{step}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* What We Scan */}
+        <section className="py-16 bg-muted/30">
           <div className="max-w-4xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">
               What We Scan
@@ -157,6 +227,44 @@ export default function CryptoLandingPage() {
                   {source}
                 </Badge>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Real-World Scenarios */}
+        <section className="py-16">
+          <div className="max-w-5xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
+              Real-World Scenarios
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card className="border-border/50">
+                <CardContent className="p-6">
+                  <Smartphone className="h-8 w-8 text-destructive mb-4" />
+                  <h3 className="font-semibold mb-2">SIM Swap Attack</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Attacker finds your phone number on a data broker site, calls your carrier, and ports your number. Within minutes, they reset your exchange 2FA and drain your funds.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardContent className="p-6">
+                  <Wallet className="h-8 w-8 text-destructive mb-4" />
+                  <h3 className="font-semibold mb-2">Exchange Account Takeover</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your exchange email appeared in a breach. Attackers use credential stuffing to access your account, then withdraw to their wallet before you notice.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardContent className="p-6">
+                  <ShieldAlert className="h-8 w-8 text-destructive mb-4" />
+                  <h3 className="font-semibold mb-2">Targeted Phishing</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your Twitter handle links to your Discord, which links to a Bitcointalk account where you discussed holdings. Attackers craft a personalized phishing message referencing your specific situation.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
@@ -175,6 +283,15 @@ export default function CryptoLandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Internal Links */}
+        <section className="py-12">
+          <div className="max-w-4xl mx-auto px-6">
+            <p className="text-center text-sm text-muted-foreground">
+              Learn more: <Link to="/blog/phone-number-privacy" className="text-primary hover:underline">Phone Number Privacy Guide</Link> · <Link to="/username-exposure" className="text-primary hover:underline">Understanding Username Exposure</Link> · <Link to="/guides/how-username-search-tools-work" className="text-primary hover:underline">How Username Search Tools Work</Link>
+            </p>
           </div>
         </section>
 

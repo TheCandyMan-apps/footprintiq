@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Shield, Code, Github, Key, Eye, CheckCircle, ArrowRight, Terminal } from "lucide-react";
+import { Shield, Code, Github, Key, Eye, CheckCircle, ArrowRight, Terminal, Database, GitCommit, FileCode } from "lucide-react";
 
 const PAIN_POINTS = [
   {
@@ -53,7 +53,39 @@ const FAQS = [
     question: "Is this useful for OPSEC during job hunting?",
     answer: "Yes. Many developers have personal projects, gaming accounts, or old forum posts linked to their professional identity. We help you see the full picture.",
   },
+  {
+    question: "What about my npm/PyPI package author information?",
+    answer: "Package registries often display author email and website. We scan for where your email appears across these platforms, helping you understand your exposure as a package maintainer.",
+  },
+  {
+    question: "How does this differ from GitHub's secret scanning?",
+    answer: "GitHub's scanning checks for secrets in your code. We check for where your identity (username, email) appears publicly across the internet—including sites that may have indexed your old commits or profile information.",
+  },
+  {
+    question: "Should developers use separate usernames for personal and professional accounts?",
+    answer: "It depends on your threat model. Our scan helps you understand how connected your accounts are. If your gaming username links directly to your GitHub profile, you can make informed decisions about whether to maintain that connection.",
+  },
 ];
+
+const WHY_THIS_MATTERS = {
+  title: "Why Developer OPSEC Matters",
+  content: `Developers often underestimate how much their code history reveals about their identity. Git commits include email addresses. GitHub profiles show contribution patterns, timezones, and interests. Stack Overflow answers reveal your employer's tech stack, and package registries often display personal contact information.
+
+This exposure creates multiple risk vectors. Recruiters use it for background checks. Spear phishers craft targeted attacks based on your projects and tech interests. And if you've ever accidentally committed a secret—even if you immediately removed it—it may still exist in cached or archived versions of your repository.
+
+Beyond security, there's also the professional consideration. Your dev handle might link to gaming accounts, personal social media, or forum posts from a decade ago. Understanding these connections helps you present a consistent professional identity while maintaining the privacy boundaries you want.`,
+};
+
+const HOW_IT_WORKS = {
+  title: "How to Audit Your Developer Footprint",
+  steps: [
+    "Scan your primary dev email (the one in your git config)",
+    "Check your GitHub username across other platforms",
+    "Search for any alternative handles you use for gaming or personal accounts",
+    "Review connections between professional and personal identities",
+    "Take action: update git email settings, consolidate or separate accounts",
+  ],
+};
 
 export default function DevelopersLandingPage() {
   const faqSchema = {
@@ -73,7 +105,7 @@ export default function DevelopersLandingPage() {
     <>
       <Helmet>
         <title>Developer OPSEC Scan — GitHub Exposure & Code History Check | FootprintIQ</title>
-        <meta name="description" content="Free scan for developers. Check what your GitHub profile, commit history, and dev usernames reveal about you." />
+        <meta name="description" content="Free scan for developers. Check what your GitHub profile, commit history, and dev usernames reveal about you. Audit your developer digital footprint." />
         <link rel="canonical" href="https://footprintiq.app/for/developers" />
         <meta property="og:title" content="Developer OPSEC Scan | FootprintIQ" />
         <meta property="og:description" content="See what your code history and dev profiles reveal. Free digital footprint scan for developers." />
@@ -116,6 +148,22 @@ export default function DevelopersLandingPage() {
           </div>
         </section>
 
+        {/* Why This Matters */}
+        <section className="py-16">
+          <div className="max-w-4xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">
+              {WHY_THIS_MATTERS.title}
+            </h2>
+            <div className="prose prose-lg dark:prose-invert mx-auto">
+              {WHY_THIS_MATTERS.content.split('\n\n').map((paragraph, idx) => (
+                <p key={idx} className="text-muted-foreground leading-relaxed mb-4">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* Pain Points */}
         <section className="py-16 bg-muted/30">
           <div className="max-w-5xl mx-auto px-6">
@@ -142,8 +190,30 @@ export default function DevelopersLandingPage() {
           </div>
         </section>
 
-        {/* What We Scan */}
+        {/* How It Works */}
         <section className="py-16">
+          <div className="max-w-4xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">
+              {HOW_IT_WORKS.title}
+            </h2>
+            <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
+              A systematic approach to understanding your developer exposure.
+            </p>
+            <div className="space-y-4">
+              {HOW_IT_WORKS.steps.map((step, idx) => (
+                <div key={idx} className="flex items-start gap-4 p-4 rounded-lg bg-muted/50 border border-border/50">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
+                    {idx + 1}
+                  </div>
+                  <p className="text-sm text-muted-foreground pt-1">{step}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Developer-Focused Scan Sources */}
+        <section className="py-16 bg-muted/30">
           <div className="max-w-4xl mx-auto px-6">
             <h2 className="text-2xl md:text-3xl font-bold text-center mb-4">
               Developer-Focused Scan Sources
@@ -157,6 +227,44 @@ export default function DevelopersLandingPage() {
                   {source}
                 </Badge>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Real-World Scenarios */}
+        <section className="py-16">
+          <div className="max-w-5xl mx-auto px-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">
+              Common Developer Exposure Scenarios
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              <Card className="border-border/50">
+                <CardContent className="p-6">
+                  <GitCommit className="h-8 w-8 text-primary mb-4" />
+                  <h3 className="font-semibold mb-2">Commit Email Exposure</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your git config uses your personal email, which appears in every commit. Years of contribution history now link your identity across every project you've touched.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardContent className="p-6">
+                  <Database className="h-8 w-8 text-primary mb-4" />
+                  <h3 className="font-semibold mb-2">Package Registry Identity</h3>
+                  <p className="text-sm text-muted-foreground">
+                    You published an npm package years ago with your personal website and email. That information is still visible to anyone who searches for you.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardContent className="p-6">
+                  <FileCode className="h-8 w-8 text-primary mb-4" />
+                  <h3 className="font-semibold mb-2">Username Chain</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Your GitHub username matches your gaming handle, which links to Discord servers where you've discussed personal projects and interests outside of work.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
@@ -175,6 +283,15 @@ export default function DevelopersLandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Internal Links */}
+        <section className="py-12">
+          <div className="max-w-4xl mx-auto px-6">
+            <p className="text-center text-sm text-muted-foreground">
+              Learn more: <Link to="/guides/how-username-search-tools-work" className="text-primary hover:underline">How Username Search Tools Work</Link> · <Link to="/username-exposure" className="text-primary hover:underline">Understanding Username Exposure</Link> · <Link to="/email-breach-check" className="text-primary hover:underline">Email Breach Check</Link>
+            </p>
           </div>
         </section>
 
