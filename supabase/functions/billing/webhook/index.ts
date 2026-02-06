@@ -31,20 +31,18 @@ const logEvent = (eventType: string, message: string, metadata?: any) => {
 
 // **CENTRALIZED PRICE-TO-TIER MAPPING** - Single source of truth
 // This mapping aligns with actual Stripe products and database schema
+// Synced with src/config/stripe.ts on 2026-02-06
 const PRICE_TO_TIER_MAP: Record<string, 'free' | 'premium' | 'enterprise'> = {
-  // Basic ($5/mo) - free tier in database
-  'price_1SQwVyPNdM5SAyj7gXDm8Mkc': 'free',
+  // Pro Monthly (£14.99/mo) - premium tier
+  'price_1ShgNPA3ptI9drLW40rbWMjq': 'premium',
   
-  // Pro ($15/mo) - premium tier
-  'price_1SQwWCPNdM5SAyj7XS394cD8': 'premium',
+  // Pro Annual (£140/year) - premium tier
+  'price_1Si2vkA3ptI9drLWCQrxU4Dc': 'premium',
   
-  // Analyst ($29/mo) - premium tier  
-  'price_1SQh7LPNdM5SAyj7PMKySuO6': 'premium',
+  // Business (£49.99/mo) - enterprise tier
+  'price_1ShdxJA3ptI9drLWjndMjptw': 'enterprise',
   
-  // Professional ($79/mo) - premium tier
-  'price_1SPXcEPNdM5SAyj7AbannmpP': 'premium',
-  
-  // Enterprise ($299/mo) - enterprise tier
+  // Enterprise (custom) - enterprise tier
   'price_1SQh9JPNdM5SAyj722p376Qh': 'enterprise',
 };
 

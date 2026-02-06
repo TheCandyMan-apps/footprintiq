@@ -1,131 +1,73 @@
 
-# Fix Stripe Subscription Sync Issues
+# Fix Stripe Subscription Sync Issues - ✅ COMPLETED
 
 ## Problem Summary
 
-Kelly Frazier (easterkelly37@gmail.com) has an **active Pro Monthly subscription** in Stripe (`sub_1SwUBTA3ptI9drLWucJ0zvfo`) but her database records show `free` tier:
-- `user_roles.subscription_tier` = `free`
-- `workspaces.subscription_tier` = `free`
-- `workspaces.stripe_customer_id` = `null`
-- `workspaces.stripe_subscription_id` = `null`
+Kelly Frazier (easterkelly37@gmail.com) had an **active Pro Monthly subscription** in Stripe (`sub_1SwUBTA3ptI9drLWucJ0zvfo`) but her database records showed `free` tier.
 
-## Root Cause Analysis
+## Resolution Summary
 
-There are **TWO** Stripe webhook handlers in the codebase with **DIFFERENT** price mappings:
+### ✅ Part 1: Kelly's Subscription Fixed
 
-| File | Has Pro Price `price_1ShgNPA3ptI9drLW40rbWMjq`? |
-|------|-----------------------------------------------|
-| `supabase/functions/stripe-webhook/index.ts` | ✅ YES → maps to `premium` |
-| `supabase/functions/billing/webhook/index.ts` | ❌ NO → defaults to `free` |
+**Database updates applied:**
+- `user_roles.subscription_tier` = `premium` ✅
+- `user_roles.subscription_expires_at` = `2026-03-02T20:56:12+00:00` ✅
+- `workspaces.subscription_tier` = `premium` ✅
+- `workspaces.plan` = `pro` ✅
+- `workspaces.scan_limit_monthly` = `100` ✅
+- `workspaces.stripe_customer_id` = `cus_TuInrqb6PdV30C` ✅
+- `workspaces.stripe_subscription_id` = `sub_1SwUBTA3ptI9drLWucJ0zvfo` ✅
 
-The `billing/webhook` function contains **outdated/legacy price IDs** that no longer match the current Stripe configuration. When Kelly's subscription was processed, if it went through the wrong webhook, it would default to `free`.
+### ✅ Part 2: Price Mappings Synchronized
 
-## Current Price Configuration (src/config/stripe.ts)
+Updated `supabase/functions/billing/webhook/index.ts` with current price IDs:
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│ Pro Monthly:  price_1ShgNPA3ptI9drLW40rbWMjq → £14.99/mo   │
-│ Pro Annual:   price_1Si2vkA3ptI9drLWCQrxU4Dc → £140/year   │
-│ Business:     price_1ShdxJA3ptI9drLWjndMjptw → £49.99/mo   │
-│ Enterprise:   price_1SQh9JPNdM5SAyj722p376Qh → custom      │
-└─────────────────────────────────────────────────────────────┘
+```typescript
+const PRICE_TO_TIER_MAP: Record<string, 'free' | 'premium' | 'enterprise'> = {
+  // Pro Monthly (£14.99/mo) - premium tier
+  'price_1ShgNPA3ptI9drLW40rbWMjq': 'premium',
+  
+  // Pro Annual (£140/year) - premium tier
+  'price_1Si2vkA3ptI9drLWCQrxU4Dc': 'premium',
+  
+  // Business (£49.99/mo) - enterprise tier
+  'price_1ShdxJA3ptI9drLWjndMjptw': 'enterprise',
+  
+  // Enterprise (custom) - enterprise tier
+  'price_1SQh9JPNdM5SAyj722p376Qh': 'enterprise',
+};
 ```
 
-## Implementation Plan
+### ✅ Part 3: Audit Results
 
-### Part 1: Fix Kelly's Subscription Immediately (Manual Database Update)
+**Active Stripe subscriptions checked:** 3 total
+1. `sub_1SwUBTA3ptI9drLWucJ0zvfo` - Kelly Frazier ✅ FIXED
+2. `sub_1SuUbSA3ptI9drLWNoSLDLO4` - Customer `cus_TsF5YamHmIv06h` (no workspace linked yet)
+3. `sub_1Smv2nA3ptI9drLWgxwnnIeg` - Matt (`mattthepilot83@gmail.com`) ✅ Already correct (premium tier)
 
-Update Kelly's records to reflect her active Pro subscription:
+**Note:** One subscriber (cus_TsF5YamHmIv06h) has no workspace linked in database. This may be a new subscription not yet fully processed.
 
-```sql
--- 1. Update user_roles to premium tier
-UPDATE user_roles
-SET 
-  subscription_tier = 'premium',
-  subscription_expires_at = '2026-03-02T20:56:12+00:00'
-WHERE user_id = '87536df3-ed93-48f6-9087-e1ca5eadc370';
+## Root Cause
 
--- 2. Update workspace with Stripe IDs and tier
-UPDATE workspaces
-SET 
-  subscription_tier = 'premium',
-  plan = 'pro',
-  scan_limit_monthly = 100,
-  stripe_customer_id = 'cus_TuInrqb6PdV30C',
-  stripe_subscription_id = 'sub_1SwUBTA3ptI9drLWucJ0zvfo'
-WHERE id = '3ba9351a-5cd0-4be1-84be-40c82556de17';
-```
+Two Stripe webhook handlers existed with different price mappings:
+- `stripe-webhook/index.ts` - Had correct mappings
+- `billing/webhook/index.ts` - Had **OUTDATED** legacy price IDs
 
-### Part 2: Synchronize Price Mappings in billing/webhook
+Now both are synchronized.
 
-Update `supabase/functions/billing/webhook/index.ts` to use the same price mappings as `stripe-webhook`:
-
-```text
-Before (OUTDATED):
-┌───────────────────────────────────────────────────────────────┐
-│ price_1SQwVyPNdM5SAyj7gXDm8Mkc → free                        │
-│ price_1SQwWCPNdM5SAyj7XS394cD8 → premium                     │
-│ price_1SQh7LPNdM5SAyj7PMKySuO6 → premium (analyst)           │
-│ price_1SPXcEPNdM5SAyj7AbannmpP → premium (professional)      │
-│ price_1SQh9JPNdM5SAyj722p376Qh → enterprise                  │
-└───────────────────────────────────────────────────────────────┘
-
-After (CURRENT):
-┌───────────────────────────────────────────────────────────────┐
-│ price_1ShgNPA3ptI9drLW40rbWMjq → premium (Pro Monthly)       │
-│ price_1Si2vkA3ptI9drLWCQrxU4Dc → premium (Pro Annual)        │
-│ price_1ShdxJA3ptI9drLWjndMjptw → enterprise (Business)       │
-│ price_1SQh9JPNdM5SAyj722p376Qh → enterprise (Enterprise)     │
-└───────────────────────────────────────────────────────────────┘
-```
-
-### Part 3: Audit Other Affected Users
-
-Query all Stripe subscriptions vs database to find mismatches:
-
-```sql
--- Find users with active Stripe subscriptions but free tier
-SELECT 
-  p.email,
-  p.user_id,
-  ur.subscription_tier,
-  w.stripe_subscription_id,
-  w.plan
-FROM profiles p
-JOIN user_roles ur ON p.user_id = ur.user_id
-JOIN workspace_members wm ON p.user_id = wm.user_id
-JOIN workspaces w ON wm.workspace_id = w.id
-WHERE ur.subscription_tier = 'free'
-  AND w.stripe_subscription_id IS NULL;
-```
-
-Then cross-reference with Stripe API to identify any other affected customers.
-
-### Part 4: Consolidate Webhook Logic (Optional but Recommended)
-
-Consider deprecating `billing/webhook` in favor of `stripe-webhook` which has the correct mappings, or create a shared `_shared/stripe-price-mapping.ts` file to ensure both use the same source of truth.
-
----
-
-## Technical Details
-
-### Files to Modify
+## Files Modified
 
 | File | Change |
 |------|--------|
-| `supabase/functions/billing/webhook/index.ts` | Update `PRICE_TO_TIER_MAP` with current price IDs |
-| Database | Manual update for Kelly's user_roles and workspaces |
+| `supabase/functions/billing/webhook/index.ts` | Updated `PRICE_TO_TIER_MAP` with current price IDs |
 
-### Database Tier Enum Values
+## Validation
 
-The `subscription_tier` enum accepts: `free`, `basic`, `premium`, `family`, `enterprise`
+Kelly's current database state:
+- Email: `easterkelly37@gmail.com`
+- Subscription Tier: `premium` ✅
+- Plan: `pro` ✅
+- Stripe Subscription ID: `sub_1SwUBTA3ptI9drLWucJ0zvfo` ✅
+- Expires: `2026-03-02T20:56:12+00:00`
 
-- Pro plans map to `premium`
-- Business plans map to `enterprise`
-
-### Validation After Fix
-
-1. Kelly should see "Pro" tier in her account settings
-2. Workspace should show 100 scans/month limit
-3. Pro-tier features (Sherlock, HIBP, exports) should be unlocked
-4. Future webhook events should correctly update tiers
+Future subscription events will now correctly map to the proper tiers.
