@@ -62,4 +62,8 @@ export const IMPLEMENTED_PROVIDERS = new Set([
   
   // Predicta Search (multi-platform social & breach aggregation)
   'predictasearch',      // Email, phone, username, name searches
+  
+  // Brave Search (independent web index for enrichment)
+  'brave_search',        // Web search enrichment + LENS corroboration
+  'brave_news',          // News mentions (entity/domain research)
 ]);
