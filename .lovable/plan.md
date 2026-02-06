@@ -1,122 +1,109 @@
 
-# Fix Focus Mode Filtering for False Positives (OP.GG, etc.)
+# Fix Stripe Subscription Sync Issues
 
 ## Problem Summary
 
-The Focus Mode filtering logic exists in `src/lib/findingFilters.ts` but is **never actually used** anywhere in the application. Additionally, the filter's URL extraction function doesn't recognize the `url` field that the results actually use.
+Kelly Frazier (easterkelly37@gmail.com) has an **active Pro Monthly subscription** in Stripe (`sub_1SwUBTA3ptI9drLWucJ0zvfo`) but her database records show `free` tier:
+- `user_roles.subscription_tier` = `free`
+- `workspaces.subscription_tier` = `free`
+- `workspaces.stripe_customer_id` = `null`
+- `workspaces.stripe_subscription_id` = `null`
 
-From the database, OP.GG findings look like this:
-- `url`: `https://www.op.gg/summoners/search?q=LondonBob77&region=kr`
-- `meta.platform`: `OP.GG [LeagueOfLegends] Korea`
+## Root Cause Analysis
 
-The patterns `/summoners?/` and `?q=` in `SEARCH_URL_PATTERNS` and `op.gg` in `GAMING_LOOKUP_SITES` should catch these—but the code never runs!
+There are **TWO** Stripe webhook handlers in the codebase with **DIFFERENT** price mappings:
 
----
+| File | Has Pro Price `price_1ShgNPA3ptI9drLW40rbWMjq`? |
+|------|-----------------------------------------------|
+| `supabase/functions/stripe-webhook/index.ts` | ✅ YES → maps to `premium` |
+| `supabase/functions/billing/webhook/index.ts` | ❌ NO → defaults to `free` |
 
-## Root Causes
+The `billing/webhook` function contains **outdated/legacy price IDs** that no longer match the current Stripe configuration. When Kelly's subscription was processed, if it went through the wrong webhook, it would default to `free`.
 
-1. **Missing field fallback**: `getItemUrl()` checks for `platformUrl`, `platform_url`, `primary_url` but NOT `url` (which is the actual field in `ScanResultRow`)
-2. **Never imported**: `filterFindings` from `findingFilters.ts` has zero imports anywhere in the codebase
-3. **No UI toggle**: There's no Focus Mode switch in the results UI to enable/disable filtering
+## Current Price Configuration (src/config/stripe.ts)
 
----
+```text
+┌─────────────────────────────────────────────────────────────┐
+│ Pro Monthly:  price_1ShgNPA3ptI9drLW40rbWMjq → £14.99/mo   │
+│ Pro Annual:   price_1Si2vkA3ptI9drLWCQrxU4Dc → £140/year   │
+│ Business:     price_1ShdxJA3ptI9drLWjndMjptw → £49.99/mo   │
+│ Enterprise:   price_1SQh9JPNdM5SAyj722p376Qh → custom      │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Implementation Plan
 
-### Step 1: Fix URL Field Extraction in `findingFilters.ts`
+### Part 1: Fix Kelly's Subscription Immediately (Manual Database Update)
 
-Update `getItemUrl()` to include `url` as a fallback:
+Update Kelly's records to reflect her active Pro subscription:
 
-```typescript
-function getItemUrl(item: FilterableItem): string {
-  return (
-    item.platformUrl ?? 
-    item.platform_url ?? 
-    item.primary_url ?? 
-    (item as any).url ??              // <-- ADD THIS
-    (item as any).raw?.primary_url ?? 
-    (item as any).raw?.url ??         // <-- AND THIS
-    ''
-  );
-}
+```sql
+-- 1. Update user_roles to premium tier
+UPDATE user_roles
+SET 
+  subscription_tier = 'premium',
+  subscription_expires_at = '2026-03-02T20:56:12+00:00'
+WHERE user_id = '87536df3-ed93-48f6-9087-e1ca5eadc370';
+
+-- 2. Update workspace with Stripe IDs and tier
+UPDATE workspaces
+SET 
+  subscription_tier = 'premium',
+  plan = 'pro',
+  scan_limit_monthly = 100,
+  stripe_customer_id = 'cus_TuInrqb6PdV30C',
+  stripe_subscription_id = 'sub_1SwUBTA3ptI9drLWucJ0zvfo'
+WHERE id = '3ba9351a-5cd0-4be1-84be-40c82556de17';
 ```
 
-Also add `site` field support to `getPlatformNameEarly()`:
+### Part 2: Synchronize Price Mappings in billing/webhook
 
-```typescript
-function getPlatformNameEarly(item: FilterableItem): string {
-  return (
-    item.platformName ??
-    item.platform_name ??
-    (item as any).site ??             // <-- ADD THIS (matches ScanResultRow)
-    (item as any).raw?.platform_name ??
-    (item as any).raw?.platformName ??
-    ''
-  ).toLowerCase();
-}
+Update `supabase/functions/billing/webhook/index.ts` to use the same price mappings as `stripe-webhook`:
+
+```text
+Before (OUTDATED):
+┌───────────────────────────────────────────────────────────────┐
+│ price_1SQwVyPNdM5SAyj7gXDm8Mkc → free                        │
+│ price_1SQwWCPNdM5SAyj7XS394cD8 → premium                     │
+│ price_1SQh7LPNdM5SAyj7PMKySuO6 → premium (analyst)           │
+│ price_1SPXcEPNdM5SAyj7AbannmpP → premium (professional)      │
+│ price_1SQh9JPNdM5SAyj722p376Qh → enterprise                  │
+└───────────────────────────────────────────────────────────────┘
+
+After (CURRENT):
+┌───────────────────────────────────────────────────────────────┐
+│ price_1ShgNPA3ptI9drLW40rbWMjq → premium (Pro Monthly)       │
+│ price_1Si2vkA3ptI9drLWCQrxU4Dc → premium (Pro Annual)        │
+│ price_1ShdxJA3ptI9drLWjndMjptw → enterprise (Business)       │
+│ price_1SQh9JPNdM5SAyj722p376Qh → enterprise (Enterprise)     │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-### Step 2: Add Focus Mode Toggle to AccountsTab
+### Part 3: Audit Other Affected Users
 
-Update `src/components/scan/results-tabs/AccountsTab.tsx`:
+Query all Stripe subscriptions vs database to find mismatches:
 
-1. Import the filter function:
-   ```typescript
-   import { filterFindings, FilterOptions, isSearchResult } from '@/lib/findingFilters';
-   ```
-
-2. Add Focus Mode state:
-   ```typescript
-   const [focusMode, setFocusMode] = useState(true); // Default ON
-   ```
-
-3. Apply filtering to `displayResults` before rendering:
-   ```typescript
-   const filteredByFocusMode = useMemo(() => {
-     return filterFindings(displayResults, { 
-       hideSearch: true, 
-       focusMode 
-     });
-   }, [displayResults, focusMode]);
-   ```
-
-4. Add UI toggle in the filter bar:
-   ```tsx
-   <div className="flex items-center gap-1.5">
-     <Switch 
-       checked={focusMode} 
-       onCheckedChange={setFocusMode}
-       className="scale-75"
-     />
-     <span className="text-[10px] text-muted-foreground">Focus Mode</span>
-   </div>
-   ```
-
-### Step 3: Show Filter Statistics
-
-Display how many items are being filtered out:
-
-```tsx
-{focusMode && displayResults.length !== filteredByFocusMode.length && (
-  <span className="text-[10px] text-amber-600">
-    {displayResults.length - filteredByFocusMode.length} hidden by Focus Mode
-  </span>
-)}
+```sql
+-- Find users with active Stripe subscriptions but free tier
+SELECT 
+  p.email,
+  p.user_id,
+  ur.subscription_tier,
+  w.stripe_subscription_id,
+  w.plan
+FROM profiles p
+JOIN user_roles ur ON p.user_id = ur.user_id
+JOIN workspace_members wm ON p.user_id = wm.user_id
+JOIN workspaces w ON wm.workspace_id = w.id
+WHERE ur.subscription_tier = 'free'
+  AND w.stripe_subscription_id IS NULL;
 ```
 
-### Step 4: Update FilterableItem Interface
+Then cross-reference with Stripe API to identify any other affected customers.
 
-Extend the interface to include the fields actually used by `ScanResultRow`:
+### Part 4: Consolidate Webhook Logic (Optional but Recommended)
 
-```typescript
-export interface FilterableItem {
-  // ... existing fields ...
-  
-  // ScanResultRow fields (from useRealtimeResults)
-  url?: string;
-  site?: string;
-}
-```
+Consider deprecating `billing/webhook` in favor of `stripe-webhook` which has the correct mappings, or create a shared `_shared/stripe-price-mapping.ts` file to ensure both use the same source of truth.
 
 ---
 
@@ -124,29 +111,21 @@ export interface FilterableItem {
 
 ### Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/lib/findingFilters.ts` | Add `url` and `site` to extraction functions, extend `FilterableItem` interface |
-| `src/components/scan/results-tabs/AccountsTab.tsx` | Import filter, add Focus Mode state + toggle, apply filtering |
-| `src/components/scan/results-tabs/accounts/AccountFilters.tsx` | Add Focus Mode toggle to the filter bar (optional: could be in AccountsTab instead) |
+| File | Change |
+|------|--------|
+| `supabase/functions/billing/webhook/index.ts` | Update `PRICE_TO_TIER_MAP` with current price IDs |
+| Database | Manual update for Kelly's user_roles and workspaces |
 
-### Expected Behavior After Fix
+### Database Tier Enum Values
 
-With Focus Mode **enabled** (default):
-- OP.GG regional lookup pages (Korea, Oceania, Russia, etc.) → **HIDDEN**
-- Tracker.gg, U.GG, and other gaming lookup sites → **HIDDEN**
-- Any URL matching `/search?`, `?q=`, `/summoners/`, `/players/` → **HIDDEN**
-- Low-confidence "Other" platform findings → **HIDDEN**
+The `subscription_tier` enum accepts: `free`, `basic`, `premium`, `family`, `enterprise`
 
-With Focus Mode **disabled**:
-- All results shown (current behavior)
+- Pro plans map to `premium`
+- Business plans map to `enterprise`
 
----
+### Validation After Fix
 
-## Validation
-
-After implementation, the scan for `LondonBob77` should:
-1. Show a Focus Mode toggle in the Accounts tab (default: ON)
-2. Hide all 10+ OP.GG regional duplicates when Focus Mode is ON
-3. Show count of hidden items ("12 hidden by Focus Mode")
-4. Reveal all items when Focus Mode is toggled OFF
+1. Kelly should see "Pro" tier in her account settings
+2. Workspace should show 100 scans/month limit
+3. Pro-tier features (Sherlock, HIBP, exports) should be unlocked
+4. Future webhook events should correctly update tiers
