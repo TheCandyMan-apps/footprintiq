@@ -234,6 +234,26 @@ export const PROVIDER_META: ProviderMeta[] = [
     ttlMs: 24 * 3600e3,
     description: 'Content reputation and threat scoring',
   },
+  // Brave Search - independent web index
+  {
+    id: 'brave_search',
+    title: 'Brave Web Index',
+    category: 'enrichment',
+    supports: ['username', 'email', 'domain', 'phone'],
+    cost: 'low',
+    ttlMs: 24 * 3600e3,
+    description: 'Independent web index verification for LENS corroboration',
+  },
+  {
+    id: 'brave_news',
+    title: 'Brave News Search',
+    category: 'enrichment',
+    supports: ['username', 'email', 'domain'],
+    cost: 'low',
+    policy: 'enterprise',
+    ttlMs: 12 * 3600e3,
+    description: 'News mentions and entity research',
+  },
 ];
 
 export function getProviderMeta(providerId: string): ProviderMeta | undefined {

@@ -121,6 +121,18 @@ export function useLensAnalysis(results: ScanResult[]): LensAnalysis {
         }
       }
 
+      // Brave Search web-index corroboration signal
+      // Check if this result has been verified by independent web index
+      const kind = (result as any).kind || '';
+      if (kind === 'web_index.hit') {
+        score += 12;
+        reasons.push('Profile verified in independent web index');
+      } else if (kind === 'web_index.result') {
+        // Individual search results get a smaller boost
+        score += 5;
+        reasons.push('Found in web search results');
+      }
+
       // Cap score at 0-100
       score = Math.max(0, Math.min(100, score));
       

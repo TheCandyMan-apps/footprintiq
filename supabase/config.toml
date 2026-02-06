@@ -99,3 +99,6 @@ verify_jwt = false
 
 [functions.lens-verify-preview]
 verify_jwt = true
+
+[functions.brave-search]
+verify_jwt = true

@@ -155,6 +155,12 @@ serve(async (req) => {
       case 'perplexity_osint':
         result = await callPerplexityOSINT(target, type, options);
         break;
+      case 'brave_search':
+        result = await callBraveSearch(target, type, 'web', options);
+        break;
+      case 'brave_news':
+        result = await callBraveSearch(target, type, 'news', options);
+        break;
       case 'abuseipdb':
         result = await callAbuseIPDB(target);
         break;
@@ -3305,4 +3311,172 @@ function normalizePerplexityFindings(content: string, citations: string[], targe
   });
 
   return findings;
+}
+
+// =================== Brave Search Provider ===================
+
+async function callBraveSearch(target: string, type: string, searchType: 'web' | 'news' = 'web', options: any = {}): Promise<{ findings: any[], citations?: string[] }> {
+  const BRAVE_API_KEY = Deno.env.get('BRAVE_SEARCH_API_KEY');
+  const now = new Date().toISOString();
+  
+  if (!BRAVE_API_KEY) {
+    console.log('[brave_search] API key not configured');
+    return {
+      findings: [{
+        provider: searchType === 'news' ? 'brave_news' : 'brave_search',
+        kind: 'provider.unconfigured',
+        severity: 'info' as const,
+        confidence: 1.0,
+        observedAt: now,
+        evidence: [
+          { key: 'message', value: 'Brave Search API key not configured' },
+          { key: 'config_required', value: 'BRAVE_SEARCH_API_KEY' }
+        ],
+        meta: { unconfigured: true }
+      }]
+    };
+  }
+
+  // Build search query based on target type
+  const queryBuilders: Record<string, string> = {
+    username: `"${target}" profile OR account OR user`,
+    email: `"${target}"`,
+    domain: `site:${target} OR "${target}"`,
+    phone: `"${target}" OR "${target.replace(/\D/g, '')}"`,
+  };
+  
+  const query = queryBuilders[type] || `"${target}"`;
+  const freshness = options.freshness || 'month';
+  const count = Math.min(options.count || 10, 20);
+  
+  console.log(`[brave_search] ${searchType} search for ${type}: "${target}"`);
+
+  try {
+    const endpoint = searchType === 'news'
+      ? 'https://api.search.brave.com/res/v1/news/search'
+      : 'https://api.search.brave.com/res/v1/web/search';
+
+    const url = new URL(endpoint);
+    url.searchParams.set('q', query);
+    url.searchParams.set('count', String(count));
+    url.searchParams.set('safesearch', 'moderate');
+    
+    // Map freshness
+    const freshnessMap: Record<string, string> = {
+      day: 'pd', week: 'pw', month: 'pm', year: 'py',
+    };
+    if (freshnessMap[freshness]) {
+      url.searchParams.set('freshness', freshnessMap[freshness]);
+    }
+
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'X-Subscription-Token': BRAVE_API_KEY,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[brave_search] API error ${response.status}:`, errorText.slice(0, 300));
+      return {
+        findings: [{
+          provider: searchType === 'news' ? 'brave_news' : 'brave_search',
+          kind: 'provider_error',
+          severity: 'warn' as const,
+          confidence: 0.5,
+          observedAt: now,
+          evidence: [
+            { key: 'error', value: `Brave API error: ${response.status}` },
+            { key: 'target', value: target }
+          ],
+          meta: { error: errorText.slice(0, 500) }
+        }]
+      };
+    }
+
+    const data = await response.json();
+    const results = searchType === 'news' 
+      ? (data.news?.results || [])
+      : (data.web?.results || []);
+
+    console.log(`[brave_search] Found ${results.length} results for "${target}"`);
+
+    // Normalize to UFM findings
+    const findings = results.slice(0, 10).map((result: any, index: number) => {
+      let domain = '';
+      try {
+        domain = result.source?.name || new URL(result.url).hostname.replace('www.', '');
+      } catch {
+        domain = 'unknown';
+      }
+
+      const titleLower = (result.title || '').toLowerCase();
+      const descLower = (result.description || '').toLowerCase();
+      const targetLower = target.toLowerCase();
+      const isDirectMatch = titleLower.includes(targetLower) || descLower.includes(targetLower);
+
+      return {
+        provider: searchType === 'news' ? 'brave_news' : 'brave_search',
+        kind: searchType === 'news' ? 'news_mention' : 'web_index.result',
+        severity: 'info' as const,
+        confidence: isDirectMatch ? 0.85 : 0.65,
+        observedAt: now,
+        evidence: [
+          { key: 'title', value: result.title || '' },
+          { key: 'url', value: result.url || '' },
+          { key: 'domain', value: domain },
+          { key: 'snippet', value: (result.description || '').slice(0, 300) },
+          { key: 'target', value: target },
+          { key: 'rank', value: String(index + 1) },
+        ].filter((e: any) => e.value),
+        meta: { ...result, searchTarget: target, searchType: type, directMatch: isDirectMatch }
+      };
+    });
+
+    // Add corroboration signal finding
+    const isIndexed = findings.length > 0;
+    const corroborationFinding = {
+      provider: searchType === 'news' ? 'brave_news' : 'brave_search',
+      kind: isIndexed ? 'web_index.hit' : 'web_index.miss',
+      severity: 'info' as const,
+      confidence: isIndexed ? 0.85 : 0.7,
+      observedAt: now,
+      evidence: [
+        { key: 'target', value: target },
+        { key: 'type', value: type },
+        { key: 'indexed', value: String(isIndexed) },
+        { key: 'result_count', value: String(findings.length) },
+      ],
+      meta: { searchType, freshness, resultCount: findings.length }
+    };
+
+    const citations = findings.slice(0, 5).map((f: any) => {
+      const urlEvidence = f.evidence?.find((e: any) => e.key === 'url');
+      return urlEvidence?.value || '';
+    }).filter(Boolean);
+
+    return {
+      findings: [corroborationFinding, ...findings],
+      citations
+    };
+
+  } catch (error: any) {
+    console.error('[brave_search] Error:', error);
+    return {
+      findings: [{
+        provider: searchType === 'news' ? 'brave_news' : 'brave_search',
+        kind: 'provider_error',
+        severity: 'warn' as const,
+        confidence: 0.5,
+        observedAt: now,
+        evidence: [
+          { key: 'error', value: error.message || 'Unknown error' },
+          { key: 'target', value: target }
+        ],
+        meta: { error: String(error) }
+      }]
+    };
+  }
 }
