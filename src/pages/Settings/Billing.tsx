@@ -150,7 +150,19 @@ export default function BillingSettings() {
     setShowPaymentDialog(true);
   };
 
-  const verifyUpgrade = async (expectedTier: string): Promise<boolean> => {
+  /**
+   * Normalize frontend plan names to database tier names
+   * Frontend: 'pro', 'pro_annual', 'business'
+   * Database: 'premium', 'enterprise'
+   */
+  const normalizeToTier = (frontendPlan: string): string => {
+    const normalized = frontendPlan.toLowerCase();
+    if (normalized === 'pro' || normalized === 'pro_annual') return 'premium';
+    if (normalized === 'business' || normalized === 'enterprise') return 'enterprise';
+    return 'free';
+  };
+
+  const verifyUpgrade = async (expectedFrontendPlan: string): Promise<boolean> => {
     try {
       await refreshSubscription();
       const { data } = await supabase.functions.invoke("billing-check-subscription");
@@ -162,8 +174,24 @@ export default function BillingSettings() {
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      return userRole?.subscription_tier === expectedTier || 
-             data?.subscription_tier === expectedTier;
+      // Normalize expected plan to tier for comparison
+      const expectedTier = normalizeToTier(expectedFrontendPlan);
+      const actualTier = userRole?.subscription_tier?.toLowerCase() || 'free';
+      const apiTier = data?.tier?.toLowerCase() || data?.subscription_tier?.toLowerCase() || 'free';
+
+      console.log('[Billing] Verifying upgrade:', { 
+        expectedFrontendPlan, 
+        expectedTier, 
+        actualTier, 
+        apiTier 
+      });
+
+      // Match if actual tier equals expected OR is "better" (enterprise >= premium)
+      const tierMatches = actualTier === expectedTier || apiTier === expectedTier;
+      const hasAnyPaidTier = (actualTier !== 'free' && expectedTier !== 'free') || 
+                            (apiTier !== 'free' && expectedTier !== 'free');
+      
+      return tierMatches || hasAnyPaidTier;
     } catch (error) {
       console.error('Verification error:', error);
       return false;

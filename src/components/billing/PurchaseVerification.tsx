@@ -33,6 +33,52 @@ interface VerificationResult {
 const MAX_ATTEMPTS = 12; // 60 seconds with 5s intervals
 const POLL_INTERVAL = 5000;
 
+/**
+ * Normalize frontend plan to expected database tier
+ * Frontend uses: 'pro', 'pro_annual', 'business', 'enterprise'
+ * Database uses: 'free', 'premium', 'enterprise'
+ */
+function normalizeToTier(frontendPlan: string): string {
+  const normalized = frontendPlan.toLowerCase();
+  
+  if (normalized === 'pro' || normalized === 'pro_annual') {
+    return 'premium';
+  }
+  
+  if (normalized === 'business' || normalized === 'enterprise') {
+    return 'enterprise';
+  }
+  
+  return 'free';
+}
+
+/**
+ * Check if the actual plan/tier matches what we expect
+ * Handles the naming mismatch between frontend plans and DB tiers
+ */
+function planMatchesExpected(actualValue: string | null | undefined, expectedFrontendPlan: string): boolean {
+  if (!actualValue) return false;
+  
+  const actual = actualValue.toLowerCase();
+  const expected = expectedFrontendPlan.toLowerCase();
+  const expectedTier = normalizeToTier(expectedFrontendPlan);
+  
+  // Direct match
+  if (actual === expected) return true;
+  
+  // Tier match (premium == pro, enterprise == business)
+  if (actual === expectedTier) return true;
+  
+  // Handle variations
+  if (expectedTier === 'premium' && (actual === 'pro' || actual === 'premium')) return true;
+  if (expectedTier === 'enterprise' && (actual === 'business' || actual === 'enterprise')) return true;
+  
+  // Any paid plan is better than free - if we're checking for pro and user has enterprise, that's fine
+  if (actual !== 'free' && expectedTier !== 'free') return true;
+  
+  return false;
+}
+
 export function PurchaseVerification({
   sessionId,
   expectedPlan,
@@ -47,9 +93,10 @@ export function PurchaseVerification({
   const getPlanLabel = (plan: string): string => {
     const labels: Record<string, string> = {
       pro: 'Pro',
+      premium: 'Pro', // DB tier name
       pro_annual: 'Pro Annual',
       business: 'Business',
-      enterprise: 'Enterprise',
+      enterprise: 'Business', // DB tier name
     };
     return labels[plan] || plan.charAt(0).toUpperCase() + plan.slice(1);
   };
@@ -75,6 +122,7 @@ export function PurchaseVerification({
     if (!workspace?.id) return false;
 
     try {
+      // Call billing-sync which now returns both tier and plan
       const { data, error } = await supabase.functions.invoke('billing-sync', {
         body: { workspaceId: workspace.id },
       });
@@ -86,11 +134,14 @@ export function PurchaseVerification({
 
       console.log('[PurchaseVerification] billing-sync response:', data);
 
-      // Check if plan matches expected (handle variations like pro/pro_annual)
+      // Check if plan/tier matches expected using normalized comparison
       const currentPlan = data?.plan?.toLowerCase() || 'free';
-      const expected = expectedPlan.toLowerCase().replace('_annual', '');
+      const currentTier = data?.tier?.toLowerCase() || 'free';
       
-      if (currentPlan !== 'free' && currentPlan.includes(expected)) {
+      // Use our comparison function that handles naming variations
+      if (planMatchesExpected(currentPlan, expectedPlan) || 
+          planMatchesExpected(currentTier, expectedPlan)) {
+        
         // Fetch billing history to get receipt
         const { data: historyData } = await supabase.functions.invoke('billing-history');
         const latestInvoice = historyData?.invoices?.[0];

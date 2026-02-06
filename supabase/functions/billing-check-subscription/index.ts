@@ -1,13 +1,14 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import Stripe from 'https://esm.sh/stripe@18.5.0';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.75.0';
+import { resolvePriceId, tierToFrontendPlan } from '../_shared/stripePlans.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const logStep = (step: string, details?: any) => {
+const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
   console.log(`[BILLING-CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
@@ -46,6 +47,7 @@ serve(async (req) => {
         JSON.stringify({ 
           subscribed: false, 
           tier: 'free',
+          subscription_tier: 'free',
           status: 'inactive'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -67,6 +69,7 @@ serve(async (req) => {
         JSON.stringify({ 
           subscribed: false, 
           tier: 'free',
+          subscription_tier: 'free',
           status: 'inactive'
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -76,25 +79,26 @@ serve(async (req) => {
     const subscription = subscriptions.data[0];
     const priceId = subscription.items.data[0].price.id;
     
-    // Map price IDs to tiers
-    const tierMap: Record<string, string> = {
-      'price_1ShdnEA3ptI9drLWLFG8qPyk': 'pro',
-      'price_1ShdxJA3ptI9drLWjndMjptw': 'business',
-    };
-
-    const tier = tierMap[priceId] || 'free';
+    // Use canonical mapping
+    const resolution = resolvePriceId(priceId);
     const subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
 
     logStep('Active subscription found', { 
       subscriptionId: subscription.id, 
-      tier,
+      priceId,
+      tier: resolution.tier,
+      plan: resolution.plan,
       endDate: subscriptionEnd 
     });
 
+    // Return both tier (DB value) and plan (frontend value) for compatibility
     return new Response(
       JSON.stringify({
         subscribed: true,
-        tier,
+        tier: resolution.tier,                    // DB tier: premium, enterprise
+        subscription_tier: resolution.tier,       // Alias for backwards compat
+        plan: resolution.plan,                    // Workspace plan: pro, business
+        frontend_plan: tierToFrontendPlan(resolution.tier), // For UI display
         status: subscription.status,
         current_period_end: subscriptionEnd,
         cancel_at_period_end: subscription.cancel_at_period_end,
