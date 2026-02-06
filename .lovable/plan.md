@@ -1,183 +1,311 @@
 
-
-# Brave Search API Integration for FootprintIQ
+# Viral Growth & SEO Optimization Implementation Plan
 
 ## Overview
 
-Integrate the Brave Search API as a new enrichment provider to complement existing intelligence sources (Perplexity, Google CSE) and enhance LENS confidence scoring through independent web-index corroboration.
+This plan implements all four recommendations to increase FootprintIQ's conversion and organic growth potential:
+
+1. **Hero Input Field** — Start scans directly from homepage (reduce friction)
+2. **Visual Share Cards** — Dynamic OG images for social sharing (increase virality)
+3. **Niche Landing Pages** — Targeted SEO pages for crypto, job seekers, developers (capture intent)
+4. **Surface Referral System** — Increase visibility of existing referral program (drive organic growth)
 
 ---
 
-## Rationale
+## 1. Hero Input Field (Friction Reduction)
 
-### Why Brave Search?
+### Current State
+- Hero component (`src/components/Hero.tsx`) has a "Run a Free Scan" button that links to `/scan`
+- UnifiedScanForm (`src/components/scan/UnifiedScanForm.tsx`) has the actual input field
+- User journey: Homepage → Click CTA → Navigate to /scan → Enter identifier → Start scan
 
-| Factor | Benefit for FootprintIQ |
-|--------|------------------------|
-| **Independent Index** | 30B+ page index separate from Google/Bing — reduces single-source bias |
-| **Cost-Effective** | 2,000 free queries/month, then $0.003–$0.009/query (vs Perplexity at higher per-query cost) |
-| **Privacy-First** | Aligns with FootprintIQ's ethical OSINT positioning |
-| **Rich Metadata** | Returns timestamps, descriptions, language, freshness — valuable for confidence signals |
-| **News API** | Separate endpoint for news mentions (useful for entity research) |
+### Proposed Change
+Add a lightweight input field directly in the Hero that allows users to type their identifier and immediately redirect to `/scan?q={identifier}` with the value pre-filled.
 
-### Integration Points
+### Files to Modify
 
-1. **Profile Enrichment** — Verify if discovered usernames/profiles are indexed by major search
-2. **LENS Confidence Boost** — Web-indexed profiles get +10-15% confidence bump
-3. **False Positive Reduction** — Filter template/placeholder pages that aren't web-indexed
-4. **Citation Sources** — Provide users with additional context links
+| File | Action |
+|------|--------|
+| `src/components/Hero.tsx` | Add inline input field with auto-detection badge |
+| `src/components/scan/UnifiedScanForm.tsx` | Accept URL query param `?q=` to pre-fill input |
+| `src/pages/Index.tsx` | Update Hero integration |
 
----
+### Implementation Details
 
-## Technical Implementation
-
-### 1. New Edge Function: `brave-search`
-
-Create `supabase/functions/brave-search/index.ts`:
-
+**Hero.tsx Changes:**
 ```text
-┌─────────────────────────────────────────────────────────┐
-│                    brave-search                         │
-├─────────────────────────────────────────────────────────┤
-│ Endpoints:                                              │
-│   • Web Search (primary)                                │
-│   • News Search (entity research)                       │
-│                                                         │
-│ Features:                                               │
-│   • Rate limiting (10 req/sec)                          │
-│   • Response caching (24h TTL)                          │
-│   • Freshness filtering (week/month/year)               │
-│   • Country/language targeting                          │
-│   • Safe search controls                                │
-│                                                         │
-│ Output:                                                 │
-│   UFM-normalized findings with:                         │
-│   - kind: "web_index.hit" | "web_index.miss"            │
-│   - confidence based on result quality                  │
-│   - citations array                                     │
-└─────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│  See What the Internet Knows About You                         │
+│  ─────────────────────────────────────────────────────────────  │
+│  [Username, email, or phone...        ] [Check Now →]           │
+│  ┌──────────────────────────────────────────────────┐           │
+│  │ 📧 Email detected                                │  (dynamic)│
+│  └──────────────────────────────────────────────────┘           │
+│                                                                 │
+│  ✓ Public data only  ✓ No tracking  ✓ User-initiated          │
+└────────────────────────────────────────────────────────────────┘
 ```
 
-### 2. Provider Registry Updates
+- Input field with live type detection (reuse `detectType()` from UnifiedScanForm)
+- On submit: `navigate(\`/scan?q=\${encodeURIComponent(identifier)}\`)`
+- Keep secondary "Learn How It Works" button
 
-Add to `supabase/functions/_shared/providerRegistry.ts`:
-- `brave_search` — Web search enrichment
-- `brave_news` — News mentions (entity/domain research)
+**UnifiedScanForm.tsx Changes:**
+- On mount, check `URLSearchParams` for `q` param
+- If present, set `identifier` state and trigger type detection
+- User can immediately submit or modify
 
-Add to `src/providers/registry.meta.ts`:
-```typescript
-{
-  id: 'brave_search',
-  title: 'Brave Web Index',
-  category: 'enrichment',
-  supports: ['username', 'email', 'domain', 'phone'],
-  cost: 'low',
-  ttlMs: 24 * 3600e3,
-  description: 'Independent web index verification',
-}
-```
-
-### 3. Provider-Proxy Integration
-
-Add `callBraveSearch()` function to `provider-proxy/index.ts`:
-
-```typescript
-async function callBraveSearch(target: string, type: string): Promise<any> {
-  const BRAVE_API_KEY = Deno.env.get('BRAVE_SEARCH_API_KEY');
-  // Build query based on type (username, email, domain)
-  // Call https://api.search.brave.com/res/v1/web/search
-  // Normalize to UFM findings
-}
-```
-
-### 4. LENS Integration
-
-Update `useLensAnalysis.ts` to include Brave corroboration signal:
-
-```typescript
-// New scoring factor
-if (braveIndexed) {
-  score += 12;
-  reasons.push('Profile verified in independent web index');
-}
-```
-
-Add new metadata field to ForensicModal confidence breakdown:
-- "Web index corroboration" — shows Brave verification status
-
-### 5. Scan Pipeline Integration
-
-**Option A: Automatic Enrichment (Recommended)**
-- Add to email/username scan flows as a low-cost verification step
-- Run after primary providers return results
-- Only for profiles marked as "found"
-
-**Option B: On-Demand Research**
-- Add "Verify with Web Search" button on profile cards
-- Similar to existing "LENS Verify" button
-- Deducts 1 credit per lookup
+### SEO Keyword Integration
+- H1 remains unchanged (already optimized)
+- Input placeholder: "Enter username, email, or phone number"
+- Aria-label: "digital footprint scanner input"
 
 ---
 
-## File Changes
+## 2. Visual Share Cards (Dynamic OG Images)
+
+### Current State
+- `ExposureScoreShareCard.tsx` uses Web Share API with text-only content
+- No visual OG image generated
+- Share text is generic and doesn't include personalized score
+
+### Proposed Change
+Create dynamic OG images that visually represent the exposure score without revealing PII.
+
+### Files to Create/Modify
 
 | File | Action | Description |
 |------|--------|-------------|
-| `supabase/functions/brave-search/index.ts` | Create | New edge function for Brave API calls |
-| `supabase/functions/_shared/providerRegistry.ts` | Update | Add `brave_search` and `brave_news` |
-| `supabase/functions/provider-proxy/index.ts` | Update | Add `callBraveSearch()` handler |
-| `src/providers/registry.meta.ts` | Update | Add provider metadata for UI |
-| `src/hooks/useLensAnalysis.ts` | Update | Add web-index corroboration scoring |
-| `src/components/forensic/ForensicModal.tsx` | Update | Add corroboration signal to breakdown |
-| `supabase/config.toml` | Update | Add function config |
+| `supabase/functions/og-share-image/index.ts` | Create | Edge function to generate share images |
+| `src/components/exposure/ExposureScoreShareCard.tsx` | Update | Add "Generate Share Card" option |
+| `src/pages/share/[scanId].tsx` | Create | Public share page with OG meta |
+
+### Implementation Details
+
+**Edge Function: og-share-image**
+- Input: `{ scanId, score, level }` (no PII)
+- Output: SVG or Canvas-rendered image (1200x630)
+- Visual design:
+  - FootprintIQ branding
+  - Large score number in circle (72/100)
+  - Level badge (Low/Moderate/High)
+  - Blurred background pattern
+  - "Check yours at footprintiq.app" CTA
+
+**Share Page: /share/[scanId]**
+- Public route (no auth required)
+- OG meta tags point to edge function image
+- Page content: "Someone shared their exposure score"
+- CTA: "Run your own free scan"
+
+**ExposureScoreShareCard.tsx Update:**
+- Add "Copy Share Link" option alongside native share
+- Share URL: `https://footprintiq.app/share/{scanId}`
+
+### Share Message Template
+```text
+"I just checked my digital footprint on FootprintIQ.
+My exposure score: 72/100 (Moderate)
+Check yours for free: footprintiq.app/share/abc123"
+```
 
 ---
 
-## API Key Setup
+## 3. Niche Landing Pages (SEO Capture)
 
-**Secret Required:** `BRAVE_SEARCH_API_KEY`
+### Current State
+- Generic homepage targets broad audience
+- No dedicated pages for specific use cases
+- Missing long-tail keyword opportunities
 
-- Obtain from: https://api.search.brave.com/
-- Free tier: 2,000 queries/month
-- Pro tier: Pay-as-you-go ($0.003–$0.009 per query)
+### Proposed Pages
+
+| Route | Target Audience | Primary Keywords |
+|-------|-----------------|------------------|
+| `/for/crypto` | Crypto users | SIM swap protection, wallet security, crypto OPSEC |
+| `/for/job-seekers` | Job seekers | employer background check, digital reputation, LinkedIn exposure |
+| `/for/developers` | Developers | GitHub exposure, API key leaks, code history |
+| `/for/executives` | Executives | executive protection, reputation management |
+
+### Files to Create
+
+| File | Description |
+|------|-------------|
+| `src/pages/for/Crypto.tsx` | Crypto security landing page |
+| `src/pages/for/JobSeekers.tsx` | Job seeker landing page |
+| `src/pages/for/Developers.tsx` | Developer-focused landing page |
+| `src/pages/for/Executives.tsx` | Executive protection landing page |
+| `src/App.tsx` | Add routes |
+
+### Page Template Structure
+
+Each page follows SEO-optimized structure:
+
+```text
+1. Hero
+   - Audience-specific headline
+   - Keyword-rich subheading
+   - Hero input field (reused component)
+
+2. Pain Points Section
+   - 3-4 audience-specific risks
+   - Evidence/statistics where available
+
+3. What We Scan Section
+   - Audience-relevant sources
+   - Platform examples (GitHub for devs, LinkedIn for job seekers)
+
+4. How It Helps
+   - Use case scenarios
+   - Before/after framing
+
+5. CTA
+   - "Run Your Free Scan"
+
+6. FAQ
+   - Audience-specific questions
+   - Schema.org FAQPage markup
+```
+
+### SEO Implementation
+
+**Meta Tags (per page):**
+```typescript
+<SEO
+  title="Crypto Security Scan — Protect Against SIM Swaps & Doxxing | FootprintIQ"
+  description="Free OSINT scan for crypto users. Check if your phone, email, or wallet-linked identifiers are exposed before hackers find them."
+  canonical="https://footprintiq.app/for/crypto"
+/>
+```
+
+**Schema.org Markup:**
+- WebPage type
+- BreadcrumbList
+- FAQPage for questions
 
 ---
 
-## Cost Analysis
+## 4. Surface Referral System
 
-| Use Case | Queries/Scan | Est. Monthly Cost (10k scans) |
-|----------|--------------|-------------------------------|
-| Auto-enrich found profiles | ~3-5 per scan | ~$100-150 |
-| On-demand only | ~0.5 per scan | ~$15-25 |
-| LENS verification | 1 per verify | Usage-based |
+### Current State
+- Full referral system exists at `/referrals`
+- `ReferralBanner.tsx` and `ReferralCodeInput.tsx` exist
+- Low visibility in user journey
 
-**Recommendation:** Start with on-demand to control costs, then evaluate auto-enrich based on user value.
+### Proposed Changes
 
----
+| Location | Change |
+|----------|--------|
+| Post-scan results page | Add referral prompt after upgrade modal |
+| Dashboard sidebar | Add referral card to PowerFeaturesCard |
+| Share flow | Include referral link option in share actions |
+| Email flows | Add referral mention to welcome email |
 
-## Tier Gating
+### Files to Modify
 
-| Tier | Access |
+| File | Action |
 |------|--------|
-| Free | None (or 3 lookups/month as preview) |
-| Pro | Unlimited within scan budget |
-| Business | Priority + news search access |
+| `src/components/scan/FreeResultsPage.tsx` | Add ReferralPrompt after scan completes |
+| `src/components/scan/AdvancedResultsPage.tsx` | Add ReferralPrompt in toolbar area |
+| `src/components/exposure/ExposureScoreShareCard.tsx` | Add "Share with referral link" option |
+| `src/components/dashboard/PowerFeaturesCard.tsx` | Already has referral card - ensure visibility |
+
+### New Component: ReferralPrompt
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  💰 Know someone who should check their exposure?           │
+│                                                             │
+│  Share your referral link and earn 100 credits when they   │
+│  complete their first scan.                                 │
+│                                                             │
+│  [Copy Referral Link]  [Share via Email]  [Share on X]     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Referral Link Integration in Share
+
+Current share flow:
+- Native share / clipboard copy
+
+Updated share flow:
+- Native share / clipboard copy
+- **New:** "Share with your referral code" option
+- Appends `?ref={code}` to share URL
 
 ---
 
-## Success Metrics
+## File Changes Summary
 
-1. **Confidence Improvement** — Track LENS scores before/after Brave integration
-2. **False Positive Reduction** — Measure template page filtering rate
-3. **User Engagement** — Monitor usage of web verification feature
-4. **Cost Efficiency** — Compare Brave vs Perplexity cost per enrichment
+### New Files (7)
+
+| File | Purpose |
+|------|---------|
+| `supabase/functions/og-share-image/index.ts` | Dynamic OG image generation |
+| `src/pages/share/ScanShare.tsx` | Public share page |
+| `src/pages/for/Crypto.tsx` | Niche landing page |
+| `src/pages/for/JobSeekers.tsx` | Niche landing page |
+| `src/pages/for/Developers.tsx` | Niche landing page |
+| `src/pages/for/Executives.tsx` | Niche landing page |
+| `src/components/ReferralPrompt.tsx` | Inline referral prompt |
+
+### Modified Files (7)
+
+| File | Changes |
+|------|---------|
+| `src/components/Hero.tsx` | Add inline input field with type detection |
+| `src/components/scan/UnifiedScanForm.tsx` | Accept URL query param pre-fill |
+| `src/components/exposure/ExposureScoreShareCard.tsx` | Add share link + referral options |
+| `src/components/scan/FreeResultsPage.tsx` | Add ReferralPrompt after results |
+| `src/components/scan/AdvancedResultsPage.tsx` | Add ReferralPrompt in results |
+| `src/App.tsx` | Add new routes |
+| `supabase/config.toml` | Add og-share-image function |
 
 ---
 
 ## Implementation Order
 
-1. **Phase 1** — Edge function + provider-proxy integration
-2. **Phase 2** — LENS scoring integration
-3. **Phase 3** — UI components (verify button, ForensicModal update)
-4. **Phase 4** — Auto-enrich in scan pipeline (optional)
+### Phase 1: Hero Input Field (Highest Impact)
+1. Update Hero.tsx with inline input
+2. Update UnifiedScanForm.tsx to accept query params
+3. Test flow end-to-end
 
+### Phase 2: Niche Landing Pages
+1. Create page template
+2. Build Crypto page (highest-value niche)
+3. Build remaining 3 pages
+4. Add routes and verify SEO
+
+### Phase 3: Visual Share Cards
+1. Create og-share-image edge function
+2. Create public share page
+3. Update ExposureScoreShareCard
+4. Test sharing on social platforms
+
+### Phase 4: Referral Visibility
+1. Create ReferralPrompt component
+2. Integrate into results pages
+3. Add referral option to share flow
+
+---
+
+## Ethical Guardrails Maintained
+
+All changes comply with FootprintIQ's ethical positioning:
+
+- **No urgency language** — CTAs use "Check" not "Protect Now!"
+- **No fear-based messaging** — Niche pages focus on awareness, not threats
+- **No live activity feeds** — Rejected from strategy (creates false urgency)
+- **Neutral share text** — "My exposure score" not "I'm at risk!"
+- **No PII in share cards** — Only score and level, never identifiers
+
+---
+
+## Success Metrics
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| Homepage → Scan conversion | +25% | Analytics funnel |
+| Social share rate | +40% | Share click events |
+| Organic traffic (niche pages) | +15% in 90 days | GSC impressions |
+| Referral program usage | +50% | referral_codes table |
