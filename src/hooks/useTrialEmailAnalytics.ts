@@ -48,23 +48,23 @@ export function useTrialEmailAnalytics(dateRange: { start: Date; end: Date } | n
       const startDate = dateRange?.start || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const endDate = dateRange?.end || new Date();
 
-      // Fetch trial metrics from workspaces
+      // Fetch trial metrics from workspaces (with graceful RLS error handling)
       const { data: workspaces, error: workspacesError } = await supabase
         .from('workspaces')
         .select('trial_status, trial_scans_used, trial_started_at')
         .not('trial_started_at', 'is', null);
 
+      // Gracefully handle RLS errors - continue with empty data instead of throwing
       if (workspacesError) {
-        console.error('Failed to fetch trial metrics:', workspacesError);
-        throw workspacesError;
+        console.warn('Admin trial metrics workspace query failed (RLS?):', workspacesError);
       }
 
       // Filter by date range if trial_started_at is within range
-      const filteredWorkspaces = workspaces?.filter(w => {
+      const filteredWorkspaces = (workspaces || []).filter(w => {
         if (!w.trial_started_at) return false;
         const trialStart = new Date(w.trial_started_at);
         return trialStart >= startDate && trialStart <= endDate;
-      }) || [];
+      });
 
       const totalTrialsStarted = filteredWorkspaces.length;
       const activeTrials = filteredWorkspaces.filter(w => w.trial_status === 'active').length;
@@ -79,16 +79,16 @@ export function useTrialEmailAnalytics(dateRange: { start: Date; end: Date } | n
       const totalScans = filteredWorkspaces.reduce((sum, w) => sum + (w.trial_scans_used || 0), 0);
       const avgScansUsed = totalTrialsStarted > 0 ? totalScans / totalTrialsStarted : 0;
 
-      // Fetch email metrics
+      // Fetch email metrics (with graceful RLS error handling)
       const { data: emails, error: emailsError } = await supabase
         .from('email_notifications')
         .select('type, sent_at, delivered_at, opened_at, clicked_at, bounced_at')
         .gte('sent_at', startDate.toISOString())
         .lte('sent_at', endDate.toISOString());
 
+      // Gracefully handle RLS errors - continue with empty data instead of throwing
       if (emailsError) {
-        console.error('Failed to fetch email metrics:', emailsError);
-        throw emailsError;
+        console.warn('Admin email metrics query failed (RLS?):', emailsError);
       }
 
       // Calculate overall email metrics
