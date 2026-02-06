@@ -1,311 +1,235 @@
 
-# Viral Growth & SEO Optimization Implementation Plan
+# SEMrush Recommendations Implementation Plan
 
 ## Overview
 
-This plan implements all four recommendations to increase FootprintIQ's conversion and organic growth potential:
-
-1. **Hero Input Field** — Start scans directly from homepage (reduce friction)
-2. **Visual Share Cards** — Dynamic OG images for social sharing (increase virality)
-3. **Niche Landing Pages** — Targeted SEO pages for crypto, job seekers, developers (capture intent)
-4. **Surface Referral System** — Increase visibility of existing referral program (drive organic growth)
+This plan addresses all SEMrush audit findings and competitor intelligence to improve FootprintIQ's organic search performance.
 
 ---
 
-## 1. Hero Input Field (Friction Reduction)
+## Issues Identified
 
-### Current State
-- Hero component (`src/components/Hero.tsx`) has a "Run a Free Scan" button that links to `/scan`
-- UnifiedScanForm (`src/components/scan/UnifiedScanForm.tsx`) has the actual input field
-- User journey: Homepage → Click CTA → Navigate to /scan → Enter identifier → Start scan
+### 1. Technical Issues
 
-### Proposed Change
-Add a lightweight input field directly in the Hero that allows users to type their identifier and immediately redirect to `/scan?q={identifier}` with the value pre-filled.
+| Issue | Severity | Root Cause |
+|-------|----------|------------|
+| **Incorrect pages in sitemap.xml** | High | New pages (`/for/crypto`, `/for/job-seekers`, `/for/developers`, `/for/executives`, `/share/:scanId`) are in routes but missing from sitemap |
+| **Low word count** | Medium | Niche landing pages (~300-400 words) fall below 600-word SEO threshold |
+| **Low text-to-HTML ratio** | Medium | Component-heavy pages with minimal prose content |
 
-### Files to Modify
+### 2. Keyword Opportunities (Not Currently Targeted)
 
-| File | Action |
-|------|--------|
-| `src/components/Hero.tsx` | Add inline input field with auto-detection badge |
-| `src/components/scan/UnifiedScanForm.tsx` | Accept URL query param `?q=` to pre-fill input |
-| `src/pages/Index.tsx` | Update Hero integration |
+| Keyword | Volume | Current Coverage |
+|---------|--------|------------------|
+| "free user name search" | 70 | Partial (blog only) |
+| "search username" | 480 | Partial (/usernames targets "username search") |
+| "free social media username search" | 720 | Good (/usernames page targets this) |
 
-### Implementation Details
+### 3. Competitor Intelligence
 
-**Hero.tsx Changes:**
-```text
-┌────────────────────────────────────────────────────────────────┐
-│  See What the Internet Knows About You                         │
-│  ─────────────────────────────────────────────────────────────  │
-│  [Username, email, or phone...        ] [Check Now →]           │
-│  ┌──────────────────────────────────────────────────┐           │
-│  │ 📧 Email detected                                │  (dynamic)│
-│  └──────────────────────────────────────────────────┘           │
-│                                                                 │
-│  ✓ Public data only  ✓ No tracking  ✓ User-initiated          │
-└────────────────────────────────────────────────────────────────┘
-```
-
-- Input field with live type detection (reuse `detectType()` from UnifiedScanForm)
-- On submit: `navigate(\`/scan?q=\${encodeURIComponent(identifier)}\`)`
-- Keep secondary "Learn How It Works" button
-
-**UnifiedScanForm.tsx Changes:**
-- On mount, check `URLSearchParams` for `q` param
-- If present, set `identifier` state and trigger type detection
-- User can immediately submit or modify
-
-### SEO Keyword Integration
-- H1 remains unchanged (already optimized)
-- Input placeholder: "Enter username, email, or phone number"
-- Aria-label: "digital footprint scanner input"
+| Competitor | Insight |
+|------------|---------|
+| **user-searcher.com** | `/tiktok-viewer` page gaining organic traffic — indicates demand for platform-specific tools |
+| **Backlink gaps** | Missing links from yahoo.com, medium.com, gitbook.io |
 
 ---
 
-## 2. Visual Share Cards (Dynamic OG Images)
+## Implementation Plan
 
-### Current State
-- `ExposureScoreShareCard.tsx` uses Web Share API with text-only content
-- No visual OG image generated
-- Share text is generic and doesn't include personalized score
+### Phase 1: Fix Sitemap (Critical)
 
-### Proposed Change
-Create dynamic OG images that visually represent the exposure score without revealing PII.
+**File:** `public/sitemap.xml`
 
-### Files to Create/Modify
+Add missing URLs (insert after AI Hub section, before Legal):
 
-| File | Action | Description |
-|------|--------|-------------|
-| `supabase/functions/og-share-image/index.ts` | Create | Edge function to generate share images |
-| `src/components/exposure/ExposureScoreShareCard.tsx` | Update | Add "Generate Share Card" option |
-| `src/pages/share/[scanId].tsx` | Create | Public share page with OG meta |
-
-### Implementation Details
-
-**Edge Function: og-share-image**
-- Input: `{ scanId, score, level }` (no PII)
-- Output: SVG or Canvas-rendered image (1200x630)
-- Visual design:
-  - FootprintIQ branding
-  - Large score number in circle (72/100)
-  - Level badge (Low/Moderate/High)
-  - Blurred background pattern
-  - "Check yours at footprintiq.app" CTA
-
-**Share Page: /share/[scanId]**
-- Public route (no auth required)
-- OG meta tags point to edge function image
-- Page content: "Someone shared their exposure score"
-- CTA: "Run your own free scan"
-
-**ExposureScoreShareCard.tsx Update:**
-- Add "Copy Share Link" option alongside native share
-- Share URL: `https://footprintiq.app/share/{scanId}`
-
-### Share Message Template
-```text
-"I just checked my digital footprint on FootprintIQ.
-My exposure score: 72/100 (Moderate)
-Check yours for free: footprintiq.app/share/abc123"
+```xml
+<!-- Niche Landing Pages -->
+<url>
+  <loc>https://footprintiq.app/for/crypto</loc>
+  <lastmod>2026-02-06</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.8</priority>
+</url>
+<url>
+  <loc>https://footprintiq.app/for/job-seekers</loc>
+  <lastmod>2026-02-06</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.8</priority>
+</url>
+<url>
+  <loc>https://footprintiq.app/for/developers</loc>
+  <lastmod>2026-02-06</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.8</priority>
+</url>
+<url>
+  <loc>https://footprintiq.app/for/executives</loc>
+  <lastmod>2026-02-06</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.8</priority>
+</url>
 ```
 
 ---
 
-## 3. Niche Landing Pages (SEO Capture)
+### Phase 2: Expand Niche Landing Page Content (Word Count Fix)
 
-### Current State
-- Generic homepage targets broad audience
-- No dedicated pages for specific use cases
-- Missing long-tail keyword opportunities
+Each `/for/` page currently has ~300 words. Expand to 600+ words by adding:
 
-### Proposed Pages
+**New sections to add to each niche page:**
 
-| Route | Target Audience | Primary Keywords |
-|-------|-----------------|------------------|
-| `/for/crypto` | Crypto users | SIM swap protection, wallet security, crypto OPSEC |
-| `/for/job-seekers` | Job seekers | employer background check, digital reputation, LinkedIn exposure |
-| `/for/developers` | Developers | GitHub exposure, API key leaks, code history |
-| `/for/executives` | Executives | executive protection, reputation management |
+1. **"Why This Matters" section** — 150-200 words explaining audience-specific risks with statistics
+2. **"How It Works" section** — 100-150 words on the scan process
+3. **Extended FAQ** — Add 2-3 more questions (currently 3, expand to 5-6)
+4. **"What You'll Learn" section** — Bullet list with narrative context
 
-### Files to Create
+**Example expansion for `/for/crypto`:**
 
-| File | Description |
-|------|-------------|
-| `src/pages/for/Crypto.tsx` | Crypto security landing page |
-| `src/pages/for/JobSeekers.tsx` | Job seeker landing page |
-| `src/pages/for/Developers.tsx` | Developer-focused landing page |
-| `src/pages/for/Executives.tsx` | Executive protection landing page |
-| `src/App.tsx` | Add routes |
+Current word count: ~380 words
+Target word count: 700+ words
 
-### Page Template Structure
-
-Each page follows SEO-optimized structure:
-
-```text
-1. Hero
-   - Audience-specific headline
-   - Keyword-rich subheading
-   - Hero input field (reused component)
-
-2. Pain Points Section
-   - 3-4 audience-specific risks
-   - Evidence/statistics where available
-
-3. What We Scan Section
-   - Audience-relevant sources
-   - Platform examples (GitHub for devs, LinkedIn for job seekers)
-
-4. How It Helps
-   - Use case scenarios
-   - Before/after framing
-
-5. CTA
-   - "Run Your Free Scan"
-
-6. FAQ
-   - Audience-specific questions
-   - Schema.org FAQPage markup
-```
-
-### SEO Implementation
-
-**Meta Tags (per page):**
-```typescript
-<SEO
-  title="Crypto Security Scan — Protect Against SIM Swaps & Doxxing | FootprintIQ"
-  description="Free OSINT scan for crypto users. Check if your phone, email, or wallet-linked identifiers are exposed before hackers find them."
-  canonical="https://footprintiq.app/for/crypto"
-/>
-```
-
-**Schema.org Markup:**
-- WebPage type
-- BreadcrumbList
-- FAQPage for questions
+Add:
+- Statistics about SIM swap attacks (cite FBI IC3 data)
+- Step-by-step "How to use FootprintIQ for crypto security"
+- 3 additional FAQs about wallet security, exchange exposure, phone number risks
+- "Real-world scenarios" section
 
 ---
 
-## 4. Surface Referral System
+### Phase 3: Keyword Optimization
 
-### Current State
-- Full referral system exists at `/referrals`
-- `ReferralBanner.tsx` and `ReferralCodeInput.tsx` exist
-- Low visibility in user journey
+#### 3a. Create dedicated "Search Username" landing page
 
-### Proposed Changes
+**New file:** `src/pages/SearchUsername.tsx`
 
-| Location | Change |
-|----------|--------|
-| Post-scan results page | Add referral prompt after upgrade modal |
-| Dashboard sidebar | Add referral card to PowerFeaturesCard |
-| Share flow | Include referral link option in share actions |
-| Email flows | Add referral mention to welcome email |
+Target keywords:
+- "search username" (480/mo)
+- "free user name search" (70/mo)
+- "username search free" (variation)
 
-### Files to Modify
+Structure:
+- H1: "Search Any Username — Free Username Lookup Tool"
+- H2: "How to Search for a Username Online"
+- H2: "What Our Free Username Search Reveals"
+- H2: "Why Search Usernames?"
+- FAQ section with Schema.org markup
+- HeroInputField component for direct scanning
 
-| File | Action |
-|------|--------|
-| `src/components/scan/FreeResultsPage.tsx` | Add ReferralPrompt after scan completes |
-| `src/components/scan/AdvancedResultsPage.tsx` | Add ReferralPrompt in toolbar area |
-| `src/components/exposure/ExposureScoreShareCard.tsx` | Add "Share with referral link" option |
-| `src/components/dashboard/PowerFeaturesCard.tsx` | Already has referral card - ensure visibility |
+Route: `/search-username` (add to App.tsx)
 
-### New Component: ReferralPrompt
+#### 3b. Update existing UsernamePage.tsx
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  💰 Know someone who should check their exposure?           │
-│                                                             │
-│  Share your referral link and earn 100 credits when they   │
-│  complete their first scan.                                 │
-│                                                             │
-│  [Copy Referral Link]  [Share via Email]  [Share on X]     │
-└─────────────────────────────────────────────────────────────┘
-```
+Enhance secondary keyword targeting:
+- Add more natural mentions of "search username" variation
+- Include "free user name search" in FAQ section
+- Add internal links to new `/search-username` page
 
-### Referral Link Integration in Share
+---
 
-Current share flow:
-- Native share / clipboard copy
+### Phase 4: Platform-Specific Tool Pages (Competitor Response)
 
-Updated share flow:
-- Native share / clipboard copy
-- **New:** "Share with your referral code" option
-- Appends `?ref={code}` to share URL
+Create platform-specific landing pages to capture traffic like user-searcher.com's TikTok viewer:
+
+**New pages:**
+
+| Route | Target Keywords |
+|-------|-----------------|
+| `/tiktok-username-search` | "tiktok username search", "find tiktok profile" |
+| `/instagram-username-search` | "instagram username search", "find instagram user" |
+| `/twitter-username-search` | "twitter username search", "find twitter user" |
+
+**Page template structure:**
+- Platform-specific hero with icon
+- Explanation of what the scan reveals for that platform
+- Platform-specific privacy tips
+- FAQ section
+- HeroInputField pre-configured for username type
+
+**Note:** These pages use the same scanning infrastructure but position for platform-specific search intent.
+
+---
+
+### Phase 5: Improve Text-to-HTML Ratio
+
+Add prose content blocks to component-heavy pages:
+
+**Pages to enhance:**
+- `/scan` — Add 200-word intro paragraph above the form
+- `/pricing` — Add 150-word comparison narrative section
+- `/features` — Expand feature descriptions from bullet points to short paragraphs
 
 ---
 
 ## File Changes Summary
 
-### New Files (7)
+### New Files (4)
 
 | File | Purpose |
 |------|---------|
-| `supabase/functions/og-share-image/index.ts` | Dynamic OG image generation |
-| `src/pages/share/ScanShare.tsx` | Public share page |
-| `src/pages/for/Crypto.tsx` | Niche landing page |
-| `src/pages/for/JobSeekers.tsx` | Niche landing page |
-| `src/pages/for/Developers.tsx` | Niche landing page |
-| `src/pages/for/Executives.tsx` | Niche landing page |
-| `src/components/ReferralPrompt.tsx` | Inline referral prompt |
+| `src/pages/SearchUsername.tsx` | Dedicated "search username" landing page |
+| `src/pages/TikTokUsernameSearch.tsx` | Platform-specific TikTok page |
+| `src/pages/InstagramUsernameSearch.tsx` | Platform-specific Instagram page |
+| `src/pages/TwitterUsernameSearch.tsx` | Platform-specific Twitter/X page |
 
-### Modified Files (7)
+### Modified Files (6)
 
 | File | Changes |
 |------|---------|
-| `src/components/Hero.tsx` | Add inline input field with type detection |
-| `src/components/scan/UnifiedScanForm.tsx` | Accept URL query param pre-fill |
-| `src/components/exposure/ExposureScoreShareCard.tsx` | Add share link + referral options |
-| `src/components/scan/FreeResultsPage.tsx` | Add ReferralPrompt after results |
-| `src/components/scan/AdvancedResultsPage.tsx` | Add ReferralPrompt in results |
-| `src/App.tsx` | Add new routes |
-| `supabase/config.toml` | Add og-share-image function |
+| `public/sitemap.xml` | Add 4 niche landing pages + 4 platform pages |
+| `src/pages/for/Crypto.tsx` | Expand content to 700+ words |
+| `src/pages/for/JobSeekers.tsx` | Expand content to 700+ words |
+| `src/pages/for/Developers.tsx` | Expand content to 700+ words |
+| `src/pages/for/Executives.tsx` | Expand content to 700+ words |
+| `src/App.tsx` | Add 4 new platform-specific routes |
+
+---
+
+## SEO Metadata Standards
+
+All new pages will include:
+
+```typescript
+<SEO
+  title="[Primary Keyword] — [Secondary Benefit] | FootprintIQ"
+  description="[150-160 char with primary + secondary keywords and CTA]"
+  canonical="https://footprintiq.app/[route]"
+  schema={{ /* FAQPage + BreadcrumbList */ }}
+/>
+```
+
+---
+
+## Internal Linking Strategy
+
+Add cross-links between:
+- `/usernames` ↔ `/search-username` ↔ `/tiktok-username-search` etc.
+- `/for/crypto` → `/phone-number-privacy` (SIM swap context)
+- `/for/job-seekers` → `/username-exposure` (employer research context)
+- `/for/developers` → `/guides/how-username-search-tools-work` (technical context)
+
+---
+
+## IndexNow Notification
+
+After deployment, trigger IndexNow for new URLs via existing `src/lib/indexnow.ts` infrastructure.
+
+---
+
+## Expected Outcomes
+
+| Metric | Target |
+|--------|--------|
+| Sitemap errors | 0 |
+| Pages with <600 words | Reduced by 80% |
+| "search username" ranking | Top 20 within 90 days |
+| Platform-specific traffic | +500 sessions/month from TikTok/Instagram terms |
 
 ---
 
 ## Implementation Order
 
-### Phase 1: Hero Input Field (Highest Impact)
-1. Update Hero.tsx with inline input
-2. Update UnifiedScanForm.tsx to accept query params
-3. Test flow end-to-end
-
-### Phase 2: Niche Landing Pages
-1. Create page template
-2. Build Crypto page (highest-value niche)
-3. Build remaining 3 pages
-4. Add routes and verify SEO
-
-### Phase 3: Visual Share Cards
-1. Create og-share-image edge function
-2. Create public share page
-3. Update ExposureScoreShareCard
-4. Test sharing on social platforms
-
-### Phase 4: Referral Visibility
-1. Create ReferralPrompt component
-2. Integrate into results pages
-3. Add referral option to share flow
-
----
-
-## Ethical Guardrails Maintained
-
-All changes comply with FootprintIQ's ethical positioning:
-
-- **No urgency language** — CTAs use "Check" not "Protect Now!"
-- **No fear-based messaging** — Niche pages focus on awareness, not threats
-- **No live activity feeds** — Rejected from strategy (creates false urgency)
-- **Neutral share text** — "My exposure score" not "I'm at risk!"
-- **No PII in share cards** — Only score and level, never identifiers
-
----
-
-## Success Metrics
-
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| Homepage → Scan conversion | +25% | Analytics funnel |
-| Social share rate | +40% | Share click events |
-| Organic traffic (niche pages) | +15% in 90 days | GSC impressions |
-| Referral program usage | +50% | referral_codes table |
+1. **Immediate** — Fix sitemap (5 min)
+2. **Day 1** — Create SearchUsername.tsx and add route
+3. **Day 1-2** — Expand all 4 niche landing pages
+4. **Day 2-3** — Create platform-specific pages (TikTok, Instagram, Twitter)
+5. **Day 3** — Update internal links and trigger IndexNow
