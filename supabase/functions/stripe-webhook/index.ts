@@ -422,8 +422,9 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
 async function handleSubscriptionChange(subscription: Stripe.Subscription, eventType: string) {
   const customerId = subscription.customer as string;
   const priceId = subscription.items.data[0]?.price.id;
+  const status = subscription.status;
   
-  logStep("Processing subscription change", { eventType, customerId, priceId, status: subscription.status });
+  logStep("Processing subscription change", { eventType, customerId, priceId, status });
   
   // Get customer details
   const customer = await stripe.customers.retrieve(customerId);
@@ -447,7 +448,77 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
   }
 
   // ════════════════════════════════════════════════════════════════════════════════
-  // USE CANONICAL MAPPING
+  // IMMEDIATE DOWNGRADE FOR FAILED PAYMENTS
+  // Statuses: past_due, unpaid, incomplete_expired = payment failed
+  // ════════════════════════════════════════════════════════════════════════════════
+  const failedStatuses = ['past_due', 'unpaid', 'incomplete_expired', 'canceled'];
+  
+  if (failedStatuses.includes(status)) {
+    logStep("⚠️ Payment failed - DOWNGRADING to free tier", { status, email, userId: user.id });
+    
+    // Downgrade user_roles to free
+    const { error: downgradeError } = await supabase
+      .from("user_roles")
+      .update({
+        subscription_tier: "free",
+        subscription_expires_at: null,
+      })
+      .eq("user_id", user.id);
+    
+    if (downgradeError) {
+      logStep("ERROR: Failed to downgrade user_roles", { error: downgradeError.message });
+    } else {
+      logStep("Downgraded user_roles to free", { userId: user.id });
+    }
+    
+    // Find and downgrade workspace
+    const { data: workspace } = await supabase
+      .from("workspaces")
+      .select("id")
+      .eq("owner_id", user.id)
+      .limit(1)
+      .maybeSingle();
+    
+    if (workspace) {
+      const { error: wsError } = await supabase
+        .from("workspaces")
+        .update({
+          subscription_tier: "free",
+          plan: "free",
+          scan_limit_monthly: 10,
+          subscription_expires_at: null,
+        })
+        .eq("id", workspace.id);
+      
+      if (wsError) {
+        logStep("ERROR: Failed to downgrade workspace", { error: wsError.message });
+      } else {
+        logStep("Downgraded workspace to free", { workspaceId: workspace.id });
+      }
+      
+      // Update subscription record status
+      const { error: subError } = await supabase
+        .from("subscriptions")
+        .update({
+          status: status,
+          plan: "free",
+          scan_limit_monthly: 10,
+        })
+        .eq("workspace_id", workspace.id);
+      
+      if (subError) {
+        logStep("ERROR: Failed to update subscription status", { error: subError.message });
+      } else {
+        logStep("Updated subscription status", { workspaceId: workspace.id, status });
+      }
+    }
+    
+    logStep("✅ Payment failure downgrade complete", { email, status });
+    return; // Exit early - don't process as normal update
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════════
+  // NORMAL ACTIVE/TRIALING SUBSCRIPTION - USE CANONICAL MAPPING
   // ════════════════════════════════════════════════════════════════════════════════
   const resolution = resolvePriceId(priceId);
   
