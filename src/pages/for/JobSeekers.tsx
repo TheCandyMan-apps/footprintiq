@@ -289,8 +289,11 @@ export default function JobSeekersLandingPage() {
         {/* Internal Links */}
         <section className="py-12">
           <div className="max-w-4xl mx-auto px-6">
+            <p className="text-center text-sm text-muted-foreground mb-3">
+              Related tools: <Link to="/search-username" className="text-primary hover:underline">Username Search</Link> · <Link to="/instagram-username-search" className="text-primary hover:underline">Instagram Search</Link> · <Link to="/twitter-username-search" className="text-primary hover:underline">Twitter/X Search</Link> · <Link to="/tiktok-username-search" className="text-primary hover:underline">TikTok Search</Link>
+            </p>
             <p className="text-center text-sm text-muted-foreground">
-              Learn more: <Link to="/username-exposure" className="text-primary hover:underline">Understanding Username Exposure</Link> · <Link to="/blog/social-media-privacy" className="text-primary hover:underline">Social Media Privacy Guide</Link> · <Link to="/reduce-digital-footprint" className="text-primary hover:underline">How to Reduce Your Digital Footprint</Link>
+              Also for: <Link to="/for/developers" className="text-primary hover:underline">Developers</Link> · <Link to="/for/executives" className="text-primary hover:underline">Executives</Link> · <Link to="/for/crypto" className="text-primary hover:underline">Crypto Holders</Link>
             </p>
           </div>
         </section>

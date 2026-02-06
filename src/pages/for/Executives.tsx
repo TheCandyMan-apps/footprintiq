@@ -289,8 +289,11 @@ export default function ExecutivesLandingPage() {
         {/* Internal Links */}
         <section className="py-12">
           <div className="max-w-4xl mx-auto px-6">
+            <p className="text-center text-sm text-muted-foreground mb-3">
+              Related tools: <Link to="/search-username" className="text-primary hover:underline">Username Search</Link> · <Link to="/email-breach-check" className="text-primary hover:underline">Email Breach Check</Link> · <Link to="/how-identity-theft-starts" className="text-primary hover:underline">How Identity Theft Starts</Link>
+            </p>
             <p className="text-center text-sm text-muted-foreground">
-              Learn more: <Link to="/enterprise" className="text-primary hover:underline">Enterprise Solutions</Link> · <Link to="/blog/remove-data-brokers" className="text-primary hover:underline">How to Remove Data Broker Listings</Link> · <Link to="/how-identity-theft-starts" className="text-primary hover:underline">How Identity Theft Starts</Link>
+              Also for: <Link to="/for/developers" className="text-primary hover:underline">Developers</Link> · <Link to="/for/crypto" className="text-primary hover:underline">Crypto Holders</Link> · <Link to="/for/job-seekers" className="text-primary hover:underline">Job Seekers</Link>
             </p>
           </div>
         </section>

@@ -289,8 +289,11 @@ export default function DevelopersLandingPage() {
         {/* Internal Links */}
         <section className="py-12">
           <div className="max-w-4xl mx-auto px-6">
+            <p className="text-center text-sm text-muted-foreground mb-3">
+              Related tools: <Link to="/search-username" className="text-primary hover:underline">Username Search</Link> · <Link to="/email-breach-check" className="text-primary hover:underline">Email Breach Check</Link> · <Link to="/guides/how-username-search-tools-work" className="text-primary hover:underline">How Username Search Works</Link>
+            </p>
             <p className="text-center text-sm text-muted-foreground">
-              Learn more: <Link to="/guides/how-username-search-tools-work" className="text-primary hover:underline">How Username Search Tools Work</Link> · <Link to="/username-exposure" className="text-primary hover:underline">Understanding Username Exposure</Link> · <Link to="/email-breach-check" className="text-primary hover:underline">Email Breach Check</Link>
+              Also for: <Link to="/for/crypto" className="text-primary hover:underline">Crypto Holders</Link> · <Link to="/for/executives" className="text-primary hover:underline">Executives</Link> · <Link to="/for/job-seekers" className="text-primary hover:underline">Job Seekers</Link>
             </p>
           </div>
         </section>

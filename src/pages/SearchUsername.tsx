@@ -261,8 +261,11 @@ export default function SearchUsernamePage() {
         {/* Internal Links */}
         <section className="py-12 bg-muted/30">
           <div className="max-w-4xl mx-auto px-6">
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-muted-foreground mb-3">
               Related tools: <Link to="/usernames" className="text-primary hover:underline">Username Scanner</Link> · <Link to="/tiktok-username-search" className="text-primary hover:underline">TikTok Username Search</Link> · <Link to="/instagram-username-search" className="text-primary hover:underline">Instagram Username Search</Link> · <Link to="/twitter-username-search" className="text-primary hover:underline">Twitter Username Search</Link>
+            </p>
+            <p className="text-center text-sm text-muted-foreground">
+              Scan for: <Link to="/for/crypto" className="text-primary hover:underline">Crypto Holders</Link> · <Link to="/for/developers" className="text-primary hover:underline">Developers</Link> · <Link to="/for/job-seekers" className="text-primary hover:underline">Job Seekers</Link> · <Link to="/for/executives" className="text-primary hover:underline">Executives</Link>
             </p>
           </div>
         </section>
