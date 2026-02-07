@@ -58,14 +58,27 @@ const Auth = () => {
     setTurnstileError(null);
     turnstileRef.current?.reset();
   }, []);
+  // Compute safe redirect target from query params
+  const getRedirectTarget = useCallback(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const redirectTo = searchParams.get('redirect');
+    // Validate: must start with "/" and not "//" (prevents open redirect)
+    if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+      return redirectTo;
+    }
+    return '/dashboard';
+  }, []);
+
   useEffect(() => {
+    const safeRedirect = getRedirectTarget();
+    
     // Listener FIRST (prevents missing events during init)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setAwaitingEmailConfirmation(false);
-        navigate("/dashboard");
+        navigate(safeRedirect);
       }
     });
 
@@ -73,12 +86,12 @@ const Auth = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setAwaitingEmailConfirmation(false);
-        navigate("/dashboard");
+        navigate(safeRedirect);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, getRedirectTarget]);
   const checkBlockedDomain = async (email: string): Promise<boolean> => {
     try {
       const { data, error } = await supabase.rpc('is_email_blocklisted', { _email: email });
@@ -184,7 +197,7 @@ const Auth = () => {
             persona: 'standard', // Default all new users to Standard mode
             user_agent: navigator.userAgent
           },
-          emailRedirectTo: `${window.location.origin}/dashboard`
+          emailRedirectTo: `${window.location.origin}${getRedirectTarget()}`
         }
       });
       if (signUpError) throw signUpError;
@@ -201,7 +214,7 @@ const Auth = () => {
 
       if (authData.session) {
         setAwaitingEmailConfirmation(false);
-        setTimeout(() => navigate("/dashboard"), 250);
+        setTimeout(() => navigate(getRedirectTarget()), 250);
       } else {
         setAwaitingEmailConfirmation(true);
       }
@@ -270,7 +283,7 @@ const Auth = () => {
     } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/dashboard`
+        redirectTo: `${window.location.origin}${getRedirectTarget()}`
       }
     });
     setLoading(false);
