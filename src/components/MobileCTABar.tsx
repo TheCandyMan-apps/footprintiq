@@ -9,7 +9,7 @@ export const MobileCTABar = () => {
   const isMobile = useIsMobile();
 
   // Don't show on certain pages
-  const hideOnPages = ['/new-scan', '/scan-history'];
+  const hideOnPages = ['/scan', '/dashboard'];
   if (!isMobile || hideOnPages.includes(location.pathname)) {
     return null;
   }
@@ -31,7 +31,7 @@ export const MobileCTABar = () => {
           <Button
             size="lg"
             className="rounded-full px-8 touch-target min-h-[44px] shadow-glow"
-            onClick={() => navigate('/new-scan')}
+            onClick={() => navigate('/scan')}
           >
             <Plus className="w-5 h-5 mr-2" />
             New Scan
@@ -41,7 +41,7 @@ export const MobileCTABar = () => {
             variant="ghost"
             size="sm"
             className="flex flex-col items-center gap-1 h-auto py-2 px-4 touch-target min-h-[44px]"
-            onClick={() => navigate('/scan-history')}
+            onClick={() => navigate('/dashboard')}
           >
             <Menu className="w-5 h-5" />
             <span className="text-xs">History</span>

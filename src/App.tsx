@@ -309,6 +309,8 @@ function RouterContent() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/scan" element={<ScanPage />} />
           <Route path="/advanced" element={<Navigate to="/scan" replace />} />
+          <Route path="/new-scan" element={<Navigate to="/scan" replace />} />
+          <Route path="/scan-history" element={<Navigate to="/dashboard" replace />} />
           <Route path="/results/:scanId" element={<ResultsDetail />} />
           <Route path="/anomaly-history" element={<AnomalyHistory />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />

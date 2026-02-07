@@ -29,7 +29,7 @@ const ScanPage = () => {
     const initializeUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate("/auth");
+        navigate("/auth?redirect=/scan");
         return;
       }
       
@@ -69,7 +69,7 @@ const ScanPage = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session) {
-        navigate("/auth");
+        navigate("/auth?redirect=/scan");
       } else {
         setUser(session.user);
       }
