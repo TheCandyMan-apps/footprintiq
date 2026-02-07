@@ -709,11 +709,7 @@ const Dashboard = () => {
               <FileStack className="h-4 w-4 mr-2" />
               Batch Scan
             </Button>
-            <Button data-tour="advanced-scan-btn" onClick={() => navigate('/scan')} variant="outline" className="border-border/60">
-              <Zap className="h-4 w-4 mr-2" />
-              Start Scan
-            </Button>
-            <Button onClick={() => navigate('/scan')}>
+            <Button data-tour="advanced-scan-btn" onClick={() => navigate('/scan')}>
               <Play className="h-4 w-4 mr-2" />
               Start New Scan
             </Button>
