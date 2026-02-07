@@ -692,23 +692,27 @@ serve(async (req) => {
               console.log(`[n8n-scan-trigger] Predicta returned ${profiles.length} profiles, ${breaches.length} breaches, ${leaks.length} leaks`);
               
               const findings: Record<string, unknown>[] = [];
+              const now = new Date().toISOString();
               
-              // Normalize profiles into findings
+              // Normalize profiles into findings (correct schema)
               for (const profile of profiles) {
+                const profileUrl = profile.link || profile.url || null;
                 findings.push({
                   scan_id: scan.id,
+                  workspace_id: workspaceId,
                   provider: 'predictasearch',
                   kind: 'social.profile',
                   severity: 'info',
-                  label: profile.platform || profile.name || 'Unknown',
-                  value: profile.link || profile.url || null,
-                  confidence: profile.is_verified ? 90 : 70,
+                  confidence: profile.is_verified ? 0.90 : 0.70,
+                  observed_at: now,
+                  evidence: profileUrl ? [{ key: 'url', value: profileUrl }] : [],
                   meta: {
+                    label: profile.platform || profile.name || 'Unknown',
+                    url: profileUrl,
                     platform: profile.platform,
                     username: profile.username || targetValue,
                     display_name: profile.name || profile.display_name,
                     avatar: profile.pfp_image || profile.avatar_url || null,
-                    url: profile.link || profile.url || null,
                     followers: profile.followers_count,
                     following: profile.following_count,
                     verified: profile.is_verified,
@@ -720,19 +724,23 @@ serve(async (req) => {
                 });
               }
               
-              // Normalize breaches into findings
+              // Normalize breaches into findings (correct schema)
               for (const breach of breaches) {
+                const breachDomain = breach.breach_domain || breach.domain || null;
                 findings.push({
                   scan_id: scan.id,
+                  workspace_id: workspaceId,
                   provider: 'predictasearch',
                   kind: 'breach.hit',
                   severity: 'high',
-                  label: breach.breach_name || breach.name || 'Unknown Breach',
-                  value: breach.breach_domain || breach.domain || null,
-                  confidence: 85,
+                  confidence: 0.85,
+                  observed_at: now,
+                  evidence: breachDomain ? [{ key: 'domain', value: breachDomain }] : [],
                   meta: {
+                    label: breach.breach_name || breach.name || 'Unknown Breach',
+                    url: breachDomain,
                     breach_name: breach.breach_name || breach.name,
-                    breach_domain: breach.breach_domain || breach.domain,
+                    breach_domain: breachDomain,
                     breach_date: breach.date,
                     pwn_count: breach.pwn_count,
                     description: breach.description,
@@ -742,17 +750,21 @@ serve(async (req) => {
                 });
               }
               
-              // Normalize leaks into findings
+              // Normalize leaks into findings (correct schema)
               for (const leak of leaks) {
+                const leakDomain = leak.domain || null;
                 findings.push({
                   scan_id: scan.id,
+                  workspace_id: workspaceId,
                   provider: 'predictasearch',
                   kind: 'breach.hit',
                   severity: 'high',
-                  label: leak.name || leak.title || 'Data Leak',
-                  value: leak.domain || null,
-                  confidence: 80,
+                  confidence: 0.80,
+                  observed_at: now,
+                  evidence: leakDomain ? [{ key: 'domain', value: leakDomain }] : [],
                   meta: {
+                    label: leak.name || leak.title || 'Data Leak',
+                    url: leakDomain,
                     leak_name: leak.name || leak.title,
                     description: leak.description,
                     data_classes: leak.data_classes,
