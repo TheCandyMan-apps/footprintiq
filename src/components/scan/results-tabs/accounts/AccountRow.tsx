@@ -281,7 +281,7 @@ export function AccountRow({
   const username = useMemo(() => extractUsername(result), [result]);
   const bio = useMemo(() => extractBio(result), [result]);
   const fullBio = useMemo(() => extractFullBio(result), [result]);
-  const profileImage = meta.avatar_url || meta.profile_image || meta.image;
+  const profileImage = meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
   const confidence = getMatchConfidence(lensScore);
   const ConfidenceIcon = confidence.icon;
   
