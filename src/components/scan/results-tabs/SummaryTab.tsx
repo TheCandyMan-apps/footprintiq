@@ -1,6 +1,7 @@
 import { useMemo, lazy, Suspense, useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { User, Mail, Phone, Globe, Clock, CheckCircle2, FileText, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -24,6 +25,10 @@ import { ProUpgradeBlock } from './summary/ProUpgradeBlock';
 import { ConnectionsPreview } from './summary/ConnectionsPreview';
 import { AdvancedModeHint } from './summary/AdvancedModeHint';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
+import { IdentityStrengthScore } from '@/components/intelligence/IdentityStrengthScore';
+import { UsernameUniquenessScore } from '@/components/intelligence/UsernameUniquenessScore';
+import { FootprintClusterMap } from '@/components/intelligence/FootprintClusterMap';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Lazy load ReputationSignalsCard for feature-flagged rollout
 const ReputationSignalsCard = lazy(() => import('./ReputationSignalsCard'));
@@ -354,6 +359,21 @@ export function SummaryTab({
           profileImages={profileImages}
           verifiedCount={verifiedEntities.size}
         />
+
+        {/* Intelligence Tiles - Identity Strength, Uniqueness, Clusters */}
+        {scanComplete && aggregated.counts.totalProfiles > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
+              <IdentityStrengthScore scanId={jobId} />
+            </ErrorBoundary>
+            <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
+              <UsernameUniquenessScore scanId={jobId} />
+            </ErrorBoundary>
+            <ErrorBoundary fallback={<Skeleton className="h-64 w-full rounded-xl" />}>
+              <FootprintClusterMap scanId={jobId} />
+            </ErrorBoundary>
+          </div>
+        )}
 
         {/* Unified Profiles & Exposure Section */}
         <ProfilesExposureSection
