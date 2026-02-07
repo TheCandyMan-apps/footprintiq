@@ -4,6 +4,15 @@ const config: CapacitorConfig = {
   appId: 'com.footprintiq.app',
   appName: 'FootprintIQ',
   webDir: 'dist',
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      launchAutoHide: true,
+      backgroundColor: '#0a0a0f',
+      showSpinner: false,
+      launchFadeOutDuration: 500,
+    },
+  },
   // Production builds use bundled web assets (no server URL)
   // For local development with hot-reload, uncomment the server block below:
   // server: {
