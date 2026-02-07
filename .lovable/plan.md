@@ -1,21 +1,84 @@
 
-# Consolidate Duplicate Scan Buttons on Dashboard
 
-## What Changes
+# Fix Profile Photos: Cache Avatars to Prevent Expiry
 
-Remove the outlined "Start Scan" button from the Dashboard toolbar and keep only the filled "Start New Scan" button. Both buttons currently navigate to the same `/scan` page, which already detects the user's tier and displays options accordingly -- so there's no need for two separate buttons.
+## The Problem
 
-## Before / After
+Profile photos from Predicta Search ARE being saved to the database (the schema fix worked), but the URLs are temporary CDN links from Instagram, TikTok, etc. that expire within hours. When a user revisits scan results, the images fail to load and show initials instead.
+
+- TikTok CDN URLs have `x-expires` parameters
+- Instagram CDN URLs have `oe=` expiry tokens
+- Most social platforms block direct hotlinking after a short window
+
+## The Fix
+
+Cache avatar images into the project's existing `scan-images` Storage bucket during scan time. Store the permanent Storage URL alongside the original CDN URL.
 
 ```text
-Before:  [Saved Views] [Anomaly History] [Entity Graph] [Batch Scan] [Start Scan] [Start New Scan]
-After:   [Saved Views] [Anomaly History] [Entity Graph] [Batch Scan] [Start New Scan]
+Scan Flow (current):
+  Predicta API --> CDN URL --> meta.avatar --> (expires) --> broken image
+
+Scan Flow (fixed):
+  Predicta API --> CDN URL --> download image --> upload to Storage --> meta.avatar_cached
+                                                                    --> permanent URL --> image displays
 ```
 
-## Technical Details
+## Changes
 
-**File:** `src/pages/Dashboard.tsx`
+### 1. Update `n8n-scan-trigger` edge function -- avatar caching
 
-- Remove lines 712-715 (the outlined "Start Scan" button with `data-tour="advanced-scan-btn"`)
-- Move the `data-tour="advanced-scan-btn"` attribute to the remaining "Start New Scan" button so any onboarding tour still targets the correct element
-- No other files need changes -- the `/scan` page already handles all tier-aware logic (provider filtering, upgrade prompts, scan type routing)
+After receiving Predicta results, before inserting findings:
+
+- For each profile with a `pfp_image` or `avatar_url`, fetch the image from the CDN
+- Upload it to the `scan-images` bucket at path: `avatars/{scan_id}/{platform}.jpg`
+- Store the public Storage URL in `meta.avatar_cached`
+- Keep the original CDN URL in `meta.avatar` as a fallback
+- Use a 3-second timeout per image to avoid blocking the scan
+- Skip failed downloads gracefully (original URL still available as fallback)
+
+### 2. Make `scan-images` bucket public
+
+The `scan-images` bucket is currently private. To serve avatar thumbnails without auth tokens, it needs to be public (these are publicly-available profile photos already scraped from public profiles).
+
+### 3. Update `AccountRow.tsx` -- prefer cached URL
+
+Change the profile image resolution chain:
+
+**Before:**
+```
+meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image
+```
+
+**After:**
+```
+meta.avatar_cached || meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image
+```
+
+### 4. Update `useRealtimeResults.ts` -- pass avatar from social_profiles
+
+When normalizing `social_profiles` into `ScanResultRow`, ensure the `avatar_url` field is also mapped into `meta` so the `AccountRow` fallback chain can find it:
+
+```
+meta: { ...profile.metadata, avatar_url: profile.avatar_url }
+```
+
+## What This Fixes
+
+- Profile photos will persist permanently after scan completion
+- Revisiting old scan results will still show photos
+- Photos display correctly even days/weeks later
+- No dependency on third-party CDN availability
+
+## What Stays the Same
+
+- The Confidence Breakdown "Profile image: Confirmed" logic remains correct (it checks if a URL was provided at scan time)
+- Scans without Predicta (free tier, or non-username scans) will still show initials -- this is expected
+- The original CDN URL is preserved as a fallback
+
+## Files Modified
+
+1. `supabase/functions/n8n-scan-trigger/index.ts` -- add avatar download and Storage upload logic
+2. `src/components/scan/results-tabs/accounts/AccountRow.tsx` -- prefer `avatar_cached` in fallback chain
+3. `src/hooks/useRealtimeResults.ts` -- merge `avatar_url` into meta for social_profiles
+4. Database migration -- make `scan-images` bucket public
+
