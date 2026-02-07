@@ -5,7 +5,6 @@ import {
   PDF_SPACING,
   SEVERITY_COLORS,
   PDFBranding,
-  addCoverPage,
   addPageHeader,
   addSectionHeader,
   addSubsectionHeader,
@@ -48,66 +47,73 @@ interface InvestigationReportData {
   }>;
 }
 
-/**
- * Helper to extract site/platform from a finding
- */
+// ==================== HELPERS ====================
+
 function extractSite(result: any): string {
-  // Check evidence array first
   if (result.evidence && Array.isArray(result.evidence)) {
     const siteEvidence = result.evidence.find((e: any) => e.key === 'site');
     if (siteEvidence?.value) return siteEvidence.value;
   }
-  // Fallback to meta
   if (result.meta?.platform) return result.meta.platform;
   if (result.meta?.site) return result.meta.site;
-  // Fallback to direct property
   if (result.site) return result.site;
   return 'Unknown';
 }
 
-/**
- * Helper to extract URL from a finding
- */
 function extractUrl(result: any): string {
-  // Check evidence array first
   if (result.evidence && Array.isArray(result.evidence)) {
     const urlEvidence = result.evidence.find((e: any) => e.key === 'url');
     if (urlEvidence?.value) return urlEvidence.value;
   }
-  // Fallback to direct property
   if (result.url) return result.url;
   return '';
 }
 
-/**
- * Helper to derive status from a finding
- */
 function deriveStatus(result: any): string {
-  // Direct status field
   if (result.status) return result.status.toLowerCase();
-  
-  // For profile_presence kind, treat as "found"
   if (result.kind === 'profile_presence') return 'found';
-  
-  // Check evidence for status indicators
   if (result.evidence && Array.isArray(result.evidence)) {
     const existsEvidence = result.evidence.find((e: any) => e.key === 'exists');
     if (existsEvidence?.value === true) return 'found';
     if (existsEvidence?.value === false) return 'not_found';
   }
-  
-  // Check for explicit status in meta
   const meta = result.meta || result.metadata || {};
   if (meta.status) return meta.status.toLowerCase();
   if (meta.exists === true) return 'found';
   if (meta.exists === false) return 'not_found';
-  
   return 'unknown';
 }
 
-/**
- * Add enhanced cover page with gradient header
- */
+/** Clean platform name by removing [+] prefix */
+function cleanPlatformName(name: string): string {
+  return name.replace(/^\[?\+?\]?\s*/g, '').trim();
+}
+
+/** Format duration in human-readable form */
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
+}
+
+/** Format date nicely */
+function formatDate(dateStr: string): string {
+  try {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+// ==================== COVER PAGE ====================
+
 function addEnhancedCoverPage(
   doc: jsPDF,
   options: {
@@ -118,238 +124,287 @@ function addEnhancedCoverPage(
     date?: Date;
     branding?: PDFBranding;
     stats?: { accounts: number; breaches: number; locations: number; total: number };
+    scanDuration?: string;
+    scanStatus?: string;
   }
 ) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const { title, subtitle, target, scanId, date = new Date(), branding, stats } = options;
-  
-  const primaryColor = branding?.primaryColor 
-    ? hexToRgb(branding.primaryColor) 
+  const { title, subtitle, target, scanId, date = new Date(), branding, stats, scanDuration, scanStatus } = options;
+
+  const primaryColor = branding?.primaryColor
+    ? hexToRgb(branding.primaryColor)
     : PDF_COLORS.primary;
-  
-  // Gradient-like header (multiple rectangles for effect)
-  const headerHeight = 160;
-  setFillColor(doc, primaryColor);
-  doc.rect(0, 0, pageWidth, headerHeight, 'F');
-  
-  // Lighter accent line at bottom of header
+
+  // === GRADIENT HEADER ===
+  const headerHeight = 180;
+
+  // Dark base layer
   doc.setFillColor(
-    Math.min(255, primaryColor.r + 30),
-    Math.min(255, primaryColor.g + 30),
-    Math.min(255, primaryColor.b + 30)
+    Math.max(0, primaryColor.r - 20),
+    Math.max(0, primaryColor.g - 20),
+    Math.max(0, primaryColor.b - 20)
   );
-  doc.rect(0, headerHeight - 4, pageWidth, 4, 'F');
-  
-  // Logo/Brand area
-  let yPos = 40;
-  
-  // Shield icon (simplified)
+  doc.rect(0, 0, pageWidth, headerHeight, 'F');
+
+  // Main color layer
+  setFillColor(doc, primaryColor);
+  doc.rect(0, 0, pageWidth, headerHeight - 8, 'F');
+
+  // Lighter accent strip at bottom of header
+  doc.setFillColor(
+    Math.min(255, primaryColor.r + 40),
+    Math.min(255, primaryColor.g + 40),
+    Math.min(255, primaryColor.b + 40)
+  );
+  doc.rect(0, headerHeight - 8, pageWidth, 8, 'F');
+
+  // === SHIELD ICON ===
+  let yPos = 45;
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(255, 255, 255);
-  doc.setLineWidth(2);
-  // Draw a simple shield shape
-  const shieldX = PDF_SPACING.margin + 5;
-  doc.roundedRect(shieldX, yPos - 10, 24, 30, 4, 4, 'S');
-  doc.line(shieldX + 8, yPos + 5, shieldX + 12, yPos + 10);
-  doc.line(shieldX + 12, yPos + 10, shieldX + 18, yPos);
-  
+  doc.setLineWidth(1.8);
+  const sx = PDF_SPACING.margin + 6;
+  // Shield body
+  doc.roundedRect(sx, yPos - 8, 22, 28, 6, 6, 'S');
+  // Shield checkmark
+  doc.line(sx + 6, yPos + 6, sx + 10, yPos + 11);
+  doc.line(sx + 10, yPos + 11, sx + 16, yPos + 2);
+
   // Company name
-  setFont(doc, 'heading1');
+  doc.setFontSize(26);
+  doc.setFont('helvetica', 'bold');
   setColor(doc, PDF_COLORS.white);
-  doc.text(branding?.companyName || 'FootprintIQ', PDF_SPACING.margin + 40, yPos + 8);
-  
+  doc.text(branding?.companyName || 'FootprintIQ', PDF_SPACING.margin + 38, yPos + 8);
+
   // Tagline
-  yPos += 25;
-  setFont(doc, 'body');
-  doc.setTextColor(255, 255, 255, 0.8);
-  doc.text(branding?.tagline || 'Digital Footprint Intelligence', PDF_SPACING.margin + 40, yPos);
-  
+  yPos += 24;
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(220, 230, 255);
+  doc.text(branding?.tagline || 'Digital Footprint Intelligence', PDF_SPACING.margin + 38, yPos);
+
   // Main title
-  yPos = 100;
-  setFont(doc, 'heading1');
+  yPos = 110;
+  doc.setFontSize(28);
+  doc.setFont('helvetica', 'bold');
   setColor(doc, PDF_COLORS.white);
   doc.text(title, PDF_SPACING.margin, yPos);
-  
+
   if (subtitle) {
-    yPos += 20;
-    setFont(doc, 'heading3');
-    doc.setTextColor(255, 255, 255, 0.9);
+    yPos += 22;
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(210, 225, 255);
     doc.text(subtitle, PDF_SPACING.margin, yPos);
   }
-  
-  // Content area below header
-  yPos = headerHeight + 30;
-  
-  // Target information box
-  setFillColor(doc, PDF_COLORS.slate50);
+
+  // === SCAN TARGET BOX ===
+  yPos = headerHeight + 25;
+  const boxHeight = 80;
+  setFillColor(doc, PDF_COLORS.white);
   doc.setDrawColor(PDF_COLORS.slate200.r, PDF_COLORS.slate200.g, PDF_COLORS.slate200.b);
-  doc.setLineWidth(1);
-  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 70, 6, 6, 'FD');
-  
+  doc.setLineWidth(0.75);
+  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, boxHeight, 6, 6, 'FD');
+
+  // Left accent bar on the target box
+  setFillColor(doc, primaryColor);
+  doc.roundedRect(PDF_SPACING.margin, yPos, 5, boxHeight, 3, 0, 'F');
+  doc.rect(PDF_SPACING.margin + 3, yPos, 2, boxHeight, 'F');
+
+  const boxX = PDF_SPACING.margin + 18;
+
   yPos += 18;
-  setFont(doc, 'caption');
-  setColor(doc, PDF_COLORS.slate500);
-  doc.text('SCAN TARGET', PDF_SPACING.margin + 15, yPos);
-  
-  yPos += 14;
-  setFont(doc, 'heading2');
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  setColor(doc, PDF_COLORS.slate400);
+  doc.text('SCAN TARGET', boxX, yPos);
+
+  yPos += 18;
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
   setColor(doc, PDF_COLORS.slate900);
-  doc.text(target || 'N/A', PDF_SPACING.margin + 15, yPos);
-  
-  yPos += 18;
-  setFont(doc, 'small');
-  setColor(doc, PDF_COLORS.slate500);
-  doc.text(`ID: ${scanId ? scanId.substring(0, 8) + '...' : 'N/A'}`, PDF_SPACING.margin + 15, yPos);
-  doc.text(`Generated: ${date.toLocaleDateString('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })}`, pageWidth / 2, yPos);
-  
-  // Stats grid
+  doc.text(target || 'N/A', boxX, yPos);
+
+  yPos += 20;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  setColor(doc, PDF_COLORS.slate400);
+
+  const detailParts: string[] = [];
+  if (scanId) detailParts.push(`ID: ${scanId.substring(0, 8)}…`);
+  if (scanStatus) detailParts.push(`Status: ${scanStatus.toUpperCase()}`);
+  if (scanDuration) detailParts.push(`Duration: ${scanDuration}`);
+  detailParts.push(`Generated: ${date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`);
+  doc.text(detailParts.join('   •   '), boxX, yPos);
+
+  // === STATS CARDS ===
   if (stats) {
-    yPos = headerHeight + 120;
-    
-    const cardWidth = (pageWidth - PDF_SPACING.margin * 2 - 30) / 4;
+    yPos = headerHeight + boxHeight + 45;
+    const cardGap = 10;
+    const cardWidth = (pageWidth - PDF_SPACING.margin * 2 - cardGap * 3) / 4;
+
     const statItems = [
       { label: 'Total Findings', value: stats.total, color: primaryColor },
       { label: 'Accounts', value: stats.accounts, color: PDF_COLORS.success },
-      { label: 'Breaches', value: stats.breaches, color: PDF_COLORS.danger },
-      { label: 'Locations', value: stats.locations, color: PDF_COLORS.info },
+      { label: 'Breaches', value: stats.breaches, color: stats.breaches > 0 ? PDF_COLORS.danger : PDF_COLORS.slate400 },
+      { label: 'Locations', value: stats.locations, color: stats.locations > 0 ? PDF_COLORS.info : PDF_COLORS.slate400 },
     ];
-    
+
     statItems.forEach((stat, index) => {
-      const x = PDF_SPACING.margin + (cardWidth + 10) * index;
-      
-      // Card with left accent
+      const x = PDF_SPACING.margin + (cardWidth + cardGap) * index;
+
+      // Card background
       setFillColor(doc, PDF_COLORS.slate50);
-      doc.roundedRect(x, yPos, cardWidth, 55, 4, 4, 'F');
-      
-      // Left accent bar
+      doc.roundedRect(x, yPos, cardWidth, 62, 5, 5, 'F');
+
+      // Top colored accent bar
       setFillColor(doc, stat.color);
-      doc.rect(x, yPos, 4, 55, 'F');
-      
+      doc.roundedRect(x, yPos, cardWidth, 5, 5, 0, 'F');
+      doc.rect(x, yPos + 3, cardWidth, 2, 'F');
+
       // Value
-      setFont(doc, 'heading1');
+      doc.setFontSize(26);
+      doc.setFont('helvetica', 'bold');
       setColor(doc, stat.color);
-      doc.text(String(stat.value), x + 12, yPos + 28);
-      
+      doc.text(String(stat.value), x + cardWidth / 2, yPos + 35, { align: 'center' });
+
       // Label
-      setFont(doc, 'caption');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
       setColor(doc, PDF_COLORS.slate500);
-      doc.text(stat.label, x + 12, yPos + 45);
+      doc.text(stat.label, x + cardWidth / 2, yPos + 52, { align: 'center' });
     });
   }
-  
-  // Risk Score section
-  yPos = headerHeight + 200;
-  
-  // Calculate risk score
+
+  // === RISK SCORE SECTION ===
+  yPos = headerHeight + boxHeight + 130;
   const riskScore = stats ? Math.max(0, 100 - (stats.breaches * 5)) : 100;
   const riskColor = riskScore >= 80 ? PDF_COLORS.success : riskScore >= 60 ? PDF_COLORS.warning : PDF_COLORS.danger;
   const riskLabel = riskScore >= 80 ? 'Low Risk' : riskScore >= 60 ? 'Moderate Risk' : 'High Risk';
-  
+
+  const riskBoxWidth = (pageWidth - PDF_SPACING.margin * 2);
   setFillColor(doc, PDF_COLORS.slate50);
-  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 60, 6, 6, 'F');
-  
-  // Left section - Score
-  setFont(doc, 'heading1');
+  doc.roundedRect(PDF_SPACING.margin, yPos, riskBoxWidth, 65, 5, 5, 'F');
+
+  // Risk score circle-like display (left)
+  const circleX = PDF_SPACING.margin + 50;
+  const circleY = yPos + 33;
+
+  // Outer ring
+  doc.setDrawColor(riskColor.r, riskColor.g, riskColor.b);
+  doc.setLineWidth(3);
+  doc.circle(circleX, circleY, 22, 'S');
+
+  // Score number inside
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
   setColor(doc, riskColor);
-  doc.text(`${riskScore}`, PDF_SPACING.margin + 20, yPos + 35);
-  
-  setFont(doc, 'body');
-  setColor(doc, PDF_COLORS.slate500);
-  doc.text('/100', PDF_SPACING.margin + 55, yPos + 35);
-  
-  // Right section - Label and description
-  setFont(doc, 'heading3');
-  setColor(doc, riskColor);
-  doc.text(riskLabel, PDF_SPACING.margin + 120, yPos + 25);
-  
-  setFont(doc, 'small');
-  setColor(doc, PDF_COLORS.slate500);
-  doc.text('Based on severity and breach count analysis', PDF_SPACING.margin + 120, yPos + 42);
-  
-  // Footer
-  const footerY = pageHeight - 50;
-  
-  // Confidential badge
-  setFillColor(doc, { r: 254, g: 226, b: 226 }); // red-100
-  doc.roundedRect(PDF_SPACING.margin, footerY, 85, 18, 3, 3, 'F');
-  
-  setFont(doc, 'caption');
-  setColor(doc, PDF_COLORS.danger);
-  doc.text('CONFIDENTIAL', PDF_SPACING.margin + 10, footerY + 12);
-  
-  setFont(doc, 'small');
+  doc.text(String(riskScore), circleX, circleY + 3, { align: 'center' });
+
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
   setColor(doc, PDF_COLORS.slate400);
-  doc.text('For authorized use only', PDF_SPACING.margin + 95, footerY + 12);
-  
+  doc.text('/100', circleX, circleY + 12, { align: 'center' });
+
+  // Risk label (right of circle)
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  setColor(doc, riskColor);
+  doc.text(riskLabel, PDF_SPACING.margin + 100, yPos + 28);
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  setColor(doc, PDF_COLORS.slate500);
+  doc.text('Based on severity and breach count analysis', PDF_SPACING.margin + 100, yPos + 44);
+
+  // === FOOTER ===
+  // Confidential badge
+  const footerY = pageHeight - 55;
+
+  setFillColor(doc, { r: 254, g: 226, b: 226 });
+  doc.setDrawColor(254, 202, 202);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(PDF_SPACING.margin, footerY, 100, 18, 3, 3, 'FD');
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  setColor(doc, PDF_COLORS.danger);
+  doc.text('CONFIDENTIAL', PDF_SPACING.margin + 12, footerY + 12);
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  setColor(doc, PDF_COLORS.slate400);
+  doc.text('For authorized use only', PDF_SPACING.margin + 108, footerY + 12);
+
   // Bottom accent bar
   setFillColor(doc, primaryColor);
   doc.rect(0, pageHeight - 6, pageWidth, 6, 'F');
 }
 
-/**
- * Add severity breakdown visual
- */
+// ==================== SEVERITY BREAKDOWN ====================
+
 function addSeverityBreakdown(doc: jsPDF, severityCounts: Record<string, number>, yPos: number): number {
   const pageWidth = doc.internal.pageSize.getWidth();
   const totalBreaches = Object.values(severityCounts).reduce((a, b) => a + b, 0);
-  
+
   if (totalBreaches === 0) return yPos;
-  
-  // Container
+
   setFillColor(doc, PDF_COLORS.slate50);
-  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 70, 4, 4, 'F');
-  
-  yPos += 15;
-  setFont(doc, 'small');
+  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 75, 5, 5, 'F');
+
+  yPos += 16;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
   setColor(doc, PDF_COLORS.slate500);
-  doc.text('SEVERITY DISTRIBUTION', PDF_SPACING.margin + 10, yPos);
-  
-  yPos += 15;
-  
+  doc.text('SEVERITY DISTRIBUTION', PDF_SPACING.margin + 12, yPos);
+
+  yPos += 20;
+
   const severities = [
     { key: 'critical', label: 'Critical', color: SEVERITY_COLORS.critical },
     { key: 'high', label: 'High', color: SEVERITY_COLORS.high },
     { key: 'medium', label: 'Medium', color: SEVERITY_COLORS.medium },
     { key: 'low', label: 'Low', color: SEVERITY_COLORS.low },
   ];
-  
-  const columnWidth = (pageWidth - PDF_SPACING.margin * 2 - 20) / 4;
-  
+
+  const columnWidth = (pageWidth - PDF_SPACING.margin * 2 - 24) / 4;
+
   severities.forEach((sev, index) => {
-    const x = PDF_SPACING.margin + 10 + columnWidth * index;
+    const x = PDF_SPACING.margin + 12 + columnWidth * index;
     const count = severityCounts[sev.key] || 0;
-    
-    // Colored dot
+
+    // Colored pill badge
+    const badgeWidth = 50;
     setFillColor(doc, sev.color);
-    doc.circle(x + 4, yPos, 4, 'F');
-    
-    // Count
-    setFont(doc, 'heading3');
-    setColor(doc, PDF_COLORS.slate900);
-    doc.text(String(count), x + 15, yPos + 3);
-    
-    // Label
-    setFont(doc, 'caption');
+    doc.roundedRect(x, yPos - 8, badgeWidth, 20, 4, 4, 'F');
+
+    // Count inside badge
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    setColor(doc, PDF_COLORS.white);
+    doc.text(String(count), x + 12, yPos + 4);
+
+    // Label next to count
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(sev.label, x + 28, yPos + 4);
+
+    // Label below
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
     setColor(doc, PDF_COLORS.slate500);
-    doc.text(sev.label, x + 15, yPos + 15);
+    doc.text(`${Math.round((count / totalBreaches) * 100)}%`, x + badgeWidth / 2, yPos + 22, { align: 'center' });
   });
-  
-  return yPos + 50;
+
+  return yPos + 45;
 }
 
-/**
- * Generate a comprehensive PDF investigation report
- */
+// ==================== MAIN EXPORT FUNCTION ====================
+
 export async function generateInvestigationReport(data: InvestigationReportData): Promise<void> {
   const { job, results, grouped, tabCounts, breachResults, geoLocations, providerEvents = [] } = data;
-  
+
   const doc = new jsPDF({
     orientation: 'portrait',
     unit: 'pt',
@@ -363,7 +418,14 @@ export async function generateInvestigationReport(data: InvestigationReportData)
     primaryColor: '#2563eb',
   };
 
-  // ==================== COVER PAGE ====================
+  // Calculate duration
+  let scanDuration: string | undefined;
+  if (job.started_at && job.finished_at) {
+    const seconds = Math.round((new Date(job.finished_at).getTime() - new Date(job.started_at).getTime()) / 1000);
+    scanDuration = formatDuration(seconds);
+  }
+
+  // ==================== PAGE 1: COVER ====================
   addEnhancedCoverPage(doc, {
     title: 'Investigation Report',
     subtitle: 'Digital Footprint Analysis',
@@ -377,103 +439,128 @@ export async function generateInvestigationReport(data: InvestigationReportData)
       breaches: tabCounts.breaches,
       locations: tabCounts.map,
     },
+    scanDuration,
+    scanStatus: job.status,
   });
 
-  // ==================== EXECUTIVE SUMMARY ====================
+  // ==================== PAGE 2: EXECUTIVE SUMMARY ====================
   doc.addPage();
   let yPos = addPageHeader(doc, 'Executive Summary', branding);
 
   // Scan details box
+  const detailsBoxHeight = 110;
   setFillColor(doc, PDF_COLORS.slate50);
-  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 90, 4, 4, 'F');
-  
-  yPos += 15;
-  setFont(doc, 'small');
-  setColor(doc, PDF_COLORS.slate500);
-  doc.text('SCAN DETAILS', PDF_SPACING.margin + 10, yPos);
-  
-  yPos += 12;
-  
-  // Two-column layout for details
-  const col1X = PDF_SPACING.margin + 10;
-  const col2X = pageWidth / 2;
-  
-  setFont(doc, 'caption');
+  doc.setDrawColor(PDF_COLORS.slate200.r, PDF_COLORS.slate200.g, PDF_COLORS.slate200.b);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, detailsBoxHeight, 5, 5, 'FD');
+
+  yPos += 16;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  setColor(doc, PDF_COLORS.slate400);
+  doc.text('SCAN DETAILS', PDF_SPACING.margin + 14, yPos);
+
+  yPos += 16;
+  const col1X = PDF_SPACING.margin + 14;
+  const col1ValX = PDF_SPACING.margin + 80;
+  const col2X = pageWidth / 2 + 10;
+  const col2ValX = pageWidth / 2 + 76;
+
+  // Row 1
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
   setColor(doc, PDF_COLORS.slate400);
   doc.text('Target:', col1X, yPos);
-  setFont(doc, 'bodyBold');
+  doc.setFont('helvetica', 'bold');
   setColor(doc, PDF_COLORS.slate900);
-  doc.text(job.username, col1X + 50, yPos);
-  
-  setFont(doc, 'caption');
+  doc.text(job.username, col1ValX, yPos);
+
   setColor(doc, PDF_COLORS.slate400);
+  doc.setFont('helvetica', 'normal');
   doc.text('Status:', col2X, yPos);
-  
-  // Status badge
-  const statusColor = job.status === 'completed' ? PDF_COLORS.success : 
-                      job.status === 'failed' ? PDF_COLORS.danger : PDF_COLORS.warning;
+  const statusColor = job.status === 'completed' ? PDF_COLORS.success :
+    job.status === 'failed' ? PDF_COLORS.danger : PDF_COLORS.warning;
   setFillColor(doc, statusColor);
-  doc.roundedRect(col2X + 40, yPos - 7, 60, 12, 2, 2, 'F');
-  setFont(doc, 'caption');
+  doc.roundedRect(col2ValX, yPos - 8, 65, 14, 3, 3, 'F');
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
   setColor(doc, PDF_COLORS.white);
-  doc.text(job.status.toUpperCase(), col2X + 48, yPos);
-  
-  yPos += 16;
-  
-  setFont(doc, 'caption');
+  doc.text(job.status.toUpperCase(), col2ValX + 8, yPos + 1);
+
+  // Row 2
+  yPos += 20;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
   setColor(doc, PDF_COLORS.slate400);
   doc.text('Scan ID:', col1X, yPos);
-  setFont(doc, 'body');
+  doc.setFont('helvetica', 'normal');
   setColor(doc, PDF_COLORS.slate700);
-  doc.text(job.id.substring(0, 24) + '...', col1X + 50, yPos);
-  
+  doc.text(job.id.substring(0, 28) + '…', col1ValX, yPos);
+
   if (job.started_at) {
-    setFont(doc, 'caption');
     setColor(doc, PDF_COLORS.slate400);
     doc.text('Started:', col2X, yPos);
-    setFont(doc, 'body');
     setColor(doc, PDF_COLORS.slate700);
-    doc.text(new Date(job.started_at).toLocaleString(), col2X + 40, yPos);
+    doc.text(formatDate(job.started_at), col2ValX, yPos);
   }
-  
-  yPos += 16;
-  
+
+  // Row 3
+  yPos += 20;
   if (job.finished_at) {
-    setFont(doc, 'caption');
     setColor(doc, PDF_COLORS.slate400);
     doc.text('Completed:', col1X, yPos);
-    setFont(doc, 'body');
     setColor(doc, PDF_COLORS.slate700);
-    doc.text(new Date(job.finished_at).toLocaleString(), col1X + 50, yPos);
-    
-    // Duration calculation
-    if (job.started_at) {
-      const duration = Math.round((new Date(job.finished_at).getTime() - new Date(job.started_at).getTime()) / 1000);
-      setFont(doc, 'caption');
+    doc.text(formatDate(job.finished_at), col1ValX, yPos);
+
+    if (scanDuration) {
       setColor(doc, PDF_COLORS.slate400);
       doc.text('Duration:', col2X, yPos);
-      setFont(doc, 'body');
-      setColor(doc, PDF_COLORS.slate700);
-      doc.text(`${duration}s`, col2X + 40, yPos);
+      doc.setFont('helvetica', 'bold');
+      setColor(doc, PDF_COLORS.primary);
+      doc.text(scanDuration, col2ValX, yPos);
     }
   }
 
-  yPos += 35;
+  yPos += 40;
 
-  // Results breakdown
+  // Results Summary
   yPos = addSectionHeader(doc, 'Results Summary', yPos);
-  
+
   const summaryStats: Array<{ label: string; value: number; color: { r: number; g: number; b: number } }> = [
     { label: 'Found', value: grouped.found.length, color: PDF_COLORS.success },
     { label: 'Claimed', value: grouped.claimed.length, color: PDF_COLORS.info },
     { label: 'Not Found', value: grouped.not_found.length, color: PDF_COLORS.slate500 },
   ];
-  
   if (grouped.unknown.length > 0) {
     summaryStats.push({ label: 'Unknown', value: grouped.unknown.length, color: PDF_COLORS.slate400 });
   }
-  
   yPos = addStatCard(doc, summaryStats, yPos);
+
+  // Add provider summary if available
+  if (providerEvents.length > 0) {
+    yPos += 10;
+    yPos = addSubsectionHeader(doc, 'Providers Used', yPos);
+
+    const providerMap = new Map<string, { results: number; status: string }>();
+    providerEvents.forEach(event => {
+      const existing = providerMap.get(event.provider) || { results: 0, status: 'pending' };
+      if (event.event_type === 'success' || event.event_type === 'completed') {
+        existing.status = 'success';
+        existing.results = event.result_count || existing.results;
+      } else if (event.event_type === 'failed') {
+        existing.status = 'failed';
+      }
+      providerMap.set(event.provider, existing);
+    });
+
+    const providerItems = Array.from(providerMap.entries())
+      .sort((a, b) => b[1].results - a[1].results)
+      .map(([name, info]) => `${cleanPlatformName(name)}: ${info.results} result${info.results !== 1 ? 's' : ''} (${info.status})`);
+
+    if (providerItems.length > 0) {
+      yPos = addBulletList(doc, providerItems.slice(0, 8), yPos);
+    }
+  }
 
   // ==================== ACCOUNTS SECTION ====================
   if (results.length > 0) {
@@ -481,21 +568,22 @@ export async function generateInvestigationReport(data: InvestigationReportData)
     yPos = addPageHeader(doc, 'Account Discovery', branding);
     yPos = addSectionHeader(doc, 'Discovered Accounts', yPos);
 
-    // Found accounts table
     const foundAccounts = results.filter(r => {
       const status = deriveStatus(r);
       return status === 'found' || status === 'claimed';
     });
 
     if (foundAccounts.length > 0) {
-      const tableData = foundAccounts.slice(0, 40).map(account => {
-        const site = extractSite(account);
+      // Show more accounts per page (up to 80)
+      const maxRows = 80;
+      const tableData = foundAccounts.slice(0, maxRows).map(account => {
+        const site = cleanPlatformName(extractSite(account));
         const url = extractUrl(account);
         const status = deriveStatus(account);
         return [
           site,
           status.charAt(0).toUpperCase() + status.slice(1),
-          url ? (url.length > 35 ? url.substring(0, 35) + '...' : url) : '-',
+          url ? (url.length > 50 ? url.substring(0, 47) + '...' : url) : '-',
         ];
       });
 
@@ -504,20 +592,35 @@ export async function generateInvestigationReport(data: InvestigationReportData)
         head: [['Platform', 'Status', 'URL']],
         body: tableData,
         ...getTableStyles(),
+        styles: {
+          ...getTableStyles().styles,
+          fontSize: 8,
+          cellPadding: 3,
+        },
+        headStyles: {
+          ...getTableStyles().headStyles,
+          fontSize: 8,
+          cellPadding: 4,
+        },
+        bodyStyles: {
+          ...getTableStyles().bodyStyles,
+          fontSize: 8,
+          cellPadding: 3,
+        },
         columnStyles: {
-          0: { cellWidth: 120, fontStyle: 'bold' },
-          1: { cellWidth: 60 },
+          0: { cellWidth: 100, fontStyle: 'bold' },
+          1: { cellWidth: 50 },
           2: { cellWidth: 'auto' },
         },
       });
 
-      yPos = (doc as any).lastAutoTable.finalY + 15;
+      yPos = (doc as any).lastAutoTable.finalY + 12;
 
-      if (foundAccounts.length > 40) {
+      if (foundAccounts.length > maxRows) {
         setFont(doc, 'small');
         setColor(doc, PDF_COLORS.slate500);
-        doc.text(`... and ${foundAccounts.length - 40} more accounts`, PDF_SPACING.margin, yPos);
-        yPos += 15;
+        doc.text(`… and ${foundAccounts.length - maxRows} more accounts`, PDF_SPACING.margin, yPos);
+        yPos += 14;
       }
     } else {
       setFillColor(doc, PDF_COLORS.slate50);
@@ -536,38 +639,61 @@ export async function generateInvestigationReport(data: InvestigationReportData)
     foundAccounts.forEach(account => {
       const platform = extractSite(account).toLowerCase();
       let category = 'Other';
-      
-      if (['facebook', 'twitter', 'instagram', 'tiktok', 'snapchat', 'linkedin', 'reddit', 'mastodon'].some(s => platform.includes(s))) {
+      if (['facebook', 'twitter', 'instagram', 'tiktok', 'snapchat', 'linkedin', 'reddit', 'mastodon', 'x.com', 'truthsocial', 'threads'].some(s => platform.includes(s))) {
         category = 'Social Media';
-      } else if (['github', 'gitlab', 'stackoverflow', 'behance', 'dribbble'].some(s => platform.includes(s))) {
+      } else if (['github', 'gitlab', 'stackoverflow', 'behance', 'dribbble', 'codepen', 'bitbucket'].some(s => platform.includes(s))) {
         category = 'Professional';
-      } else if (['youtube', 'twitch', 'spotify', 'soundcloud', 'vimeo'].some(s => platform.includes(s))) {
+      } else if (['youtube', 'twitch', 'spotify', 'soundcloud', 'vimeo', 'dailymotion', 'bandcamp'].some(s => platform.includes(s))) {
         category = 'Media & Entertainment';
-      } else if (['steam', 'xbox', 'playstation', 'discord', 'roblox'].some(s => platform.includes(s))) {
+      } else if (['steam', 'xbox', 'playstation', 'discord', 'roblox', 'nitrotype'].some(s => platform.includes(s))) {
         category = 'Gaming';
+      } else if (['pinterest', 'tumblr', 'flickr', 'imgur', 'giphy', 'newgrounds'].some(s => platform.includes(s))) {
+        category = 'Creative & Visual';
+      } else if (['telegram', 'signal', 'whatsapp'].some(s => platform.includes(s))) {
+        category = 'Messaging';
       }
-      
       categories[category] = (categories[category] || 0) + 1;
     });
 
-    const categoryItems = Object.entries(categories)
-      .sort((a, b) => b[1] - a[1])
-      .map(([cat, count]) => `${cat}: ${count} account${count > 1 ? 's' : ''}`);
+    const categoryEntries = Object.entries(categories).sort((a, b) => b[1] - a[1]);
 
-    if (categoryItems.length > 0) {
-      yPos = addBulletList(doc, categoryItems, yPos);
+    if (categoryEntries.length > 0) {
+      // Visual category table instead of bullet list
+      const catData = categoryEntries.map(([cat, count]) => [
+        cat,
+        `${count} account${count > 1 ? 's' : ''}`,
+        `${Math.round((count / foundAccounts.length) * 100)}%`,
+      ]);
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Category', 'Count', 'Share']],
+        body: catData,
+        ...getTableStyles(),
+        styles: {
+          ...getTableStyles().styles,
+          fontSize: 9,
+        },
+        columnStyles: {
+          0: { fontStyle: 'bold', cellWidth: 160 },
+          1: { cellWidth: 120 },
+          2: { halign: 'right' as const, cellWidth: 'auto' },
+        },
+      });
+
+      yPos = (doc as any).lastAutoTable.finalY + 15;
     }
-    
+
     // Email validation if present
     const emailResult = results.find(r => (r as any).kind === 'email_validation' || (r as any).type?.includes('email'));
     if (emailResult) {
       yPos = checkPageBreak(doc, yPos, 60);
       yPos += 10;
       yPos = addSubsectionHeader(doc, 'Email Validation', yPos);
-      
+
       setFillColor(doc, PDF_COLORS.slate50);
       doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 35, 4, 4, 'F');
-      
+
       setFont(doc, 'body');
       setColor(doc, PDF_COLORS.slate700);
       const meta = emailResult.meta as Record<string, any> | undefined;
@@ -582,7 +708,6 @@ export async function generateInvestigationReport(data: InvestigationReportData)
     yPos = addPageHeader(doc, 'Security Findings', branding);
     yPos = addSectionHeader(doc, 'Breach Analysis', yPos);
 
-    // Severity breakdown visual
     const severityCounts = {
       critical: breachResults.filter(b => b.severity === 'critical').length,
       high: breachResults.filter(b => b.severity === 'high').length,
@@ -594,8 +719,8 @@ export async function generateInvestigationReport(data: InvestigationReportData)
     yPos += 10;
 
     // Breach table
-    const breachTableData = breachResults.slice(0, 20).map(breach => {
-      const source = extractSite(breach) !== 'Unknown' ? extractSite(breach) : (breach.provider || 'Unknown');
+    const breachTableData = breachResults.slice(0, 30).map(breach => {
+      const source = extractSite(breach) !== 'Unknown' ? cleanPlatformName(extractSite(breach)) : (breach.provider || 'Unknown');
       return [
         source,
         (breach.severity || 'unknown').toUpperCase(),
@@ -609,14 +734,14 @@ export async function generateInvestigationReport(data: InvestigationReportData)
       body: breachTableData,
       ...getTableStyles(),
       didDrawCell: (data: any) => {
-        // Color-code severity cells
         if (data.column.index === 1 && data.section === 'body') {
           const severity = data.cell.raw.toLowerCase();
           const color = SEVERITY_COLORS[severity as keyof typeof SEVERITY_COLORS] || SEVERITY_COLORS.unknown;
           doc.setFillColor(color.r, color.g, color.b);
-          doc.roundedRect(data.cell.x + 2, data.cell.y + 2, data.cell.width - 4, data.cell.height - 4, 2, 2, 'F');
+          doc.roundedRect(data.cell.x + 3, data.cell.y + 3, data.cell.width - 6, data.cell.height - 6, 2, 2, 'F');
           doc.setTextColor(255, 255, 255);
-          doc.setFontSize(8);
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'bold');
           doc.text(data.cell.raw, data.cell.x + data.cell.width / 2, data.cell.y + data.cell.height / 2 + 2, { align: 'center' });
         }
       },
@@ -627,46 +752,44 @@ export async function generateInvestigationReport(data: InvestigationReportData)
     // Recommendations
     yPos = checkPageBreak(doc, yPos, 150);
     yPos = addSectionHeader(doc, 'Recommended Actions', yPos);
-    
+
     // Immediate actions box
-    setFillColor(doc, { r: 254, g: 242, b: 242 }); // red-50
-    doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 80, 4, 4, 'F');
-    
-    // Red accent bar
+    setFillColor(doc, { r: 254, g: 242, b: 242 });
+    doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 85, 5, 5, 'F');
     setFillColor(doc, PDF_COLORS.danger);
-    doc.rect(PDF_SPACING.margin, yPos, 4, 80, 'F');
-    
-    yPos += 15;
-    setFont(doc, 'heading4');
+    doc.rect(PDF_SPACING.margin, yPos, 4, 85, 'F');
+
+    yPos += 16;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
     setColor(doc, PDF_COLORS.danger);
-    doc.text('🚨 Immediate Actions Required', PDF_SPACING.margin + 15, yPos);
-    
-    yPos += 12;
+    doc.text('Immediate Actions Required', PDF_SPACING.margin + 16, yPos);
+
+    yPos += 14;
     const immediateActions = [
       'Change passwords for all affected accounts immediately',
       'Enable two-factor authentication (2FA) where available',
       'Review recent account activity for suspicious behavior',
     ];
-    
+
     immediateActions.forEach(action => {
-      setFont(doc, 'body');
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
       setColor(doc, PDF_COLORS.slate700);
-      doc.text('• ' + action, PDF_SPACING.margin + 15, yPos);
-      yPos += 12;
+      doc.text('• ' + action, PDF_SPACING.margin + 16, yPos);
+      yPos += 13;
     });
-    
+
     yPos += 20;
-    
+
     // Additional recommendations
     yPos = checkPageBreak(doc, yPos, 80);
-    
     const additionalRecs = [
       'Monitor financial accounts for unauthorized transactions',
       'Consider using a password manager for unique passwords',
       'Request data deletion from data brokers if identified',
       'Set up dark web monitoring alerts for your email',
     ];
-    
     yPos = addBulletList(doc, additionalRecs, yPos);
   }
 
@@ -676,9 +799,9 @@ export async function generateInvestigationReport(data: InvestigationReportData)
     yPos = addPageHeader(doc, 'Scan Timeline', branding);
     yPos = addSectionHeader(doc, 'Provider Execution', yPos);
 
-    const timelineData = providerEvents.slice(0, 25).map(event => [
-      event.provider,
-      event.event_type.replace(/_/g, ' '),
+    const timelineData = providerEvents.slice(0, 30).map(event => [
+      cleanPlatformName(event.provider),
+      event.event_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
       String(event.result_count || 0),
       new Date(event.created_at).toLocaleTimeString(),
     ]);
@@ -690,8 +813,8 @@ export async function generateInvestigationReport(data: InvestigationReportData)
       ...getTableStyles(),
       columnStyles: {
         0: { fontStyle: 'bold' },
-        2: { halign: 'center' },
-        3: { halign: 'right' },
+        2: { halign: 'center' as const },
+        3: { halign: 'right' as const },
       },
     });
 
@@ -701,33 +824,46 @@ export async function generateInvestigationReport(data: InvestigationReportData)
   // ==================== GEOGRAPHIC SECTION ====================
   if (geoLocations.length > 0) {
     yPos = checkPageBreak(doc, yPos, 150);
-    
+
     if (yPos < 50) {
       yPos = addPageHeader(doc, 'Geographic Analysis', branding);
     }
-    
+
     yPos = addSectionHeader(doc, 'Geographic Distribution', yPos);
 
-    // Region breakdown
     const regionCounts: Record<string, number> = {};
     geoLocations.forEach(loc => {
       regionCounts[loc.region] = (regionCounts[loc.region] || 0) + 1;
     });
 
-    yPos = addSubsectionHeader(doc, 'Regions', yPos);
-    
-    const regionItems = Object.entries(regionCounts)
+    // Region breakdown as table
+    const regionData = Object.entries(regionCounts)
       .sort((a, b) => b[1] - a[1])
-      .map(([region, count]) => `${region}: ${count} location${count > 1 ? 's' : ''}`);
+      .map(([region, count]) => [region, String(count), `${Math.round((count / geoLocations.length) * 100)}%`]);
 
-    yPos = addBulletList(doc, regionItems, yPos);
+    if (regionData.length > 0) {
+      autoTable(doc, {
+        startY: yPos,
+        head: [['Region', 'Locations', 'Share']],
+        body: regionData,
+        ...getTableStyles(),
+        columnStyles: {
+          0: { fontStyle: 'bold' },
+          1: { halign: 'center' as const },
+          2: { halign: 'right' as const },
+        },
+      });
 
-    yPos += 10;
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+    }
 
-    // Locations table
-    const locationData = geoLocations.slice(0, 15).map(loc => [
+    // Locations detail table
+    yPos = checkPageBreak(doc, yPos, 80);
+    yPos = addSubsectionHeader(doc, 'Location Details', yPos);
+
+    const locationData = geoLocations.slice(0, 20).map(loc => [
       loc.ip,
-      loc.formatted.length > 30 ? loc.formatted.substring(0, 30) + '...' : loc.formatted,
+      loc.formatted.length > 35 ? loc.formatted.substring(0, 32) + '...' : loc.formatted,
       loc.region,
       `${loc.coordinates.lat.toFixed(2)}, ${loc.coordinates.lng.toFixed(2)}`,
     ]);
@@ -745,35 +881,87 @@ export async function generateInvestigationReport(data: InvestigationReportData)
   yPos = addPageHeader(doc, 'Appendix', branding);
   yPos = addSectionHeader(doc, 'Report Metadata', yPos);
 
-  // Metadata box
+  // Metadata box with proper spacing
+  const metaBoxHeight = 100;
   setFillColor(doc, PDF_COLORS.slate50);
-  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 80, 4, 4, 'F');
-  
-  yPos += 15;
-  yPos = addKeyValue(doc, 'Report Generated', new Date().toISOString(), yPos);
-  yPos = addKeyValue(doc, 'Report Version', '2.0', yPos);
-  yPos = addKeyValue(doc, 'Total Pages', String(doc.getNumberOfPages()), yPos);
-  yPos = addKeyValue(doc, 'Classification', 'CONFIDENTIAL', yPos);
+  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, metaBoxHeight, 5, 5, 'F');
 
-  yPos += 25;
+  const metaCol1 = PDF_SPACING.margin + 14;
+  const metaVal1 = PDF_SPACING.margin + 120;
 
-  yPos = addSubsectionHeader(doc, 'Legal Notice', yPos);
+  yPos += 20;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  setColor(doc, PDF_COLORS.slate400);
+  doc.text('Report Generated:', metaCol1, yPos);
+  doc.setFont('helvetica', 'bold');
+  setColor(doc, PDF_COLORS.slate700);
+  doc.text(formatDate(new Date().toISOString()), metaVal1, yPos);
+
+  yPos += 18;
+  doc.setFont('helvetica', 'normal');
+  setColor(doc, PDF_COLORS.slate400);
+  doc.text('Report Version:', metaCol1, yPos);
+  doc.setFont('helvetica', 'bold');
+  setColor(doc, PDF_COLORS.slate700);
+  doc.text('2.1', metaVal1, yPos);
+
+  yPos += 18;
+  doc.setFont('helvetica', 'normal');
+  setColor(doc, PDF_COLORS.slate400);
+  doc.text('Total Pages:', metaCol1, yPos);
+  doc.setFont('helvetica', 'bold');
+  setColor(doc, PDF_COLORS.slate700);
+  doc.text(String(doc.getNumberOfPages()), metaVal1, yPos);
+
+  yPos += 18;
+  doc.setFont('helvetica', 'normal');
+  setColor(doc, PDF_COLORS.slate400);
+  doc.text('Classification:', metaCol1, yPos);
+  doc.setFont('helvetica', 'bold');
+  setColor(doc, PDF_COLORS.danger);
+  doc.text('CONFIDENTIAL', metaVal1, yPos);
+
+  yPos += 35;
+
+  // Methodology section
+  yPos = addSubsectionHeader(doc, 'Methodology', yPos);
   
   setFillColor(doc, PDF_COLORS.slate50);
-  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 60, 4, 4, 'F');
-  
-  setFont(doc, 'small');
+  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 65, 5, 5, 'F');
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
   setColor(doc, PDF_COLORS.slate600);
-  
-  const legalText = 'This report contains information gathered from publicly accessible sources only. FootprintIQ operates within legal and ethical boundaries, collecting only openly available data. This report is intended for authorized recipients only and should be handled in accordance with applicable privacy laws and regulations.';
-  
-  const legalLines = doc.splitTextToSize(legalText, pageWidth - PDF_SPACING.margin * 2 - 20);
-  doc.text(legalLines, PDF_SPACING.margin + 10, yPos + 15);
+
+  const methodologyText = 'This report was generated using FootprintIQ\'s automated OSINT pipeline, which scans publicly accessible sources including social media platforms, public records, and data breach databases. Multiple OSINT tools were used in parallel to maximize coverage and accuracy. Results are cross-validated and deduplicated before inclusion.';
+  const methodLines = doc.splitTextToSize(methodologyText, pageWidth - PDF_SPACING.margin * 2 - 28);
+  doc.text(methodLines, PDF_SPACING.margin + 14, yPos + 16);
+
+  yPos += 85;
+
+  // Legal Notice
+  yPos = addSubsectionHeader(doc, 'Legal Notice', yPos);
+
+  setFillColor(doc, PDF_COLORS.slate50);
+  doc.roundedRect(PDF_SPACING.margin, yPos, pageWidth - PDF_SPACING.margin * 2, 70, 5, 5, 'F');
+
+  // Legal accent bar
+  setFillColor(doc, PDF_COLORS.warning);
+  doc.rect(PDF_SPACING.margin, yPos, 4, 70, 'F');
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  setColor(doc, PDF_COLORS.slate600);
+
+  const legalText = 'This report contains information gathered from publicly accessible sources only. FootprintIQ operates within legal and ethical boundaries, collecting only openly available data. This report is intended for authorized recipients only and should be handled in accordance with applicable privacy laws and regulations. The findings herein should be independently verified before taking any action.';
+  const legalLines = doc.splitTextToSize(legalText, pageWidth - PDF_SPACING.margin * 2 - 30);
+  doc.text(legalLines, PDF_SPACING.margin + 16, yPos + 16);
 
   // Add footers to all pages
   addPageFooters(doc, branding);
 
-  // Save the PDF
+  // Save
   const filename = `footprintiq-investigation-${job.username}-${Date.now()}.pdf`;
   doc.save(filename);
 }
