@@ -1,65 +1,67 @@
 
-# Fix Incorrect "Premium" Role Values in Admin Dashboard
+
+# Display Profile Photos from Scan Results
 
 ## Problem
 
-The "Role" column in the admin user table is showing "premium" for some users. This is incorrect — "premium" is a **subscription tier**, not a **role**.
+Profile photos are already being scraped and stored in the database, but they are not displayed due to a **key name mismatch** between backend storage and frontend rendering.
 
-In the database, 7 users currently have `role = 'premium'`, which was likely set by a previous webhook or sync bug. The valid roles should be `admin`, `user`, or `free` (access control), while subscription information belongs exclusively in the `subscription_tier` column (which is already shown separately).
+| Provider | Stores avatar as | Frontend checks |
+|----------|-----------------|-----------------|
+| Predicta Search | `meta.avatar` | `meta.avatar_url`, `meta.profile_image`, `meta.image` |
+| osint-scan (GitHub/Reddit) | `meta.avatar_url` | Same as above (works) |
 
-## What Will Change
+5 of 6 Predicta profile findings already contain real avatar URLs (Facebook, MapMyFitness, PicsArt, etc.) that are simply not being rendered.
 
-### 1. Fix Existing Data (Database Migration)
+## Solution
 
-Update the 7 users who currently have `role = 'premium'` to `role = 'user'` (the standard authenticated user role). Their `subscription_tier` column already correctly reflects their subscription status, so no subscription data is lost.
+Add `meta.avatar` to the image lookup chain in all components that display profile thumbnails. This is a one-line fix in each file.
 
-### 2. Fix the Edit User Dialog
+## Files to Change
 
-Remove "Premium User" from the Role dropdown in the user editor. The corrected options will be:
-- **Free** (default, no special access)
-- **User** (standard authenticated user)
-- **Admin** (full admin access)
+### 1. `src/components/scan/results-tabs/accounts/AccountRow.tsx` (line 284)
 
-Subscription tier is already managed in its own separate dropdown on the same form.
+The main results table row. Change the profileImage extraction to include `meta.avatar`:
 
-### 3. Fix the Role Filter
+```
+// Before
+const profileImage = meta.avatar_url || meta.profile_image || meta.image;
 
-Update the role filter dropdown in the user table to match the valid role values (`admin`, `user`, `free`) instead of listing "Premium" as a filterable role.
-
-### 4. Update Role Display Styling
-
-Add a colour/icon mapping for the `user` role so it renders cleanly alongside `admin` and `free` in the table.
-
----
-
-## Technical Details
-
-### Database Migration
-
-```sql
-UPDATE user_roles
-SET role = 'user'
-WHERE role = 'premium';
+// After
+const profileImage = meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
 ```
 
-### Files Modified
+### 2. `src/components/scan/results-tabs/accounts/FocusedEntityCard.tsx` (line 16)
 
-| File | Change |
-|------|--------|
-| `src/components/admin/EditUserDialog.tsx` | Replace "Premium User" role option with "User" |
-| `src/components/admin/UserManagementTable.tsx` | Update roleColors, roleIcons, and filter dropdown to use `user` instead of `premium` |
+The focused entity sidebar card. Same fix:
 
-### Before vs After
+```
+// Before
+const profileImage = meta.avatar_url || meta.profile_image || meta.image;
 
-**Role dropdown (Edit User):**
-- Before: Free User / Premium User / Admin
-- After: Free User / User / Admin
+// After
+const profileImage = meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
+```
 
-**Role filter (User Table):**
-- Before: All Roles / Admin / Free / Premium
-- After: All Roles / Admin / User / Free
+### 3. `src/components/scan/results-tabs/connections/ConnectionsInspector.tsx` (line 101)
 
-**Role badge colours:**
-- `admin` = red (unchanged)
-- `free` = grey (unchanged)
-- `user` = blue (new, replaces purple "premium")
+The connections inspector panel. Same fix:
+
+```
+// Before
+const profileImage = meta.avatar_url || meta.profile_image || meta.image;
+
+// After
+const profileImage = meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
+```
+
+## Why This Works
+
+- Predicta stores the URL in `meta.avatar` (from `profile.pfp_image`)
+- osint-scan stores it in `meta.avatar_url` (from GitHub/Reddit APIs)
+- Adding `meta.pfp_image` as a final fallback catches any edge cases where the raw Predicta field name leaks through via the `...profile` spread
+- No backend changes needed -- the data is already there
+
+## What You Will See
+
+After this fix, scan results from Predicta will show profile thumbnails (Instagram, TikTok, Facebook, Gravatar, etc.) directly in the Accounts table, just like the reference screenshots from Predicta Search and SherlocEye show.
