@@ -98,7 +98,7 @@ export function ConnectionsInspector({
   lensScore = 70,
 }: ConnectionsInspectorProps) {
   const meta = (selectedProfile?.meta || selectedProfile?.metadata || {}) as Record<string, any>;
-  const profileImage = meta.avatar_url || meta.profile_image || meta.image;
+  const profileImage = meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
   const extractedUsername = meta.username || meta.handle || meta.screen_name;
   
   const { verify, isVerifying } = useForensicVerification();
