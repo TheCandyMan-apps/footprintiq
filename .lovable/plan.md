@@ -1,99 +1,121 @@
 
 
-# Add Predicta Search to Username Scan Pipeline (with Credit Deduction)
+# iOS App Icons and Splash Screens for FootprintIQ
 
-## Overview
+## What This Does
 
-Currently, username scans only use Sherlock, Maigret, GoSearch, Holehe, and WhatsMyName. Predicta Search -- which returns profile photos, breach data, and social metadata -- is only used for `personal_details` (name) scans. This plan wires Predicta into the username scan pipeline so every username scan also gets rich profile data with photos, and deducts credits for the API call.
+Sets up all the required app icon sizes and splash/launch screen images so the iOS app looks polished on every Apple device -- from iPhone SE to iPad Pro. Right now, the project has no iOS icon or splash assets at all, so this fills that gap.
 
-## Credit Cost
+## Approach
 
-Predicta Search will cost **3 credits** per call (it's an expensive external API). This is consistent with other premium API providers like IPQS and TrueCaller.
+We will use Capacitor's official asset generation tool (`@capacitor/assets`). You provide two source images, and it automatically creates every size Apple requires -- no manual resizing needed.
 
-## Changes
+## Step-by-Step Plan
 
-### 1. Frontend Provider Registry
-**File:** `src/lib/providers/registry.ts`
+### 1. Create the `assets/` source folder
 
-Add a new `predictasearch` entry to `PROVIDER_REGISTRY` under the username providers section:
-- `id`: `'predictasearch'`
-- `name`: `'Predicta Search'`
-- `description`: `'Social profiles, breaches & profile photos'`
-- `scanType`: `'username'`
-- `creditCost`: 3
-- `minTier`: `'pro'` (Pro tier -- the API is expensive)
-- `category`: `'social'`
-- `requiresKey`: `'PREDICTA_SEARCH_API_KEY'`
-- `enabled`: true
+Add a folder at the project root called `assets/` with these files:
 
-This registers Predicta in the UI so users can see it in provider lists and credit calculations.
+| File | Purpose | Minimum Size |
+|------|---------|-------------|
+| `icon-only.png` | App icon (no background padding) | 1024 x 1024 px |
+| `icon-foreground.png` | Icon foreground layer (for adaptive icons on Android too) | 1024 x 1024 px |
+| `icon-background.png` | Solid background behind the foreground layer | 1024 x 1024 px |
+| `splash.png` | Launch/splash screen shown while app loads | 2732 x 2732 px |
+| `splash-dark.png` | Dark-mode variant of the splash screen | 2732 x 2732 px |
 
-### 2. Backend Scan Trigger -- Add Provider and Parallel Call
-**File:** `supabase/functions/n8n-scan-trigger/index.ts`
+We will generate these from the existing `logo-icon.png` (1024x1024) brand asset. The splash screens will use FootprintIQ's brand colours (#0a0a0f dark background, #7c3aed purple accent) with the shield logo centered.
 
-Two changes:
+### 2. Generate icon source images programmatically
 
-**a) Add `predictasearch` to the username providers list (line ~340)**
+Create a small helper script (`scripts/generate-asset-sources.ts`) that:
+- Takes `public/logo-icon-transparent.png` as the icon source
+- Creates `assets/icon-only.png` (transparent logo on transparent background, 1024x1024)
+- Creates `assets/icon-foreground.png` (logo padded to safe zone, 1024x1024)
+- Creates `assets/icon-background.png` (solid #0a0a0f background, 1024x1024)
+- Creates `assets/splash.png` (centered logo on #0a0a0f background, 2732x2732)
+- Creates `assets/splash-dark.png` (same as splash but slightly different tint)
 
-Add `"predictasearch"` to the `providers` array for username scans so the progress tracker knows about it:
+Since we cannot run image processing in the browser, these will be simple static PNGs placed manually from the existing brand assets.
+
+### 3. Install `@capacitor/assets` as a dev dependency
+
+Add it to `package.json`:
 ```
-providers = ["sherlock", "gosearch", "maigret", "holehe", "whatsmyname", "predictasearch"];
+@capacitor/assets (dev dependency)
 ```
 
-**b) Add a new parallel call section (after the name-intel block, before the return)**
+### 4. Add npm script for asset generation
 
-Similar to how email-intel and phone-intel are fired in parallel for their respective scan types, add a `PREDICTA-INTEL PARALLEL CALL` block for username scans:
-
-- Only fires for non-free-tier username scans (Pro and above)
-- Checks credit balance first (3 credits required)
-- Deducts credits using `spend_credits` RPC with reason `'api_usage'` and meta `{ provider: 'predictasearch', scan_id, username }`
-- Calls the `predicta-search` edge function with `queryType: 'username'`
-- On success, normalizes results into findings (social profiles and breaches) and inserts them into the `findings` table
-- Logs scan events for progress tracking
-- Fire-and-forget pattern (does not block the main scan response)
-
-### 3. Backend Predicta Username Handler
-**File:** `supabase/functions/n8n-scan-trigger/index.ts` (same file, new section)
-
-The parallel call block will:
-
-1. Check workspace has >= 3 credits via `get_credits_balance` RPC
-2. Deduct 3 credits via `spend_credits` RPC (reason: `'api_usage'`, meta: `{ provider: 'predictasearch', scan_id }`)
-3. Call `predicta-search` edge function with the username
-4. Parse results into `findings` rows (same format as name-intel: `social.profile` and `breach.hit` kinds)
-5. Store avatar URLs in `meta.avatar` so the frontend fix we just made picks them up
-6. Log `scan_events` for `predictasearch` provider
-7. Broadcast progress via realtime channel
-8. If credits insufficient, log provider as `skipped` with message and continue (scan not blocked)
-
-### Technical Detail: Credit Deduction
-
-The `credits_ledger` table has a CHECK constraint allowing these reasons: `'darkweb_scan', 'purchase', 'reverse_image_search', 'export', 'scan', 'api_usage', 'admin_grant'`.
-
-We will use `'api_usage'` as the reason (matching existing patterns like quick-analysis), with the provider name in the `_meta` field:
+Add to `package.json` scripts:
 ```json
-{ "provider": "predictasearch", "scan_id": "...", "scan_type": "username" }
+"generate:assets": "npx capacitor-assets generate"
 ```
 
-### What This Does NOT Change
+This command reads from `assets/` and outputs correctly sized icons and splash screens into the `ios/` and `android/` folders.
 
-- Free tier username scans remain unaffected (only WhatsMyName runs on free quick scans)
-- The existing `predicta-search` edge function is reused as-is
-- The name-intel pipeline for `personal_details` scans remains unchanged
-- No database schema changes needed
+### 5. Add Apple Touch Icon to `index.html`
 
-### Summary of Flow
-
-```text
-User starts username scan (Pro+)
-  -> n8n-scan-trigger
-     -> Creates scan record
-     -> Fires n8n webhook (Sherlock, Maigret, etc.)
-     -> NEW: Fires Predicta Search in parallel
-        -> Check credits (3 required)
-        -> Deduct 3 credits (reason: api_usage)
-        -> Call predicta-search edge function
-        -> Insert findings with meta.avatar
-        -> Log scan events + broadcast progress
-  -> Returns scan ID to frontend
+Add `<link>` tags for PWA/Safari support:
+```html
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png" />
 ```
+
+### 6. Update PWA manifest
+
+Replace placeholder icons in `manifest.json` and `vite.config.ts` PWA config with actual icon paths:
+- 192x192 PNG icon
+- 512x512 PNG icon
+
+### 7. Add Capacitor splash screen configuration
+
+Update `capacitor.config.ts` to include splash screen settings:
+```typescript
+plugins: {
+  SplashScreen: {
+    launchShowDuration: 2000,
+    launchAutoHide: true,
+    backgroundColor: '#0a0a0f',
+    showSpinner: false,
+    launchFadeOutDuration: 500,
+  }
+}
+```
+
+## What Gets Created
+
+After running `npx capacitor-assets generate`, the tool auto-generates:
+
+**iOS App Icons (AppIcon.appiconset):**
+- 20x20, 29x29, 40x40, 58x58, 60x60, 76x76, 80x80, 87x87, 120x120, 152x152, 167x167, 180x180, 1024x1024
+
+**iOS Splash/Launch Screens:**
+- All required sizes for iPhone SE through iPad Pro (portrait and landscape)
+
+**PWA Icons:**
+- 192x192, 512x512 (with maskable variants)
+
+## Technical Details
+
+### Files created:
+- `assets/icon-only.png` -- source icon (1024x1024)
+- `assets/icon-foreground.png` -- foreground layer (1024x1024)
+- `assets/icon-background.png` -- background layer (1024x1024)
+- `assets/splash.png` -- splash screen (2732x2732)
+- `assets/splash-dark.png` -- dark splash screen (2732x2732)
+
+### Files modified:
+- `capacitor.config.ts` -- add SplashScreen plugin config
+- `index.html` -- add apple-touch-icon link
+- `vite.config.ts` -- update PWA manifest icon references
+- `manifest.json` -- update icon references
+- `package.json` -- add `@capacitor/assets` dev dependency and `generate:assets` script
+
+### Post-implementation steps (on your Mac):
+1. Export/pull the project from GitHub
+2. Run `npm install`
+3. Place your final 1024x1024 icon PNG and 2732x2732 splash PNG into the `assets/` folder (or use the generated defaults)
+4. Run `npm run generate:assets` to produce all iOS/Android/PWA sizes
+5. Run `npx cap sync ios` to sync everything to the Xcode project
+6. Open in Xcode with `npx cap open ios` to verify icons appear correctly
+
