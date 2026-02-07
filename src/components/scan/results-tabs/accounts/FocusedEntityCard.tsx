@@ -13,7 +13,7 @@ export function FocusedEntityCard({ entity, onClear }: FocusedEntityCardProps) {
   if (!entity) return null;
 
   const meta = (entity.meta || entity.metadata || {}) as Record<string, any>;
-  const profileImage = meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
+  const profileImage = meta.avatar_cached || meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
 
   return (
     <Card className="border-primary/50 bg-primary/5">
