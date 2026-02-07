@@ -1,84 +1,116 @@
 
 
-# Fix Profile Photos: Cache Avatars to Prevent Expiry
+# Fix Clarity-Identified UX Issues
 
-## The Problem
+## Summary
 
-Profile photos from Predicta Search ARE being saved to the database (the schema fix worked), but the URLs are temporary CDN links from Instagram, TikTok, etc. that expire within hours. When a user revisits scan results, the images fail to load and show initials instead.
+Four issues were flagged by Clarity session recordings. Two require immediate fixes, one is working correctly, and one confirms healthy usage.
 
-- TikTok CDN URLs have `x-expires` parameters
-- Instagram CDN URLs have `oe=` expiry tokens
-- Most social platforms block direct hotlinking after a short window
+---
 
-## The Fix
+## Issue 1: `/usernames` Landing Page Flow
+**Status: No action needed**
 
-Cache avatar images into the project's existing `scan-images` Storage bucket during scan time. Store the permanent Storage URL alongside the original CDN URL.
+The `/usernames` page correctly links users to `/scan` via the "Run a Free Username Scan" CTA. This is working as designed after the unified scan interface consolidation.
+
+---
+
+## Issue 2: 404s on `/new-scan` and `/scan-history` (CRITICAL)
+
+**Root cause:** The `MobileCTABar` component (visible on all mobile pages) has two buttons that navigate to `/new-scan` and `/scan-history`, but neither route exists in the router.
+
+**Impact from real 404 data:**
+- `/new-scan` -- 1,035+ hits (sources: Google, Reddit, direct, dashboard)
+- `/scan-history` -- 456+ hits (sources: direct, Google, dashboard, Stripe checkout returns)
+
+**Fix:**
+1. Update `MobileCTABar.tsx` to navigate to correct existing routes:
+   - "New Scan" button: `/new-scan` --> `/scan`
+   - "History" button: `/scan-history` --> `/dashboard` (the dashboard contains scan history)
+2. Add redirect routes in `App.tsx` as safety nets for anyone who bookmarked these URLs:
+   - `/new-scan` --> redirect to `/scan`
+   - `/scan-history` --> redirect to `/dashboard`
+
+---
+
+## Issue 3: Extended Multi-Step Scanning Flows
+**Status: No action needed**
+
+This confirms healthy product usage -- users are completing full scan flows, exploring results, and re-scanning. No friction detected.
+
+---
+
+## Issue 4: Authentication Loop / Drop-off (IMPORTANT)
+
+**Root cause:** The auth page has no "redirect back" mechanism. The flow breaks like this:
 
 ```text
-Scan Flow (current):
-  Predicta API --> CDN URL --> meta.avatar --> (expires) --> broken image
-
-Scan Flow (fixed):
-  Predicta API --> CDN URL --> download image --> upload to Storage --> meta.avatar_cached
-                                                                    --> permanent URL --> image displays
+User on /usernames --> clicks "Run a Free Username Scan" --> /scan
+  --> ScanPage checks auth --> no session --> redirect to /auth
+    --> user signs in/up --> hardcoded redirect to /dashboard
+      --> user has to manually find scan again (many don't)
 ```
 
-## Changes
+**Fix:**
+1. Update `ScanPage.tsx` to pass the intended destination when redirecting to auth:
+   - Change `navigate("/auth")` to `navigate("/auth?redirect=/scan")`
+2. Update `Auth.tsx` to read the `redirect` query parameter and use it after successful login:
+   - Read `redirect` from `URLSearchParams`
+   - After successful auth, navigate to the redirect URL instead of always `/dashboard`
+   - Validate the redirect URL starts with `/` to prevent open redirect attacks
+3. Apply the same pattern to other pages that redirect to `/auth` (e.g., Dashboard, Monitoring) so the user always returns to where they intended to go.
 
-### 1. Update `n8n-scan-trigger` edge function -- avatar caching
-
-After receiving Predicta results, before inserting findings:
-
-- For each profile with a `pfp_image` or `avatar_url`, fetch the image from the CDN
-- Upload it to the `scan-images` bucket at path: `avatars/{scan_id}/{platform}.jpg`
-- Store the public Storage URL in `meta.avatar_cached`
-- Keep the original CDN URL in `meta.avatar` as a fallback
-- Use a 3-second timeout per image to avoid blocking the scan
-- Skip failed downloads gracefully (original URL still available as fallback)
-
-### 2. Make `scan-images` bucket public
-
-The `scan-images` bucket is currently private. To serve avatar thumbnails without auth tokens, it needs to be public (these are publicly-available profile photos already scraped from public profiles).
-
-### 3. Update `AccountRow.tsx` -- prefer cached URL
-
-Change the profile image resolution chain:
-
-**Before:**
-```
-meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image
-```
-
-**After:**
-```
-meta.avatar_cached || meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image
-```
-
-### 4. Update `useRealtimeResults.ts` -- pass avatar from social_profiles
-
-When normalizing `social_profiles` into `ScanResultRow`, ensure the `avatar_url` field is also mapped into `meta` so the `AccountRow` fallback chain can find it:
-
-```
-meta: { ...profile.metadata, avatar_url: profile.avatar_url }
-```
-
-## What This Fixes
-
-- Profile photos will persist permanently after scan completion
-- Revisiting old scan results will still show photos
-- Photos display correctly even days/weeks later
-- No dependency on third-party CDN availability
-
-## What Stays the Same
-
-- The Confidence Breakdown "Profile image: Confirmed" logic remains correct (it checks if a URL was provided at scan time)
-- Scans without Predicta (free tier, or non-username scans) will still show initials -- this is expected
-- The original CDN URL is preserved as a fallback
+---
 
 ## Files Modified
 
-1. `supabase/functions/n8n-scan-trigger/index.ts` -- add avatar download and Storage upload logic
-2. `src/components/scan/results-tabs/accounts/AccountRow.tsx` -- prefer `avatar_cached` in fallback chain
-3. `src/hooks/useRealtimeResults.ts` -- merge `avatar_url` into meta for social_profiles
-4. Database migration -- make `scan-images` bucket public
+1. **`src/components/MobileCTABar.tsx`** -- Fix navigation targets from `/new-scan` to `/scan` and `/scan-history` to `/dashboard`
+2. **`src/App.tsx`** -- Add two redirect routes for `/new-scan` and `/scan-history` as safety nets
+3. **`src/pages/Auth.tsx`** -- Read `redirect` query param and use it after successful login instead of hardcoded `/dashboard`
+4. **`src/pages/ScanPage.tsx`** -- Pass `?redirect=/scan` when redirecting unauthenticated users to `/auth`
+
+---
+
+## Technical Details
+
+### MobileCTABar fix
+```typescript
+// Before
+onClick={() => navigate('/new-scan')}
+onClick={() => navigate('/scan-history'))
+
+// After
+onClick={() => navigate('/scan'))
+onClick={() => navigate('/dashboard'))
+```
+
+### Auth redirect-back logic
+```typescript
+// In Auth.tsx useEffect and sign-in handler
+const searchParams = new URLSearchParams(window.location.search);
+const redirectTo = searchParams.get('redirect');
+
+// Validate: must start with "/" and not "//" (prevents open redirect)
+const safeRedirect = redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')
+  ? redirectTo
+  : '/dashboard';
+
+// Use safeRedirect instead of hardcoded '/dashboard'
+navigate(safeRedirect);
+```
+
+### ScanPage auth redirect
+```typescript
+// Before
+navigate("/auth");
+
+// After
+navigate("/auth?redirect=/scan");
+```
+
+### Safety-net redirect routes in App.tsx
+```tsx
+<Route path="/new-scan" element={<Navigate to="/scan" replace />} />
+<Route path="/scan-history" element={<Navigate to="/dashboard" replace />} />
+```
 
