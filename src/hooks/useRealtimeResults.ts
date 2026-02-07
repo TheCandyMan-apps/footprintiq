@@ -45,7 +45,7 @@ function normalizeSocialProfile(profile: SocialProfile): ScanResultRow {
       avatar: profile.avatar_url,
       confidence_score: profile.confidence_score 
     },
-    meta: profile.metadata,
+    meta: { ...(profile.metadata || {}), avatar_url: profile.avatar_url },
     created_at: profile.first_seen || new Date().toISOString(),
   };
 }

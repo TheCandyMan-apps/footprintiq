@@ -694,9 +694,88 @@ serve(async (req) => {
               const findings: Record<string, unknown>[] = [];
               const now = new Date().toISOString();
               
+              // Helper: cache a single avatar image to scan-images storage bucket
+              // Returns the public URL on success, or null on failure (graceful skip)
+              async function cacheAvatar(
+                imageUrl: string, 
+                scanId: string, 
+                platformSlug: string
+              ): Promise<string | null> {
+                try {
+                  const controller = new AbortController();
+                  const timeout = setTimeout(() => controller.abort(), 3000); // 3s timeout
+                  
+                  const imgRes = await fetch(imageUrl, { 
+                    signal: controller.signal,
+                    headers: { 'User-Agent': 'FootprintIQ/1.0' },
+                  });
+                  clearTimeout(timeout);
+                  
+                  if (!imgRes.ok) {
+                    console.log(`[avatar-cache] Failed to fetch ${platformSlug}: HTTP ${imgRes.status}`);
+                    return null;
+                  }
+                  
+                  const contentType = imgRes.headers.get('content-type') || 'image/jpeg';
+                  const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg';
+                  const blob = await imgRes.blob();
+                  
+                  // Skip if image is too small (likely a placeholder/error page)
+                  if (blob.size < 100) {
+                    console.log(`[avatar-cache] Skipping ${platformSlug}: too small (${blob.size} bytes)`);
+                    return null;
+                  }
+                  
+                  const storagePath = `avatars/${scanId}/${platformSlug}.${ext}`;
+                  
+                  const { error: uploadError } = await serviceClient.storage
+                    .from('scan-images')
+                    .upload(storagePath, blob, { 
+                      contentType, 
+                      upsert: true,
+                    });
+                  
+                  if (uploadError) {
+                    console.error(`[avatar-cache] Upload failed for ${platformSlug}:`, uploadError.message);
+                    return null;
+                  }
+                  
+                  const { data: publicUrlData } = serviceClient.storage
+                    .from('scan-images')
+                    .getPublicUrl(storagePath);
+                  
+                  console.log(`[avatar-cache] Cached ${platformSlug} avatar → ${storagePath}`);
+                  return publicUrlData?.publicUrl || null;
+                } catch (err) {
+                  const msg = err instanceof Error ? err.message : String(err);
+                  // Don't log abort errors as errors (expected on timeout)
+                  if (msg.includes('abort')) {
+                    console.log(`[avatar-cache] Timeout fetching ${platformSlug} avatar`);
+                  } else {
+                    console.error(`[avatar-cache] Error caching ${platformSlug}:`, msg);
+                  }
+                  return null;
+                }
+              }
+              
               // Normalize profiles into findings (correct schema)
-              for (const profile of profiles) {
+              // Cache avatars in parallel before building findings
+              const avatarCachePromises = profiles.map(async (profile: Record<string, unknown>) => {
+                const cdnUrl = (profile.pfp_image || profile.avatar_url) as string | null;
+                if (!cdnUrl) return null;
+                const platformSlug = ((profile.platform as string) || 'unknown').toLowerCase().replace(/[^a-z0-9]/g, '_');
+                return cacheAvatar(cdnUrl, scan.id, platformSlug);
+              });
+              
+              const cachedAvatarUrls = await Promise.all(avatarCachePromises);
+              console.log(`[n8n-scan-trigger] Avatar caching: ${cachedAvatarUrls.filter(Boolean).length}/${profiles.length} succeeded`);
+              
+              for (let i = 0; i < profiles.length; i++) {
+                const profile = profiles[i];
                 const profileUrl = profile.link || profile.url || null;
+                const originalAvatar = profile.pfp_image || profile.avatar_url || null;
+                const cachedAvatar = cachedAvatarUrls[i] || null;
+                
                 findings.push({
                   scan_id: scan.id,
                   workspace_id: workspaceId,
@@ -712,7 +791,8 @@ serve(async (req) => {
                     platform: profile.platform,
                     username: profile.username || targetValue,
                     display_name: profile.name || profile.display_name,
-                    avatar: profile.pfp_image || profile.avatar_url || null,
+                    avatar: originalAvatar,
+                    avatar_cached: cachedAvatar,
                     followers: profile.followers_count,
                     following: profile.following_count,
                     verified: profile.is_verified,
