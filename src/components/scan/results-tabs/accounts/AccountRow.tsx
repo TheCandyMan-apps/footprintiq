@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
-import { CheckCircle, HelpCircle, AlertCircle, Clock, Users, MapPin, Info, Globe } from 'lucide-react';
+import { CheckCircle, HelpCircle, AlertCircle, Clock, Users, MapPin, Info, Globe, Zap, Sparkles } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,9 @@ import { ConfidenceBreakdown, ConfidenceTooltipContent } from './ConfidenceBreak
 import { LensUpgradePrompt } from './LensUpgradePrompt';
 import { useTierGating } from '@/hooks/useTierGating';
 import { PlatformIconBadge } from '@/components/ui/PlatformIcon';
+import { useAIEnrichment } from '@/hooks/useAIEnrichment';
+import { QuickAnalysisDialog } from '@/components/scan/QuickAnalysisDialog';
+import { EnrichmentDialog } from '@/components/scan/EnrichmentDialog';
 import {
   Tooltip,
   TooltipContent,
@@ -285,6 +289,20 @@ export function AccountRow({
   const confidence = getMatchConfidence(lensScore);
   const ConfidenceIcon = confidence.icon;
   
+  // AI enrichment
+  const {
+    isAnalyzing,
+    analysisOpen,
+    setAnalysisOpen,
+    analysisData,
+    handleQuickAnalysis,
+    isEnriching,
+    enrichmentOpen,
+    setEnrichmentOpen,
+    enrichmentData,
+    handleDeepEnrichment,
+  } = useAIEnrichment(result.id);
+  
   // Determine if this is an "unclear" account that needs review
   const isUnclearConfidence = lensScore < 60 && !verificationResult;
 
@@ -526,6 +544,32 @@ export function AccountRow({
               </a>
             </div>
           )}
+
+          {/* AI Enrichment Buttons */}
+          {!isFree && (
+            <div className="flex gap-2 pt-2 border-t border-border/15" onClick={(e) => e.stopPropagation()}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleQuickAnalysis}
+                disabled={isAnalyzing}
+                className="gap-1.5 text-[11px] h-7"
+              >
+                <Zap className="h-3.5 w-3.5" />
+                {isAnalyzing ? 'Analyzing...' : 'Quick Analysis (2 credits)'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDeepEnrichment}
+                disabled={isEnriching}
+                className="gap-1.5 text-[11px] h-7"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                {isEnriching ? 'Enriching...' : 'Deep Enrichment (5 credits)'}
+              </Button>
+            </div>
+          )}
         </div>
       </CollapsibleContent>
 
@@ -537,6 +581,22 @@ export function AccountRow({
         url={profileUrl || undefined}
         platform={platformName}
         scanId={jobId}
+      />
+
+      {/* AI Dialogs */}
+      <QuickAnalysisDialog
+        open={analysisOpen}
+        onOpenChange={setAnalysisOpen}
+        analysis={analysisData}
+        isLoading={isAnalyzing}
+        creditsSpent={2}
+      />
+      <EnrichmentDialog
+        open={enrichmentOpen}
+        onOpenChange={setEnrichmentOpen}
+        enrichment={enrichmentData}
+        isLoading={isEnriching}
+        creditsSpent={5}
       />
     </Collapsible>
   );
