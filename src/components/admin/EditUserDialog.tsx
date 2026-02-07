@@ -203,7 +203,7 @@ export function EditUserDialog({ user, open, onClose }: EditUserDialogProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="free">Free User</SelectItem>
-                      <SelectItem value="premium">Premium User</SelectItem>
+                      <SelectItem value="user">User</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>

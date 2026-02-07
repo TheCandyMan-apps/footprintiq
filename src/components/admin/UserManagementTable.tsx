@@ -52,13 +52,13 @@ import { toast } from 'sonner';
 const roleColors = {
   admin: 'bg-red-500/10 text-red-500 border-red-500/20',
   free: 'bg-gray-500/10 text-gray-500 border-gray-500/20',
-  premium: 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+  user: 'bg-blue-500/10 text-blue-500 border-blue-500/20',
 };
 
 const roleIcons = {
   admin: Shield,
   free: UserIcon,
-  premium: Crown,
+  user: UserIcon,
 };
 
 const statusColors = {
@@ -446,8 +446,8 @@ export function UserManagementTable() {
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="user">User</SelectItem>
                 <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="premium">Premium</SelectItem>
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
