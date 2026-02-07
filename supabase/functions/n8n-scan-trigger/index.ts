@@ -149,27 +149,8 @@ serve(async (req) => {
         });
       }
       
-      // For phone scans on Free tier - always block (no free providers available)
-      if (scanType === 'phone') {
-        await serviceClient.from('activity_logs').insert({
-          user_id: user.id,
-          action: 'scan.blocked',
-          entity_type: 'scan',
-          metadata: {
-            scan_type: scanType,
-            reason: 'scan_blocked_by_tier',
-            workspace_id: workspaceId,
-            message: 'Phone intelligence requires Pro plan',
-          },
-        });
-        
-        return createBlockResponse({
-          error: 'scan_blocked_by_tier',
-          code: 'scan_blocked_by_tier',
-          message: 'Phone intelligence requires a Pro subscription. Upgrade to access carrier lookup, fraud detection, and more.',
-          scanType,
-        });
-      }
+      // Phone scans on Free tier: allowed with abstract_phone only (free-tier provider)
+      // Other phone providers (IPQS, NumVerify, Twilio, TrueCaller) are gated by enforceProviderAccess in phone-intel
       
       // For email scans - check if user has free_any_scan_credits OR allow holehe-only scan
       // (Holehe is available on Free tier, so we allow email scans to proceed)
@@ -516,7 +497,7 @@ serve(async (req) => {
             scanId: scan.id,
             email: targetValue,
             workspaceId: workspaceId,
-            providers: ['hibp', 'abstract_email', 'ipqs_email'],
+            providers: ['hibp', 'abstract_email', 'abstract_email_reputation', 'ipqs_email'],
             userPlan: effectiveTier,
           }),
         }).then(res => {

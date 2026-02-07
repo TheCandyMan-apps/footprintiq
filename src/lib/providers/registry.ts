@@ -216,7 +216,7 @@ export const PROVIDER_REGISTRY: ProviderConfig[] = [
     description: 'Email validation & deliverability',
     scanType: 'email',
     creditCost: 1,
-    minTier: 'pro',
+    minTier: 'free',
     category: 'carrier',
     requiresKey: 'ABSTRACTAPI_EMAIL_VERIFICATION_KEY',
     enabled: true,
