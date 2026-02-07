@@ -29,23 +29,23 @@ export default defineConfig(({ mode }) => ({
         categories: ['productivity', 'security', 'utilities'],
         icons: [
           {
-            src: '/placeholder.svg',
+            src: '/pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/placeholder.svg',
+            src: '/pwa-512x512.png',
             sizes: '512x512',
-            type: 'image/svg+xml',
+            type: 'image/png',
             purpose: 'any maskable'
           }
         ],
         screenshots: [
           {
-            src: '/placeholder.svg',
+            src: '/og-image.jpg',
             sizes: '1280x720',
-            type: 'image/svg+xml',
+            type: 'image/jpeg',
             label: 'FootprintIQ Dashboard'
           }
         ]
