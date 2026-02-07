@@ -337,7 +337,7 @@ serve(async (req) => {
           break;
         case 'username':
         default:
-          providers = ["sherlock", "gosearch", "maigret", "holehe", "whatsmyname"];
+          providers = ["sherlock", "gosearch", "maigret", "holehe", "whatsmyname", "predictasearch"];
           break;
       }
     }
@@ -600,6 +600,247 @@ serve(async (req) => {
         console.log(`[n8n-scan-trigger] name-intel triggered (fire-and-forget)`);
       } catch (nameIntelError) {
         console.error('[n8n-scan-trigger] Failed to trigger name-intel:', nameIntelError);
+      }
+    }
+
+    // ==================== PREDICTA-INTEL PARALLEL CALL (username scans, Pro+) ====================
+    // For username scans on Pro+ tiers, also call Predicta Search for rich profile data & photos
+    // Costs 3 credits per call. Fire-and-forget pattern (does not block scan response).
+    if (scanType === 'username' && targetValue && effectiveTier !== 'free') {
+      console.log(`[n8n-scan-trigger] Evaluating Predicta Search for username "${targetValue.slice(0, 5)}***" (tier: ${effectiveTier})`);
+      
+      try {
+        // 1. Check credit balance
+        const { data: balanceData, error: balanceError } = await serviceClient
+          .rpc('get_credits_balance', { _workspace_id: workspaceId });
+        
+        const currentBalance = balanceData ?? 0;
+        const predictaCost = 3;
+        
+        if (balanceError) {
+          console.error(`[n8n-scan-trigger] Failed to check credits for Predicta:`, balanceError);
+          // Log as skipped and continue
+          await serviceClient.from('scan_events').insert({
+            scan_id: scan.id,
+            provider: 'predictasearch',
+            event_type: 'provider_skipped',
+            payload: { reason: 'credit_check_failed', error: balanceError.message },
+          });
+        } else if (currentBalance < predictaCost) {
+          console.log(`[n8n-scan-trigger] Insufficient credits for Predicta (have: ${currentBalance}, need: ${predictaCost})`);
+          // Log as skipped due to insufficient credits
+          await serviceClient.from('scan_events').insert({
+            scan_id: scan.id,
+            provider: 'predictasearch',
+            event_type: 'provider_skipped',
+            payload: { reason: 'insufficient_credits', balance: currentBalance, cost: predictaCost },
+          });
+        } else {
+          // 2. Deduct credits
+          const { data: spendResult, error: spendError } = await serviceClient
+            .rpc('spend_credits', {
+              _workspace_id: workspaceId,
+              _cost: predictaCost,
+              _reason: 'api_usage',
+              _meta: { provider: 'predictasearch', scan_id: scan.id, scan_type: 'username', username: targetValue },
+            });
+          
+          if (spendError || !spendResult) {
+            console.error(`[n8n-scan-trigger] Failed to deduct credits for Predicta:`, spendError);
+            await serviceClient.from('scan_events').insert({
+              scan_id: scan.id,
+              provider: 'predictasearch',
+              event_type: 'provider_skipped',
+              payload: { reason: 'credit_deduction_failed', error: spendError?.message },
+            });
+          } else {
+            console.log(`[n8n-scan-trigger] Deducted ${predictaCost} credits for Predicta Search (balance: ${currentBalance - predictaCost})`);
+            
+            // Log credit deduction event
+            await serviceClient.from('scan_events').insert({
+              scan_id: scan.id,
+              provider: 'predictasearch',
+              event_type: 'credits_deducted',
+              payload: { cost: predictaCost, remaining: currentBalance - predictaCost },
+            });
+            
+            // 3. Fire predicta-search edge function (fire-and-forget)
+            fetch(`${supabaseUrl}/functions/v1/predicta-search`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${serviceRoleKey}`,
+              },
+              body: JSON.stringify({
+                query: targetValue,
+                queryType: 'username',
+                networks: ['all'],
+              }),
+            }).then(async (res) => {
+              console.log(`[n8n-scan-trigger] predicta-search responded: ${res.status}`);
+              
+              if (!res.ok) {
+                console.error(`[n8n-scan-trigger] predicta-search HTTP error: ${res.status}`);
+                await serviceClient.from('scan_events').insert({
+                  scan_id: scan.id,
+                  provider: 'predictasearch',
+                  event_type: 'provider_error',
+                  payload: { status: res.status, error: `HTTP ${res.status}` },
+                });
+                return;
+              }
+              
+              const predictaResult = await res.json();
+              
+              if (!predictaResult?.success) {
+                console.error(`[n8n-scan-trigger] predicta-search returned error:`, predictaResult?.error || predictaResult?.message);
+                await serviceClient.from('scan_events').insert({
+                  scan_id: scan.id,
+                  provider: 'predictasearch',
+                  event_type: 'provider_error',
+                  payload: { error: predictaResult?.error || predictaResult?.message || 'Unknown error' },
+                });
+                return;
+              }
+              
+              // 4. Normalize and insert findings
+              const profiles = predictaResult.data?.profiles || [];
+              const breaches = predictaResult.data?.breaches || [];
+              const leaks = predictaResult.data?.leaks || [];
+              
+              console.log(`[n8n-scan-trigger] Predicta returned ${profiles.length} profiles, ${breaches.length} breaches, ${leaks.length} leaks`);
+              
+              const findings: Record<string, unknown>[] = [];
+              
+              // Normalize profiles into findings
+              for (const profile of profiles) {
+                findings.push({
+                  scan_id: scan.id,
+                  provider: 'predictasearch',
+                  kind: 'social.profile',
+                  severity: 'info',
+                  label: profile.platform || profile.name || 'Unknown',
+                  value: profile.link || profile.url || null,
+                  confidence: profile.is_verified ? 90 : 70,
+                  meta: {
+                    platform: profile.platform,
+                    username: profile.username || targetValue,
+                    display_name: profile.name || profile.display_name,
+                    avatar: profile.pfp_image || profile.avatar_url || null,
+                    url: profile.link || profile.url || null,
+                    followers: profile.followers_count,
+                    following: profile.following_count,
+                    verified: profile.is_verified,
+                    country: profile.country,
+                    gender: profile.gender,
+                    age: profile.age,
+                    source: 'predictasearch',
+                  },
+                });
+              }
+              
+              // Normalize breaches into findings
+              for (const breach of breaches) {
+                findings.push({
+                  scan_id: scan.id,
+                  provider: 'predictasearch',
+                  kind: 'breach.hit',
+                  severity: 'high',
+                  label: breach.breach_name || breach.name || 'Unknown Breach',
+                  value: breach.breach_domain || breach.domain || null,
+                  confidence: 85,
+                  meta: {
+                    breach_name: breach.breach_name || breach.name,
+                    breach_domain: breach.breach_domain || breach.domain,
+                    breach_date: breach.date,
+                    pwn_count: breach.pwn_count,
+                    description: breach.description,
+                    data_classes: breach.data_classes,
+                    source: 'predictasearch',
+                  },
+                });
+              }
+              
+              // Normalize leaks into findings
+              for (const leak of leaks) {
+                findings.push({
+                  scan_id: scan.id,
+                  provider: 'predictasearch',
+                  kind: 'breach.hit',
+                  severity: 'high',
+                  label: leak.name || leak.title || 'Data Leak',
+                  value: leak.domain || null,
+                  confidence: 80,
+                  meta: {
+                    leak_name: leak.name || leak.title,
+                    description: leak.description,
+                    data_classes: leak.data_classes,
+                    source: 'predictasearch',
+                  },
+                });
+              }
+              
+              if (findings.length > 0) {
+                const { error: insertError } = await serviceClient
+                  .from('findings')
+                  .insert(findings);
+                
+                if (insertError) {
+                  console.error(`[n8n-scan-trigger] Failed to insert Predicta findings:`, insertError);
+                  await serviceClient.from('scan_events').insert({
+                    scan_id: scan.id,
+                    provider: 'predictasearch',
+                    event_type: 'provider_error',
+                    payload: { error: 'findings_insert_failed', details: insertError.message },
+                  });
+                } else {
+                  console.log(`[n8n-scan-trigger] Inserted ${findings.length} Predicta findings for scan ${scan.id}`);
+                  
+                  // Update scan_progress findings count
+                  const { data: currentProgress } = await serviceClient
+                    .from('scan_progress')
+                    .select('findings_count')
+                    .eq('scan_id', scan.id)
+                    .single();
+                  
+                  const newCount = (currentProgress?.findings_count || 0) + findings.length;
+                  await serviceClient.from('scan_progress').update({
+                    findings_count: newCount,
+                    updated_at: new Date().toISOString(),
+                  }).eq('scan_id', scan.id);
+                }
+              }
+              
+              // Log completion event
+              await serviceClient.from('scan_events').insert({
+                scan_id: scan.id,
+                provider: 'predictasearch',
+                event_type: 'provider_done',
+                payload: {
+                  profiles: profiles.length,
+                  breaches: breaches.length,
+                  leaks: leaks.length,
+                  findings_inserted: findings.length,
+                },
+              });
+              
+              console.log(`[n8n-scan-trigger] Predicta Search completed for scan ${scan.id}`);
+            }).catch(async (err) => {
+              console.error(`[n8n-scan-trigger] predicta-search fetch error: ${err.message}`);
+              await serviceClient.from('scan_events').insert({
+                scan_id: scan.id,
+                provider: 'predictasearch',
+                event_type: 'provider_error',
+                payload: { error: err.message },
+              });
+            });
+            
+            console.log(`[n8n-scan-trigger] predicta-search triggered (fire-and-forget)`);
+          }
+        }
+      } catch (predictaError) {
+        console.error('[n8n-scan-trigger] Failed to trigger predicta-search:', predictaError);
+        // Don't fail the whole scan
       }
     }
 
