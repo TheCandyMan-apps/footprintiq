@@ -227,9 +227,7 @@ const PricingPage = () => {
               <p className="text-xl text-muted-foreground mb-4">
                 Understand your online exposure before it's used against you.
               </p>
-              <p className="text-muted-foreground">
-                FootprintIQ is free to try. Upgrade only if you want deeper visibility, monitoring, or advanced reporting.
-              </p>
+              <p className="text-muted-foreground">Free to try — upgrade for deeper visibility, monitoring & advanced reporting.</p>
             </motion.div>
           </div>
         </section>
