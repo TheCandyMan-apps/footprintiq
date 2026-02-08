@@ -35,7 +35,7 @@
   </url>
   <url>
     <loc>https://footprintiq.app/usernames</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -427,7 +427,7 @@
   <!-- AI Hub -->
   <url>
     <loc>https://footprintiq.app/ai</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-08</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -463,8 +463,38 @@
   </url>
   <url>
     <loc>https://footprintiq.app/ai-answers-hub</loc>
-    <lastmod>2026-02-02</lastmod>
+    <lastmod>2026-02-08</lastmod>
     <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/ai-answers/what-is-a-username-osint-scan</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/ai-answers/why-username-reuse-is-risky</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/ai-answers/are-username-search-tools-accurate</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/ai-answers/is-username-osint-legal</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://footprintiq.app/ai-answers/ethical-osint-tools</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   

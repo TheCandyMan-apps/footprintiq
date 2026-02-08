@@ -68,6 +68,11 @@ export const INDEXNOW_URLS = [
   "/ai/what-is-identity-profiling",
   "/ai/what-are-data-brokers",
   "/ai-answers-hub",
+  "/ai-answers/what-is-a-username-osint-scan",
+  "/ai-answers/why-username-reuse-is-risky",
+  "/ai-answers/are-username-search-tools-accurate",
+  "/ai-answers/is-username-osint-legal",
+  "/ai-answers/ethical-osint-tools",
   // Platform-specific search pages
   "/search-username",
   "/tiktok-username-search",
