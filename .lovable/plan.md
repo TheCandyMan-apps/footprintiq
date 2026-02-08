@@ -1,41 +1,47 @@
 
-# Add Informational Block to Username Scan Page
+# Add AI Answers Pages to Sitemap and Trigger IndexNow
 
-## What Changes
+## Summary
 
-A single, small informational `Alert` block will be added to the `/usernames` page, positioned between the page heading and the tab navigation. It will use the existing `Alert` + `AlertDescription` components (from `@/components/ui/alert`) with an `Info` icon, matching the pattern already used on pages like Maigret Monitoring.
+Three of the requested URLs (`/ai-answers-hub`, `/ai`, `/usernames`) are already in both the sitemap and the IndexNow list. The five individual `/ai-answers/*` pages are missing from both. This plan adds them and updates the `lastmod` dates on the pages that recently changed.
 
-## Content
+## Changes
 
-The block will read:
+### 1. `public/sitemap.xml`
 
-> **AI Answers** explains accuracy limits, legality, and ethical use of username OSINT.  
-> [Learn more](/ai-answers-hub) -- [Are username search tools accurate?](/ai-answers/are-username-search-tools-accurate)
+Add 5 new `<url>` entries inside the existing "AI Hub" section (after the `/ai-answers-hub` entry at line 469), with today's date and monthly change frequency:
 
-Both links will use React Router's `Link` component. No marketing language, no CTAs.
+- `/ai-answers/what-is-a-username-osint-scan` (priority 0.6)
+- `/ai-answers/why-username-reuse-is-risky` (priority 0.6)
+- `/ai-answers/are-username-search-tools-accurate` (priority 0.6)
+- `/ai-answers/is-username-osint-legal` (priority 0.6)
+- `/ai-answers/ethical-osint-tools` (priority 0.6)
 
-## File: `src/pages/scan/UsernamesPage.tsx`
+Also update `lastmod` to `2026-02-08` on these three existing entries (since they were recently modified with new internal links):
 
-**What changes:**
+- `/usernames` (line 38)
+- `/ai-answers-hub` (line 467)
+- `/ai` (line 431) -- only if it links to the new group; will update date regardless for consistency
 
-1. Add imports for `Alert`, `AlertDescription` from `@/components/ui/alert`, `Info` from `lucide-react`, and `Link` from `react-router-dom`.
-2. Insert the `Alert` block after the heading/description `div` (after line 33) and before the `Tabs` component (line 35), so it sits naturally in the existing `space-y-6` layout.
+### 2. `src/lib/indexnow.ts`
 
-**New block (inserted between heading and tabs):**
+Add the 5 AI Answers page paths to the `INDEXNOW_URLS` array, grouped under the existing "AI Hub" comment block (after `/ai-answers-hub` on line 70):
 
-```tsx
-<Alert className="bg-muted/50">
-  <Info className="h-4 w-4" />
-  <AlertDescription>
-    <Link to="/ai-answers-hub" className="font-medium underline underline-offset-4 hover:text-primary">
-      AI Answers
-    </Link>{" "}
-    explains accuracy limits, legality, and ethical use of username OSINT.{" "}
-    <Link to="/ai-answers/are-username-search-tools-accurate" className="underline underline-offset-4 hover:text-primary">
-      Are username search tools accurate?
-    </Link>
-  </AlertDescription>
-</Alert>
+```
+"/ai-answers/what-is-a-username-osint-scan",
+"/ai-answers/why-username-reuse-is-risky",
+"/ai-answers/are-username-search-tools-accurate",
+"/ai-answers/is-username-osint-legal",
+"/ai-answers/ethical-osint-tools",
 ```
 
-**No other files are modified.** The `Alert`, `AlertDescription`, `Info`, and `Link` components are all already available in the project. The `bg-muted/50` class gives a subtle background that matches the existing design system without drawing excessive attention.
+### 3. Trigger IndexNow submission
+
+After deployment, the existing `submitToIndexNow()` function can be called to notify Bing, Yandex, Naver, and Seznam about all updated and new URLs. No code change needed for this -- it will use the updated `INDEXNOW_URLS` array automatically.
+
+## What is NOT changed
+
+- No new files created
+- No UI changes
+- No route changes
+- `/ai`, `/usernames`, and `/ai-answers-hub` are already in both files and only need date updates in the sitemap
