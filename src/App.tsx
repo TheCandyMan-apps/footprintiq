@@ -246,6 +246,13 @@ const TikTokUsernameSearchPage = lazy(() => import("./pages/TikTokUsernameSearch
 const InstagramUsernameSearchPage = lazy(() => import("./pages/InstagramUsernameSearch"));
 const TwitterUsernameSearchPage = lazy(() => import("./pages/TwitterUsernameSearch"));
 
+// AI Answers Hub - OSINT Explainer Pages
+const AIAnswersWhatIsUsernameOsintScan = lazy(() => import("./pages/ai-answers/WhatIsUsernameOsintScan"));
+const AIAnswersWhyUsernameReuseIsRisky = lazy(() => import("./pages/ai-answers/WhyUsernameReuseIsRisky"));
+const AIAnswersAreUsernameSearchToolsAccurate = lazy(() => import("./pages/ai-answers/AreUsernameSearchToolsAccurate"));
+const AIAnswersIsUsernameOsintLegal = lazy(() => import("./pages/ai-answers/IsUsernameOsintLegal"));
+const AIAnswersEthicalOsintTools = lazy(() => import("./pages/ai-answers/EthicalOsintTools"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -525,6 +532,15 @@ function RouterContent() {
           <Route path="/ai/what-is-osint" element={<AIWhatIsOsint />} />
           <Route path="/ai/what-is-identity-profiling" element={<AIWhatIsIdentityProfiling />} />
           <Route path="/ai/what-are-data-brokers" element={<AIWhatAreDataBrokers />} />
+          
+          {/* AI Answers Hub - OSINT Explainer Pages */}
+          <Route path="/ai-answers" element={<Navigate to="/ai-answers-hub" replace />} />
+          <Route path="/ai-answers/what-is-a-username-osint-scan" element={<AIAnswersWhatIsUsernameOsintScan />} />
+          <Route path="/ai-answers/why-username-reuse-is-risky" element={<AIAnswersWhyUsernameReuseIsRisky />} />
+          <Route path="/ai-answers/are-username-search-tools-accurate" element={<AIAnswersAreUsernameSearchToolsAccurate />} />
+          <Route path="/ai-answers/is-username-osint-legal" element={<AIAnswersIsUsernameOsintLegal />} />
+          <Route path="/ai-answers/ethical-osint-tools" element={<AIAnswersEthicalOsintTools />} />
+          
           <Route path="/ethical-osint-for-individuals" element={<EthicalOsintForIndividuals />} />
           <Route path="/ethical-osint" element={<EthicalOsint />} />
           <Route path="/press" element={<Press />} />

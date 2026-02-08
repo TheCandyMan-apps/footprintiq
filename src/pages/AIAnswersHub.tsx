@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { BookOpen, ArrowRight, Shield, HelpCircle, Lightbulb } from "lucide-react";
+import { BookOpen, ArrowRight, Shield, HelpCircle, Lightbulb, Search, Scale, AlertTriangle, CheckCircle } from "lucide-react";
 
 export default function AIAnswersHub() {
   const articleSchema = {
@@ -222,6 +222,74 @@ export default function AIAnswersHub() {
                     </Link>
                   </div>
                 ))}
+              </div>
+            </section>
+
+            {/* OSINT & Username Scanning */}
+            <section className="mb-12">
+              <h2 className="text-2xl font-semibold text-foreground mb-8 flex items-center gap-3">
+                <Search className="h-6 w-6 text-primary" />
+                OSINT & Username Scanning
+              </h2>
+              
+              <div className="space-y-8">
+                {[
+                  {
+                    title: "What Is a Username OSINT Scan?",
+                    description: "A clear explanation of what username OSINT scans are, how they work, their legitimate uses, and their limitations.",
+                    link: "/ai-answers/what-is-a-username-osint-scan",
+                    icon: Search,
+                  },
+                  {
+                    title: "Why Username Reuse Is Risky",
+                    description: "How reusing the same handle across platforms gradually increases digital exposure and enables account correlation.",
+                    link: "/ai-answers/why-username-reuse-is-risky",
+                    icon: AlertTriangle,
+                  },
+                  {
+                    title: "Are Username Search Tools Accurate?",
+                    description: "Understanding false positives, the limits of automated matching, and the difference between correlation and verification.",
+                    link: "/ai-answers/are-username-search-tools-accurate",
+                    icon: CheckCircle,
+                  },
+                  {
+                    title: "Is Username OSINT Legal?",
+                    description: "A high-level overview of the legality of username OSINT, covering public data use, jurisdictional variation, and ethical boundaries.",
+                    link: "/ai-answers/is-username-osint-legal",
+                    icon: Scale,
+                  },
+                  {
+                    title: "What Makes an OSINT Tool Ethical?",
+                    description: "How responsible OSINT tools differ in design, intent, and safeguards from other data lookup services.",
+                    link: "/ai-answers/ethical-osint-tools",
+                    icon: Shield,
+                  },
+                ].map((item, index) => {
+                  const Icon = item.icon;
+                  return (
+                    <div 
+                      key={index}
+                      className="p-6 bg-card rounded-xl border border-border hover:border-primary/30 transition-colors"
+                    >
+                      <div className="flex items-start gap-3 mb-4">
+                        <Icon className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                        <h3 className="text-xl font-semibold text-foreground">
+                          {item.title}
+                        </h3>
+                      </div>
+                      <p className="text-muted-foreground mb-4">
+                        {item.description}
+                      </p>
+                      <Link 
+                        to={item.link}
+                        className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
+                      >
+                        Read more
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </div>
+                  );
+                })}
               </div>
             </section>
 

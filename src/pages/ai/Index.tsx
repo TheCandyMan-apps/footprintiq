@@ -1,6 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
-import { ChevronRight, BookOpen, Link2, HelpCircle, Fingerprint, Globe, Eye, Network, Building2, Info, CheckCircle, ArrowRight } from "lucide-react";
+import { ChevronRight, BookOpen, Link2, HelpCircle, Fingerprint, Globe, Eye, Network, Building2, Info, CheckCircle, ArrowRight, Search, Shield, Scale, AlertTriangle } from "lucide-react";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -48,6 +48,39 @@ const dataConnections: TopicLink[] = [
     description: "How patterns are inferred from multiple data sources, and how profiling differs from tracking or surveillance.",
     href: "/ai/what-is-identity-profiling",
     icon: Network,
+  },
+];
+
+const osintScanning: TopicLink[] = [
+  {
+    title: "What Is a Username OSINT Scan?",
+    description: "A clear explanation of what username OSINT scans are, how they work, their legitimate uses, and their limitations.",
+    href: "/ai-answers/what-is-a-username-osint-scan",
+    icon: Search,
+  },
+  {
+    title: "Why Username Reuse Is Risky",
+    description: "How reusing the same handle across platforms increases digital exposure and enables account correlation.",
+    href: "/ai-answers/why-username-reuse-is-risky",
+    icon: AlertTriangle,
+  },
+  {
+    title: "Are Username Search Tools Accurate?",
+    description: "Understanding false positives, correlation versus verification, and why accuracy varies between tools.",
+    href: "/ai-answers/are-username-search-tools-accurate",
+    icon: CheckCircle,
+  },
+  {
+    title: "Is Username OSINT Legal?",
+    description: "A high-level overview of the legality of username OSINT, covering public data use and jurisdictional variation.",
+    href: "/ai-answers/is-username-osint-legal",
+    icon: Scale,
+  },
+  {
+    title: "What Makes an OSINT Tool Ethical?",
+    description: "How responsible OSINT tools differ in design, intent, and safeguards from other data lookup services.",
+    href: "/ai-answers/ethical-osint-tools",
+    icon: Shield,
   },
 ];
 
@@ -296,6 +329,14 @@ const AIIndex = () => {
             description="These pages explain how separate pieces of information become profiles."
             icon={Link2} 
             topics={dataConnections} 
+          />
+
+          {/* OSINT & Username Scanning Section */}
+          <Section 
+            title="OSINT & Username Scanning" 
+            description="These pages explain how username scanning works, its accuracy, legality, and ethical considerations."
+            icon={Search} 
+            topics={osintScanning} 
           />
 
           {/* Common Questions Section */}
