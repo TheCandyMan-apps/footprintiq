@@ -342,6 +342,12 @@ const DigitalPrivacyGlossary = () => {
                 Clear, neutral definitions of key terms related to digital footprints, online exposure, 
                 OSINT, and identity risk. Written for non-technical readers.
               </p>
+              <p className="text-sm text-muted-foreground mt-4">
+                For topic explainers and OSINT context, see{" "}
+                <Link to="/ai-answers-hub" className="underline underline-offset-4 hover:text-primary">
+                  AI Answers
+                </Link>.
+              </p>
             </div>
           </section>
 
