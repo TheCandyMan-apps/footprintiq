@@ -6,6 +6,9 @@ import { WorkerHealth } from '@/components/scan/WorkerHealth';
 import { UsernameScanComparison } from '@/components/scan/UsernameScanComparison';
 import { Helmet } from 'react-helmet-async';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function UsernamesPage() {
   return (
@@ -31,6 +34,19 @@ export default function UsernamesPage() {
             </div>
             <WorkerHealth />
           </div>
+
+          <Alert className="bg-muted/50">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <Link to="/ai-answers-hub" className="font-medium underline underline-offset-4 hover:text-primary">
+                AI Answers
+              </Link>{" "}
+              explains accuracy limits, legality, and ethical use of username OSINT.{" "}
+              <Link to="/ai-answers/are-username-search-tools-accurate" className="underline underline-offset-4 hover:text-primary">
+                Are username search tools accurate?
+              </Link>
+            </AlertDescription>
+          </Alert>
 
           <Tabs defaultValue="scan" className="w-full">
             <TabsList className="grid w-full max-w-md grid-cols-2">
