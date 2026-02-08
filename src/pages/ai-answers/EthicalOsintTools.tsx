@@ -47,7 +47,7 @@ const EthicalOsintTools = () => {
         "name": "How do ethical OSINT tools differ from people search sites?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "People search sites are typically designed to look up information about other people and often aggregate data from commercial sources. Ethical OSINT tools focus on self-assessment, use only public data, and include transparency about accuracy limitations and ethical boundaries."
+          "text": "People search sites are typically designed to look up information about other people and may aggregate data from commercial sources. Ethical OSINT tools focus on self-assessment, use only public data, and include transparency about accuracy limitations and ethical boundaries."
         }
       }
     ]
@@ -123,6 +123,9 @@ const EthicalOsintTools = () => {
               <p>
                 The term "ethical" in this context refers not just to what data is collected, but to how the tool is designed, how results are presented, and what guardrails exist to discourage misuse.
               </p>
+              <p>
+                An ethical OSINT tool is defined by its transparency, its limitations disclosures, and its safeguards against harm.
+              </p>
             </div>
           </section>
 
@@ -145,7 +148,7 @@ const EthicalOsintTools = () => {
 
               <h3 className="text-xl font-semibold text-foreground mt-6">Self-Assessment Focus</h3>
               <p>
-                Tools designed for ethical use prioritise self-assessment: helping individuals understand their own digital exposure. This contrasts with services designed primarily for looking up information about other people.
+                Tools designed for ethical use prioritise self-assessment: helping individuals understand their own digital exposure. This differs from services that may be designed primarily for looking up information about other people.
               </p>
 
               <h3 className="text-xl font-semibold text-foreground mt-6">Harm Reduction</h3>

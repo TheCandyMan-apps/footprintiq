@@ -123,6 +123,9 @@ const AreUsernameSearchToolsAccurate = () => {
               <p>
                 Most username search tools address the first dimension. They check whether a username is registered on a platform. The second dimension — identity confirmation — is beyond what automated tools can reliably determine.
               </p>
+              <p>
+                Username searches show correlation between accounts, not confirmation of ownership.
+              </p>
             </div>
           </section>
 
@@ -167,7 +170,7 @@ const AreUsernameSearchToolsAccurate = () => {
                 False positives are common in username searching. They arise from ambiguous platform responses, URL patterns that coincidentally match, or platforms that reserve usernames without creating public profiles.
               </p>
               <p>
-                The prevalence of false positives means that raw results from any username search tool should be treated as preliminary data requiring review. Tools like FootprintIQ address this by incorporating confidence scoring and filtering layers to reduce noise in results.
+                The prevalence of false positives means that raw results from any username search tool should be treated as preliminary data requiring review. Tools like FootprintIQ are designed to support careful interpretation by providing context and encouraging verification where possible.
               </p>
               <p>
                 Users should expect some false positives in any scan and interpret results accordingly. Further discussion of accuracy and interpretation is available in the <Link to="/ai-answers-hub" className="text-primary hover:underline">AI Answers Hub</Link>.

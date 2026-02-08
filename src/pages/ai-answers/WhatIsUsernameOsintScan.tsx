@@ -123,6 +123,9 @@ const WhatIsUsernameOsintScan = () => {
               <p>
                 The scan checks whether a given handle appears as a registered account across social media sites, forums, developer platforms, and other public services. It does not access private data, bypass login screens, or interact with account owners.
               </p>
+              <p>
+                A username OSINT scan checks where a username appears publicly; it does not verify identity.
+              </p>
             </div>
           </section>
 

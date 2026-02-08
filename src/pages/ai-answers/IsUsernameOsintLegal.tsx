@@ -123,6 +123,9 @@ const IsUsernameOsintLegal = () => {
               <p>
                 The legal question is usually not whether you can search for a username, but what you do with the results. Collection of public data and misuse of that data are treated differently under most legal frameworks.
               </p>
+              <p>
+                Public data access and responsible use are legally and ethically distinct.
+              </p>
             </div>
           </section>
 
@@ -134,7 +137,7 @@ const IsUsernameOsintLegal = () => {
             </h2>
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
               <p>
-                In most jurisdictions, accessing publicly available information does not require special authorisation. Public profiles, public posts, and publicly listed usernames are designed by platforms to be viewable by anyone.
+                In most jurisdictions, accessing publicly available information may not require special authorisation. Public profiles, public posts, and publicly listed usernames are designed by platforms to be viewable by anyone.
               </p>
               <p>
                 However, several legal considerations apply to how username search results are used:
@@ -142,12 +145,12 @@ const IsUsernameOsintLegal = () => {
 
               <h3 className="text-xl font-semibold text-foreground mt-6">Terms of Service</h3>
               <p>
-                Many platforms prohibit automated scraping in their terms of service. While violating terms of service is typically a civil matter rather than a criminal one, it can result in account restrictions or legal action from the platform.
+                Many platforms prohibit automated scraping in their terms of service. While violating terms of service is often treated as a civil matter rather than a criminal one in many jurisdictions, it can result in account restrictions or legal action from the platform.
               </p>
 
               <h3 className="text-xl font-semibold text-foreground mt-6">Anti-Harassment Laws</h3>
               <p>
-                Using publicly available information to harass, stalk, or intimidate someone is illegal in most jurisdictions, regardless of how the information was obtained. The public nature of the data does not create a right to use it harmfully.
+                Using publicly available information to harass, stalk, or intimidate someone can be unlawful in many jurisdictions, regardless of how the information was obtained. The public nature of the data does not create a right to use it harmfully.
               </p>
 
               <h3 className="text-xl font-semibold text-foreground mt-6">Employment and Discrimination Laws</h3>
