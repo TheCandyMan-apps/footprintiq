@@ -231,7 +231,14 @@ export default function AIAnswersHub() {
                 <Search className="h-6 w-6 text-primary" />
                 OSINT & Username Scanning
               </h2>
-              
+              <p className="text-muted-foreground mb-6">
+                If you're checking your own exposure, you can{" "}
+                <Link to="/scan" className="underline underline-offset-4 hover:text-primary">
+                  run a scan
+                </Link>{" "}
+                and use these pages to interpret what you find.
+              </p>
+
               <div className="space-y-8">
                 {[
                   {
