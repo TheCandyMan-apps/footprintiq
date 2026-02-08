@@ -233,7 +233,7 @@ const PricingPage = () => {
         </section>
 
         {/* Pricing Cards */}
-        <section className="py-16 px-4">
+        <section className="py-6 px-4">
           <div className="container mx-auto">
             <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
               
