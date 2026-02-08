@@ -214,7 +214,7 @@ const PricingPage = () => {
         <Header />
         
         {/* Hero Section */}
-        <section className="py-20 px-4 bg-background">
+        <section className="pt-20 pb-6 px-4 bg-background">
           <div className="container mx-auto text-center max-w-3xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
