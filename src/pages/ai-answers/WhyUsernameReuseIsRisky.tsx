@@ -123,6 +123,9 @@ const WhyUsernameReuseIsRisky = () => {
               <p>
                 While using the same name everywhere simplifies account management, it also creates a linkable pattern that can connect otherwise unrelated accounts.
               </p>
+              <p>
+                Username reuse creates a linkable pattern across platforms, increasing the potential for correlation over time.
+              </p>
             </div>
           </section>
 
