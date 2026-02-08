@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Separator } from "@/components/ui/separator";
@@ -247,6 +248,13 @@ const EditorialEthicsPolicy = () => {
                 </p>
               </section>
             </div>
+
+            <p className="text-muted-foreground leading-relaxed mt-12">
+              For definitions and OSINT explainers, see{" "}
+              <Link to="/ai-answers-hub" className="underline underline-offset-4 hover:text-primary">
+                AI Answers
+              </Link>.
+            </p>
 
             <footer className="mt-16 pt-8 border-t border-border">
               <p className="text-sm text-muted-foreground">
