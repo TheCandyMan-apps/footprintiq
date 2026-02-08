@@ -1,116 +1,172 @@
 
+# AI Answers Hub Expansion: 5 OSINT Explainer Pages
 
-# Fix Clarity-Identified UX Issues
+## Overview
 
-## Summary
-
-Four issues were flagged by Clarity session recordings. Two require immediate fixes, one is working correctly, and one confirms healthy usage.
-
----
-
-## Issue 1: `/usernames` Landing Page Flow
-**Status: No action needed**
-
-The `/usernames` page correctly links users to `/scan` via the "Run a Free Username Scan" CTA. This is working as designed after the unified scan interface consolidation.
+Create 5 new educational pages under `/ai-answers/*` and wire them into the existing routing, hub page, and AI index page. Each page follows the established pattern from `src/pages/ai/WhatIsOsint.tsx`.
 
 ---
 
-## Issue 2: 404s on `/new-scan` and `/scan-history` (CRITICAL)
+## New Files (5 page components)
 
-**Root cause:** The `MobileCTABar` component (visible on all mobile pages) has two buttons that navigate to `/new-scan` and `/scan-history`, but neither route exists in the router.
+### 1. `src/pages/ai-answers/WhatIsUsernameOsintScan.tsx`
+- Route: `/ai-answers/what-is-a-username-osint-scan`
+- Defines what a username OSINT scan is, its legitimate uses, and what it cannot do
+- Sections: Definition, How It Works, Limitations, Ethical Use
+- Links: `/ai-answers-hub`, `/usernames`, `/scan`
 
-**Impact from real 404 data:**
-- `/new-scan` -- 1,035+ hits (sources: Google, Reddit, direct, dashboard)
-- `/scan-history` -- 456+ hits (sources: direct, Google, dashboard, Stripe checkout returns)
+### 2. `src/pages/ai-answers/WhyUsernameReuseIsRisky.tsx`
+- Route: `/ai-answers/why-username-reuse-is-risky`
+- Explains how reusing the same handle across platforms increases exposure
+- Sections: Definition, How Reuse Creates Risk, Limitations of Reuse Analysis, Safety Considerations
+- Links: `/ai-answers-hub`, `/usernames`, `/scan`
 
-**Fix:**
-1. Update `MobileCTABar.tsx` to navigate to correct existing routes:
-   - "New Scan" button: `/new-scan` --> `/scan`
-   - "History" button: `/scan-history` --> `/dashboard` (the dashboard contains scan history)
-2. Add redirect routes in `App.tsx` as safety nets for anyone who bookmarked these URLs:
-   - `/new-scan` --> redirect to `/scan`
-   - `/scan-history` --> redirect to `/dashboard`
+### 3. `src/pages/ai-answers/AreUsernameSearchToolsAccurate.tsx`
+- Route: `/ai-answers/are-username-search-tools-accurate`
+- Covers false positives, correlation vs verification, accuracy limitations
+- Sections: Definition, Why Accuracy Varies, False Positives, Ethical Interpretation
+- Links: `/ai-answers-hub`, `/usernames`, `/scan`
 
----
+### 4. `src/pages/ai-answers/IsUsernameOsintLegal.tsx`
+- Route: `/ai-answers/is-username-osint-legal`
+- High-level legality overview: public data, jurisdictional variation, ethical boundaries
+- Sections: Definition, General Legal Framework, Jurisdictional Variation, Ethical and Safety Considerations
+- Links: `/ai-answers-hub`, `/usernames`, `/scan`
 
-## Issue 3: Extended Multi-Step Scanning Flows
-**Status: No action needed**
-
-This confirms healthy product usage -- users are completing full scan flows, exploring results, and re-scanning. No friction detected.
-
----
-
-## Issue 4: Authentication Loop / Drop-off (IMPORTANT)
-
-**Root cause:** The auth page has no "redirect back" mechanism. The flow breaks like this:
-
-```text
-User on /usernames --> clicks "Run a Free Username Scan" --> /scan
-  --> ScanPage checks auth --> no session --> redirect to /auth
-    --> user signs in/up --> hardcoded redirect to /dashboard
-      --> user has to manually find scan again (many don't)
-```
-
-**Fix:**
-1. Update `ScanPage.tsx` to pass the intended destination when redirecting to auth:
-   - Change `navigate("/auth")` to `navigate("/auth?redirect=/scan")`
-2. Update `Auth.tsx` to read the `redirect` query parameter and use it after successful login:
-   - Read `redirect` from `URLSearchParams`
-   - After successful auth, navigate to the redirect URL instead of always `/dashboard`
-   - Validate the redirect URL starts with `/` to prevent open redirect attacks
-3. Apply the same pattern to other pages that redirect to `/auth` (e.g., Dashboard, Monitoring) so the user always returns to where they intended to go.
+### 5. `src/pages/ai-answers/EthicalOsintTools.tsx`
+- Route: `/ai-answers/ethical-osint-tools`
+- Defines what makes an OSINT tool ethical and how responsible tools differ
+- Sections: Definition, Design Principles, Limitations, Responsible Use
+- Links: `/ai-answers-hub`, `/usernames`, `/scan`
 
 ---
 
-## Files Modified
+## Each Page Includes
 
-1. **`src/components/MobileCTABar.tsx`** -- Fix navigation targets from `/new-scan` to `/scan` and `/scan-history` to `/dashboard`
-2. **`src/App.tsx`** -- Add two redirect routes for `/new-scan` and `/scan-history` as safety nets
-3. **`src/pages/Auth.tsx`** -- Read `redirect` query param and use it after successful login instead of hardcoded `/dashboard`
-4. **`src/pages/ScanPage.tsx`** -- Pass `?redirect=/scan` when redirecting unauthenticated users to `/auth`
+- **Helmet SEO**: title, meta description, canonical URL, OG tags, Twitter card
+- **JSON-LD**: Article schema (headline, description, author "FootprintIQ", publisher, datePublished/dateModified "2026-02-08"), FAQPage schema (2 Q&As), BreadcrumbList schema (Home > AI Answers > Page Title)
+- **Layout**: Header + Footer, `max-w-4xl` container, breadcrumb UI using existing `Breadcrumb` components
+- **Content structure**: H1 + subtitle, definition section near top (highlighted bg), limitations section, ethical/safety section
+- **`useScrollDepthTracking`** hook with `pageType: 'authority'`
+- **Internal links**: One to `/ai-answers-hub`, one to `/usernames`, one to `/scan`
+- **FootprintIQ mention**: Exactly once per page, neutrally phrased
+- **Word count**: 400-700 words per page
+- **Tone**: Calm, neutral, factual, educational. No marketing, no CTAs, no pricing, no competitor names, no invented statistics
+
+---
+
+## Modified Files
+
+### `src/App.tsx`
+- Add 5 lazy imports for the new page components
+- Add redirect: `/ai-answers` to `/ai-answers-hub` (using `Navigate` with `replace`)
+- Add 5 new routes under `/ai-answers/*`
+- Placed in the existing AI/content section near the other `/ai/*` routes (around line 527)
+
+### `src/pages/AIAnswersHub.tsx`
+- Add a new "OSINT & Username Scanning" section between the existing "Common Questions & Answers" and "How to Use These Answers" sections
+- Uses the same card layout pattern already established in the hub (bordered cards with title, description, and link)
+- 5 new cards linking to each new page
+
+### `src/pages/ai/Index.tsx`
+- Add a new topic group titled "OSINT & Username Scanning" using the existing `Section` component pattern
+- 5 new entries in a new `osintScanning` array with title, description, href, and icon for each page
+- Placed after the "How Data Connects" section
 
 ---
 
 ## Technical Details
 
-### MobileCTABar fix
+### Lazy Import Pattern (App.tsx)
 ```typescript
-// Before
-onClick={() => navigate('/new-scan')}
-onClick={() => navigate('/scan-history'))
-
-// After
-onClick={() => navigate('/scan'))
-onClick={() => navigate('/dashboard'))
+const AIAnswersWhatIsUsernameOsintScan = lazy(() => import("./pages/ai-answers/WhatIsUsernameOsintScan"));
+const AIAnswersWhyUsernameReuseIsRisky = lazy(() => import("./pages/ai-answers/WhyUsernameReuseIsRisky"));
+const AIAnswersAreUsernameSearchToolsAccurate = lazy(() => import("./pages/ai-answers/AreUsernameSearchToolsAccurate"));
+const AIAnswersIsUsernameOsintLegal = lazy(() => import("./pages/ai-answers/IsUsernameOsintLegal"));
+const AIAnswersEthicalOsintTools = lazy(() => import("./pages/ai-answers/EthicalOsintTools"));
 ```
 
-### Auth redirect-back logic
-```typescript
-// In Auth.tsx useEffect and sign-in handler
-const searchParams = new URLSearchParams(window.location.search);
-const redirectTo = searchParams.get('redirect');
-
-// Validate: must start with "/" and not "//" (prevents open redirect)
-const safeRedirect = redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')
-  ? redirectTo
-  : '/dashboard';
-
-// Use safeRedirect instead of hardcoded '/dashboard'
-navigate(safeRedirect);
-```
-
-### ScanPage auth redirect
-```typescript
-// Before
-navigate("/auth");
-
-// After
-navigate("/auth?redirect=/scan");
-```
-
-### Safety-net redirect routes in App.tsx
+### Route Registration (App.tsx)
 ```tsx
-<Route path="/new-scan" element={<Navigate to="/scan" replace />} />
-<Route path="/scan-history" element={<Navigate to="/dashboard" replace />} />
+<Route path="/ai-answers" element={<Navigate to="/ai-answers-hub" replace />} />
+<Route path="/ai-answers/what-is-a-username-osint-scan" element={<AIAnswersWhatIsUsernameOsintScan />} />
+<Route path="/ai-answers/why-username-reuse-is-risky" element={<AIAnswersWhyUsernameReuseIsRisky />} />
+<Route path="/ai-answers/are-username-search-tools-accurate" element={<AIAnswersAreUsernameSearchToolsAccurate />} />
+<Route path="/ai-answers/is-username-osint-legal" element={<AIAnswersIsUsernameOsintLegal />} />
+<Route path="/ai-answers/ethical-osint-tools" element={<AIAnswersEthicalOsintTools />} />
 ```
 
+### Page Component Structure (each page)
+```text
+Imports: Helmet, Link, lucide icons, Breadcrumb components, Card, Footer, Header, useScrollDepthTracking
+
+Component:
+  - origin detection for canonical URLs
+  - useScrollDepthTracking({ pageId, pageType: 'authority' })
+  - articleJsonLd (Article schema)
+  - faqJsonLd (FAQPage schema, 2 Q&As)
+  - breadcrumbJsonLd (BreadcrumbList schema)
+  
+  Return:
+    <Helmet> with title, meta description, canonical, OG, Twitter, JSON-LD scripts
+    <div min-h-screen bg-background>
+      <Header />
+      <main container max-w-4xl>
+        <Breadcrumb> Home > AI Answers > [Page Title]
+        <header> H1 + subtitle
+        <section> Definition (highlighted background)
+        <section> Main content sections with H2/H3
+        <section> Limitations / Nuance
+        <section> Ethical / Safety
+      </main>
+      <Footer />
+    </div>
+```
+
+### AIAnswersHub.tsx Update
+New section added with 5 cards using the same bordered card pattern:
+```tsx
+<section className="mb-12">
+  <h2>OSINT & Username Scanning</h2>
+  <div className="space-y-8">
+    {osintScanningTopics.map(...)}
+  </div>
+</section>
+```
+
+### ai/Index.tsx Update
+New `osintScanning` topic array and `Section` call:
+```tsx
+const osintScanning: TopicLink[] = [
+  { title: "What Is a Username OSINT Scan?", description: "...", href: "/ai-answers/what-is-a-username-osint-scan", icon: Search },
+  { title: "Why Username Reuse Is Risky", description: "...", href: "/ai-answers/why-username-reuse-is-risky", icon: Shield },
+  // ... 3 more entries
+];
+
+<Section 
+  title="OSINT & Username Scanning" 
+  description="These pages explain how username scanning works, its accuracy, legality, and ethical considerations."
+  icon={Search} 
+  topics={osintScanning} 
+/>
+```
+
+---
+
+## Content Compliance (every page verified against)
+
+- 400-700 words
+- Short paragraphs (2-4 lines max)
+- H2 and H3 headings
+- Definition section near top
+- Limitations section present
+- Ethical/Safety section present
+- No marketing language, hype, or superlatives
+- No pricing references or CTAs
+- No invented statistics
+- No competitor names
+- FootprintIQ mentioned exactly once, neutrally, in body text
+- One contextual link to `/ai-answers-hub`
+- One contextual link to `/usernames`
+- One contextual link to `/scan`
+- Calm, neutral, factual, educational tone
