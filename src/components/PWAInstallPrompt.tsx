@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Download, Smartphone } from "lucide-react";
+import { X, Download, Smartphone, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
@@ -8,13 +8,22 @@ const SESSION_COUNT_KEY = "fpiq_session_count";
 const PROMPT_DISMISSED_KEY = "fpiq_install_dismissed";
 const INSTALLED_KEY = "fpiq_pwa_installed";
 
+const isIOSSafari = () => {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isSafari = /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(ua);
+  return isIOS && isSafari;
+};
+
 export const PWAInstallPrompt = () => {
   const [showPrompt, setShowPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches || 
+        (navigator as any).standalone === true ||
         localStorage.getItem(INSTALLED_KEY)) {
       return;
     }
@@ -23,6 +32,8 @@ export const PWAInstallPrompt = () => {
     if (localStorage.getItem(PROMPT_DISMISSED_KEY)) {
       return;
     }
+
+    setIsIOS(isIOSSafari());
 
     // Track sessions (only increment once per browser session)
     const sessionTracked = sessionStorage.getItem('fpiq_session_tracked');
@@ -44,7 +55,7 @@ export const PWAInstallPrompt = () => {
       }
     }
 
-    // Listen for beforeinstallprompt event
+    // Listen for beforeinstallprompt event (Android Chrome)
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -68,20 +79,19 @@ export const PWAInstallPrompt = () => {
   }, []);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) {
-      // Fallback instructions for iOS/browsers without prompt API
-      return;
+    if (deferredPrompt) {
+      // Android Chrome: use native install prompt
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        localStorage.setItem(INSTALLED_KEY, "true");
+      }
+      
+      setDeferredPrompt(null);
+      setShowPrompt(false);
     }
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      localStorage.setItem(INSTALLED_KEY, "true");
-    }
-    
-    setDeferredPrompt(null);
-    setShowPrompt(false);
+    // iOS: the button is not shown; instructions are displayed instead
   };
 
   const handleDismiss = () => {
@@ -119,28 +129,47 @@ export const PWAInstallPrompt = () => {
                 <h3 className="font-semibold text-foreground mb-1">
                   Install FootprintIQ
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  Add to your home screen for quick access and offline support
-                </p>
+                {isIOS ? (
+                  <p className="text-sm text-muted-foreground">
+                    Tap <Share className="inline w-4 h-4 align-text-bottom mx-0.5" /> <strong>Share</strong>, then <strong>Add to Home Screen</strong> to install
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Add to your home screen for quick access and offline support
+                  </p>
+                )}
               </div>
 
               <div className="flex gap-2">
-                <Button
-                  onClick={handleInstall}
-                  size="sm"
-                  className="flex-1 touch-target"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Install App
-                </Button>
-                <Button
-                  onClick={handleDismiss}
-                  variant="outline"
-                  size="sm"
-                  className="touch-target"
-                >
-                  Later
-                </Button>
+                {isIOS ? (
+                  <Button
+                    onClick={handleDismiss}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 touch-target"
+                  >
+                    Got it
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      onClick={handleInstall}
+                      size="sm"
+                      className="flex-1 touch-target"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Install App
+                    </Button>
+                    <Button
+                      onClick={handleDismiss}
+                      variant="outline"
+                      size="sm"
+                      className="touch-target"
+                    >
+                      Later
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
