@@ -380,7 +380,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
         </div>
 
         {/* Right: Stats */}
-        <div className="text-[11px] font-mono text-muted-foreground">
+        <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">
           {graphMode === 'correlation' ? (
             <span>
               <strong className="text-foreground">{accountNodes.length}</strong> profiles
