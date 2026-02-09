@@ -2106,6 +2106,51 @@ export type Database = {
           },
         ]
       }
+      checkout_sessions: {
+        Row: {
+          amount_total: number | null
+          completed_at: string | null
+          created_at: string
+          currency: string | null
+          expired_at: string | null
+          id: string
+          metadata: Json | null
+          plan: string
+          status: string
+          stripe_session_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          amount_total?: number | null
+          completed_at?: string | null
+          created_at?: string
+          currency?: string | null
+          expired_at?: string | null
+          id?: string
+          metadata?: Json | null
+          plan: string
+          status?: string
+          stripe_session_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          amount_total?: number | null
+          completed_at?: string | null
+          created_at?: string
+          currency?: string | null
+          expired_at?: string | null
+          id?: string
+          metadata?: Json | null
+          plan?: string
+          status?: string
+          stripe_session_id?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       circuit_breaker_events: {
         Row: {
           created_at: string

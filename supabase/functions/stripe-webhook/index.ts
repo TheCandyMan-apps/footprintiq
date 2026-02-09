@@ -125,6 +125,23 @@ serve(async (req) => {
           customerId: session.customer,
           metadata: session.metadata 
         });
+
+        // Mark checkout session as completed for abandonment tracking
+        const { error: trackingUpdateError } = await supabase
+          .from('checkout_sessions')
+          .update({ 
+            status: 'completed', 
+            completed_at: new Date().toISOString(),
+            amount_total: session.amount_total,
+            currency: session.currency,
+          })
+          .eq('stripe_session_id', session.id);
+        
+        if (trackingUpdateError) {
+          logStep("WARN: Failed to update checkout_sessions tracking", { error: trackingUpdateError.message });
+        } else {
+          logStep("Checkout session marked as completed in tracking", { sessionId: session.id });
+        }
         
         if (session.mode === 'subscription') {
           await handleSubscriptionCheckout(session);
@@ -157,6 +174,26 @@ serve(async (req) => {
         });
         
         await handleSubscriptionCancellation(subscription);
+        break;
+      }
+
+      case "checkout.session.expired": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        logStep("Checkout session expired (abandoned)", { sessionId: session.id });
+
+        const { error: expiredError } = await supabase
+          .from('checkout_sessions')
+          .update({ 
+            status: 'expired', 
+            expired_at: new Date().toISOString() 
+          })
+          .eq('stripe_session_id', session.id);
+        
+        if (expiredError) {
+          logStep("WARN: Failed to mark checkout as expired", { error: expiredError.message });
+        } else {
+          logStep("Checkout session marked as expired/abandoned", { sessionId: session.id });
+        }
         break;
       }
 

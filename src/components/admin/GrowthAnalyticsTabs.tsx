@@ -3,8 +3,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TrialConversionMetrics } from './TrialConversionMetrics';
 import { EmailMetricsDashboard } from './EmailMetricsDashboard';
+import { AbandonedCheckoutMetrics } from './AbandonedCheckoutMetrics';
 import { useTrialEmailAnalytics } from '@/hooks/useTrialEmailAnalytics';
-import { TrendingUp, Mail, Calendar } from 'lucide-react';
+import { useAbandonedCheckouts } from '@/hooks/useAbandonedCheckouts';
+import { TrendingUp, Mail, Calendar, ShoppingCart } from 'lucide-react';
 
 type DateRangeOption = '7d' | '30d' | '90d' | 'all';
 
@@ -35,6 +37,7 @@ export function GrowthAnalyticsTabs() {
 
   const dateRange = getDateRange(dateRangeOption);
   const { data, isLoading, isPlaceholderData } = useTrialEmailAnalytics(dateRange);
+  const { data: checkoutData, isLoading: checkoutLoading, isPlaceholderData: checkoutPlaceholder } = useAbandonedCheckouts(dateRange);
 
   return (
     <div className="space-y-6">
@@ -64,6 +67,10 @@ export function GrowthAnalyticsTabs() {
             <TrendingUp className="h-4 w-4" />
             Trial Funnel
           </TabsTrigger>
+          <TabsTrigger value="abandoned-checkouts" className="flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            Checkouts
+          </TabsTrigger>
           <TabsTrigger value="email-performance" className="flex items-center gap-2">
             <Mail className="h-4 w-4" />
             Email Performance
@@ -74,6 +81,13 @@ export function GrowthAnalyticsTabs() {
           <TrialConversionMetrics 
             metrics={data?.trialMetrics} 
             isLoading={isLoading && !isPlaceholderData} 
+          />
+        </TabsContent>
+
+        <TabsContent value="abandoned-checkouts">
+          <AbandonedCheckoutMetrics 
+            metrics={checkoutData} 
+            isLoading={checkoutLoading && !checkoutPlaceholder} 
           />
         </TabsContent>
 

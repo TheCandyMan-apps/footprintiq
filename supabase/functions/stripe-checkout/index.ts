@@ -187,6 +187,33 @@ serve(async (req) => {
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 
+    console.log('[STRIPE-CHECKOUT] Session created:', session.id);
+
+    // Log the checkout session for abandoned checkout tracking
+    const serviceSupabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      { auth: { persistSession: false } }
+    );
+
+    const { error: trackingError } = await serviceSupabase
+      .from('checkout_sessions')
+      .insert({
+        stripe_session_id: session.id,
+        user_id: user.id,
+        workspace_id: workspaceId,
+        plan: plan,
+        status: 'pending',
+        metadata: { price_id: priceId, customer_email: user.email },
+      });
+
+    if (trackingError) {
+      // Non-blocking: don't fail checkout if tracking fails
+      console.warn('[STRIPE-CHECKOUT] Failed to log checkout session for tracking:', trackingError.message);
+    } else {
+      console.log('[STRIPE-CHECKOUT] Checkout session tracked for abandonment monitoring');
+    }
+
     return new Response(JSON.stringify({ url: session.url }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
