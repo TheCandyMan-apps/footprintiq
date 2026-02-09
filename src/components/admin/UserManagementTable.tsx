@@ -369,6 +369,7 @@ export function UserManagementTable() {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [subscriptionFilter, setSubscriptionFilter] = useState<string>('all');
   const [flagFilter, setFlagFilter] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [flagUser, setFlagUser] = useState<any>(null);
@@ -398,6 +399,7 @@ export function UserManagementTable() {
     
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     const matchesStatus = statusFilter === 'all' || (user.status || 'active') === statusFilter;
+    const matchesSubscription = subscriptionFilter === 'all' || user.subscription_tier === subscriptionFilter;
     
     const userFlags = getUserFlags(user.user_id);
     const matchesFlag = flagFilter === 'all' || 
@@ -405,7 +407,7 @@ export function UserManagementTable() {
       (flagFilter === 'not_flagged' && userFlags.length === 0) ||
       userFlags.some(f => f.flag_type === flagFilter);
     
-    return matchesSearch && matchesRole && matchesStatus && matchesFlag;
+    return matchesSearch && matchesRole && matchesStatus && matchesSubscription && matchesFlag;
   });
 
   if (isLoading) {
@@ -458,6 +460,19 @@ export function UserManagementTable() {
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="disabled">Disabled</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={subscriptionFilter} onValueChange={setSubscriptionFilter}>
+              <SelectTrigger className="w-[170px]">
+                <SelectValue placeholder="Subscription" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Subscriptions</SelectItem>
+                <SelectItem value="free">Free</SelectItem>
+                <SelectItem value="premium">Premium</SelectItem>
+                <SelectItem value="enterprise">Enterprise</SelectItem>
+                <SelectItem value="basic">Basic</SelectItem>
+                <SelectItem value="family">Family</SelectItem>
               </SelectContent>
             </Select>
             <Select value={flagFilter} onValueChange={setFlagFilter}>
