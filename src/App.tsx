@@ -281,6 +281,14 @@ function AppContent() {
 function RouterContent() {
   const navigate = useNavigate();
   const { announce } = useAccessibility();
+  const { resolvedTheme } = useTheme();
+  
+  // Dynamically update theme-color meta tag to match current theme
+  useEffect(() => {
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    const color = resolvedTheme === 'dark' ? '#0a0a14' : '#ffffff';
+    metas.forEach((meta) => meta.setAttribute('content', color));
+  }, [resolvedTheme]);
   
   // Track page views on route changes for Google Analytics
   useGoogleAnalytics();
