@@ -75,10 +75,14 @@ const AIAnalyst = () => {
 
   const loadEntities = async () => {
     try {
-      // Load recent scans as entities for analysis
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // Load only the current user's scans for analysis
       const { data, error } = await supabase
         .from("scans")
         .select("id, email, phone, username, privacy_score, high_risk_count, created_at")
+        .eq("user_id", session.user.id)
         .order("created_at", { ascending: false })
         .limit(50);
 
