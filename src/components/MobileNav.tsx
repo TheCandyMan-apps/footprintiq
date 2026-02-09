@@ -66,7 +66,7 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[280px] sm:w-[320px]">
-        <nav className="flex flex-col gap-2 mt-8">
+        <nav className="flex flex-col gap-2 mt-8 pb-safe">
           {navItems.map((item) => (
             <Link
               key={item.href}
