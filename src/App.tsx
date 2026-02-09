@@ -13,6 +13,7 @@ import { LoadingState } from "@/components/LoadingState";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useAccessibility } from "@/hooks/useAccessibility";
 import { useGoogleAnalytics } from "@/hooks/useGoogleAnalytics";
+import { useTheme } from "next-themes";
 import { HelmetProvider } from 'react-helmet-async';
 import { PageTransition } from "@/components/PageTransition";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
