@@ -314,7 +314,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   return (
     <div ref={containerRef} className="flex flex-col h-[calc(100vh-320px)] min-h-[520px]">
       {/* Mode Toggle Bar */}
-      <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-muted/40 border-b border-border">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 py-1.5 bg-muted/40 border-b border-border">
         {/* Left: Mode toggle */}
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-background border border-border rounded-lg p-0.5">
@@ -380,7 +380,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
         </div>
 
         {/* Right: Stats */}
-        <div className="text-[11px] font-mono text-muted-foreground">
+        <div className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">
           {graphMode === 'correlation' ? (
             <span>
               <strong className="text-foreground">{accountNodes.length}</strong> profiles
@@ -449,10 +449,11 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
                         <Info className="w-3 h-3 text-primary flex-shrink-0" />
-                        <span className="truncate">
+                        <span className="hidden sm:inline">
                           <strong className="text-foreground">{accountNodes.length}</strong> profiles · 
-                          <strong className="text-foreground ml-1">{correlationStats.correlationEdges}</strong> correlations · {explanationSummary}
+                          <strong className="text-foreground ml-1">{correlationStats.correlationEdges}</strong> correlations · 
                         </span>
+                        <span className="line-clamp-1">{explanationSummary}</span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs">
