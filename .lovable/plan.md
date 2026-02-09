@@ -1,108 +1,64 @@
 
 
-# Optimize Mobile Web Experience for iOS Safari
+# Further iOS Safari Optimisations
 
-## Overview
-Make FootprintIQ feel native on iOS Safari by applying safe area insets consistently, improving touch interactions, preventing iOS-specific quirks (bounce scroll, zoom on inputs, tap delay), and polishing responsive layouts across the key surfaces.
+## What's Already Done
+- Safe area insets (top, bottom)
+- Touch-action: manipulation (no 300ms delay)
+- Tap highlight removal
+- 16px input font (no auto-zoom)
+- Haptic feedback on buttons
+- PWA manifest with standalone display
+- apple-mobile-web-app-capable + status bar meta tags
+- overscroll-behavior-y: none
 
-## Changes
+## What's Left
 
-### 1. Global CSS Improvements (`src/index.css`)
-- Add safe area inset utilities for left/right (notch landscape support)
-- Add `-webkit-tap-highlight-color: transparent` to remove iOS blue tap flash
-- Add `touch-action: manipulation` globally to eliminate 300ms tap delay
-- Add smooth momentum scrolling defaults
-- Prevent text size adjustment on orientation change (`-webkit-text-size-adjust: 100%`)
-- Add `overscroll-behavior-y: none` on body to prevent pull-to-refresh bounce on inner pages
-- Set font size on inputs to `16px` minimum to prevent iOS auto-zoom on focus
+### 1. iOS Splash Screens (Launch Images)
+**Why**: When users add FootprintIQ to their home screen, iOS shows a blank white screen while the app loads. Apple requires specific `<link rel="apple-touch-startup-image">` tags with exact device dimensions to show a branded splash screen instead.
 
-### 2. Header Safe Area (`src/components/Header.tsx`)
-- Add `pt-safe` to the sticky header so it respects the iOS status bar / Dynamic Island area
-- The header currently uses `sticky top-0` but doesn't account for the safe area inset top -- content gets hidden behind the notch in standalone PWA mode
+**Change**: Add `apple-touch-startup-image` link tags to `index.html` for key iOS device sizes, pointing to generated splash images. We'll create a simple HTML-canvas-based splash (dark background + logo) that covers the main device sizes:
+- iPhone 15 Pro Max (1290x2796)
+- iPhone 15/14 (1170x2532)
+- iPhone SE (750x1334)
+- iPad Pro 12.9" (2048x2732)
 
-### 3. Footer Bottom Padding (`src/components/Footer.tsx`)
-- Add `pb-safe` to the footer so content isn't obscured by the home indicator bar on iPhones without a home button
+Since we can't generate image files directly, we'll use a `media` query approach with the existing `og-image.jpg` or `logo-dark.png` as a fallback, and note that proper splash PNGs should be generated offline.
 
-### 4. MobileCTABar Refinements (`src/components/MobileCTABar.tsx`)
-- Already has `pb-safe` -- good
-- Add `backdrop-saturate-150` for a more native iOS frosted-glass feel
-- Increase the z-index to ensure it sits above all other fixed elements
+### 2. Standalone Mode Styling
+**Why**: When running as a home screen app (standalone mode), iOS doesn't show a browser URL bar, but the app still behaves like a webpage -- rubber-band scrolling on the body, visible scrollbars, and no distinction from browser mode.
 
-### 5. Mobile Nav Sheet (`src/components/MobileNav.tsx`)
-- Add `pb-safe` to the bottom of the sheet content so the last items aren't hidden behind the home indicator
-- Ensure nav items have `active:scale-[0.97]` for tactile press feedback (native iOS feel)
+**Change in `src/index.css`**:
+- Add `@media (display-mode: standalone)` rules to:
+  - Hide scrollbars globally for a native feel
+  - Disable rubber-band overscroll on the root element
+  - Apply a slightly different background to signal standalone mode is active
 
-### 6. Hero Section Touch Polish (`src/components/Hero.tsx`)
-- Use `min-h-[80svh]` (already done) -- confirmed correct for iOS Safari's dynamic viewport
-- Ensure the CTA button has `active:scale-[0.97]` for press feedback
+### 3. iOS-Safe Fixed Bottom Elements
+**Why**: The `MobileCTABar` sits at `z-40` which can conflict with iOS keyboard and Safari's bottom toolbar. When the keyboard opens, fixed bottom elements can jump or overlap.
 
-### 7. HeroInputField iOS Fix (`src/components/HeroInputField.tsx`)
-- Ensure the input has `text-base` (16px) to prevent iOS auto-zoom on focus
-- Add `autocomplete`, `autocorrect="off"`, `autocapitalize="off"` attributes for username inputs
+**Change in `src/components/MobileCTABar.tsx`**:
+- Add a `visualViewport` resize listener that hides the CTA bar when the iOS keyboard is open (viewport height shrinks significantly)
 
-### 8. ScanForm Input Fix (`src/components/ScanForm.tsx`)
-- Same 16px font-size fix on all input fields to prevent iOS zoom
+### 4. Smooth Page Transitions
+**Why**: Native iOS apps have smooth transitions between views. The current app has instant page swaps which feel jarring.
 
-## Technical Details
+**Change in `src/App.tsx` or router wrapper**:
+- Add a lightweight CSS fade transition (opacity 0 to 1, ~150ms) on route changes using framer-motion's `AnimatePresence` (already installed) wrapping the route outlet
 
-### CSS additions to `src/index.css`
-```css
-/* In @layer base */
-html {
-  -webkit-text-size-adjust: 100%;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-}
+### 5. Pull-to-Refresh Prevention on Non-Scrollable Pages
+**Why**: On iOS Safari, pulling down on pages that don't scroll triggers the browser's reload gesture, which is disruptive mid-scan.
 
-body {
-  overscroll-behavior-y: none;
-}
+**Change in `src/index.css`**:
+- Add `overscroll-behavior-y: contain` on specific containers (scan results, dashboard) to prevent accidental reloads while still allowing natural scroll within content areas
 
-/* In @layer utilities */
-.pl-safe { padding-left: env(safe-area-inset-left); }
-.pr-safe { padding-right: env(safe-area-inset-right); }
+### 6. Theme-Color Updates for Dark/Light Mode
+**Why**: The status bar colour should match the current theme. Currently, the meta tags set fixed purple values. When users switch themes, the status bar doesn't update.
 
-/* Prevent iOS zoom on input focus */
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="search"],
-input[type="url"],
-input[type="password"],
-textarea,
-select {
-  font-size: 16px !important;
-}
+**Change**: Add a small effect in the theme provider or `App.tsx` that updates `document.querySelector('meta[name="theme-color"]')` content dynamically when the theme changes -- white-ish for light mode, dark for dark mode.
 
-@media (min-width: 768px) {
-  input[type="text"],
-  input[type="email"],
-  input[type="tel"],
-  input[type="search"],
-  input[type="url"],
-  input[type="password"],
-  textarea,
-  select {
-    font-size: inherit !important;
-  }
-}
-```
-
-### Component changes (className additions only)
-- **Header**: `pt-safe` on the `<header>` element
-- **Footer**: `pb-safe` on the `<footer>` element  
-- **MobileNav**: `pb-safe` on `SheetContent` inner container
-- **MobileCTABar**: Add `backdrop-saturate-150`
-- **Hero CTA button**: Add `active:scale-[0.97] transition-transform`
-- **MobileNav items**: Add `active:scale-[0.97]`
-
-### Files Modified
-1. `src/index.css` -- global iOS Safari fixes
-2. `src/components/Header.tsx` -- safe area top
-3. `src/components/Footer.tsx` -- safe area bottom
-4. `src/components/MobileNav.tsx` -- safe area + press feedback
-5. `src/components/MobileCTABar.tsx` -- enhanced backdrop
-6. `src/components/Hero.tsx` -- press feedback on CTA
-7. `src/components/HeroInputField.tsx` -- iOS zoom prevention + autocorrect attrs
-
-All changes are CSS/className only. No logic or functionality changes.
+## Files Modified
+1. `index.html` -- splash screen link tags
+2. `src/index.css` -- standalone mode styles, overscroll-behavior on containers
+3. `src/components/MobileCTABar.tsx` -- keyboard-aware hide logic
+4. `src/App.tsx` (or layout wrapper) -- route fade transitions, dynamic theme-color meta
