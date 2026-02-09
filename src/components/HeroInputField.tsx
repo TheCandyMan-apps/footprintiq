@@ -115,7 +115,7 @@ export function HeroInputField({ className }: HeroInputFieldProps) {
           type="submit" 
           size="lg"
           disabled={!identifier.trim()}
-          className="h-14 px-8 text-lg rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+          className="h-14 px-8 text-lg rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm active:scale-[0.97] transition-transform"
         >
           Check Now
           <ArrowRight className="w-5 h-5 ml-2" />

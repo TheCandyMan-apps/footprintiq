@@ -44,7 +44,7 @@ export const Hero = ({
           <Button 
             size="lg" 
             variant="outline" 
-            className="text-lg px-8 py-6 h-auto border-2 hover:bg-muted" 
+            className="text-lg px-8 py-6 h-auto border-2 hover:bg-muted active:scale-[0.97] transition-transform" 
             asChild
           >
             <a href="#how-it-works">

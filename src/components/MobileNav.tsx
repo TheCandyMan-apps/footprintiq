@@ -73,7 +73,7 @@ export function MobileNav() {
               to={item.href}
               onClick={() => setOpen(false)}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all active:scale-[0.97]",
                 location.pathname === item.href
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-muted"

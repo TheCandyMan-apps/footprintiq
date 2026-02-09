@@ -16,7 +16,7 @@ export const MobileCTABar = () => {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 pb-safe">
-      <div className="bg-card/95 backdrop-blur-lg border-t border-border shadow-elevated">
+      <div className="bg-card/95 backdrop-blur-lg backdrop-saturate-150 border-t border-border shadow-elevated">
         <div className="flex items-center justify-around px-4 py-3 max-w-screen-xl mx-auto">
           <Button
             variant="ghost"
