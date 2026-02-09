@@ -1,64 +1,119 @@
 
+# Android Chrome Mobile Optimisations
 
-# Further iOS Safari Optimisations
+## Overview
+Most of the iOS optimisations already work on Android Chrome (safe areas, touch-action, overscroll, theme-color). This plan targets Android-specific improvements: proper adaptive icon support, richer install experience, Android back-button handling in standalone mode, and the `display_override` manifest field for a more native PWA feel.
 
-## What's Already Done
-- Safe area insets (top, bottom)
-- Touch-action: manipulation (no 300ms delay)
-- Tap highlight removal
-- 16px input font (no auto-zoom)
-- Haptic feedback on buttons
-- PWA manifest with standalone display
-- apple-mobile-web-app-capable + status bar meta tags
-- overscroll-behavior-y: none
+## What's Already Working on Android
+- `touch-action: manipulation` (no tap delay)
+- `-webkit-tap-highlight-color: transparent`
+- `overscroll-behavior-y: none` (prevents pull-to-refresh)
+- `theme-color` meta tags (colours the Android status bar)
+- 16px input font (prevents zoom on some Android browsers)
+- Safe area insets (respected on Android notch/punch-hole devices)
+- PWA manifest with standalone display, shortcuts, and screenshots
+- `beforeinstallprompt` API in PWAInstallPrompt (works natively on Chrome Android)
 
-## What's Left
+## Changes
 
-### 1. iOS Splash Screens (Launch Images)
-**Why**: When users add FootprintIQ to their home screen, iOS shows a blank white screen while the app loads. Apple requires specific `<link rel="apple-touch-startup-image">` tags with exact device dimensions to show a branded splash screen instead.
+### 1. Manifest Enhancements (`public/manifest.json` + `vite.config.ts`)
+- Add `display_override: ["standalone"]` -- this is the modern replacement for `display` on Android Chrome, giving you future-proofing for new display modes.
+- Split icon purposes: Android requires separate `"any"` and `"maskable"` icon entries. Currently both are combined as `"any maskable"` which Chrome flags as a warning. Split into two entries per size.
+- Add a `144x144` icon entry for older Android devices.
+- Add `"form_factor": "narrow"` to the screenshot entry so Chrome shows it in the mobile install UI (richer install sheet).
+- Add a second `"wide"` screenshot for tablet installs.
+- Update `theme_color` and `background_color` to match the dynamic values used in App.tsx (align with light mode default: `#ffffff`).
 
-**Change**: Add `apple-touch-startup-image` link tags to `index.html` for key iOS device sizes, pointing to generated splash images. We'll create a simple HTML-canvas-based splash (dark background + logo) that covers the main device sizes:
-- iPhone 15 Pro Max (1290x2796)
-- iPhone 15/14 (1170x2532)
-- iPhone SE (750x1334)
-- iPad Pro 12.9" (2048x2732)
+### 2. Android Back Button / Gesture Navigation (`src/App.tsx`)
+- In standalone PWA mode on Android, the hardware/gesture back button maps to `history.back()`. If the user is on the home page and presses back, the app closes -- which feels broken.
+- Add a `popstate` listener that prevents closing the app when at the root route by pushing state back onto the history stack.
 
-Since we can't generate image files directly, we'll use a `media` query approach with the existing `og-image.jpg` or `logo-dark.png` as a fallback, and note that proper splash PNGs should be generated offline.
+### 3. PWAInstallPrompt Android-Specific UI (`src/components/PWAInstallPrompt.tsx`)
+- The component already handles `beforeinstallprompt` correctly for Android Chrome.
+- Add platform detection: on Android, show "Install" with the native prompt. On iOS Safari (where `beforeinstallprompt` is unavailable), show manual instructions: "Tap Share, then Add to Home Screen".
+- This makes the install prompt useful on both platforms instead of being a no-op on iOS.
 
-### 2. Standalone Mode Styling
-**Why**: When running as a home screen app (standalone mode), iOS doesn't show a browser URL bar, but the app still behaves like a webpage -- rubber-band scrolling on the body, visible scrollbars, and no distinction from browser mode.
+### 4. Android Status Bar + Navigation Bar Colours
+- The dynamic `theme-color` update in `App.tsx` already handles the status bar.
+- Add a second meta tag approach: set `<meta name="theme-color">` without media queries as the primary (Android Chrome uses this), keeping the prefers-color-scheme variants as fallbacks. The JS in App.tsx already overrides these dynamically.
 
-**Change in `src/index.css`**:
-- Add `@media (display-mode: standalone)` rules to:
-  - Hide scrollbars globally for a native feel
-  - Disable rubber-band overscroll on the root element
-  - Apply a slightly different background to signal standalone mode is active
+### 5. Viewport Stability for Android Keyboards
+- Android Chrome resizes the viewport when the keyboard opens (unlike iOS which uses `visualViewport`). The current `MobileCTABar` keyboard detection using `visualViewport` also works on Android Chrome.
+- No additional changes needed, but verify the threshold (75% of window height) works on Android where keyboard heights differ.
 
-### 3. iOS-Safe Fixed Bottom Elements
-**Why**: The `MobileCTABar` sits at `z-40` which can conflict with iOS keyboard and Safari's bottom toolbar. When the keyboard opens, fixed bottom elements can jump or overlap.
+## Technical Details
 
-**Change in `src/components/MobileCTABar.tsx`**:
-- Add a `visualViewport` resize listener that hides the CTA bar when the iOS keyboard is open (viewport height shrinks significantly)
+### Manifest icon split (both files)
+```json
+"icons": [
+  {
+    "src": "/pwa-192x192.png",
+    "sizes": "192x192",
+    "type": "image/png",
+    "purpose": "any"
+  },
+  {
+    "src": "/pwa-192x192.png",
+    "sizes": "192x192",
+    "type": "image/png",
+    "purpose": "maskable"
+  },
+  {
+    "src": "/pwa-512x512.png",
+    "sizes": "512x512",
+    "type": "image/png",
+    "purpose": "any"
+  },
+  {
+    "src": "/pwa-512x512.png",
+    "sizes": "512x512",
+    "type": "image/png",
+    "purpose": "maskable"
+  }
+]
+```
 
-### 4. Smooth Page Transitions
-**Why**: Native iOS apps have smooth transitions between views. The current app has instant page swaps which feel jarring.
+### Android back-button handler (App.tsx)
+```typescript
+// Inside RouterContent component
+useEffect(() => {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+  if (!isStandalone) return;
 
-**Change in `src/App.tsx` or router wrapper**:
-- Add a lightweight CSS fade transition (opacity 0 to 1, ~150ms) on route changes using framer-motion's `AnimatePresence` (already installed) wrapping the route outlet
+  // Prevent app from closing on back press at root
+  const handlePopState = () => {
+    if (window.location.pathname === '/') {
+      window.history.pushState(null, '', '/');
+    }
+  };
 
-### 5. Pull-to-Refresh Prevention on Non-Scrollable Pages
-**Why**: On iOS Safari, pulling down on pages that don't scroll triggers the browser's reload gesture, which is disruptive mid-scan.
+  window.history.pushState(null, '', window.location.href);
+  window.addEventListener('popstate', handlePopState);
+  return () => window.removeEventListener('popstate', handlePopState);
+}, []);
+```
 
-**Change in `src/index.css`**:
-- Add `overscroll-behavior-y: contain` on specific containers (scan results, dashboard) to prevent accidental reloads while still allowing natural scroll within content areas
+### PWAInstallPrompt iOS fallback
+Add platform detection and show "Tap Share > Add to Home Screen" instructions when `deferredPrompt` is null and the user is on iOS Safari.
 
-### 6. Theme-Color Updates for Dark/Light Mode
-**Why**: The status bar colour should match the current theme. Currently, the meta tags set fixed purple values. When users switch themes, the status bar doesn't update.
+### Manifest additions
+```json
+"display_override": ["standalone"],
+"screenshots": [
+  {
+    "src": "/og-image.jpg",
+    "sizes": "1280x720",
+    "type": "image/jpeg",
+    "label": "FootprintIQ Dashboard",
+    "form_factor": "narrow"
+  }
+]
+```
 
-**Change**: Add a small effect in the theme provider or `App.tsx` that updates `document.querySelector('meta[name="theme-color"]')` content dynamically when the theme changes -- white-ish for light mode, dark for dark mode.
+### Files Modified
+1. `public/manifest.json` -- display_override, split icons, screenshot form_factor
+2. `vite.config.ts` -- mirror manifest changes in VitePWA config
+3. `src/App.tsx` -- Android back-button handler for standalone mode
+4. `src/components/PWAInstallPrompt.tsx` -- iOS/Android platform-aware install UI
 
-## Files Modified
-1. `index.html` -- splash screen link tags
-2. `src/index.css` -- standalone mode styles, overscroll-behavior on containers
-3. `src/components/MobileCTABar.tsx` -- keyboard-aware hide logic
-4. `src/App.tsx` (or layout wrapper) -- route fade transitions, dynamic theme-color meta
+All changes are lightweight: manifest fields, one useEffect, and conditional UI text. No new dependencies.
