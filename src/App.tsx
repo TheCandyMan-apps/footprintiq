@@ -289,6 +289,22 @@ function RouterContent() {
     const color = resolvedTheme === 'dark' ? '#0a0a14' : '#ffffff';
     metas.forEach((meta) => meta.setAttribute('content', color));
   }, [resolvedTheme]);
+
+  // Android back-button handler: prevent app from closing at root in standalone PWA mode
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    if (!isStandalone) return;
+
+    const handlePopState = () => {
+      if (window.location.pathname === '/') {
+        window.history.pushState(null, '', '/');
+      }
+    };
+
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   
   // Track page views on route changes for Google Analytics
   useGoogleAnalytics();

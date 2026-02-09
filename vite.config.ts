@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => ({
         theme_color: '#7c3aed',
         background_color: '#0a0a0f',
         display: 'standalone',
+        display_override: ['standalone'],
         orientation: 'portrait',
         start_url: '/',
         categories: ['productivity', 'security', 'utilities'],
@@ -32,13 +33,25 @@ export default defineConfig(({ mode }) => ({
             src: '/pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: '/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable'
           },
           {
             src: '/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ],
         screenshots: [
@@ -46,7 +59,15 @@ export default defineConfig(({ mode }) => ({
             src: '/og-image.jpg',
             sizes: '1280x720',
             type: 'image/jpeg',
-            label: 'FootprintIQ Dashboard'
+            label: 'FootprintIQ Dashboard',
+            form_factor: 'narrow'
+          },
+          {
+            src: '/og-image.jpg',
+            sizes: '1280x720',
+            type: 'image/jpeg',
+            label: 'FootprintIQ Dashboard - Desktop',
+            form_factor: 'wide'
           }
         ]
       },
