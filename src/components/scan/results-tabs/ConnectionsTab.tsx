@@ -314,7 +314,7 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
   return (
     <div ref={containerRef} className="flex flex-col h-[calc(100vh-320px)] min-h-[520px]">
       {/* Mode Toggle Bar */}
-      <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-muted/40 border-b border-border">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 py-1.5 bg-muted/40 border-b border-border">
         {/* Left: Mode toggle */}
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-background border border-border rounded-lg p-0.5">
