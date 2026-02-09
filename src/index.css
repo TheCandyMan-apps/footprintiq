@@ -124,6 +124,27 @@ DESIGN PHILOSOPHY:
 
   html {
     transition: background-color 0.3s ease, color 0.3s ease;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  body {
+    overscroll-behavior-y: none;
+  }
+
+  /* Prevent iOS Safari auto-zoom on input focus (requires >= 16px) */
+  @media screen and (max-width: 767px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="search"],
+    input[type="url"],
+    input[type="password"],
+    textarea,
+    select {
+      font-size: 16px !important;
+    }
   }
 
   @keyframes shimmer {
