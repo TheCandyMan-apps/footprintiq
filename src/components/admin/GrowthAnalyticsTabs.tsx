@@ -9,7 +9,7 @@ import { TrendingUp, Mail, Calendar } from 'lucide-react';
 type DateRangeOption = '7d' | '30d' | '90d' | 'all';
 
 export function GrowthAnalyticsTabs() {
-  const [dateRangeOption, setDateRangeOption] = useState<DateRangeOption>('30d');
+  const [dateRangeOption, setDateRangeOption] = useState<DateRangeOption>('all');
 
   const getDateRange = (option: DateRangeOption): { start: Date; end: Date } | null => {
     const end = new Date();

@@ -44,8 +44,9 @@ export function useTrialEmailAnalytics(dateRange: { start: Date; end: Date } | n
   return useQuery({
     queryKey: ['trial-email-analytics', dateRange?.start?.toISOString(), dateRange?.end?.toISOString()],
     queryFn: async (): Promise<TrialEmailAnalytics> => {
-      // Build date filter
-      const startDate = dateRange?.start || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      // Build date filter — null means "all time"
+      const isAllTime = !dateRange;
+      const startDate = dateRange?.start || new Date('2020-01-01');
       const endDate = dateRange?.end || new Date();
 
       // Fetch trial metrics from workspaces (with graceful RLS error handling)
