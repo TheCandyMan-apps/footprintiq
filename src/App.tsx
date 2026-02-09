@@ -8,11 +8,12 @@ import { ThemeProvider } from "next-themes";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { SkipLink } from "@/components/SkipLink";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { LoadingState } from "@/components/LoadingState";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useAccessibility } from "@/hooks/useAccessibility";
 import { useGoogleAnalytics } from "@/hooks/useGoogleAnalytics";
+import { useTheme } from "next-themes";
 import { HelmetProvider } from 'react-helmet-async';
 import { PageTransition } from "@/components/PageTransition";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
@@ -280,6 +281,14 @@ function AppContent() {
 function RouterContent() {
   const navigate = useNavigate();
   const { announce } = useAccessibility();
+  const { resolvedTheme } = useTheme();
+  
+  // Dynamically update theme-color meta tag to match current theme
+  useEffect(() => {
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    const color = resolvedTheme === 'dark' ? '#0a0a14' : '#ffffff';
+    metas.forEach((meta) => meta.setAttribute('content', color));
+  }, [resolvedTheme]);
   
   // Track page views on route changes for Google Analytics
   useGoogleAnalytics();

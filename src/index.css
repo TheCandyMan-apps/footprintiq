@@ -252,3 +252,24 @@ DESIGN PHILOSOPHY:
     display: none;
   }
 }
+
+/* Standalone PWA mode — native-like feel */
+@media (display-mode: standalone) {
+  html, body {
+    overscroll-behavior: none;
+  }
+
+  /* Hide scrollbars in standalone */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  * {
+    scrollbar-width: none;
+  }
+}
+
+/* Prevent pull-to-refresh on specific containers */
+.overscroll-contain {
+  overscroll-behavior-y: contain;
+}

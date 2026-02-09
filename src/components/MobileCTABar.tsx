@@ -2,15 +2,32 @@ import { Search, Menu, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useState, useEffect } from "react";
 
 export const MobileCTABar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
-  // Don't show on certain pages
+  // Hide CTA bar when iOS keyboard is open
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const handleResize = () => {
+      // If viewport height is significantly less than window height, keyboard is open
+      const isKeyboard = viewport.height < window.innerHeight * 0.75;
+      setKeyboardOpen(isKeyboard);
+    };
+
+    viewport.addEventListener('resize', handleResize);
+    return () => viewport.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Don't show on certain pages or when keyboard is open
   const hideOnPages = ['/scan', '/dashboard'];
-  if (!isMobile || hideOnPages.includes(location.pathname)) {
+  if (!isMobile || hideOnPages.includes(location.pathname) || keyboardOpen) {
     return null;
   }
 
