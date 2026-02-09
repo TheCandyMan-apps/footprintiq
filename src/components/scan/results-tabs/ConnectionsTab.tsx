@@ -449,10 +449,11 @@ export function ConnectionsTab({ results, username, jobId }: ConnectionsTabProps
                     <TooltipTrigger asChild>
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-help">
                         <Info className="w-3 h-3 text-primary flex-shrink-0" />
-                        <span className="truncate">
+                        <span className="hidden sm:inline">
                           <strong className="text-foreground">{accountNodes.length}</strong> profiles · 
-                          <strong className="text-foreground ml-1">{correlationStats.correlationEdges}</strong> correlations · {explanationSummary}
+                          <strong className="text-foreground ml-1">{correlationStats.correlationEdges}</strong> correlations · 
                         </span>
+                        <span className="line-clamp-1">{explanationSummary}</span>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-xs">
