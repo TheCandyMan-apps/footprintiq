@@ -95,9 +95,11 @@ export function HeroInputField({ className }: HeroInputFieldProps) {
             value={identifier}
             onChange={(e) => setIdentifier(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="h-14 text-lg px-5 pr-24 bg-background border-2 border-border focus:border-primary rounded-xl"
+            className="h-14 text-base sm:text-lg px-5 pr-24 bg-background border-2 border-border focus:border-primary rounded-xl"
             aria-label="digital footprint scanner input"
             maxLength={255}
+            autoCorrect="off"
+            autoCapitalize="off"
           />
           {detectedType && (
             <div className={cn(
@@ -113,7 +115,7 @@ export function HeroInputField({ className }: HeroInputFieldProps) {
           type="submit" 
           size="lg"
           disabled={!identifier.trim()}
-          className="h-14 px-8 text-lg rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
+          className="h-14 px-8 text-lg rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm active:scale-[0.97] transition-transform"
         >
           Check Now
           <ArrowRight className="w-5 h-5 ml-2" />

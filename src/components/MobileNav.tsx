@@ -66,14 +66,14 @@ export function MobileNav() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="w-[280px] sm:w-[320px]">
-        <nav className="flex flex-col gap-2 mt-8">
+        <nav className="flex flex-col gap-2 mt-8 pb-safe">
           {navItems.map((item) => (
             <Link
               key={item.href}
               to={item.href}
               onClick={() => setOpen(false)}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all active:scale-[0.97]",
                 location.pathname === item.href
                   ? "bg-primary text-primary-foreground"
                   : "hover:bg-muted"

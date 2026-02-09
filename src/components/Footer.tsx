@@ -4,7 +4,7 @@ import { TrustBadges } from "./TrustBadges";
 
 export const Footer = () => {
   return (
-    <footer className="bg-card border-t border-accent">
+    <footer className="bg-card border-t border-accent pb-safe">
       <div className="max-w-7xl mx-auto px-6 py-12">
         {/* Trust Badges - Horizontal Scroll */}
         <div className="mb-10">
