@@ -39,11 +39,14 @@ export function TrialConversionMetrics({ metrics, isLoading }: TrialConversionMe
     return (
       <Card>
         <CardContent className="pt-6 text-center text-muted-foreground">
-          No trial data available
+          No trial data available for this period
         </CardContent>
       </Card>
     );
   }
+
+  // Show a clean zero-state when there's data object but no trials
+  const hasAnyData = metrics.totalTrialsStarted > 0;
 
   const maxValue = Math.max(
     metrics.totalTrialsStarted,

@@ -34,7 +34,7 @@ export function GrowthAnalyticsTabs() {
   };
 
   const dateRange = getDateRange(dateRangeOption);
-  const { data, isLoading } = useTrialEmailAnalytics(dateRange);
+  const { data, isLoading, isPlaceholderData } = useTrialEmailAnalytics(dateRange);
 
   return (
     <div className="space-y-6">
@@ -73,14 +73,14 @@ export function GrowthAnalyticsTabs() {
         <TabsContent value="trial-funnel">
           <TrialConversionMetrics 
             metrics={data?.trialMetrics} 
-            isLoading={isLoading} 
+            isLoading={isLoading && !isPlaceholderData} 
           />
         </TabsContent>
 
         <TabsContent value="email-performance">
           <EmailMetricsDashboard 
             metrics={data?.emailMetrics} 
-            isLoading={isLoading} 
+            isLoading={isLoading && !isPlaceholderData} 
           />
         </TabsContent>
       </Tabs>

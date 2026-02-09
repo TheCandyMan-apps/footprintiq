@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface TrialMetrics {
@@ -49,11 +49,12 @@ export function useTrialEmailAnalytics(dateRange: { start: Date; end: Date } | n
       const startDate = dateRange?.start || new Date('2020-01-01');
       const endDate = dateRange?.end || new Date();
 
-      // Fetch trial metrics from workspaces (with graceful RLS error handling)
+      // Fetch trial metrics from FREE-TIER workspaces only (paid users aren't "trialing")
       const { data: workspaces, error: workspacesError } = await supabase
         .from('workspaces')
-        .select('trial_status, trial_scans_used, trial_started_at')
-        .not('trial_started_at', 'is', null);
+        .select('trial_status, trial_scans_used, trial_started_at, subscription_tier')
+        .not('trial_started_at', 'is', null)
+        .eq('subscription_tier', 'free');
 
       // Gracefully handle RLS errors - continue with empty data instead of throwing
       if (workspacesError) {
@@ -150,6 +151,7 @@ export function useTrialEmailAnalytics(dateRange: { start: Date; end: Date } | n
         },
       };
     },
+    placeholderData: keepPreviousData, // Prevent blank flash when switching timelines
     refetchInterval: 60000, // Refresh every minute
   });
 }
