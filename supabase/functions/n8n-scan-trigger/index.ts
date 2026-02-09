@@ -398,83 +398,85 @@ serve(async (req) => {
     );
     console.log(`[n8n-scan-trigger] Payload callbackToken: ${callbackToken ? "set" : "MISSING"}`);
 
-    // Fire n8n webhook - wait briefly to catch immediate failures
-    console.log(`[n8n-scan-trigger] Calling n8n webhook for scan ${scan.id} (URL: ${webhookUrl ? 'configured' : 'MISSING'})`);
+    // For personal_details (name) scans, skip n8n entirely.
+    // Name-intel (PredictaSearch) is the sole handler — username tools (Sherlock, Maigret)
+    // don't support spaces and would return empty, then overwrite valid results.
+    if (scanType === 'personal_details') {
+      console.log(`[n8n-scan-trigger] Skipping n8n workflow for personal_details scan ${scan.id} — name-intel handles this`);
+      await serviceClient.from("scans").update({ status: "running" }).eq("id", scan.id);
+    } else {
+      // Fire n8n webhook - wait briefly to catch immediate failures
+      console.log(`[n8n-scan-trigger] Calling n8n webhook for scan ${scan.id} (URL: ${webhookUrl ? 'configured' : 'MISSING'})`);
 
-    // Use AbortController for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for initial connection
+      // Use AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for initial connection
 
-    try {
-      const n8nResponse = await fetch(webhookUrl!, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(n8nPayload),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
+      try {
+        const n8nResponse = await fetch(webhookUrl!, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(n8nPayload),
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
 
-      if (!n8nResponse.ok) {
-        console.error(`[n8n-scan-trigger] n8n webhook failed immediately: ${n8nResponse.status}`);
-        // Mark scan as failed right away so user knows
+        if (!n8nResponse.ok) {
+          console.error(`[n8n-scan-trigger] n8n webhook failed immediately: ${n8nResponse.status}`);
+          await serviceClient
+            .from("scans")
+            .update({ 
+              status: "failed", 
+              analysis_error: `n8n webhook returned ${n8nResponse.status}`,
+              completed_at: new Date().toISOString()
+            })
+            .eq("id", scan.id);
+          
+          await serviceClient.from("scan_progress").update({
+            status: "error",
+            error: true,
+            message: `Workflow failed to start (HTTP ${n8nResponse.status})`,
+            updated_at: new Date().toISOString(),
+          }).eq("scan_id", scan.id);
+
+          await serviceClient.from("system_errors").insert({
+            error_type: "n8n_webhook_failure",
+            message: `n8n returned ${n8nResponse.status} for scan ${scan.id}`,
+            metadata: { scanId: scan.id, username, status: n8nResponse.status },
+            severity: "error",
+          });
+        } else {
+          console.log(`[n8n-scan-trigger] n8n webhook accepted scan ${scan.id}`);
+          await serviceClient.from("scans").update({ status: "running" }).eq("id", scan.id);
+        }
+      } catch (fetchError) {
+        clearTimeout(timeoutId);
+        const errMsg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+        console.error("[n8n-scan-trigger] Error calling n8n:", errMsg);
+        
         await serviceClient
           .from("scans")
           .update({ 
             status: "failed", 
-            analysis_error: `n8n webhook returned ${n8nResponse.status}`,
+            analysis_error: `n8n webhook unreachable: ${errMsg}`,
             completed_at: new Date().toISOString()
           })
           .eq("id", scan.id);
         
-        // Also update progress
         await serviceClient.from("scan_progress").update({
           status: "error",
           error: true,
-          message: `Workflow failed to start (HTTP ${n8nResponse.status})`,
+          message: `Workflow unreachable: ${errMsg.substring(0, 100)}`,
           updated_at: new Date().toISOString(),
         }).eq("scan_id", scan.id);
 
-        // Log to system_errors for debugging
         await serviceClient.from("system_errors").insert({
-          error_type: "n8n_webhook_failure",
-          message: `n8n returned ${n8nResponse.status} for scan ${scan.id}`,
-          metadata: { scanId: scan.id, username, status: n8nResponse.status },
+          error_type: "n8n_webhook_unreachable",
+          message: `n8n webhook failed for scan ${scan.id}: ${errMsg}`,
+          metadata: { scanId: scan.id, username, error: errMsg },
           severity: "error",
         });
-      } else {
-        console.log(`[n8n-scan-trigger] n8n webhook accepted scan ${scan.id}`);
-        await serviceClient.from("scans").update({ status: "running" }).eq("id", scan.id);
       }
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      const errMsg = fetchError instanceof Error ? fetchError.message : String(fetchError);
-      console.error("[n8n-scan-trigger] Error calling n8n:", errMsg);
-      
-      // Mark scan as failed immediately
-      await serviceClient
-        .from("scans")
-        .update({ 
-          status: "failed", 
-          analysis_error: `n8n webhook unreachable: ${errMsg}`,
-          completed_at: new Date().toISOString()
-        })
-        .eq("id", scan.id);
-      
-      // Update progress
-      await serviceClient.from("scan_progress").update({
-        status: "error",
-        error: true,
-        message: `Workflow unreachable: ${errMsg.substring(0, 100)}`,
-        updated_at: new Date().toISOString(),
-      }).eq("scan_id", scan.id);
-
-      // Log error
-      await serviceClient.from("system_errors").insert({
-        error_type: "n8n_webhook_unreachable",
-        message: `n8n webhook failed for scan ${scan.id}: ${errMsg}`,
-        metadata: { scanId: scan.id, username, error: errMsg },
-        severity: "error",
-      });
     }
 
     // ==================== EMAIL-INTEL PARALLEL CALL ====================
