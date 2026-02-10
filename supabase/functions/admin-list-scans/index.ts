@@ -99,7 +99,9 @@ Deno.serve(wrapHandler(async (req) => {
     }
 
     if (searchTerm) {
-      query = query.or(`username.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`);
+      const sanitized = searchTerm.replace(/[%_\\,().]/g, '\\$&');
+      const term = `%${sanitized}%`;
+      query = query.or(`username.ilike.${term},email.ilike.${term},phone.ilike.${term},id.ilike.${term}`);
     }
 
     const offset = (page - 1) * pageSize;
