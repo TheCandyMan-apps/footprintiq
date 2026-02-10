@@ -239,6 +239,7 @@ const InterpretOsintResults = lazy(() => import("./pages/guides/InterpretOsintRe
 const WhatOsintResultsMean = lazy(() => import("./pages/guides/WhatOsintResultsMean"));
 const IsOsintScanWorthIt = lazy(() => import("./pages/guides/IsOsintScanWorthIt"));
 const FreeVsPaidOsintTools = lazy(() => import("./pages/guides/FreeVsPaidOsintTools"));
+const GoodOsintScanResult = lazy(() => import("./pages/guides/GoodOsintScanResult"));
 const EthicalOsint = lazy(() => import("./pages/EthicalOsint"));
 const Press = lazy(() => import("./pages/Press"));
 const CryptoLandingPage = lazy(() => import("./pages/for/Crypto"));
@@ -532,6 +533,7 @@ function RouterContent() {
             <Route path="/guides/what-osint-results-mean" element={<WhatOsintResultsMean />} />
             <Route path="/guides/is-osint-scan-worth-it" element={<IsOsintScanWorthIt />} />
             <Route path="/guides/free-vs-paid-osint-tools" element={<FreeVsPaidOsintTools />} />
+            <Route path="/guides/good-osint-scan-result" element={<GoodOsintScanResult />} />
            
            {/* SEO Pillar Pages */}
           <Route path="/digital-footprint-scanner" element={<DigitalFootprintScanner />} />
