@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { ProfileThumbnail } from './ProfileThumbnail';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
@@ -79,26 +80,7 @@ export function AccountCard({
     >
       {/* Header: icon + platform + confidence */}
       <div className="flex items-center gap-2 px-2.5 pt-2 pb-1">
-        <div className="relative shrink-0">
-          <PlatformIconBadge platform={platformName} url={profileUrl} size="md" position="top-left" />
-          <div className="w-8 h-8 rounded overflow-hidden bg-muted/20 border border-border/30 ml-0.5 mt-0.5">
-            {profileImage ? (
-              <img
-                src={profileImage}
-                alt={`${platformName} profile photo`}
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                  if (fallback) fallback.style.display = 'flex';
-                }}
-              />
-            ) : null}
-            <div className={cn('absolute inset-0 flex items-center justify-center bg-primary/4', profileImage ? 'hidden' : 'flex')}>
-              <span className="text-[10px] font-semibold text-primary/40">{getInitials(username || platformName)}</span>
-            </div>
-          </div>
-        </div>
+        <ProfileThumbnail profileImage={profileImage} platformName={platformName} profileUrl={profileUrl} username={username} size="card" />
 
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[12px] text-foreground truncate leading-none">{platformName}</p>

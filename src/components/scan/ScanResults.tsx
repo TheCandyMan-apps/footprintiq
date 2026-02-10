@@ -14,6 +14,7 @@ import { generateInvestigationReport } from '@/lib/investigationReportPDF';
 import { ScanProgress } from './ScanProgress';
 import { ResultsTabBar } from './ResultsTabBar';
 import { TabSkeleton } from './results-tabs/TabSkeleton';
+import { AccountsTabSkeleton } from './results-tabs/accounts/AccountsTabSkeleton';
 import { InvestigationProvider } from '@/contexts/InvestigationContext';
 import { Loader2, Shield } from 'lucide-react';
 import { parseISO, isValid } from 'date-fns';
@@ -448,7 +449,7 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                 </TabsContent>
 
                 <TabsContent value="accounts" className="mt-0">
-                  <Suspense fallback={<TabSkeleton />}>
+                  <Suspense fallback={<AccountsTabSkeleton />}>
                     <AccountsTab results={results} jobId={jobId} />
                   </Suspense>
                 </TabsContent>

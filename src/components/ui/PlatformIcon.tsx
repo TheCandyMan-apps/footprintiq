@@ -113,6 +113,8 @@ export function PlatformIcon({
         <img 
           src={faviconUrl}
           alt={`${platform} icon`}
+          width={parseInt(config.icon.match(/w-(\d+)/)?.[1] || '5') * 4}
+          height={parseInt(config.icon.match(/w-(\d+)/)?.[1] || '5') * 4}
           className={cn(config.icon, 'object-contain')}
           onError={() => setFaviconError(true)}
           loading="lazy"
