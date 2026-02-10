@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, BookOpen, AlertTriangle, Clock, Database, Shield, CheckCircle } from "lucide-react";
+import { GuideBackLink } from "@/components/guides/GuideBackLink";
 import { Link } from "react-router-dom";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
@@ -86,14 +87,7 @@ export default function HowUsernameSearchToolsWork() {
       
       <main className="flex-1">
         <article className="max-w-4xl mx-auto px-6 py-12">
-          {/* Back Link */}
-          <Link
-            to="/blog"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8 font-medium group"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Resources
-          </Link>
+          <GuideBackLink />
 
           {/* Guide Badge */}
           <div className="flex flex-wrap items-center gap-3 text-sm mb-6">
