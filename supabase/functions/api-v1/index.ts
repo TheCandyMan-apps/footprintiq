@@ -141,21 +141,21 @@ async function handleScans(req: Request, parts: string[], apiKeyData: any, supab
 
   if (method === 'GET') {
     if (scanId) {
-      // Get specific scan
+      // Get specific scan - scope to workspace
       const { data, error } = await supabase
         .from('scans')
         .select('*')
         .eq('id', scanId)
-        .eq('user_id', apiKeyData.user_id)
+        .eq('workspace_id', apiKeyData.workspace_id)
         .single();
       if (error) throw error;
       return data;
     } else {
-      // List scans
+      // List scans - scope to workspace
       const { data, error } = await supabase
         .from('scans')
         .select('*')
-        .eq('user_id', apiKeyData.user_id)
+        .eq('workspace_id', apiKeyData.workspace_id)
         .order('created_at', { ascending: false })
         .limit(50);
       if (error) throw error;
@@ -164,12 +164,13 @@ async function handleScans(req: Request, parts: string[], apiKeyData: any, supab
   }
 
   if (method === 'POST') {
-    // Create scan
+    // Create scan - associate with workspace
     const body = await req.json();
     const { data, error } = await supabase
       .from('scans')
       .insert({
         user_id: apiKeyData.user_id,
+        workspace_id: apiKeyData.workspace_id,
         scan_type: body.scan_type || 'quick',
         username: body.username,
         email: body.email,
