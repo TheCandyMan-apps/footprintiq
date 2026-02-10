@@ -89,26 +89,6 @@ export function AccountRowActions({
   return (
     <TooltipProvider delayDuration={300}>
       <div className={RESULTS_ACTION_CLUSTER.container}>
-        {/* Open Link */}
-        {url && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className={RESULTS_ACTION_CLUSTER.button}
-                asChild
-                onClick={(e) => e.stopPropagation()}
-              >
-                <a href={url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="w-2.5 h-2.5" />
-                </a>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent className="text-[10px]">Open</TooltipContent>
-          </Tooltip>
-        )}
-
         {/* Focus Button */}
         <Tooltip>
           <TooltipTrigger asChild>

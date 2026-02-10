@@ -90,7 +90,7 @@ export function AccountCard({
         )}
       >
         {/* Header: icon + platform + confidence */}
-        <div className="flex items-center gap-2 px-2.5 pt-2.5 pb-1">
+        <div className="flex items-center gap-2 px-2.5 pt-2 pb-1">
           <div className="relative shrink-0">
             <PlatformIconBadge platform={platformName} url={profileUrl} size="md" position="top-left" />
             <div className="w-8 h-8 rounded overflow-hidden bg-muted/20 border border-border/30 ml-0.5 mt-0.5">
@@ -135,7 +135,7 @@ export function AccountCard({
         </div>
 
         {/* Bio - 2 line clamp */}
-        <div className="px-2.5 pb-1.5">
+        <div className="px-2.5 pb-1">
           {bio ? (
             <p className="text-[10px] text-muted-foreground/70 leading-snug line-clamp-2">{bio}</p>
           ) : profileUrl ? (
@@ -149,7 +149,7 @@ export function AccountCard({
 
         {/* LENS badge if verified */}
         {verificationResult && (
-          <div className="px-2.5 pb-1.5">
+          <div className="px-2.5 pb-1">
             <LensStatusBadge status={null} score={verificationResult.confidenceScore} compact />
           </div>
         )}
@@ -169,7 +169,7 @@ export function AccountCard({
 
         {/* AI Enrichment Buttons (Pro only) */}
         {!isFree && (
-          <div className="flex gap-1.5 px-2.5 pb-1.5">
+          <div className="flex gap-1.5 px-2.5 pb-1">
             <Button
               variant="outline"
               size="sm"

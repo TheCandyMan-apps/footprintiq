@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
-import { CheckCircle, HelpCircle, AlertCircle, Clock, Users, MapPin, Info, Globe, Zap, Sparkles } from 'lucide-react';
+import { CheckCircle, HelpCircle, AlertCircle, Clock, Users, MapPin, Info, Globe, Zap, Sparkles, ExternalLink } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
@@ -141,7 +141,7 @@ export function AccountRow({
       {/* Main Row - Compact investigation style */}
       <div 
         className={cn(
-          'flex items-center gap-2 px-2 py-1.5 min-h-[52px] border-l-2 transition-all duration-75 cursor-pointer group',
+          'flex items-center gap-2 px-2 py-1 min-h-[44px] border-l-2 transition-all duration-75 cursor-pointer group',
           'border-b border-border/15 last:border-b-0',
           !isFocused && !isExpanded && 'border-l-transparent hover:border-l-primary/20 hover:bg-muted/8',
           isExpanded && !isFocused && 'bg-muted/6 border-l-muted-foreground/15',
@@ -291,22 +291,46 @@ export function AccountRow({
             </TooltipProvider>
           )}
           
-          {/* Action cluster */}
-          <AccountRowActions
-            findingId={result.id}
-            url={profileUrl}
-            platform={platformName}
-            scanId={jobId}
-            isFocused={isFocused}
-            onFocus={onFocus}
-            verificationResult={verificationResult}
-            onVerificationComplete={onVerificationComplete}
-            claimStatus={claimStatus}
-            onClaimChange={onClaimChange}
-            isClaimLoading={isClaimLoading}
-            isExpanded={isExpanded}
-            onToggleExpand={onToggleExpand}
-          />
+          {/* Always-visible: Open link */}
+          {profileUrl && (
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-4.5 w-4.5 rounded text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
+                    asChild
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <a href={profileUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="text-[10px]">Open</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
+          {/* Hover-reveal: Secondary actions */}
+          <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            <AccountRowActions
+              findingId={result.id}
+              url={profileUrl}
+              platform={platformName}
+              scanId={jobId}
+              isFocused={isFocused}
+              onFocus={onFocus}
+              verificationResult={verificationResult}
+              onVerificationComplete={onVerificationComplete}
+              claimStatus={claimStatus}
+              onClaimChange={onClaimChange}
+              isClaimLoading={isClaimLoading}
+              isExpanded={isExpanded}
+              onToggleExpand={onToggleExpand}
+            />
+          </div>
         </div>
       </div>
 

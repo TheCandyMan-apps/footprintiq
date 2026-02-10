@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Search, Filter, User, ArrowUpDown, Lock, Sparkles, Eye, EyeOff, List, LayoutGrid } from 'lucide-react';
+import { Search, Filter, User, ArrowUpDown, Lock, Sparkles, Eye, EyeOff, List, LayoutGrid, SearchX } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { useInvestigation } from '@/contexts/InvestigationContext';
@@ -21,6 +21,7 @@ import { AccountCard } from './accounts/AccountCard';
 import { ProviderHealthPanel } from './ProviderHealthPanel';
 import { cn } from '@/lib/utils';
 import { extractPlatformName, deriveResultStatus } from '@/lib/results/extractors';
+import { EmptyState } from '@/components/EmptyState';
 
 interface AccountsTabProps {
   results: ScanResult[];
@@ -269,33 +270,60 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
         </ToggleGroup>
       </div>
 
-      {/* Inline Stats - Minimal */}
-      <div className="flex items-center gap-1 text-[10px]">
+      {/* Results Summary Bar */}
+      <div className="flex items-center gap-1.5 text-[10px] flex-wrap">
+        <span className="px-1.5 py-0.5 rounded bg-muted/30 text-muted-foreground font-medium">
+          {displayResults.length} total
+        </span>
         <span className="px-1.5 py-0.5 rounded bg-green-600/10 text-green-600 dark:text-green-400 font-medium">
           {statusCounts.found} found
         </span>
-        <span className="text-muted-foreground/50">
-          {statusCounts.claimed} claimed
-        </span>
+        {filterCounts.high_confidence > 0 && (
+          <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">
+            {filterCounts.high_confidence} high conf
+          </span>
+        )}
+        {focusMode && hiddenByFocusMode > 0 && (
+          <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
+            {hiddenByFocusMode} hidden
+          </span>
+        )}
         {!isFullAccess && displayResults.length > freeAccountLimit && (
-          <span className="flex items-center gap-0.5 text-muted-foreground/50 ml-1">
+          <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted/20 text-muted-foreground/60">
             <Lock className="h-2.5 w-2.5" />
-            +{displayResults.length - freeAccountLimit} hidden
+            +{displayResults.length - freeAccountLimit} locked
           </span>
         )}
         <span className="text-muted-foreground/40 ml-auto text-[9px]">
+          {statusFilter !== 'all' && <span className="mr-1">{statusFilter}</span>}
+          {sortBy !== 'confidence' && <span className="mr-1">by {sortBy}</span>}
           {filteredResults.length}/{displayResults.length}
         </span>
       </div>
 
       {/* Account Results */}
       {filteredResults.length === 0 ? (
-        <div className="border border-border/20 rounded overflow-hidden bg-card p-4 text-center">
-          <User className="w-5 h-5 mx-auto text-muted-foreground/30 mb-1" />
-          <p className="text-[11px] text-muted-foreground/60">
-            {searchQuery || statusFilter !== 'all' || quickFilter !== 'all' ? 'No matches' : 'No accounts found'}
-          </p>
-        </div>
+        displayResults.length === 0 ? (
+          <EmptyState
+            icon={User}
+            title="No accounts found"
+            description="This scan did not find any matching accounts."
+          />
+        ) : (
+          <EmptyState
+            icon={SearchX}
+            title="No matching accounts"
+            description="No accounts match your current search or filter criteria."
+            action={{
+              label: 'Reset Filters',
+              onClick: () => {
+                setSearchQuery('');
+                setStatusFilter('all');
+                setQuickFilter('all');
+              },
+            }}
+          />
+        )
       ) : viewMode === 'list' ? (
         /* List View - Virtualized */
         <VirtualizedAccountList
