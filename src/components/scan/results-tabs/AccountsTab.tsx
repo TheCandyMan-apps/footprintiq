@@ -334,54 +334,24 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
           </p>
         </div>
       ) : viewMode === 'list' ? (
-        /* List View */
-        <div className="border border-border/20 rounded overflow-hidden bg-card">
-          {filteredResults.map((result) => {
-            const lensScore = lensAnalysis.resultScores.get(result.id);
-            const score = lensScore?.score || 50;
-            const isExpanded = expandedRows.has(result.id);
-            const isFocused = focusedEntityId === result.id;
-            const verificationResult = verifiedEntities.get(result.id) || null;
-            const claimStatus = claimedEntities.get(result.id) || null;
-
-            return (
-              <AccountRow
-                key={result.id}
-                result={result}
-                jobId={jobId}
-                lensScore={score}
-                isFocused={isFocused}
-                isExpanded={isExpanded}
-                verificationResult={verificationResult}
-                claimStatus={claimStatus}
-                isClaimLoading={isClaimLoading}
-                onFocus={() => handleFocus(result.id)}
-                onToggleExpand={() => toggleExpanded(result.id)}
-                onVerificationComplete={(r) => handleVerificationComplete(result.id, r)}
-                onClaimChange={(claim) => handleClaimChange(result.id, claim)}
-              />
-            );
-          })}
-
-          {/* Free tier upgrade prompt */}
-          {!isFullAccess && displayResults.length > freeAccountLimit && (
-            <div className="p-3 bg-muted/30 border-t border-border/20 text-center">
-              <div className="flex items-center justify-center gap-1.5 mb-1.5">
-                <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs font-medium">
-                  {displayResults.length - freeAccountLimit} more accounts
-                </span>
-              </div>
-              <p className="text-[10px] text-muted-foreground mb-2">
-                Upgrade to Pro to view all accounts with full confidence scoring.
-              </p>
-              <Button size="sm" className="h-7 text-[10px] gap-1">
-                <Sparkles className="h-3 w-3" />
-                Upgrade to Pro
-              </Button>
-            </div>
-          )}
-        </div>
+        /* List View - Virtualized */
+        <VirtualizedAccountList
+          filteredResults={filteredResults}
+          jobId={jobId}
+          lensAnalysis={lensAnalysis}
+          expandedRows={expandedRows}
+          focusedEntityId={focusedEntityId}
+          verifiedEntities={verifiedEntities}
+          claimedEntities={claimedEntities}
+          isClaimLoading={isClaimLoading}
+          handleFocus={handleFocus}
+          toggleExpanded={toggleExpanded}
+          handleVerificationComplete={handleVerificationComplete}
+          handleClaimChange={handleClaimChange}
+          isFullAccess={isFullAccess}
+          displayResults={displayResults}
+          freeAccountLimit={freeAccountLimit}
+        />
       ) : (
         /* Grid View */
         <div>
