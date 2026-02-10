@@ -1,59 +1,53 @@
 
 
-# Add "Start Free Trial" Button to Header and Pricing Page
+# Add Subtle Upgrade Nudge for Logged-In Free Users
 
-## Overview
-Add a visible "Start Free Trial" button in the header navigation for unauthenticated users, and update the pricing page's free-tier CTA. Both will link to `/auth?tab=signup` so the sign-up tab is pre-selected, reducing friction.
-
-## Confirming: Sign-up without a trial
-Yes -- users can sign up on the free tier and run scans without subscribing to a Pro trial. The free tier provides default credits and a scan quota via the workspace system. The "Start Free Trial" label is a marketing label for the free-tier sign-up, not a gated trial requiring payment.
+## What this does
+Adds a small, non-intrusive "Upgrade" text link in the header for logged-in free-tier users, and a gentle highlight on the pricing page to draw attention to Pro without being pushy.
 
 ## Changes
 
-### 1. Auth page: read `tab` query parameter (`src/pages/Auth.tsx`)
-- Read `?tab=signup` from the URL search params
-- Pass it as `defaultValue` to the `<Tabs>` component so the sign-up tab is pre-selected when users arrive via the new button
+### 1. Header: Add a subtle "Upgrade" text link (`src/components/Header.tsx`)
+- Next to the credits badge (which already shows for free users), add a small text link that says "Upgrade" with a subtle sparkle icon
+- Styled as a muted text link (not a button) -- blends into the header without shouting
+- Links to `/pricing`
+- Only visible when: user is logged in AND on the free tier
 
-### 2. Header: replace "Get Started" with "Start Free Trial" (`src/components/Header.tsx`)
-- Change the unauthenticated "Get Started" button (line 431) to say "Start Free Trial"
-- Update its destination from `/auth` to `/auth?tab=signup`
-- Also update the "Sign In" text link (line 380) to remain as-is for returning users
+Visual result: `[credits badge] Upgrade`
 
-### 3. Pricing page: update free-tier CTA (`src/pages/Pricing.tsx`)
-- Update the free plan's `navigate('/auth')` call (line 40) to `navigate('/auth?tab=signup')` so clicking "Get Started" on the free tier pre-selects sign-up
-- No visual changes needed -- just the link target
+### 2. Pricing page: Add a gentle nudge banner for free users (`src/pages/Pricing.tsx`)
+- Below the hero text, show a single-line subtle message for logged-in free users: "You're on the Free plan. Upgrade anytime for deeper insights."
+- Styled with muted text and a small arrow icon -- no bright colours, no urgency
+- Not dismissible (it's just a quiet status line, not a banner)
 
-### 4. Mobile nav: add matching CTA
-- In the mobile navigation menu section of Header.tsx, ensure the unauthenticated mobile CTA also reads "Start Free Trial" and links to `/auth?tab=signup`
+## Technical Details
 
-## Technical Detail
-
-**Auth.tsx tab pre-selection:**
-```typescript
-const searchParams = new URLSearchParams(window.location.search);
-const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
-// ...
-<Tabs defaultValue={defaultTab} className="w-full">
+**Header.tsx** (~line 416, after credits badge):
+```tsx
+{user && !isPremium && (
+  <Link
+    to="/pricing"
+    className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+  >
+    <Sparkles className="h-3 w-3" />
+    Upgrade
+  </Link>
+)}
 ```
 
-**Header.tsx button update:**
-```typescript
-<Button onClick={() => navigate('/auth?tab=signup')}>
-  Start Free Trial
-</Button>
-```
-
-**Pricing.tsx free plan link:**
-```typescript
-if (planId === 'free') {
-  navigate('/auth?tab=signup');
-  return;
-}
+**Pricing.tsx** (~line 231, after subtitle):
+```tsx
+{currentPlan === 'free' && workspace && (
+  <p className="text-sm text-muted-foreground/70 mt-3 flex items-center justify-center gap-1.5">
+    <span>You're on the Free plan</span>
+    <span className="text-muted-foreground/40">·</span>
+    <span>Upgrade anytime for deeper insights</span>
+  </p>
+)}
 ```
 
 ## Files Modified
-1. `src/pages/Auth.tsx` -- read `tab` query param for tab pre-selection
-2. `src/components/Header.tsx` -- rename button, update link target (desktop + mobile)
-3. `src/pages/Pricing.tsx` -- update free-tier CTA destination
+1. `src/components/Header.tsx` -- add subtle "Upgrade" text link for free users
+2. `src/pages/Pricing.tsx` -- add quiet status line for free users below hero
 
-All changes are minimal: a query parameter reader, two string changes, and one navigate path update. No new dependencies.
+Both additions are minimal, non-intrusive, and match the existing design language.
