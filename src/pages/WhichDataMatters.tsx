@@ -48,7 +48,7 @@ const WhichDataMatters = () => {
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": "https://footprintiq.io/which-data-matters"
+      "@id": "https://footprintiq.app/which-data-matters"
     },
     "datePublished": "2025-01-17",
     "dateModified": "2025-01-17"
