@@ -59,11 +59,11 @@ export function AccountCard({
   return (
     <div
       className={cn(
-        'rounded-lg border bg-card overflow-hidden transition-all duration-150 cursor-pointer shadow-sm',
-        'hover:shadow-md hover:border-border',
-        isSelected && 'ring-2 ring-primary border-primary/50 shadow-md',
-        isFocused && !isSelected && 'ring-1 ring-primary/50 border-primary/30',
-        !isFocused && !isSelected && 'border-border/50'
+        'rounded-lg border-2 bg-card overflow-hidden transition-all duration-150 cursor-pointer shadow-sm',
+        'hover:shadow-md hover:border-foreground/25',
+        isSelected && 'ring-2 ring-primary border-primary/60 shadow-md',
+        isFocused && !isSelected && 'ring-1 ring-primary/50 border-primary/40',
+        !isFocused && !isSelected && 'border-border'
       )}
       onClick={onSelect}
       onKeyDown={(e) => { if (e.key === 'Enter') onSelect(); }}
