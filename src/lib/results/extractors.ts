@@ -221,5 +221,5 @@ export function deriveResultStatus(result: ScanResult): string {
   if (meta.exists === true) return 'found';
   if (meta.exists === false) return 'not_found';
 
-  return 'unknown';
+  return 'pending_review';
 }

@@ -64,23 +64,32 @@ export function LensStatusBadge({ status, score, className, compact = false }: L
   const Icon = config.icon;
 
   return (
-    <Badge 
-      variant="outline" 
-      className={cn(
-        'gap-1 font-medium',
-        compact ? 'h-5 px-1.5 text-[10px]' : 'h-6 px-2 text-xs',
-        config.className,
-        className
-      )}
-    >
-      <Icon className={cn(
-        compact ? 'w-2.5 h-2.5' : 'w-3 h-3',
-        effectiveStatus === 'pending' && 'animate-spin'
-      )} />
-      {!compact && <span>{compact ? config.shortLabel : config.label}</span>}
-      {score !== undefined && effectiveStatus !== 'pending' && (
-        <span className="opacity-70">{score}%</span>
-      )}
-    </Badge>
+    <TooltipProvider delayDuration={200}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge 
+            variant="outline" 
+            className={cn(
+              'gap-1 font-medium cursor-help',
+              compact ? 'h-5 px-1.5 text-[10px]' : 'h-6 px-2 text-xs',
+              config.className,
+              className
+            )}
+          >
+            <Icon className={cn(
+              compact ? 'w-2.5 h-2.5' : 'w-3 h-3',
+              effectiveStatus === 'pending' && 'animate-spin'
+            )} />
+            {!compact && <span>{compact ? config.shortLabel : config.label}</span>}
+            {score !== undefined && effectiveStatus !== 'pending' && (
+              <span className="opacity-70">{score}%</span>
+            )}
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[240px] text-[10px] leading-snug">
+          {config.tooltip}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

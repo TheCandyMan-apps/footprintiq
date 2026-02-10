@@ -225,7 +225,7 @@ export function AccountRow({
                   <a href={profileUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-2.5 h-2.5" /></a>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent className="text-[10px]">Open</TooltipContent>
+              <TooltipContent className="text-[10px]">Visit profile on {platformName}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}

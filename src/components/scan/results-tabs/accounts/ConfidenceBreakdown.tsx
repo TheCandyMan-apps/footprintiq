@@ -288,7 +288,7 @@ export function ConfidenceTooltipContent({
         ))}
       </div>
       <div className="text-[9px] text-muted-foreground pt-1 border-t border-border/30">
-        Expand for detailed analysis
+        Click to see detailed signal breakdown
       </div>
     </div>
   );

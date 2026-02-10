@@ -164,7 +164,7 @@ export function AccountCard({
             onClick={(e) => e.stopPropagation()}
           >
             <ExternalLink className="w-3 h-3" />
-            Open
+            Visit profile
           </a>
         )}
         <button
