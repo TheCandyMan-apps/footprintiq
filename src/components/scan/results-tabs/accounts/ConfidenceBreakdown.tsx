@@ -188,7 +188,7 @@ export function ConfidenceBreakdown({
                 <div className="flex items-center gap-1.5 shrink-0">
                   <StatusIcon className={cn('w-3 h-3', color)} />
                   <span className={cn('text-[10px] font-medium', color)}>
-                    {signal.score >= 70 ? 'Confirmed' : signal.score >= 40 ? 'Partial' : 'Insufficient'}
+                    {signal.score >= 70 ? 'Confirmed' : signal.score >= 40 ? 'Partial' : 'Not available'}
                   </span>
                 </div>
               </div>
