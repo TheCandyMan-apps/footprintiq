@@ -81,6 +81,7 @@ export const Footer = () => {
               <li><Link to="/responsible-use" className="hover:text-primary transition-colors">Responsible Use</Link></li>
               <li><Link to="/trust" className="hover:text-primary transition-colors">Trust & Security</Link></li>
               <li><Link to="/about-footprintiq" className="hover:text-primary transition-colors">About & Ethics</Link></li>
+              <li><Link to="/ethics" className="hover:text-primary transition-colors">Ethical Principles</Link></li>
             </ul>
           </div>
         </div>
