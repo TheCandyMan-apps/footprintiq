@@ -56,8 +56,8 @@ serve(async (req) => {
     let query = supabase.from('cache_entries').delete();
 
     if (pattern) {
-      // Delete by specific pattern (e.g., phone number)
-      query = query.ilike('cache_key', `%${pattern}%`);
+      const sanitized = pattern.replace(/[%_\\,().]/g, '\\$&');
+      query = query.ilike('cache_key', `%${sanitized}%`);
     } else if (cacheType === 'phone') {
       // Delete all phone-related cache entries
       query = query.or('cache_key.ilike.%phone%,cache_type.eq.phone_scan');

@@ -99,7 +99,9 @@ Deno.serve(wrapHandler(async (req) => {
         query = query.eq('status', filters.status);
       }
       if (filters?.searchTerm) {
-        query = query.or(`username.ilike.%${filters.searchTerm}%,email.ilike.%${filters.searchTerm}%,phone.ilike.%${filters.searchTerm}%,id.ilike.%${filters.searchTerm}%`);
+        const sanitized = filters.searchTerm.replace(/[%_\\,().]/g, '\\$&');
+        const term = `%${sanitized}%`;
+        query = query.or(`username.ilike.${term},email.ilike.${term},phone.ilike.${term},id.ilike.${term}`);
       }
       
       const { data: scansToDelete, error: fetchError } = await query;
