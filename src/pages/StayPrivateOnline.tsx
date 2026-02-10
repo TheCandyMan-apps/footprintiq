@@ -101,7 +101,7 @@ export default function StayPrivateOnline() {
         "@type": "ListItem",
         "position": 3,
         "name": "Is It Possible to Stay Private Online Anymore?",
-        "item": "https://footprintiq.io/stay-private-online"
+        "item": "https://footprintiq.app/stay-private-online"
       }
     ]
   };
