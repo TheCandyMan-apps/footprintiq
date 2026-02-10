@@ -51,6 +51,26 @@ export function useAdminAnalytics() {
         console.warn('Admin analytics workspace count failed (RLS 406?):', workspacesError);
       }
 
+      // AI-referred scans (chatgpt.com, openai.com, bing.com)
+      const aiReferrerPatterns = ['chatgpt.com', 'openai.com', 'bing.com'];
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const [aiReferred7d, aiReferred30d] = await Promise.all(
+        [sevenDaysAgo, thirtyDaysAgo].map(async (since) => {
+          let total = 0;
+          for (const pattern of aiReferrerPatterns) {
+            const { count, error } = await supabase
+              .from('scans')
+              .select('*', { count: 'exact', head: true })
+              .ilike('referrer', `%${pattern}%`)
+              .gte('created_at', since.toISOString());
+            if (!error) total += count || 0;
+          }
+          return total;
+        })
+      );
+
       return {
         totalUsers: totalUsers || 0,
         adminCount,
@@ -59,6 +79,8 @@ export function useAdminAnalytics() {
         recentSignups: recentSignups || 0,
         totalScans: totalScans || 0,
         activeWorkspaces: activeWorkspaces || 0,
+        aiReferred7d,
+        aiReferred30d,
       };
     },
     refetchInterval: 30000, // Refresh every 30 seconds
