@@ -282,7 +282,7 @@ export function ConfidenceTooltipContent({
               s.status === 'partial' && 'text-amber-600 dark:text-amber-400',
               s.status === 'insufficient' && 'text-muted-foreground'
             )}>
-              {s.status === 'confirmed' ? 'Confirmed' : s.status === 'partial' ? 'Partial' : 'Insufficient'}
+              {s.status === 'confirmed' ? 'Confirmed' : s.status === 'partial' ? 'Partial' : 'Not available'}
             </span>
           </div>
         ))}
