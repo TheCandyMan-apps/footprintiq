@@ -4,7 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Search, Filter, User, ArrowUpDown, Lock, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Search, Filter, User, ArrowUpDown, Lock, Sparkles, Eye, EyeOff, List, LayoutGrid } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { useInvestigation } from '@/contexts/InvestigationContext';
@@ -15,6 +16,7 @@ import { filterFindings } from '@/lib/findingFilters';
 import { RESULTS_SPACING } from './styles';
 import { AccountFilters, QuickFilterOption } from './accounts/AccountFilters';
 import { AccountRow } from './accounts/AccountRow';
+import { AccountCard } from './accounts/AccountCard';
 import { ProviderHealthPanel } from './ProviderHealthPanel';
 import { cn } from '@/lib/utils';
 
