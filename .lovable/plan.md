@@ -1,70 +1,82 @@
 
+# Side Panel Preview for Accounts Tab
 
-# Premium UI Polish Pass -- Accounts Tab
+## Overview
 
-## 1. Results Summary Bar (new)
+Replace inline expand/collapse with a right-side Sheet panel that opens when clicking a row (list) or card (grid). Rows and cards become compact, selection-only surfaces. The Sheet displays all detailed content currently in the collapsible/dialog areas.
 
-Add a compact, chip-based summary row between the AccountFilters and the Focus/Search controls in `AccountsTab.tsx`. It shows at-a-glance stats:
+## Architecture
 
-- **Total**: `displayResults.length` total results
-- **Found**: `statusCounts.found` found accounts (green chip)
-- **High Confidence**: count of results with score >= 75 (from existing `filterCounts.high_confidence`)
-- **Hidden by Focus**: `hiddenByFocusMode` count (amber chip, only when > 0)
-- **Active filters**: show current sort and status filter as muted text on the right
+**New file**: `src/components/scan/results-tabs/accounts/AccountPreviewPanel.tsx`
+- A Sheet (from existing `@/components/ui/sheet`) sliding in from the right
+- Contains all content currently in `AccountRow`'s `CollapsibleContent` and `AccountCard`'s Details Dialog:
+  - Platform icon, name, username, profile image
+  - Confidence breakdown (full `ConfidenceBreakdown` component)
+  - LENS badge and "LENS Verify" button (with tier gating)
+  - Full bio, metadata grid (followers, following, location, joined, website)
+  - Profile URL link
+  - AI enrichment buttons (Quick Analysis / Deep Enrichment) for Pro users
+  - Claim toggle and Focus button
+  - ForensicModal launcher (if verified)
+- Props: the selected `ScanResult`, `jobId`, lens score, verification/claim state, callbacks, and `open`/`onOpenChange`
+- Built-in accessibility: Sheet already provides focus trap and ESC-to-close; will add `aria-label` for the panel
 
-This replaces the current "Inline Stats" section (lines 272-289) with a cleaner, unified summary row.
+**Modified: `AccountsTab.tsx`**
+- Replace `expandedRows` state with `selectedResultId: string | null`
+- Clicking a row/card sets `selectedResultId` (instead of toggling expand)
+- Render `AccountPreviewPanel` at the bottom of the component, driven by `selectedResultId`
+- Remove `toggleExpanded` and `expandedRows` from `VirtualizedAccountList` props
+- Virtualizer `estimateSize` can use a fixed height (no dynamic expand), improving performance
 
-## 2. Hide Secondary Actions on Hover (list view)
+**Modified: `AccountRow.tsx`**
+- Remove `Collapsible`/`CollapsibleContent` wrapper entirely
+- Remove `isExpanded`/`onToggleExpand` props
+- Replace with `onSelect` prop (clicking the row calls this)
+- Add `isSelected` prop for visual highlight (subtle background change)
+- Remove all expanded-panel content (confidence breakdown, bio, metadata grid, AI buttons)
+- Remove ForensicModal, QuickAnalysisDialog, EnrichmentDialog (moved to panel)
+- Keep the compact row: icon, platform, username, signal chips, bio snippet, confidence badge, LENS badge, open-link button
+- Secondary hover actions remain (Focus, Claim) but remove Expand chevron
 
-In `AccountRow.tsx`, wrap the `AccountRowActions` cluster in a container that is `opacity-0 group-hover:opacity-100 focus-within:opacity-100` so secondary actions (Focus, Claim, LENS, Expand) only appear on hover/focus. The **confidence badge** and **LENS badge** (when verified) remain always visible since they are informational, not actions.
+**Modified: `AccountRowActions.tsx`**
+- Remove the "Expand" (ChevronRight) button and related props (`isExpanded`, `onToggleExpand`)
 
-In `AccountRowActions.tsx`, add the hover-reveal class to the outer container so the entire action cluster fades in on row hover. The `ExternalLink` (Open) button will be pulled out and kept always visible as the primary action.
+**Modified: `AccountCard.tsx`**
+- Remove the Details `Dialog` entirely
+- Replace with `onSelect` prop; clicking the card calls it
+- Add `isSelected` prop for ring highlight
+- Remove the "Details" button from action row, replace with "Preview" or just make the whole card clickable
+- Remove QuickAnalysisDialog/EnrichmentDialog (moved to panel)
 
-### Specific changes:
+## Accessibility
 
-**AccountRow.tsx (RIGHT section, line 236 area)**:
-- Keep the confidence badge and LENS badge always visible
-- Move the "Open link" action out of `AccountRowActions` and render it inline as always-visible
-- Wrap `AccountRowActions` in `opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity`
+- The Sheet component already implements focus trap and ESC-to-close
+- Keyboard navigation: pressing Enter on a focused row/card opens the panel
+- `aria-label="Account preview panel"` on the Sheet
+- Panel close button is keyboard-accessible (Sheet provides this)
 
-**AccountRowActions.tsx**:
-- Remove the `ExternalLink` button from this component (it moves to AccountRow)
-- Remove `url` from the required props (becomes optional, only for LENS verify)
+## Visual Behavior
 
-## 3. Spacing and Typography Tightening
+- List view: clicking a row highlights it and opens the right sheet; clicking another row switches content; clicking the same row or pressing ESC closes it
+- Grid view: same behavior -- clicking a card opens the sheet
+- The sheet width: `sm:max-w-md` (roughly 28rem) to leave the list visible
 
-**AccountRow.tsx**:
-- Reduce `min-h-[52px]` to `min-h-[44px]` for tighter row height
-- Reduce `py-1.5` to `py-1` on the main row div
+## What Moves Where
 
-**AccountCard.tsx**:
-- Reduce `pt-2.5 pb-1` to `pt-2 pb-1` on header
-- Reduce `pb-1.5` to `pb-1` on bio section
-- Ensure action row uses `py-1` consistently
+| Content | Currently in | Moves to |
+|---------|-------------|----------|
+| ConfidenceBreakdown | AccountRow expanded, AccountCard dialog | AccountPreviewPanel |
+| Full bio | AccountRow expanded, AccountCard dialog | AccountPreviewPanel |
+| Metadata grid (followers, location, etc.) | AccountRow expanded, AccountCard dialog | AccountPreviewPanel |
+| AI enrichment buttons | AccountRow expanded, AccountCard inline | AccountPreviewPanel |
+| ForensicModal launcher | AccountRow | AccountPreviewPanel |
+| LENS upgrade prompt | AccountRow expanded | AccountPreviewPanel |
+| Profile URL link | AccountRow expanded, AccountCard dialog | AccountPreviewPanel |
 
-## 4. Empty States with Reset
+## No Changes To
 
-In `AccountsTab.tsx`, replace the current minimal empty state (lines 292-298) with two distinct states:
-
-**No results at all** (when `displayResults.length === 0`):
-- User icon, "No accounts found" title, "This scan did not find any matching accounts." description
-- No reset button needed
-
-**No matches for current filters** (when `filteredResults.length === 0` but `displayResults.length > 0`):
-- Search icon, "No matching accounts" title, description mentioning active filters
-- "Reset Filters" button that clears `searchQuery`, `statusFilter` to 'all', and `quickFilter` to 'all'
-
-Both use the existing `EmptyState` component from `src/components/EmptyState.tsx`.
-
----
-
-## Technical Summary
-
-| File | Changes |
-|------|---------|
-| `AccountsTab.tsx` | Replace inline stats with summary bar; add empty states with reset; import EmptyState |
-| `AccountRow.tsx` | Reduce row padding/height; extract Open link as always-visible; wrap remaining actions in hover-reveal |
-| `AccountRowActions.tsx` | Remove ExternalLink button (moved to parent); make `url` optional |
-| `AccountCard.tsx` | Tighten spacing on header, bio, action sections |
-
-No new files created. No functionality or gating changes.
+- Filtering, sorting, search, focus mode, view mode toggle
+- Free/Pro tier gating logic
+- Summary bar and empty states
+- AccountFilters component
+- FocusedEntityCard component
