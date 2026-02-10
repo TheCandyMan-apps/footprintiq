@@ -158,7 +158,7 @@ export default function MarketplacePlugin() {
                     {plugin.icon_url && (
                       <img
                         src={plugin.icon_url}
-                        alt=""
+                        alt={`${plugin.title} icon`}
                         className="w-16 h-16 rounded-lg"
                       />
                     )}

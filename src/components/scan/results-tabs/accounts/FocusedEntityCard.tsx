@@ -38,7 +38,7 @@ export function FocusedEntityCard({ entity, onClear }: FocusedEntityCardProps) {
           {profileImage ? (
             <img 
               src={profileImage} 
-              alt=""
+              alt={`${entity.site || 'Unknown'} profile photo`}
               className="w-10 h-10 rounded-full object-cover border border-primary/30"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />

@@ -370,7 +370,7 @@ export function DeepResearchPanel() {
                                     >
                                       <img 
                                         src={`https://www.google.com/s2/favicons?domain=${extractDomain(url)}&sz=16`}
-                                        alt=""
+                                        alt={`${extractDomain(url)} favicon`}
                                         className="w-3 h-3"
                                       />
                                       <span className="truncate max-w-[100px]">{extractDomain(url)}</span>

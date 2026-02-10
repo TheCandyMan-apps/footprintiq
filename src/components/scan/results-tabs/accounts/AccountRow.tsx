@@ -334,7 +334,7 @@ export function AccountRow({
             {profileImage ? (
               <img 
                 src={profileImage} 
-                alt=""
+                alt={`${platformName} profile photo`}
                 className="w-full h-full object-cover"
                 onError={(e) => { 
                   e.currentTarget.style.display = 'none';

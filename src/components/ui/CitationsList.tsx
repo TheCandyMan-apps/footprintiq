@@ -67,7 +67,7 @@ export function CitationsList({ citations, compact = false, maxVisible = 5 }: Ci
           >
             <img 
               src={`https://www.google.com/s2/favicons?domain=${extractDomain(citation.url)}&sz=16`}
-              alt=""
+              alt={`${extractDomain(citation.url)} favicon`}
               className="w-4 h-4"
             />
             <span className="truncate flex-1">

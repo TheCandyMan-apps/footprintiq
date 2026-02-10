@@ -89,7 +89,7 @@ export function MindMapInspector({
                     {selectedEntity.avatar ? (
                       <img 
                         src={selectedEntity.avatar} 
-                        alt=""
+                        alt={`${selectedEntity.platform} profile photo`}
                         className="w-12 h-12 rounded-full object-cover border border-border shadow-sm"
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />
