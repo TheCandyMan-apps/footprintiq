@@ -21,6 +21,7 @@ import {
   extractBioText,
   getInitials,
   generateRiskContext,
+  deriveMatchType,
 } from '@/lib/results/extractors';
 
 type ClaimType = 'me' | 'not_me';
@@ -63,6 +64,7 @@ export function AccountCard({
   const profileImage = meta.avatar_cached || meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
   const confidence = getMatchConfidence(lensScore);
   const ConfidenceIcon = confidence.icon;
+  const matchType = useMemo(() => deriveMatchType(result, lensScore), [result, lensScore]);
 
   return (
     <div
@@ -86,6 +88,16 @@ export function AccountCard({
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[12px] text-foreground truncate leading-none">{platformName}</p>
           {username ? <p className="text-[10px] text-muted-foreground/70 truncate leading-tight">@{username}</p> : <p className="text-[10px] text-muted-foreground/40 truncate leading-tight italic">Username not publicly listed</p>}
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground/60 font-medium leading-none cursor-help w-fit" onClick={e => e.stopPropagation()}>
+                  {matchType.label}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[220px] text-[10px] leading-snug">{matchType.tooltip}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         <TooltipProvider delayDuration={200}>
