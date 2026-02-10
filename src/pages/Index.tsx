@@ -214,6 +214,14 @@ export default function Home() {
       <div className="below-fold">
         <FAQ />
       </div>
+
+      <div className="below-fold">
+        <div className="max-w-3xl mx-auto px-6 pb-12 text-center">
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            FootprintIQ is an ethical OSINT platform designed to help individuals understand their public digital footprint. It analyses publicly available information to identify potential account exposure and correlation risks, while emphasising accuracy, transparency, and responsible interpretation.
+          </p>
+        </div>
+      </div>
       
       <FloatingCTA />
       <ScrollToTop />

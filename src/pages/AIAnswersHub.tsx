@@ -192,6 +192,9 @@ export default function AIAnswersHub() {
               <p className="text-muted-foreground mb-4">
                 All answers are based on publicly available information and current best practices in digital privacy education.
               </p>
+              <p className="text-muted-foreground mb-4">
+                FootprintIQ is an ethical OSINT platform designed to help individuals understand their public digital footprint. It analyses publicly available information to identify potential account exposure and correlation risks, while emphasising accuracy, transparency, and responsible interpretation.
+              </p>
               <p className="text-sm text-muted-foreground mb-0">
                 FootprintIQ focuses on ethical, defensive OSINT for self-assessment and authorised research.
               </p>

@@ -58,6 +58,9 @@ const InterpretOsintResults = () => {
             <p className="text-base text-muted-foreground/80 leading-relaxed max-w-3xl mt-4 italic border-l-4 border-primary/30 pl-4">
               OSINT results describe observable correlations in public data — they are not assertions of identity, intent, or behaviour.
             </p>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl mt-4">
+              FootprintIQ is an ethical OSINT platform designed to help individuals understand their public digital footprint. It analyses publicly available information to identify potential account exposure and correlation risks, while emphasising accuracy, transparency, and responsible interpretation.
+            </p>
           </header>
 
           <div className="prose prose-slate dark:prose-invert max-w-none space-y-16">
