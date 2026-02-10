@@ -168,7 +168,7 @@ export function GraphInspector({
                     {selectedNode.imageUrl ? (
                       <img 
                         src={selectedNode.imageUrl} 
-                        alt=""
+                        alt={`${selectedNode.platform || selectedNode.label || 'Profile'} photo`}
                         className="w-14 h-14 rounded-full object-cover border-2 shadow-sm"
                         style={{ borderColor: categoryConfig?.color }}
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}

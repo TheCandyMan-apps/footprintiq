@@ -194,7 +194,7 @@ export function IntelligenceBrief({
                 <img
                   key={idx}
                   src={img}
-                  alt=""
+                  alt="Discovered profile photo"
                   className="w-6 h-6 rounded-full border border-background object-cover"
                   onError={(e) => { e.currentTarget.style.display = 'none'; }}
                 />

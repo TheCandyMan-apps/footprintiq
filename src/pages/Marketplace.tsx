@@ -138,7 +138,7 @@ export default function Marketplace() {
                         <div className="flex-1">
                           <CardTitle className="flex items-center gap-2">
                             {plugin.icon_url && (
-                              <img src={plugin.icon_url} alt="" className="w-8 h-8 rounded" />
+                              <img src={plugin.icon_url} alt={`${plugin.title} icon`} className="w-8 h-8 rounded" />
                             )}
                             {plugin.title}
                           </CardTitle>
@@ -184,7 +184,7 @@ export default function Marketplace() {
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         {install.plugins.icon_url && (
-                          <img src={install.plugins.icon_url} alt="" className="w-8 h-8 rounded" />
+                          <img src={install.plugins.icon_url} alt={`${install.plugins.title} icon`} className="w-8 h-8 rounded" />
                         )}
                         {install.plugins.title}
                       </CardTitle>

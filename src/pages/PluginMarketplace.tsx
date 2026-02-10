@@ -71,7 +71,7 @@ export default function PluginMarketplace() {
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   {plugin.icon_url && (
-                    <img src={plugin.icon_url} alt="" className="w-10 h-10 rounded" />
+                    <img src={plugin.icon_url} alt={`${plugin.name} icon`} className="w-10 h-10 rounded" />
                   )}
                   <div>
                     <h3 className="font-semibold">{plugin.name}</h3>

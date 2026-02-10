@@ -217,7 +217,7 @@ export function ChatDock({ contextType, contextId, workspaceId }: ChatDockProps)
                             >
                               <img 
                                 src={`https://www.google.com/s2/favicons?domain=${extractDomain(citation.url)}&sz=16`}
-                                alt=""
+                                alt={`${extractDomain(citation.url)} favicon`}
                                 className="w-3 h-3"
                               />
                               <span className="truncate max-w-[100px]">{extractDomain(citation.url)}</span>

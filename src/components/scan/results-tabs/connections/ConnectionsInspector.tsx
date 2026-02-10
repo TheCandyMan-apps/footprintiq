@@ -160,7 +160,7 @@ export function ConnectionsInspector({
                     {profileImage ? (
                       <img 
                         src={profileImage} 
-                        alt=""
+                        alt={`${selectedProfile.site || 'Profile'} photo`}
                         className="w-12 h-12 rounded-full object-cover border border-border shadow-sm"
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />

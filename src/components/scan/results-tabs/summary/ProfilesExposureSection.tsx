@@ -64,7 +64,7 @@ function ProfileRow({
           {profile.avatarUrl ? (
             <img 
               src={profile.avatarUrl} 
-              alt=""
+              alt={`${profile.platform} profile photo`}
               className="w-full h-full object-cover"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
