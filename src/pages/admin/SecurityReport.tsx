@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, AlertTriangle, CheckCircle2, XCircle, RefreshCw, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 interface SecurityCheck {
   id: string;
@@ -259,6 +260,7 @@ export default function SecurityReport() {
       <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto space-y-6">
+          <AdminBreadcrumb currentPage="Security Report" />
           {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">

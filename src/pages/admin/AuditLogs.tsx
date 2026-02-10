@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { Search, Shield } from 'lucide-react';
 import { SEO } from '@/components/SEO';
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 export default function AuditLogs() {
   const { workspace, can } = useWorkspace();
@@ -84,6 +85,7 @@ export default function AuditLogs() {
       />
       
       <div className="container py-8 max-w-7xl">
+        <AdminBreadcrumb currentPage="Audit Logs" />
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Audit Logs</h1>
           <p className="text-muted-foreground">

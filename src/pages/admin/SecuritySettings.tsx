@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 import {
   Select,
   SelectContent,
@@ -325,6 +326,7 @@ export default function SecuritySettings() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <AdminBreadcrumb currentPage="Security Settings" />
       <div>
         <h1 className="text-3xl font-bold">Security Settings</h1>
         <p className="text-muted-foreground">

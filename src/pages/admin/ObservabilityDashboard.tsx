@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Activity, AlertTriangle, CheckCircle, XCircle, TrendingUp, Play, AlertCircle } from "lucide-react";
 import { SEO } from "@/components/SEO";
 import { Label } from "@/components/ui/label";
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 export default function ObservabilityDashboard() {
   const { toast } = useToast();
@@ -183,6 +184,7 @@ export default function ObservabilityDashboard() {
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8 max-w-7xl">
+        <AdminBreadcrumb currentPage="Observability Dashboard" />
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-2">Observability</h1>

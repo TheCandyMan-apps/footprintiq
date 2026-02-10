@@ -9,6 +9,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { AlertTriangle, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 interface ProviderStats {
   provider: string;
@@ -110,6 +111,7 @@ export default function ProviderHealth() {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 container py-8">
+        <AdminBreadcrumb currentPage="Provider Health" />
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Provider Health</h1>
           <p className="text-muted-foreground">Monitor provider performance over the last 7 days</p>

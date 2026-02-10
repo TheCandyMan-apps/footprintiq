@@ -15,6 +15,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 interface PaymentError {
   id: string;
@@ -98,6 +99,7 @@ export default function PaymentErrors() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <AdminBreadcrumb currentPage="Payment Errors" />
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">Payment Error Monitoring</h1>

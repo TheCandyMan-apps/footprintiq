@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { FileSearch, Filter, Download } from 'lucide-react';
 import { format } from 'date-fns';
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 export default function AuditViewer() {
   const navigate = useNavigate();
@@ -164,6 +165,7 @@ export default function AuditViewer() {
       <Header />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto space-y-6">
+          <AdminBreadcrumb currentPage="Audit Log Viewer" />
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">Audit Log Viewer</h1>

@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertTriangle, CheckCircle, XCircle, RefreshCw } from "lucide-react";
 import { trackPaymentError } from "@/lib/sentry";
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 interface AuditIssue {
   type: string;
@@ -136,6 +137,7 @@ export default function PaymentAudit() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <AdminBreadcrumb currentPage="Payment Audit" />
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Payment System Audit</h1>

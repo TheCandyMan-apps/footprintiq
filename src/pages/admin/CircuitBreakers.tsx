@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertCircle, CheckCircle2, MinusCircle, RefreshCcw, Activity } from "lucide-react";
 import { toast } from "sonner";
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 export default function CircuitBreakers() {
   const queryClient = useQueryClient();
@@ -119,6 +120,7 @@ export default function CircuitBreakers() {
 
   return (
     <div className="container mx-auto py-8 space-y-6">
+      <AdminBreadcrumb currentPage="Circuit Breakers" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Circuit Breakers</h1>

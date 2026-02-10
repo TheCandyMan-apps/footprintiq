@@ -99,6 +99,13 @@ export default function SettingsIndex() {
     <div className="container mx-auto py-8 px-4 max-w-7xl">
       {/* Header */}
       <div className="mb-8">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+          <Link to="/dashboard" className="hover:text-foreground transition-colors">
+            Dashboard
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-foreground font-medium">Settings</span>
+        </nav>
         <div className="flex items-center gap-3 mb-2">
           <div className="p-2 rounded-lg bg-primary/10">
             <SettingsIcon className="h-6 w-6 text-primary" />

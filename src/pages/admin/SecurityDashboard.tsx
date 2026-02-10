@@ -6,6 +6,7 @@ import { Shield, AlertTriangle, Activity, Lock, Eye } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 export default function SecurityDashboard() {
   const { data: securityEvents, isLoading } = useQuery({
@@ -65,6 +66,7 @@ export default function SecurityDashboard() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <AdminBreadcrumb currentPage="Security Dashboard" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">

@@ -5,6 +5,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { PROVIDER_META, getProvidersByCategory } from "@/providers/registry.meta";
 import { Activity, AlertTriangle, CheckCircle, Clock, Shield, TrendingUp } from "lucide-react";
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 interface ProviderHealth {
   provider: string;
@@ -113,6 +114,7 @@ export default function Health() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <AdminBreadcrumb currentPage="System Health" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">System Health</h1>
