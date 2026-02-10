@@ -22,7 +22,7 @@ export default function StayPrivateOnline() {
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": "https://footprintiq.io/stay-private-online"
+      "@id": "https://footprintiq.app/stay-private-online"
     }
   };
 
