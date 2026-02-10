@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Shield, TrendingUp, Database, Activity, Layers } from 'lucide-react';
+import { Users, Shield, TrendingUp, Database, Activity, Bot } from 'lucide-react';
 import { useAdminAnalytics } from '@/hooks/useAdminAnalytics';
 
 export function AdminAnalytics() {
@@ -65,25 +65,49 @@ export function AdminAnalytics() {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {stats.map((stat) => {
-        const Icon = stat.icon;
-        return (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                {stat.title}
-              </CardTitle>
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <Icon className={`w-4 h-4 ${stat.color}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value.toLocaleString()}</div>
-            </CardContent>
-          </Card>
-        );
-      })}
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.title}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
+                <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                  <Icon className={`w-4 h-4 ${stat.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stat.value.toLocaleString()}</div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">AI-referred scans</CardTitle>
+          <div className="p-2 rounded-lg bg-accent/10">
+            <Bot className="w-4 h-4 text-accent-foreground" />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-6">
+            <div>
+              <div className="text-2xl font-bold">{(analytics?.aiReferred7d ?? 0).toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Last 7 days</p>
+            </div>
+            <div>
+              <div className="text-2xl font-bold">{(analytics?.aiReferred30d ?? 0).toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Last 30 days</p>
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground/50 mt-2">chatgpt.com · openai.com · bing.com</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
