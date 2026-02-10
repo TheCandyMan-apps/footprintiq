@@ -31,6 +31,7 @@ interface Scan {
   completed_at: string | null;
   workspace_id: string;
   user_id: string;
+  referrer: string | null;
   findingsCount: number;
   workspaceName: string;
   userEmail: string;
@@ -455,6 +456,7 @@ export default function ScanManagement() {
                         <TableHead>Workspace</TableHead>
                         <TableHead>User</TableHead>
                         <TableHead>Findings</TableHead>
+                        <TableHead>Referrer</TableHead>
                         <TableHead>Created</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -494,6 +496,9 @@ export default function ScanManagement() {
                           </TableCell>
                           <TableCell>
                             <Badge variant="secondary">{scan.findingsCount}</Badge>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground max-w-[120px] truncate">
+                            {scan.referrer || <span className="italic opacity-50">—</span>}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {formatDistanceToNow(new Date(scan.created_at), { addSuffix: true })}

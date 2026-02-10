@@ -87,6 +87,7 @@ Deno.serve(wrapHandler(async (req) => {
         completed_at,
         workspace_id,
         user_id,
+        referrer,
         workspaces(name)
       `, { count: 'exact' });
 
