@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair, ChevronDown, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair, ChevronDown, Info, Zap, Sparkles } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
