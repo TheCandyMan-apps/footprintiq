@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Search, Filter, User, ArrowUpDown, Lock, Sparkles, Eye, EyeOff, List, LayoutGrid, SearchX } from 'lucide-react';
+import { Search, Filter, User, ArrowUpDown, Lock, Sparkles, Eye, EyeOff, List, LayoutGrid, SearchX, Download } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { useInvestigation } from '@/contexts/InvestigationContext';
@@ -23,6 +23,7 @@ import { ProviderHealthPanel } from './ProviderHealthPanel';
 import { cn } from '@/lib/utils';
 import { extractPlatformName, deriveResultStatus } from '@/lib/results/extractors';
 import { EmptyState } from '@/components/EmptyState';
+import { AccountsExportMenu } from './accounts/AccountsExportMenu';
 
 interface AccountsTabProps {
   results: ScanResult[];
@@ -217,10 +218,17 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
             <Lock className="h-2.5 w-2.5" />+{displayResults.length - freeAccountLimit} locked
           </span>
         )}
-        <span className="text-muted-foreground/40 ml-auto text-[9px]">
+        <span className="text-muted-foreground/40 ml-auto text-[9px] flex items-center gap-1">
           {statusFilter !== 'all' && <span className="mr-1">{statusFilter}</span>}
           {sortBy !== 'confidence' && <span className="mr-1">by {sortBy}</span>}
           {filteredResults.length}/{displayResults.length}
+          <AccountsExportMenu
+            filteredResults={filteredResults}
+            allResults={displayResults}
+            jobId={jobId}
+            scoreMap={new Map(Array.from(lensAnalysis.resultScores.entries()).map(([id, s]) => [id, s.score]))}
+            isFullAccess={isFullAccess}
+          />
         </span>
       </div>
 
