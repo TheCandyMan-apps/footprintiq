@@ -35,6 +35,38 @@ export function BillingSyncPanel() {
   const [results, setResults] = useState<BackfillResult[] | null>(null);
   const [summary, setSummary] = useState<BackfillResponse['summary'] | null>(null);
   const [isDryRun, setIsDryRun] = useState(true);
+  const [cancelEmail, setCancelEmail] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelResult, setCancelResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const handleCancelSubscription = async () => {
+    if (!cancelEmail) {
+      toast.error('Please enter an email address');
+      return;
+    }
+    if (!confirm(`Are you sure you want to cancel the subscription for ${cancelEmail}? They will retain access until the end of their billing period.`)) {
+      return;
+    }
+    setCancelling(true);
+    setCancelResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-cancel-subscription', {
+        body: { email: cancelEmail, reason: cancelReason || undefined },
+      });
+      if (error) throw error;
+      setCancelResult({ success: true, message: data.message });
+      toast.success(data.message);
+      setCancelEmail('');
+      setCancelReason('');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      setCancelResult({ success: false, message: msg });
+      toast.error('Cancel failed: ' + msg);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const runBackfill = async (dryRun: boolean) => {
     setLoading(true);
