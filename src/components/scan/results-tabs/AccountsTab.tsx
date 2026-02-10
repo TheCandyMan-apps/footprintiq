@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { extractPlatformName, deriveResultStatus } from '@/lib/results/extractors';
 import { EmptyState } from '@/components/EmptyState';
 import { AccountsExportMenu } from './accounts/AccountsExportMenu';
+import { LowResultsNotice } from '@/components/scan/LowResultsNotice';
 
 interface AccountsTabProps {
   results: ScanResult[];
@@ -235,7 +236,9 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
       {/* Account Results */}
       {filteredResults.length === 0 ? (
         displayResults.length === 0 ? (
-          <EmptyState icon={User} title="No accounts found" description="This scan did not find any matching accounts." />
+          <div className="py-8">
+            <LowResultsNotice variant="zero" />
+          </div>
         ) : (
           <EmptyState
             icon={SearchX}
