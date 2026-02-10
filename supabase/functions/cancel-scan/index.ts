@@ -148,7 +148,8 @@ Deno.serve(wrapHandler(async (req) => {
       }
 
       if (filters?.searchTerm) {
-        const searchTerm = `%${filters.searchTerm}%`;
+        const sanitized = filters.searchTerm.replace(/[%_\\,().]/g, '\\$&');
+        const searchTerm = `%${sanitized}%`;
         query = query.or(`username.ilike.${searchTerm},email.ilike.${searchTerm},phone.ilike.${searchTerm},id::text.ilike.${searchTerm}`);
       }
 
