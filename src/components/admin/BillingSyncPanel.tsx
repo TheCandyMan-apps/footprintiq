@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { RefreshCw, AlertTriangle, CheckCircle, XCircle, UserX, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { RefreshCw, AlertTriangle, CheckCircle, XCircle, UserX, Loader2, Ban } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -34,6 +35,38 @@ export function BillingSyncPanel() {
   const [results, setResults] = useState<BackfillResult[] | null>(null);
   const [summary, setSummary] = useState<BackfillResponse['summary'] | null>(null);
   const [isDryRun, setIsDryRun] = useState(true);
+  const [cancelEmail, setCancelEmail] = useState('');
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelResult, setCancelResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const handleCancelSubscription = async () => {
+    if (!cancelEmail) {
+      toast.error('Please enter an email address');
+      return;
+    }
+    if (!confirm(`Are you sure you want to cancel the subscription for ${cancelEmail}? They will retain access until the end of their billing period.`)) {
+      return;
+    }
+    setCancelling(true);
+    setCancelResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-cancel-subscription', {
+        body: { email: cancelEmail, reason: cancelReason || undefined },
+      });
+      if (error) throw error;
+      setCancelResult({ success: true, message: data.message });
+      toast.success(data.message);
+      setCancelEmail('');
+      setCancelReason('');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Unknown error';
+      setCancelResult({ success: false, message: msg });
+      toast.error('Cancel failed: ' + msg);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const runBackfill = async (dryRun: boolean) => {
     setLoading(true);
@@ -93,6 +126,7 @@ export function BillingSyncPanel() {
   const needsSync = results?.filter(r => r.status === 'created' || r.status === 'updated') || [];
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
@@ -203,5 +237,53 @@ export function BillingSyncPanel() {
         )}
       </CardContent>
     </Card>
+
+    {/* Cancel Subscription Section */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Ban className="h-5 w-5" />
+          Cancel Subscription
+        </CardTitle>
+        <CardDescription>
+          Cancel a user's Stripe subscription by email. This cancels in Stripe directly — the webhook will sync the database automatically. Access continues until the end of the billing period.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex gap-2">
+          <Input
+            placeholder="User email address"
+            value={cancelEmail}
+            onChange={(e) => setCancelEmail(e.target.value)}
+            className="max-w-xs"
+          />
+          <Input
+            placeholder="Reason (optional)"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            className="max-w-xs"
+          />
+          <Button
+            onClick={handleCancelSubscription}
+            disabled={cancelling || !cancelEmail}
+            variant="destructive"
+            size="default"
+          >
+            {cancelling ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Ban className="h-4 w-4 mr-2" />
+            )}
+            Cancel Sub
+          </Button>
+        </div>
+        {cancelResult && (
+          <div className={`text-sm p-2 rounded-md ${cancelResult.success ? 'bg-muted text-foreground' : 'bg-destructive/10 text-destructive'}`}>
+            {cancelResult.message}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+    </>
   );
 }
