@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { ResearchQuote } from "@/components/ResearchQuote";
 import { useScrollDepthTracking } from "@/hooks/useScrollDepthTracking";
+import { SeeAlsoSection } from "@/components/ai-answers/SeeAlsoSection";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -187,6 +188,13 @@ export default function WhenNotToUseOsint() {
               OSINT results describe observable correlations in public data — they are not assertions of identity, intent, or behaviour. This page is educational and does not constitute legal advice.
             </p>
           </div>
+        </div>
+        <div className="max-w-3xl mx-auto px-4 pb-12">
+          <SeeAlsoSection links={[
+            { title: "What Makes an OSINT Tool Ethical?", href: "/ai-answers/ethical-osint-tools" },
+            { title: "Is Username OSINT Legal?", href: "/ai-answers/is-username-osint-legal" },
+            { title: "How to Interpret OSINT Results", href: "/guides/interpret-osint-results" },
+          ]} />
         </div>
       </main>
       <Footer />

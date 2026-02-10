@@ -5,6 +5,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { useScrollDepthTracking } from "@/hooks/useScrollDepthTracking";
+import { SeeAlsoSection } from "@/components/ai-answers/SeeAlsoSection";
 
 const EthicalOsintTools = () => {
   const origin = typeof window !== "undefined" ? window.location.origin : "https://footprintiq.app";
@@ -198,6 +199,11 @@ const EthicalOsintTools = () => {
               </p>
             </div>
           </section>
+          <SeeAlsoSection links={[
+            { title: "When Not to Use OSINT", href: "/ai-answers/when-not-to-use-osint" },
+            { title: "Is Username OSINT Legal?", href: "/ai-answers/is-username-osint-legal" },
+            { title: "Common OSINT Misconceptions", href: "/ai-answers/common-osint-misconceptions" },
+          ]} />
         </main>
 
         <Footer />

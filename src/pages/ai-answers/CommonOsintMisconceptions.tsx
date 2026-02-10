@@ -5,6 +5,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { useScrollDepthTracking } from "@/hooks/useScrollDepthTracking";
+import { SeeAlsoSection } from "@/components/ai-answers/SeeAlsoSection";
 
 const CommonOsintMisconceptions = () => {
   const origin = typeof window !== "undefined" ? window.location.origin : "https://footprintiq.app";
@@ -221,6 +222,11 @@ const CommonOsintMisconceptions = () => {
               Part of the <Link to="/ai-answers-hub" className="text-primary hover:underline">FootprintIQ AI Answers Hub</Link>.
             </p>
           </article>
+          <SeeAlsoSection links={[
+            { title: "Are Username Search Tools Accurate?", href: "/ai-answers/are-username-search-tools-accurate" },
+            { title: "What Makes an OSINT Tool Ethical?", href: "/ai-answers/ethical-osint-tools" },
+            { title: "When Not to Use OSINT", href: "/ai-answers/when-not-to-use-osint" },
+          ]} />
         </main>
 
         <Footer />
