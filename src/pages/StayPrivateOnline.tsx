@@ -89,7 +89,7 @@ export default function StayPrivateOnline() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://footprintiq.io"
+        "item": "https://footprintiq.app"
       },
       {
         "@type": "ListItem",
