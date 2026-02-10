@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
-  Crosshair, ExternalLink, ChevronRight, 
+  Crosshair, 
   UserCheck, UserX, Loader2, Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -35,8 +35,6 @@ interface AccountRowActionsProps {
   claimStatus: ClaimType | null;
   onClaimChange: (claim: ClaimType | null) => void;
   isClaimLoading?: boolean;
-  isExpanded: boolean;
-  onToggleExpand: () => void;
 }
 
 export function AccountRowActions({
@@ -51,8 +49,6 @@ export function AccountRowActions({
   claimStatus,
   onClaimChange,
   isClaimLoading = false,
-  isExpanded,
-  onToggleExpand,
 }: AccountRowActionsProps) {
   const { verify, isVerifying } = useForensicVerification();
   const { isFree } = useTierGating();
@@ -62,7 +58,6 @@ export function AccountRowActions({
   const handleVerify = async () => {
     if (!url || isVerifying || localVerifying) return;
     
-    // Show upgrade prompt for free users
     if (isFree) {
       setShowUpgradePopover(true);
       return;
@@ -112,7 +107,7 @@ export function AccountRowActions({
           </TooltipContent>
         </Tooltip>
 
-        {/* LENS Verify Button - shows upgrade popover for free users only */}
+        {/* LENS Verify Button */}
         {url && !verificationResult && (
           isFree ? (
             <Popover open={showUpgradePopover} onOpenChange={setShowUpgradePopover}>
@@ -207,27 +202,6 @@ export function AccountRowActions({
             {claimStatus === 'me' && 'Yours'}
             {claimStatus === 'not_me' && 'Not you'}
           </TooltipContent>
-        </Tooltip>
-
-        {/* Expand */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className={RESULTS_ACTION_CLUSTER.button}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleExpand();
-              }}
-            >
-              <ChevronRight className={cn(
-                'w-2.5 h-2.5 transition-transform duration-100',
-                isExpanded && 'rotate-90'
-              )} />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent className="text-[10px]">{isExpanded ? 'Less' : 'More'}</TooltipContent>
         </Tooltip>
       </div>
     </TooltipProvider>
