@@ -83,6 +83,22 @@ export const INDEXNOW_URLS = [
   "/for/job-seekers",
   "/for/developers",
   "/for/executives",
+  // AI Answers
+  "/ai-answers-hub",
+  "/ai-answers/what-is-a-username-osint-scan",
+  "/ai-answers/why-username-reuse-is-risky",
+  "/ai-answers/are-username-search-tools-accurate",
+  "/ai-answers/is-username-osint-legal",
+  "/ai-answers/ethical-osint-tools",
+  // Guides
+  "/guides/interpret-osint-results",
+  "/guides/what-osint-results-mean",
+  "/guides/is-osint-scan-worth-it",
+  "/guides/free-vs-paid-osint-tools",
+  "/guides/good-osint-scan-result",
+  // Hub-to-action surfaces
+  "/usernames",
+  "/scan",
 ];
 
 /**
