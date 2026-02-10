@@ -136,7 +136,7 @@ export function AccountPreviewPanel({
               </div>
               <div className="min-w-0 flex-1">
                 <SheetTitle className="text-sm font-semibold truncate">{platformName}</SheetTitle>
-                {username && <p className="text-xs text-muted-foreground truncate">@{username}</p>}
+                {username ? <p className="text-xs text-muted-foreground truncate">@{username}</p> : <p className="text-xs text-muted-foreground/50 truncate italic">Username not publicly listed</p>}
                 <div className="flex items-center gap-1.5 mt-1">
                   <Badge variant="outline" className={cn('h-5 px-1.5 gap-0.5 text-[9px] font-medium', confidence.bg, confidence.text, confidence.border)}>
                     <ConfidenceIcon className="w-2.5 h-2.5" />
