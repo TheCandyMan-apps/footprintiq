@@ -290,6 +290,19 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
             <SelectItem value="status" className="text-[10px]">Status</SelectItem>
           </SelectContent>
         </Select>
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(v) => { if (v) setViewMode(v as 'list' | 'grid'); }}
+          className="h-6 shrink-0"
+        >
+          <ToggleGroupItem value="list" aria-label="List view" className="h-6 w-6 p-0">
+            <List className="h-3 w-3" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="grid" aria-label="Grid view" className="h-6 w-6 p-0">
+            <LayoutGrid className="h-3 w-3" />
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {/* Inline Stats - Minimal */}
