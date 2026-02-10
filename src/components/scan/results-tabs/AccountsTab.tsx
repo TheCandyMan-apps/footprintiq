@@ -43,7 +43,8 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
   const [sortBy, setSortBy] = useState<SortOption>('confidence');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [quickFilter, setQuickFilter] = useState<QuickFilterOption>('all');
-  const [focusMode, setFocusMode] = useState(true); // Focus Mode ON by default
+  const [focusMode, setFocusMode] = useState(true);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   // Filter out provider health findings
   const baseResults = useMemo(() => filterOutProviderHealth(results), [results]);
