@@ -6,15 +6,12 @@ export interface ExportOptions {
  * Helper to extract site/platform from a finding
  */
 function extractSite(result: any): string {
-  // Check evidence array first
   if (result.evidence && Array.isArray(result.evidence)) {
     const siteEvidence = result.evidence.find((e: any) => e.key === 'site');
     if (siteEvidence?.value) return siteEvidence.value;
   }
-  // Fallback to meta
   if (result.meta?.platform) return result.meta.platform;
   if (result.meta?.site) return result.meta.site;
-  // Fallback to direct property
   if (result.site) return result.site;
   return '';
 }
@@ -23,12 +20,10 @@ function extractSite(result: any): string {
  * Helper to extract URL from a finding
  */
 function extractUrl(result: any): string {
-  // Check evidence array first
   if (result.evidence && Array.isArray(result.evidence)) {
     const urlEvidence = result.evidence.find((e: any) => e.key === 'url');
     if (urlEvidence?.value) return urlEvidence.value;
   }
-  // Fallback to direct property
   if (result.url) return result.url;
   return '';
 }
@@ -41,8 +36,8 @@ function extractUsername(result: any): string {
     const usernameEvidence = result.evidence.find((e: any) => e.key === 'username');
     if (usernameEvidence?.value) return usernameEvidence.value;
   }
-  if (result.meta?.username) return result.meta.username;
-  return '';
+  const meta = result.meta || result.metadata || {};
+  return meta.username || meta.handle || meta.screen_name || meta.display_name || meta.name || '';
 }
 
 /**
@@ -67,7 +62,7 @@ function deriveStatusForExport(result: any): string {
 }
 
 /**
- * Transform raw finding to a flattened, human-readable format
+ * Transform raw finding to a flattened, human-readable format (legacy)
  */
 function transformFinding(result: any): Record<string, any> {
   return {
@@ -86,82 +81,132 @@ function transformFinding(result: any): Record<string, any> {
   };
 }
 
+// ── Account-specific enriched export ──────────────────────────────
+
+export interface AccountExportRow {
+  platform: string;
+  profile_url: string;
+  username: string;
+  confidence: number | string;
+  status: string;
+  bio: string;
+  location: string;
+  followers: string;
+  following: string;
+  website: string;
+  joined: string;
+  provider: string;
+  severity: string;
+  scan_id: string;
+  created_at: string;
+}
+
+/**
+ * Transform a finding into an enriched account export row with key metadata.
+ */
+export function transformAccountRow(result: any, jobId: string, confidenceScore?: number): AccountExportRow {
+  const meta = result.meta || result.metadata || {};
+  return {
+    platform: extractSite(result),
+    profile_url: extractUrl(result),
+    username: extractUsername(result),
+    confidence: confidenceScore ?? result.confidence ?? '',
+    status: deriveStatusForExport(result),
+    bio: meta.bio || meta.about || meta.summary || meta.headline || '',
+    location: (meta.location && meta.location !== 'Unknown') ? meta.location : '',
+    followers: meta.followers !== undefined ? String(meta.followers) : '',
+    following: meta.following !== undefined ? String(meta.following) : '',
+    website: meta.website || '',
+    joined: meta.joined || '',
+    provider: result.provider || '',
+    severity: result.severity || '',
+    scan_id: jobId,
+    created_at: result.created_at || '',
+  };
+}
+
+const ACCOUNT_HEADERS: (keyof AccountExportRow)[] = [
+  'platform', 'profile_url', 'username', 'confidence', 'status',
+  'bio', 'location', 'followers', 'following', 'website', 'joined',
+  'provider', 'severity', 'scan_id', 'created_at',
+];
+
+export function exportAccountsToCSV(
+  results: any[],
+  jobId: string,
+  filename: string,
+  scoreMap?: Map<string, number>,
+) {
+  const rows = results.map(r => transformAccountRow(r, jobId, scoreMap?.get(r.id)));
+  const csv = [
+    ACCOUNT_HEADERS.join(','),
+    ...rows.map(row =>
+      ACCOUNT_HEADERS.map(h => escapeCSVField(String(row[h] ?? ''))).join(',')
+    ),
+  ].join('\n');
+  downloadBlob(new Blob([csv], { type: 'text/csv' }), filename);
+}
+
+export function exportAccountsToJSON(
+  results: any[],
+  jobId: string,
+  filename: string,
+  scoreMap?: Map<string, number>,
+) {
+  const rows = results.map(r => {
+    const row = transformAccountRow(r, jobId, scoreMap?.get(r.id));
+    return { ...row, meta: r.meta, evidence: r.evidence };
+  });
+  const json = JSON.stringify(rows, null, 2);
+  downloadBlob(new Blob([json], { type: 'application/json' }), filename);
+}
+
+// ── Legacy exporters (kept for toolbar compatibility) ─────────────
+
 export function exportResultsToJSON(results: any[], jobId: string, options: ExportOptions = {}) {
   const { includeAllFields = true } = options;
-  
-  // Transform results to include extracted fields
   const dataToExport = results.map((r) => {
     const transformed = transformFinding(r);
     if (includeAllFields) {
-      // Include original nested data as well
-      return {
-        ...transformed,
-        meta: r.meta,
-        evidence: r.evidence,
-      };
+      return { ...transformed, meta: r.meta, evidence: r.evidence };
     }
     return transformed;
   });
-  
   const json = JSON.stringify(dataToExport, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  downloadBlob(blob, `footprintiq_scan_${jobId}.json`);
+  downloadBlob(new Blob([json], { type: 'application/json' }), `footprintiq_scan_${jobId}.json`);
 }
 
 export function exportResultsToCSV(results: any[], jobId: string, options: ExportOptions = {}) {
   const { includeAllFields = true } = options;
-  
-  // Transform all results to flattened format
   const transformedResults = results.map(transformFinding);
   
   if (includeAllFields && transformedResults.length > 0) {
-    // Use all keys from transformed results
     const headers = ['id', 'site', 'status', 'url', 'username', 'provider', 'severity', 'kind', 'confidence', 'platform_description', 'tool', 'created_at'];
-    
-    const rows = transformedResults.map((r) => 
-      headers.map((header) => {
-        const value = r[header];
-        if (value === null || value === undefined) return '';
-        return String(value);
-      })
+    const rows = transformedResults.map((r) =>
+      headers.map((header) => String(r[header] ?? ''))
     );
-
     const csv = [headers, ...rows]
       .map((row) => row.map((cell) => escapeCSVField(cell)).join(','))
       .join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    downloadBlob(blob, `footprintiq_scan_${jobId}.csv`);
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `footprintiq_scan_${jobId}.csv`);
   } else {
-    // Basic export with fixed headers
     const headers = ['Site', 'Status', 'URL', 'Provider', 'Severity'];
     const rows = transformedResults.map((r) => [
-      r.site || '',
-      r.status || '',
-      r.url || '',
-      r.provider || '',
-      r.severity || '',
+      r.site || '', r.status || '', r.url || '', r.provider || '', r.severity || '',
     ]);
-
     const csv = [headers, ...rows]
       .map((row) => row.map((cell) => escapeCSVField(cell)).join(','))
       .join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    downloadBlob(blob, `footprintiq_scan_${jobId}.csv`);
+    downloadBlob(new Blob([csv], { type: 'text/csv' }), `footprintiq_scan_${jobId}.csv`);
   }
 }
 
 function escapeCSVField(field: string): string {
-  // Prevent CSV injection
   const dangerousChars = ['=', '+', '-', '@', '\t', '\r'];
   let sanitized = field;
-  
   if (dangerousChars.some(char => sanitized.startsWith(char))) {
     sanitized = "'" + sanitized;
   }
-  
-  // Escape quotes and wrap if contains special chars
   if (sanitized.includes(',') || sanitized.includes('"') || sanitized.includes('\n')) {
     return `"${sanitized.replace(/"/g, '""')}"`;
   }
