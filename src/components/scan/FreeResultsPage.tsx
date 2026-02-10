@@ -679,12 +679,12 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                               jobId={jobId}
                               lensScore={lensScore}
                               isFocused={focusedRowId === profile.id}
-                              isExpanded={expandedRowId === profile.id}
+                              isSelected={expandedRowId === profile.id}
                               verificationResult={verificationResults[profile.id] || null}
                               claimStatus={claimStatuses[profile.id] || null}
                               isClaimLoading={false}
                               onFocus={() => handleFocus(profile.id)}
-                              onToggleExpand={() => handleToggleExpand(profile.id)}
+                              onSelect={() => handleToggleExpand(profile.id)}
                               onVerificationComplete={(result) => handleVerificationComplete(profile.id, result)}
                               onClaimChange={(claim) => handleClaimChange(profile.id, claim)}
                             />
