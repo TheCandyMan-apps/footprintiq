@@ -142,8 +142,8 @@ export function ConfidenceBreakdown({
       description: platformScore >= 80 
         ? `${platformName} is a verified, well-established platform`
         : platformScore >= 60 
-          ? `${platformName} is a recognised platform with moderate verification`
-          : `${platformName} has limited identity verification processes`,
+          ? `${platformName} is a recognised platform with moderate identity checks`
+          : `${platformName} has minimal identity verification — results may be less reliable`,
       icon: Shield,
       score: platformScore,
       weight: 20,
