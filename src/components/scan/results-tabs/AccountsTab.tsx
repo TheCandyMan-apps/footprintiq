@@ -20,6 +20,7 @@ import { AccountRow } from './accounts/AccountRow';
 import { AccountCard } from './accounts/AccountCard';
 import { ProviderHealthPanel } from './ProviderHealthPanel';
 import { cn } from '@/lib/utils';
+import { extractPlatformName, deriveResultStatus } from '@/lib/results/extractors';
 
 interface AccountsTabProps {
   results: ScanResult[];
@@ -28,14 +29,6 @@ interface AccountsTabProps {
 
 type SortOption = 'platform' | 'confidence' | 'status';
 
-// Helper to extract platform name for search/sort
-const extractPlatformName = (result: ScanResult): string => {
-  if (result.site && result.site !== 'Unknown') return result.site;
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  if (meta.platform) return meta.platform;
-  if (meta.site) return meta.site;
-  return 'Unknown';
-};
 
 
 export function AccountsTab({ results, jobId }: AccountsTabProps) {
@@ -113,7 +106,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
         result.url?.toLowerCase().includes(searchQuery.toLowerCase());
       
       // Status filter
-      const matchesStatus = statusFilter === 'all' || result.status?.toLowerCase() === statusFilter;
+      const matchesStatus = statusFilter === 'all' || deriveResultStatus(result) === statusFilter;
       
       // Quick filter
       let matchesQuickFilter = true;
@@ -162,36 +155,6 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
     return filtered;
   }, [displayResults, searchQuery, statusFilter, sortBy, quickFilter, lensAnalysis.resultScores, claimedEntities, verifiedEntities, isFullAccess, freeAccountLimit]);
 
-// Derive status from result data (kind field, evidence, or status)
-  const deriveResultStatus = useCallback((result: ScanResult): string => {
-    // Check explicit status field first
-    if (result.status) return result.status.toLowerCase();
-    
-    // Check kind field for profile_presence findings
-    const kind = (result as any).kind || '';
-    if (kind === 'profile_presence' || kind === 'presence.hit' || kind === 'account_found') {
-      return 'found';
-    }
-    if (kind === 'presence.miss' || kind === 'not_found') {
-      return 'not_found';
-    }
-    
-    // Check evidence array for exists key
-    if (result.evidence && Array.isArray(result.evidence)) {
-      const existsEvidence = result.evidence.find((e: any) => e.key === 'exists');
-      if (existsEvidence?.value === true) return 'found';
-      if (existsEvidence?.value === false) return 'not_found';
-    }
-    
-    // Check meta for status indicators
-    const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-    if (meta.status) return meta.status.toLowerCase();
-    if (meta.exists === true) return 'found';
-    if (meta.exists === false) return 'not_found';
-    
-    return 'unknown';
-  }, []);
-
   const statusCounts = useMemo(() => {
     const counts = { found: 0, claimed: 0, not_found: 0 };
     displayResults.forEach(r => {
@@ -199,7 +162,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
       if (status in counts) counts[status as keyof typeof counts]++;
     });
     return counts;
-  }, [displayResults, deriveResultStatus]);
+  }, [displayResults]);
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedRows(prev => {

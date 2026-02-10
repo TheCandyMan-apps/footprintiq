@@ -1,6 +1,5 @@
-import { Fragment, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair, ChevronDown, Info } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
@@ -15,6 +14,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ConfidenceBreakdown } from './ConfidenceBreakdown';
+import {
+  extractPlatformName,
+  extractUrl,
+  extractUsername,
+  extractBioText,
+  getInitials,
+} from '@/lib/results/extractors';
 
 type ClaimType = 'me' | 'not_me';
 
@@ -29,92 +35,6 @@ interface AccountCardProps {
   onVerificationComplete: (result: LensVerificationResult) => void;
   onClaimChange: (claim: ClaimType | null) => void;
 }
-
-// Reuse extraction helpers from AccountRow
-const extractPlatformName = (result: ScanResult): string => {
-  if (result.site && result.site !== 'Unknown') return result.site;
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  if (meta.platform && meta.platform !== 'Unknown') return meta.platform;
-  if (meta.site && meta.site !== 'Unknown') return meta.site;
-  if (result.evidence && Array.isArray(result.evidence)) {
-    const siteEvidence = result.evidence.find((e: any) => e.key === 'site' || e.key === 'platform');
-    if (siteEvidence?.value) return siteEvidence.value;
-  }
-  const url = result.url || meta.url;
-  if (url) {
-    try {
-      const hostname = new URL(url).hostname;
-      const parts = hostname.replace('www.', '').split('.');
-      return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-    } catch {}
-  }
-  if (meta.provider) return meta.provider;
-  return 'Unknown';
-};
-
-const extractUrl = (result: ScanResult): string | null => {
-  if (result.url) return result.url;
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  if (meta.url) return meta.url;
-  if (result.evidence && Array.isArray(result.evidence)) {
-    const urlEvidence = result.evidence.find((e: any) => e.key === 'url');
-    if (urlEvidence?.value) return urlEvidence.value;
-  }
-  return null;
-};
-
-const extractUsername = (result: ScanResult): string | null => {
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  const genericPatterns = ['user', 'profile', 'users', 'people', 'account', 'member', 'id', 'u', 'p', 'unknown'];
-  const isGeneric = (val: string | undefined) => {
-    if (!val) return true;
-    const lower = val.toLowerCase().trim();
-    return lower.length < 2 || genericPatterns.includes(lower) || lower === '@user';
-  };
-  if (!isGeneric(meta.username)) return meta.username;
-  if (!isGeneric(meta.handle)) return meta.handle;
-  if (!isGeneric(meta.screen_name)) return meta.screen_name;
-  if (!isGeneric(meta.display_name)) return meta.display_name;
-  if (!isGeneric(meta.name)) return meta.name;
-  if (!isGeneric(meta.login)) return meta.login;
-  if (!isGeneric(meta.user)) return meta.user;
-  const url = extractUrl(result);
-  if (url) {
-    try {
-      const pathname = new URL(url).pathname;
-      const parts = pathname.split('/').filter(Boolean);
-      for (const part of parts) {
-        const cleaned = part.replace(/[?#].*$/, '');
-        if (!isGeneric(cleaned) && cleaned.length >= 2 && cleaned.length <= 30) {
-          if (!/^\d+$/.test(cleaned) && !/\.\w{2,4}$/.test(cleaned)) return cleaned;
-        }
-      }
-    } catch {}
-  }
-  return null;
-};
-
-const extractBioText = (result: ScanResult): string | null => {
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  const isGenericDescription = (text: string): boolean => {
-    const patterns = ['unknown platform', 'profile found on', 'account detected'];
-    return patterns.some(p => text.toLowerCase().includes(p));
-  };
-  const bioFields = [meta.bio, meta.about, meta.summary, meta.headline, meta.tagline];
-  for (const bio of bioFields) {
-    if (bio && typeof bio === 'string' && !isGenericDescription(bio)) return bio;
-  }
-  if (meta.description && !isGenericDescription(meta.description)) return meta.description;
-  return null;
-};
-
-const getInitials = (name: string): string => {
-  if (!name) return '??';
-  const cleaned = name.replace(/[_-]/g, ' ');
-  const words = cleaned.split(' ').filter(Boolean);
-  if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
-  return name.slice(0, 2).toUpperCase();
-};
 
 const getMatchConfidence = (score: number) => {
   if (score >= 80) return { label: 'High Confidence', shortLabel: 'High', ...RESULTS_SEMANTIC_COLORS.confidenceHigh, icon: CheckCircle };
