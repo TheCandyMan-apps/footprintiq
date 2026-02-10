@@ -56,6 +56,9 @@ const WhatOsintResultsMean = () => {
               signals, as proof when they are correlations, and as complete when they are partial. This guide
               explains what results actually represent — and what they cannot tell you.
             </p>
+            <p className="text-base text-muted-foreground/80 leading-relaxed max-w-3xl mt-4 italic border-l-4 border-primary/30 pl-4">
+              OSINT results describe observable correlations in public data — they are not assertions of identity, intent, or behaviour.
+            </p>
           </header>
 
           <div className="prose prose-slate dark:prose-invert max-w-none space-y-16">
