@@ -50,18 +50,21 @@ const getMatchConfidence = (score: number) => {
   if (score >= 80) return { 
     label: 'High Confidence', 
     shortLabel: 'High',
+    tooltip: 'Strong match — username, profile data, and platform all align.',
     ...RESULTS_SEMANTIC_COLORS.confidenceHigh,
     icon: CheckCircle 
   };
   if (score >= 60) return { 
     label: 'Moderate', 
     shortLabel: 'Med',
+    tooltip: 'Partial match — some signals align but others could not be confirmed.',
     ...RESULTS_SEMANTIC_COLORS.confidenceMedium,
     icon: HelpCircle 
   };
   return { 
     label: 'Needs Review', 
     shortLabel: 'Low',
+    tooltip: 'Weak match — limited public data available. Manual review recommended.',
     ...RESULTS_SEMANTIC_COLORS.confidenceLow,
     icon: AlertCircle 
   };
@@ -91,11 +94,11 @@ export function AccountRow({
     if (profileUrl) {
       try { chips.push({ label: new URL(profileUrl).hostname.replace('www.', '') }); } catch {}
     }
-    if (meta.followers !== undefined) {
+     if (meta.followers !== undefined) {
       const f = Number(meta.followers) >= 1000 ? `${(Number(meta.followers)/1000).toFixed(1)}K` : meta.followers;
       chips.push({ label: `${f} followers` });
     }
-    if (meta.location && meta.location !== 'Unknown') {
+    if (meta.location && meta.location !== 'Unknown' && meta.location.toLowerCase() !== 'unknown') {
       chips.push({ label: meta.location });
     }
     if (meta.joined) chips.push({ label: `Joined ${meta.joined}` });
@@ -149,7 +152,7 @@ export function AccountRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1 leading-none mb-0.5">
           <span className="font-semibold text-[12px] text-foreground truncate">{platformName}</span>
-          {username && <span className="text-muted-foreground/70 text-[10px] truncate">@{username}</span>}
+          {username ? <span className="text-muted-foreground/70 text-[10px] truncate">@{username}</span> : <span className="text-muted-foreground/40 text-[10px] truncate italic">Username not publicly listed</span>}
           {claimStatus && (
             <span className={cn('w-1 h-1 rounded-full shrink-0', claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500')} />
           )}
@@ -208,7 +211,7 @@ export function AccountRow({
                   <LensStatusBadge status={null} score={verificationResult.confidenceScore} compact={false} />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="top"><p className="text-xs">View LENS Analysis</p></TooltipContent>
+              <TooltipContent side="top"><p className="text-xs">View LENS verification breakdown</p></TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
@@ -222,7 +225,7 @@ export function AccountRow({
                   <a href={profileUrl} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-2.5 h-2.5" /></a>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent className="text-[10px]">Open</TooltipContent>
+              <TooltipContent className="text-[10px]">Visit profile on {platformName}</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}

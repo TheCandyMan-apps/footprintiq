@@ -79,9 +79,9 @@ export function ConfidenceBreakdown({
     result.push({
       id: 'username',
       label: 'Username match',
-      description: username 
+       description: username 
         ? `Username "@${username}" matches the searched identifier`
-        : 'Unable to extract username from this profile',
+        : 'Username not publicly listed by this platform',
       icon: User,
       score: usernameScore,
       weight: 25,
@@ -94,7 +94,7 @@ export function ConfidenceBreakdown({
       label: 'Profile image',
       description: hasProfileImage 
         ? 'Custom profile image present — can be used for visual comparison'
-        : 'No profile image available for visual verification',
+        : 'No public profile image found — the platform may not share this data',
       icon: Image,
       score: imageScore,
       weight: 20,
@@ -111,7 +111,7 @@ export function ConfidenceBreakdown({
       label: 'Profile completeness',
       description: profileFields > 0 
         ? `Profile contains ${profileFields === 3 ? 'bio, location, and website link' : profileFields === 2 ? 'multiple identifying details' : 'some identifying information'}`
-        : 'Limited public information on this profile',
+        : 'Limited public metadata — the platform may restrict profile details',
       icon: FileText,
       score: bioScore,
       weight: 20,
@@ -128,7 +128,7 @@ export function ConfidenceBreakdown({
       label: 'Activity indicators',
       description: activityCount > 0 
         ? `Account shows ${activityCount === 3 ? 'consistent activity patterns' : activityCount === 2 ? 'moderate engagement history' : 'some usage indicators'}`
-        : 'Insufficient activity data for analysis',
+        : 'No public activity data — the platform may not expose this information',
       icon: Activity,
       score: activityScore,
       weight: 15,
@@ -142,8 +142,8 @@ export function ConfidenceBreakdown({
       description: platformScore >= 80 
         ? `${platformName} is a verified, well-established platform`
         : platformScore >= 60 
-          ? `${platformName} is a recognised platform with moderate verification`
-          : `${platformName} has limited identity verification processes`,
+          ? `${platformName} is a recognised platform with moderate identity checks`
+          : `${platformName} has minimal identity verification — results may be less reliable`,
       icon: Shield,
       score: platformScore,
       weight: 20,
@@ -188,7 +188,7 @@ export function ConfidenceBreakdown({
                 <div className="flex items-center gap-1.5 shrink-0">
                   <StatusIcon className={cn('w-3 h-3', color)} />
                   <span className={cn('text-[10px] font-medium', color)}>
-                    {signal.score >= 70 ? 'Confirmed' : signal.score >= 40 ? 'Partial' : 'Insufficient'}
+                    {signal.score >= 70 ? 'Confirmed' : signal.score >= 40 ? 'Partial' : 'Not available'}
                   </span>
                 </div>
               </div>
@@ -282,13 +282,13 @@ export function ConfidenceTooltipContent({
               s.status === 'partial' && 'text-amber-600 dark:text-amber-400',
               s.status === 'insufficient' && 'text-muted-foreground'
             )}>
-              {s.status === 'confirmed' ? 'Confirmed' : s.status === 'partial' ? 'Partial' : 'Insufficient'}
+              {s.status === 'confirmed' ? 'Confirmed' : s.status === 'partial' ? 'Partial' : 'Not available'}
             </span>
           </div>
         ))}
       </div>
       <div className="text-[9px] text-muted-foreground pt-1 border-t border-border/30">
-        Expand for detailed analysis
+        Click to see detailed signal breakdown
       </div>
     </div>
   );

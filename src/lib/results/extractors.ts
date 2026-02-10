@@ -37,7 +37,7 @@ export function extractPlatformName(result: ScanResult): string {
 
   if (meta.provider) return meta.provider;
 
-  return 'Unknown';
+  return 'Unidentified site';
 }
 
 // ── URL ──────────────────────────────────────────────────────────
@@ -95,7 +95,7 @@ export function extractUsername(result: ScanResult): string | null {
     } catch {}
   }
 
-  return null;
+  return null; // Caller should show "Username not publicly listed" when null
 }
 
 // ── Bio ──────────────────────────────────────────────────────────
@@ -221,5 +221,5 @@ export function deriveResultStatus(result: ScanResult): string {
   if (meta.exists === true) return 'found';
   if (meta.exists === false) return 'not_found';
 
-  return 'unknown';
+  return 'pending_review';
 }

@@ -6,6 +6,12 @@ import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
 import { RESULTS_SEMANTIC_COLORS } from '../styles';
 import { LensStatusBadge } from './LensStatusBadge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { PlatformIconBadge } from '@/components/ui/PlatformIcon';
 import {
   extractPlatformName,
@@ -32,9 +38,9 @@ interface AccountCardProps {
 }
 
 const getMatchConfidence = (score: number) => {
-  if (score >= 80) return { label: 'High Confidence', shortLabel: 'High', ...RESULTS_SEMANTIC_COLORS.confidenceHigh, icon: CheckCircle };
-  if (score >= 60) return { label: 'Moderate', shortLabel: 'Med', ...RESULTS_SEMANTIC_COLORS.confidenceMedium, icon: HelpCircle };
-  return { label: 'Needs Review', shortLabel: 'Low', ...RESULTS_SEMANTIC_COLORS.confidenceLow, icon: AlertCircle };
+  if (score >= 80) return { label: 'High Confidence', shortLabel: 'High', tooltip: 'Strong match — username, profile data, and platform all align.', ...RESULTS_SEMANTIC_COLORS.confidenceHigh, icon: CheckCircle };
+  if (score >= 60) return { label: 'Moderate', shortLabel: 'Med', tooltip: 'Partial match — some signals align but others could not be confirmed.', ...RESULTS_SEMANTIC_COLORS.confidenceMedium, icon: HelpCircle };
+  return { label: 'Needs Review', shortLabel: 'Low', tooltip: 'Weak match — limited public data available. Manual review recommended.', ...RESULTS_SEMANTIC_COLORS.confidenceLow, icon: AlertCircle };
 };
 
 export function AccountCard({
@@ -96,16 +102,25 @@ export function AccountCard({
 
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[12px] text-foreground truncate leading-none">{platformName}</p>
-          {username && <p className="text-[10px] text-muted-foreground/70 truncate leading-tight">@{username}</p>}
+          {username ? <p className="text-[10px] text-muted-foreground/70 truncate leading-tight">@{username}</p> : <p className="text-[10px] text-muted-foreground/40 truncate leading-tight italic">Username not publicly listed</p>}
         </div>
 
-        <Badge
-          variant="outline"
-          className={cn('h-5 px-1.5 gap-0.5 text-[9px] font-medium shrink-0', confidence.bg, confidence.text, confidence.border)}
-        >
-          <ConfidenceIcon className="w-2.5 h-2.5" />
-          {confidence.shortLabel}
-        </Badge>
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                variant="outline"
+                className={cn('h-5 px-1.5 gap-0.5 text-[9px] font-medium shrink-0 cursor-help', confidence.bg, confidence.text, confidence.border)}
+              >
+                <ConfidenceIcon className="w-2.5 h-2.5" />
+                {confidence.shortLabel}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[220px] text-[10px] leading-snug">
+              {confidence.tooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Bio */}
@@ -117,7 +132,7 @@ export function AccountCard({
             {(() => { try { return new URL(profileUrl).hostname.replace('www.', ''); } catch { return ''; } })()}
           </p>
         ) : (
-          <p className="text-[10px] text-muted-foreground/30 leading-snug italic">No bio available</p>
+          <p className="text-[10px] text-muted-foreground/30 leading-snug italic">No public profile description found</p>
         )}
       </div>
 
@@ -149,7 +164,7 @@ export function AccountCard({
             onClick={(e) => e.stopPropagation()}
           >
             <ExternalLink className="w-3 h-3" />
-            Open
+            Visit profile
           </a>
         )}
         <button
