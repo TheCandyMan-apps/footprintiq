@@ -279,6 +279,7 @@ export default function AIAnswersHub() {
                     description: "A guide to evaluating confidence levels, recognising false positives, understanding missing data, and applying ethical judgement to scan findings.",
                     link: "/guides/interpret-osint-results",
                     icon: BookOpen,
+                    anchor: "How to interpret OSINT scan results responsibly",
                   },
                 ].map((item, index) => {
                   const Icon = item.icon;
@@ -300,7 +301,7 @@ export default function AIAnswersHub() {
                         to={item.link}
                         className="inline-flex items-center gap-2 text-primary hover:underline font-medium"
                       >
-                        Read more
+                        {item.anchor || "Read more"}
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                     </div>

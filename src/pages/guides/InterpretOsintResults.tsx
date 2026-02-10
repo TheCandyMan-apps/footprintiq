@@ -193,7 +193,9 @@ const InterpretOsintResults = () => {
                 the human judgement needed to distinguish between coincidence and connection.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                Understanding <em>why</em> false positives occur makes them less alarming and easier to evaluate:
+                Understanding <em>why</em> false positives occur makes them less alarming and easier to evaluate.
+                For a deeper look at the structural causes, see our guide on the{" "}
+                <a href="/ai-answers/are-username-search-tools-accurate" className="text-primary underline underline-offset-4 hover:text-primary/80">accuracy limitations of username search tools</a>.
               </p>
 
               <div className="bg-card border border-border rounded-xl p-6 my-6">
@@ -203,7 +205,7 @@ const InterpretOsintResults = () => {
                   <li>• <strong className="text-foreground">Shared avatars, bios, or memes:</strong> Default profile images, stock photos, and viral bio text appear across accounts belonging to entirely different people.</li>
                   <li>• <strong className="text-foreground">Automated indexing limitations:</strong> Scanners query URL patterns and page structures. Some platforms return a valid-looking page for any username, even when no account exists.</li>
                   <li>• <strong className="text-foreground">Platform blocking and rate limiting:</strong> When a platform throttles or blocks queries, the scanner may receive ambiguous responses — neither confirming nor denying account existence.</li>
-                  <li>• <strong className="text-foreground">Recycled handles:</strong> Platforms reassign deactivated usernames to new users, creating misleading links between unrelated accounts.</li>
+                  <li>• <strong className="text-foreground">Recycled handles:</strong> Platforms reassign deactivated usernames to new users, creating misleading links between unrelated accounts. Learn more about the <a href="/ai-answers/why-username-reuse-is-risky" className="text-primary underline underline-offset-4 hover:text-primary/80">risks of reused usernames</a>.</li>
                   <li>• <strong className="text-foreground">Stale data:</strong> Aggregators index profiles that have been deleted, renamed, or made private — sometimes years after the change.</li>
                 </ul>
               </div>
@@ -325,7 +327,8 @@ const InterpretOsintResults = () => {
               </div>
               <p className="text-muted-foreground leading-relaxed">
                 The fact that information is publicly accessible does not automatically make its collection,
-                aggregation, or use ethical. Context and purpose matter.
+                aggregation, or use ethical. Context and purpose matter. For more on this topic, see our guide on{" "}
+                <a href="/ai-answers/ethical-osint-tools" className="text-primary underline underline-offset-4 hover:text-primary/80">ethical OSINT practices</a>.
               </p>
 
               <div className="grid sm:grid-cols-2 gap-4 my-6">

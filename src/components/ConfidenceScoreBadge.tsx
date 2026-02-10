@@ -79,7 +79,8 @@ export function ConfidenceScoreBadge({
               {badge}
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-[200px] text-center">
-              <p className="text-xs">{getTip()}</p>
+          <p className="text-xs">{getTip()}</p>
+          <a href="/guides/interpret-osint-results" className="text-[10px] underline underline-offset-2 text-primary mt-1 block">What confidence levels mean</a>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -98,6 +99,7 @@ export function ConfidenceScoreBadge({
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-[200px] text-center">
           <p className="text-xs">{getTip()}</p>
+          <a href="/guides/interpret-osint-results" className="text-[10px] underline underline-offset-2 text-primary mt-1 block">What confidence levels mean</a>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
