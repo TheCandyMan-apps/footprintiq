@@ -1,4 +1,4 @@
-import { Shield, Menu, X, User, CreditCard, ChevronDown, Search, UserCircle, Coins, Settings } from "lucide-react";
+import { Shield, Menu, X, User, CreditCard, ChevronDown, Search, UserCircle, Coins, Settings, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -413,6 +413,15 @@ export const Header = () => {
                 <Coins className="h-3 w-3" />
                 <span>⚡ {credits ?? 0} credits</span>
               </Badge>
+            )}
+            {user && !isPremium && (
+              <Link
+                to="/pricing"
+                className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+              >
+                <Sparkles className="h-3 w-3" />
+                Upgrade
+              </Link>
             )}
             
             <ThemeToggle />

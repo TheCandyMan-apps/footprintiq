@@ -228,6 +228,13 @@ const PricingPage = () => {
                 Understand your online exposure before it's used against you.
               </p>
               <p className="text-muted-foreground">Free to try — upgrade for deeper visibility, monitoring & advanced reporting.</p>
+              {currentPlan === 'free' && workspace && (
+                <p className="text-sm text-muted-foreground/70 mt-3 flex items-center justify-center gap-1.5">
+                  <span>You're on the Free plan</span>
+                  <span className="text-muted-foreground/40">·</span>
+                  <span>Upgrade anytime for deeper insights</span>
+                </p>
+              )}
             </motion.div>
           </div>
         </section>
