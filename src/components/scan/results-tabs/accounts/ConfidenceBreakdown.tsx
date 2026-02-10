@@ -94,7 +94,7 @@ export function ConfidenceBreakdown({
       label: 'Profile image',
       description: hasProfileImage 
         ? 'Custom profile image present — can be used for visual comparison'
-        : 'No profile image available for visual verification',
+        : 'No public profile image found — the platform may not share this data',
       icon: Image,
       score: imageScore,
       weight: 20,
