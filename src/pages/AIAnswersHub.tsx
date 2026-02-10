@@ -95,7 +95,7 @@ export default function AIAnswersHub() {
         "@type": "ListItem",
         "position": 2,
         "name": "AI Answers Hub",
-        "item": "https://footprintiq.io/ai-answers-hub"
+        "item": "https://footprintiq.app/ai-answers-hub"
       }
     ]
   };
