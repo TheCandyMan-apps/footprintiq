@@ -404,4 +404,125 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
   );
 }
 
+
+/* Virtualized list sub-component */
+interface VirtualizedAccountListProps {
+  filteredResults: ScanResult[];
+  jobId: string;
+  lensAnalysis: ReturnType<typeof useLensAnalysis>;
+  expandedRows: Set<string>;
+  focusedEntityId: string | null;
+  verifiedEntities: Map<string, LensVerificationResult>;
+  claimedEntities: Map<string, 'me' | 'not_me'>;
+  isClaimLoading: boolean;
+  handleFocus: (id: string) => void;
+  toggleExpanded: (id: string) => void;
+  handleVerificationComplete: (findingId: string, result: LensVerificationResult) => void;
+  handleClaimChange: (findingId: string, claim: 'me' | 'not_me' | null) => void;
+  isFullAccess: boolean;
+  displayResults: ScanResult[];
+  freeAccountLimit: number;
+}
+
+function VirtualizedAccountList({
+  filteredResults,
+  jobId,
+  lensAnalysis,
+  expandedRows,
+  focusedEntityId,
+  verifiedEntities,
+  claimedEntities,
+  isClaimLoading,
+  handleFocus,
+  toggleExpanded,
+  handleVerificationComplete,
+  handleClaimChange,
+  isFullAccess,
+  displayResults,
+  freeAccountLimit,
+}: VirtualizedAccountListProps) {
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: filteredResults.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 56,
+    overscan: 10,
+  });
+
+  return (
+    <div
+      ref={parentRef}
+      className="border border-border/20 rounded overflow-auto bg-card"
+      style={{ maxHeight: '70vh' }}
+    >
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualRow) => {
+          const result = filteredResults[virtualRow.index];
+          const score = lensAnalysis.resultScores.get(result.id)?.score || 50;
+          const isExpanded = expandedRows.has(result.id);
+          const isFocused = focusedEntityId === result.id;
+          const verificationResult = verifiedEntities.get(result.id) || null;
+          const claimStatus = claimedEntities.get(result.id) || null;
+
+          return (
+            <div
+              key={result.id}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              <AccountRow
+                result={result}
+                jobId={jobId}
+                lensScore={score}
+                isFocused={isFocused}
+                isExpanded={isExpanded}
+                verificationResult={verificationResult}
+                claimStatus={claimStatus}
+                isClaimLoading={isClaimLoading}
+                onFocus={() => handleFocus(result.id)}
+                onToggleExpand={() => toggleExpanded(result.id)}
+                onVerificationComplete={(r) => handleVerificationComplete(result.id, r)}
+                onClaimChange={(claim) => handleClaimChange(result.id, claim)}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Free tier upgrade prompt */}
+      {!isFullAccess && displayResults.length > freeAccountLimit && (
+        <div className="p-3 bg-muted/30 border-t border-border/20 text-center">
+          <div className="flex items-center justify-center gap-1.5 mb-1.5">
+            <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs font-medium">
+              {displayResults.length - freeAccountLimit} more accounts
+            </span>
+          </div>
+          <p className="text-[10px] text-muted-foreground mb-2">
+            Upgrade to Pro to view all accounts with full confidence scoring.
+          </p>
+          <Button size="sm" className="h-7 text-[10px] gap-1">
+            <Sparkles className="h-3 w-3" />
+            Upgrade to Pro
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default AccountsTab;
