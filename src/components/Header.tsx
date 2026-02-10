@@ -1,4 +1,4 @@
-import { Shield, Menu, X, User, CreditCard, ChevronDown, Search, UserCircle, Coins, Settings } from "lucide-react";
+import { Shield, Menu, X, User, CreditCard, ChevronDown, Search, UserCircle, Coins, Settings, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
