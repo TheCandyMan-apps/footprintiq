@@ -211,7 +211,7 @@ export function AccountRow({
                   <LensStatusBadge status={null} score={verificationResult.confidenceScore} compact={false} />
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="top"><p className="text-xs">View LENS Analysis</p></TooltipContent>
+              <TooltipContent side="top"><p className="text-xs">View LENS verification breakdown</p></TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
