@@ -441,6 +441,11 @@ export function ScanResults({ jobId }: ScanResultsProps) {
                 <a href="/guides/interpret-osint-results" className="underline underline-offset-2 hover:text-primary transition-colors">Learn how to interpret results</a>
               </p>
 
+              <div className="mt-4 p-3 rounded-lg bg-muted/20 border border-border/30 text-[11px] text-muted-foreground leading-relaxed">
+                <span className="font-medium text-foreground/70">Why this matters:</span>{' '}
+                Understanding what is publicly visible about you helps you make informed privacy decisions. These results are observational — they describe what was found, not what it means about you. The goal is awareness, not alarm.
+              </div>
+
               {/* Tab Content - Lazy Loaded */}
               <div className="mt-6">
                 <TabsContent value="summary" className="mt-0">
