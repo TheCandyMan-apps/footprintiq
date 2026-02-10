@@ -6,6 +6,12 @@ import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
 import { RESULTS_SEMANTIC_COLORS } from '../styles';
 import { LensStatusBadge } from './LensStatusBadge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { PlatformIconBadge } from '@/components/ui/PlatformIcon';
 import {
   extractPlatformName,
