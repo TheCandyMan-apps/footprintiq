@@ -11,7 +11,7 @@ import {
 import {
   CheckCircle, HelpCircle, AlertCircle, Info, Globe, Clock,
   Users, MapPin, Zap, Sparkles, ExternalLink,
-  Crosshair, UserCheck, UserX, Loader2, Lightbulb,
+  Crosshair, UserCheck, UserX, Loader2, Lightbulb, ShieldCheck,
 } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
@@ -308,6 +308,18 @@ export function AccountPreviewPanel({
                 </Button>
               </div>
             )}
+
+            {/* Trust & ethics microcopy */}
+            <div className="pt-3 border-t border-border/15">
+              <div className="flex items-start gap-2 text-[9px] text-muted-foreground/60 leading-relaxed">
+                <ShieldCheck className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                <p>
+                  All information shown here was gathered from publicly accessible sources. 
+                  Results are observational and do not imply wrongdoing. 
+                  FootprintIQ supports ethical, defensive OSINT for self-assessment and authorised research.
+                </p>
+              </div>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
