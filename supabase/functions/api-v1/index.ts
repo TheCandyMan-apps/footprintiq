@@ -223,7 +223,7 @@ async function handleMonitors(req: Request, parts: string[], apiKeyData: any, su
         .from('monitors')
         .select('*')
         .eq('id', monitorId)
-        .eq('user_id', apiKeyData.user_id)
+        .eq('workspace_id', apiKeyData.workspace_id)
         .single();
       if (error) throw error;
       return data;
@@ -231,7 +231,7 @@ async function handleMonitors(req: Request, parts: string[], apiKeyData: any, su
       const { data, error } = await supabase
         .from('monitors')
         .select('*')
-        .eq('user_id', apiKeyData.user_id)
+        .eq('workspace_id', apiKeyData.workspace_id)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return { monitors: data };
