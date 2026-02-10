@@ -132,12 +132,17 @@ export const useUsernameScan = () => {
         ? options.providers 
         : ['maigret', 'sherlock'];
       
+      // Capture referrer at scan time
+      const { getReferrerHostname } = await import('@/lib/referrer');
+      const referrer = getReferrerHostname();
+
       // Call scan-orchestrate with multi-tool support - CORRECT FIELD NAMES
       const requestBody = {
         scanId: batchId,
         type: 'username' as const,           // ✅ Correct field name
         value: options.username,             // ✅ Correct field name  
         workspaceId: workspaceId,            // ✅ Use ensured workspace ID
+        ...(referrer && { referrer }),
         options: {
           noCache: true,                     // ✅ Force cache bypass for username scans
           providers: selectedProviders,      // ✅ Moved inside options

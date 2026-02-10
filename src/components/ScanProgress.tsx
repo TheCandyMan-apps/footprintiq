@@ -192,6 +192,10 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           return digits.startsWith('+') ? digits : `+${digits}`;
         };
 
+        // Capture referrer at scan time
+        const { getReferrerHostname } = await import('@/lib/referrer');
+        const referrer = getReferrerHostname();
+
         const requestBody: Record<string, any> = {
           scanId: preScanId,
           scanType,
@@ -199,6 +203,7 @@ export const ScanProgress = ({ onComplete, scanData, userId, subscriptionTier, i
           tier: subscriptionTier || 'free',  // Pass tier for routing to correct n8n workflow
           scanMode: scanData.scanMode || 'standard',  // Pass scan mode from unified form
           enhancers: scanData.enhancers || [],  // Pass selected enhancers
+          ...(referrer && { referrer }),
         };
         
         if (scanData.username?.trim()) requestBody.username = scanData.username.trim();

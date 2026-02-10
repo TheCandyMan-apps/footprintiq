@@ -92,7 +92,8 @@ serve(async (req) => {
       scanType = "username", 
       mode = "lean", 
       turnstile_token,
-      tier: requestedTier = "free"  // Accept tier parameter from frontend (not trusted)
+      tier: requestedTier = "free",  // Accept tier parameter from frontend (not trusted)
+      referrer,  // Optional: normalised hostname of document.referrer
     } = body;
     
     // ==================== TIER & EMAIL VERIFICATION GATING ====================
@@ -261,6 +262,11 @@ serve(async (req) => {
       provider_counts: {},
       results_route: "results",
     };
+
+    // Store referrer if provided (already normalised to hostname by frontend)
+    if (referrer && typeof referrer === 'string' && referrer.length < 255) {
+      scanInsertData.referrer = referrer;
+    }
 
     // Set the appropriate column for the target value
     if (scanType === 'email' || (scanType === 'personal_details' && targetColumn === 'email')) {

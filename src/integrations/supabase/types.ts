@@ -7471,6 +7471,7 @@ export type Database = {
           privacy_score: number | null
           profile_entities_json: Json | null
           provider_counts: Json | null
+          referrer: string | null
           results_route: string
           scan_type: Database["public"]["Enums"]["scan_type"]
           status: string | null
@@ -7506,6 +7507,7 @@ export type Database = {
           privacy_score?: number | null
           profile_entities_json?: Json | null
           provider_counts?: Json | null
+          referrer?: string | null
           results_route?: string
           scan_type: Database["public"]["Enums"]["scan_type"]
           status?: string | null
@@ -7541,6 +7543,7 @@ export type Database = {
           privacy_score?: number | null
           profile_entities_json?: Json | null
           provider_counts?: Json | null
+          referrer?: string | null
           results_route?: string
           scan_type?: Database["public"]["Enums"]["scan_type"]
           status?: string | null
