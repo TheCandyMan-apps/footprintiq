@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 export default function Observability() {
   const [metrics, setMetrics] = useState<any>(null);
@@ -67,6 +68,7 @@ export default function Observability() {
 
   return (
     <div className="container mx-auto py-8 space-y-8">
+      <AdminBreadcrumb currentPage="Provider Observability" />
       <div>
         <h1 className="text-4xl font-bold mb-2">Provider Observability</h1>
         <p className="text-muted-foreground">

@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertCircle, AlertTriangle, Info, RefreshCw, Download, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 export default function ErrorViewer() {
   const [filters, setFilters] = useState({
@@ -97,6 +98,7 @@ export default function ErrorViewer() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
+      <AdminBreadcrumb currentPage="Error Viewer" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Error Viewer</h1>

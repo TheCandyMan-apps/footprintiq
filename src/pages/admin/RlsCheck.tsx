@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 interface RlsStatus {
   table: string;
@@ -101,6 +102,7 @@ export default function RlsCheck() {
 
   return (
     <div className="container max-w-6xl mx-auto py-8 space-y-6">
+      <AdminBreadcrumb currentPage="RLS Security Check" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">RLS Security Check</h1>

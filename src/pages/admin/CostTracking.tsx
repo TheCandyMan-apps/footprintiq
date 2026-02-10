@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 import {
   DollarSign,
   TrendingUp,
@@ -194,6 +195,7 @@ export default function CostTracking() {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8">
+        <AdminBreadcrumb currentPage="Cost Tracking" />
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-2">Cost Tracking & Optimization</h1>

@@ -18,6 +18,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -196,6 +197,7 @@ export default function FalsePositivesReview() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <AdminBreadcrumb currentPage="False Positives Review" />
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold mb-2">False Positives Review</h1>

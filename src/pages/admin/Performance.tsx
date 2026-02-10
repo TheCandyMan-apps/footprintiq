@@ -29,6 +29,7 @@ import {
   Legend,
   ResponsiveContainer
 } from "recharts";
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 export default function Performance() {
   const [timeRange, setTimeRange] = useState("24h");
@@ -179,6 +180,7 @@ export default function Performance() {
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8">
+        <AdminBreadcrumb currentPage="Performance & Scale" />
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold mb-2">Performance & Scale</h1>

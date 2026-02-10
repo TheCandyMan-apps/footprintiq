@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { SettingsBreadcrumb } from "@/components/settings/SettingsBreadcrumb";
 import { SEO } from "@/components/SEO";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -38,6 +39,7 @@ export default function Preferences() {
       
       <main className="min-h-screen bg-background py-20 px-6">
         <div className="max-w-2xl mx-auto">
+          <SettingsBreadcrumb currentPage="Preferences" />
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-2">Preferences</h1>
             <p className="text-muted-foreground">

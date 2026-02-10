@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { SEO } from "@/components/SEO";
 import { formatDistanceToNow } from "date-fns";
+import { AdminBreadcrumb } from "@/components/admin/AdminBreadcrumb";
 
 type ScanStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'timeout';
 
@@ -297,6 +298,7 @@ export default function ScanManagement() {
       <div className="min-h-screen flex flex-col bg-background">
         <Header />
         <main className="flex-1 container mx-auto px-4 py-8">
+          <AdminBreadcrumb currentPage="Scan Management" />
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className="text-4xl font-bold mb-2">Scan Management</h1>
