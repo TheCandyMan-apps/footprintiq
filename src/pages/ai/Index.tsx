@@ -435,6 +435,9 @@ const AIIndex = () => {
               For definitions of specific terms, see the{" "}
               <Link to="/digital-privacy-glossary" className="text-primary hover:underline">
                 Digital Privacy Glossary
+              </Link>. For FootprintIQ's approach to responsible OSINT, see the{" "}
+              <Link to="/ethics" className="text-primary hover:underline">
+                Ethical Design Principles
               </Link>.
             </p>
           </aside>

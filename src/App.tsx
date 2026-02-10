@@ -224,6 +224,7 @@ const StayPrivateOnline = lazy(() => import("./pages/StayPrivateOnline"));
 const AIAnswersHub = lazy(() => import("./pages/AIAnswersHub"));
 const AboutFootprintIQ = lazy(() => import("./pages/AboutFootprintIQ"));
 const EditorialEthicsPolicy = lazy(() => import("./pages/EditorialEthicsPolicy"));
+const EthicsPage = lazy(() => import("./pages/Ethics"));
 const AIDigitalExposure = lazy(() => import("./pages/ai/DigitalExposure"));
 const AIDigitalFootprint = lazy(() => import("./pages/ai/DigitalFootprint"));
 const AIWhatIsOsint = lazy(() => import("./pages/ai/WhatIsOsint"));
@@ -565,6 +566,7 @@ function RouterContent() {
           <Route path="/ai-answers-hub" element={<AIAnswersHub />} />
           <Route path="/about-footprintiq" element={<AboutFootprintIQ />} />
           <Route path="/editorial-ethics-policy" element={<EditorialEthicsPolicy />} />
+          <Route path="/ethics" element={<EthicsPage />} />
           <Route path="/ai" element={<AIIndex />} />
           <Route path="/ai/digital-exposure" element={<AIDigitalExposure />} />
           <Route path="/ai/digital-footprint" element={<AIDigitalFootprint />} />
