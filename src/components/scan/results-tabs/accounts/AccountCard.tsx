@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair, ChevronDown, Info } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair, ChevronDown, Info, Zap, Sparkles } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
@@ -14,6 +15,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ConfidenceBreakdown } from './ConfidenceBreakdown';
+import { useAIEnrichment } from '@/hooks/useAIEnrichment';
+import { QuickAnalysisDialog } from '@/components/scan/QuickAnalysisDialog';
+import { EnrichmentDialog } from '@/components/scan/EnrichmentDialog';
+import { useTierGating } from '@/hooks/useTierGating';
 import {
   extractPlatformName,
   extractUrl,
@@ -52,6 +57,7 @@ export function AccountCard({
   onFocus,
 }: AccountCardProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const { isFree } = useTierGating();
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
   const profileUrl = useMemo(() => extractUrl(result), [result]);
@@ -60,6 +66,19 @@ export function AccountCard({
   const profileImage = meta.avatar_cached || meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
   const confidence = getMatchConfidence(lensScore);
   const ConfidenceIcon = confidence.icon;
+
+  const {
+    isAnalyzing,
+    analysisOpen,
+    setAnalysisOpen,
+    analysisData,
+    handleQuickAnalysis,
+    isEnriching,
+    enrichmentOpen,
+    setEnrichmentOpen,
+    enrichmentData,
+    handleDeepEnrichment,
+  } = useAIEnrichment(result.id);
 
   return (
     <>
@@ -145,6 +164,32 @@ export function AccountCard({
               <span className={cn('w-1.5 h-1.5 rounded-full', claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500')} />
               {claimStatus === 'me' ? 'Claimed' : 'Not me'}
             </span>
+          </div>
+        )}
+
+        {/* AI Enrichment Buttons (Pro only) */}
+        {!isFree && (
+          <div className="flex gap-1.5 px-2.5 pb-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleQuickAnalysis}
+              disabled={isAnalyzing}
+              className="flex-1 gap-1 text-[9px] h-6 px-2"
+            >
+              <Zap className="h-3 w-3" />
+              {isAnalyzing ? 'Analyzing...' : 'Quick Analysis (2 credits)'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDeepEnrichment}
+              disabled={isEnriching}
+              className="flex-1 gap-1 text-[9px] h-6 px-2"
+            >
+              <Sparkles className="h-3 w-3" />
+              {isEnriching ? 'Enriching...' : 'Deep Enrichment (5 credits)'}
+            </Button>
           </div>
         )}
 
@@ -253,6 +298,22 @@ export function AccountCard({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* AI Dialogs */}
+      <QuickAnalysisDialog
+        open={analysisOpen}
+        onOpenChange={setAnalysisOpen}
+        analysis={analysisData}
+        isLoading={isAnalyzing}
+        creditsSpent={2}
+      />
+      <EnrichmentDialog
+        open={enrichmentOpen}
+        onOpenChange={setEnrichmentOpen}
+        enrichment={enrichmentData}
+        isLoading={isEnriching}
+        creditsSpent={5}
+      />
     </>
   );
 }
