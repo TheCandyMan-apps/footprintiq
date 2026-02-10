@@ -94,11 +94,11 @@ export function AccountRow({
     if (profileUrl) {
       try { chips.push({ label: new URL(profileUrl).hostname.replace('www.', '') }); } catch {}
     }
-    if (meta.followers !== undefined) {
+     if (meta.followers !== undefined) {
       const f = Number(meta.followers) >= 1000 ? `${(Number(meta.followers)/1000).toFixed(1)}K` : meta.followers;
       chips.push({ label: `${f} followers` });
     }
-    if (meta.location && meta.location !== 'Unknown') {
+    if (meta.location && meta.location !== 'Unknown' && meta.location.toLowerCase() !== 'unknown') {
       chips.push({ label: meta.location });
     }
     if (meta.joined) chips.push({ label: `Joined ${meta.joined}` });
