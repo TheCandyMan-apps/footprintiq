@@ -87,7 +87,7 @@ const WhichDataMatters = () => {
         "@type": "ListItem",
         "position": 3,
         "name": "Which Personal Data Matters",
-        "item": "https://footprintiq.io/which-data-matters"
+        "item": "https://footprintiq.app/which-data-matters"
       }
     ]
   };
