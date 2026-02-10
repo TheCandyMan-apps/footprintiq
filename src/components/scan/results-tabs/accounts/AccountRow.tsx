@@ -152,7 +152,7 @@ export function AccountRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1 leading-none mb-0.5">
           <span className="font-semibold text-[12px] text-foreground truncate">{platformName}</span>
-          {username && <span className="text-muted-foreground/70 text-[10px] truncate">@{username}</span>}
+          {username ? <span className="text-muted-foreground/70 text-[10px] truncate">@{username}</span> : <span className="text-muted-foreground/40 text-[10px] truncate italic">Username not publicly listed</span>}
           {claimStatus && (
             <span className={cn('w-1 h-1 rounded-full shrink-0', claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500')} />
           )}
