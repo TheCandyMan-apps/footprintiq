@@ -211,7 +211,8 @@ export function ConfidenceBreakdown({
       
       {/* Weight explanation */}
       <p className="text-[9px] text-muted-foreground/60 pt-1 border-t border-border/20">
-        Each signal contributes to the overall score based on its weight (shown as %)
+        Each signal contributes to the overall score based on its weight (shown as %).
+        Confidence is derived from publicly available data and does not represent a definitive identity match.
       </p>
     </div>
   );
@@ -288,7 +289,7 @@ export function ConfidenceTooltipContent({
         ))}
       </div>
       <div className="text-[9px] text-muted-foreground pt-1 border-t border-border/30">
-        Click to see detailed signal breakdown
+        Click to see detailed signal breakdown · Based on public data only
       </div>
     </div>
   );

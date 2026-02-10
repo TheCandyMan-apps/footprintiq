@@ -491,6 +491,12 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
           </InvestigationProvider>
         )}
       </CardContent>
+      <div className="px-6 pb-4">
+        <p className="text-[10px] text-muted-foreground/50 text-center leading-relaxed">
+          All results are based on publicly accessible information. Nothing here implies wrongdoing or malicious intent. 
+          Use this data responsibly for self-assessment, authorised research, or risk awareness.
+        </p>
+      </div>
     </Card>
   );
 }
