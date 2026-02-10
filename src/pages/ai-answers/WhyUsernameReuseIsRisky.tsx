@@ -5,6 +5,7 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { useScrollDepthTracking } from "@/hooks/useScrollDepthTracking";
+import { SeeAlsoSection } from "@/components/ai-answers/SeeAlsoSection";
 
 const WhyUsernameReuseIsRisky = () => {
   const origin = typeof window !== "undefined" ? window.location.origin : "https://footprintiq.app";
@@ -193,6 +194,11 @@ const WhyUsernameReuseIsRisky = () => {
               </p>
             </div>
           </section>
+          <SeeAlsoSection links={[
+            { title: "Are Username Search Tools Accurate?", href: "/ai-answers/are-username-search-tools-accurate" },
+            { title: "What Is a Username OSINT Scan?", href: "/ai-answers/what-is-a-username-osint-scan" },
+            { title: "Is Username OSINT Legal?", href: "/ai-answers/is-username-osint-legal" },
+          ]} />
         </main>
 
         <Footer />
