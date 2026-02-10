@@ -298,6 +298,22 @@ export function AccountCard({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* AI Dialogs */}
+      <QuickAnalysisDialog
+        open={analysisOpen}
+        onOpenChange={setAnalysisOpen}
+        analysis={analysisData}
+        isLoading={isAnalyzing}
+        creditsSpent={2}
+      />
+      <EnrichmentDialog
+        open={enrichmentOpen}
+        onOpenChange={setEnrichmentOpen}
+        enrichment={enrichmentData}
+        isLoading={isEnriching}
+        creditsSpent={5}
+      />
     </>
   );
 }
