@@ -28,6 +28,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  extractPlatformName,
+  extractUrl,
+  extractUsername,
+  extractBio,
+  extractFullBio,
+  getInitials,
+} from '@/lib/results/extractors';
 
 type ClaimType = 'me' | 'not_me';
 
@@ -45,101 +53,6 @@ interface AccountRowProps {
   onVerificationComplete: (result: LensVerificationResult) => void;
   onClaimChange: (claim: ClaimType | null) => void;
 }
-
-// Extract platform name from various data structures
-const extractPlatformName = (result: ScanResult): string => {
-  if (result.site && result.site !== 'Unknown') return result.site;
-  
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  if (meta.platform && meta.platform !== 'Unknown') return meta.platform;
-  if (meta.site && meta.site !== 'Unknown') return meta.site;
-  
-  if (result.evidence && Array.isArray(result.evidence)) {
-    const siteEvidence = result.evidence.find(
-      (e: any) => e.key === 'site' || e.key === 'platform'
-    );
-    if (siteEvidence?.value) return siteEvidence.value;
-  }
-  
-  const url = result.url || meta.url;
-  if (url) {
-    try {
-      const hostname = new URL(url).hostname;
-      const parts = hostname.replace('www.', '').split('.');
-      return parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-    } catch {}
-  }
-  
-  if (meta.provider) return meta.provider;
-  
-  return 'Unknown';
-};
-
-// Extract URL from various data structures
-const extractUrl = (result: ScanResult): string | null => {
-  if (result.url) return result.url;
-  
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  if (meta.url) return meta.url;
-  
-  if (result.evidence && Array.isArray(result.evidence)) {
-    const urlEvidence = result.evidence.find((e: any) => e.key === 'url');
-    if (urlEvidence?.value) return urlEvidence.value;
-  }
-  
-  return null;
-};
-
-// Map platform name to domain for favicon lookup
-const getPlatformDomain = (platform: string, url?: string | null): string => {
-  if (url) {
-    try {
-      const hostname = new URL(url).hostname;
-      return hostname.replace('www.', '');
-    } catch {}
-  }
-  
-  const p = platform?.toLowerCase() || '';
-  const domainMap: Record<string, string> = {
-    'github': 'github.com',
-    'gitlab': 'gitlab.com',
-    'twitter': 'twitter.com',
-    'x': 'x.com',
-    'linkedin': 'linkedin.com',
-    'facebook': 'facebook.com',
-    'instagram': 'instagram.com',
-    'reddit': 'reddit.com',
-    'youtube': 'youtube.com',
-    'tiktok': 'tiktok.com',
-    'discord': 'discord.com',
-    'telegram': 'telegram.org',
-    'pinterest': 'pinterest.com',
-    'medium': 'medium.com',
-    'stackoverflow': 'stackoverflow.com',
-    'twitch': 'twitch.tv',
-    'spotify': 'spotify.com',
-    'snapchat': 'snapchat.com',
-    'tumblr': 'tumblr.com',
-    'flickr': 'flickr.com',
-    'vimeo': 'vimeo.com',
-    'steam': 'store.steampowered.com',
-    'patreon': 'patreon.com',
-    'behance': 'behance.net',
-    'dribbble': 'dribbble.com',
-    'deviantart': 'deviantart.com',
-    'soundcloud': 'soundcloud.com',
-    'quora': 'quora.com',
-    'mastodon': 'mastodon.social',
-    'threads': 'threads.net',
-    'bluesky': 'bsky.app',
-  };
-
-  for (const [key, domain] of Object.entries(domainMap)) {
-    if (p.includes(key)) return domain;
-  }
-
-  return `${p.replace(/\s+/g, '')}.com`;
-};
 
 const getMatchConfidence = (score: number) => {
   if (score >= 80) return { 
@@ -160,107 +73,6 @@ const getMatchConfidence = (score: number) => {
     ...RESULTS_SEMANTIC_COLORS.confidenceLow,
     icon: AlertCircle 
   };
-};
-
-const getInitials = (name: string): string => {
-  if (!name) return '??';
-  const cleaned = name.replace(/[_-]/g, ' ');
-  const words = cleaned.split(' ').filter(Boolean);
-  if (words.length >= 2) {
-    return (words[0][0] + words[1][0]).toUpperCase();
-  }
-  return name.slice(0, 2).toUpperCase();
-};
-
-const extractUsername = (result: ScanResult): string | null => {
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  
-  // Generic patterns to filter out
-  const genericPatterns = ['user', 'profile', 'users', 'people', 'account', 'member', 'id', 'u', 'p', 'unknown'];
-  const isGeneric = (val: string | undefined) => {
-    if (!val) return true;
-    const lower = val.toLowerCase().trim();
-    return lower.length < 2 || genericPatterns.includes(lower) || lower === '@user';
-  };
-  
-  // Prefer explicit metadata fields
-  if (!isGeneric(meta.username)) return meta.username;
-  if (!isGeneric(meta.handle)) return meta.handle;
-  if (!isGeneric(meta.screen_name)) return meta.screen_name;
-  if (!isGeneric(meta.display_name)) return meta.display_name;
-  if (!isGeneric(meta.name)) return meta.name;
-  if (!isGeneric(meta.login)) return meta.login; // GitHub style
-  if (!isGeneric(meta.user)) return meta.user;
-  
-  // Try to extract from URL path
-  const url = extractUrl(result);
-  if (url) {
-    try {
-      const pathname = new URL(url).pathname;
-      const parts = pathname.split('/').filter(Boolean);
-      
-      // Try each path segment, preferring the one that looks like a username
-      for (const part of parts) {
-        const cleaned = part.replace(/[?#].*$/, ''); // Remove query/hash
-        if (!isGeneric(cleaned) && cleaned.length >= 2 && cleaned.length <= 30) {
-          // Skip numeric-only or file-like segments
-          if (!/^\d+$/.test(cleaned) && !/\.\w{2,4}$/.test(cleaned)) {
-            return cleaned;
-          }
-        }
-      }
-    } catch {}
-  }
-  
-  return null;
-};
-
-const extractBioText = (result: ScanResult): string | null => {
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  
-  // Check various bio fields - prioritize actual user content
-  const bioFields = [meta.bio, meta.about, meta.summary, meta.headline, meta.tagline];
-  for (const bio of bioFields) {
-    if (bio && typeof bio === 'string' && !isGenericDescription(bio)) {
-      return bio;
-    }
-  }
-  
-  // Description is lower priority as it's often system-generated
-  if (meta.description && !isGenericDescription(meta.description)) {
-    return meta.description;
-  }
-  
-  return null;
-};
-
-const isGenericDescription = (text: string): boolean => {
-  const genericPatterns = [
-    'unknown platform',
-    'profile found on',
-    'account detected',
-  ];
-  const lowerText = text.toLowerCase();
-  return genericPatterns.some(pattern => lowerText.includes(pattern));
-};
-
-const extractBio = (result: ScanResult): string | null => {
-  const bio = extractBioText(result);
-  if (bio) {
-    return bio.length > 80 ? bio.slice(0, 77) + '…' : bio;
-  }
-  
-  // Try location as fallback context
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  if (meta.location && meta.location !== 'Unknown' && meta.location.toLowerCase() !== 'unknown') {
-    return `📍 ${meta.location}`;
-  }
-  
-  return null;
-};
-
-const extractFullBio = (result: ScanResult): string | null => {
-  return extractBioText(result);
 };
 
 export function AccountRow({
