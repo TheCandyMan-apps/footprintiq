@@ -11,7 +11,7 @@ import {
 import {
   CheckCircle, HelpCircle, AlertCircle, Info, Globe, Clock,
   Users, MapPin, Zap, Sparkles, ExternalLink,
-  Crosshair, UserCheck, UserX, Loader2,
+  Crosshair, UserCheck, UserX, Loader2, Lightbulb,
 } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
@@ -34,6 +34,7 @@ import {
   extractFullBio,
   getInitials,
   generateRiskContext,
+  generateRecommendedActions,
 } from '@/lib/results/extractors';
 
 type ClaimType = 'me' | 'not_me';
@@ -209,6 +210,29 @@ export function AccountPreviewPanel({
                 </a>
               )}
             </div>
+
+            {/* Recommended Actions */}
+            {(() => {
+              const actions = generateRecommendedActions(result, lensScore, claimStatus);
+              if (actions.length === 0) return null;
+              return (
+                <div className="pt-2 border-t border-border/15">
+                  <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Lightbulb className="w-3 h-3" />
+                    Suggested Next Steps
+                  </h4>
+                  <div className="space-y-2">
+                    {actions.map((action, i) => (
+                      <div key={i} className="rounded-md bg-muted/20 border border-border/15 px-3 py-2">
+                        <p className="text-[11px] font-medium text-foreground/90">{action.label}</p>
+                        <p className="text-[10px] leading-relaxed text-muted-foreground mt-0.5">{action.description}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[9px] text-muted-foreground/50 italic mt-1.5">These are suggestions based on available data, not requirements.</p>
+                </div>
+              );
+            })()}
 
             {/* Profile URL */}
             {profileUrl && (

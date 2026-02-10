@@ -268,3 +268,93 @@ export function generateRiskContext(
 
   return `${signalSummary} ${strength}`;
 }
+
+// ── Recommended actions ──────────────────────────────────────────
+
+export interface RecommendedAction {
+  label: string;
+  description: string;
+}
+
+const SOCIAL_PLATFORMS = new Set([
+  'facebook', 'instagram', 'twitter', 'x', 'tiktok', 'snapchat',
+  'linkedin', 'threads', 'bluesky', 'mastodon', 'pinterest', 'tumblr',
+]);
+
+const CODE_PLATFORMS = new Set([
+  'github', 'gitlab', 'bitbucket', 'stackoverflow', 'codepen',
+]);
+
+/**
+ * Suggest safe, reasonable next steps based on confidence level
+ * and platform type. Framed as optional guidance, never requirements.
+ */
+export function generateRecommendedActions(
+  result: ScanResult,
+  lensScore: number,
+  claimStatus: 'me' | 'not_me' | null,
+): RecommendedAction[] {
+  const platform = extractPlatformName(result).toLowerCase();
+  const isSocial = SOCIAL_PLATFORMS.has(platform);
+  const isCode = CODE_PLATFORMS.has(platform);
+  const meta = getMeta(result);
+  const hasPublicBio = !!extractBioText(result);
+  const actions: RecommendedAction[] = [];
+
+  // Already claimed — tailor advice
+  if (claimStatus === 'me') {
+    if (isSocial) {
+      actions.push({
+        label: 'Review privacy settings',
+        description: `Consider reviewing your privacy settings on ${extractPlatformName(result)} to ensure your profile visibility matches your preferences.`,
+      });
+    }
+    if (hasPublicBio || (meta.followers !== undefined && Number(meta.followers) > 0)) {
+      actions.push({
+        label: 'Audit public information',
+        description: 'You may want to check what personal details are publicly visible on this profile.',
+      });
+    }
+    if (isCode) {
+      actions.push({
+        label: 'Check repository visibility',
+        description: 'Verify that any repositories or contributions align with what you intend to be public.',
+      });
+    }
+    return actions;
+  }
+
+  if (claimStatus === 'not_me') {
+    actions.push({
+      label: 'No action needed',
+      description: 'You have indicated this account is not yours. No further steps are necessary unless you believe it is being used to impersonate you.',
+    });
+    return actions;
+  }
+
+  // Unclaimed — base on confidence
+  if (lensScore >= 80) {
+    actions.push({
+      label: 'Confirm ownership',
+      description: 'This profile has a strong match to the search query. Consider marking it as yours or not yours to keep your results organised.',
+    });
+    if (isSocial) {
+      actions.push({
+        label: 'Review privacy settings',
+        description: `If this is your account, reviewing the privacy settings on ${extractPlatformName(result)} can help you control what information is publicly accessible.`,
+      });
+    }
+  } else if (lensScore >= 60) {
+    actions.push({
+      label: 'Verify this profile',
+      description: 'Some signals match but the linkage is not certain. Visiting the profile can help you determine whether this account is relevant.',
+    });
+  } else {
+    actions.push({
+      label: 'No immediate action needed',
+      description: 'The connection to the search query is weak. You can review the profile if you wish, but no action is required at this time.',
+    });
+  }
+
+  return actions;
+}
