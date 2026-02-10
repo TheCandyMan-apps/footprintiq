@@ -190,6 +190,18 @@ async function handleFindings(req: Request, parts: string[], apiKeyData: any, su
   const scanId = parts[0];
   
   if (req.method === 'GET' && scanId) {
+    // Verify the scan belongs to this workspace before returning findings
+    const { data: scan, error: scanError } = await supabase
+      .from('scans')
+      .select('id')
+      .eq('id', scanId)
+      .eq('workspace_id', apiKeyData.workspace_id)
+      .single();
+    
+    if (scanError || !scan) {
+      throw new Error('Scan not found or access denied');
+    }
+
     const { data, error } = await supabase
       .from('findings')
       .select('*')
