@@ -1,85 +1,70 @@
 
 
-# Fix Whitespace + Enrich Row Content
+# Premium UI Polish Pass -- Accounts Tab
 
-## Changes to `src/components/scan/results-tabs/accounts/AccountRow.tsx`
+## 1. Results Summary Bar (new)
 
-### 1. Remove `max-w-sm` caps (lines 377, 381)
-Remove the `max-w-sm` class from the bio and URL fallback `<p>` tags so text expands to fill available width on wide screens. Keep `truncate` for overflow.
+Add a compact, chip-based summary row between the AccountFilters and the Focus/Search controls in `AccountsTab.tsx`. It shows at-a-glance stats:
 
-### 2. Add inline signal chips row (after line 373, before current bio line)
-Insert a new row of compact signal chips between the platform/username line and the bio line. Each chip pulls from existing `meta` fields when available:
+- **Total**: `displayResults.length` total results
+- **Found**: `statusCounts.found` found accounts (green chip)
+- **High Confidence**: count of results with score >= 75 (from existing `filterCounts.high_confidence`)
+- **Hidden by Focus**: `hiddenByFocusMode` count (amber chip, only when > 0)
+- **Active filters**: show current sort and status filter as muted text on the right
 
-- **Domain** -- extracted from `profileUrl` hostname (e.g., `github.com`)
-- **Followers** -- from `meta.followers` (e.g., `1.2K followers`)
-- **Location** -- from `meta.location` (e.g., `London, UK`)
-- **Joined** -- from `meta.joined` (e.g., `Joined 2019`)
-- **Website** -- from `meta.website`, rendered as a clickable link with `stopPropagation`
+This replaces the current "Inline Stats" section (lines 272-289) with a cleaner, unified summary row.
 
-Chips will render as small inline `<span>` elements with:
-- `text-[9px]` size, `text-muted-foreground/60` color
-- Tiny dot separators between chips
-- Max 3 chips shown to keep the row compact
-- Clickable website chip uses `stopPropagation` + `e.preventDefault()` pattern to avoid toggling the collapsible
+## 2. Hide Secondary Actions on Hover (list view)
 
-### 3. Ensure click isolation
-The website signal chip (if rendered as a link) will use `onClick={(e) => e.stopPropagation()}` to prevent row expansion when clicked.
+In `AccountRow.tsx`, wrap the `AccountRowActions` cluster in a container that is `opacity-0 group-hover:opacity-100 focus-within:opacity-100` so secondary actions (Focus, Claim, LENS, Expand) only appear on hover/focus. The **confidence badge** and **LENS badge** (when verified) remain always visible since they are informational, not actions.
+
+In `AccountRowActions.tsx`, add the hover-reveal class to the outer container so the entire action cluster fades in on row hover. The `ExternalLink` (Open) button will be pulled out and kept always visible as the primary action.
+
+### Specific changes:
+
+**AccountRow.tsx (RIGHT section, line 236 area)**:
+- Keep the confidence badge and LENS badge always visible
+- Move the "Open link" action out of `AccountRowActions` and render it inline as always-visible
+- Wrap `AccountRowActions` in `opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity`
+
+**AccountRowActions.tsx**:
+- Remove the `ExternalLink` button from this component (it moves to AccountRow)
+- Remove `url` from the required props (becomes optional, only for LENS verify)
+
+## 3. Spacing and Typography Tightening
+
+**AccountRow.tsx**:
+- Reduce `min-h-[52px]` to `min-h-[44px]` for tighter row height
+- Reduce `py-1.5` to `py-1` on the main row div
+
+**AccountCard.tsx**:
+- Reduce `pt-2.5 pb-1` to `pt-2 pb-1` on header
+- Reduce `pb-1.5` to `pb-1` on bio section
+- Ensure action row uses `py-1` consistently
+
+## 4. Empty States with Reset
+
+In `AccountsTab.tsx`, replace the current minimal empty state (lines 292-298) with two distinct states:
+
+**No results at all** (when `displayResults.length === 0`):
+- User icon, "No accounts found" title, "This scan did not find any matching accounts." description
+- No reset button needed
+
+**No matches for current filters** (when `filteredResults.length === 0` but `displayResults.length > 0`):
+- Search icon, "No matching accounts" title, description mentioning active filters
+- "Reset Filters" button that clears `searchQuery`, `statusFilter` to 'all', and `quickFilter` to 'all'
+
+Both use the existing `EmptyState` component from `src/components/EmptyState.tsx`.
 
 ---
 
-## Technical Details
+## Technical Summary
 
-### Signal chip rendering logic
-```text
-const signalChips = useMemo(() => {
-  const chips: { label: string; href?: string }[] = [];
-  // Domain from URL
-  if (profileUrl) {
-    try { chips.push({ label: new URL(profileUrl).hostname.replace('www.', '') }); } catch {}
-  }
-  // Followers
-  if (meta.followers !== undefined) {
-    const f = meta.followers >= 1000 ? `${(meta.followers/1000).toFixed(1)}K` : meta.followers;
-    chips.push({ label: `${f} followers` });
-  }
-  // Location
-  if (meta.location && meta.location !== 'Unknown') {
-    chips.push({ label: meta.location });
-  }
-  // Joined
-  if (meta.joined) chips.push({ label: `Joined ${meta.joined}` });
-  // Website
-  if (meta.website) {
-    chips.push({ label: meta.website.replace(/^https?:\/\//, '').slice(0, 30), href: meta.website });
-  }
-  return chips.slice(0, 3); // cap at 3
-}, [profileUrl, meta]);
-```
+| File | Changes |
+|------|---------|
+| `AccountsTab.tsx` | Replace inline stats with summary bar; add empty states with reset; import EmptyState |
+| `AccountRow.tsx` | Reduce row padding/height; extract Open link as always-visible; wrap remaining actions in hover-reveal |
+| `AccountRowActions.tsx` | Remove ExternalLink button (moved to parent); make `url` optional |
+| `AccountCard.tsx` | Tighten spacing on header, bio, action sections |
 
-### Chip markup (inline after username row)
-```text
-{signalChips.length > 0 && (
-  <div className="flex items-center gap-1 text-[9px] text-muted-foreground/60 leading-none">
-    {signalChips.map((chip, i) => (
-      <Fragment key={i}>
-        {i > 0 && <span className="text-border">·</span>}
-        {chip.href ? (
-          <a href={chip.href} target="_blank" rel="noopener noreferrer"
-             className="hover:text-primary truncate max-w-[120px]"
-             onClick={e => e.stopPropagation()}>{chip.label}</a>
-        ) : (
-          <span className="truncate max-w-[120px]">{chip.label}</span>
-        )}
-      </Fragment>
-    ))}
-  </div>
-)}
-```
-
-### Summary of line changes
-| Line(s) | Change |
-|---------|--------|
-| 1 | Add `Fragment` to React import |
-| 282 | Add `signalChips` useMemo |
-| 373-384 | Add signal chips row, remove `max-w-sm` from bio/URL lines |
-
+No new files created. No functionality or gating changes.
