@@ -29,14 +29,6 @@ interface AccountsTabProps {
 
 type SortOption = 'platform' | 'confidence' | 'status';
 
-// Helper to extract platform name for search/sort
-const extractPlatformName = (result: ScanResult): string => {
-  if (result.site && result.site !== 'Unknown') return result.site;
-  const meta = (result.meta || result.metadata || {}) as Record<string, any>;
-  if (meta.platform) return meta.platform;
-  if (meta.site) return meta.site;
-  return 'Unknown';
-};
 
 
 export function AccountsTab({ results, jobId }: AccountsTabProps) {
