@@ -44,11 +44,11 @@ const WhichDataMatters = () => {
     "publisher": {
       "@type": "Organization",
       "name": "FootprintIQ",
-      "url": "https://footprintiq.io"
+      "url": "https://footprintiq.app"
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": "https://footprintiq.io/which-data-matters"
+      "@id": "https://footprintiq.app/which-data-matters"
     },
     "datePublished": "2025-01-17",
     "dateModified": "2025-01-17"
@@ -75,19 +75,19 @@ const WhichDataMatters = () => {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://footprintiq.io"
+        "item": "https://footprintiq.app"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Digital Footprint Scanner",
-        "item": "https://footprintiq.io/digital-footprint-scanner"
+        "item": "https://footprintiq.app/digital-footprint-scanner"
       },
       {
         "@type": "ListItem",
         "position": 3,
         "name": "Which Personal Data Matters",
-        "item": "https://footprintiq.io/which-data-matters"
+        "item": "https://footprintiq.app/which-data-matters"
       }
     ]
   };
@@ -100,7 +100,7 @@ const WhichDataMatters = () => {
           name="description" 
           content="Learn which types of personal data carry real risk and which are low-impact noise. A calm, practical guide to prioritising your digital privacy efforts." 
         />
-        <link rel="canonical" href="https://footprintiq.io/which-data-matters" />
+        <link rel="canonical" href="https://footprintiq.app/which-data-matters" />
         <script type="application/ld+json">
           {JSON.stringify(articleSchema)}
         </script>

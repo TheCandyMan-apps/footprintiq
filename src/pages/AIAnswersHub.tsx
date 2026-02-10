@@ -18,11 +18,11 @@ export default function AIAnswersHub() {
     "publisher": {
       "@type": "Organization",
       "name": "FootprintIQ",
-      "url": "https://footprintiq.io"
+      "url": "https://footprintiq.app"
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": "https://footprintiq.io/ai-answers-hub"
+      "@id": "https://footprintiq.app/ai-answers-hub"
     }
   };
 
@@ -89,13 +89,13 @@ export default function AIAnswersHub() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://footprintiq.io"
+        "item": "https://footprintiq.app"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "AI Answers Hub",
-        "item": "https://footprintiq.io/ai-answers-hub"
+        "item": "https://footprintiq.app/ai-answers-hub"
       }
     ]
   };
@@ -147,7 +147,7 @@ export default function AIAnswersHub() {
           name="description" 
           content="A central reference hub providing clear, factual answers to common questions about digital footprints, online exposure, identity risk, and privacy." 
         />
-        <link rel="canonical" href="https://footprintiq.io/ai-answers-hub" />
+        <link rel="canonical" href="https://footprintiq.app/ai-answers-hub" />
       </Helmet>
       <JsonLd data={articleSchema} />
       <JsonLd data={faqSchema} />

@@ -18,11 +18,11 @@ export default function StayPrivateOnline() {
     "publisher": {
       "@type": "Organization",
       "name": "FootprintIQ",
-      "url": "https://footprintiq.io"
+      "url": "https://footprintiq.app"
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": "https://footprintiq.io/stay-private-online"
+      "@id": "https://footprintiq.app/stay-private-online"
     }
   };
 
@@ -89,19 +89,19 @@ export default function StayPrivateOnline() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://footprintiq.io"
+        "item": "https://footprintiq.app"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Digital Footprint Scanner",
-        "item": "https://footprintiq.io/digital-footprint-scanner"
+        "item": "https://footprintiq.app/digital-footprint-scanner"
       },
       {
         "@type": "ListItem",
         "position": 3,
         "name": "Is It Possible to Stay Private Online Anymore?",
-        "item": "https://footprintiq.io/stay-private-online"
+        "item": "https://footprintiq.app/stay-private-online"
       }
     ]
   };
@@ -114,7 +114,7 @@ export default function StayPrivateOnline() {
           name="description" 
           content="A realistic guide to understanding online privacy today. Learn what privacy means, what you can control, and how to think about it without fear or false expectations." 
         />
-        <link rel="canonical" href="https://footprintiq.io/stay-private-online" />
+        <link rel="canonical" href="https://footprintiq.app/stay-private-online" />
       </Helmet>
       <JsonLd data={articleSchema} />
       <JsonLd data={faqSchema} />
