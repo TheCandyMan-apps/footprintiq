@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Search, Filter, User, ArrowUpDown, Lock, Sparkles, Eye, EyeOff, List, LayoutGrid } from 'lucide-react';
+import { Search, Filter, User, ArrowUpDown, Lock, Sparkles, Eye, EyeOff, List, LayoutGrid, SearchX } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { useInvestigation } from '@/contexts/InvestigationContext';
@@ -21,6 +21,7 @@ import { AccountCard } from './accounts/AccountCard';
 import { ProviderHealthPanel } from './ProviderHealthPanel';
 import { cn } from '@/lib/utils';
 import { extractPlatformName, deriveResultStatus } from '@/lib/results/extractors';
+import { EmptyState } from '@/components/EmptyState';
 
 interface AccountsTabProps {
   results: ScanResult[];
