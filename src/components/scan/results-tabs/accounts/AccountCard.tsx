@@ -132,7 +132,7 @@ export function AccountCard({
             {(() => { try { return new URL(profileUrl).hostname.replace('www.', ''); } catch { return ''; } })()}
           </p>
         ) : (
-          <p className="text-[10px] text-muted-foreground/30 leading-snug italic">No bio available</p>
+          <p className="text-[10px] text-muted-foreground/30 leading-snug italic">No public profile description found</p>
         )}
       </div>
 
