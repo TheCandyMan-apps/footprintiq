@@ -27,6 +27,8 @@ import { ScanProgress } from './ScanProgress';
 import { ResultsTabBar } from './ResultsTabBar';
 import { TabSkeleton } from './results-tabs/TabSkeleton';
 import { AccountsTabSkeleton } from './results-tabs/accounts/AccountsTabSkeleton';
+import { ConnectionsTabSkeleton } from './results-tabs/ConnectionsTabSkeleton';
+import { TimelineTabSkeleton } from './results-tabs/TimelineTabSkeleton';
 import { InvestigationProvider } from '@/contexts/InvestigationContext';
 import { Loader2, Shield } from 'lucide-react';
 import { parseISO, isValid } from 'date-fns';
@@ -449,7 +451,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
                 </TabsContent>
 
                 <TabsContent value="connections" className="mt-0">
-                  <Suspense fallback={<TabSkeleton />}>
+                  <Suspense fallback={<ConnectionsTabSkeleton />}>
                     <ConnectionsTab 
                       results={results} 
                       username={job.username} 
@@ -460,7 +462,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
 
                 {showTimeline && (
                   <TabsContent value="timeline" className="mt-0">
-                    <Suspense fallback={<TabSkeleton />}>
+                    <Suspense fallback={<TimelineTabSkeleton />}>
                       <TimelineTab 
                         scanId={jobId} 
                         results={results} 
