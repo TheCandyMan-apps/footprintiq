@@ -55,6 +55,9 @@ const InterpretOsintResults = () => {
               This guide is about judgement, not fear. It explains how to evaluate findings with appropriate scepticism,
               recognise structural limitations, and avoid the common mistakes that lead to wrong conclusions.
             </p>
+            <p className="text-base text-muted-foreground/80 leading-relaxed max-w-3xl mt-4 italic border-l-4 border-primary/30 pl-4">
+              OSINT results describe observable correlations in public data — they are not assertions of identity, intent, or behaviour.
+            </p>
           </header>
 
           <div className="prose prose-slate dark:prose-invert max-w-none space-y-16">
