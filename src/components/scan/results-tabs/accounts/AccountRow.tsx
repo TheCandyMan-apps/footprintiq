@@ -389,14 +389,32 @@ export function AccountRow({
               )} />
             )}
           </div>
+
+          {/* Signal chips */}
+          {signalChips.length > 0 && (
+            <div className="flex items-center gap-1 text-[9px] text-muted-foreground/60 leading-none">
+              {signalChips.map((chip, i) => (
+                <Fragment key={i}>
+                  {i > 0 && <span className="text-border">·</span>}
+                  {chip.href ? (
+                    <a href={chip.href} target="_blank" rel="noopener noreferrer"
+                       className="hover:text-primary truncate max-w-[120px]"
+                       onClick={e => e.stopPropagation()}>{chip.label}</a>
+                  ) : (
+                    <span className="truncate max-w-[120px]">{chip.label}</span>
+                  )}
+                </Fragment>
+              ))}
+            </div>
+          )}
           
           {/* Secondary line: Bio snippet or URL hint */}
           {bio ? (
-            <p className="text-[10px] leading-snug truncate max-w-sm text-muted-foreground/70">
+            <p className="text-[10px] leading-snug truncate text-muted-foreground/70">
               {bio}
             </p>
           ) : profileUrl ? (
-            <p className="text-[10px] leading-snug truncate max-w-sm text-muted-foreground/40">
+            <p className="text-[10px] leading-snug truncate text-muted-foreground/40">
               {new URL(profileUrl).hostname.replace('www.', '')}
             </p>
           ) : null}
