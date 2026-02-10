@@ -303,12 +303,27 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
 
       {/* Account Results */}
       {filteredResults.length === 0 ? (
-        <div className="border border-border/20 rounded overflow-hidden bg-card p-4 text-center">
-          <User className="w-5 h-5 mx-auto text-muted-foreground/30 mb-1" />
-          <p className="text-[11px] text-muted-foreground/60">
-            {searchQuery || statusFilter !== 'all' || quickFilter !== 'all' ? 'No matches' : 'No accounts found'}
-          </p>
-        </div>
+        displayResults.length === 0 ? (
+          <EmptyState
+            icon={User}
+            title="No accounts found"
+            description="This scan did not find any matching accounts."
+          />
+        ) : (
+          <EmptyState
+            icon={SearchX}
+            title="No matching accounts"
+            description="No accounts match your current search or filter criteria."
+            action={{
+              label: 'Reset Filters',
+              onClick: () => {
+                setSearchQuery('');
+                setStatusFilter('all');
+                setQuickFilter('all');
+              },
+            }}
+          />
+        )
       ) : viewMode === 'list' ? (
         /* List View - Virtualized */
         <VirtualizedAccountList

@@ -169,7 +169,7 @@ export function AccountCard({
 
         {/* AI Enrichment Buttons (Pro only) */}
         {!isFree && (
-          <div className="flex gap-1.5 px-2.5 pb-1.5">
+          <div className="flex gap-1.5 px-2.5 pb-1">
             <Button
               variant="outline"
               size="sm"

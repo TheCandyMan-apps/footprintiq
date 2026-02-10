@@ -291,22 +291,46 @@ export function AccountRow({
             </TooltipProvider>
           )}
           
-          {/* Action cluster */}
-          <AccountRowActions
-            findingId={result.id}
-            url={profileUrl}
-            platform={platformName}
-            scanId={jobId}
-            isFocused={isFocused}
-            onFocus={onFocus}
-            verificationResult={verificationResult}
-            onVerificationComplete={onVerificationComplete}
-            claimStatus={claimStatus}
-            onClaimChange={onClaimChange}
-            isClaimLoading={isClaimLoading}
-            isExpanded={isExpanded}
-            onToggleExpand={onToggleExpand}
-          />
+          {/* Always-visible: Open link */}
+          {profileUrl && (
+            <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-4.5 w-4.5 rounded text-muted-foreground hover:text-foreground hover:bg-background/50 transition-colors"
+                    asChild
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <a href={profileUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="text-[10px]">Open</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          
+          {/* Hover-reveal: Secondary actions */}
+          <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            <AccountRowActions
+              findingId={result.id}
+              url={profileUrl}
+              platform={platformName}
+              scanId={jobId}
+              isFocused={isFocused}
+              onFocus={onFocus}
+              verificationResult={verificationResult}
+              onVerificationComplete={onVerificationComplete}
+              claimStatus={claimStatus}
+              onClaimChange={onClaimChange}
+              isClaimLoading={isClaimLoading}
+              isExpanded={isExpanded}
+              onToggleExpand={onToggleExpand}
+            />
+          </div>
         </div>
       </div>
 
