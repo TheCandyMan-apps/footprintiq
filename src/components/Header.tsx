@@ -647,11 +647,11 @@ export const Header = () => {
                     >
                       Sign In
                     </Link>
-                    <Button 
-                      onClick={() => { navigate('/auth'); setMobileMenuOpen(false); }} 
+                     <Button 
+                      onClick={() => { navigate('/auth?tab=signup'); setMobileMenuOpen(false); }} 
                       className="w-full min-h-[44px]"
                     >
-                      Get Started
+                      Start Free Trial
                     </Button>
                   </div>
                 )}

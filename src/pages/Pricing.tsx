@@ -37,7 +37,7 @@ const PricingPage = () => {
 
   const handleSelectPlan = async (planId: PlanId) => {
     if (planId === 'free') {
-      navigate('/auth');
+      navigate('/auth?tab=signup');
       return;
     }
     
