@@ -223,3 +223,48 @@ export function deriveResultStatus(result: ScanResult): string {
 
   return 'pending_review';
 }
+
+// ── Risk context explanation ─────────────────────────────────────
+
+/**
+ * Generate a concise, human-readable explanation of why a result was
+ * found and how strong the linkage is, using existing confidence and
+ * signal data only.  Tone: neutral, factual, non-alarmist.
+ */
+export function generateRiskContext(
+  result: ScanResult,
+  lensScore: number,
+): string {
+  const meta = getMeta(result);
+  const platform = extractPlatformName(result);
+  const username = extractUsername(result);
+  const hasAvatar = !!(meta.avatar_cached || meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image);
+  const hasBio = !!extractBioText(result);
+  const hasFollowers = meta.followers !== undefined && Number(meta.followers) > 0;
+  const hasLocation = !!(meta.location && meta.location !== 'Unknown' && meta.location.toLowerCase() !== 'unknown');
+
+  const signals: string[] = [];
+  if (username) signals.push('matching username');
+  if (hasAvatar) signals.push('profile image');
+  if (hasBio) signals.push('public bio');
+  if (hasFollowers) signals.push('follower data');
+  if (hasLocation) signals.push('location info');
+
+  const signalSummary =
+    signals.length === 0
+      ? 'Limited public information was available for this profile.'
+      : signals.length === 1
+        ? `A ${signals[0]} was identified on ${platform}.`
+        : `Multiple signals were identified on ${platform}, including ${signals.slice(0, -1).join(', ')} and ${signals[signals.length - 1]}.`;
+
+  let strength: string;
+  if (lensScore >= 80) {
+    strength = 'These signals strongly suggest this profile is associated with the search query.';
+  } else if (lensScore >= 60) {
+    strength = 'Some indicators align, but the linkage could not be fully confirmed from public data alone.';
+  } else {
+    strength = 'The available evidence is limited; manual review is recommended to confirm relevance.';
+  }
+
+  return `${signalSummary} ${strength}`;
+}
