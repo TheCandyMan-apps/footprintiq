@@ -90,7 +90,7 @@ export function AccountCard({
         )}
       >
         {/* Header: icon + platform + confidence */}
-        <div className="flex items-center gap-2 px-2.5 pt-2.5 pb-1">
+        <div className="flex items-center gap-2 px-2.5 pt-2 pb-1">
           <div className="relative shrink-0">
             <PlatformIconBadge platform={platformName} url={profileUrl} size="md" position="top-left" />
             <div className="w-8 h-8 rounded overflow-hidden bg-muted/20 border border-border/30 ml-0.5 mt-0.5">
