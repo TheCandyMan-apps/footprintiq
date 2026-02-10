@@ -109,6 +109,7 @@ export function LensConfidenceBadge({
               <HelpCircle className="h-2.5 w-2.5" />
               <span>LENS = Layered Entity & Network Scoring</span>
             </div>
+            <a href="/guides/interpret-osint-results" className="text-[10px] underline underline-offset-2 text-primary mt-1 block">What confidence levels mean</a>
           </div>
         </TooltipContent>
       </Tooltip>
