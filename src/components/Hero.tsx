@@ -30,8 +30,11 @@ export const Hero = ({
         </p>
         
         {/* Transparency line */}
-        <p className="text-base text-muted-foreground/80 mb-10 max-w-2xl mx-auto">
+        <p className="text-base text-muted-foreground/80 mb-2 max-w-2xl mx-auto">
           We provide visibility. You make the decisions.
+        </p>
+        <p className="text-sm text-muted-foreground/60 mb-10 max-w-2xl mx-auto">
+          Designed for ethical OSINT and responsible interpretation.
         </p>
         
         {/* Inline Hero Input - reduces friction */}
