@@ -280,6 +280,24 @@ export function AccountRow({
   const [lensModalOpen, setLensModalOpen] = useState(false);
   const { isFree } = useTierGating();
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
+  const signalChips = useMemo(() => {
+    const chips: { label: string; href?: string }[] = [];
+    if (profileUrl) {
+      try { chips.push({ label: new URL(profileUrl).hostname.replace('www.', '') }); } catch {}
+    }
+    if (meta.followers !== undefined) {
+      const f = Number(meta.followers) >= 1000 ? `${(Number(meta.followers)/1000).toFixed(1)}K` : meta.followers;
+      chips.push({ label: `${f} followers` });
+    }
+    if (meta.location && meta.location !== 'Unknown') {
+      chips.push({ label: meta.location });
+    }
+    if (meta.joined) chips.push({ label: `Joined ${meta.joined}` });
+    if (meta.website) {
+      chips.push({ label: String(meta.website).replace(/^https?:\/\//, '').slice(0, 30), href: String(meta.website) });
+    }
+    return chips.slice(0, 3);
+  }, [profileUrl, meta]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
   const profileUrl = useMemo(() => extractUrl(result), [result]);
   const username = useMemo(() => extractUsername(result), [result]);
