@@ -1,39 +1,59 @@
 
 
-# Fix: AI Analyst Showing Other Users' Scans
+# Add "Start Free Trial" Button to Header and Pricing Page
 
-## Problem
-The "Select Entities to Analyze" dropdown on the AI Analyst page (`/ai-analyst`) loads scans from all users. This happens because:
+## Overview
+Add a visible "Start Free Trial" button in the header navigation for unauthenticated users, and update the pricing page's free-tier CTA. Both will link to `/auth?tab=signup` so the sign-up tab is pre-selected, reducing friction.
 
-1. The query in `loadEntities()` fetches from the `scans` table **without filtering by `user_id`**
-2. Your account has an **admin** role, and the RLS policy "Admins can view all scans" lets admins see every scan in the database
-3. So the unfiltered query returns all scans across the platform
+## Confirming: Sign-up without a trial
+Yes -- users can sign up on the free tier and run scans without subscribing to a Pro trial. The free tier provides default credits and a scan quota via the workspace system. The "Start Free Trial" label is a marketing label for the free-tier sign-up, not a gated trial requiring payment.
 
-## Fix
-Add an explicit `user_id` filter to the query in `src/pages/AIAnalyst.tsx` so the entity picker only shows the logged-in user's own scans -- regardless of admin privileges.
+## Changes
 
-## Technical Change
+### 1. Auth page: read `tab` query parameter (`src/pages/Auth.tsx`)
+- Read `?tab=signup` from the URL search params
+- Pass it as `defaultValue` to the `<Tabs>` component so the sign-up tab is pre-selected when users arrive via the new button
 
-**File: `src/pages/AIAnalyst.tsx`** (line ~76-83)
+### 2. Header: replace "Get Started" with "Start Free Trial" (`src/components/Header.tsx`)
+- Change the unauthenticated "Get Started" button (line 431) to say "Start Free Trial"
+- Update its destination from `/auth` to `/auth?tab=signup`
+- Also update the "Sign In" text link (line 380) to remain as-is for returning users
 
-Update `loadEntities` to get the current user's ID and filter by it:
+### 3. Pricing page: update free-tier CTA (`src/pages/Pricing.tsx`)
+- Update the free plan's `navigate('/auth')` call (line 40) to `navigate('/auth?tab=signup')` so clicking "Get Started" on the free tier pre-selects sign-up
+- No visual changes needed -- just the link target
 
+### 4. Mobile nav: add matching CTA
+- In the mobile navigation menu section of Header.tsx, ensure the unauthenticated mobile CTA also reads "Start Free Trial" and links to `/auth?tab=signup`
+
+## Technical Detail
+
+**Auth.tsx tab pre-selection:**
 ```typescript
-const loadEntities = async () => {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return;
-
-    const { data, error } = await supabase
-      .from("scans")
-      .select("id, email, phone, username, privacy_score, high_risk_count, created_at")
-      .eq("user_id", session.user.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    // ... rest unchanged
-  }
-};
+const searchParams = new URLSearchParams(window.location.search);
+const defaultTab = searchParams.get('tab') === 'signup' ? 'signup' : 'signin';
+// ...
+<Tabs defaultValue={defaultTab} className="w-full">
 ```
 
-This is a one-line addition (`.eq("user_id", session.user.id)`) plus fetching the session. It ensures defence-in-depth: even if RLS changes in the future, the query itself is scoped to the current user.
+**Header.tsx button update:**
+```typescript
+<Button onClick={() => navigate('/auth?tab=signup')}>
+  Start Free Trial
+</Button>
+```
+
+**Pricing.tsx free plan link:**
+```typescript
+if (planId === 'free') {
+  navigate('/auth?tab=signup');
+  return;
+}
+```
+
+## Files Modified
+1. `src/pages/Auth.tsx` -- read `tab` query param for tab pre-selection
+2. `src/components/Header.tsx` -- rename button, update link target (desktop + mobile)
+3. `src/pages/Pricing.tsx` -- update free-tier CTA destination
+
+All changes are minimal: a query parameter reader, two string changes, and one navigate path update. No new dependencies.
