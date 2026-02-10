@@ -135,7 +135,7 @@ export function AccountCard({
         </div>
 
         {/* Bio - 2 line clamp */}
-        <div className="px-2.5 pb-1.5">
+        <div className="px-2.5 pb-1">
           {bio ? (
             <p className="text-[10px] text-muted-foreground/70 leading-snug line-clamp-2">{bio}</p>
           ) : profileUrl ? (
