@@ -126,6 +126,7 @@ export function BillingSyncPanel() {
   const needsSync = results?.filter(r => r.status === 'created' || r.status === 'updated') || [];
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
