@@ -274,6 +274,12 @@ export default function AIAnswersHub() {
                     link: "/ai-answers/ethical-osint-tools",
                     icon: Shield,
                   },
+                  {
+                    title: "How to Interpret OSINT Scan Results Responsibly",
+                    description: "A guide to evaluating confidence levels, recognising false positives, understanding missing data, and applying ethical judgement to scan findings.",
+                    link: "/guides/interpret-osint-results",
+                    icon: BookOpen,
+                  },
                 ].map((item, index) => {
                   const Icon = item.icon;
                   return (

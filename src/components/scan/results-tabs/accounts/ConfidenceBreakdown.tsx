@@ -289,7 +289,7 @@ export function ConfidenceTooltipContent({
         ))}
       </div>
       <div className="text-[9px] text-muted-foreground pt-1 border-t border-border/30">
-        Click to see detailed signal breakdown · Based on public data only
+        Click to see detailed signal breakdown · <a href="/guides/interpret-osint-results" className="underline underline-offset-2 hover:text-foreground/70">Based on public data only</a>
       </div>
     </div>
   );

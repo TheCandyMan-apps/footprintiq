@@ -495,6 +495,10 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
         <p className="text-[10px] text-muted-foreground/50 text-center leading-relaxed">
           All results are based on publicly accessible information. Nothing here implies wrongdoing or malicious intent. 
           Use this data responsibly for self-assessment, authorised research, or risk awareness.
+          {" · "}
+          <a href="/guides/interpret-osint-results" className="underline underline-offset-2 hover:text-muted-foreground/70 transition-colors">
+            How to interpret these results
+          </a>
         </p>
       </div>
     </Card>
