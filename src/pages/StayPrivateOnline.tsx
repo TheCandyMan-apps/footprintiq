@@ -95,7 +95,7 @@ export default function StayPrivateOnline() {
         "@type": "ListItem",
         "position": 2,
         "name": "Digital Footprint Scanner",
-        "item": "https://footprintiq.io/digital-footprint-scanner"
+        "item": "https://footprintiq.app/digital-footprint-scanner"
       },
       {
         "@type": "ListItem",
