@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
@@ -285,6 +285,24 @@ export function AccountRow({
   const username = useMemo(() => extractUsername(result), [result]);
   const bio = useMemo(() => extractBio(result), [result]);
   const fullBio = useMemo(() => extractFullBio(result), [result]);
+  const signalChips = useMemo(() => {
+    const chips: { label: string; href?: string }[] = [];
+    if (profileUrl) {
+      try { chips.push({ label: new URL(profileUrl).hostname.replace('www.', '') }); } catch {}
+    }
+    if (meta.followers !== undefined) {
+      const f = Number(meta.followers) >= 1000 ? `${(Number(meta.followers)/1000).toFixed(1)}K` : meta.followers;
+      chips.push({ label: `${f} followers` });
+    }
+    if (meta.location && meta.location !== 'Unknown') {
+      chips.push({ label: meta.location });
+    }
+    if (meta.joined) chips.push({ label: `Joined ${meta.joined}` });
+    if (meta.website) {
+      chips.push({ label: String(meta.website).replace(/^https?:\/\//, '').slice(0, 30), href: String(meta.website) });
+    }
+    return chips.slice(0, 3);
+  }, [profileUrl, meta]);
   const profileImage = meta.avatar_cached || meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
   const confidence = getMatchConfidence(lensScore);
   const ConfidenceIcon = confidence.icon;
@@ -371,14 +389,32 @@ export function AccountRow({
               )} />
             )}
           </div>
+
+          {/* Signal chips */}
+          {signalChips.length > 0 && (
+            <div className="flex items-center gap-1 text-[9px] text-muted-foreground/60 leading-none">
+              {signalChips.map((chip, i) => (
+                <Fragment key={i}>
+                  {i > 0 && <span className="text-border">·</span>}
+                  {chip.href ? (
+                    <a href={chip.href} target="_blank" rel="noopener noreferrer"
+                       className="hover:text-primary truncate max-w-[120px]"
+                       onClick={e => e.stopPropagation()}>{chip.label}</a>
+                  ) : (
+                    <span className="truncate max-w-[120px]">{chip.label}</span>
+                  )}
+                </Fragment>
+              ))}
+            </div>
+          )}
           
           {/* Secondary line: Bio snippet or URL hint */}
           {bio ? (
-            <p className="text-[10px] leading-snug truncate max-w-sm text-muted-foreground/70">
+            <p className="text-[10px] leading-snug truncate text-muted-foreground/70">
               {bio}
             </p>
           ) : profileUrl ? (
-            <p className="text-[10px] leading-snug truncate max-w-sm text-muted-foreground/40">
+            <p className="text-[10px] leading-snug truncate text-muted-foreground/40">
               {new URL(profileUrl).hostname.replace('www.', '')}
             </p>
           ) : null}
