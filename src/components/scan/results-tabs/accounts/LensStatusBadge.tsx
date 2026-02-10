@@ -1,5 +1,11 @@
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, HelpCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 type LensStatus = 'verified' | 'likely' | 'unclear' | 'pending' | null;
