@@ -106,7 +106,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
         result.url?.toLowerCase().includes(searchQuery.toLowerCase());
       
       // Status filter
-      const matchesStatus = statusFilter === 'all' || result.status?.toLowerCase() === statusFilter;
+      const matchesStatus = statusFilter === 'all' || deriveResultStatus(result) === statusFilter;
       
       // Quick filter
       let matchesQuickFilter = true;
