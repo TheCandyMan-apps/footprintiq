@@ -280,6 +280,11 @@ export function AccountRow({
   const [lensModalOpen, setLensModalOpen] = useState(false);
   const { isFree } = useTierGating();
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
+  const platformName = useMemo(() => extractPlatformName(result), [result]);
+  const profileUrl = useMemo(() => extractUrl(result), [result]);
+  const username = useMemo(() => extractUsername(result), [result]);
+  const bio = useMemo(() => extractBio(result), [result]);
+  const fullBio = useMemo(() => extractFullBio(result), [result]);
   const signalChips = useMemo(() => {
     const chips: { label: string; href?: string }[] = [];
     if (profileUrl) {
@@ -298,11 +303,6 @@ export function AccountRow({
     }
     return chips.slice(0, 3);
   }, [profileUrl, meta]);
-  const platformName = useMemo(() => extractPlatformName(result), [result]);
-  const profileUrl = useMemo(() => extractUrl(result), [result]);
-  const username = useMemo(() => extractUsername(result), [result]);
-  const bio = useMemo(() => extractBio(result), [result]);
-  const fullBio = useMemo(() => extractFullBio(result), [result]);
   const profileImage = meta.avatar_cached || meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
   const confidence = getMatchConfidence(lensScore);
   const ConfidenceIcon = confidence.icon;
