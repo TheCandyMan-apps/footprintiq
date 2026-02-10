@@ -270,21 +270,33 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
         </ToggleGroup>
       </div>
 
-      {/* Inline Stats - Minimal */}
-      <div className="flex items-center gap-1 text-[10px]">
+      {/* Results Summary Bar */}
+      <div className="flex items-center gap-1.5 text-[10px] flex-wrap">
+        <span className="px-1.5 py-0.5 rounded bg-muted/30 text-muted-foreground font-medium">
+          {displayResults.length} total
+        </span>
         <span className="px-1.5 py-0.5 rounded bg-green-600/10 text-green-600 dark:text-green-400 font-medium">
           {statusCounts.found} found
         </span>
-        <span className="text-muted-foreground/50">
-          {statusCounts.claimed} claimed
-        </span>
+        {filterCounts.high_confidence > 0 && (
+          <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-medium">
+            {filterCounts.high_confidence} high conf
+          </span>
+        )}
+        {focusMode && hiddenByFocusMode > 0 && (
+          <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
+            {hiddenByFocusMode} hidden
+          </span>
+        )}
         {!isFullAccess && displayResults.length > freeAccountLimit && (
-          <span className="flex items-center gap-0.5 text-muted-foreground/50 ml-1">
+          <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted/20 text-muted-foreground/60">
             <Lock className="h-2.5 w-2.5" />
-            +{displayResults.length - freeAccountLimit} hidden
+            +{displayResults.length - freeAccountLimit} locked
           </span>
         )}
         <span className="text-muted-foreground/40 ml-auto text-[9px]">
+          {statusFilter !== 'all' && <span className="mr-1">{statusFilter}</span>}
+          {sortBy !== 'confidence' && <span className="mr-1">by {sortBy}</span>}
           {filteredResults.length}/{displayResults.length}
         </span>
       </div>
