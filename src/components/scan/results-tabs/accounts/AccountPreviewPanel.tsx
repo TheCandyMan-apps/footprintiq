@@ -230,6 +230,11 @@ export function AccountPreviewPanel({
                     ))}
                   </div>
                   <p className="text-[9px] text-muted-foreground/50 italic mt-1.5">These are suggestions based on available data, not requirements.</p>
+                  {isFree && (
+                    <p className="text-[9px] text-muted-foreground/60 mt-2">
+                      <a href="/pricing" className="text-primary/70 hover:text-primary hover:underline">Pro</a> can add deeper verification signals for stronger interpretation.
+                    </p>
+                  )}
                 </div>
               );
             })()}
