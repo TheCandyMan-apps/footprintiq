@@ -79,9 +79,9 @@ export function ConfidenceBreakdown({
     result.push({
       id: 'username',
       label: 'Username match',
-      description: username 
+       description: username 
         ? `Username "@${username}" matches the searched identifier`
-        : 'Unable to extract username from this profile',
+        : 'Username not publicly listed by this platform',
       icon: User,
       score: usernameScore,
       weight: 25,
