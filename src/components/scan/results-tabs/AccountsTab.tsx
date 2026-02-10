@@ -4,7 +4,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Search, Filter, User, ArrowUpDown, Lock, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Search, Filter, User, ArrowUpDown, Lock, Sparkles, Eye, EyeOff, List, LayoutGrid } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { useLensAnalysis } from '@/hooks/useLensAnalysis';
 import { useInvestigation } from '@/contexts/InvestigationContext';
@@ -15,6 +16,7 @@ import { filterFindings } from '@/lib/findingFilters';
 import { RESULTS_SPACING } from './styles';
 import { AccountFilters, QuickFilterOption } from './accounts/AccountFilters';
 import { AccountRow } from './accounts/AccountRow';
+import { AccountCard } from './accounts/AccountCard';
 import { ProviderHealthPanel } from './ProviderHealthPanel';
 import { cn } from '@/lib/utils';
 
@@ -41,7 +43,8 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
   const [sortBy, setSortBy] = useState<SortOption>('confidence');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [quickFilter, setQuickFilter] = useState<QuickFilterOption>('all');
-  const [focusMode, setFocusMode] = useState(true); // Focus Mode ON by default
+  const [focusMode, setFocusMode] = useState(true);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   // Filter out provider health findings
   const baseResults = useMemo(() => filterOutProviderHealth(results), [results]);
@@ -287,6 +290,19 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
             <SelectItem value="status" className="text-[10px]">Status</SelectItem>
           </SelectContent>
         </Select>
+        <ToggleGroup
+          type="single"
+          value={viewMode}
+          onValueChange={(v) => { if (v) setViewMode(v as 'list' | 'grid'); }}
+          className="h-6 shrink-0"
+        >
+          <ToggleGroupItem value="list" aria-label="List view" className="h-6 w-6 p-0">
+            <List className="h-3 w-3" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="grid" aria-label="Grid view" className="h-6 w-6 p-0">
+            <LayoutGrid className="h-3 w-3" />
+          </ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {/* Inline Stats - Minimal */}
@@ -308,17 +324,18 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
         </span>
       </div>
 
-      {/* Account Rows - Dense feed */}
-      <div className="border border-border/20 rounded overflow-hidden bg-card">
-        {filteredResults.length === 0 ? (
-          <div className="p-4 text-center">
-            <User className="w-5 h-5 mx-auto text-muted-foreground/30 mb-1" />
-            <p className="text-[11px] text-muted-foreground/60">
-              {searchQuery || statusFilter !== 'all' || quickFilter !== 'all' ? 'No matches' : 'No accounts found'}
-            </p>
-          </div>
-        ) : (
-          filteredResults.map((result) => {
+      {/* Account Results */}
+      {filteredResults.length === 0 ? (
+        <div className="border border-border/20 rounded overflow-hidden bg-card p-4 text-center">
+          <User className="w-5 h-5 mx-auto text-muted-foreground/30 mb-1" />
+          <p className="text-[11px] text-muted-foreground/60">
+            {searchQuery || statusFilter !== 'all' || quickFilter !== 'all' ? 'No matches' : 'No accounts found'}
+          </p>
+        </div>
+      ) : viewMode === 'list' ? (
+        /* List View */
+        <div className="border border-border/20 rounded overflow-hidden bg-card">
+          {filteredResults.map((result) => {
             const lensScore = lensAnalysis.resultScores.get(result.id);
             const score = lensScore?.score || 50;
             const isExpanded = expandedRows.has(result.id);
@@ -343,28 +360,75 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                 onClaimChange={(claim) => handleClaimChange(result.id, claim)}
               />
             );
-          })
-        )}
-        
-        {/* Free tier upgrade prompt */}
-        {!isFullAccess && displayResults.length > freeAccountLimit && (
-          <div className="p-3 bg-muted/30 border-t border-border/20 text-center">
-            <div className="flex items-center justify-center gap-1.5 mb-1.5">
-              <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs font-medium">
-                {displayResults.length - freeAccountLimit} more accounts
-              </span>
+          })}
+
+          {/* Free tier upgrade prompt */}
+          {!isFullAccess && displayResults.length > freeAccountLimit && (
+            <div className="p-3 bg-muted/30 border-t border-border/20 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium">
+                  {displayResults.length - freeAccountLimit} more accounts
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground mb-2">
+                Upgrade to Pro to view all accounts with full confidence scoring.
+              </p>
+              <Button size="sm" className="h-7 text-[10px] gap-1">
+                <Sparkles className="h-3 w-3" />
+                Upgrade to Pro
+              </Button>
             </div>
-            <p className="text-[10px] text-muted-foreground mb-2">
-              Upgrade to Pro to view all accounts with full confidence scoring.
-            </p>
-            <Button size="sm" className="h-7 text-[10px] gap-1">
-              <Sparkles className="h-3 w-3" />
-              Upgrade to Pro
-            </Button>
+          )}
+        </div>
+      ) : (
+        /* Grid View */
+        <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-2">
+            {filteredResults.map((result) => {
+              const lensScore = lensAnalysis.resultScores.get(result.id);
+              const score = lensScore?.score || 50;
+              const isFocused = focusedEntityId === result.id;
+              const verificationResult = verifiedEntities.get(result.id) || null;
+              const claimStatus = claimedEntities.get(result.id) || null;
+
+              return (
+                <AccountCard
+                  key={result.id}
+                  result={result}
+                  jobId={jobId}
+                  lensScore={score}
+                  isFocused={isFocused}
+                  verificationResult={verificationResult}
+                  claimStatus={claimStatus}
+                  onFocus={() => handleFocus(result.id)}
+                  onVerificationComplete={(r) => handleVerificationComplete(result.id, r)}
+                  onClaimChange={(claim) => handleClaimChange(result.id, claim)}
+                />
+              );
+            })}
           </div>
-        )}
-      </div>
+
+          {/* Free tier upgrade prompt */}
+          {!isFullAccess && displayResults.length > freeAccountLimit && (
+            <div className="p-3 bg-muted/30 border border-border/20 rounded mt-2 text-center">
+              <div className="flex items-center justify-center gap-1.5 mb-1.5">
+                <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium">
+                  {displayResults.length - freeAccountLimit} more accounts
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground mb-2">
+                Upgrade to Pro to view all accounts with full confidence scoring.
+              </p>
+              <Button size="sm" className="h-7 text-[10px] gap-1">
+                <Sparkles className="h-3 w-3" />
+                Upgrade to Pro
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
