@@ -1,4 +1,5 @@
 import { SEO } from "@/components/SEO";
+import { GuideCitationBlock } from "@/components/guides/GuideCitationBlock";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import {
@@ -351,6 +352,8 @@ const IsOsintScanWorthIt = () => {
                 ))}
               </div>
             </section>
+
+            <GuideCitationBlock />
 
           </div>
         </div>
