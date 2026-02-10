@@ -434,7 +434,32 @@ export function SummaryTab({
           {aggregated.counts.totalProfiles}
         </span>
       </div>
-      
+
+      {/* What to do next — shown after scan completes */}
+      {scanComplete && (
+        <div className="mt-5 p-4 rounded-lg bg-muted/15 border border-border/25">
+          <h4 className="text-xs font-medium text-foreground/80 mb-2">What to do next</h4>
+          <ul className="space-y-1.5 text-[11px] text-muted-foreground leading-relaxed">
+            <li className="flex items-start gap-2">
+              <span className="shrink-0 mt-0.5 w-1 h-1 rounded-full bg-muted-foreground/30" />
+              Review privacy settings on any high-confidence accounts you recognise — you decide what stays public.
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="shrink-0 mt-0.5 w-1 h-1 rounded-full bg-muted-foreground/30" />
+              Consider reclaiming or closing accounts you no longer use, if that feels right for you.
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="shrink-0 mt-0.5 w-1 h-1 rounded-full bg-muted-foreground/30" />
+              Where practical, using different usernames for different contexts can reduce cross-platform correlation.
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="shrink-0 mt-0.5 w-1 h-1 rounded-full bg-muted-foreground/30" />
+              No action needed is a perfectly valid outcome — these results are for your awareness, not a to-do list.
+            </li>
+          </ul>
+        </div>
+      )}
+
       {/* Subtle hint for Standard users to try Advanced mode */}
       <AdvancedModeHint scanComplete={scanComplete} />
     </div>
