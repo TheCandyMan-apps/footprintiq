@@ -240,6 +240,7 @@ const WhatOsintResultsMean = lazy(() => import("./pages/guides/WhatOsintResultsM
 const IsOsintScanWorthIt = lazy(() => import("./pages/guides/IsOsintScanWorthIt"));
 const FreeVsPaidOsintTools = lazy(() => import("./pages/guides/FreeVsPaidOsintTools"));
 const GoodOsintScanResult = lazy(() => import("./pages/guides/GoodOsintScanResult"));
+const GuidesIndex = lazy(() => import("./pages/guides/GuidesIndex"));
 const EthicalOsint = lazy(() => import("./pages/EthicalOsint"));
 const Press = lazy(() => import("./pages/Press"));
 const CryptoLandingPage = lazy(() => import("./pages/for/Crypto"));
@@ -528,6 +529,7 @@ function RouterContent() {
           <Route path="/research" element={<Research />} />
           <Route path="/research/username-reuse-report-2026" element={<UsernameReuseReport2026 />} />
           <Route path="/research/fact-sheet" element={<FactSheet />} />
+          <Route path="/guides" element={<GuidesIndex />} />
           <Route path="/guides/how-username-search-tools-work" element={<HowUsernameSearchToolsWork />} />
             <Route path="/guides/interpret-osint-results" element={<InterpretOsintResults />} />
             <Route path="/guides/what-osint-results-mean" element={<WhatOsintResultsMean />} />

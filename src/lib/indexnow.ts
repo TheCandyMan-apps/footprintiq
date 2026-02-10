@@ -91,6 +91,7 @@ export const INDEXNOW_URLS = [
   "/ai-answers/is-username-osint-legal",
   "/ai-answers/ethical-osint-tools",
   // Guides
+  "/guides",
   "/guides/interpret-osint-results",
   "/guides/what-osint-results-mean",
   "/guides/is-osint-scan-worth-it",
