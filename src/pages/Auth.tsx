@@ -311,7 +311,7 @@ const Auth = () => {
           </div>
         )}
 
-        <Tabs defaultValue="signin" className="w-full">
+        <Tabs defaultValue={new URLSearchParams(window.location.search).get('tab') === 'signup' ? 'signup' : 'signin'} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
