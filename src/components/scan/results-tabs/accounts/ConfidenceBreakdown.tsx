@@ -128,7 +128,7 @@ export function ConfidenceBreakdown({
       label: 'Activity indicators',
       description: activityCount > 0 
         ? `Account shows ${activityCount === 3 ? 'consistent activity patterns' : activityCount === 2 ? 'moderate engagement history' : 'some usage indicators'}`
-        : 'Insufficient activity data for analysis',
+        : 'No public activity data — the platform may not expose this information',
       icon: Activity,
       score: activityScore,
       weight: 15,
