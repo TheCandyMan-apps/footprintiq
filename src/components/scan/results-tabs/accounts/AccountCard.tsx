@@ -149,7 +149,7 @@ export function AccountCard({
 
         {/* LENS badge if verified */}
         {verificationResult && (
-          <div className="px-2.5 pb-1.5">
+          <div className="px-2.5 pb-1">
             <LensStatusBadge status={null} score={verificationResult.confidenceScore} compact />
           </div>
         )}
