@@ -102,7 +102,7 @@ export function AccountCard({
 
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[12px] text-foreground truncate leading-none">{platformName}</p>
-          {username && <p className="text-[10px] text-muted-foreground/70 truncate leading-tight">@{username}</p>}
+          {username ? <p className="text-[10px] text-muted-foreground/70 truncate leading-tight">@{username}</p> : <p className="text-[10px] text-muted-foreground/40 truncate leading-tight italic">Username not publicly listed</p>}
         </div>
 
         <Badge
