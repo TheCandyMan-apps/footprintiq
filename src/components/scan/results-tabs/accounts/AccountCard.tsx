@@ -79,6 +79,8 @@ export function AccountCard({
     enrichmentData,
     handleDeepEnrichment,
   } = useAIEnrichment(result.id);
+
+  return (
     <>
       <div
         className={cn(
