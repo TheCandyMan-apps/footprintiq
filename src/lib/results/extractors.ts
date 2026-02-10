@@ -358,3 +358,74 @@ export function generateRecommendedActions(
 
   return actions;
 }
+
+// ── Match type label ─────────────────────────────────────────────
+
+export interface MatchTypeInfo {
+  label: string;
+  tooltip: string;
+}
+
+/**
+ * Derives a human-readable match type from existing result signals.
+ * No new scoring — purely based on kind, provider, and metadata already present.
+ */
+export function deriveMatchType(result: ScanResult, lensScore: number): MatchTypeInfo {
+  const raw = result as any;
+  const kind: string = raw.kind || '';
+  const meta = getMeta(result);
+  const provider: string = raw.provider || meta.provider || '';
+
+  // Breach-related findings
+  if (kind.startsWith('breach') || kind === 'credential_exposure') {
+    return {
+      label: 'Breach record',
+      tooltip: 'This result was found in a publicly reported data breach. It indicates the associated identifier appeared in leaked datasets.',
+    };
+  }
+
+  // Profile presence from username enumeration tools
+  if (kind === 'profile_presence' || kind === 'presence.hit') {
+    // If we have strong username + platform alignment
+    if (lensScore >= 75) {
+      return {
+        label: 'Username match',
+        tooltip: 'The queried username was found on this platform with consistent public indicators. This reflects a direct name match, not confirmed ownership.',
+      };
+    }
+    return {
+      label: 'Profile correlation',
+      tooltip: 'A profile was found that correlates with the search query. Some signals align, but additional review may help determine relevance.',
+    };
+  }
+
+  // Dark web mentions
+  if (kind.startsWith('darkweb')) {
+    return {
+      label: 'Exposure mention',
+      tooltip: 'This result references a mention found in publicly indexed exposure datasets. It does not confirm active risk.',
+    };
+  }
+
+  // High-confidence generic results
+  if (lensScore >= 75) {
+    return {
+      label: 'Username match',
+      tooltip: 'The queried identifier was found with strong signal alignment on this platform.',
+    };
+  }
+
+  // Moderate confidence
+  if (lensScore >= 50) {
+    return {
+      label: 'Profile correlation',
+      tooltip: 'Some public signals correlate with the search query, but not all indicators could be confirmed.',
+    };
+  }
+
+  // Low confidence
+  return {
+    label: 'Weak signal',
+    tooltip: 'Limited public data connects this result to the search query. It may still be relevant but warrants review.',
+  };
+}

@@ -29,6 +29,7 @@ import {
   extractBio,
   getInitials,
   generateRiskContext,
+  deriveMatchType,
 } from '@/lib/results/extractors';
 
 type ClaimType = 'me' | 'not_me';
@@ -112,6 +113,7 @@ export function AccountRow({
   const profileImage = meta.avatar_cached || meta.avatar_url || meta.avatar || meta.profile_image || meta.image || meta.pfp_image;
   const confidence = getMatchConfidence(lensScore);
   const ConfidenceIcon = confidence.icon;
+  const matchType = useMemo(() => deriveMatchType(result, lensScore), [result, lensScore]);
 
   return (
     <div 
@@ -136,6 +138,16 @@ export function AccountRow({
         <div className="flex items-center gap-1 leading-none mb-0.5">
           <span className="font-semibold text-[12px] text-foreground truncate">{platformName}</span>
           {username ? <span className="text-muted-foreground/70 text-[10px] truncate">@{username}</span> : <span className="text-muted-foreground/40 text-[10px] truncate italic">Username not publicly listed</span>}
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="shrink-0 text-[8px] px-1.5 py-0.5 rounded-full bg-muted/40 text-muted-foreground/60 font-medium leading-none cursor-help" onClick={e => e.stopPropagation()}>
+                  {matchType.label}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[240px] text-[10px] leading-snug">{matchType.tooltip}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           {claimStatus && (
             <span className={cn('w-1 h-1 rounded-full shrink-0', claimStatus === 'me' ? 'bg-green-500' : 'bg-red-500')} />
           )}
