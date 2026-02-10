@@ -111,7 +111,7 @@ export function ConfidenceBreakdown({
       label: 'Profile completeness',
       description: profileFields > 0 
         ? `Profile contains ${profileFields === 3 ? 'bio, location, and website link' : profileFields === 2 ? 'multiple identifying details' : 'some identifying information'}`
-        : 'Limited public information on this profile',
+        : 'Limited public metadata — the platform may restrict profile details',
       icon: FileText,
       score: bioScore,
       weight: 20,
