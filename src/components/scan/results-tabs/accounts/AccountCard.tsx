@@ -167,6 +167,32 @@ export function AccountCard({
           </div>
         )}
 
+        {/* AI Enrichment Buttons (Pro only) */}
+        {!isFree && (
+          <div className="flex gap-1.5 px-2.5 pb-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleQuickAnalysis}
+              disabled={isAnalyzing}
+              className="flex-1 gap-1 text-[9px] h-6 px-2"
+            >
+              <Zap className="h-3 w-3" />
+              {isAnalyzing ? 'Analyzing...' : 'Quick Analysis (2 credits)'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDeepEnrichment}
+              disabled={isEnriching}
+              className="flex-1 gap-1 text-[9px] h-6 px-2"
+            >
+              <Sparkles className="h-3 w-3" />
+              {isEnriching ? 'Enriching...' : 'Deep Enrichment (5 credits)'}
+            </Button>
+          </div>
+        )}
+
         {/* Action row */}
         <div className="flex items-center border-t border-border/15 divide-x divide-border/15">
           {profileUrl && (
