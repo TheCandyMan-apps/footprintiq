@@ -1,4 +1,5 @@
 import { SEO } from "@/components/SEO";
+import { GuideCitationBlock } from "@/components/guides/GuideCitationBlock";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import {
@@ -377,6 +378,8 @@ const GoodOsintScanResult = () => {
                 ))}
               </div>
             </section>
+
+            <GuideCitationBlock />
 
           </div>
         </div>
