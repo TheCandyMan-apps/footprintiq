@@ -13,6 +13,7 @@ import { exportResultsToJSON, exportResultsToCSV } from '@/utils/exporters';
 import { generateInvestigationReport } from '@/lib/investigationReportPDF';
 import { ScanProgress } from './ScanProgress';
 import { ResultsTabBar } from './ResultsTabBar';
+import { LowResultsNotice } from './LowResultsNotice';
 import { TabSkeleton } from './results-tabs/TabSkeleton';
 import { AccountsTabSkeleton } from './results-tabs/accounts/AccountsTabSkeleton';
 import { ConnectionsTabSkeleton } from './results-tabs/ConnectionsTabSkeleton';
@@ -404,12 +405,12 @@ export function ScanResults({ jobId }: ScanResultsProps) {
             </p>
           </div>
         ) : results.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-sm text-muted-foreground">
-              {['finished', 'completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'].includes(job.status)
-                ? 'No results captured—try again later or adjust tags.'
-                : 'Waiting for results...'}
-            </p>
+          <div className="py-12">
+            {['finished', 'completed', 'completed_partial', 'completed_empty', 'failed', 'failed_timeout'].includes(job.status)
+              ? <LowResultsNotice variant="zero" />
+              : (
+                <p className="text-sm text-muted-foreground text-center">Waiting for results...</p>
+              )}
           </div>
         ) : !isPremium ? (
           /* ===== FREE USER: Dedicated FreeResultsView (no tabs) ===== */

@@ -32,6 +32,7 @@ import { TimelineTabSkeleton } from './results-tabs/TimelineTabSkeleton';
 import { InvestigationProvider } from '@/contexts/InvestigationContext';
 import { Loader2, Shield } from 'lucide-react';
 import { parseISO, isValid } from 'date-fns';
+import { LowResultsNotice } from './LowResultsNotice';
 
 // Lazy load tab components for performance
 const SummaryTab = lazy(() => import('./results-tabs/SummaryTab'));
@@ -409,12 +410,10 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
             </p>
           </div>
         ) : results.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-sm text-muted-foreground">
-              {isTerminalStatus
-                ? 'No results captured—try again later or adjust tags.'
-                : 'Waiting for results...'}
-            </p>
+          <div className="py-12">
+            {isTerminalStatus
+              ? <LowResultsNotice variant="zero" />
+              : <p className="text-sm text-muted-foreground text-center">Waiting for results...</p>}
           </div>
         ) : (
           /* ===== FULL TABBED INTERFACE ===== */

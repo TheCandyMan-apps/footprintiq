@@ -70,6 +70,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useScanResultsData, ScanJob, ScanResult } from '@/hooks/useScanResultsData';
 import { useRealtimeResults } from '@/hooks/useRealtimeResults';
 import { ScanProgress } from './ScanProgress';
+import { LowResultsNotice } from './LowResultsNotice';
 import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User, MapPin, Users, ExternalLink, Clock } from 'lucide-react';
 import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsAggregator';
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
@@ -504,10 +505,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                   </Button>
                 </div>
               ) : (
-                // Generic message for other scan types
-                <p className="text-sm text-muted-foreground">
-                  No results captured—try again later or adjust your search.
-                </p>
+                <LowResultsNotice variant="zero" />
               )
             ) : (
               <div className="flex flex-col items-center gap-3">
