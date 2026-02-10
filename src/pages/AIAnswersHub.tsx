@@ -22,7 +22,7 @@ export default function AIAnswersHub() {
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
-      "@id": "https://footprintiq.io/ai-answers-hub"
+      "@id": "https://footprintiq.app/ai-answers-hub"
     }
   };
 
