@@ -20,6 +20,7 @@ import {
   extractUsername,
   extractBioText,
   getInitials,
+  generateRiskContext,
 } from '@/lib/results/extractors';
 
 type ClaimType = 'me' | 'not_me';
@@ -105,17 +106,14 @@ export function AccountCard({
         </TooltipProvider>
       </div>
 
-      {/* Bio */}
+      {/* Bio / risk context */}
       <div className="px-2.5 pb-1">
         {bio ? (
           <p className="text-[10px] text-muted-foreground/70 leading-snug line-clamp-2">{bio}</p>
-        ) : profileUrl ? (
-          <p className="text-[10px] text-muted-foreground/40 truncate leading-snug">
-            {(() => { try { return new URL(profileUrl).hostname.replace('www.', ''); } catch { return ''; } })()}
-          </p>
-        ) : (
-          <p className="text-[10px] text-muted-foreground/30 leading-snug italic">No public profile description found</p>
-        )}
+        ) : null}
+        <p className="text-[9px] text-muted-foreground/50 leading-snug line-clamp-2 italic mt-0.5">
+          {generateRiskContext(result, lensScore).split('. ')[0]}.
+        </p>
       </div>
 
       {/* LENS badge if verified */}

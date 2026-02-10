@@ -28,6 +28,7 @@ import {
   extractUsername,
   extractBio,
   getInitials,
+  generateRiskContext,
 } from '@/lib/results/extractors';
 
 type ClaimType = 'me' | 'not_me';
@@ -157,11 +158,10 @@ export function AccountRow({
         )}
         {bio ? (
           <p className="text-[10px] leading-snug truncate text-muted-foreground/70">{bio}</p>
-        ) : profileUrl ? (
-          <p className="text-[10px] leading-snug truncate text-muted-foreground/40">
-            {(() => { try { return new URL(profileUrl).hostname.replace('www.', ''); } catch { return ''; } })()}
-          </p>
         ) : null}
+        <p className="text-[9px] leading-snug truncate text-muted-foreground/50 italic">
+          {generateRiskContext(result, lensScore).split('. ')[0]}.
+        </p>
       </div>
 
       {/* RIGHT: Badges + Actions */}

@@ -33,6 +33,7 @@ import {
   extractUsername,
   extractFullBio,
   getInitials,
+  generateRiskContext,
 } from '@/lib/results/extractors';
 
 type ClaimType = 'me' | 'not_me';
@@ -135,6 +136,13 @@ export function AccountPreviewPanel({
           </SheetHeader>
 
           <div className="px-4 py-3 space-y-4">
+            {/* Risk context explanation */}
+            <div className="rounded-md bg-muted/30 border border-border/20 px-3 py-2">
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                {generateRiskContext(result, lensScore)}
+              </p>
+            </div>
+
             {/* LENS upsell for unclear accounts */}
             {isUnclearConfidence && isFree && (
               <LensUpgradePrompt variant="banner" context="unclear" />
