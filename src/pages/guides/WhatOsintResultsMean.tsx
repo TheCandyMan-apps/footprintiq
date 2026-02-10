@@ -34,6 +34,36 @@ const WhatOsintResultsMean = () => {
               "@type": "Organization",
               "name": "FootprintIQ"
             }
+          },
+          faq: {
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Are OSINT scan results always accurate?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. OSINT scan results are probabilistic correlations, not verified facts. Approximately 41% of automated username matches are false positives — coincidental collisions where someone else uses the same identifier. Results should always be evaluated with appropriate scepticism, cross-referenced where possible, and never treated as proof of identity or ownership."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Can OSINT scans show private accounts?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. OSINT scans only access publicly available information. They cannot see private accounts, encrypted messages, password-protected content, or anything behind authentication. If a platform's privacy settings hide a profile from public view, an OSINT scan will not detect it. The scan reflects what is already visible to anyone who knows where to look."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does an OSINT match mean the account belongs to me?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Not necessarily. An OSINT match means the identifier you searched — such as a username or email — was found on a platform. It does not confirm ownership. Common usernames appear on many platforms belonging to different people. Confidence scoring, metadata correlation, and manual verification are needed to determine whether a match is genuinely yours."
+                }
+              }
+            ]
           }
         }}
       />
