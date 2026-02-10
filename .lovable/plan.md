@@ -1,82 +1,128 @@
 
-# Side Panel Preview for Accounts Tab
+# Skeleton Loading States and Layout Stability for Accounts Tab
 
 ## Overview
 
-Replace inline expand/collapse with a right-side Sheet panel that opens when clicking a row (list) or card (grid). Rows and cards become compact, selection-only surfaces. The Sheet displays all detailed content currently in the collapsible/dialog areas.
+Add dedicated skeleton loading states to the Accounts tab that match the current list and grid view layouts. Also harden all image/icon containers with fixed dimensions and fallback placeholders to prevent Cumulative Layout Shift (CLS).
 
-## Architecture
+## Current State
 
-**New file**: `src/components/scan/results-tabs/accounts/AccountPreviewPanel.tsx`
-- A Sheet (from existing `@/components/ui/sheet`) sliding in from the right
-- Contains all content currently in `AccountRow`'s `CollapsibleContent` and `AccountCard`'s Details Dialog:
-  - Platform icon, name, username, profile image
-  - Confidence breakdown (full `ConfidenceBreakdown` component)
-  - LENS badge and "LENS Verify" button (with tier gating)
-  - Full bio, metadata grid (followers, following, location, joined, website)
-  - Profile URL link
-  - AI enrichment buttons (Quick Analysis / Deep Enrichment) for Pro users
-  - Claim toggle and Focus button
-  - ForensicModal launcher (if verified)
-- Props: the selected `ScanResult`, `jobId`, lens score, verification/claim state, callbacks, and `open`/`onOpenChange`
-- Built-in accessibility: Sheet already provides focus trap and ESC-to-close; will add `aria-label` for the panel
+- The `AccountsTab` component receives `results` as a prop -- by the time it mounts, results are already loaded (the parent `AdvancedResultsPage` shows a spinner until results arrive).
+- However, the Suspense boundary wrapping `AccountsTab` uses a generic `TabSkeleton` that does not match the accounts layout at all.
+- Inside the tab, there is no skeleton state for initial render or when filters are being applied.
+- Profile images (`<img>` tags in `AccountRow`, `AccountCard`, and `AccountPreviewPanel`) have no fixed dimensions on the `<img>` element itself, relying only on parent containers -- this can cause micro-shifts when images load or fail.
+- The `PlatformIcon` component (favicon) has fixed container sizes but lacks a placeholder while loading.
 
-**Modified: `AccountsTab.tsx`**
-- Replace `expandedRows` state with `selectedResultId: string | null`
-- Clicking a row/card sets `selectedResultId` (instead of toggling expand)
-- Render `AccountPreviewPanel` at the bottom of the component, driven by `selectedResultId`
-- Remove `toggleExpanded` and `expandedRows` from `VirtualizedAccountList` props
-- Virtualizer `estimateSize` can use a fixed height (no dynamic expand), improving performance
+## Changes
 
-**Modified: `AccountRow.tsx`**
-- Remove `Collapsible`/`CollapsibleContent` wrapper entirely
-- Remove `isExpanded`/`onToggleExpand` props
-- Replace with `onSelect` prop (clicking the row calls this)
-- Add `isSelected` prop for visual highlight (subtle background change)
-- Remove all expanded-panel content (confidence breakdown, bio, metadata grid, AI buttons)
-- Remove ForensicModal, QuickAnalysisDialog, EnrichmentDialog (moved to panel)
-- Keep the compact row: icon, platform, username, signal chips, bio snippet, confidence badge, LENS badge, open-link button
-- Secondary hover actions remain (Focus, Claim) but remove Expand chevron
+### 1. New Component: `AccountsTabSkeleton.tsx`
 
-**Modified: `AccountRowActions.tsx`**
-- Remove the "Expand" (ChevronRight) button and related props (`isExpanded`, `onToggleExpand`)
+**File**: `src/components/scan/results-tabs/accounts/AccountsTabSkeleton.tsx`
 
-**Modified: `AccountCard.tsx`**
-- Remove the Details `Dialog` entirely
-- Replace with `onSelect` prop; clicking the card calls it
-- Add `isSelected` prop for ring highlight
-- Remove the "Details" button from action row, replace with "Preview" or just make the whole card clickable
-- Remove QuickAnalysisDialog/EnrichmentDialog (moved to panel)
+A dedicated skeleton that mirrors the Accounts tab layout, supporting both `list` and `grid` variants.
 
-## Accessibility
+- **List variant**: Renders 8 skeleton rows matching `AccountRow` structure (left icon block + text lines + right badges), each at the fixed 44px row height.
+- **Grid variant**: Renders 6 skeleton cards matching `AccountCard` structure (icon header + text + action bar).
+- Includes a skeleton for the filter bar, focus toggle, search box, and summary bar at the top.
+- Uses the existing `Skeleton` component with shimmer animation for consistency.
 
-- The Sheet component already implements focus trap and ESC-to-close
-- Keyboard navigation: pressing Enter on a focused row/card opens the panel
-- `aria-label="Account preview panel"` on the Sheet
-- Panel close button is keyboard-accessible (Sheet provides this)
+### 2. Update: `AccountsTab.tsx`
 
-## Visual Behavior
+- Accept an optional `isLoading` prop (boolean, defaults to false).
+- When `isLoading` is true and `results.length === 0`, render `AccountsTabSkeleton` with the current `viewMode`.
+- This provides a smooth transition for the Suspense fallback and for any future streaming-results scenarios.
+- Replace the generic `TabSkeleton` in `AdvancedResultsPage.tsx` and `FreeResultsPage.tsx` Suspense boundaries with the new accounts-specific skeleton.
 
-- List view: clicking a row highlights it and opens the right sheet; clicking another row switches content; clicking the same row or pressing ESC closes it
-- Grid view: same behavior -- clicking a card opens the sheet
-- The sheet width: `sm:max-w-md` (roughly 28rem) to leave the list visible
+### 3. Layout Stability: Fixed Image Dimensions
 
-## What Moves Where
+**AccountRow.tsx** (profile thumbnail):
+- Add explicit `width` and `height` attributes to the `<img>` element (44px x 44px to match container).
+- Ensure the fallback initials div is always rendered (not hidden/shown via JS) using CSS `opacity` toggling instead of `display:none`, preventing reflow.
 
-| Content | Currently in | Moves to |
-|---------|-------------|----------|
-| ConfidenceBreakdown | AccountRow expanded, AccountCard dialog | AccountPreviewPanel |
-| Full bio | AccountRow expanded, AccountCard dialog | AccountPreviewPanel |
-| Metadata grid (followers, location, etc.) | AccountRow expanded, AccountCard dialog | AccountPreviewPanel |
-| AI enrichment buttons | AccountRow expanded, AccountCard inline | AccountPreviewPanel |
-| ForensicModal launcher | AccountRow | AccountPreviewPanel |
-| LENS upgrade prompt | AccountRow expanded | AccountPreviewPanel |
-| Profile URL link | AccountRow expanded, AccountCard dialog | AccountPreviewPanel |
+**AccountCard.tsx** (profile thumbnail):
+- Add explicit `width` and `height` to `<img>` (32px x 32px to match container).
+- Same opacity-based fallback strategy.
+
+**AccountPreviewPanel.tsx** (profile image in sheet header):
+- Add explicit `width` and `height` to `<img>` (48px x 48px).
+- Same opacity-based fallback strategy.
+
+**PlatformIcon.tsx** (favicon):
+- Add a subtle muted background placeholder that shows while the favicon loads.
+- Add explicit `width` and `height` attributes to the `<img>` element matching the size config.
+- The container already has fixed dimensions, so this is a minor reinforcement.
+
+### 4. Virtualization Stability
+
+- The virtualizer already uses a fixed `estimateSize` of 52px and `overscan` of 10 -- no changes needed there.
+- The skeleton will not interact with the virtualizer; it replaces the entire list container during loading.
+- This prevents the "flash" pattern where the virtualizer mounts with 0 items then repopulates.
+
+## Technical Details
+
+### AccountsTabSkeleton Structure (List Mode)
+
+```text
++------------------------------------------+
+| [_ toggle] [______ search ___] [sort][v] |  <- Filter bar skeleton
++------------------------------------------+
+| [_ total] [_ found] [_ high conf]       |  <- Summary bar skeleton
++------------------------------------------+
+| [icon] [====== text ======] [badge]      |  <- Row skeleton x 8
+| [icon] [====== text ======] [badge]      |
+| [icon] [====== text ======] [badge]      |
+| ...                                       |
++------------------------------------------+
+```
+
+### AccountsTabSkeleton Structure (Grid Mode)
+
+```text
++------------------------------------------+
+| [_ toggle] [______ search ___] [sort][v] |
++------------------------------------------+
+| +--------+  +--------+  +--------+       |
+| | [icon] |  | [icon] |  | [icon] |       |
+| | [text] |  | [text] |  | [text] |       |
+| | [acts] |  | [acts] |  | [acts] |       |
+| +--------+  +--------+  +--------+       |
+| +--------+  +--------+  +--------+       |
+| | ...    |  | ...    |  | ...    |       |
+| +--------+  +--------+  +--------+       |
++------------------------------------------+
+```
+
+### Image Fallback Strategy (Before vs After)
+
+**Before**: `onError` handler uses `style.display = 'none'` and shows/hides sibling, causing reflow.
+
+**After**: Both `<img>` and fallback `<div>` are always in the DOM. Use a `useState` (`imageLoaded` / `imageError`) to control opacity:
+- Image: `opacity-0` until loaded, then `opacity-100`
+- Fallback: `opacity-100` by default, `opacity-0` when image loads
+
+This eliminates all layout shift from image loading/failure.
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/components/scan/results-tabs/accounts/AccountsTabSkeleton.tsx` | List and grid skeleton matching AccountsTab layout |
+
+## Files to Modify
+
+| File | Change |
+|------|--------|
+| `AccountsTab.tsx` | Add `isLoading` prop, render skeleton when loading with no results |
+| `AccountRow.tsx` | Fixed img dimensions, opacity-based fallback instead of display toggle |
+| `AccountCard.tsx` | Fixed img dimensions, opacity-based fallback instead of display toggle |
+| `AccountPreviewPanel.tsx` | Fixed img dimensions, opacity-based fallback instead of display toggle |
+| `PlatformIcon.tsx` | Add explicit width/height to `<img>`, loading placeholder background |
+| `AdvancedResultsPage.tsx` | Replace `TabSkeleton` with `AccountsTabSkeleton` in accounts Suspense |
 
 ## No Changes To
 
-- Filtering, sorting, search, focus mode, view mode toggle
-- Free/Pro tier gating logic
-- Summary bar and empty states
-- AccountFilters component
-- FocusedEntityCard component
+- Skeleton base component (`skeleton.tsx`) -- already has shimmer animation
+- Virtualization config -- already stable with fixed height + overscan
+- Filter/sort logic
+- Free tier gating
+- Sheet/panel behavior
