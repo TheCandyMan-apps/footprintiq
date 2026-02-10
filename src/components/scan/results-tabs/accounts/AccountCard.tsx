@@ -57,6 +57,7 @@ export function AccountCard({
   onFocus,
 }: AccountCardProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const { isFree } = useTierGating();
   const meta = useMemo(() => (result.meta || result.metadata || {}) as Record<string, any>, [result]);
   const platformName = useMemo(() => extractPlatformName(result), [result]);
   const profileUrl = useMemo(() => extractUrl(result), [result]);
@@ -66,7 +67,18 @@ export function AccountCard({
   const confidence = getMatchConfidence(lensScore);
   const ConfidenceIcon = confidence.icon;
 
-  return (
+  const {
+    isAnalyzing,
+    analysisOpen,
+    setAnalysisOpen,
+    analysisData,
+    handleQuickAnalysis,
+    isEnriching,
+    enrichmentOpen,
+    setEnrichmentOpen,
+    enrichmentData,
+    handleDeepEnrichment,
+  } = useAIEnrichment(result.id);
     <>
       <div
         className={cn(
