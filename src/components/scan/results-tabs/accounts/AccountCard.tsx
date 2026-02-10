@@ -38,9 +38,9 @@ interface AccountCardProps {
 }
 
 const getMatchConfidence = (score: number) => {
-  if (score >= 80) return { label: 'High Confidence', shortLabel: 'High', ...RESULTS_SEMANTIC_COLORS.confidenceHigh, icon: CheckCircle };
-  if (score >= 60) return { label: 'Moderate', shortLabel: 'Med', ...RESULTS_SEMANTIC_COLORS.confidenceMedium, icon: HelpCircle };
-  return { label: 'Needs Review', shortLabel: 'Low', ...RESULTS_SEMANTIC_COLORS.confidenceLow, icon: AlertCircle };
+  if (score >= 80) return { label: 'High Confidence', shortLabel: 'High', tooltip: 'Strong match — username, profile data, and platform all align.', ...RESULTS_SEMANTIC_COLORS.confidenceHigh, icon: CheckCircle };
+  if (score >= 60) return { label: 'Moderate', shortLabel: 'Med', tooltip: 'Partial match — some signals align but others could not be confirmed.', ...RESULTS_SEMANTIC_COLORS.confidenceMedium, icon: HelpCircle };
+  return { label: 'Needs Review', shortLabel: 'Low', tooltip: 'Weak match — limited public data available. Manual review recommended.', ...RESULTS_SEMANTIC_COLORS.confidenceLow, icon: AlertCircle };
 };
 
 export function AccountCard({
