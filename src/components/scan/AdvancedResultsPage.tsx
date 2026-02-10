@@ -491,7 +491,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
           </InvestigationProvider>
         )}
       </CardContent>
-      <div className="px-6 pb-4">
+      <div className="px-6 pb-4 space-y-2">
         <p className="text-[10px] text-muted-foreground/50 text-center leading-relaxed">
           All results are based on publicly accessible information. Nothing here implies wrongdoing or malicious intent. 
           Use this data responsibly for self-assessment, authorised research, or risk awareness.
@@ -499,6 +499,9 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
           <a href="/guides/interpret-osint-results" className="underline underline-offset-2 hover:text-muted-foreground/70 transition-colors">
             How to interpret these results
           </a>
+        </p>
+        <p className="text-[10px] text-muted-foreground/40 text-center leading-relaxed">
+          FootprintIQ is an ethical OSINT platform designed to help individuals understand their public digital footprint. It analyses publicly available information to identify potential account exposure and correlation risks, while emphasising accuracy, transparency, and responsible interpretation.
         </p>
       </div>
     </Card>
