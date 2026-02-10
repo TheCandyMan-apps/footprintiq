@@ -75,7 +75,7 @@ export function useAdminUsers() {
       expiresAt 
     }: { 
       userId: string; 
-      tier: 'free' | 'premium' | 'family' | 'basic' | 'enterprise'; 
+      tier: 'free' | 'pro' | 'enterprise'; 
       expiresAt?: string;
     }) => {
       const { error } = await supabase

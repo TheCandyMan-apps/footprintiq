@@ -232,13 +232,13 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleUpdateTier = async (userId: string, newTier: 'free' | 'premium' | 'family') => {
+  const handleUpdateTier = async (userId: string, newTier: 'free' | 'pro' | 'enterprise') => {
     try {
       const { error } = await supabase
         .from('user_roles')
         .update({
           subscription_tier: newTier,
-          subscription_expires_at: newTier === 'premium' ? null : undefined,
+          subscription_expires_at: newTier === 'pro' ? null : undefined,
         })
         .eq('user_id', userId);
 
@@ -252,7 +252,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleUpdateRole = async (userId: string, newRole: 'admin' | 'premium' | 'free') => {
+  const handleUpdateRole = async (userId: string, newRole: 'admin' | 'user' | 'free') => {
     try {
       const { error } = await supabase
         .from('user_roles')
@@ -462,14 +462,14 @@ export default function AdminDashboard() {
                                     <Label className="text-xs text-muted-foreground mb-1">Role</Label>
                                     <Select
                                       defaultValue={user.role}
-                                      onValueChange={(value: 'admin' | 'premium' | 'free') => handleUpdateRole(user.id, value)}
+                                      onValueChange={(value: 'admin' | 'user' | 'free') => handleUpdateRole(user.id, value)}
                                     >
                                       <SelectTrigger className="h-8 text-xs">
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="admin">Admin</SelectItem>
-                                        <SelectItem value="premium">Premium</SelectItem>
+                                        <SelectItem value="user">User</SelectItem>
                                         <SelectItem value="free">Free</SelectItem>
                                       </SelectContent>
                                     </Select>
@@ -479,15 +479,15 @@ export default function AdminDashboard() {
                                     <Label className="text-xs text-muted-foreground mb-1">Tier</Label>
                                     <Select
                                       defaultValue={user.subscription_tier}
-                                      onValueChange={(value: 'free' | 'premium' | 'family') => handleUpdateTier(user.id, value)}
+                                      onValueChange={(value: 'free' | 'pro' | 'enterprise') => handleUpdateTier(user.id, value)}
                                     >
                                       <SelectTrigger className="h-8 text-xs">
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="free">Free</SelectItem>
-                                        <SelectItem value="premium">Premium</SelectItem>
-                                        <SelectItem value="family">Family</SelectItem>
+                                        <SelectItem value="pro">Pro</SelectItem>
+                                        <SelectItem value="enterprise">Enterprise</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>

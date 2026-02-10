@@ -10298,7 +10298,7 @@ export type Database = {
         | "phone"
         | "domain"
         | "email"
-      subscription_tier: "free" | "premium" | "family" | "basic" | "enterprise"
+      subscription_tier: "free" | "pro" | "family" | "basic" | "enterprise"
       workspace_role: "viewer" | "analyst" | "admin"
     }
     CompositeTypes: {
@@ -10449,7 +10449,7 @@ export const Constants = {
         "domain",
         "email",
       ],
-      subscription_tier: ["free", "premium", "family", "basic", "enterprise"],
+      subscription_tier: ["free", "pro", "family", "basic", "enterprise"],
       workspace_role: ["viewer", "analyst", "admin"],
     },
   },

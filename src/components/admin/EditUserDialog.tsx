@@ -217,10 +217,8 @@ export function EditUserDialog({ user, open, onClose }: EditUserDialogProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="free">Free</SelectItem>
-                      <SelectItem value="basic">Basic</SelectItem>
-                      <SelectItem value="premium">Premium</SelectItem>
+                      <SelectItem value="pro">Pro</SelectItem>
                       <SelectItem value="enterprise">Enterprise</SelectItem>
-                      <SelectItem value="family">Family</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
