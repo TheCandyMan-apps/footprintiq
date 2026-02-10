@@ -18,7 +18,7 @@ export default function StayPrivateOnline() {
     "publisher": {
       "@type": "Organization",
       "name": "FootprintIQ",
-      "url": "https://footprintiq.io"
+      "url": "https://footprintiq.app"
     },
     "mainEntityOfPage": {
       "@type": "WebPage",
