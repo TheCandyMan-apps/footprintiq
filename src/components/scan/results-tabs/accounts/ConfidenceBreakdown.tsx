@@ -155,12 +155,12 @@ export function ConfidenceBreakdown({
   // Get overall confidence explanation
   const confidenceExplanation = useMemo(() => {
     if (score >= 80) {
-      return 'High confidence — multiple data points strongly suggest this account belongs to the same individual';
+      return 'High confidence — multiple data points align, suggesting this account corresponds to the search query. Confidence reflects signal strength, not certainty of identity.';
     }
     if (score >= 60) {
-      return 'Moderate confidence — some indicators align, but additional verification recommended';
+      return 'Moderate confidence — some indicators align, but others could not be confirmed from public data alone. This is common and does not indicate an error.';
     }
-    return 'Low confidence — insufficient evidence to confirm identity; manual review suggested';
+    return 'Low confidence — limited evidence was available to assess this match. Low confidence does not mean the result is unimportant — it means the available signals are insufficient to evaluate strength.';
   }, [score]);
 
   return (
@@ -209,11 +209,11 @@ export function ConfidenceBreakdown({
         })}
       </div>
       
-      {/* Weight explanation */}
-      <p className="text-[9px] text-muted-foreground/60 pt-1 border-t border-border/20">
-        Each signal contributes to the overall score based on its weight (shown as %).
-        Confidence is derived from publicly available data and does not represent a definitive identity match.
-      </p>
+      {/* Explainer */}
+      <div className="text-[9px] text-muted-foreground/60 pt-1 border-t border-border/20 space-y-1">
+        <p>Each signal contributes to the overall score based on its weight (shown as %).</p>
+        <p>Confidence reflects signal strength, not certainty of identity. A high score does not prove ownership, and a low score does not mean the result is irrelevant. The absence of results does not indicate safety.</p>
+      </div>
     </div>
   );
 }
@@ -288,8 +288,9 @@ export function ConfidenceTooltipContent({
           </div>
         ))}
       </div>
-      <div className="text-[9px] text-muted-foreground pt-1 border-t border-border/30">
-        Click to see detailed signal breakdown · <a href="/guides/interpret-osint-results" className="underline underline-offset-2 hover:text-foreground/70">What confidence levels mean</a>
+      <div className="text-[9px] text-muted-foreground pt-1 border-t border-border/30 space-y-1">
+        <p>Confidence ≠ importance. It reflects signal strength, not certainty. Absence of results does not mean safety.</p>
+        <p>Click to see detailed signal breakdown · <a href="/guides/interpret-osint-results" className="underline underline-offset-2 hover:text-foreground/70">What confidence levels mean</a></p>
       </div>
     </div>
   );
