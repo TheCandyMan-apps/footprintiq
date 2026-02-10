@@ -284,6 +284,12 @@ export default function AIAnswersHub() {
                     icon: AlertTriangle,
                   },
                   {
+                    title: "When Not to Use OSINT",
+                    description: "Scenarios where OSINT tools are inappropriate — covering consent, proportionality, legal risk, and safer alternatives.",
+                    link: "/ai-answers/when-not-to-use-osint",
+                    icon: Shield,
+                  },
+                  {
                     title: "How to Interpret OSINT Scan Results Responsibly",
                     description: "A guide to evaluating confidence levels, recognising false positives, understanding missing data, and applying ethical judgement to scan findings.",
                     link: "/guides/interpret-osint-results",
