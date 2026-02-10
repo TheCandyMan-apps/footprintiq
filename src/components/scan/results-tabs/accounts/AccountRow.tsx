@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
-import { CheckCircle, HelpCircle, AlertCircle, Clock, Users, MapPin, Info, Globe, Zap, Sparkles } from 'lucide-react';
+import { CheckCircle, HelpCircle, AlertCircle, Clock, Users, MapPin, Info, Globe, Zap, Sparkles, ExternalLink } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
