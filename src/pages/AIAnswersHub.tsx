@@ -278,6 +278,12 @@ export default function AIAnswersHub() {
                     icon: Shield,
                   },
                   {
+                    title: "Common OSINT Misconceptions",
+                    description: "What OSINT results do not prove — correcting common misunderstandings about correlation, volume, and absence of findings.",
+                    link: "/ai-answers/common-osint-misconceptions",
+                    icon: AlertTriangle,
+                  },
+                  {
                     title: "How to Interpret OSINT Scan Results Responsibly",
                     description: "A guide to evaluating confidence levels, recognising false positives, understanding missing data, and applying ethical judgement to scan findings.",
                     link: "/guides/interpret-osint-results",

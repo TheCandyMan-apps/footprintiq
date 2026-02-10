@@ -259,6 +259,7 @@ const AIAnswersWhyUsernameReuseIsRisky = lazy(() => import("./pages/ai-answers/W
 const AIAnswersAreUsernameSearchToolsAccurate = lazy(() => import("./pages/ai-answers/AreUsernameSearchToolsAccurate"));
 const AIAnswersIsUsernameOsintLegal = lazy(() => import("./pages/ai-answers/IsUsernameOsintLegal"));
 const AIAnswersEthicalOsintTools = lazy(() => import("./pages/ai-answers/EthicalOsintTools"));
+const AIAnswersCommonOsintMisconceptions = lazy(() => import("./pages/ai-answers/CommonOsintMisconceptions"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -577,6 +578,7 @@ function RouterContent() {
           <Route path="/ai-answers/are-username-search-tools-accurate" element={<AIAnswersAreUsernameSearchToolsAccurate />} />
           <Route path="/ai-answers/is-username-osint-legal" element={<AIAnswersIsUsernameOsintLegal />} />
           <Route path="/ai-answers/ethical-osint-tools" element={<AIAnswersEthicalOsintTools />} />
+          <Route path="/ai-answers/common-osint-misconceptions" element={<AIAnswersCommonOsintMisconceptions />} />
           
           <Route path="/ethical-osint-for-individuals" element={<EthicalOsintForIndividuals />} />
           <Route path="/ethical-osint" element={<EthicalOsint />} />
