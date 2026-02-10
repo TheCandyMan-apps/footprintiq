@@ -20,6 +20,7 @@ import { AccountRow } from './accounts/AccountRow';
 import { AccountCard } from './accounts/AccountCard';
 import { ProviderHealthPanel } from './ProviderHealthPanel';
 import { cn } from '@/lib/utils';
+import { extractPlatformName, deriveResultStatus } from '@/lib/results/extractors';
 
 interface AccountsTabProps {
   results: ScanResult[];
