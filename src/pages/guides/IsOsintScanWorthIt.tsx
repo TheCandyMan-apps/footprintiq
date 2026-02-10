@@ -42,7 +42,7 @@ const IsOsintScanWorthIt = () => {
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
               <Link to="/" className="hover:text-primary transition-colors">Home</Link>
               <span>/</span>
-              <Link to="/guides/interpret-osint-results" className="hover:text-primary transition-colors">Guides</Link>
+              <Link to="/guides" className="hover:text-primary transition-colors">Guides</Link>
               <span>/</span>
               <span className="text-foreground">Is an OSINT Scan Worth It?</span>
             </div>
