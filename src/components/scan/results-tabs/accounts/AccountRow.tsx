@@ -159,9 +159,29 @@ export function AccountRow({
         {bio ? (
           <p className="text-[10px] leading-snug truncate text-muted-foreground/70">{bio}</p>
         ) : null}
-        <p className="text-[9px] leading-snug truncate text-muted-foreground/50 italic">
-          {generateRiskContext(result, lensScore).split('. ')[0]}.
-        </p>
+        <div className="flex items-center gap-1">
+          <p className="text-[9px] leading-snug truncate text-muted-foreground/50 italic">
+            {generateRiskContext(result, lensScore).split('. ')[0]}.
+          </p>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors"
+                  onClick={e => e.stopPropagation()}
+                  aria-label="Why am I seeing this?"
+                >
+                  <Info className="w-3 h-3" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[260px] text-[10px] leading-snug">
+                <p className="font-medium mb-1">Why am I seeing this?</p>
+                <p>{generateRiskContext(result, lensScore)}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
       {/* RIGHT: Badges + Actions */}

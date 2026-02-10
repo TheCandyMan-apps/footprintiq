@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ProfileThumbnail } from './ProfileThumbnail';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair } from 'lucide-react';
+import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair, Info } from 'lucide-react';
 import { ScanResult } from '@/hooks/useScanResultsData';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { cn } from '@/lib/utils';
@@ -111,9 +111,29 @@ export function AccountCard({
         {bio ? (
           <p className="text-[10px] text-muted-foreground/70 leading-snug line-clamp-2">{bio}</p>
         ) : null}
-        <p className="text-[9px] text-muted-foreground/50 leading-snug line-clamp-2 italic mt-0.5">
-          {generateRiskContext(result, lensScore).split('. ')[0]}.
-        </p>
+        <div className="flex items-center gap-1">
+          <p className="text-[9px] text-muted-foreground/50 leading-snug line-clamp-2 italic mt-0.5 flex-1">
+            {generateRiskContext(result, lensScore).split('. ')[0]}.
+          </p>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="shrink-0 text-muted-foreground/40 hover:text-muted-foreground/70 transition-colors mt-0.5"
+                  onClick={e => e.stopPropagation()}
+                  aria-label="Why am I seeing this?"
+                >
+                  <Info className="w-3 h-3" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[260px] text-[10px] leading-snug">
+                <p className="font-medium mb-1">Why am I seeing this?</p>
+                <p>{generateRiskContext(result, lensScore)}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
       {/* LENS badge if verified */}
