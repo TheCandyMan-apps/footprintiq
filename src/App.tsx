@@ -235,6 +235,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const UsernameReuseReport2026 = lazy(() => import("./pages/research/UsernameReuseReport2026"));
 const FactSheet = lazy(() => import("./pages/research/FactSheet"));
 const HowUsernameSearchToolsWork = lazy(() => import("./pages/guides/HowUsernameSearchToolsWork"));
+const InterpretOsintResults = lazy(() => import("./pages/guides/InterpretOsintResults"));
 const EthicalOsint = lazy(() => import("./pages/EthicalOsint"));
 const Press = lazy(() => import("./pages/Press"));
 const CryptoLandingPage = lazy(() => import("./pages/for/Crypto"));
@@ -524,6 +525,7 @@ function RouterContent() {
           <Route path="/research/username-reuse-report-2026" element={<UsernameReuseReport2026 />} />
           <Route path="/research/fact-sheet" element={<FactSheet />} />
           <Route path="/guides/how-username-search-tools-work" element={<HowUsernameSearchToolsWork />} />
+            <Route path="/guides/interpret-osint-results" element={<InterpretOsintResults />} />
           
           {/* SEO Pillar Pages */}
           <Route path="/digital-footprint-scanner" element={<DigitalFootprintScanner />} />
