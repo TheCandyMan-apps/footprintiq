@@ -236,5 +236,53 @@ export function BillingSyncPanel() {
         )}
       </CardContent>
     </Card>
+
+    {/* Cancel Subscription Section */}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Ban className="h-5 w-5" />
+          Cancel Subscription
+        </CardTitle>
+        <CardDescription>
+          Cancel a user's Stripe subscription by email. This cancels in Stripe directly — the webhook will sync the database automatically. Access continues until the end of the billing period.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex gap-2">
+          <Input
+            placeholder="User email address"
+            value={cancelEmail}
+            onChange={(e) => setCancelEmail(e.target.value)}
+            className="max-w-xs"
+          />
+          <Input
+            placeholder="Reason (optional)"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            className="max-w-xs"
+          />
+          <Button
+            onClick={handleCancelSubscription}
+            disabled={cancelling || !cancelEmail}
+            variant="destructive"
+            size="default"
+          >
+            {cancelling ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Ban className="h-4 w-4 mr-2" />
+            )}
+            Cancel Sub
+          </Button>
+        </div>
+        {cancelResult && (
+          <div className={`text-sm p-2 rounded-md ${cancelResult.success ? 'bg-muted text-foreground' : 'bg-destructive/10 text-destructive'}`}>
+            {cancelResult.message}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+    </>
   );
 }
