@@ -27,24 +27,28 @@ const STATUS_CONFIG = {
   verified: {
     label: 'Identity Confirmed',
     shortLabel: 'Confirmed',
+    tooltip: 'LENS verified this profile with high confidence across multiple signals.',
     icon: CheckCircle,
     className: 'bg-green-500/15 text-green-600 border-green-500/30 dark:text-green-400',
   },
   likely: {
     label: 'Probable Match',
     shortLabel: 'Probable',
+    tooltip: 'LENS found supporting evidence, but some signals were inconclusive.',
     icon: HelpCircle,
     className: 'bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400',
   },
   unclear: {
     label: 'Insufficient Evidence',
     shortLabel: 'Unconfirmed',
+    tooltip: 'LENS could not confirm this profile — insufficient publicly available evidence.',
     icon: AlertTriangle,
     className: 'bg-muted text-muted-foreground border-border',
   },
   pending: {
     label: 'Analysing',
     shortLabel: 'Analysing',
+    tooltip: 'LENS is currently verifying this profile…',
     icon: Loader2,
     className: 'bg-primary/10 text-primary border-primary/30',
   },
