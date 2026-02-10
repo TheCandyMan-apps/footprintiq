@@ -141,7 +141,7 @@ export function AccountRow({
       {/* Main Row - Compact investigation style */}
       <div 
         className={cn(
-          'flex items-center gap-2 px-2 py-1.5 min-h-[52px] border-l-2 transition-all duration-75 cursor-pointer group',
+          'flex items-center gap-2 px-2 py-1 min-h-[44px] border-l-2 transition-all duration-75 cursor-pointer group',
           'border-b border-border/15 last:border-b-0',
           !isFocused && !isExpanded && 'border-l-transparent hover:border-l-primary/20 hover:bg-muted/8',
           isExpanded && !isFocused && 'bg-muted/6 border-l-muted-foreground/15',
