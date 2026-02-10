@@ -95,22 +95,27 @@ Deno.serve(wrapHandler(async (req) => {
       user_id: payload.user_id
     }));
 
-    // Sanitize UUIDs before database insert - treat zero UUID as reserved
-    const zeroUUID = '00000000-0000-0000-0000-000000000000';
-    const safeUserId = payload.user_id && isUUID(payload.user_id) && payload.user_id !== zeroUUID 
-      ? payload.user_id 
-      : null;
-    const safeWorkspaceId = payload.workspace_id && isUUID(payload.workspace_id) 
-      ? payload.workspace_id 
-      : null;
-    
-    if (payload.user_id === zeroUUID) {
-      console.warn('[scan-results] Reserved zero UUID detected; storing user_id as null');
-    } else if (payload.user_id && !safeUserId) {
-      console.warn('[scan-results] Invalid user_id format in payload; storing as null');
+    // Look up user_id and workspace_id from the scan record (trusted source)
+    // instead of accepting them from the external webhook payload
+    let safeUserId: string | null = null;
+    let safeWorkspaceId: string | null = null;
+
+    const { data: scanRecord } = await supabase
+      .from('scans')
+      .select('user_id, workspace_id')
+      .eq('id', payload.job_id)
+      .maybeSingle();
+
+    if (scanRecord) {
+      safeUserId = scanRecord.user_id || null;
+      safeWorkspaceId = scanRecord.workspace_id || null;
+      console.log(`[${functionName}] Resolved user_id=${safeUserId}, workspace_id=${safeWorkspaceId} from scan record`);
+    } else {
+      console.warn(`[${functionName}] No scan record found for job_id=${payload.job_id}; user attribution unavailable`);
     }
-    if (payload.workspace_id && !safeWorkspaceId) {
-      console.warn('[scan-results] Invalid workspace_id format in payload; storing as null');
+
+    if (payload.user_id && payload.user_id !== (safeUserId || '')) {
+      console.warn(`[${functionName}] Payload user_id mismatch ignored (payload=${payload.user_id}, scan=${safeUserId})`);
     }
 
     // Store in legacy maigret_results table
