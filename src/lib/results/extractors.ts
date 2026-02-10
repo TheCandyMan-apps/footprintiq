@@ -95,7 +95,7 @@ export function extractUsername(result: ScanResult): string | null {
     } catch {}
   }
 
-  return null;
+  return null; // Caller should show "Username not publicly listed" when null
 }
 
 // ── Bio ──────────────────────────────────────────────────────────
