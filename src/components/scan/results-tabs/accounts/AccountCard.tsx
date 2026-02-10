@@ -15,6 +15,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ConfidenceBreakdown } from './ConfidenceBreakdown';
+import { useAIEnrichment } from '@/hooks/useAIEnrichment';
+import { QuickAnalysisDialog } from '@/components/scan/QuickAnalysisDialog';
+import { EnrichmentDialog } from '@/components/scan/EnrichmentDialog';
+import { useTierGating } from '@/hooks/useTierGating';
 import {
   extractPlatformName,
   extractUrl,
