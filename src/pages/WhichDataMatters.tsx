@@ -100,7 +100,7 @@ const WhichDataMatters = () => {
           name="description" 
           content="Learn which types of personal data carry real risk and which are low-impact noise. A calm, practical guide to prioritising your digital privacy efforts." 
         />
-        <link rel="canonical" href="https://footprintiq.io/which-data-matters" />
+        <link rel="canonical" href="https://footprintiq.app/which-data-matters" />
         <script type="application/ld+json">
           {JSON.stringify(articleSchema)}
         </script>

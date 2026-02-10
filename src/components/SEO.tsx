@@ -153,12 +153,6 @@ export const SEO = ({
       "availability": "https://schema.org/InStock",
       "description": "Free tier with premium plans available"
     },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.8",
-      "ratingCount": "127",
-      "bestRating": "5"
-    },
     "creator": {
       "@type": "Organization",
       "name": "FootprintIQ",

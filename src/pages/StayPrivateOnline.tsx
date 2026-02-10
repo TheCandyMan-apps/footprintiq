@@ -114,7 +114,7 @@ export default function StayPrivateOnline() {
           name="description" 
           content="A realistic guide to understanding online privacy today. Learn what privacy means, what you can control, and how to think about it without fear or false expectations." 
         />
-        <link rel="canonical" href="https://footprintiq.io/stay-private-online" />
+        <link rel="canonical" href="https://footprintiq.app/stay-private-online" />
       </Helmet>
       <JsonLd data={articleSchema} />
       <JsonLd data={faqSchema} />

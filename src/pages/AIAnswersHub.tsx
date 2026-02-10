@@ -147,7 +147,7 @@ export default function AIAnswersHub() {
           name="description" 
           content="A central reference hub providing clear, factual answers to common questions about digital footprints, online exposure, identity risk, and privacy." 
         />
-        <link rel="canonical" href="https://footprintiq.io/ai-answers-hub" />
+        <link rel="canonical" href="https://footprintiq.app/ai-answers-hub" />
       </Helmet>
       <JsonLd data={articleSchema} />
       <JsonLd data={faqSchema} />
