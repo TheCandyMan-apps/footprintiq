@@ -105,13 +105,22 @@ export function AccountCard({
           {username ? <p className="text-[10px] text-muted-foreground/70 truncate leading-tight">@{username}</p> : <p className="text-[10px] text-muted-foreground/40 truncate leading-tight italic">Username not publicly listed</p>}
         </div>
 
-        <Badge
-          variant="outline"
-          className={cn('h-5 px-1.5 gap-0.5 text-[9px] font-medium shrink-0', confidence.bg, confidence.text, confidence.border)}
-        >
-          <ConfidenceIcon className="w-2.5 h-2.5" />
-          {confidence.shortLabel}
-        </Badge>
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                variant="outline"
+                className={cn('h-5 px-1.5 gap-0.5 text-[9px] font-medium shrink-0 cursor-help', confidence.bg, confidence.text, confidence.border)}
+              >
+                <ConfidenceIcon className="w-2.5 h-2.5" />
+                {confidence.shortLabel}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[220px] text-[10px] leading-snug">
+              {confidence.tooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
       {/* Bio */}
