@@ -21,7 +21,7 @@ export function useAdminAnalytics() {
 
       const adminCount = roles?.filter(r => r.role === 'admin').length || 0;
       const freeUsers = roles?.filter(r => r.subscription_tier === 'free').length || 0;
-      const premiumUsers = roles?.filter(r => r.subscription_tier === 'premium').length || 0;
+      const premiumUsers = roles?.filter(r => r.subscription_tier === 'pro').length || 0;
 
       // Get recent signups (last 30 days)
       const thirtyDaysAgo = new Date();

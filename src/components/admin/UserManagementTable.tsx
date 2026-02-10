@@ -469,10 +469,8 @@ export function UserManagementTable() {
               <SelectContent>
                 <SelectItem value="all">All Subscriptions</SelectItem>
                 <SelectItem value="free">Free</SelectItem>
-                <SelectItem value="premium">Premium</SelectItem>
+                <SelectItem value="pro">Pro</SelectItem>
                 <SelectItem value="enterprise">Enterprise</SelectItem>
-                <SelectItem value="basic">Basic</SelectItem>
-                <SelectItem value="family">Family</SelectItem>
               </SelectContent>
             </Select>
             <Select value={flagFilter} onValueChange={setFlagFilter}>
