@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useSubscription } from '@/hooks/useSubscription';
 import { TabSkeleton } from './results-tabs/TabSkeleton';
+import { AccountsTabSkeleton } from './results-tabs/accounts/AccountsTabSkeleton';
 
 // Lazy load both page components to ensure unused code is not bundled
 const FreeResultsPage = lazy(() => import('./FreeResultsPage'));
@@ -88,7 +89,7 @@ export function ScanResultsRouter({ jobId }: ScanResultsRouterProps) {
   // Hard routing based on tier
   // CRITICAL: Only ONE component is ever mounted - they are never both loaded
   return (
-    <Suspense fallback={<TabSkeleton />}>
+    <Suspense fallback={<AccountsTabSkeleton />}>
       {userTier === 'free' ? (
         <FreeResultsPage jobId={jobId} />
       ) : (

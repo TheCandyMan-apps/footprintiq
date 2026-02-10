@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { ProfileThumbnail } from './ProfileThumbnail';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -114,26 +115,7 @@ export function AccountPreviewPanel({
           {/* Header */}
           <SheetHeader className="px-4 pt-4 pb-3 border-b border-border/20">
             <div className="flex items-center gap-3">
-              <div className="relative shrink-0">
-                <PlatformIconBadge platform={platformName} url={profileUrl} size="lg" position="top-left" />
-                <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted/20 border border-border/30 ml-1 mt-1">
-                  {profileImage ? (
-                    <img
-                      src={profileImage}
-                      alt={`${platformName} profile`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        const fb = e.currentTarget.nextElementSibling as HTMLElement;
-                        if (fb) fb.style.display = 'flex';
-                      }}
-                    />
-                  ) : null}
-                  <div className={cn('absolute inset-0 flex items-center justify-center bg-primary/4', profileImage ? 'hidden' : 'flex')}>
-                    <span className="text-sm font-semibold text-primary/40">{getInitials(username || platformName)}</span>
-                  </div>
-                </div>
-              </div>
+              <ProfileThumbnail profileImage={profileImage} platformName={platformName} profileUrl={profileUrl} username={username} size="panel" />
               <div className="min-w-0 flex-1">
                 <SheetTitle className="text-sm font-semibold truncate">{platformName}</SheetTitle>
                 {username ? <p className="text-xs text-muted-foreground truncate">@{username}</p> : <p className="text-xs text-muted-foreground/50 truncate italic">Username not publicly listed</p>}

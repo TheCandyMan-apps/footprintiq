@@ -1,4 +1,5 @@
-import { Fragment, useMemo } from 'react';
+import { Fragment, useMemo, useState } from 'react';
+import { ProfileThumbnail } from './ProfileThumbnail';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, HelpCircle, AlertCircle, Info, ExternalLink } from 'lucide-react';
@@ -127,26 +128,7 @@ export function AccountRow({
       aria-pressed={isSelected}
     >
       {/* LEFT: Platform Icon + Profile Thumbnail */}
-      <div className="relative shrink-0 w-12">
-        <PlatformIconBadge platform={platformName} url={profileUrl} size="lg" position="top-left" />
-        <div className="w-11 h-11 rounded overflow-hidden bg-muted/20 border border-border/30 relative ml-1 mt-1">
-          {profileImage ? (
-            <img 
-              src={profileImage} 
-              alt={`${platformName} profile photo`}
-              className="w-full h-full object-cover"
-              onError={(e) => { 
-                e.currentTarget.style.display = 'none';
-                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                if (fallback) fallback.style.display = 'flex';
-              }}
-            />
-          ) : null}
-          <div className={cn('absolute inset-0 flex items-center justify-center bg-primary/4', profileImage ? 'hidden' : 'flex')}>
-            <span className="text-[12px] font-semibold text-primary/40">{getInitials(username || platformName)}</span>
-          </div>
-        </div>
-      </div>
+      <ProfileThumbnail profileImage={profileImage} platformName={platformName} profileUrl={profileUrl} username={username} size="row" />
 
       {/* CENTER: Platform + Username + Bio */}
       <div className="flex-1 min-w-0">
