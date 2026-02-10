@@ -37,7 +37,7 @@ export function extractPlatformName(result: ScanResult): string {
 
   if (meta.provider) return meta.provider;
 
-  return 'Unknown';
+  return 'Unidentified site';
 }
 
 // ── URL ──────────────────────────────────────────────────────────
