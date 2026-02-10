@@ -431,6 +431,11 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
                 actionsDisabled={results.length === 0}
               />
 
+              <p className="mt-3 text-[11px] text-muted-foreground/60">
+                Results show public correlations, not verified identities.{' '}
+                <a href="/guides/interpret-osint-results" className="underline underline-offset-2 hover:text-primary transition-colors">Learn how to interpret results</a>
+              </p>
+
               <div className="mt-6">
                 <TabsContent value="summary" className="mt-0">
                   <Suspense fallback={<TabSkeleton />}>
