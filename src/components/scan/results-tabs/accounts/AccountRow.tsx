@@ -52,21 +52,21 @@ const getMatchConfidence = (score: number) => {
   if (score >= 80) return { 
     label: 'High Confidence', 
     shortLabel: 'High',
-    tooltip: 'Strong match — username, profile data, and platform all align.',
+    tooltip: 'High confidence reflects strong signal alignment — username, profile data, and platform indicators all correspond. This does not confirm identity; it means the available public signals are consistent.',
     ...RESULTS_SEMANTIC_COLORS.confidenceHigh,
     icon: CheckCircle 
   };
   if (score >= 60) return { 
     label: 'Moderate', 
     shortLabel: 'Med',
-    tooltip: 'Partial match — some signals align but others could not be confirmed.',
+    tooltip: 'Moderate confidence means some signals align but others could not be confirmed from public data alone. This is common and does not imply the result is wrong — it means further review may be useful.',
     ...RESULTS_SEMANTIC_COLORS.confidenceMedium,
     icon: HelpCircle 
   };
   return { 
     label: 'Needs Review', 
     shortLabel: 'Low',
-    tooltip: 'Weak match — limited public data available. Manual review recommended.',
+    tooltip: 'Low confidence means limited public data was available to evaluate this match. This does not mean the result is unimportant — it means the available evidence is insufficient to assess strength either way.',
     ...RESULTS_SEMANTIC_COLORS.confidenceLow,
     icon: AlertCircle 
   };

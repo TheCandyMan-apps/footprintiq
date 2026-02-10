@@ -40,9 +40,9 @@ interface AccountCardProps {
 }
 
 const getMatchConfidence = (score: number) => {
-  if (score >= 80) return { label: 'High Confidence', shortLabel: 'High', tooltip: 'Strong match — username, profile data, and platform all align.', ...RESULTS_SEMANTIC_COLORS.confidenceHigh, icon: CheckCircle };
-  if (score >= 60) return { label: 'Moderate', shortLabel: 'Med', tooltip: 'Partial match — some signals align but others could not be confirmed.', ...RESULTS_SEMANTIC_COLORS.confidenceMedium, icon: HelpCircle };
-  return { label: 'Needs Review', shortLabel: 'Low', tooltip: 'Weak match — limited public data available. Manual review recommended.', ...RESULTS_SEMANTIC_COLORS.confidenceLow, icon: AlertCircle };
+  if (score >= 80) return { label: 'High Confidence', shortLabel: 'High', tooltip: 'High confidence reflects strong signal alignment — username, profile data, and platform indicators all correspond. This does not confirm identity; it means the available public signals are consistent.', ...RESULTS_SEMANTIC_COLORS.confidenceHigh, icon: CheckCircle };
+  if (score >= 60) return { label: 'Moderate', shortLabel: 'Med', tooltip: 'Moderate confidence means some signals align but others could not be confirmed from public data alone. Further review may be useful.', ...RESULTS_SEMANTIC_COLORS.confidenceMedium, icon: HelpCircle };
+  return { label: 'Needs Review', shortLabel: 'Low', tooltip: 'Low confidence means limited public data was available. This does not mean the result is unimportant — the available evidence is insufficient to assess strength either way.', ...RESULTS_SEMANTIC_COLORS.confidenceLow, icon: AlertCircle };
 };
 
 export function AccountCard({
