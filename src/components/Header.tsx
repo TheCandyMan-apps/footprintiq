@@ -428,8 +428,8 @@ export const Header = () => {
               </>
             )}
             {!user && (
-              <Button onClick={() => navigate('/auth')}>
-                Get Started
+              <Button onClick={() => navigate('/auth?tab=signup')}>
+                Start Free Trial
               </Button>
             )}
           </div>
