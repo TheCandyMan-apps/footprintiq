@@ -1,5 +1,6 @@
 import { SEO } from "@/components/SEO";
 import { GuideCitationBlock } from "@/components/guides/GuideCitationBlock";
+import { GuideBackLink } from "@/components/guides/GuideBackLink";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import {
@@ -38,12 +39,13 @@ const FreeVsPaidOsintTools = () => {
       <Header />
       <main className="min-h-screen bg-background">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
+          <GuideBackLink />
 
           <header className="mb-16">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
               <Link to="/" className="hover:text-primary transition-colors">Home</Link>
               <span>/</span>
-              <Link to="/guides/interpret-osint-results" className="hover:text-primary transition-colors">Guides</Link>
+              <Link to="/guides" className="hover:text-primary transition-colors">Guides</Link>
               <span>/</span>
               <span className="text-foreground">Free vs Paid OSINT Tools</span>
             </div>

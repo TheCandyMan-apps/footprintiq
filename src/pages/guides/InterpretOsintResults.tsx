@@ -1,5 +1,6 @@
 import { SEO } from "@/components/SEO";
 import { GuideCitationBlock } from "@/components/guides/GuideCitationBlock";
+import { GuideBackLink } from "@/components/guides/GuideBackLink";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import {
@@ -71,6 +72,7 @@ const InterpretOsintResults = () => {
 
       <main className="min-h-screen bg-background">
         <article className="max-w-4xl mx-auto px-6 py-16">
+          <GuideBackLink />
           {/* Header */}
           <header className="mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border mb-6">
