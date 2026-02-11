@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 
 import { GDPRConsentModal } from "@/components/auth/GDPRConsentModal";
+import { SEO } from "@/components/SEO";
 import { TurnstileGate, type TurnstileGateRef } from "@/components/auth/TurnstileGate";
 import { logActivity } from "@/lib/activityLogger";
 
@@ -295,7 +296,11 @@ const Auth = () => {
       });
     }
   };
-  return <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-background via-background to-secondary/10 animate-fadeIn">
+  return <><SEO
+      title="Sign In or Create Account | FootprintIQ"
+      description="Sign in or create your FootprintIQ account to scan your digital footprint, monitor data breaches, and manage your online privacy."
+      canonical="https://footprintiq.app/auth"
+    /><div className="min-h-screen flex items-center justify-center px-6 py-12 bg-gradient-to-br from-background via-background to-secondary/10 animate-fadeIn">
       <Card className="w-full max-w-md p-8 bg-gradient-card border-border shadow-card">
         <div className="text-center mb-8">
           <img src="/logo-dark.png" alt="FootprintIQ Logo" className="w-212 h-32 mx-auto mb-4" />
@@ -410,6 +415,6 @@ const Auth = () => {
       </Card>
 
       <GDPRConsentModal open={showConsentModal} onAccept={handleConsentAccept} onDecline={handleConsentDecline} loading={loading} />
-    </div>;
+    </div></>;
 };
 export default Auth;
