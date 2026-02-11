@@ -1,33 +1,30 @@
 
-# Fix: New User Signup Blocked by Invalid Enum Value
 
-## Root Cause
-The `handle_new_user` database trigger (fires on every new signup) tries to insert `'premium'` into the `subscription_tier` column for the admin email. However, a previous migration renamed that enum value from `'premium'` to `'pro'`. Since `'premium'` is no longer a valid enum value, **all signups fail with a 500 error** -- even non-admin signups -- because the trigger function fails to compile/execute.
+## Fix: Duplicate Meta Descriptions (Bing Webmaster Tools)
 
-Additionally, the `set_workspace_tier_from_owner` trigger also references `'premium'`, which would cause downstream failures.
+### Problem
+Bing flagged 10 pages sharing identical meta descriptions. The root causes are:
 
-## Fix
+1. **`/auth` page has no SEO component** -- it falls back to the `index.html` default meta description, creating a duplicate with `/scan`.
+2. **`index.html` default description** ("Scan your digital footprint across 500+ platforms...") is too similar to the `/scan` page description and does not match the official `PLATFORM_META_DESCRIPTION` constant. Since this is a single-page app, Bing may read the `index.html` meta before React Helmet overrides it, causing several pages to appear as duplicates.
 
-### 1. Update `handle_new_user` trigger function
-Replace `'premium'` with `'pro'` in the admin user branch:
-```sql
--- Change from:
-VALUES (NEW.id, 'admin', 'premium')
--- To:
-VALUES (NEW.id, 'admin', 'pro')
-```
+### Changes
 
-### 2. Update `set_workspace_tier_from_owner` trigger function
-Replace all references to `'premium'` with `'pro'`:
-```sql
--- Change from:
-IF owner_tier = 'premium' THEN
-    NEW.plan := 'premium';
-    NEW.subscription_tier := 'premium';
--- To:
-IF owner_tier = 'pro' THEN
-    NEW.plan := 'pro';
-    NEW.subscription_tier := 'pro';
-```
+**1. Update `index.html` default meta description (line 63)**
+- Replace the current default with the `PLATFORM_META_DESCRIPTION` value: *"FootprintIQ is an ethical digital footprint intelligence platform using OSINT techniques to help you understand online exposure -- without surveillance or invasive data collection."*
+- Also update the OG and Twitter description tags (lines 123-124) to stay consistent.
 
-Both changes will be applied in a single database migration. After this, new user signups (including admin) will work correctly.
+**2. Add `<SEO>` component to `src/pages/Auth.tsx`**
+- Import the `SEO` component and add it with a unique title and description:
+  - Title: "Sign In or Create Account | FootprintIQ"
+  - Description: "Sign in or create your FootprintIQ account to scan your digital footprint, monitor data breaches, and manage your online privacy."
+  - Canonical: "https://footprintiq.app/auth"
+
+### Result
+Each of the 10 flagged URLs will have a distinct meta description, and the `index.html` fallback will use the official platform description -- preventing future SPA crawling duplicates.
+
+### Technical Details
+
+Files modified:
+- `index.html` -- update `<meta name="description">`, `og:description`, and `twitter:description` to `PLATFORM_META_DESCRIPTION` value
+- `src/pages/Auth.tsx` -- import `SEO` and render it with unique title/description/canonical
