@@ -35,7 +35,7 @@ export function AdminAnalytics() {
       bgColor: 'bg-red-500/10',
     },
     {
-      title: 'Premium Users',
+      title: 'Pro Users',
       value: analytics?.premiumUsers || 0,
       icon: TrendingUp,
       color: 'text-purple-500',
