@@ -19,27 +19,49 @@ export function generateExposureDrivers(rows: ScanResultRow[]): ExposureDriver[]
 
   const drivers: ExposureDriver[] = [];
 
-  // 1. Count profiles found
+  // 1. Profiles found — kind === 'profile_presence' OR status === 'found'
   const profileRows = rows.filter(
-    r => r.kind === 'profile_presence' && r.status === 'found'
+    r =>
+      (r.kind === 'profile_presence' && r.status === 'found') ||
+      r.status === 'found',
   );
   if (profileRows.length > 0) {
-    const platforms = [...new Set(profileRows.map(r => r.site).filter(Boolean))];
-    const preview = platforms.slice(0, 3).join(', ');
-    const suffix = platforms.length > 3 ? ` and ${platforms.length - 3} more` : '';
-    drivers.push({
-      label: `Active profiles found on ${profileRows.length} platform${profileRows.length !== 1 ? 's' : ''} (${preview}${suffix})`,
-      category: 'public_profiles',
-    });
+    const platforms = [
+      ...new Set(
+        profileRows
+          .map(r => r.site || r.meta?.platform)
+          .filter((p): p is string => Boolean(p)),
+      ),
+    ];
+    if (platforms.length > 0) {
+      const preview = platforms.slice(0, 3).join(', ');
+      const suffix = platforms.length > 3 ? ` and ${platforms.length - 3} more` : '';
+      drivers.push({
+        label: `Active profiles found on ${platforms.length} platform${platforms.length !== 1 ? 's' : ''} (${preview}${suffix})`,
+        category: 'public_profiles',
+      });
+    } else {
+      drivers.push({
+        label: `Active profiles detected on ${profileRows.length} platform${profileRows.length !== 1 ? 's' : ''}`,
+        category: 'public_profiles',
+      });
+    }
   }
 
-  // 2. Breach associations
-  const breachKeywords = ['breach', 'hibp', 'leak', 'pwned', 'compromised', 'exposure'];
-  const noBreachPatterns = ['breach.none', 'no_breach', 'not found', 'clean'];
+  // 2. Breach associations — prioritise kind === 'breach.hit', then provider 'hibp', then keyword fallback
   const breachRows = rows.filter(r => {
     const kind = (r.kind || '').toLowerCase();
-    if (noBreachPatterns.some(p => kind.includes(p))) return false;
     const provider = (r.provider || '').toLowerCase();
+
+    // Direct match
+    if (kind === 'breach.hit') return true;
+    // Provider match
+    if (provider.includes('hibp')) return true;
+
+    // Keyword fallback (exclude negatives)
+    const noBreachPatterns = ['breach.none', 'no_breach', 'not found', 'clean'];
+    if (noBreachPatterns.some(p => kind.includes(p))) return false;
+    const breachKeywords = ['breach', 'leak', 'pwned', 'compromised', 'exposure'];
     return breachKeywords.some(k => kind.includes(k) || provider.includes(k));
   });
   if (breachRows.length > 0) {
@@ -51,7 +73,7 @@ export function generateExposureDrivers(rows: ScanResultRow[]): ExposureDriver[]
 
   // 3. High-severity findings
   const highSeverity = rows.filter(
-    r => r.severity === 'high' || r.severity === 'critical'
+    r => r.severity === 'high' || r.severity === 'critical',
   );
   if (highSeverity.length > 0) {
     drivers.push({
@@ -62,7 +84,7 @@ export function generateExposureDrivers(rows: ScanResultRow[]): ExposureDriver[]
 
   // 4. Cross-platform identifier reuse
   const uniqueProviders = new Set(
-    profileRows.map(r => r.provider).filter(Boolean)
+    profileRows.map(r => r.provider).filter(Boolean),
   );
   if (uniqueProviders.size >= 3) {
     drivers.push({
@@ -82,7 +104,9 @@ export function generateExposureDrivers(rows: ScanResultRow[]): ExposureDriver[]
   }
 
   // 6. Phone intelligence
-  const phoneRows = rows.filter(r => r.kind === 'phone_intelligence' || (r.provider || '').toLowerCase().includes('phone'));
+  const phoneRows = rows.filter(
+    r => r.kind === 'phone_intelligence' || (r.provider || '').toLowerCase().includes('phone'),
+  );
   if (phoneRows.length > 0) {
     drivers.push({
       label: 'Phone number linked to public data sources',
@@ -90,7 +114,7 @@ export function generateExposureDrivers(rows: ScanResultRow[]): ExposureDriver[]
     });
   }
 
-  // Fallback if nothing matched
+  // Fallback
   if (drivers.length === 0) {
     drivers.push({
       label: 'Minimal public exposure detected across scanned sources.',
