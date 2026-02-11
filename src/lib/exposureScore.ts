@@ -7,7 +7,7 @@ export interface ExposureCategory {
   evidence?: Finding[];
 }
 
-export type ExposureLevel = 'low' | 'moderate' | 'high';
+export type ExposureLevel = 'low' | 'moderate' | 'high' | 'severe';
 
 export interface ExposureScoreResult {
   score: number;
@@ -16,7 +16,7 @@ export interface ExposureScoreResult {
   categories: ExposureCategory[];
 }
 
-// Category definitions
+// Category definitions (unchanged shape)
 const CATEGORY_DEFINITIONS = [
   { id: 'public_profiles', label: 'Public profile discoverability' },
   { id: 'identifier_reuse', label: 'Identifier reuse' },
@@ -25,7 +25,7 @@ const CATEGORY_DEFINITIONS = [
   { id: 'metadata_signals', label: 'Metadata & infrastructure signals' },
 ] as const;
 
-// Insight sentences mapped to highest contributing category
+// Insight sentences mapped to highest contributing bucket
 const INSIGHTS: Record<string, string> = {
   public_profiles: "Most of your exposure comes from publicly discoverable profiles.",
   identifier_reuse: "Identifier reuse significantly increases your exposure.",
@@ -35,105 +35,15 @@ const INSIGHTS: Record<string, string> = {
   default: "Your digital footprint has been analyzed across multiple public sources.",
 };
 
-// Calculate category scores from findings
-function calculateCategoryScores(findings: Finding[]): Record<string, { score: number; evidence: Finding[] }> {
-  const categories: Record<string, { score: number; evidence: Finding[] }> = {
-    public_profiles: { score: 0, evidence: [] },
-    identifier_reuse: { score: 0, evidence: [] },
-    data_broker: { score: 0, evidence: [] },
-    breach_association: { score: 0, evidence: [] },
-    metadata_signals: { score: 0, evidence: [] },
-  };
+// --- Level helpers ---
 
-  // Track unique providers for identifier reuse detection
-  const providersByType: Record<string, Set<string>> = {
-    social_media: new Set(),
-    identity: new Set(),
-  };
-
-  for (const finding of findings) {
-    const severityMultiplier = {
-      critical: 1.5,
-      high: 1.2,
-      medium: 1.0,
-      low: 0.6,
-      info: 0.3,
-    }[finding.severity] || 1.0;
-
-    const baseScore = finding.confidence * severityMultiplier * 10;
-
-    // Categorize findings
-    switch (finding.type) {
-      case 'social_media':
-        categories.public_profiles.score += baseScore;
-        categories.public_profiles.evidence.push(finding);
-        providersByType.social_media.add(finding.provider);
-        break;
-
-      case 'identity':
-        categories.public_profiles.score += baseScore * 0.5;
-        categories.public_profiles.evidence.push(finding);
-        providersByType.identity.add(finding.provider);
-        
-        // Check for data broker indicators
-        if ((finding.provider || '').toLowerCase().includes('broker') || 
-            finding.tags?.some(t => t.includes('data_broker'))) {
-          categories.data_broker.score += baseScore;
-          categories.data_broker.evidence.push(finding);
-        }
-        break;
-
-      case 'breach':
-        categories.breach_association.score += baseScore * 1.5;
-        categories.breach_association.evidence.push(finding);
-        break;
-
-      case 'ip_exposure':
-      case 'domain_reputation':
-      case 'dns_history':
-      case 'domain_tech':
-        categories.metadata_signals.score += baseScore;
-        categories.metadata_signals.evidence.push(finding);
-        break;
-
-      case 'phone_intelligence':
-        categories.public_profiles.score += baseScore * 0.3;
-        categories.data_broker.score += baseScore * 0.7;
-        categories.data_broker.evidence.push(finding);
-        break;
-
-      default:
-        // Generic exposure contribution
-        categories.metadata_signals.score += baseScore * 0.5;
-    }
-  }
-
-  // Calculate identifier reuse based on cross-platform presence
-  const totalProviders = providersByType.social_media.size + providersByType.identity.size;
-  if (totalProviders >= 5) {
-    categories.identifier_reuse.score = Math.min(30, totalProviders * 3);
-    // Add all social/identity findings as evidence for reuse
-    categories.identifier_reuse.evidence = findings.filter(
-      f => f.type === 'social_media' || f.type === 'identity'
-    );
-  } else if (totalProviders >= 3) {
-    categories.identifier_reuse.score = totalProviders * 2;
-    categories.identifier_reuse.evidence = findings.filter(
-      f => f.type === 'social_media' || f.type === 'identity'
-    );
-  }
-
-  return categories;
-}
-
-// Get level from score
 export function getExposureLevel(score: number): ExposureLevel {
-  if (score <= 29) return 'low';
-  if (score <= 59) return 'moderate';
-  return 'high';
+  if (score <= 24) return 'low';
+  if (score <= 49) return 'moderate';
+  if (score <= 74) return 'high';
+  return 'severe';
 }
 
-// Get color class for level
 export function getExposureLevelColor(level: ExposureLevel): string {
   switch (level) {
     case 'low':
@@ -142,6 +52,8 @@ export function getExposureLevelColor(level: ExposureLevel): string {
       return 'text-yellow-500';
     case 'high':
       return 'text-red-500';
+    case 'severe':
+      return 'text-red-600';
   }
 }
 
@@ -153,6 +65,8 @@ export function getExposureLevelBgColor(level: ExposureLevel): string {
       return 'bg-yellow-500/10 border-yellow-500/30';
     case 'high':
       return 'bg-red-500/10 border-red-500/30';
+    case 'severe':
+      return 'bg-red-600/10 border-red-600/30';
   }
 }
 
@@ -164,7 +78,62 @@ export function getExposureLevelLabel(level: ExposureLevel): string {
       return 'Moderate exposure';
     case 'high':
       return 'High exposure';
+    case 'severe':
+      return 'Severe exposure';
   }
+}
+
+// --- Additive surface-area scoring ---
+
+function getProfileContribution(findings: Finding[]): { score: number; evidence: Finding[] } {
+  const profileFindings = findings.filter(
+    f => f.type === 'social_media' || f.type === 'identity'
+  );
+  const count = profileFindings.length;
+
+  let score = 0;
+  if (count > 100) score = 60;
+  else if (count > 50) score = 45;
+  else if (count > 20) score = 30;
+  else if (count > 5) score = 15;
+  else if (count > 0) score = 5;
+
+  return { score, evidence: profileFindings };
+}
+
+function getBreachContribution(findings: Finding[]): { score: number; evidence: Finding[] } {
+  const breachFindings = findings.filter(f => {
+    if (f.type === 'breach') return true;
+    const kind = (f as any).kind as string | undefined;
+    if (kind === 'breach.hit') return true;
+    if ((f.provider || '').toLowerCase().includes('hibp')) return true;
+    return false;
+  });
+  const count = breachFindings.length;
+
+  let score = 0;
+  if (count > 5) score = 35;
+  else if (count >= 2) score = 25;
+  else if (count === 1) score = 15;
+
+  return { score, evidence: breachFindings };
+}
+
+function getSeverityContribution(findings: Finding[]): { score: number; evidence: Finding[] } {
+  const highSevFindings = findings.filter(
+    f => f.severity === 'high' || f.severity === 'critical'
+  );
+  const score = Math.min(20, highSevFindings.length * 5);
+  return { score, evidence: highSevFindings };
+}
+
+function getReuseContribution(findings: Finding[]): { score: number; evidence: Finding[] } {
+  const profileFindings = findings.filter(
+    f => f.type === 'social_media' || f.type === 'identity'
+  );
+  const uniqueProviders = new Set(profileFindings.map(f => f.provider).filter(Boolean));
+  const score = uniqueProviders.size >= 3 ? 10 : 0;
+  return { score, evidence: score > 0 ? profileFindings : [] };
 }
 
 // Main calculation function
@@ -183,45 +152,43 @@ export function calculateExposureScore(findings: Finding[]): ExposureScoreResult
     };
   }
 
-  const categoryScores = calculateCategoryScores(findings);
+  // Calculate each bucket
+  const profile = getProfileContribution(findings);
+  const breach = getBreachContribution(findings);
+  const severity = getSeverityContribution(findings);
+  const reuse = getReuseContribution(findings);
 
-  // Weighted score calculation (sum normalized to 100)
-  const weights = {
-    public_profiles: 0.25,
-    identifier_reuse: 0.20,
-    data_broker: 0.20,
-    breach_association: 0.25,
-    metadata_signals: 0.10,
+  // Additive score, clamped 0-100
+  const rawScore = profile.score + breach.score + severity.score + reuse.score;
+  const finalScore = Math.round(Math.min(100, Math.max(0, rawScore)));
+  const level = getExposureLevel(finalScore);
+
+  // Determine highest contributing bucket for insight
+  const buckets = [
+    { id: 'public_profiles', score: profile.score },
+    { id: 'breach_association', score: breach.score },
+    { id: 'metadata_signals', score: severity.score },
+    { id: 'identifier_reuse', score: reuse.score },
+  ];
+  const highestBucket = buckets.reduce((a, b) => (b.score > a.score ? b : a), buckets[0]);
+  const insight = highestBucket.score > 0
+    ? (INSIGHTS[highestBucket.id] || INSIGHTS.default)
+    : INSIGHTS.default;
+
+  // Map buckets to category output (preserving CATEGORY_DEFINITIONS shape)
+  const bucketMap: Record<string, { score: number; evidence: Finding[] }> = {
+    public_profiles: profile,
+    identifier_reuse: reuse,
+    data_broker: { score: 0, evidence: [] }, // Not scored in surface-area model
+    breach_association: breach,
+    metadata_signals: severity,
   };
 
-  // Normalize each category to 0-100 range, then apply weights
-  const maxCategoryScore = 50; // Cap per category before normalization
-  let totalScore = 0;
-  let highestCategory = '';
-  let highestCategoryScore = 0;
-
-  for (const [catId, catData] of Object.entries(categoryScores)) {
-    const normalizedScore = Math.min(catData.score, maxCategoryScore) / maxCategoryScore * 100;
-    const weightedScore = normalizedScore * (weights[catId as keyof typeof weights] || 0.1);
-    totalScore += weightedScore;
-
-    if (catData.score > highestCategoryScore && catData.score > 0) {
-      highestCategoryScore = catData.score;
-      highestCategory = catId;
-    }
-  }
-
-  // Clamp final score to 0-100
-  const finalScore = Math.round(Math.min(100, Math.max(0, totalScore)));
-  const level = getExposureLevel(finalScore);
-  const insight = INSIGHTS[highestCategory] || INSIGHTS.default;
-
-  // Build categories array
   const categories: ExposureCategory[] = CATEGORY_DEFINITIONS.map(cat => ({
     id: cat.id,
     label: cat.label,
-    detected: categoryScores[cat.id].score > 0,
-    evidence: categoryScores[cat.id].evidence,
+    detected: (bucketMap[cat.id]?.score ?? 0) > 0,
+    evidence: bucketMap[cat.id]?.evidence ?? [],
   }));
 
   return {

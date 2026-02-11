@@ -11,27 +11,9 @@ import {
 } from '@/lib/exposureScore';
 import type { ExposureDriver } from '@/lib/exposureScoreDrivers';
 
-// Extend ExposureLevel to include 'severe'
-export type ExposureScoreLevel = ExposureLevel | 'severe';
-
-function getLevelColor(level: ExposureScoreLevel): string {
-  if (level === 'severe') return 'text-red-600';
-  return getExposureLevelColor(level);
-}
-
-function getLevelBg(level: ExposureScoreLevel): string {
-  if (level === 'severe') return 'bg-red-600/10 border-red-600/30';
-  return getExposureLevelBgColor(level);
-}
-
-function getLevelLabel(level: ExposureScoreLevel): string {
-  if (level === 'severe') return 'Severe exposure';
-  return getExposureLevelLabel(level);
-}
-
 interface ExposureScoreCardProps {
   score: number;
-  level: ExposureScoreLevel;
+  level: ExposureLevel;
   drivers: ExposureDriver[];
   isLocked?: boolean;
   /** Full category breakdown for Pro users */
@@ -64,10 +46,10 @@ export function ExposureScoreCard({
             <div
               className={cn(
                 'flex flex-col items-center justify-center w-24 h-24 rounded-full border-[3px] transition-colors',
-                getLevelBg(level)
+                getExposureLevelBgColor(level)
               )}
             >
-              <span className={cn('text-3xl font-bold tabular-nums', getLevelColor(level))}>
+              <span className={cn('text-3xl font-bold tabular-nums', getExposureLevelColor(level))}>
                 {score}
               </span>
               <span className="text-[10px] text-muted-foreground font-medium">/ 100</span>
@@ -84,11 +66,11 @@ export function ExposureScoreCard({
                 variant="outline"
                 className={cn(
                   'text-xs font-medium px-2 py-0.5',
-                  getLevelBg(level),
-                  getLevelColor(level)
+                  getExposureLevelBgColor(level),
+                  getExposureLevelColor(level)
                 )}
               >
-                {getLevelLabel(level)}
+                {getExposureLevelLabel(level)}
               </Badge>
             </div>
 
