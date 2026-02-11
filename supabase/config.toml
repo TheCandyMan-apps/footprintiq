@@ -105,3 +105,6 @@ verify_jwt = true
 
 [functions.og-share-image]
 verify_jwt = false
+
+[functions.error-alert]
+verify_jwt = false
