@@ -141,7 +141,10 @@ function ExposureScoreCardSection({ results, onUpgradeClick }: { results: ScanRe
       title: r.meta?.title || r.site || '',
       description: '',
       severity: (['low', 'medium', 'high', 'critical', 'info'].includes(r.severity) ? r.severity : 'info') as Finding['severity'],
-      confidence: typeof r.evidence?.confidence_score === 'number' ? r.evidence.confidence_score / 100 : 0.5,
+      confidence:
+        typeof (r as any).confidence === 'number' ? (r as any).confidence :
+        typeof (r as any).evidence?.confidence_score === 'number' ? (r as any).evidence.confidence_score / 100 :
+        0.5,
       provider: r.provider || '',
       providerCategory: '',
       evidence: [],
