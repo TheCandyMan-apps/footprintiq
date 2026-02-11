@@ -74,6 +74,10 @@ import { LowResultsNotice } from './LowResultsNotice';
 import { Loader2, Shield, Eye, HelpCircle, Lock, ArrowRight, Check, User, MapPin, Users, ExternalLink, Clock } from 'lucide-react';
 import { aggregateResults, type AggregatedProfile } from '@/lib/results/resultsAggregator';
 import { filterOutProviderHealth } from '@/lib/providerHealthUtils';
+import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
+import { calculateExposureScore } from '@/lib/exposureScore';
+import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
+import type { Finding } from '@/lib/ufm';
 import { filterFindings } from '@/lib/findingFilters';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
 import { useNavigate } from 'react-router-dom';
@@ -126,6 +130,43 @@ const PRO_BENEFITS = [
   'Exposure timeline (historical vs active)',
   'Recommended next steps',
 ];
+
+/** Internal helper to compute and render the ExposureScoreCard for Free users */
+function ExposureScoreCardSection({ results, onUpgradeClick }: { results: ScanResult[]; onUpgradeClick: () => void }) {
+  const scoreResult = useMemo(() => {
+    // Map ScanResultRows to minimal Finding-compatible objects for the score calculator
+    const findings: Finding[] = (results as any[]).map(r => ({
+      id: r.id || '',
+      type: r.kind === 'profile_presence' ? 'social_media' : (r.kind || 'identity'),
+      title: r.meta?.title || r.site || '',
+      description: '',
+      severity: (['low', 'medium', 'high', 'critical', 'info'].includes(r.severity) ? r.severity : 'info') as Finding['severity'],
+      confidence: typeof r.evidence?.confidence_score === 'number' ? r.evidence.confidence_score / 100 : 0.5,
+      provider: r.provider || '',
+      providerCategory: '',
+      evidence: [],
+      impact: '',
+      remediation: [],
+      tags: [],
+      observedAt: r.created_at || new Date().toISOString(),
+    }));
+    return calculateExposureScore(findings);
+  }, [results]);
+
+  const drivers = useMemo(() => generateExposureDrivers(results as any), [results]);
+  const level = scoreResult.score >= 80 ? 'severe' as const : scoreResult.level;
+
+  return (
+    <ExposureScoreCard
+      score={scoreResult.score}
+      level={level}
+      drivers={drivers}
+      isLocked
+      maxDrivers={3}
+      onUpgradeClick={onUpgradeClick}
+    />
+  );
+}
 
 export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
 
@@ -550,6 +591,9 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 <span>No monitoring</span>
               </div>
             </div>
+
+            {/* ===== EXPOSURE SCORE HERO CARD ===== */}
+            <ExposureScoreCardSection results={results} onUpgradeClick={handleUpgradeClick} />
 
             {/* ===== NEW: BLURRED RISK GAUGE (creates immediate curiosity) ===== */}
             <BlurredRiskGauge
