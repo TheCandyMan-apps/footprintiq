@@ -40,7 +40,7 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const [quickFilter, setQuickFilter] = useState<QuickFilterOption>('all');
   const [focusMode, setFocusMode] = useState(true);
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
 
   // Filter out provider health findings
   const baseResults = useMemo(() => filterOutProviderHealth(results), [results]);
