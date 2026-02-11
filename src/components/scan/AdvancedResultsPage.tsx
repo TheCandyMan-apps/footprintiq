@@ -33,6 +33,10 @@ import { InvestigationProvider } from '@/contexts/InvestigationContext';
 import { Loader2, Shield } from 'lucide-react';
 import { parseISO, isValid } from 'date-fns';
 import { LowResultsNotice } from './LowResultsNotice';
+import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
+import { calculateExposureScore } from '@/lib/exposureScore';
+import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
+import type { Finding } from '@/lib/ufm';
 
 // Lazy load tab components for performance
 const SummaryTab = lazy(() => import('./results-tabs/SummaryTab'));
@@ -48,6 +52,41 @@ interface AdvancedResultsPageProps {
 
 const VALID_TABS = ['summary', 'accounts', 'connections', 'timeline', 'breaches', 'map'] as const;
 type TabValue = typeof VALID_TABS[number];
+
+/** Helper to compute and render ExposureScoreCard for Pro users */
+function AdvancedExposureScoreSection({ results }: { results: any[] }) {
+  const scoreResult = useMemo(() => {
+    const findings: Finding[] = results.map(r => ({
+      id: r.id || '',
+      type: r.kind === 'profile_presence' ? 'social_media' : (r.kind || 'identity'),
+      title: r.meta?.title || r.site || '',
+      description: '',
+      severity: (['low', 'medium', 'high', 'critical', 'info'].includes(r.severity) ? r.severity : 'info') as Finding['severity'],
+      confidence: typeof r.evidence?.confidence_score === 'number' ? r.evidence.confidence_score / 100 : 0.5,
+      provider: r.provider || '',
+      providerCategory: '',
+      evidence: [],
+      impact: '',
+      remediation: [],
+      tags: [],
+      observedAt: r.created_at || new Date().toISOString(),
+    }));
+    return calculateExposureScore(findings);
+  }, [results]);
+
+  const drivers = useMemo(() => generateExposureDrivers(results), [results]);
+  const level = scoreResult.score >= 80 ? 'severe' as const : scoreResult.level;
+
+  return (
+    <ExposureScoreCard
+      score={scoreResult.score}
+      level={level}
+      drivers={drivers}
+      categories={scoreResult.categories}
+      className="mb-4"
+    />
+  );
+}
 
 export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
 
@@ -418,6 +457,7 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
         ) : (
           /* ===== FULL TABBED INTERFACE ===== */
           <InvestigationProvider scanId={jobId}>
+            <AdvancedExposureScoreSection results={results} />
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <ResultsTabBar 
                 tabCounts={tabCounts} 
