@@ -1,32 +1,33 @@
 
+# Fix: New User Signup Blocked by Invalid Enum Value
 
-# Add Referrer Tracking to Email and Phone Scans
+## Root Cause
+The `handle_new_user` database trigger (fires on every new signup) tries to insert `'premium'` into the `subscription_tier` column for the admin email. However, a previous migration renamed that enum value from `'premium'` to `'pro'`. Since `'premium'` is no longer a valid enum value, **all signups fail with a 500 error** -- even non-admin signups -- because the trigger function fails to compile/execute.
 
-## Problem
-Referrer data is only captured for **username scans** (in `useUsernameScan.ts`). Email and phone scans go through `useAdvancedScan.tsx`, which never calls `getReferrerHostname()` or includes `referrer` in the request body. That is why almost all scans show "---" in the Referrer column.
+Additionally, the `set_workspace_tier_from_owner` trigger also references `'premium'`, which would cause downstream failures.
 
-## Solution
-Add the same referrer capture logic to `useAdvancedScan.tsx` so email and phone scans also record the referring domain.
+## Fix
 
-## Changes
-
-### 1. `src/hooks/useAdvancedScan.tsx`
-- Import `getReferrerHostname` from `@/lib/referrer`
-- Before building the `orchestrateBody`, capture the referrer
-- Spread `referrer` into the request body (same pattern as the username hook)
-
-Specifically, around the orchestrate body construction (line ~244), add:
-
-```text
-const referrer = getReferrerHostname();
-
-const orchestrateBody = withTurnstileToken({
-  type,
-  value: value!,
-  workspaceId: workspace.id,
-  ...(referrer && { referrer }),   // <-- add this line
-  options: { ... },
-}, options.turnstileToken);
+### 1. Update `handle_new_user` trigger function
+Replace `'premium'` with `'pro'` in the admin user branch:
+```sql
+-- Change from:
+VALUES (NEW.id, 'admin', 'premium')
+-- To:
+VALUES (NEW.id, 'admin', 'pro')
 ```
 
-This is a one-file, ~3-line change that brings email/phone scans in line with the existing username scan referrer tracking.
+### 2. Update `set_workspace_tier_from_owner` trigger function
+Replace all references to `'premium'` with `'pro'`:
+```sql
+-- Change from:
+IF owner_tier = 'premium' THEN
+    NEW.plan := 'premium';
+    NEW.subscription_tier := 'premium';
+-- To:
+IF owner_tier = 'pro' THEN
+    NEW.plan := 'pro';
+    NEW.subscription_tier := 'pro';
+```
+
+Both changes will be applied in a single database migration. After this, new user signups (including admin) will work correctly.
