@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { getPlan } from '@/lib/billing/tiers';
 import { useTurnstileGating, withTurnstileToken } from '@/hooks/useTurnstileGating';
+import { getReferrerHostname } from '@/lib/referrer';
 
 // Custom error class for tier-related errors
 class TierRestrictionError extends Error {
@@ -241,10 +242,13 @@ export function useAdvancedScan() {
           );
         }
         
+        const referrer = getReferrerHostname();
+        
         const orchestrateBody = withTurnstileToken({
           type,
           value: value!,
           workspaceId: workspace.id,
+          ...(referrer && { referrer }),
           options: {
             includeDarkweb: !!options.deepWeb,
             providers: providersForScan,
