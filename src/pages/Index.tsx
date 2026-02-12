@@ -24,6 +24,7 @@ import { FAQ } from "@/components/FAQ";
 import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { FloatingCTA } from "@/components/FloatingCTA";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { PlatformCapabilities } from "@/components/PlatformCapabilities";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -169,6 +170,10 @@ export default function Home() {
       
       <div className="below-fold">
         <WhatWeDoSection />
+      </div>
+
+      <div className="below-fold">
+        <PlatformCapabilities includeSchema />
       </div>
       
       <div id="how-it-works" className="below-fold">
