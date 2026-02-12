@@ -43,6 +43,36 @@ const faqs = [
     answer:
       "The standard opt-out process typically completes within 24 hours to 7 days after email verification. GDPR and CCPA requests have legal deadlines of 30 and 45 days respectively. If you do not receive confirmation, follow up in writing.",
   },
+  {
+    question: "Does BeenVerified charge to remove my data?",
+    answer:
+      "No. The opt-out process is free and does not require a paid BeenVerified subscription. You should not need to create an account or enter payment information to submit a removal request.",
+  },
+  {
+    question: "Is BeenVerified the same as a background check company?",
+    answer:
+      "BeenVerified is a people-search and data broker service, not a formal background check provider. It aggregates publicly available records into searchable profiles. The data may overlap with background check content but is not verified to the same standard.",
+  },
+  {
+    question: "Can I remove criminal records from BeenVerified?",
+    answer:
+      "Submitting an opt-out request removes your entire BeenVerified profile, including any criminal record data displayed. However, the underlying public records (court filings, arrest records) remain available through government databases and other brokers.",
+  },
+  {
+    question: "What if BeenVerified doesn't send a verification email?",
+    answer:
+      "Check your spam and junk folders. If no email arrives within 30 minutes, try submitting the opt-out request again with the same email address. If the issue persists, use a formal GDPR or CCPA request via written correspondence instead.",
+  },
+  {
+    question: "Does removing my BeenVerified profile affect other sites?",
+    answer:
+      "No. Each data broker operates independently. Removing your profile from BeenVerified has no effect on your listings on Spokeo, MyLife, Whitepages, or other people-search sites. You must submit separate removal requests to each broker.",
+  },
+  {
+    question: "Can I prevent BeenVerified from re-listing my data?",
+    answer:
+      "There is no permanent opt-out mechanism that prevents future re-listing. Data brokers continuously ingest new public records. Periodic monitoring — such as running a scan with FootprintIQ — helps you identify when your data reappears so you can submit a new request.",
+  },
 ];
 
 const faqJsonLd = {

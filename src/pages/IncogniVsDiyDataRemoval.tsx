@@ -29,7 +29,31 @@ const FAQ_DATA = [
   {
     question: "Will my data come back after removal?",
     answer: "Often, yes. Many data brokers re-collect and re-list personal information from public records and other sources. This is why ongoing monitoring — either manual or through an automated service — is important for long-term privacy."
-  }
+  },
+  {
+    question: "How much does Incogni cost per month?",
+    answer: "Incogni pricing varies by plan and billing cycle. Annual plans are typically discounted compared to monthly billing. Check Incogni's website for current pricing — costs generally range from a few dollars per month on annual plans to higher rates for month-to-month subscriptions."
+  },
+  {
+    question: "What are the risks of DIY data removal?",
+    answer: "The main risks are incomplete removal (missing brokers you don't know about), re-listing without your knowledge, and accidentally providing too much personal information during opt-out verification. Using a structured checklist and monitoring tool reduces these risks."
+  },
+  {
+    question: "Can I use Incogni and DIY removal together?",
+    answer: "Yes. Some people use Incogni for the bulk of brokers and handle specific high-priority removals manually. This hybrid approach can be effective — automated services cover breadth while you maintain direct control over the most sensitive listings."
+  },
+  {
+    question: "How do I know which approach is right for me?",
+    answer: "Consider three factors: the number of brokers holding your data, how much time you can invest, and your budget. If you have data on fewer than 10 brokers, DIY is practical. For 20+ brokers or limited time, automation is more efficient. Running a scan first helps you assess the scope."
+  },
+  {
+    question: "Are there alternatives to Incogni for automated removal?",
+    answer: "Yes. Services like DeleteMe, Privacy Duck, and Kanary also offer automated data broker removal. Each covers a different set of brokers and pricing models. Compare coverage, cost, and monitoring frequency before choosing a service."
+  },
+  {
+    question: "Does data removal improve my online security?",
+    answer: "Reducing the amount of personal data available on broker sites lowers your exposure to targeted phishing, social engineering, identity theft, and unwanted contact. While it doesn't eliminate all risk, it meaningfully reduces your attack surface."
+  },
 ];
 
 const faqSchema = {
