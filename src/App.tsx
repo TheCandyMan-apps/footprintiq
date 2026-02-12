@@ -268,6 +268,7 @@ const RemoveMyLifeProfile = lazy(() => import("./pages/RemoveMyLifeProfile"));
 const PrivacyCentrePage = lazy(() => import("./pages/PrivacyCentrePage"));
 const DataBrokerRemovalGuide = lazy(() => import("./pages/DataBrokerRemovalGuide"));
 const RemoveSpokeoProfile = lazy(() => import("./pages/RemoveSpokeoProfile"));
+const RemoveBeenVerifiedProfile = lazy(() => import("./pages/RemoveBeenVerifiedProfile"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -406,6 +407,7 @@ function RouterContent() {
           <Route path="/privacy-centre" element={<PrivacyCentrePage />} />
           <Route path="/data-broker-removal-guide" element={<DataBrokerRemovalGuide />} />
           <Route path="/remove-spokeo-profile" element={<RemoveSpokeoProfile />} />
+          <Route path="/remove-beenverified-profile" element={<RemoveBeenVerifiedProfile />} />
           <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
