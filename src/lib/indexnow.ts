@@ -103,6 +103,7 @@ export const INDEXNOW_URLS = [
   // Privacy & Removal
   "/privacy-centre",
   "/remove-mylife-profile",
+  "/data-broker-removal-guide",
 ];
 
 /**
