@@ -49,6 +49,7 @@
 - [Remove BeenVerified Profile](https://footprintiq.app/remove-beenverified-profile): Step-by-step guide to removing your BeenVerified listing using online opt-out, GDPR, or CCPA requests
 - [Incogni vs DIY Data Removal](https://footprintiq.app/incogni-vs-diy-data-removal): Neutral comparison of automated data removal services versus manual DIY broker removal, covering costs, benefits, and limitations
 - [Remove Yourself from Google Search](https://footprintiq.app/remove-yourself-from-google-search): Step-by-step guide to removing personal information from Google search results, covering right to be forgotten, legal options, and monitoring
+- [Google Content Removal Guide](https://footprintiq.app/privacy/google-content-removal): Comprehensive 2026 guide to removing personal information from Google, including doxxing removal, GDPR Article 17, data broker de-indexing, and jurisdiction-specific guidance
 
 ## Optional
 
