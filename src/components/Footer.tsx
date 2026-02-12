@@ -86,6 +86,18 @@ export const Footer = () => {
           </div>
         </div>
 
+        {/* Privacy Resources */}
+        <div className="mb-8">
+          <h3 className="font-semibold mb-4 text-center md:text-left">Privacy Resources</h3>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 justify-center md:justify-start text-sm text-muted-foreground">
+            <Link to="/data-broker-removal-guide" className="hover:text-primary transition-colors">Data Broker Removal Guide</Link>
+            <Link to="/remove-mylife-profile" className="hover:text-primary transition-colors">Remove MyLife Profile</Link>
+            <Link to="/remove-spokeo-profile" className="hover:text-primary transition-colors">Remove Spokeo Profile</Link>
+            <Link to="/remove-beenverified-profile" className="hover:text-primary transition-colors">Remove BeenVerified Profile</Link>
+            <Link to="/privacy-centre" className="hover:text-primary transition-colors">Privacy Centre</Link>
+          </div>
+        </div>
+
         {/* Legal & Compliance Disclaimer */}
         <div className="py-6 border-t border-border text-center">
           <p className="text-sm text-muted-foreground mb-2">
