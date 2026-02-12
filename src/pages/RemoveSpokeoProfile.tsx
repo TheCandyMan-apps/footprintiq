@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { RemovalIsOneStep } from "@/components/privacy/RemovalIsOneStep";
 import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Header } from "@/components/Header";
@@ -362,6 +363,8 @@ export default function RemoveSpokeoProfile() {
               </p>
             </div>
           </section>
+
+          <RemovalIsOneStep />
 
           {/* FAQ Section */}
           <section className="mb-12">

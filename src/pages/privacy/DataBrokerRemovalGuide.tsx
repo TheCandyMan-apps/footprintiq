@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { RemovalIsOneStep } from "@/components/privacy/RemovalIsOneStep";
 import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Shield, Database, Globe, AlertTriangle, Search, ArrowRight, Users, BarChart3 } from "lucide-react";
@@ -459,6 +460,8 @@ const DataBrokerRemovalGuide = () => {
               </p>
             </div>
           </section>
+
+          <RemovalIsOneStep />
 
           {/* FAQ Section */}
           <section className="mb-12">

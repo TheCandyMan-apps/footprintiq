@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { RemovalIsOneStep } from "@/components/privacy/RemovalIsOneStep";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -447,6 +448,8 @@ const RemoveYourselfFromGoogleSearch = () => {
               </ul>
             </div>
           </section>
+
+          <RemovalIsOneStep />
 
           {/* FAQ */}
           <section className="mb-12">

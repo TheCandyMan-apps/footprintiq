@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { RemovalIsOneStep } from "@/components/privacy/RemovalIsOneStep";
 import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Shield, FileText, Globe, AlertTriangle, Search, ArrowRight } from "lucide-react";
@@ -346,6 +347,8 @@ const GoogleContentRemoval = () => {
               </p>
             </div>
           </section>
+
+          <RemovalIsOneStep />
 
           {/* FAQ Section */}
           <section className="mb-12">
