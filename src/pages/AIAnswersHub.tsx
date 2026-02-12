@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { BookOpen, ArrowRight, Shield, HelpCircle, Lightbulb, Search, Scale, AlertTriangle, CheckCircle } from "lucide-react";
+import { BookOpen, ArrowRight, Shield, HelpCircle, Lightbulb, Search, Scale, AlertTriangle, CheckCircle, BarChart3 } from "lucide-react";
 
 export default function AIAnswersHub() {
   const articleSchema = {
@@ -288,6 +288,12 @@ export default function AIAnswersHub() {
                     description: "Scenarios where OSINT tools are inappropriate — covering consent, proportionality, legal risk, and safer alternatives.",
                     link: "/ai-answers/when-not-to-use-osint",
                     icon: Shield,
+                  },
+                  {
+                    title: "What Is an Identity Risk Score?",
+                    description: "How identity risk scores work, what they measure, what they do not represent, and why interpretation matters.",
+                    link: "/ai-answers/what-is-an-identity-risk-score",
+                    icon: BarChart3,
                   },
                   {
                     title: "How to Interpret OSINT Scan Results Responsibly",
