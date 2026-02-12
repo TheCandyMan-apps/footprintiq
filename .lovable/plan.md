@@ -1,68 +1,55 @@
 
 
-## Finalise Exposure Score Polish
+## New AI Answers Page: "Does OSINT Include Dark Web Data?"
 
-Most structural changes (BlurredRiskGauge removal, interpretation prop, badgeLabel prop) are already implemented. The remaining work is small copy adjustments across two files.
+A new standalone page at `/ai-answers/does-osint-include-dark-web-data`, following the established AI Answers pattern (same structure as `WhatIsUsernameOsintScan`, `WhatIsAnIdentityRiskScore`, etc.).
 
-### What is already done (no action needed)
-- BlurredRiskGauge / "Risk Assessment" block -- already removed from FreeResultsPage
-- `interpretation` and `badgeLabel` props -- already wired in ExposureScoreCard and both results pages
-- Locked section CTA -- already updated in prior plan
+### Why a new page (not a section on the username scan page)
 
-### Remaining changes
+The topic is distinct enough to warrant its own URL for SEO, AI citation, and internal linking. Adding it as a section would bloat the username scan page with tangentially related content.
 
-#### 1. Update Risk Snapshot wording (FreeResultsPage.tsx, line 624)
+### Page structure
 
-Change:
-```
-"signals need your attention"
-```
-To:
-```
-"public exposure signals detected"
-```
+**URL**: `/ai-answers/does-osint-include-dark-web-data`
 
-#### 2. Adjust interpretation wording (FreeResultsPage.tsx, lines 162-167)
+**Sections** (each with an icon header, matching existing pages):
 
-Update the `interpretationMap` values to match the requested wording:
-- **moderate**: "This identifier appears across multiple public platforms."
-- **high**: "High public surface area across independent platforms."
-- **severe**: "Extensive public exposure detected across many sources."
+1. **Definition** -- What "dark web data" means in OSINT context vs open web OSINT. Quotable one-liner for AI citation.
+2. **Open Web vs Dark Web Exposure** -- Clear distinction between surface-level OSINT (username presence, public profiles) and breach/dark web indicators (credential dumps, paste sites, indexed mentions).
+3. **What Breach Signals May Be Included** -- Types of indicators: breach database references, paste site mentions, dark web index hits. No raw credentials are shown. Metadata only.
+4. **Limitations and Legal Boundaries** -- Not all tools include dark web sources. Legal constraints vary by jurisdiction. No continuous monitoring unless explicitly implemented. Data may be outdated or incomplete.
+5. **Ethical Considerations** -- Cautious framing: breach indicators inform risk, not guilt. No fear language.
 
-(`low` stays unchanged.)
+**FootprintIQ mention** (once, in the breach signals section):
+> "FootprintIQ may surface publicly referenced breach indicators where available."
 
-#### 3. Shorten locked CTA text (ExposureScoreCard.tsx, line 126)
+**FAQ Schema** (3 questions):
+- "Does OSINT include dark web data?"
+- "What breach signals appear in an OSINT scan?"
+- "Does an OSINT scan provide continuous dark web monitoring?"
 
-Change:
-```
-"See which platforms increase your exposure most + get step-by-step privacy recommendations"
-```
-To:
-```
-"See which platforms increase your exposure most"
-```
+**See Also** links: identity risk score page, username OSINT scan page, ethical OSINT tools page.
 
-#### 4. Update subtext wording (ExposureScoreCard.tsx, line 143)
+### Integration points
 
-Change:
-```
-"Includes full breakdown, evidence, and remediation checklist."
-```
-To:
-```
-"Includes full breakdown, evidence, and privacy recommendations."
-```
+1. **Route** (`src/App.tsx`): Add lazy-loaded route for the new page.
+2. **AI Answers Hub** (`src/pages/AIAnswersHub.tsx`): Add entry with `Globe` or `ShieldAlert` icon in the OSINT section.
+3. **See Also on username scan page** (`WhatIsUsernameOsintScan.tsx`): Replace one of the three existing See Also links with this new page.
 
-#### 5. Mirror interpretation updates in AdvancedResultsPage.tsx
+### Technical details
 
-Apply the same wording changes (moderate/high/severe) to the `interpretationMap` in AdvancedResultsPage.
+**New file**: `src/pages/ai-answers/DoesOsintIncludeDarkWebData.tsx`
+- Follows identical component pattern: Helmet, JSON-LD (Article + FAQ + Breadcrumb), Header, Breadcrumb nav, content sections, SeeAlsoSection, GuideCitationBlock, Footer.
 
-### Files to edit
-1. `src/components/scan/FreeResultsPage.tsx` -- Risk Snapshot copy (line 624) + interpretation wording (lines 164-166)
-2. `src/components/results/ExposureScoreCard.tsx` -- CTA text (line 126) + subtext (line 143)
-3. `src/components/scan/AdvancedResultsPage.tsx` -- interpretation wording alignment
+**Edits**:
+- `src/App.tsx` -- add lazy import + route
+- `src/pages/AIAnswersHub.tsx` -- add hub entry
+- `src/pages/ai-answers/WhatIsUsernameOsintScan.tsx` -- update See Also to include this page
 
-### What stays unchanged
-- `exposureScore.ts`, `exposureScoreDrivers.ts` -- no changes
-- ExposureScoreCard component structure and props -- no changes
-- Risk Snapshot grid layout -- no changes
+### Tone and compliance
+- Cautious, educational, non-promotional
+- No competitor comparisons
+- No exaggerated claims about dark web coverage
+- No fear-based language
+- Consistent with platform ethical positioning rules
+
