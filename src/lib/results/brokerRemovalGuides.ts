@@ -8,8 +8,8 @@
 
 const BROKER_REMOVAL_GUIDES: Record<string, string> = {
   mylife: '/remove-mylife-profile',
+  spokeo: '/remove-spokeo-profile',
   // Future guides — uncomment as pages are published:
-  // spokeo: '/remove-spokeo-profile',
   // beenverified: '/remove-beenverified-profile',
   // whitepages: '/remove-whitepages-profile',
 };

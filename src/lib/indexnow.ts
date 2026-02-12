@@ -104,6 +104,7 @@ export const INDEXNOW_URLS = [
   "/privacy-centre",
   "/remove-mylife-profile",
   "/data-broker-removal-guide",
+  "/remove-spokeo-profile",
 ];
 
 /**
