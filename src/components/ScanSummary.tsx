@@ -158,7 +158,7 @@ export const ScanSummary = ({ findings, scanId, isPro = false }: ScanSummaryProp
     if (!isPro) {
       toast({
         title: "Pro Feature",
-        description: "Upgrade to Pro to enable continuous monitoring.",
+        description: "Switch to Pro Intelligence to enable monitoring automation.",
         variant: "destructive",
       });
       return;
@@ -341,7 +341,7 @@ export const ScanSummary = ({ findings, scanId, isPro = false }: ScanSummaryProp
             <div>
               <p className="text-sm font-medium">Alert on Changes</p>
               <p className="text-xs text-muted-foreground">
-                {isPro ? "Monitor for new findings" : "Upgrade to Pro"}
+                {isPro ? "Monitor for new findings" : "Available with Pro Intelligence"}
               </p>
             </div>
           </div>

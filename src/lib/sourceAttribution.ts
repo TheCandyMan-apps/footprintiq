@@ -143,7 +143,7 @@ export function getSourceTransparencyText(
   isFullAccess: boolean
 ): string {
   if (!isFullAccess) {
-    return 'Upgrade to Pro to view source details';
+    return 'Switch to Pro Intelligence to view source details';
   }
   
   const uniqueSources = [...new Set(sources)];

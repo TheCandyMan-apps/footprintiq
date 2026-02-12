@@ -181,7 +181,7 @@ export function ReconNgScanForm({ workspaceId }: { workspaceId: string }) {
             className="w-full max-w-xs"
           >
             <Crown className="mr-2 h-5 w-5" />
-            Upgrade to Premium
+            Switch to Pro Intelligence
           </Button>
 
           <p className="text-xs text-muted-foreground">

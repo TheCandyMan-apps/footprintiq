@@ -134,13 +134,13 @@ export function ExposureScoreCard({
                       onClick={onUpgradeClick}
                       className="text-xs gap-1.5 flex-shrink-0 border-primary/30 text-primary hover:bg-primary/5"
                     >
-                      Upgrade to Pro
+                      Switch to Pro Intelligence
                       <ArrowRight className="h-3 w-3" />
                     </Button>
                   )}
                 </div>
                 <p className="text-[11px] text-muted-foreground/70">
-                  Includes full breakdown, evidence, and privacy recommendations.
+                  Includes full correlation analysis, trend tracking, and exportable reports.
                 </p>
               </div>
             )}

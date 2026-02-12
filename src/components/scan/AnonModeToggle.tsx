@@ -85,7 +85,7 @@ export function AnonModeToggle({
             </TooltipTrigger>
             {!isPremium && (
               <TooltipContent side="left">
-                <p className="text-xs">Upgrade to Pro to enable</p>
+                <p className="text-xs">Available with Pro Intelligence</p>
               </TooltipContent>
             )}
           </Tooltip>

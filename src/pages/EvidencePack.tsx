@@ -393,7 +393,7 @@ export default function EvidencePack() {
           </CardHeader>
           <CardContent>
             <Button onClick={() => navigate('/settings/billing')} className="w-full">
-              Upgrade to Premium
+              Switch to Pro Intelligence
             </Button>
           </CardContent>
         </Card>

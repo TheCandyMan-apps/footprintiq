@@ -85,7 +85,7 @@ export const AIInsightsCard = ({
         setIsFallbackMode(true);
         toast({
           title: "Basic Analysis",
-          description: "Showing deterministic analysis. Upgrade to Pro for AI-powered insights.",
+          description: "Showing basic analysis. Switch to Pro Intelligence for AI-powered correlation insights.",
         });
       } else {
         toast({
