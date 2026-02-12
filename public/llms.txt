@@ -45,6 +45,7 @@
 - [Privacy Centre](https://footprintiq.app/privacy-centre): Free data broker removal toolkit with GDPR/CCPA templates, broker detection, and opt-out status tracking
 - [Remove MyLife Profile](https://footprintiq.app/remove-mylife-profile): Step-by-step guide to removing your MyLife listing using manual opt-out, GDPR, or CCPA requests
 - [Data Broker Removal Guide](https://footprintiq.app/data-broker-removal-guide): Complete guide to removing personal data from data broker websites with GDPR and CCPA templates
+- [Remove Spokeo Profile](https://footprintiq.app/remove-spokeo-profile): Step-by-step guide to removing your Spokeo listing using online opt-out, GDPR, or CCPA requests
 
 ## Optional
 
