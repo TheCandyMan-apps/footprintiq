@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ProfileThumbnail } from './ProfileThumbnail';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, HelpCircle, AlertCircle, ExternalLink, Crosshair, Info } from 'lucide-react';
@@ -23,6 +24,7 @@ import {
   generateRiskContext,
   deriveMatchType,
 } from '@/lib/results/extractors';
+import { getBrokerRemovalGuide } from '@/lib/results/brokerRemovalGuides';
 
 type ClaimType = 'me' | 'not_me';
 
@@ -65,6 +67,7 @@ export function AccountCard({
   const confidence = getMatchConfidence(lensScore);
   const ConfidenceIcon = confidence.icon;
   const matchType = useMemo(() => deriveMatchType(result, lensScore), [result, lensScore]);
+  const removalGuide = useMemo(() => getBrokerRemovalGuide(platformName), [platformName]);
 
   return (
     <div
@@ -147,6 +150,20 @@ export function AccountCard({
           </TooltipProvider>
         </div>
       </div>
+
+      {/* Broker removal guide link */}
+      {removalGuide && (
+        <div className="px-2.5 pb-1">
+          <Link
+            to={removalGuide}
+            className="text-[9px] text-accent hover:underline transition-colors"
+            onClick={(e) => e.stopPropagation()}
+            target="_blank"
+          >
+            Learn how to remove this listing →
+          </Link>
+        </div>
+      )}
 
       {/* LENS badge if verified */}
       {verificationResult && (
