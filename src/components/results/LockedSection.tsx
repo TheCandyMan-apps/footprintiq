@@ -39,7 +39,7 @@ export function LockedSection({
   icon: Icon,
   previewContent,
   lockedContentCount,
-  upgradeCTA = 'Unlock full details',
+  upgradeCTA = 'Reveal full analysis',
   isLocked,
   children,
   className,

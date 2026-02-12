@@ -294,8 +294,8 @@ export function AccountsTab({ results, jobId }: AccountsTabProps) {
                 <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="text-xs font-medium">{displayResults.length - freeAccountLimit} more accounts</span>
               </div>
-              <p className="text-[10px] text-muted-foreground mb-2">Upgrade to Pro to view all accounts with full confidence scoring.</p>
-              <Button size="sm" className="h-7 text-[10px] gap-1"><Sparkles className="h-3 w-3" />Upgrade to Pro</Button>
+              <p className="text-[10px] text-muted-foreground mb-2">Activate Pro Intelligence Mode for full correlation and confidence scoring.</p>
+              <Button size="sm" className="h-7 text-[10px] gap-1"><Sparkles className="h-3 w-3" />Activate Pro Intelligence</Button>
             </div>
           )}
         </div>
@@ -405,8 +405,8 @@ function VirtualizedAccountList({
             <Lock className="h-3.5 w-3.5 text-muted-foreground" />
             <span className="text-xs font-medium">{displayResults.length - freeAccountLimit} more accounts</span>
           </div>
-          <p className="text-[10px] text-muted-foreground mb-2">Upgrade to Pro to view all accounts with full confidence scoring.</p>
-          <Button size="sm" className="h-7 text-[10px] gap-1"><Sparkles className="h-3 w-3" />Upgrade to Pro</Button>
+          <p className="text-[10px] text-muted-foreground mb-2">Activate Pro Intelligence Mode for full correlation and confidence scoring.</p>
+          <Button size="sm" className="h-7 text-[10px] gap-1"><Sparkles className="h-3 w-3" />Activate Pro Intelligence</Button>
         </div>
       )}
     </div>

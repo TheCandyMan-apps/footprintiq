@@ -24,10 +24,10 @@ export function PostScanUpgradeBanner({ totalFindings, highRiskCount }: PostScan
   }
 
   const message = highRiskCount > 0
-    ? `We found ${highRiskCount} high-risk exposures. Unlock full details to understand why.`
+    ? `${highRiskCount} high-risk signals detected. Reveal full identity correlation analysis.`
     : totalFindings > 0
-    ? `We found ${totalFindings} data points. See the full context with Pro.`
-    : 'Unlock full exposure details and reduce false positives with Pro.';
+    ? `${totalFindings} exposure signals found. Activate Pro Intelligence Mode for full context.`
+    : 'Activate Pro Intelligence Mode for correlation clarity and false positive reduction.';
 
   return (
     <Card className="relative p-4 mb-6 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 border-primary/20">
@@ -46,7 +46,7 @@ export function PostScanUpgradeBanner({ totalFindings, highRiskCount }: PostScan
         </div>
         
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm">Unlock full exposure details</p>
+          <p className="font-medium text-sm">Activate Pro Intelligence Mode</p>
           <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
             {message}
           </p>
@@ -64,7 +64,7 @@ export function PostScanUpgradeBanner({ totalFindings, highRiskCount }: PostScan
 
       {/* Subtle microcopy */}
       <p className="text-[10px] text-muted-foreground/60 mt-3 text-center">
-        Pro users see source URLs, evidence details, and correlation insights.
+        Correlation clarity • False positive reduction • Exposure trend tracking • Report exports
       </p>
     </Card>
   );

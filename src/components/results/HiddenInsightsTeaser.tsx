@@ -82,10 +82,10 @@ export function HiddenInsightsTeaser({
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground">
-                  {placeholderInsights.length} AI insights generated
+                  {placeholderInsights.length} AI attribution insights ready
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Unlock Pro to reveal findings
+                  Activate Pro Intelligence Mode to reveal
                 </p>
               </div>
               <Button 
@@ -94,7 +94,7 @@ export function HiddenInsightsTeaser({
                 className="h-8 px-4 gap-1.5"
                 onClick={() => navigate('/pricing')}
               >
-                Unlock AI Analysis
+                Unlock AI Attribution Insights
                 <ArrowRight className="h-3.5 w-3.5" />
               </Button>
             </div>

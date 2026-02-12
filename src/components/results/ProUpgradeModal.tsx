@@ -85,10 +85,11 @@ export function ProUpgradeModal({ open, onOpenChange }: ProUpgradeModalProps) {
   };
 
   const benefits = [
-    "Reduce false positives with source context",
-    "See how usernames and profiles connect",
-    "Access deeper evidence and confidence signals",
-    "Reveal hidden exposure you can't see on the free plan",
+    "Correlation clarity — see how identifiers connect across platforms",
+    "False positive reduction — filter noise with source-level context",
+    "Exposure trend tracking — monitor changes to your public visibility",
+    "Removal workflow tracking — manage opt-out requests in one place",
+    "Report exports — download evidence packs for action",
   ];
 
   return (
@@ -120,13 +121,13 @@ export function ProUpgradeModal({ open, onOpenChange }: ProUpgradeModalProps) {
               </div>
 
               <DialogTitle className="text-xl font-semibold leading-tight">
-                Unlock the full picture of your digital footprint
+                Switch to Pro Intelligence Mode
               </DialogTitle>
 
               <DialogDescription className="pt-4 text-base text-muted-foreground">
-                <span className="block mb-1">Free scans show what exists.</span>
+                <span className="block mb-1">Free scans identify public exposure.</span>
                 <span className="block font-medium text-foreground">
-                  Pro explains what it means.
+                  Pro reveals the full correlation analysis.
                 </span>
               </DialogDescription>
             </DialogHeader>
@@ -134,7 +135,7 @@ export function ProUpgradeModal({ open, onOpenChange }: ProUpgradeModalProps) {
             {/* Benefits list */}
             <div className="py-4">
               <p className="text-sm font-medium mb-3">
-                Upgrade to FootprintIQ Pro to:
+                Pro Intelligence Mode includes:
               </p>
               <ul className="space-y-2.5">
                 {benefits.map((benefit, index) => (

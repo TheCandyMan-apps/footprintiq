@@ -9,10 +9,10 @@ interface ProUnlockTransitionProps {
 }
 
 const UNLOCK_ITEMS = [
-  { icon: Users, label: 'All profiles revealed', delay: 0.2 },
-  { icon: Network, label: 'Connections labeled', delay: 0.4 },
-  { icon: Shield, label: 'LENS verification enabled', delay: 0.6 },
-  { icon: Brain, label: 'Confidence explanations unlocked', delay: 0.8 },
+  { icon: Users, label: 'Full identity correlation active', delay: 0.2 },
+  { icon: Network, label: 'Cross-platform connections revealed', delay: 0.4 },
+  { icon: Shield, label: 'False positive filtering enabled', delay: 0.6 },
+  { icon: Brain, label: 'AI attribution insights unlocked', delay: 0.8 },
 ];
 
 export function ProUnlockTransition({ isVisible, onDismiss }: ProUnlockTransitionProps) {
@@ -64,8 +64,8 @@ export function ProUnlockTransition({ isVisible, onDismiss }: ProUnlockTransitio
                 <Sparkles className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">Pro unlocked</h3>
-                <p className="text-sm text-muted-foreground">LENS verification is now available</p>
+                <h3 className="font-semibold text-foreground">Pro Intelligence Mode active</h3>
+                <p className="text-sm text-muted-foreground">Full correlation analysis is now available</p>
               </div>
             </motion.div>
 

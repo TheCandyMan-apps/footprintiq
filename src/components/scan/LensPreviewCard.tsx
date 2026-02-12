@@ -122,7 +122,7 @@ export function LensPreviewCard({ profiles, scanId }: LensPreviewCardProps) {
             <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
             <div className="flex-1">
               <p className="text-sm text-muted-foreground">
-                Upgrade to Pro to verify all findings with LENS.
+                Activate Pro Intelligence Mode for full LENS verification across all findings.
               </p>
             </div>
             <Button 

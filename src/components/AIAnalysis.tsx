@@ -114,9 +114,9 @@ export const AIAnalysis = ({ scanId }: AIAnalysisProps) => {
             {!isPremium && (
               <div className="mb-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
                 <Lock className="h-8 w-8 mx-auto mb-2 text-primary" />
-                <p className="font-semibold text-primary mb-1">Premium Feature</p>
+                <p className="font-semibold text-primary mb-1">Pro Intelligence Feature</p>
                 <p className="text-sm text-muted-foreground">
-                  Upgrade to Pro to unlock AI-powered privacy analysis
+                  Activate Pro Intelligence Mode for AI-powered attribution analysis
                 </p>
               </div>
             )}

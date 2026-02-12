@@ -140,7 +140,7 @@ export function UpgradeTeaser({
             )}
           </Button>
           <p className="text-xs text-center text-muted-foreground">
-            Unlimited scans • Cancel anytime • 30-day money-back guarantee
+            Correlation clarity • False positive reduction • Cancel anytime
           </p>
         </div>
       </div>
