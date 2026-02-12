@@ -20,6 +20,10 @@ interface ExposureScoreCardProps {
   categories?: ExposureCategory[];
   /** Max drivers to show (default: all) */
   maxDrivers?: number;
+  /** 1-line interpretation rendered below the header */
+  interpretation?: string;
+  /** Override the default badge label text */
+  badgeLabel?: string;
   onUpgradeClick?: () => void;
   className?: string;
 }
@@ -31,6 +35,8 @@ export function ExposureScoreCard({
   isLocked = false,
   categories,
   maxDrivers,
+  interpretation,
+  badgeLabel,
   onUpgradeClick,
   className,
 }: ExposureScoreCardProps) {
@@ -70,9 +76,14 @@ export function ExposureScoreCard({
                   getExposureLevelColor(level)
                 )}
               >
-                {getExposureLevelLabel(level)}
+                {badgeLabel || getExposureLevelLabel(level)}
               </Badge>
             </div>
+
+            {/* Interpretation line */}
+            {interpretation && (
+              <p className="text-xs text-muted-foreground leading-relaxed">{interpretation}</p>
+            )}
 
             {/* Drivers list */}
             <ul className="space-y-1.5">
@@ -107,12 +118,12 @@ export function ExposureScoreCard({
 
             {/* Locked section for Free users */}
             {isLocked && (
-              <div className="pt-3 border-t border-border/30">
-                <div className="flex items-center gap-4 justify-between">
+              <div className="pt-2 border-t border-border/30 space-y-2">
+                <div className="flex items-center gap-3 justify-between">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Lock className="h-3.5 w-3.5 flex-shrink-0" />
                     <span>
-                      Unlock full exposure breakdown + remediation steps
+                      See which platforms increase your exposure most + get step-by-step privacy recommendations
                       {hiddenDriverCount > 0 && ` (+${hiddenDriverCount} more insights)`}
                     </span>
                   </div>
@@ -128,6 +139,9 @@ export function ExposureScoreCard({
                     </Button>
                   )}
                 </div>
+                <p className="text-[11px] text-muted-foreground/70">
+                  Includes full breakdown, evidence, and remediation checklist.
+                </p>
               </div>
             )}
           </div>

@@ -80,12 +80,20 @@ function AdvancedExposureScoreSection({ results }: { results: any[] }) {
   const drivers = useMemo(() => generateExposureDrivers(results), [results]);
   const level = scoreResult.score >= 80 ? 'severe' as const : scoreResult.level;
 
+  const interpretationMap: Record<string, string> = {
+    low: 'Limited public discoverability detected for this identifier.',
+    moderate: 'This identifier is publicly discoverable across multiple sources.',
+    high: 'High public surface area across multiple independent platforms.',
+    severe: 'Extensive public exposure across many sources — prioritise review.',
+  };
+
   return (
     <ExposureScoreCard
       score={scoreResult.score}
       level={level}
       drivers={drivers}
       categories={scoreResult.categories}
+      interpretation={interpretationMap[level] || interpretationMap.low}
       className="mb-4"
     />
   );
