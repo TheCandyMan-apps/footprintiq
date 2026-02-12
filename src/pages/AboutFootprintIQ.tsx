@@ -8,6 +8,7 @@ import {
   PLATFORM_IS,
   PLATFORM_IS_NOT
 } from '@/lib/platformDescription';
+import { PlatformCapabilities } from '@/components/PlatformCapabilities';
 
 const AboutFootprintIQ = () => {
   const jsonLd = {
@@ -150,6 +151,9 @@ const AboutFootprintIQ = () => {
                 </p>
               </div>
             </section>
+
+            {/* Platform Capabilities */}
+            <PlatformCapabilities />
 
             {/* Section 3: Data Sources & Methodology */}
             <section className="mb-12">
