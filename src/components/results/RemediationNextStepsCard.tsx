@@ -129,7 +129,7 @@ export function RemediationNextStepsCard({
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Lock className="h-3.5 w-3.5 flex-shrink-0" />
                   <span>
-                    {hiddenSteps} more personalised step{hiddenSteps !== 1 ? 's' : ''} available with Pro
+                    +{hiddenSteps} additional step{hiddenSteps !== 1 ? 's' : ''} available in Pro
                   </span>
                 </div>
                 {onUpgradeClick && (
