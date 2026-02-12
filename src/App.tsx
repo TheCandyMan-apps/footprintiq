@@ -270,6 +270,7 @@ const DataBrokerRemovalGuide = lazy(() => import("./pages/DataBrokerRemovalGuide
 const RemoveSpokeoProfile = lazy(() => import("./pages/RemoveSpokeoProfile"));
 const RemoveBeenVerifiedProfile = lazy(() => import("./pages/RemoveBeenVerifiedProfile"));
 const IncogniVsDiyDataRemoval = lazy(() => import("./pages/IncogniVsDiyDataRemoval"));
+const RemoveYourselfFromGoogleSearch = lazy(() => import("./pages/RemoveYourselfFromGoogleSearch"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -410,6 +411,7 @@ function RouterContent() {
           <Route path="/remove-spokeo-profile" element={<RemoveSpokeoProfile />} />
           <Route path="/remove-beenverified-profile" element={<RemoveBeenVerifiedProfile />} />
           <Route path="/incogni-vs-diy-data-removal" element={<IncogniVsDiyDataRemoval />} />
+          <Route path="/remove-yourself-from-google-search" element={<RemoveYourselfFromGoogleSearch />} />
           <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
