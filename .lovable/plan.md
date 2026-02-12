@@ -1,76 +1,55 @@
 
 
-## Update Exposure Score to Surface Area Model
+## Polish Exposure Score Card and Remove Redundancy
 
-### Overview
-Replace the current weighted-category scoring algorithm in `src/lib/exposureScore.ts` with an additive "surface area" model that prioritizes public profile visibility as the dominant factor, adds breach/severity/reuse contributions, and introduces a new `severe` exposure level.
+### Task A: Remove Duplicate "Risk Assessment" (BlurredRiskGauge)
 
-### Changes
+In `FreeResultsPage.tsx`, remove the `BlurredRiskGauge` component (lines 601-606) and its import (line 84). This was the blurred gauge creating redundancy with the Exposure Score card. The page flow becomes:
 
-**1. `src/lib/exposureScore.ts` -- Major rewrite of scoring logic**
+1. ExposureScoreCard (locked)
+2. Risk Snapshot section (kept)
+3. HiddenInsightsTeaser
+4. Public Profiles
+5. ...remaining blocks
 
-- Add `'severe'` to the `ExposureLevel` type: `'low' | 'moderate' | 'high' | 'severe'`
-- Update `getExposureLevel()` to new thresholds:
-  - 0-24: `low`
-  - 25-49: `moderate`
-  - 50-74: `high`
-  - 75+: `severe`
-- Update `getExposureLevelColor`, `getExposureLevelBgColor`, `getExposureLevelLabel` to handle `severe` (red-600 styling, "Severe exposure" label)
-- Replace `calculateCategoryScores()` and the weighted score calculation in `calculateExposureScore()` with the new additive model:
+### Task B: Add `interpretation` Prop to ExposureScoreCard
 
-```text
-Score Buckets (additive, clamped 0-100):
+Add an optional `interpretation?: string` prop to `ExposureScoreCard`. Render it as small muted text below the header row (under "Exposure Score" title + badge).
 
-Profile Presence (dominant):
-  Count findings where type === 'social_media' OR type === 'identity'
-  0-5:   +5
-  6-20:  +15
-  21-50: +30
-  51-100: +45
-  100+:  +60
+Interpretation text by level (provided by the page components):
+- **low**: "Limited public discoverability detected for this identifier."
+- **moderate**: "This identifier is publicly discoverable across multiple sources."
+- **high**: "High public surface area across multiple independent platforms."
+- **severe**: "Extensive public exposure across many sources -- prioritise review."
 
-Breach Association:
-  Count findings where type === 'breach'
-  1:    +15
-  2-5:  +25
-  5+:   +35
+Wire this in both `FreeResultsPage.tsx` (ExposureScoreCardSection) and `AdvancedResultsPage.tsx`.
 
-High Severity Signals:
-  Each finding with severity 'high' or 'critical': +5
-  Capped at +20
+### Task C: Badge Text Override for Free "Emerging Exposure"
 
-Identifier Reuse:
-  Unique providers across social_media + identity findings >= 3: +10
-```
+Add optional `badgeLabel?: string` prop to `ExposureScoreCard`. When provided, it overrides the default `getExposureLevelLabel(level)` text in the badge.
 
-- Update the `categories` output so `detected` reflects which buckets contributed (non-zero contribution)
-- Set `insight` based on the highest contributing bucket
-- Keep CATEGORY_DEFINITIONS and ExposureCategory interface unchanged (backward compatible)
+In `FreeResultsPage.tsx` only: if score is 10-24, pass `badgeLabel="Emerging exposure"`. Otherwise omit the prop (uses default labels).
 
-**2. `src/components/results/ExposureScoreCard.tsx` -- Simplify severe handling**
+### Task D: Improve Free CTA Copy
 
-- Remove the local `ExposureScoreLevel` type extension and `getLevelColor`/`getLevelBg`/`getLevelLabel` wrappers since `severe` is now part of the core `ExposureLevel` type
-- Use the core `getExposureLevelColor`, `getExposureLevelBgColor`, `getExposureLevelLabel` directly
+In `ExposureScoreCard.tsx`, update the locked section:
+- Change the lock text from "Unlock full exposure breakdown + remediation steps" to "See which platforms increase your exposure most + get step-by-step privacy recommendations"
+- Add a subtext line below the Upgrade button: "Includes full breakdown, evidence, and remediation checklist." (small muted text)
 
-**3. `src/components/exposure/DigitalExposureScore.tsx` -- No changes needed**
+### Task E: UX Polish
 
-Already uses the core helpers which will now handle `severe`.
+- Tighten locked section spacing: reduce `pt-3` to `pt-2` and gap adjustments
+- Ensure no "Unknown" labels anywhere in the card
 
-**4. `src/components/exposure/ExposureScoreShareCard.tsx` -- No changes needed**
+### Files to Edit
 
-Already uses `ExposureLevel` type which will now include `severe`.
+1. **`src/components/results/ExposureScoreCard.tsx`** -- add `interpretation` and `badgeLabel` props, update CTA copy, tighten spacing
+2. **`src/components/scan/FreeResultsPage.tsx`** -- remove BlurredRiskGauge import + usage, pass `interpretation` and conditional `badgeLabel` to ExposureScoreCardSection
+3. **`src/components/scan/AdvancedResultsPage.tsx`** -- pass `interpretation` based on level
 
-### What stays unchanged
-- `ExposureCategory` interface shape
-- `CATEGORY_DEFINITIONS` array (same 5 categories)
-- `Finding` type in `ufm.ts`
-- `generateExposureDrivers()` in `exposureScoreDrivers.ts`
-- Results page mapping logic (already fixed in previous plan)
-- `useRealtimeResults.ts`
+### What Stays Unchanged
+- `exposureScore.ts` -- no changes
+- `exposureScoreDrivers.ts` -- no changes
+- Risk Snapshot section -- kept as-is
+- Pro results layout -- no structural changes
 
-### Technical Details
-- The function still accepts `Finding[]` as input
-- Profile counting uses `finding.type === 'social_media' || finding.type === 'identity'`
-- Breach counting uses `finding.type === 'breach'`
-- The additive model produces scores that align intuitively with real exposure (many profiles = high surface area)
-- Empty findings still return score 0 / level low / default insight
