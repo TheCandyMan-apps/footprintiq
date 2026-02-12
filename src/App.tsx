@@ -266,6 +266,7 @@ const AIAnswersWhatIsAnIdentityRiskScore = lazy(() => import("./pages/ai-answers
 const AIAnswersDoesOsintIncludeDarkWebData = lazy(() => import("./pages/ai-answers/DoesOsintIncludeDarkWebData"));
 const RemoveMyLifeProfile = lazy(() => import("./pages/RemoveMyLifeProfile"));
 const PrivacyCentrePage = lazy(() => import("./pages/PrivacyCentrePage"));
+const DataBrokerRemovalGuide = lazy(() => import("./pages/DataBrokerRemovalGuide"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -402,6 +403,7 @@ function RouterContent() {
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/remove-mylife-profile" element={<RemoveMyLifeProfile />} />
           <Route path="/privacy-centre" element={<PrivacyCentrePage />} />
+          <Route path="/data-broker-removal-guide" element={<DataBrokerRemovalGuide />} />
           <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
