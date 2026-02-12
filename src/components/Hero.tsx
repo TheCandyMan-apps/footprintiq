@@ -19,14 +19,20 @@ export const Hero = ({
       
       <div className="relative z-10 max-w-4xl mx-auto px-6 py-24 text-center">
         {/* Main headline */}
+        {/* Platform positioning */}
+        <p className="text-sm font-medium uppercase tracking-widest text-primary mb-4">
+          Digital Exposure Intelligence Platform
+        </p>
+
+        {/* Main headline */}
         <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight tracking-tight text-foreground">
-          See What the Internet
-          <span className="block text-primary mt-2">Knows About You</span>
+          Understand What's
+          <span className="block text-primary mt-2">Publicly Visible</span>
         </h1>
         
-        {/* Subheading - Canonical platform description */}
+        {/* Subheading */}
         <p className="text-lg sm:text-xl md:text-2xl text-muted-foreground mb-4 max-w-3xl mx-auto leading-relaxed">
-          {PLATFORM_DESCRIPTION_SHORT}
+          Manage your online footprint responsibly with ethical, open-source intelligence.
         </p>
         
         {/* Transparency line */}
@@ -34,7 +40,7 @@ export const Hero = ({
           We provide visibility. You make the decisions.
         </p>
         <p className="text-sm text-muted-foreground/60 mb-10 max-w-2xl mx-auto">
-          Designed for ethical OSINT and responsible interpretation.
+          Built for individuals and professionals who value transparency over surveillance.
         </p>
         
         {/* Inline Hero Input - reduces friction */}
@@ -57,19 +63,19 @@ export const Hero = ({
           </Button>
         </div>
         
-        {/* Trust indicators - updated for AI discoverability */}
+        {/* Trust indicators */}
         <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-primary" />
-            <span>Public data only</span>
+            <span>Public-source intelligence only</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-primary" />
-            <span>No monitoring or tracking</span>
+            <span>Ethical OSINT</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4 text-primary" />
-            <span>User-initiated scans only</span>
+            <span>Transparent exposure analysis</span>
           </div>
         </div>
       </div>
