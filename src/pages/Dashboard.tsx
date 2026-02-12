@@ -43,6 +43,7 @@ import { GlassCard } from '@/components/dashboard/GlassCard';
 import { CircularMetric } from '@/components/dashboard/CircularMetric';
 import { EntityCard } from '@/components/dashboard/EntityCard';
 import { NetworkPreview } from '@/components/dashboard/NetworkPreview';
+import { MonitoringStatusBanner } from '@/components/dashboard/MonitoringStatusBanner';
 import { SocialIntegrations } from '@/components/dashboard/SocialIntegrations';
 import { SavedViewsDialog } from '@/components/dashboard/SavedViewsDialog';
 import { useDashboardQuery } from '@/hooks/useDashboardQuery';
@@ -686,6 +687,7 @@ const Dashboard = () => {
               <p className="text-muted-foreground mt-2 text-base">
                 Monitor your digital footprint and track OSINT findings
               </p>
+              <MonitoringStatusBanner />
             </div>
           </div>
         </div>
