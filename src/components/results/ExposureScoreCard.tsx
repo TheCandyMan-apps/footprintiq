@@ -123,7 +123,7 @@ export function ExposureScoreCard({
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Lock className="h-3.5 w-3.5 flex-shrink-0" />
                     <span>
-                      See which platforms increase your exposure most + get step-by-step privacy recommendations
+                      See which platforms increase your exposure most
                       {hiddenDriverCount > 0 && ` (+${hiddenDriverCount} more insights)`}
                     </span>
                   </div>
@@ -140,7 +140,7 @@ export function ExposureScoreCard({
                   )}
                 </div>
                 <p className="text-[11px] text-muted-foreground/70">
-                  Includes full breakdown, evidence, and remediation checklist.
+                  Includes full breakdown, evidence, and privacy recommendations.
                 </p>
               </div>
             )}
