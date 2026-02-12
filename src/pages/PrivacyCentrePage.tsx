@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/accordion";
 import { Shield, FileText, Eye, ArrowRight, Lock, CheckCircle, Zap, ShieldCheck, Ban, UserX, Pencil, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RelatedPrivacyGuides } from "@/components/privacy/RelatedPrivacyGuides";
 
 const faqs = [
   {
@@ -449,6 +450,16 @@ export default function PrivacyCentrePage() {
             </Button>
           </div>
         </section>
+
+        <div className="max-w-3xl mx-auto px-6">
+          <RelatedPrivacyGuides links={[
+            { label: "Remove Personal Information from Google", to: "/privacy/google-content-removal" },
+            { label: "Data Broker Removal Guide", to: "/privacy/data-broker-removal-guide" },
+            { label: "Remove Your Spokeo Listing", to: "/remove-spokeo-profile" },
+            { label: "Remove Your Home Address from Google", to: "/how-to-remove-your-address-from-google" },
+            { label: "Ethical OSINT Principles", to: "/ethical-osint-principles" },
+          ]} />
+        </div>
 
         <GuideCitationBlock />
       </main>

@@ -13,6 +13,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Shield, FileText, AlertTriangle, CheckCircle, Globe, Scale, ArrowRight } from "lucide-react";
+import { RelatedPrivacyGuides } from "@/components/privacy/RelatedPrivacyGuides";
 
 const faqs = [
   {
@@ -430,16 +431,13 @@ export default function RemoveBeenVerifiedProfile() {
             </div>
           </section>
 
-          <section className="mt-16">
-            <h2 className="text-2xl font-bold mb-4">Related Data Broker Removal Guides</h2>
-            <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-              <li><Link to="/data-broker-removal-guide" className="text-accent hover:underline">Complete Data Broker Removal Guide</Link></li>
-              <li><Link to="/privacy-centre" className="text-accent hover:underline">Privacy Centre – Templates & Tracking</Link></li>
-              <li><Link to="/remove-mylife-profile" className="text-accent hover:underline">How to Remove Your MyLife Profile</Link></li>
-              <li><Link to="/remove-spokeo-profile" className="text-accent hover:underline">How to Remove Your Spokeo Profile</Link></li>
-              <li><Link to="/incogni-vs-diy-data-removal" className="text-accent hover:underline">Incogni vs DIY Data Removal – Comparison</Link></li>
-            </ul>
-          </section>
+          <RelatedPrivacyGuides links={[
+            { label: "Data Broker Removal Guide", to: "/privacy/data-broker-removal-guide" },
+            { label: "Remove Personal Information from Google", to: "/privacy/google-content-removal" },
+            { label: "Remove Your Spokeo Listing", to: "/remove-spokeo-profile" },
+            { label: "Remove Your Home Address from Google", to: "/how-to-remove-your-address-from-google" },
+            { label: "Ethical OSINT Principles", to: "/ethical-osint-principles" },
+          ]} />
 
           <GuideCitationBlock />
         </article>

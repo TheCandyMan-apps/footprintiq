@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Shield, FileText, Globe, AlertTriangle, Search, ArrowRight } from "lucide-react";
+import { RelatedPrivacyGuides } from "@/components/privacy/RelatedPrivacyGuides";
 
 const faqs = [
   {
@@ -393,6 +394,14 @@ const GoogleContentRemoval = () => {
               </li>
             </ul>
           </section>
+
+          <RelatedPrivacyGuides links={[
+            { label: "Remove Your Home Address from Google", to: "/how-to-remove-your-address-from-google" },
+            { label: "Data Broker Removal Guide", to: "/privacy/data-broker-removal-guide" },
+            { label: "Remove Your Spokeo Listing", to: "/remove-spokeo-profile" },
+            { label: "Remove Your BeenVerified Profile", to: "/remove-beenverified-profile" },
+            { label: "Privacy Centre – Templates & Tracking", to: "/privacy-centre" },
+          ]} />
 
           {/* Cite Block */}
           <aside className="border border-border/50 rounded-xl p-6 bg-muted/30 text-sm text-muted-foreground">
