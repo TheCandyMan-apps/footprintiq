@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { RemovalIsOneStep } from "@/components/privacy/RemovalIsOneStep";
 import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Shield, Database, Globe, AlertTriangle, Search, ArrowRight, Users, BarChart3 } from "lucide-react";
 
 const faqs = [
@@ -91,6 +92,12 @@ const breadcrumbSchema = {
   ],
 };
 
+const webPageSchema = buildWebPageSchema({
+  name: "Complete Data Broker Removal Guide (2026 Edition)",
+  description: "Learn how to remove your personal information from data broker websites. Step-by-step guidance for US, UK, and EU residents.",
+  url: "https://footprintiq.app/privacy/data-broker-removal-guide",
+});
+
 const DataBrokerRemovalGuide = () => {
   return (
     <>
@@ -119,6 +126,7 @@ const DataBrokerRemovalGuide = () => {
       <JsonLd data={faqSchema} />
       <JsonLd data={articleSchema} />
       <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={webPageSchema} />
 
       <main className="min-h-screen bg-background">
         <article className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
