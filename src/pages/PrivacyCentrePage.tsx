@@ -188,6 +188,9 @@ export default function PrivacyCentrePage() {
               </Link>
             </Button>
           </div>
+          <p className="text-sm text-muted-foreground mt-6">
+            This removal toolkit is free to use. No automated submissions. No hidden paywalls.
+          </p>
         </section>
 
         {/* How FootprintIQ Handles Removal */}
