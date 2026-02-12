@@ -2106,6 +2106,30 @@ export type Database = {
           },
         ]
       }
+      checklist_downloads: {
+        Row: {
+          checklist_slug: string
+          consent_given: boolean
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          checklist_slug?: string
+          consent_given?: boolean
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          checklist_slug?: string
+          consent_given?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       checkout_sessions: {
         Row: {
           amount_total: number | null

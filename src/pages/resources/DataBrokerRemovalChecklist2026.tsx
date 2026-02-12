@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { ChecklistDownloadCallout } from "@/components/resources/ChecklistDownloadCallout";
 import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
@@ -186,6 +187,8 @@ export default function DataBrokerRemovalChecklist2026() {
               professionals who want a structured, repeatable process for managing digital exposure.
             </p>
           </section>
+
+          <ChecklistDownloadCallout />
 
           {/* SECTION 1 */}
           <SectionHeading icon={Globe}>1. Identify Where Your Data Appears</SectionHeading>
