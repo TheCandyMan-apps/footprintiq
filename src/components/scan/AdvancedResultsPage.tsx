@@ -34,8 +34,10 @@ import { Loader2, Shield } from 'lucide-react';
 import { parseISO, isValid } from 'date-fns';
 import { LowResultsNotice } from './LowResultsNotice';
 import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
+import { RemediationNextStepsCard } from '@/components/results/RemediationNextStepsCard';
 import { calculateExposureScore } from '@/lib/exposureScore';
 import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
+import { buildRemediationPlan } from '@/lib/remediationPlan';
 import type { Finding } from '@/lib/ufm';
 
 // Lazy load tab components for performance
@@ -87,15 +89,24 @@ function AdvancedExposureScoreSection({ results }: { results: any[] }) {
     severe: 'Extensive public exposure detected across many sources.',
   };
 
+  const plan = useMemo(() => buildRemediationPlan(drivers, level), [drivers, level]);
+
   return (
-    <ExposureScoreCard
-      score={scoreResult.score}
-      level={level}
-      drivers={drivers}
-      categories={scoreResult.categories}
-      interpretation={interpretationMap[level] || interpretationMap.low}
-      className="mb-4"
-    />
+    <>
+      <ExposureScoreCard
+        score={scoreResult.score}
+        level={level}
+        drivers={drivers}
+        categories={scoreResult.categories}
+        interpretation={interpretationMap[level] || interpretationMap.low}
+        className="mb-4"
+      />
+      <RemediationNextStepsCard
+        drivers={drivers}
+        plan={plan}
+        className="mb-4"
+      />
+    </>
   );
 }
 
