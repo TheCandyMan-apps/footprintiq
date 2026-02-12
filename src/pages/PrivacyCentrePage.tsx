@@ -134,6 +134,8 @@ export default function PrivacyCentrePage() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Free Data Broker Removal Toolkit | FootprintIQ Privacy Centre" />
         <meta name="twitter:description" content="Remove your personal data from people-search sites with guided GDPR/CCPA templates and broker opt-out tracking." />
+        <meta property="og:image" content="https://footprintiq.app/og-image.jpg" />
+        <meta property="og:site_name" content="FootprintIQ" />
       </Helmet>
       <JsonLd data={faqJsonLd} />
       <JsonLd data={breadcrumbJsonLd} />

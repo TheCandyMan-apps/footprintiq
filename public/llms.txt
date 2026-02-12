@@ -40,6 +40,11 @@
 - [API Documentation](https://footprintiq.app/docs/api): Programmatic access to OSINT scanning
 - [What is OSINT](https://footprintiq.app/what-is-osint): Introduction to open-source intelligence
 
+## Privacy & Removal
+
+- [Privacy Centre](https://footprintiq.app/privacy-centre): Free data broker removal toolkit with GDPR/CCPA templates, broker detection, and opt-out status tracking
+- [Remove MyLife Profile](https://footprintiq.app/remove-mylife-profile): Step-by-step guide to removing your MyLife listing using manual opt-out, GDPR, or CCPA requests
+
 ## Optional
 
 - [Pricing](https://footprintiq.app/pricing): Free and Pro tier comparison
