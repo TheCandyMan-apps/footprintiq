@@ -102,6 +102,7 @@ const PartnerDashboard = lazy(() => import("./pages/partners/Dashboard"));
 const GlobalIndex = lazy(() => import("./pages/GlobalIndex"));
 const ResourcesIndex = lazy(() => import("./pages/resources/Index"));
 const WebinarsPage = lazy(() => import("./pages/resources/Webinars"));
+const DataBrokerRemovalChecklist2026 = lazy(() => import("./pages/resources/DataBrokerRemovalChecklist2026"));
 const Organization = lazy(() => import("./pages/Organization"));
 const ThreatIntel = lazy(() => import("./pages/ThreatIntel"));
 const Compliance = lazy(() => import("./pages/Compliance"));
@@ -482,6 +483,7 @@ function RouterContent() {
           <Route path="/intelligence" element={<IntelligenceDashboard />} />
           <Route path="/resources" element={<ResourcesIndex />} />
           <Route path="/resources/webinars" element={<WebinarsPage />} />
+          <Route path="/resources/2026-data-broker-removal-checklist" element={<DataBrokerRemovalChecklist2026 />} />
           <Route path="/organization" element={<Organization />} />
           <Route path="/threat-intel" element={<ThreatIntel />} />
           <Route path="/compliance" element={<Compliance />} />
