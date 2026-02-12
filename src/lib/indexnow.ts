@@ -106,6 +106,7 @@ export const INDEXNOW_URLS = [
   "/data-broker-removal-guide",
   "/remove-spokeo-profile",
   "/remove-beenverified-profile",
+  "/incogni-vs-diy-data-removal",
 ];
 
 /**
