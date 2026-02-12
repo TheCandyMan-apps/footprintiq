@@ -247,6 +247,40 @@ export default function PrivacyCentrePage() {
           </div>
         </section>
 
+        {/* Legal Framework */}
+        <section className="max-w-5xl mx-auto px-6 pb-16">
+          <h2 className="text-3xl font-bold text-center mb-4">Legal Framework</h2>
+          <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
+            The following regulations provide the legal basis for data deletion and de-indexing requests. This is informational context only and does not constitute legal advice.
+          </p>
+          <div className="space-y-4">
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <h3 className="font-semibold text-lg mb-2">GDPR Article 17 — Right to Erasure</h3>
+              <p className="text-muted-foreground leading-relaxed text-sm">
+                Under EU law, individuals have the right to request deletion of personal data when it is no longer necessary for the purpose it was collected, when consent is withdrawn, or when the data has been unlawfully processed. This also underpins the "Right to Be Forgotten" for search engine de-listing.
+              </p>
+            </div>
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <h3 className="font-semibold text-lg mb-2">UK GDPR</h3>
+              <p className="text-muted-foreground leading-relaxed text-sm">
+                The UK retains equivalent data protection rights through the UK Data Protection Act 2018. UK residents can exercise the right to erasure against data controllers operating in or targeting the UK. The Information Commissioner's Office (ICO) provides enforcement and guidance.
+              </p>
+            </div>
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <h3 className="font-semibold text-lg mb-2">CCPA / CPRA (California)</h3>
+              <p className="text-muted-foreground leading-relaxed text-sm">
+                The California Consumer Privacy Act and its amendment (CPRA) give California residents the right to request deletion of personal information held by businesses. The California Delete Act (SB 362) further requires data brokers to honour deletion requests through a centralised mechanism.
+              </p>
+            </div>
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <h3 className="font-semibold text-lg mb-2">Google Transparency Policy</h3>
+              <p className="text-muted-foreground leading-relaxed text-sm">
+                Google publishes a Transparency Report detailing the volume and outcomes of content removal requests. Google's policies allow individuals to request de-indexing of URLs containing sensitive personal information, including doxxing content, financial data, and identity documents, regardless of jurisdiction.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Features Grid */}
         <section className="max-w-5xl mx-auto px-6 pb-16">
           <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
