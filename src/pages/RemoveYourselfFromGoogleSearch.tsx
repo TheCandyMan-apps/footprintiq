@@ -62,6 +62,16 @@ const faqs = [
     answer:
       "If you delete or deactivate a social media account, the profile page will eventually drop out of Google's index. You can speed this up by using Google's URL removal tool once the page returns a 404 error. Cached versions may persist briefly.",
   },
+  {
+    question: "Can companies remove search results about them?",
+    answer:
+      "Companies can request removal of specific content that violates Google's policies, such as doxxing of employees or leaked confidential data. For other content, companies typically work with the source website to remove or update the information, then request Google to de-index the outdated page.",
+  },
+  {
+    question: "Is removal from Google permanent?",
+    answer:
+      "Not necessarily. If the original content remains online, Google may re-index it during future crawls. Permanent removal requires deleting the content at the source. Even after source deletion, data brokers may re-aggregate your information from other public records, so ongoing monitoring is recommended.",
+  },
 ];
 
 const faqSchema = {
@@ -79,7 +89,7 @@ const articleSchema = {
   "@type": "Article",
   headline: "How to Remove Your Name from Google Search (Step-by-Step Guide)",
   description:
-    "Learn how to remove personal information from Google search results. Includes right to be forgotten, legal options, and step-by-step instructions.",
+    "Learn how to remove personal information from Google search results. Includes right to be forgotten, legal options, and step-by-step removal guidance.",
   author: { "@type": "Organization", name: "FootprintIQ" },
   publisher: { "@type": "Organization", name: "FootprintIQ" },
   datePublished: "2026-02-12",
@@ -109,7 +119,7 @@ const RemoveYourselfFromGoogleSearch = () => {
         <title>How to Remove Your Name from Google Search (Step-by-Step Guide)</title>
         <meta
           name="description"
-          content="Learn how to remove personal information from Google search results. Includes right to be forgotten, legal options, and step-by-step instructions."
+          content="Learn how to remove personal information from Google search results. Includes right to be forgotten, legal options, and step-by-step removal guidance."
         />
         <link rel="canonical" href="https://footprintiq.app/remove-yourself-from-google-search" />
         <meta property="og:title" content="How to Remove Your Name from Google Search (Step-by-Step Guide)" />
@@ -177,6 +187,10 @@ const RemoveYourselfFromGoogleSearch = () => {
               <li>
                 <strong>News articles:</strong> Online news coverage, press releases, and blog posts
                 that mention your name are indexed and may persist indefinitely.
+              </li>
+              <li>
+                <strong>Cached content:</strong> Even after a page is updated or removed, Google may
+                continue to show a cached version until the next crawl cycle refreshes the index.
               </li>
             </ul>
           </section>
@@ -373,9 +387,43 @@ const RemoveYourselfFromGoogleSearch = () => {
             </ul>
           </section>
 
+          {/* Structured Removal Workflow */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-4">Structured Removal Workflow</h2>
+            <p className="text-muted-foreground mb-4">
+              A structured approach increases the likelihood of successful removal and reduces
+              the time spent on repeated requests. A typical workflow involves:
+            </p>
+            <ol className="list-decimal list-inside space-y-3 text-muted-foreground mb-6">
+              <li>
+                <strong>Identify source websites</strong> — Search your name and document every URL
+                where your personal information appears.
+              </li>
+              <li>
+                <strong>Generate compliant removal templates</strong> — Use standardised GDPR or
+                CCPA request templates to contact each source with a legally grounded removal request.
+              </li>
+              <li>
+                <strong>Track submission status</strong> — Record which requests have been sent,
+                acknowledged, and completed to avoid duplicating effort.
+              </li>
+            </ol>
+            <div className="bg-card border border-border/50 rounded-xl p-6">
+              <p className="text-foreground font-medium mb-2">Generate a GDPR/CCPA Removal Template</p>
+              <p className="text-muted-foreground">
+                The{" "}
+                <Link to="/privacy-centre" className="text-accent hover:underline">
+                  Privacy Centre
+                </Link>{" "}
+                provides ready-to-use removal request templates that comply with GDPR Article 17
+                and CCPA requirements.
+              </p>
+            </div>
+          </section>
+
           {/* Monitoring */}
           <section className="mb-12">
-            <h2 className="text-2xl font-bold mb-4">Monitoring Your Search Exposure</h2>
+            <h2 className="text-2xl font-bold mb-4">Monitor Your Search Exposure Over Time</h2>
             <p className="text-muted-foreground mb-4">
               Search results change over time. New data broker listings, social media mentions, or
               public records may surface after an initial removal. Structured, periodic monitoring
