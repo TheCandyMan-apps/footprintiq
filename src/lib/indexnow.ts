@@ -109,6 +109,7 @@ export const INDEXNOW_URLS = [
   "/incogni-vs-diy-data-removal",
   "/remove-yourself-from-google-search",
   "/privacy/google-content-removal",
+  "/privacy/data-broker-removal-guide",
 ];
 
 /**
