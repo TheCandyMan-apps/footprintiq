@@ -1,6 +1,7 @@
 import { Shield, Fingerprint, AlertTriangle, BookOpen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { Link } from "react-router-dom";
 
 const capabilities = [
   {
@@ -8,6 +9,7 @@ const capabilities = [
     title: "Identity Risk Scoring",
     description:
       "FootprintIQ generates an identity risk score based on publicly observable correlation signals, account exposure patterns, and contextual indicators.",
+    learnMore: "/ai-answers/what-is-an-identity-risk-score",
   },
   {
     icon: Fingerprint,
@@ -84,6 +86,14 @@ export function PlatformCapabilities({ includeSchema = false }: PlatformCapabili
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {cap.description}
                       </p>
+                      {"learnMore" in cap && cap.learnMore && (
+                        <Link
+                          to={cap.learnMore}
+                          className="inline-block mt-2 text-xs text-primary hover:underline"
+                        >
+                          Learn more →
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </CardContent>
