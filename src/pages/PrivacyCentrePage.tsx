@@ -349,6 +349,41 @@ export default function PrivacyCentrePage() {
           </div>
         </section>
 
+        {/* Upgrade for Ongoing Monitoring */}
+        <section className="max-w-4xl mx-auto px-6 pb-16">
+          <div className="bg-card border border-border/50 rounded-2xl p-8 md:p-10">
+            <div className="flex items-center gap-3 mb-4">
+              <ShieldCheck className="w-6 h-6 text-accent" />
+              <h2 className="text-2xl md:text-3xl font-bold">Upgrade for Ongoing Monitoring & Tracking</h2>
+            </div>
+            <p className="text-muted-foreground leading-relaxed mb-6 max-w-2xl">
+              The free toolkit covers discovery and guided removal. For users who want enhanced control over their digital exposure, Pro adds continuous monitoring and management tools.
+            </p>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+              {[
+                "Removal request tracking",
+                "Exposure change alerts",
+                "Re-scan notifications",
+                "Exportable reports",
+                "Multi-profile management",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <CheckCircle className="w-4 h-4 text-accent shrink-0" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-8">
+              <Button asChild variant="outline" size="lg" className="gap-2">
+                <Link to="/pricing">
+                  Learn More About Pro
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
         {/* FAQ Section */}
         <section className="max-w-4xl mx-auto px-6 pb-16">
           <h2 className="text-3xl font-bold text-center mb-10">Frequently Asked Questions</h2>
