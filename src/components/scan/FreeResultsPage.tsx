@@ -84,6 +84,8 @@ import { useNavigate } from 'react-router-dom';
 
 import { HiddenInsightsTeaser } from '@/components/results/HiddenInsightsTeaser';
 import { ScanDepthIndicator } from '@/components/results/ScanDepthIndicator';
+import { RemediationNextStepsCard } from '@/components/results/RemediationNextStepsCard';
+import { buildRemediationPlan } from '@/lib/remediationPlan';
 import { AccountRow } from './results-tabs/accounts/AccountRow';
 import { ConnectionsPreviewGraph } from './results-tabs/connections/ConnectionsPreviewGraph';
 import { TimelinePreview } from './results-tabs/TimelinePreview';
@@ -167,18 +169,28 @@ function ExposureScoreCardSection({ results, onUpgradeClick }: { results: ScanRe
   };
 
   const freeBadgeLabel = scoreResult.score >= 10 && scoreResult.score <= 24 ? 'Emerging exposure' : undefined;
+  const plan = useMemo(() => buildRemediationPlan(drivers, level), [drivers, level]);
 
   return (
-    <ExposureScoreCard
-      score={scoreResult.score}
-      level={level}
-      drivers={drivers}
-      isLocked
-      maxDrivers={3}
-      interpretation={interpretationMap[level] || interpretationMap.low}
-      badgeLabel={freeBadgeLabel}
-      onUpgradeClick={onUpgradeClick}
-    />
+    <>
+      <ExposureScoreCard
+        score={scoreResult.score}
+        level={level}
+        drivers={drivers}
+        isLocked
+        maxDrivers={3}
+        interpretation={interpretationMap[level] || interpretationMap.low}
+        badgeLabel={freeBadgeLabel}
+        onUpgradeClick={onUpgradeClick}
+      />
+      <RemediationNextStepsCard
+        drivers={drivers}
+        plan={plan}
+        isLocked
+        onUpgradeClick={onUpgradeClick}
+        className="mt-4"
+      />
+    </>
   );
 }
 
