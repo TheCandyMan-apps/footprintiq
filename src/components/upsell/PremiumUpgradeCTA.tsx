@@ -15,8 +15,8 @@ interface PremiumUpgradeCTAProps {
 
 export const PremiumUpgradeCTA = ({ 
   variant = 'card',
-  message = 'Upgrade to Pro for unlimited scans',
-  feature = 'unlimited scans'
+  message = 'Switch to Pro Intelligence Mode',
+  feature = 'full correlation analysis and exposure monitoring'
 }: PremiumUpgradeCTAProps) => {
   const [loading, setLoading] = useState(false);
 
@@ -60,7 +60,7 @@ export const PremiumUpgradeCTA = ({
                 </Badge>
               </h3>
               <p className="text-sm text-muted-foreground">
-                Get {feature} and premium features
+                {feature}
               </p>
             </div>
           </div>
@@ -71,7 +71,7 @@ export const PremiumUpgradeCTA = ({
           >
             {loading ? 'Loading...' : (
               <>
-                Upgrade Now
+                Activate Pro Intelligence
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}
@@ -113,7 +113,7 @@ export const PremiumUpgradeCTA = ({
         </div>
         <CardTitle className="text-2xl">{message}</CardTitle>
         <CardDescription>
-          Unlock premium features for just <strong className="text-primary">$15/month</strong>
+          Full correlation analysis and exposure monitoring for just <strong className="text-primary">$15/month</strong>
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -121,22 +121,22 @@ export const PremiumUpgradeCTA = ({
           <div className="flex items-start gap-2">
             <Zap className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium">Unlimited Scans</p>
-              <p className="text-sm text-muted-foreground">No limits on scan frequency or depth</p>
+              <p className="font-medium">Correlation Clarity</p>
+              <p className="text-sm text-muted-foreground">See how identifiers connect across platforms</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <Shield className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium">Advanced Tools</p>
-              <p className="text-sm text-muted-foreground">Access to premium OSINT tools and dark web scanning</p>
+              <p className="font-medium">False Positive Reduction</p>
+              <p className="text-sm text-muted-foreground">Filter noise with source-level context and LENS verification</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <Sparkles className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium">AI-Powered Analysis</p>
-              <p className="text-sm text-muted-foreground">Get AI insights and catfish detection</p>
+              <p className="font-medium">Exposure Monitoring & Reports</p>
+              <p className="text-sm text-muted-foreground">Track exposure trends and export evidence packs</p>
             </div>
           </div>
         </div>
@@ -148,7 +148,7 @@ export const PremiumUpgradeCTA = ({
         >
           {loading ? 'Opening Checkout...' : (
             <>
-              Upgrade to Pro Now
+              Activate Pro Intelligence Mode
               <ArrowRight className="ml-2 h-4 w-4" />
             </>
           )}

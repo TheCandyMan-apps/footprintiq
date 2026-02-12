@@ -132,14 +132,14 @@ export function PostScanUpgradeModal({
             <Lock className="h-7 w-7 text-primary" />
           </div>
           <DialogTitle className="text-xl">
-            Want clarity on what this actually means?
+            Ready for the full correlation analysis?
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground mt-3 space-y-2">
             <span className="block">
-              You're viewing a redacted summary of an advanced scan.
+              You're viewing a summary of your public exposure signals.
             </span>
             <span className="block">
-              Unlock Pro to see full sources, confidence scores, and connections.
+              Switch to Pro Intelligence Mode for full attribution insights and false positive filtering.
             </span>
           </DialogDescription>
         </DialogHeader>
@@ -153,7 +153,7 @@ export function PostScanUpgradeModal({
               className="w-full"
               size="lg"
             >
-              Unlock full analysis
+              Activate Pro Intelligence Mode
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           ) : (
@@ -162,7 +162,7 @@ export function PostScanUpgradeModal({
               className="w-full"
               size="lg"
             >
-              Unlock full analysis
+              Activate Pro Intelligence Mode
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           )}

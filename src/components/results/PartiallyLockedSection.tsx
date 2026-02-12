@@ -33,7 +33,7 @@ export function PartiallyLockedSection({
   icon: Icon,
   children,
   blurredPreview,
-  lockedReason = "Unlock full context",
+  lockedReason = "Reveal full correlation",
   className,
   isGated,
   inline = false,

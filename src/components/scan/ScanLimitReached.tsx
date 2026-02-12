@@ -41,7 +41,7 @@ export function ScanLimitReached({
         {/* Friendly explanation */}
         <p className="text-sm text-muted-foreground mb-4">
           You've used {scansUsed} of {scansLimit} scan{scansLimit !== 1 ? 's' : ''} this month. 
-          Upgrade to Pro for more scans and full analysis capabilities.
+          Switch to Pro Intelligence Mode for expanded scanning and full correlation analysis.
         </p>
 
         {/* Usage indicator */}
@@ -57,24 +57,24 @@ export function ScanLimitReached({
           className="w-full max-w-xs"
         >
           <TrendingUp className="h-5 w-5 mr-2" />
-          Unlock Full Analysis
+          Activate Pro Intelligence Mode
         </Button>
 
         {/* Value props */}
         <div className="mt-6 grid grid-cols-2 gap-3 text-xs text-muted-foreground">
           <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
             <p className="font-medium text-foreground mb-1">100 scans/month</p>
-            <p>Pro plan includes comprehensive OSINT coverage</p>
+            <p>Correlation clarity and false positive reduction</p>
           </div>
           <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
-            <p className="font-medium text-foreground mb-1">Full Analysis</p>
-            <p>Context, evidence, correlation & AI insights</p>
+            <p className="font-medium text-foreground mb-1">Full Intelligence</p>
+            <p>Attribution insights, exposure tracking & report exports</p>
           </div>
         </div>
 
         {/* Educational microcopy */}
         <p className="text-[10px] text-muted-foreground/60 mt-6">
-          Pro users gain investigator-grade clarity on their digital exposure.
+          Pro Intelligence Mode provides correlation clarity and exposure monitoring.
         </p>
       </div>
     </Card>
@@ -115,7 +115,7 @@ export function ScanLimitReachedInline({
           size="sm"
         >
           <TrendingUp className="h-4 w-4 mr-1.5" />
-          Unlock Full Analysis
+          Activate Pro Intelligence
         </Button>
       </div>
     </>
