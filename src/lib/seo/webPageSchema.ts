@@ -13,6 +13,8 @@ export function buildWebPageSchema(options: {
   name: string;
   description: string;
   url: string;
+  datePublished?: string;
+  dateModified?: string;
   lastReviewed?: string;
 }) {
   return {
@@ -23,6 +25,8 @@ export function buildWebPageSchema(options: {
     url: options.url,
     author: FOOTPRINTIQ_ORG,
     publisher: FOOTPRINTIQ_ORG,
+    datePublished: options.datePublished ?? "2026-02-12",
+    dateModified: options.dateModified ?? "2026-02-12",
     lastReviewed: options.lastReviewed ?? "2026-02-12",
     inLanguage: "en",
     isPartOf: {

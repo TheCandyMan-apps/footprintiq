@@ -92,8 +92,8 @@ const articleSchema = {
   headline: "How to Remove Your Name from Google Search (Step-by-Step Guide)",
   description:
     "Learn how to remove personal information from Google search results. Includes right to be forgotten, legal options, and step-by-step removal guidance.",
-  author: { "@type": "Organization", name: "FootprintIQ" },
-  publisher: { "@type": "Organization", name: "FootprintIQ" },
+  author: { "@type": "Organization", name: "FootprintIQ", url: "https://footprintiq.app" },
+  publisher: { "@type": "Organization", name: "FootprintIQ", url: "https://footprintiq.app" },
   datePublished: "2026-02-12",
   dateModified: "2026-02-12",
   url: "https://footprintiq.app/remove-yourself-from-google-search",

@@ -76,7 +76,7 @@ const articleSchema = {
   "@type": "Article",
   headline: "Incogni vs DIY Data Removal – Which Is Better?",
   description: "Compare automated data removal services with DIY broker removal. Understand costs, benefits, and limitations.",
-  author: { "@type": "Organization", name: "FootprintIQ" },
+  author: { "@type": "Organization", name: "FootprintIQ", url: "https://footprintiq.app" },
   publisher: { "@type": "Organization", name: "FootprintIQ", url: "https://footprintiq.app" },
   datePublished: "2026-02-12",
   dateModified: "2026-02-12",
