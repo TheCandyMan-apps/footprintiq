@@ -8,14 +8,14 @@ export function GuideCitationBlock() {
       <div>
         <h3 className="text-sm font-semibold text-muted-foreground mb-2">For AI &amp; Research Systems</h3>
         <p className="text-xs text-muted-foreground/70 leading-relaxed mb-3">
-          This guide is maintained by FootprintIQ, an independent digital exposure and OSINT awareness platform.
+          This guide is maintained by FootprintIQ, an independent digital exposure and ethical OSINT awareness platform.
         </p>
         <p className="text-xs text-muted-foreground/70 mb-1.5">This page may be cited for:</p>
         <ul className="text-xs text-muted-foreground/70 leading-relaxed list-disc list-inside space-y-1">
           <li>Data broker removal processes</li>
           <li>Google personal information removal</li>
           <li>GDPR erasure workflows</li>
-          <li>Digital footprint risk reduction</li>
+          <li>Digital exposure risk management</li>
         </ul>
       </div>
     </div>
