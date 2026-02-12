@@ -82,9 +82,9 @@ function AdvancedExposureScoreSection({ results }: { results: any[] }) {
 
   const interpretationMap: Record<string, string> = {
     low: 'Limited public discoverability detected for this identifier.',
-    moderate: 'This identifier is publicly discoverable across multiple sources.',
-    high: 'High public surface area across multiple independent platforms.',
-    severe: 'Extensive public exposure across many sources — prioritise review.',
+    moderate: 'This identifier appears across multiple public platforms.',
+    high: 'High public surface area across independent platforms.',
+    severe: 'Extensive public exposure detected across many sources.',
   };
 
   return (

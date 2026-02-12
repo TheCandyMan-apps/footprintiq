@@ -161,9 +161,9 @@ function ExposureScoreCardSection({ results, onUpgradeClick }: { results: ScanRe
 
   const interpretationMap: Record<string, string> = {
     low: 'Limited public discoverability detected for this identifier.',
-    moderate: 'This identifier is publicly discoverable across multiple sources.',
-    high: 'High public surface area across multiple independent platforms.',
-    severe: 'Extensive public exposure across many sources — prioritise review.',
+    moderate: 'This identifier appears across multiple public platforms.',
+    high: 'High public surface area across independent platforms.',
+    severe: 'Extensive public exposure detected across many sources.',
   };
 
   const freeBadgeLabel = scoreResult.score >= 10 && scoreResult.score <= 24 ? 'Emerging exposure' : undefined;
@@ -621,7 +621,7 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 {/* Enhanced emotional context */}
                 <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-4">
                   <p className="text-sm font-medium text-amber-600 dark:text-amber-400">
-                    ⚠️ {signalsFound} signals need your attention
+                    ⚠️ {signalsFound} public exposure signals detected
                   </p>
                   {totalBreaches > 0 && (
                     <p className="text-xs text-muted-foreground mt-1">
