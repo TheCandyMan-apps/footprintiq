@@ -10,7 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Shield, FileText, Eye, ArrowRight, Lock, CheckCircle, Zap } from "lucide-react";
+import { Shield, FileText, Eye, ArrowRight, Lock, CheckCircle, Zap, ShieldCheck, Ban, UserX, Pencil, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const faqs = [
@@ -179,6 +179,71 @@ export default function PrivacyCentrePage() {
                 View Sample Report
               </Link>
             </Button>
+          </div>
+        </section>
+
+        {/* How FootprintIQ Handles Removal */}
+        <section className="max-w-5xl mx-auto px-6 pb-16">
+          <h2 className="text-3xl font-bold text-center mb-4">How FootprintIQ Handles Removal</h2>
+          <p className="text-center text-muted-foreground mb-10 max-w-2xl mx-auto">
+            FootprintIQ follows ethical OSINT principles throughout the removal process. We provide tools and guidance — never deception or automation without your knowledge.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="p-3 rounded-xl bg-accent/10 border border-accent/20 w-fit mb-4">
+                <ShieldCheck className="w-5 h-5 text-accent" />
+              </div>
+              <h3 className="font-semibold mb-2">No Automated Submissions Without Consent</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We never submit removal requests on your behalf without your explicit approval. You review and send every request yourself.
+              </p>
+            </div>
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="p-3 rounded-xl bg-accent/10 border border-accent/20 w-fit mb-4">
+                <Ban className="w-5 h-5 text-accent" />
+              </div>
+              <h3 className="font-semibold mb-2">No Scraping Private Data</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                FootprintIQ only analyses publicly available information. We never access private accounts, bypass authentication, or scrape restricted content.
+              </p>
+            </div>
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="p-3 rounded-xl bg-accent/10 border border-accent/20 w-fit mb-4">
+                <UserX className="w-5 h-5 text-accent" />
+              </div>
+              <h3 className="font-semibold mb-2">No Impersonation</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We never impersonate you or misrepresent identity when interacting with data brokers. All templates are transparent and honest.
+              </p>
+            </div>
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="p-3 rounded-xl bg-accent/10 border border-accent/20 w-fit mb-4">
+                <Pencil className="w-5 h-5 text-accent" />
+              </div>
+              <h3 className="font-semibold mb-2">User-Controlled Template Generation</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                You control the content of every removal request. Templates are pre-filled from your identity profile and fully editable before use.
+              </p>
+            </div>
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="p-3 rounded-xl bg-accent/10 border border-accent/20 w-fit mb-4">
+                <BarChart3 className="w-5 h-5 text-accent" />
+              </div>
+              <h3 className="font-semibold mb-2">Transparent Tracking Only</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Status tracking reflects actions you have taken. We do not inject hidden tracking, affiliate links, or third-party analytics into your removal workflow.
+              </p>
+            </div>
+            <div className="bg-card border border-border/50 rounded-2xl p-6">
+              <div className="p-3 rounded-xl bg-accent/10 border border-accent/20 w-fit mb-4">
+                <Shield className="w-5 h-5 text-accent" />
+              </div>
+              <h3 className="font-semibold mb-2">Ethical OSINT Principles</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                FootprintIQ operates within strict ethical boundaries: public data only, correlation-based analysis (not identity confirmation), harm reduction by design, and full transparency about methods and limitations.{" "}
+                <Link to="/ethical-osint" className="text-accent hover:underline">Learn more →</Link>
+              </p>
+            </div>
           </div>
         </section>
 
