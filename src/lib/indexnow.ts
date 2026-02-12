@@ -108,6 +108,7 @@ export const INDEXNOW_URLS = [
   "/remove-beenverified-profile",
   "/incogni-vs-diy-data-removal",
   "/remove-yourself-from-google-search",
+  "/privacy/google-content-removal",
 ];
 
 /**
