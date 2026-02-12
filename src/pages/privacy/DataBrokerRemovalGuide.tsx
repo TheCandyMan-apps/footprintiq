@@ -5,6 +5,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Shield, Database, Globe, AlertTriangle, Search, ArrowRight, Users, BarChart3 } from "lucide-react";
 import { RelatedPrivacyGuides } from "@/components/privacy/RelatedPrivacyGuides";
+import { PrivacyBreadcrumb } from "@/components/privacy/PrivacyBreadcrumb";
 
 const faqs = [
   {
@@ -88,7 +89,7 @@ const breadcrumbSchema = {
   "@type": "BreadcrumbList",
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
-    { "@type": "ListItem", position: 2, name: "Privacy", item: "https://footprintiq.app/privacy-centre" },
+    { "@type": "ListItem", position: 2, name: "Privacy Resources", item: "https://footprintiq.app/privacy-centre" },
     { "@type": "ListItem", position: 3, name: "Data Broker Removal Guide", item: "https://footprintiq.app/privacy/data-broker-removal-guide" },
   ],
 };
@@ -132,15 +133,7 @@ const DataBrokerRemovalGuide = () => {
       <main className="min-h-screen bg-background">
         <article className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
           {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" className="mb-8 text-sm text-muted-foreground">
-            <ol className="flex items-center gap-2 flex-wrap">
-              <li><Link to="/" className="hover:text-accent transition-colors">Home</Link></li>
-              <li>/</li>
-              <li><Link to="/privacy-centre" className="hover:text-accent transition-colors">Privacy</Link></li>
-              <li>/</li>
-              <li className="text-foreground font-medium">Data Broker Removal Guide</li>
-            </ol>
-          </nav>
+          <PrivacyBreadcrumb currentPage="Data Broker Removal Guide" />
 
           {/* Header */}
           <header className="mb-12">

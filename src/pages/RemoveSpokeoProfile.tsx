@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/accordion";
 import { Shield, FileText, AlertTriangle, CheckCircle, Globe, Scale, ArrowRight } from "lucide-react";
 import { RelatedPrivacyGuides } from "@/components/privacy/RelatedPrivacyGuides";
+import { PrivacyBreadcrumb } from "@/components/privacy/PrivacyBreadcrumb";
 
 const faqs = [
   {
@@ -117,7 +118,7 @@ const breadcrumbJsonLd = {
   "@type": "BreadcrumbList",
   itemListElement: [
     { "@type": "ListItem", position: 1, name: "Home", item: "https://footprintiq.app/" },
-    { "@type": "ListItem", position: 2, name: "Guides", item: "https://footprintiq.app/guides" },
+    { "@type": "ListItem", position: 2, name: "Privacy Resources", item: "https://footprintiq.app/privacy-centre" },
     { "@type": "ListItem", position: 3, name: "Remove Spokeo Profile", item: "https://footprintiq.app/remove-spokeo-profile" },
   ],
 };
@@ -156,16 +157,9 @@ export default function RemoveSpokeoProfile() {
       <Header />
 
       <main className="min-h-screen bg-background">
-        {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="max-w-4xl mx-auto px-6 pt-8">
-          <ol className="flex items-center gap-2 text-sm text-muted-foreground">
-            <li><Link to="/" className="hover:text-primary transition-colors">Home</Link></li>
-            <li>/</li>
-            <li><Link to="/guides" className="hover:text-primary transition-colors">Guides</Link></li>
-            <li>/</li>
-            <li className="text-foreground font-medium">Remove Spokeo Profile</li>
-          </ol>
-        </nav>
+        <div className="max-w-4xl mx-auto px-6 pt-8">
+          <PrivacyBreadcrumb currentPage="Remove Spokeo Profile" />
+        </div>
 
         <article className="max-w-4xl mx-auto px-6 py-12">
           {/* Hero */}

@@ -7,6 +7,7 @@ import { buildWebPageSchema } from '@/lib/seo/webPageSchema';
 import { Link } from 'react-router-dom';
 import { Globe, Lock, UserX, FileX, Shield, Scale } from 'lucide-react';
 import { RelatedPrivacyGuides } from '@/components/privacy/RelatedPrivacyGuides';
+import { PrivacyBreadcrumb } from '@/components/privacy/PrivacyBreadcrumb';
 
 const SECTIONS = [
   {
@@ -91,7 +92,8 @@ export default function EthicalOsintPrinciples() {
     '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://footprintiq.app/' },
-      { '@type': 'ListItem', position: 2, name: 'Ethical OSINT Principles', item: canonicalUrl },
+      { '@type': 'ListItem', position: 2, name: 'Privacy Resources', item: 'https://footprintiq.app/privacy-centre' },
+      { '@type': 'ListItem', position: 3, name: 'Ethical OSINT Principles', item: canonicalUrl },
     ],
   };
 
@@ -109,6 +111,9 @@ export default function EthicalOsintPrinciples() {
       <Header />
 
       <main className="flex-1">
+        <div className="max-w-3xl mx-auto px-6 pt-8">
+          <PrivacyBreadcrumb currentPage="Ethical OSINT Principles" />
+        </div>
         {/* Hero */}
         <section className="py-16 px-6">
           <div className="max-w-3xl mx-auto text-center">
