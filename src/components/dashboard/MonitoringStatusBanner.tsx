@@ -13,11 +13,7 @@ export const MonitoringStatusBanner = () => {
       <div className="flex items-center justify-center gap-3 py-2 px-4 rounded-lg bg-primary/5 border border-primary/15 mt-4">
         <ShieldCheck className="h-4 w-4 text-primary flex-shrink-0" />
         <span className="text-sm font-medium text-primary">
-          Protection Active – Monitoring enabled
-        </span>
-        <span className="text-xs text-muted-foreground flex items-center gap-1">
-          <Clock className="h-3 w-3" />
-          Next scan: {format(nextScanDate, 'MMM d, yyyy')}
+          Monitoring Active – Next scan scheduled on {format(nextScanDate, 'MMM d, yyyy')}
         </span>
       </div>
     );
