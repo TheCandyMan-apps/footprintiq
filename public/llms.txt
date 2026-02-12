@@ -48,6 +48,7 @@
 - [Remove Spokeo Profile](https://footprintiq.app/remove-spokeo-profile): Step-by-step guide to removing your Spokeo listing using online opt-out, GDPR, or CCPA requests
 - [Remove BeenVerified Profile](https://footprintiq.app/remove-beenverified-profile): Step-by-step guide to removing your BeenVerified listing using online opt-out, GDPR, or CCPA requests
 - [Incogni vs DIY Data Removal](https://footprintiq.app/incogni-vs-diy-data-removal): Neutral comparison of automated data removal services versus manual DIY broker removal, covering costs, benefits, and limitations
+- [Remove Yourself from Google Search](https://footprintiq.app/remove-yourself-from-google-search): Step-by-step guide to removing personal information from Google search results, covering right to be forgotten, legal options, and monitoring
 
 ## Optional
 

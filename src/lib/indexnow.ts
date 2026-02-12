@@ -107,6 +107,7 @@ export const INDEXNOW_URLS = [
   "/remove-spokeo-profile",
   "/remove-beenverified-profile",
   "/incogni-vs-diy-data-removal",
+  "/remove-yourself-from-google-search",
 ];
 
 /**
