@@ -272,6 +272,7 @@ const RemoveBeenVerifiedProfile = lazy(() => import("./pages/RemoveBeenVerifiedP
 const IncogniVsDiyDataRemoval = lazy(() => import("./pages/IncogniVsDiyDataRemoval"));
 const RemoveYourselfFromGoogleSearch = lazy(() => import("./pages/RemoveYourselfFromGoogleSearch"));
 const GoogleContentRemoval = lazy(() => import("./pages/privacy/GoogleContentRemoval"));
+const PrivacyDataBrokerRemovalGuide = lazy(() => import("./pages/privacy/DataBrokerRemovalGuide"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -414,6 +415,7 @@ function RouterContent() {
           <Route path="/incogni-vs-diy-data-removal" element={<IncogniVsDiyDataRemoval />} />
           <Route path="/remove-yourself-from-google-search" element={<RemoveYourselfFromGoogleSearch />} />
           <Route path="/privacy/google-content-removal" element={<GoogleContentRemoval />} />
+          <Route path="/privacy/data-broker-removal-guide" element={<PrivacyDataBrokerRemovalGuide />} />
           <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
