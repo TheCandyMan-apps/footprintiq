@@ -232,6 +232,7 @@ const AIWhatIsIdentityProfiling = lazy(() => import("./pages/ai/WhatIsIdentityPr
 const AIWhatAreDataBrokers = lazy(() => import("./pages/ai/WhatAreDataBrokers"));
 const AIIndex = lazy(() => import("./pages/ai/Index"));
 const EthicalOsintForIndividuals = lazy(() => import("./pages/EthicalOsintForIndividuals"));
+const EthicalOsintPrinciples = lazy(() => import("./pages/EthicalOsintPrinciples"));
 const Contact = lazy(() => import("./pages/Contact"));
 const UsernameReuseReport2026 = lazy(() => import("./pages/research/UsernameReuseReport2026"));
 const FactSheet = lazy(() => import("./pages/research/FactSheet"));
@@ -610,6 +611,7 @@ function RouterContent() {
           <Route path="/ai-answers/does-osint-include-dark-web-data" element={<AIAnswersDoesOsintIncludeDarkWebData />} />
           
           <Route path="/ethical-osint-for-individuals" element={<EthicalOsintForIndividuals />} />
+          <Route path="/ethical-osint-principles" element={<EthicalOsintPrinciples />} />
           <Route path="/ethical-osint" element={<EthicalOsint />} />
           <Route path="/press" element={<Press />} />
           <Route path="/media" element={<Press />} />
