@@ -193,6 +193,33 @@ export default function PrivacyCentrePage() {
           </p>
         </section>
 
+        {/* Our Approach to Ethical OSINT */}
+        <section className="max-w-4xl mx-auto px-6 pb-16">
+          <div className="bg-card border border-border/50 rounded-2xl p-8 md:p-10">
+            <div className="flex items-center gap-3 mb-4">
+              <Lock className="w-6 h-6 text-accent" />
+              <h2 className="text-2xl font-bold">Our Approach to Ethical OSINT</h2>
+            </div>
+            <p className="text-muted-foreground leading-relaxed mb-5 max-w-2xl">
+              FootprintIQ operates within strict ethical boundaries. Every feature on this platform is designed around transparency, user control, and respect for privacy.
+            </p>
+            <ul className="space-y-2.5">
+              {[
+                ["Public-source only", "All data is gathered exclusively from publicly accessible sources."],
+                ["No private database access", "We never query restricted, proprietary, or non-public databases."],
+                ["No impersonation", "We do not misrepresent identity when interacting with any service."],
+                ["User-controlled removal workflow", "You review, customise, and submit every removal request yourself."],
+                ["Transparency over automation", "We prioritise clear guidance over black-box automation."],
+              ].map(([title, desc]) => (
+                <li key={title} className="flex items-start gap-2.5 text-sm">
+                  <CheckCircle className="w-4 h-4 text-accent mt-0.5 shrink-0" />
+                  <span className="text-muted-foreground"><span className="text-foreground font-medium">{title}.</span> {desc}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
         {/* How FootprintIQ Handles Removal */}
         <section className="max-w-5xl mx-auto px-6 pb-16">
           <h2 className="text-3xl font-bold text-center mb-4">How FootprintIQ Handles Removal</h2>
