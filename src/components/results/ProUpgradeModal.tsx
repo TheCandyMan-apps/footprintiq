@@ -85,11 +85,12 @@ export function ProUpgradeModal({ open, onOpenChange }: ProUpgradeModalProps) {
   };
 
   const benefits = [
-    "Correlation clarity — see how identifiers connect across platforms",
-    "False positive reduction — filter noise with source-level context",
-    "Exposure trend tracking — monitor changes to your public visibility",
-    "Removal workflow tracking — manage opt-out requests in one place",
-    "Report exports — download evidence packs for action",
+    "Full identity correlation mapping — see how identifiers connect across platforms",
+    "False positive filtering — reduce noise with source-level verification",
+    "Exposure trend tracking — monitor changes to your public visibility over time",
+    "Removal tracking dashboard — manage opt-out requests in one place",
+    "Exportable compliance reports — download evidence packs for GDPR/CCPA action",
+    "Monitoring automation — get alerted when new exposure surfaces",
   ];
 
   return (
@@ -121,7 +122,7 @@ export function ProUpgradeModal({ open, onOpenChange }: ProUpgradeModalProps) {
               </div>
 
               <DialogTitle className="text-xl font-semibold leading-tight">
-                Switch to Pro Intelligence Mode
+                Why Upgrade to Pro Intelligence?
               </DialogTitle>
 
               <DialogDescription className="pt-4 text-base text-muted-foreground">
@@ -193,7 +194,10 @@ export function ProUpgradeModal({ open, onOpenChange }: ProUpgradeModalProps) {
 
             {/* Trust line */}
             <p className="text-[11px] text-muted-foreground/60 text-center pt-2">
-              Ethical OSINT only • Public data sources • No monitoring • Cancel anytime
+              Trusted by privacy-conscious individuals and professionals.
+            </p>
+            <p className="text-[11px] text-muted-foreground/40 text-center">
+              Ethical OSINT only • Public data sources • Cancel anytime
             </p>
           </>
         )}
