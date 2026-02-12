@@ -274,6 +274,8 @@ const RemoveYourselfFromGoogleSearch = lazy(() => import("./pages/RemoveYourself
 const GoogleContentRemoval = lazy(() => import("./pages/privacy/GoogleContentRemoval"));
 const PrivacyDataBrokerRemovalGuide = lazy(() => import("./pages/privacy/DataBrokerRemovalGuide"));
 
+const DigitalExposureRiskExplained = lazy(() => import("./pages/DigitalExposureRiskExplained"));
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -416,6 +418,7 @@ function RouterContent() {
           <Route path="/remove-yourself-from-google-search" element={<RemoveYourselfFromGoogleSearch />} />
           <Route path="/privacy/google-content-removal" element={<GoogleContentRemoval />} />
           <Route path="/privacy/data-broker-removal-guide" element={<PrivacyDataBrokerRemovalGuide />} />
+          <Route path="/digital-exposure-risk-explained" element={<DigitalExposureRiskExplained />} />
           <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
