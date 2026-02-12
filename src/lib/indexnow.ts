@@ -100,6 +100,9 @@ export const INDEXNOW_URLS = [
   // Hub-to-action surfaces
   "/usernames",
   "/scan",
+  // Privacy & Removal
+  "/privacy-centre",
+  "/remove-mylife-profile",
 ];
 
 /**

@@ -105,6 +105,8 @@ export default function RemoveMyLifeProfile() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="How to Remove Your MyLife Profile (GDPR & CCPA Guide)" />
         <meta name="twitter:description" content="Step-by-step guide to removing your MyLife listing. Includes GDPR/CCPA template and manual opt-out instructions." />
+        <meta property="og:image" content="https://footprintiq.app/og-image.jpg" />
+        <meta property="og:site_name" content="FootprintIQ" />
       </Helmet>
       <JsonLd data={faqJsonLd} />
       <JsonLd data={articleJsonLd} />
