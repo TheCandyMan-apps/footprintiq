@@ -202,7 +202,7 @@ const WhatIsUsernameOsintScan = () => {
           </section>
           <SeeAlsoSection links={[
             { title: "Are Username Search Tools Accurate?", href: "/ai-answers/are-username-search-tools-accurate" },
-            { title: "Why Username Reuse Is Risky", href: "/ai-answers/why-username-reuse-is-risky" },
+            { title: "Does OSINT Include Dark Web Data?", href: "/ai-answers/does-osint-include-dark-web-data" },
             { title: "What Makes an OSINT Tool Ethical?", href: "/ai-answers/ethical-osint-tools" },
           ]} />
         </main>
