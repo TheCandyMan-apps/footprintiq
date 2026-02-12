@@ -43,6 +43,36 @@ const faqs = [
     answer:
       "Processing times vary. Manual opt-out requests are typically processed within a few days. GDPR and CCPA requests have legal deadlines of 30 and 45 days respectively. If you do not receive confirmation, follow up in writing.",
   },
+  {
+    question: "What information does MyLife show about me?",
+    answer:
+      "MyLife profiles may include your full name, age, current and previous addresses, phone numbers, email addresses, relatives, associates, and a 'reputation score.' All data is aggregated from publicly available sources and third-party databases.",
+  },
+  {
+    question: "Can I remove my MyLife reputation score?",
+    answer:
+      "MyLife's reputation score is generated from aggregated public data. Submitting a full profile removal request should also remove the associated score. If the score persists after profile deletion, follow up with a written request referencing the original removal confirmation.",
+  },
+  {
+    question: "Does MyLife charge a fee to remove my profile?",
+    answer:
+      "Submitting a removal request to MyLife is free. You should not need to pay or create an account to opt out. If you encounter a paywall during the opt-out process, use the GDPR or CCPA email template approach instead.",
+  },
+  {
+    question: "Can I remove someone else's profile from MyLife?",
+    answer:
+      "Generally, removal requests must be submitted by the data subject (the person whose data is listed) or an authorised representative. Submitting requests on behalf of someone else without their consent may not be honoured by the broker.",
+  },
+  {
+    question: "What should I do if MyLife ignores my removal request?",
+    answer:
+      "Document all correspondence including dates, confirmation numbers, and screenshots. If MyLife does not respond within the legally required timeframe, you can file a complaint with your local data protection authority (e.g., ICO for UK residents) or the California Attorney General for CCPA matters.",
+  },
+  {
+    question: "Does removing my MyLife profile affect other data brokers?",
+    answer:
+      "No. Each data broker operates independently. Removing your profile from MyLife does not affect your listings on Spokeo, BeenVerified, Whitepages, or other sites. You need to submit separate requests to each broker.",
+  },
 ];
 
 const faqJsonLd = {

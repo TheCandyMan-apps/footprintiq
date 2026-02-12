@@ -43,6 +43,36 @@ const faqs = [
     answer:
       "The standard opt-out process typically completes within 3–7 days after email verification. GDPR and CCPA requests have legal deadlines of 30 and 45 days respectively. If you do not receive confirmation, follow up in writing.",
   },
+  {
+    question: "How do I find my Spokeo profile URL?",
+    answer:
+      "Search for your name on spokeo.com. If a profile exists, click on it and copy the URL from your browser's address bar. This URL is required for the opt-out form. If multiple profiles appear, you may need to submit separate removal requests for each one.",
+  },
+  {
+    question: "Does Spokeo charge to remove my information?",
+    answer:
+      "No. Spokeo's opt-out process is free. You do not need a paid Spokeo account to request removal. If you see any payment prompts, you may be on the wrong page — the opt-out form is at spokeo.com/optout.",
+  },
+  {
+    question: "Can I remove my Spokeo profile without an email address?",
+    answer:
+      "Spokeo's standard opt-out requires email verification. If you prefer not to use email, you can submit a formal GDPR or CCPA removal request via written correspondence. FootprintIQ's Privacy Centre provides templates for this approach.",
+  },
+  {
+    question: "Does Spokeo share my data with other brokers?",
+    answer:
+      "Spokeo aggregates data from multiple sources but does not publicly disclose whether it shares data with other brokers. Removing your Spokeo profile does not guarantee removal from other sites that may have independently collected the same information.",
+  },
+  {
+    question: "What if I have multiple Spokeo profiles?",
+    answer:
+      "It is common to have multiple listings on Spokeo, especially if you have lived at different addresses or used different names. Each profile needs a separate opt-out submission. Search for all variations of your name and previous locations.",
+  },
+  {
+    question: "Can I check if my Spokeo removal was successful?",
+    answer:
+      "After the stated processing period (typically 3–7 days), search for your name on Spokeo again. If your profile no longer appears, the removal was processed. If it persists, submit a follow-up request and reference your original confirmation email.",
+  },
 ];
 
 const faqJsonLd = {

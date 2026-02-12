@@ -52,6 +52,46 @@ const faqs = [
     answer:
       "GDPR applies to EU/UK residents and provides the right to erasure under Article 17. CCPA/CPRA applies to California residents and grants the right to delete personal information. Both require the broker to comply, but the legal basis, timelines, and enforcement mechanisms differ.",
   },
+  {
+    question: "How many data brokers have my information?",
+    answer:
+      "The average person's data appears on 30–50 data broker sites. Power users, professionals, and public figures may appear on 100 or more. Running a digital footprint scan can help identify which brokers currently hold your data.",
+  },
+  {
+    question: "What happens if a data broker ignores my removal request?",
+    answer:
+      "If a broker fails to respond within the legally required timeframe (30 days for GDPR, 45 days for CCPA), you can file a complaint with the relevant data protection authority — such as the ICO in the UK or the California Attorney General in the US. Document all correspondence for your records.",
+  },
+  {
+    question: "Do I need a lawyer to remove my data from brokers?",
+    answer:
+      "No. Most data broker removal requests can be submitted directly by the individual. GDPR and CCPA provide standardised rights that do not require legal representation. Free templates — like those in FootprintIQ's Privacy Centre — can help you draft compliant requests.",
+  },
+  {
+    question: "Are data brokers the same as people-search sites?",
+    answer:
+      "People-search sites are a category of data broker. They specialise in aggregating personal records into searchable profiles. Other types of data brokers may focus on marketing data, financial data, or behavioural data. The removal process varies by category.",
+  },
+  {
+    question: "Can I opt out of data collection before it happens?",
+    answer:
+      "Some jurisdictions allow you to opt out of future data collection. Under CCPA, you can submit a 'Do Not Sell My Personal Information' request. Under GDPR, you can object to processing. However, most brokers collect data from public records, which may not be preventable.",
+  },
+  {
+    question: "Is data broker removal free?",
+    answer:
+      "Submitting removal requests directly to brokers is free. Some paid services automate the process across many brokers at once. FootprintIQ provides free GDPR and CCPA removal templates and step-by-step guides to help you handle removals yourself at no cost.",
+  },
+  {
+    question: "How do data brokers get my information in the first place?",
+    answer:
+      "Data brokers collect information from public records (voter registrations, property records, court filings), social media profiles, marketing databases, loyalty programmes, and data purchased from other companies. Much of this data is publicly accessible.",
+  },
+  {
+    question: "Should I remove my data from brokers if I have nothing to hide?",
+    answer:
+      "Data broker exposure increases risk regardless of whether you have sensitive information. Aggregated personal data can be used for targeted phishing, identity theft, social engineering, or unwanted contact. Reducing your exposure is a proactive security measure.",
+  },
 ];
 
 const faqJsonLd = {
