@@ -225,11 +225,10 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
         <header className="bg-muted/30 border-b border-border">
           <div className="max-w-4xl mx-auto px-6 py-8 text-center">
             <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3">
-              Free Digital Footprint Scanner
+              Digital Exposure Scanner
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Check where your personal information appears online. Scan usernames across 500+ platforms, 
-              detect email breaches, verify phone exposure, and discover your digital presence using ethical OSINT methods.
+              See where your information appears across public sources. This tool performs observational analysis only — no identity verification, no private database access, no surveillance.
             </p>
           </div>
         </header>
@@ -240,10 +239,10 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-2 mb-3">
                 <Shield className="h-7 w-7 text-primary" />
-                <h2 className="text-2xl font-semibold">Start Your Scan</h2>
+                <h2 className="text-2xl font-semibold">Check Your Exposure</h2>
               </div>
               <p className="text-muted-foreground">
-                Enter a username, email, phone number, or full name to discover your online presence
+                Enter a username, email, phone number, or full name to review publicly visible information
               </p>
             </div>
 
@@ -319,13 +318,13 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
               className="w-full"
               disabled={!identifier.trim()}
             >
-              Run scan
+              Analyse exposure
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
 
             {/* Trust Line */}
             <p className="text-xs text-muted-foreground text-center">
-              We only use public sources. Queries are discarded after processing.
+              Public-source data only. Observational analysis — no identity verification performed.
             </p>
 
             {/* Pro Options Panel - Progressive Disclosure */}
@@ -349,20 +348,21 @@ export function UnifiedScanForm({ onSubmit, subscriptionTier: tierProp }: Unifie
         <div className="max-w-4xl mx-auto px-6 py-10">
           <div className="grid md:grid-cols-2 gap-8 text-sm text-muted-foreground">
             <div>
-              <h3 className="font-semibold text-foreground mb-2">What We Scan</h3>
+              <h3 className="font-semibold text-foreground mb-2">What We Analyse</h3>
               <ul className="space-y-1">
                 <li>• Social media platforms (Instagram, TikTok, Reddit, X/Twitter, etc.)</li>
                 <li>• Professional networks (LinkedIn, GitHub, Behance)</li>
                 <li>• Gaming platforms (Steam, PlayStation, Xbox)</li>
                 <li>• Forums, communities, and creative sites</li>
-                <li>• Known data breach databases</li>
+                <li>• Known data breach records</li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-foreground mb-2">Privacy Promise</h3>
+              <h3 className="font-semibold text-foreground mb-2">Our Approach</h3>
               <p className="mb-3">
-                FootprintIQ only accesses publicly available information. We never store your queries, 
-                track your activity, or sell your data. Scans are user-initiated and results are yours alone.
+                FootprintIQ performs observational analysis of publicly available data only. We do not verify identity, 
+                access private databases, or conduct surveillance. This tool is designed for exposure awareness — helping 
+                you understand what is publicly visible so you can make informed decisions.
               </p>
               <p>
                 <a href="/responsible-use" className="text-primary hover:underline">Read our Responsible Use Policy</a>
