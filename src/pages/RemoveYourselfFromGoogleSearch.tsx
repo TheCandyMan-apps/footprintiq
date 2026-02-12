@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { RemovalIsOneStep } from "@/components/privacy/RemovalIsOneStep";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Footer } from "@/components/Footer";
 import { GuideCitationBlock } from "@/components/guides/GuideCitationBlock";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -113,6 +114,12 @@ const breadcrumbSchema = {
   ],
 };
 
+const webPageSchema = buildWebPageSchema({
+  name: "How to Remove Your Name from Google Search (Step-by-Step Guide)",
+  description: "Learn how to remove personal information from Google search results. Includes right to be forgotten, legal options, and step-by-step removal guidance.",
+  url: "https://footprintiq.app/remove-yourself-from-google-search",
+});
+
 const RemoveYourselfFromGoogleSearch = () => {
   return (
     <>
@@ -144,6 +151,7 @@ const RemoveYourselfFromGoogleSearch = () => {
       <JsonLd data={articleSchema} />
       <JsonLd data={breadcrumbSchema} />
       <JsonLd data={faqSchema} />
+      <JsonLd data={webPageSchema} />
 
       <Header />
 

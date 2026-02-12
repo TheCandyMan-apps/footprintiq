@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { RemovalIsOneStep } from "@/components/privacy/RemovalIsOneStep";
 import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Shield, DollarSign, Clock, CheckCircle, XCircle, ArrowRight } from "lucide-react";
@@ -92,6 +93,12 @@ const breadcrumbSchema = {
   ]
 };
 
+const webPageSchema = buildWebPageSchema({
+  name: "Incogni vs DIY Data Removal – Which Is Better?",
+  description: "Compare automated data removal services with DIY broker removal. Understand costs, benefits, and limitations.",
+  url: "https://footprintiq.app/incogni-vs-diy-data-removal",
+});
+
 export default function IncogniVsDiyDataRemoval() {
   return (
     <>
@@ -113,6 +120,7 @@ export default function IncogniVsDiyDataRemoval() {
       <JsonLd data={faqSchema} />
       <JsonLd data={articleSchema} />
       <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={webPageSchema} />
 
       <div className="min-h-screen bg-background">
         <Header />

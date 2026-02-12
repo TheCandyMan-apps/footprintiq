@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { RemovalIsOneStep } from "@/components/privacy/RemovalIsOneStep";
 import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Shield, FileText, Globe, AlertTriangle, Search, ArrowRight } from "lucide-react";
 
 const faqs = [
@@ -71,6 +72,12 @@ const breadcrumbSchema = {
   ],
 };
 
+const webPageSchema = buildWebPageSchema({
+  name: "How to Remove Personal Information from Google (2026 Guide)",
+  description: "Learn how to remove personal information from Google search results. Covers doxxing removal, right to be forgotten, data broker de-indexing, and jurisdiction-specific guidance.",
+  url: "https://footprintiq.app/privacy/google-content-removal",
+});
+
 const GoogleContentRemoval = () => {
   return (
     <>
@@ -99,6 +106,7 @@ const GoogleContentRemoval = () => {
       <JsonLd data={faqSchema} />
       <JsonLd data={articleSchema} />
       <JsonLd data={breadcrumbSchema} />
+      <JsonLd data={webPageSchema} />
 
       <main className="min-h-screen bg-background">
         <article className="max-w-4xl mx-auto px-4 sm:px-6 py-16 sm:py-20">

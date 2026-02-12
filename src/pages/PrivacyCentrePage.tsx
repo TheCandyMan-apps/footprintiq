@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GuideCitationBlock } from "@/components/guides/GuideCitationBlock";
@@ -67,6 +68,12 @@ const breadcrumbJsonLd = {
     { "@type": "ListItem", position: 2, name: "Privacy Centre", item: "https://footprintiq.app/privacy-centre" },
   ],
 };
+
+const webPageSchema = buildWebPageSchema({
+  name: "Free Data Broker Removal Toolkit | FootprintIQ Privacy Centre",
+  description: "Remove your personal data from people-search sites with FootprintIQ's guided removal toolkit. GDPR and CCPA templates, broker detection, and status tracking.",
+  url: "https://footprintiq.app/privacy-centre",
+});
 
 const features = [
   {
@@ -139,6 +146,7 @@ export default function PrivacyCentrePage() {
       </Helmet>
       <JsonLd data={faqJsonLd} />
       <JsonLd data={breadcrumbJsonLd} />
+      <JsonLd data={webPageSchema} />
 
       <Header />
 

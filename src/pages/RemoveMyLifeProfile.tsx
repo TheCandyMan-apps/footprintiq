@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { RemovalIsOneStep } from "@/components/privacy/RemovalIsOneStep";
 import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GuideCitationBlock } from "@/components/guides/GuideCitationBlock";
@@ -119,6 +120,12 @@ const breadcrumbJsonLd = {
   ],
 };
 
+const webPageSchema = buildWebPageSchema({
+  name: "How to Remove Your MyLife Profile (GDPR & CCPA Guide)",
+  description: "Step-by-step guide to removing your MyLife listing. Includes GDPR/CCPA template and manual opt-out instructions.",
+  url: "https://footprintiq.app/remove-mylife-profile",
+});
+
 export default function RemoveMyLifeProfile() {
   return (
     <>
@@ -142,6 +149,7 @@ export default function RemoveMyLifeProfile() {
       <JsonLd data={faqJsonLd} />
       <JsonLd data={articleJsonLd} />
       <JsonLd data={breadcrumbJsonLd} />
+      <JsonLd data={webPageSchema} />
 
       <Header />
 

@@ -2,6 +2,7 @@ import { Helmet } from "react-helmet-async";
 import { RemovalIsOneStep } from "@/components/privacy/RemovalIsOneStep";
 import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GuideCitationBlock } from "@/components/guides/GuideCitationBlock";
@@ -120,6 +121,12 @@ const breadcrumbJsonLd = {
   ],
 };
 
+const webPageSchema = buildWebPageSchema({
+  name: "How to Remove Your Spokeo Profile (Step-by-Step Guide)",
+  description: "Step-by-step guide to removing your Spokeo listing. Includes GDPR/CCPA template and opt-out instructions.",
+  url: "https://footprintiq.app/remove-spokeo-profile",
+});
+
 export default function RemoveSpokeoProfile() {
   return (
     <>
@@ -143,6 +150,7 @@ export default function RemoveSpokeoProfile() {
       <JsonLd data={faqJsonLd} />
       <JsonLd data={articleJsonLd} />
       <JsonLd data={breadcrumbJsonLd} />
+      <JsonLd data={webPageSchema} />
 
       <Header />
 
