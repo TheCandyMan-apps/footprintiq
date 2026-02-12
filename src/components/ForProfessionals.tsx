@@ -3,26 +3,26 @@ import { Globe, ShieldCheck, FileText, Search } from 'lucide-react';
 
 const features = [
   {
-    icon: Search,
-    title: 'Public-Source Exposure Analysis',
-    description:
-      'Scan usernames, emails, and phone numbers across publicly accessible sources to identify where information is visible — without accessing private data or bypassing authentication.',
-  },
-  {
     icon: Globe,
     title: 'Digital Footprint Risk Awareness',
     description:
-      "Understand how username reuse, data broker listings, and public profiles contribute to an individual or organisation\u2019s overall exposure surface.",
+      "Understand how username reuse, data broker listings, and public profiles contribute to an individual or organisation\u2019s overall exposure surface — helping teams and individuals take informed action.",
+  },
+  {
+    icon: Search,
+    title: 'Exposure Assessment Workflows',
+    description:
+      'Run structured scans across usernames, emails, and phone numbers to identify where information is publicly visible — designed for repeatable, scalable assessment processes.',
   },
   {
     icon: ShieldCheck,
-    title: 'Ethical OSINT Workflows',
+    title: 'Ethical OSINT Analysis',
     description:
-      'Every scan follows responsible, public-source-only methodology. FootprintIQ is designed for self-audits, authorised investigations, and compliance-aligned research.',
+      'Every scan follows responsible, public-source-only methodology. FootprintIQ is built for self-audits, authorised investigations, and compliance-aligned research.',
   },
   {
     icon: FileText,
-    title: 'Structured Reporting',
+    title: 'Structured Reporting for Professionals',
     description:
       'Generate clear, evidence-backed reports with confidence scoring, source attribution, and actionable findings — ready for risk assessments or client briefings.',
   },
@@ -34,12 +34,12 @@ export const ForProfessionals = () => {
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-14">
           <h2 className="text-3xl font-bold text-foreground">
-            For Professionals &amp; Organisations
+            For Professionals &amp; Organizations
           </h2>
           <p className="mt-3 text-muted-foreground max-w-2xl mx-auto text-base">
             FootprintIQ scales with your workflow — from individual audits to
-            team-based investigations. Built on ethical, public-source
-            intelligence principles.
+            team-based investigations. Responsible, repeatable, and built on
+            public-source intelligence principles.
           </p>
         </div>
 
