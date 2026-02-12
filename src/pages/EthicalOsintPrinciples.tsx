@@ -5,44 +5,44 @@ import { JsonLd } from '@/components/seo/JsonLd';
 import { GuideCitationBlock } from '@/components/guides/GuideCitationBlock';
 import { buildWebPageSchema } from '@/lib/seo/webPageSchema';
 import { Link } from 'react-router-dom';
-import { Shield, Eye, UserX, FileX, Lock, Heart } from 'lucide-react';
+import { Globe, Lock, UserX, FileX, Shield, Scale } from 'lucide-react';
 
-const PRINCIPLES = [
+const SECTIONS = [
   {
-    icon: Eye,
-    title: 'Public-Source Only',
-    description:
-      'FootprintIQ analyses publicly accessible information — social media profiles, forum posts, data broker listings, and publicly indexed content. We never access private systems, locked accounts, or restricted databases.',
+    icon: Globe,
+    title: 'Public-Source Intelligence Only',
+    content:
+      'FootprintIQ analyses publicly accessible information — social media profiles, forum posts, data broker listings, and publicly indexed content. We do not access private systems, locked accounts, or restricted databases. Every data point surfaced in a scan originates from sources that are independently verifiable by anyone with an internet connection.',
   },
   {
     icon: Lock,
     title: 'No Private Database Access',
-    description:
-      'We do not query private databases, law-enforcement systems, or proprietary data sets. Every source used in a scan is publicly available and independently verifiable by the user.',
+    content:
+      'We do not query private databases, law-enforcement systems, credit bureaus, or proprietary data sets. No non-public records are accessed at any stage of the scanning or analysis process. The information we surface is limited strictly to what is already publicly available.',
   },
   {
     icon: UserX,
-    title: 'No Impersonation',
-    description:
-      'FootprintIQ never creates accounts, sends messages, or interacts with third parties on behalf of a user. Scans are observational — we read what is already visible, without pretending to be someone else.',
+    title: 'No Impersonation or Deceptive Practices',
+    content:
+      'FootprintIQ never creates fake accounts, sends messages, or interacts with platforms on behalf of a user. We do not scrape behind login walls or use deceptive techniques to gain access to restricted content. All scans are observational — we read what is already visible without pretending to be someone else.',
   },
   {
     icon: FileX,
     title: 'No Automated Removal Submissions',
-    description:
-      'We provide templates and guidance for data-removal requests, but never submit opt-out forms automatically without explicit user consent. Users retain full control over every action taken with their data.',
+    content:
+      'We provide templates, guidance, and structured workflows for data-removal requests, but we never submit opt-out forms or removal requests automatically without explicit user consent. Users retain full control over every action taken with their data, including when and how removal requests are sent.',
   },
   {
     icon: Shield,
-    title: 'Transparency in Data Handling',
-    description:
-      'Scan results are stored securely and associated only with the authenticated user who initiated them. We do not sell, share, or repurpose scan data. Users can delete their data at any time.',
+    title: 'Transparency & User Control',
+    content:
+      'Scan results are stored securely and associated only with the authenticated user who initiated them. We do not sell, share, or repurpose scan data. Users receive structured exposure awareness — clear, contextual information about their digital footprint — and can delete their data at any time.',
   },
   {
-    icon: Heart,
-    title: 'Respect for Privacy Rights',
-    description:
-      'FootprintIQ is designed for self-audits, authorised investigations, and compliance-aligned research. We actively discourage misuse and provide educational resources on responsible OSINT practices.',
+    icon: Scale,
+    title: 'Compliance & Legal Framework Awareness',
+    content:
+      'FootprintIQ operates with awareness of major data-protection frameworks including the General Data Protection Regulation (GDPR), the UK GDPR, the California Consumer Privacy Act (CCPA/CPRA), and platform-specific transparency policies. While we do not provide legal advice, our workflows are designed to align with the principles of lawful basis, data minimisation, and individual rights that underpin these regulations.',
   },
 ];
 
@@ -69,9 +69,9 @@ export default function EthicalOsintPrinciples() {
   const canonicalUrl = 'https://footprintiq.app/ethical-osint-principles';
 
   const webPageSchema = buildWebPageSchema({
-    name: 'Our Approach to Ethical OSINT',
+    name: 'Ethical OSINT & Public-Source Intelligence Principles',
     description:
-      'How FootprintIQ applies ethical, public-source-only intelligence principles to digital exposure analysis.',
+      'Learn how FootprintIQ approaches ethical OSINT and digital exposure analysis using public-source data only.',
     url: canonicalUrl,
   });
 
@@ -81,10 +81,7 @@ export default function EthicalOsintPrinciples() {
     mainEntity: FAQ_ITEMS.map((item) => ({
       '@type': 'Question',
       name: item.q,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: item.a,
-      },
+      acceptedAnswer: { '@type': 'Answer', text: item.a },
     })),
   };
 
@@ -100,8 +97,8 @@ export default function EthicalOsintPrinciples() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <SEO
-        title="Our Approach to Ethical OSINT — FootprintIQ"
-        description="How FootprintIQ applies ethical, public-source-only intelligence principles to digital exposure analysis. No private databases, no impersonation, full transparency."
+        title="Ethical OSINT & Public-Source Intelligence Principles | FootprintIQ"
+        description="Learn how FootprintIQ approaches ethical OSINT and digital exposure analysis using public-source data only."
         canonical={canonicalUrl}
       />
       <JsonLd data={webPageSchema} />
@@ -117,70 +114,49 @@ export default function EthicalOsintPrinciples() {
             <h1 className="text-4xl font-bold text-foreground mb-4">
               Our Approach to Ethical OSINT
             </h1>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              FootprintIQ is built on a simple commitment: help people understand their
+            <p className="text-lg text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+              FootprintIQ is built on a clear commitment: help people understand their
               public digital exposure using only ethical, transparent, and publicly
               available methods.
             </p>
           </div>
         </section>
 
-        {/* Principles */}
+        {/* Principle sections */}
         <section className="pb-16 px-6">
-          <div className="max-w-4xl mx-auto grid sm:grid-cols-2 gap-6">
-            {PRINCIPLES.map((p) => (
-              <div
-                key={p.title}
-                className="p-6 rounded-xl border border-border/60 bg-card"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="p-2.5 rounded-lg bg-primary/10 text-primary flex-shrink-0">
-                    <p.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="font-semibold text-foreground mb-1.5">{p.title}</h2>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {p.description}
-                    </p>
-                  </div>
+          <div className="max-w-3xl mx-auto space-y-10">
+            {SECTIONS.map((s, i) => (
+              <div key={s.title} className="flex items-start gap-5">
+                <div className="p-3 rounded-lg bg-primary/10 text-primary flex-shrink-0 mt-0.5">
+                  <s.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground mb-2">
+                    {i + 1}. {s.title}
+                  </h2>
+                  <p className="text-muted-foreground leading-relaxed">{s.content}</p>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Context */}
+        {/* Internal links */}
         <section className="pb-16 px-6">
-          <div className="max-w-3xl mx-auto space-y-6">
-            <h2 className="text-2xl font-bold text-foreground">
-              Why These Principles Matter
-            </h2>
+          <div className="max-w-3xl mx-auto space-y-4">
+            <h2 className="text-2xl font-bold text-foreground">Learn More</h2>
             <p className="text-muted-foreground leading-relaxed">
-              Open-source intelligence is a powerful capability. When applied
-              responsibly, it helps individuals and organisations understand their
-              exposure surface, identify risks, and take informed action. When misused,
-              it can cause real harm.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              FootprintIQ exists to make ethical OSINT accessible — not to enable
-              surveillance, harassment, or unauthorised investigation. Every design
-              decision, from scan methodology to result presentation, reflects this
-              commitment.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              For more on how we handle personal data, see our{' '}
-              <Link
-                to="/privacy-centre"
-                className="text-primary font-medium hover:underline"
-              >
+              For details on how we handle personal data, visit our{' '}
+              <Link to="/privacy-centre" className="text-primary font-medium hover:underline">
                 Privacy Centre
               </Link>
-              . To understand how removal workflows operate, visit the{' '}
-              <Link
-                to="/privacy/data-broker-removal-guide"
-                className="text-primary font-medium hover:underline"
-              >
+              . To understand how removal workflows operate, see the{' '}
+              <Link to="/privacy/data-broker-removal-guide" className="text-primary font-medium hover:underline">
                 Data Broker Removal Guide
+              </Link>
+              . Ready to assess your own digital footprint?{' '}
+              <Link to="/scan" className="text-primary font-medium hover:underline">
+                Start a scan
               </Link>
               .
             </p>
@@ -197,9 +173,7 @@ export default function EthicalOsintPrinciples() {
               {FAQ_ITEMS.map((item) => (
                 <div key={item.q} className="border-b border-border/40 pb-5">
                   <h3 className="font-semibold text-foreground mb-2">{item.q}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {item.a}
-                  </p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{item.a}</p>
                 </div>
               ))}
             </div>
