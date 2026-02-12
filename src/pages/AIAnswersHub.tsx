@@ -296,6 +296,12 @@ export default function AIAnswersHub() {
                     icon: BarChart3,
                   },
                   {
+                    title: "Does OSINT Include Dark Web Data?",
+                    description: "The distinction between open web OSINT and dark web exposure indicators, what breach signals may appear, and the legal and ethical boundaries involved.",
+                    link: "/ai-answers/does-osint-include-dark-web-data",
+                    icon: Shield,
+                  },
+                  {
                     title: "How to Interpret OSINT Scan Results Responsibly",
                     description: "A guide to evaluating confidence levels, recognising false positives, understanding missing data, and applying ethical judgement to scan findings.",
                     link: "/guides/interpret-osint-results",

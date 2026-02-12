@@ -263,6 +263,7 @@ const AIAnswersEthicalOsintTools = lazy(() => import("./pages/ai-answers/Ethical
 const AIAnswersCommonOsintMisconceptions = lazy(() => import("./pages/ai-answers/CommonOsintMisconceptions"));
 const AIAnswersWhenNotToUseOsint = lazy(() => import("./pages/ai-answers/WhenNotToUseOsint"));
 const AIAnswersWhatIsAnIdentityRiskScore = lazy(() => import("./pages/ai-answers/WhatIsAnIdentityRiskScore"));
+const AIAnswersDoesOsintIncludeDarkWebData = lazy(() => import("./pages/ai-answers/DoesOsintIncludeDarkWebData"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -585,6 +586,7 @@ function RouterContent() {
           <Route path="/ai-answers/common-osint-misconceptions" element={<AIAnswersCommonOsintMisconceptions />} />
           <Route path="/ai-answers/when-not-to-use-osint" element={<AIAnswersWhenNotToUseOsint />} />
           <Route path="/ai-answers/what-is-an-identity-risk-score" element={<AIAnswersWhatIsAnIdentityRiskScore />} />
+          <Route path="/ai-answers/does-osint-include-dark-web-data" element={<AIAnswersDoesOsintIncludeDarkWebData />} />
           
           <Route path="/ethical-osint-for-individuals" element={<EthicalOsintForIndividuals />} />
           <Route path="/ethical-osint" element={<EthicalOsint />} />
