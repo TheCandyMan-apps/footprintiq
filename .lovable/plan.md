@@ -1,55 +1,35 @@
 
 
-## New AI Answers Page: "Does OSINT Include Dark Web Data?"
+## SEO and AI Visibility Optimisation + IndexNow Submission
 
-A new standalone page at `/ai-answers/does-osint-include-dark-web-data`, following the established AI Answers pattern (same structure as `WhatIsUsernameOsintScan`, `WhatIsAnIdentityRiskScore`, etc.).
+### What needs to happen
 
-### Why a new page (not a section on the username scan page)
+Both `/privacy-centre` and `/remove-mylife-profile` are well-structured but missing a few items for full SEO and AI crawler coverage.
 
-The topic is distinct enough to warrant its own URL for SEO, AI citation, and internal linking. Adding it as a section would bloat the username scan page with tangentially related content.
+### Changes
 
-### Page structure
+**1. Add OG image and site name meta tags to both pages**
+- Add `og:image` pointing to `https://footprintiq.app/og-image.jpg` (the standard OG image)
+- Add `og:site_name: FootprintIQ` to both pages
 
-**URL**: `/ai-answers/does-osint-include-dark-web-data`
+**2. Add both URLs to the IndexNow URL list**
+- Add `/privacy-centre` and `/remove-mylife-profile` to the `INDEXNOW_URLS` array in `src/lib/indexnow.ts`
 
-**Sections** (each with an icon header, matching existing pages):
+**3. Update `llms.txt` for AI visibility**
+- Add a new "Privacy & Removal" section to `public/llms.txt` with links to both pages, so AI crawlers (GPTBot, Claude-Web, etc.) can discover them
 
-1. **Definition** -- What "dark web data" means in OSINT context vs open web OSINT. Quotable one-liner for AI citation.
-2. **Open Web vs Dark Web Exposure** -- Clear distinction between surface-level OSINT (username presence, public profiles) and breach/dark web indicators (credential dumps, paste sites, indexed mentions).
-3. **What Breach Signals May Be Included** -- Types of indicators: breach database references, paste site mentions, dark web index hits. No raw credentials are shown. Metadata only.
-4. **Limitations and Legal Boundaries** -- Not all tools include dark web sources. Legal constraints vary by jurisdiction. No continuous monitoring unless explicitly implemented. Data may be outdated or incomplete.
-5. **Ethical Considerations** -- Cautious framing: breach indicators inform risk, not guilt. No fear language.
+**4. Trigger IndexNow submission**
+- Call the IndexNow edge function to notify Bing, Yandex, Naver, and Seznam about the new pages
 
-**FootprintIQ mention** (once, in the breach signals section):
-> "FootprintIQ may surface publicly referenced breach indicators where available."
+### Files to modify
+- `src/pages/RemoveMyLifeProfile.tsx` -- add `og:image`, `og:site_name`
+- `src/pages/PrivacyCentrePage.tsx` -- add `og:image`, `og:site_name`
+- `src/lib/indexnow.ts` -- add both new URLs to the array
+- `public/llms.txt` -- add Privacy and Removal section
 
-**FAQ Schema** (3 questions):
-- "Does OSINT include dark web data?"
-- "What breach signals appear in an OSINT scan?"
-- "Does an OSINT scan provide continuous dark web monitoring?"
-
-**See Also** links: identity risk score page, username OSINT scan page, ethical OSINT tools page.
-
-### Integration points
-
-1. **Route** (`src/App.tsx`): Add lazy-loaded route for the new page.
-2. **AI Answers Hub** (`src/pages/AIAnswersHub.tsx`): Add entry with `Globe` or `ShieldAlert` icon in the OSINT section.
-3. **See Also on username scan page** (`WhatIsUsernameOsintScan.tsx`): Replace one of the three existing See Also links with this new page.
-
-### Technical details
-
-**New file**: `src/pages/ai-answers/DoesOsintIncludeDarkWebData.tsx`
-- Follows identical component pattern: Helmet, JSON-LD (Article + FAQ + Breadcrumb), Header, Breadcrumb nav, content sections, SeeAlsoSection, GuideCitationBlock, Footer.
-
-**Edits**:
-- `src/App.tsx` -- add lazy import + route
-- `src/pages/AIAnswersHub.tsx` -- add hub entry
-- `src/pages/ai-answers/WhatIsUsernameOsintScan.tsx` -- update See Also to include this page
-
-### Tone and compliance
-- Cautious, educational, non-promotional
-- No competitor comparisons
-- No exaggerated claims about dark web coverage
-- No fear-based language
-- Consistent with platform ethical positioning rules
+### Technical detail
+- No routing changes
+- No scan logic changes
+- Static content only
+- IndexNow will be triggered via the existing edge function after deployment
 
