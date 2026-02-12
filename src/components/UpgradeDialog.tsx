@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Check, Zap, Loader2, Clock } from "lucide-react";
+import { Check, Zap, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,8 +50,8 @@ export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: 
       // Show success message after brief delay
       setTimeout(() => {
         toast({
-          title: "Upgrade complete - enjoy premium features! 🎉",
-          description: "Your subscription has been activated successfully.",
+          title: "Pro Intelligence activated",
+          description: "Your subscription is now active. Full correlation tools are available.",
         });
       }, 2000);
     } catch (error) {
@@ -72,10 +72,10 @@ export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: 
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
             <Zap className="w-6 h-6 text-primary" />
-            Upgrade to Pro
+            Switch to Pro Intelligence
           </DialogTitle>
           <DialogDescription className="text-base pt-2">
-            {feature} is a Pro feature. Upgrade now to unlock unlimited privacy protection.
+            {feature} is available with Pro. Gain full correlation visibility and structured reporting.
           </DialogDescription>
         </DialogHeader>
 
@@ -86,40 +86,32 @@ export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: 
               <span className="text-muted-foreground">/month</span>
             </div>
 
-            <h3 className="text-xl font-semibold mb-4">Pro Plan Benefits</h3>
+            <h3 className="text-xl font-semibold mb-4">Pro Intelligence includes</h3>
 
             <ul className="space-y-3 mb-6">
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-sm">Unlimited scans - no restrictions</span>
+                <span className="text-sm">Full identity correlation visibility</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-sm">Advanced OSINT detection across 100+ sources</span>
+                <span className="text-sm">False positive reduction & confidence scoring</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-sm">AI-powered catfish detection</span>
-              </li>
-              <li className="flex items-start gap-3 opacity-60">
-                <Clock className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-muted-foreground">Removal guidance (coming soon)</span>
+                <span className="text-sm">Exposure trend tracking over time</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-sm">Continuous monitoring & alerts</span>
+                <span className="text-sm">Removal workflow tracking</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-sm">Social media profile analysis</span>
+                <span className="text-sm">Exportable intelligence reports</span>
               </li>
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-sm">Priority email support</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span className="text-sm">Monthly privacy reports</span>
+                <span className="text-sm">Monitoring automation & alerts</span>
               </li>
             </ul>
 
@@ -137,7 +129,7 @@ export const UpgradeDialog = ({ open, onOpenChange, feature = "this feature" }: 
               ) : (
                 <>
                   <Zap className="w-4 h-4 mr-2" />
-                  Upgrade to Pro Now
+                  Switch to Pro Intelligence
                 </>
               )}
             </Button>

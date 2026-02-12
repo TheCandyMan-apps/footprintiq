@@ -126,7 +126,7 @@ export function ProOptionsPanel({
           }}
           className="w-full text-center py-3 text-sm text-primary hover:text-primary/80 transition-colors"
         >
-          Upgrade to Pro to unlock deeper sources, confidence signals, and connections.
+          Switch to Pro Intelligence for deeper sources, confidence signals, and full correlation.
         </button>
       )}
     </div>

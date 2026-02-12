@@ -438,7 +438,7 @@ const findings = await response.json();`}
                   <div className="p-4 bg-muted/50 rounded-lg">
                     <p className="text-sm text-muted-foreground">
                       <strong>Free tier:</strong> Includes "Made with FootprintIQ" badge. 
-                      Upgrade to Premium to remove branding.
+                      Switch to Pro Intelligence to remove branding.
                     </p>
                   </div>
                 </CardContent>

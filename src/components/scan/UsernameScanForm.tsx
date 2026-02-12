@@ -461,8 +461,8 @@ export function UsernameScanForm() {
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription className="text-sm">
-                Upgrade to Premium for artifact exports, longer timeouts, bulk scanning, and
-                scheduling
+                Pro Intelligence includes exportable reports, extended timeouts, bulk scanning, and
+                monitoring automation
               </AlertDescription>
             </Alert>
           )}

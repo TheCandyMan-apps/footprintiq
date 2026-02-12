@@ -61,19 +61,19 @@ export function UpgradeModal({ open, onOpenChange, reason, blockedFeature }: Upg
   const getMessage = () => {
     switch (reason) {
       case 'provider_blocked':
-        return `${blockedFeature} requires a Pro or higher plan.`;
+        return `${blockedFeature} is available with Pro Intelligence.`;
       case 'insufficient_credits':
-        return 'Insufficient credits. Upgrade for more scans or buy credits.';
+        return 'Additional scan credits are available with Pro Intelligence.';
       case 'batch_blocked':
-        return 'Batch scanning requires a Pro plan or higher.';
+        return 'Batch scanning is available with Pro Intelligence.';
       case 'darkweb_blocked':
-        return 'Dark web monitoring requires an Unlimited plan.';
+        return 'Dark web signal detection is available with the Unlimited plan.';
       case 'email_scan_blocked':
-        return 'Email intelligence is a Pro feature. Free plan supports username lookups only.';
+        return 'Email intelligence is available with Pro Intelligence. Free plan supports username lookups.';
       case 'phone_scan_blocked':
-        return 'Phone intelligence is a Pro feature. Free plan supports username lookups only.';
+        return 'Phone intelligence is available with Pro Intelligence. Free plan supports username lookups.';
       default:
-        return 'Unlock premium features with an upgrade.';
+        return 'Pro Intelligence provides full correlation visibility and structured reporting.';
     }
   };
 
@@ -81,7 +81,7 @@ export function UpgradeModal({ open, onOpenChange, reason, blockedFeature }: Upg
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Upgrade Required</DialogTitle>
+          <DialogTitle className="text-2xl">Switch to Pro Intelligence</DialogTitle>
           <DialogDescription>{getMessage()}</DialogDescription>
         </DialogHeader>
 
@@ -135,7 +135,7 @@ export function UpgradeModal({ open, onOpenChange, reason, blockedFeature }: Upg
               </li>
             </ul>
             <Button onClick={() => handleUpgrade('pro')} disabled={loading} className="w-full">
-              Upgrade to Pro
+              Switch to Pro Intelligence
             </Button>
           </Card>
 

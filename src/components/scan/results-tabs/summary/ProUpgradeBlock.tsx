@@ -27,17 +27,17 @@ interface ProUpgradeBlockProps {
 }
 
 const BENEFITS = [
-  'Confidence scoring & false-positive filtering',
-  'Full source list & evidence context',
-  'Labeled connections graph',
-  'Exposure timeline (historical vs active)',
-  'Recommended next steps',
+  'Full identity correlation visibility',
+  'False positive reduction & confidence scoring',
+  'Exposure trend tracking over time',
+  'Removal workflow tracking',
+  'Exportable intelligence reports',
 ];
 
 const COMPACT_BENEFITS = [
-  'Confidence scoring & filtering',
-  'Full source list',
-  'Labeled connections',
+  'Full correlation visibility',
+  'False positive reduction',
+  'Exportable reports',
 ];
 
 export function ProUpgradeBlock({
@@ -67,15 +67,15 @@ export function ProUpgradeBlock({
           <Lock className="h-4 w-4 text-primary shrink-0" />
           <div className="min-w-0">
             <p className="text-xs font-medium text-foreground">
-              Unlock the full analysis
+              Switch to Pro Intelligence
             </p>
             <p className="text-[10px] text-muted-foreground">
-              Free shows what exists. Pro explains what it means.
+              Full correlation analysis, trend tracking, and exportable reports.
             </p>
           </div>
         </div>
         <Button size="sm" className="h-7 text-xs shrink-0" onClick={handleUpgrade}>
-          Unlock Pro
+          Switch to Pro Intelligence
           <ArrowRight className="h-3 w-3 ml-1" />
         </Button>
       </div>
@@ -91,9 +91,9 @@ export function ProUpgradeBlock({
               <Lock className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-semibold mb-1">Unlock the full analysis</h3>
+              <h3 className="text-sm font-semibold mb-1">Switch to Pro Intelligence</h3>
               <p className="text-[10px] text-muted-foreground mb-2">
-                Free shows what exists. Pro explains what it means.
+                Full correlation analysis, trend tracking, and exportable reports.
               </p>
               <ul className="space-y-1 mb-3">
                 {COMPACT_BENEFITS.map((benefit, i) => (
@@ -104,7 +104,7 @@ export function ProUpgradeBlock({
                 ))}
               </ul>
               <Button size="sm" className="h-7 text-xs w-full" onClick={handleUpgrade}>
-                Unlock Pro
+                Switch to Pro Intelligence
                 <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
             </div>
@@ -120,9 +120,9 @@ export function ProUpgradeBlock({
       <CardContent className="p-5">
         {/* Header */}
         <div className="mb-4">
-          <h3 className="text-lg font-semibold mb-1">Unlock the full analysis</h3>
+          <h3 className="text-lg font-semibold mb-1">Switch to Pro Intelligence</h3>
           <p className="text-sm text-muted-foreground">
-            Free shows what exists. Pro explains what it means.
+            Full identity correlation, false positive reduction, and structured reporting.
           </p>
         </div>
 
@@ -138,7 +138,7 @@ export function ProUpgradeBlock({
 
         {/* CTA */}
         <Button className="w-full" size="lg" onClick={handleUpgrade}>
-          Unlock Pro
+          Switch to Pro Intelligence
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
 

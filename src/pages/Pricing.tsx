@@ -423,7 +423,7 @@ const PricingPage = () => {
                       onClick={() => handleSelectPlan('pro')}
                       disabled={currentPlan === 'pro'}
                     >
-                      {currentPlan === 'pro' ? 'Current Plan' : 'Upgrade to Pro'}
+                      {currentPlan === 'pro' ? 'Current Plan' : 'Switch to Pro Intelligence'}
                     </Button>
                   </CardFooter>
                 </Card>

@@ -134,7 +134,7 @@ export const AIAnalysis = ({ scanId }: AIAnalysisProps) => {
                 <>
                   {!isPremium && <Lock className="mr-2 h-4 w-4" />}
                   {isPremium && <Brain className="mr-2 h-4 w-4" />}
-                  {isPremium ? 'Generate AI Analysis' : 'Upgrade to Unlock'}
+                  {isPremium ? 'Generate AI Analysis' : 'Switch to Pro Intelligence'}
                 </>
               )}
             </Button>

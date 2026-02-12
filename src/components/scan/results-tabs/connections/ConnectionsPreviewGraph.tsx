@@ -226,7 +226,7 @@ export function ConnectionsPreviewGraph({
           <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/80 backdrop-blur-sm rounded-full border border-border/50">
             <Lock className="h-3 w-3 text-muted-foreground" />
             <span className="text-xs font-medium text-muted-foreground">
-              Preview mode — unlock Pro for full graph interaction
+              Preview mode — Pro Intelligence enables full graph interaction
             </span>
           </div>
         </div>
@@ -245,7 +245,7 @@ export function ConnectionsPreviewGraph({
               className="gap-2"
             >
               <Lock className="h-3.5 w-3.5" />
-              Unlock Pro to explore full connections
+              Switch to Pro Intelligence
               <ArrowRight className="h-3.5 w-3.5" />
             </Button>
           </div>
