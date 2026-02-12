@@ -62,28 +62,19 @@ export default function Home() {
     "name": "FootprintIQ",
     "applicationCategory": "SecurityApplication",
     "operatingSystem": "Web",
-    "description": PLATFORM_SCHEMA_DESCRIPTION,
+    "description": "Ethical OSINT platform providing digital footprint discovery, identity risk scoring, and exposure analysis",
     "url": "https://footprintiq.app/",
     "featureList": [
-      "Case-based investigations",
-      "False-positive reduction",
-      "Consent-oriented analysis",
-      "Ethical OSINT-based scanning",
-      "Username search across 500+ platforms",
-      "Email breach detection",
-      "Data broker exposure checks",
-      "Transparency and consent-first design"
+      "Identity risk scoring",
+      "Digital footprint discovery",
+      "Public exposure analysis",
+      "Breach signal detection",
+      "Confidence-based interpretation"
     ],
     "about": {
       "@type": "DefinedTerm",
       "name": "Ethical OSINT",
       "url": "https://footprintiq.app/ethical-osint-for-individuals"
-    },
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "GBP",
-      "description": "Free scan available"
     }
   };
 
