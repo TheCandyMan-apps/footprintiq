@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Shield, FileText, AlertTriangle, CheckCircle, ArrowRight, Scale, Globe, Clock } from "lucide-react";
@@ -121,12 +122,18 @@ const articleJsonLd = {
   "@type": "Article",
   headline: "Complete Guide to Data Broker Removal (GDPR & CCPA)",
   description: "Learn how to remove your personal data from data broker websites. Step-by-step guide with GDPR and CCPA templates.",
-  author: { "@type": "Organization", name: "FootprintIQ" },
+  author: { "@type": "Organization", name: "FootprintIQ", url: "https://footprintiq.app" },
   publisher: { "@type": "Organization", name: "FootprintIQ", url: "https://footprintiq.app" },
   datePublished: "2026-02-12",
   dateModified: "2026-02-12",
   url: "https://footprintiq.app/data-broker-removal-guide",
 };
+
+const webPageSchema = buildWebPageSchema({
+  name: "Complete Guide to Data Broker Removal (GDPR & CCPA)",
+  description: "Learn how to remove your personal data from data broker websites. Step-by-step guide with GDPR and CCPA templates.",
+  url: "https://footprintiq.app/data-broker-removal-guide",
+});
 
 const DataBrokerRemovalGuide = () => {
   return (
@@ -152,6 +159,7 @@ const DataBrokerRemovalGuide = () => {
       <JsonLd data={faqJsonLd} />
       <JsonLd data={articleJsonLd} />
       <JsonLd data={breadcrumbJsonLd} />
+      <JsonLd data={webPageSchema} />
 
       <main className="pt-24 pb-20 px-6">
         <article className="max-w-4xl mx-auto">
