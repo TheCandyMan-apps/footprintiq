@@ -6,7 +6,8 @@ import {
   Network, 
   Clock, 
   ShieldAlert, 
-  MapPin 
+  MapPin,
+  Shield
 } from 'lucide-react';
 import { TabCounts } from '@/hooks/useScanResultsData';
 import { ResultsToolbar } from './ResultsToolbar';
@@ -107,6 +108,14 @@ export function ResultsTabBar({
               )}
             </TabsTrigger>
           )}
+
+          <TabsTrigger 
+            value="privacy" 
+            className="flex items-center gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground px-3 py-1.5 text-sm"
+          >
+            <Shield className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Privacy Center</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* Compact Toolbar */}

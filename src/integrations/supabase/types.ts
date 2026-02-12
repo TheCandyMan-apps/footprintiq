@@ -3172,6 +3172,42 @@ export type Database = {
         }
         Relationships: []
       }
+      data_brokers: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          domain: string | null
+          id: string
+          name: string
+          removal_url: string | null
+          risk_level: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          domain?: string | null
+          id?: string
+          name: string
+          removal_url?: string | null
+          risk_level?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          domain?: string | null
+          id?: string
+          name?: string
+          removal_url?: string | null
+          risk_level?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       data_sources: {
         Row: {
           category: string
@@ -6611,8 +6647,11 @@ export type Database = {
       }
       removal_requests: {
         Row: {
+          broker_id: string | null
           completed_at: string | null
+          confirmed_at: string | null
           id: string
+          identity_profile_id: string | null
           notes: string | null
           requested_at: string
           scan_id: string
@@ -6620,11 +6659,16 @@ export type Database = {
           source_name: string
           source_type: string
           status: Database["public"]["Enums"]["removal_status"]
+          submitted_at: string | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
+          broker_id?: string | null
           completed_at?: string | null
+          confirmed_at?: string | null
           id?: string
+          identity_profile_id?: string | null
           notes?: string | null
           requested_at?: string
           scan_id: string
@@ -6632,11 +6676,16 @@ export type Database = {
           source_name: string
           source_type: string
           status?: Database["public"]["Enums"]["removal_status"]
+          submitted_at?: string | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
+          broker_id?: string | null
           completed_at?: string | null
+          confirmed_at?: string | null
           id?: string
+          identity_profile_id?: string | null
           notes?: string | null
           requested_at?: string
           scan_id?: string
@@ -6644,9 +6693,25 @@ export type Database = {
           source_name?: string
           source_type?: string
           status?: Database["public"]["Enums"]["removal_status"]
+          submitted_at?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "removal_requests_broker_id_fkey"
+            columns: ["broker_id"]
+            isOneToOne: false
+            referencedRelation: "data_brokers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "removal_requests_identity_profile_id_fkey"
+            columns: ["identity_profile_id"]
+            isOneToOne: false
+            referencedRelation: "user_identity_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "removal_requests_scan_id_fkey"
             columns: ["scan_id"]
@@ -9103,6 +9168,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_identity_profiles: {
+        Row: {
+          address: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          region: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          region?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          region?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_integrations: {
         Row: {
           configuration: Json
@@ -10292,7 +10390,16 @@ export type Database = {
         | "approved"
         | "rejected"
         | "suspended"
-      removal_status: "pending" | "in_progress" | "completed" | "failed"
+      removal_status:
+        | "pending"
+        | "in_progress"
+        | "completed"
+        | "failed"
+        | "not_started"
+        | "submitted"
+        | "awaiting_confirmation"
+        | "removed"
+        | "re_listed"
       risk_level: "low" | "medium" | "high"
       scan_type:
         | "username"
@@ -10442,7 +10549,17 @@ export const Constants = {
         "rejected",
         "suspended",
       ],
-      removal_status: ["pending", "in_progress", "completed", "failed"],
+      removal_status: [
+        "pending",
+        "in_progress",
+        "completed",
+        "failed",
+        "not_started",
+        "submitted",
+        "awaiting_confirmation",
+        "removed",
+        "re_listed",
+      ],
       risk_level: ["low", "medium", "high"],
       scan_type: [
         "username",
