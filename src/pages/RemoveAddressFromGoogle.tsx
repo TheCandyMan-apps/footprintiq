@@ -6,6 +6,7 @@ import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Footer } from "@/components/Footer";
 import { GuideCitationBlock } from "@/components/guides/GuideCitationBlock";
 import { RelatedPrivacyGuides } from "@/components/privacy/RelatedPrivacyGuides";
+import { PrivacyBreadcrumb } from "@/components/privacy/PrivacyBreadcrumb";
 import { JsonLd } from "@/components/seo/JsonLd";
 import {
   Accordion,
@@ -93,8 +94,8 @@ const breadcrumbSchema = {
     {
       "@type": "ListItem",
       position: 2,
-      name: "Privacy Guides",
-      item: "https://footprintiq.app/privacy-center",
+      name: "Privacy Resources",
+      item: "https://footprintiq.app/privacy-centre",
     },
     {
       "@type": "ListItem",
@@ -155,6 +156,7 @@ export default function RemoveAddressFromGoogle() {
 
       <main className="min-h-screen bg-background">
         <article className="max-w-3xl mx-auto px-6 py-16 text-foreground">
+          <PrivacyBreadcrumb currentPage="Remove Address from Google" />
           {/* H1 */}
           <h1 className="text-3xl md:text-4xl font-bold mb-6 leading-tight">
             How to Remove Your Home Address from Google Search
