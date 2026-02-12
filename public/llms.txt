@@ -46,6 +46,7 @@
 - [Remove MyLife Profile](https://footprintiq.app/remove-mylife-profile): Step-by-step guide to removing your MyLife listing using manual opt-out, GDPR, or CCPA requests
 - [Data Broker Removal Guide](https://footprintiq.app/data-broker-removal-guide): Complete guide to removing personal data from data broker websites with GDPR and CCPA templates
 - [Remove Spokeo Profile](https://footprintiq.app/remove-spokeo-profile): Step-by-step guide to removing your Spokeo listing using online opt-out, GDPR, or CCPA requests
+- [Remove BeenVerified Profile](https://footprintiq.app/remove-beenverified-profile): Step-by-step guide to removing your BeenVerified listing using online opt-out, GDPR, or CCPA requests
 
 ## Optional
 
