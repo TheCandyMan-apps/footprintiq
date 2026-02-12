@@ -265,6 +265,7 @@ const AIAnswersWhenNotToUseOsint = lazy(() => import("./pages/ai-answers/WhenNot
 const AIAnswersWhatIsAnIdentityRiskScore = lazy(() => import("./pages/ai-answers/WhatIsAnIdentityRiskScore"));
 const AIAnswersDoesOsintIncludeDarkWebData = lazy(() => import("./pages/ai-answers/DoesOsintIncludeDarkWebData"));
 const RemoveMyLifeProfile = lazy(() => import("./pages/RemoveMyLifeProfile"));
+const PrivacyCentrePage = lazy(() => import("./pages/PrivacyCentrePage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -400,6 +401,7 @@ function RouterContent() {
           <Route path="/blog/ethical-osint-exposure" element={<EthicalOsintExposure />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/remove-mylife-profile" element={<RemoveMyLifeProfile />} />
+          <Route path="/privacy-centre" element={<PrivacyCentrePage />} />
           <Route path="/lens" element={<Lens />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/usernames" element={<UsernamePage />} />
