@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { buildWebPageSchema } from "@/lib/seo/webPageSchema";
 import { Footer } from "@/components/Footer";
 import { GuideCitationBlock } from "@/components/guides/GuideCitationBlock";
+import { RelatedPrivacyGuides } from "@/components/privacy/RelatedPrivacyGuides";
 import { JsonLd } from "@/components/seo/JsonLd";
 import {
   Accordion,
@@ -473,6 +474,14 @@ export default function RemoveAddressFromGoogle() {
               </li>
             </ul>
           </section>
+
+          <RelatedPrivacyGuides links={[
+            { label: "Remove Personal Information from Google", to: "/privacy/google-content-removal" },
+            { label: "Data Broker Removal Guide", to: "/privacy/data-broker-removal-guide" },
+            { label: "Remove Your Spokeo Listing", to: "/remove-spokeo-profile" },
+            { label: "Remove Your BeenVerified Profile", to: "/remove-beenverified-profile" },
+            { label: "Ethical OSINT Principles", to: "/ethical-osint-principles" },
+          ]} />
 
           <GuideCitationBlock />
         </article>

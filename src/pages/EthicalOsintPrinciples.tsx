@@ -6,6 +6,7 @@ import { GuideCitationBlock } from '@/components/guides/GuideCitationBlock';
 import { buildWebPageSchema } from '@/lib/seo/webPageSchema';
 import { Link } from 'react-router-dom';
 import { Globe, Lock, UserX, FileX, Shield, Scale } from 'lucide-react';
+import { RelatedPrivacyGuides } from '@/components/privacy/RelatedPrivacyGuides';
 
 const SECTIONS = [
   {
@@ -179,6 +180,16 @@ export default function EthicalOsintPrinciples() {
             </div>
           </div>
         </section>
+
+        {/* Related Guides */}
+        <div className="max-w-3xl mx-auto px-6">
+          <RelatedPrivacyGuides links={[
+            { label: "Remove Personal Information from Google", to: "/privacy/google-content-removal" },
+            { label: "Data Broker Removal Guide", to: "/privacy/data-broker-removal-guide" },
+            { label: "Remove Your Spokeo Listing", to: "/remove-spokeo-profile" },
+            { label: "Privacy Centre – Templates & Tracking", to: "/privacy-centre" },
+          ]} />
+        </div>
 
         {/* Citation */}
         <div className="max-w-3xl mx-auto px-6 pb-12">
