@@ -25,6 +25,7 @@ import { ScrollProgressBar } from "@/components/ScrollProgressBar";
 import { FloatingCTA } from "@/components/FloatingCTA";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { PlatformCapabilities } from "@/components/PlatformCapabilities";
+import { ForProfessionals } from "@/components/ForProfessionals";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -193,6 +194,10 @@ export default function Home() {
       
       <div className="below-fold">
         <SampleReportPreview />
+      </div>
+
+      <div className="below-fold">
+        <ForProfessionals />
       </div>
       
       <div className="below-fold">
