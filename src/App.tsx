@@ -272,6 +272,7 @@ const RemoveSpokeoProfile = lazy(() => import("./pages/RemoveSpokeoProfile"));
 const RemoveBeenVerifiedProfile = lazy(() => import("./pages/RemoveBeenVerifiedProfile"));
 const IncogniVsDiyDataRemoval = lazy(() => import("./pages/IncogniVsDiyDataRemoval"));
 const RemoveYourselfFromGoogleSearch = lazy(() => import("./pages/RemoveYourselfFromGoogleSearch"));
+const RemoveAddressFromGoogle = lazy(() => import("./pages/RemoveAddressFromGoogle"));
 const GoogleContentRemoval = lazy(() => import("./pages/privacy/GoogleContentRemoval"));
 const PrivacyDataBrokerRemovalGuide = lazy(() => import("./pages/privacy/DataBrokerRemovalGuide"));
 
@@ -417,6 +418,7 @@ function RouterContent() {
           <Route path="/remove-beenverified-profile" element={<RemoveBeenVerifiedProfile />} />
           <Route path="/incogni-vs-diy-data-removal" element={<IncogniVsDiyDataRemoval />} />
           <Route path="/remove-yourself-from-google-search" element={<RemoveYourselfFromGoogleSearch />} />
+          <Route path="/how-to-remove-your-address-from-google" element={<RemoveAddressFromGoogle />} />
           <Route path="/privacy/google-content-removal" element={<GoogleContentRemoval />} />
           <Route path="/privacy/data-broker-removal-guide" element={<PrivacyDataBrokerRemovalGuide />} />
           <Route path="/digital-exposure-risk-explained" element={<DigitalExposureRiskExplained />} />
