@@ -81,7 +81,7 @@ import type { Finding } from '@/lib/ufm';
 import { filterFindings } from '@/lib/findingFilters';
 import { PostScanUpgradeModal } from '@/components/upsell/PostScanUpgradeModal';
 import { useNavigate } from 'react-router-dom';
-import { BlurredRiskGauge } from '@/components/results/BlurredRiskGauge';
+
 import { HiddenInsightsTeaser } from '@/components/results/HiddenInsightsTeaser';
 import { ScanDepthIndicator } from '@/components/results/ScanDepthIndicator';
 import { AccountRow } from './results-tabs/accounts/AccountRow';
@@ -159,6 +159,15 @@ function ExposureScoreCardSection({ results, onUpgradeClick }: { results: ScanRe
   const drivers = useMemo(() => generateExposureDrivers(results as any), [results]);
   const level = scoreResult.score >= 80 ? 'severe' as const : scoreResult.level;
 
+  const interpretationMap: Record<string, string> = {
+    low: 'Limited public discoverability detected for this identifier.',
+    moderate: 'This identifier is publicly discoverable across multiple sources.',
+    high: 'High public surface area across multiple independent platforms.',
+    severe: 'Extensive public exposure across many sources — prioritise review.',
+  };
+
+  const freeBadgeLabel = scoreResult.score >= 10 && scoreResult.score <= 24 ? 'Emerging exposure' : undefined;
+
   return (
     <ExposureScoreCard
       score={scoreResult.score}
@@ -166,6 +175,8 @@ function ExposureScoreCardSection({ results, onUpgradeClick }: { results: ScanRe
       drivers={drivers}
       isLocked
       maxDrivers={3}
+      interpretation={interpretationMap[level] || interpretationMap.low}
+      badgeLabel={freeBadgeLabel}
       onUpgradeClick={onUpgradeClick}
     />
   );
@@ -598,12 +609,6 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
             {/* ===== EXPOSURE SCORE HERO CARD ===== */}
             <ExposureScoreCardSection results={results} onUpgradeClick={handleUpgradeClick} />
 
-            {/* ===== NEW: BLURRED RISK GAUGE (creates immediate curiosity) ===== */}
-            <BlurredRiskGauge
-              signalsCount={signalsFound}
-              highConfidenceCount={highConfidenceCount}
-              exposuresCount={totalBreaches}
-            />
 
             {/* ===== RISK SNAPSHOT (with emotional context) ===== */}
             <Card className="overflow-hidden border-border/50">
