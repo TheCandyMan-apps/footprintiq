@@ -51,6 +51,12 @@ const allTools = [
     icon: Trash2,
   },
   {
+    to: "/check-my-digital-footprint",
+    title: "Check My Digital Footprint",
+    desc: "Run a free scan to see what personal data is publicly visible",
+    icon: Search,
+  },
+  {
     to: "/ai-answers-hub",
     title: "AI Answers Hub",
     desc: "Get answers to OSINT and digital privacy questions",
