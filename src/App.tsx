@@ -89,6 +89,7 @@ const LensCaseStudyFalsePositive = lazy(() => import("./pages/blog/LensCaseStudy
 const DarkWebScansNoise = lazy(() => import("./pages/blog/DarkWebScansNoise"));
 const OsintToInsight = lazy(() => import("./pages/blog/OsintToInsight"));
 const EthicalOsintExposure = lazy(() => import("./pages/blog/EthicalOsintExposure"));
+const WhatIsOsintBlog = lazy(() => import("./pages/blog/WhatIsOsint"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -420,6 +421,7 @@ function RouterContent() {
           <Route path="/blog/dark-web-scans-noise" element={<DarkWebScansNoise />} />
           <Route path="/blog/osint-to-insight" element={<OsintToInsight />} />
           <Route path="/blog/ethical-osint-exposure" element={<EthicalOsintExposure />} />
+          <Route path="/blog/what-is-osint" element={<WhatIsOsintBlog />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/remove-mylife-profile" element={<RemoveMyLifeProfile />} />
           <Route path="/privacy-centre" element={<PrivacyCentrePage />} />
