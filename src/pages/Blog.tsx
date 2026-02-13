@@ -112,6 +112,15 @@ const blogPosts = [{
   featured: false,
   image: "/blog-images/ai-osint-2025.webp"
 }, {
+  slug: "how-exposed-am-i-online",
+  title: "How Exposed Am I Online? (2026 Digital Footprint Guide)",
+  excerpt: "Learn how to measure your online exposure using ethical OSINT techniques. Comprehensive 2026 guide covering digital footprint scans, breach checks, and exposure reduction strategies.",
+  date: "February 13, 2026",
+  readTime: "11 min read",
+  category: "Privacy",
+  featured: true,
+  image: "/blog-images/digital-footprint.webp"
+}, {
   slug: "what-is-osint-risk",
   title: "What is OSINT Risk? Understanding Your Digital Exposure",
   excerpt: "Learn what OSINT risk means for your business, how threat actors use open-source intelligence, and practical steps to reduce your digital attack surface.",
