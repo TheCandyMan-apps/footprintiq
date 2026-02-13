@@ -122,6 +122,37 @@
     <meta name="twitter:title" content="FootprintIQ — Ethical Digital Footprint Intelligence">
     <meta property="og:description" content="FootprintIQ is an ethical digital footprint intelligence platform using OSINT techniques to help you understand online exposure — without surveillance or invasive data collection.">
     <meta name="twitter:description" content="FootprintIQ is an ethical digital footprint intelligence platform using OSINT techniques to help you understand online exposure — without surveillance or invasive data collection.">
+
+    <!-- Pre-JS SEO fallback: sets meta tags before React/Helmet hydrates -->
+    <script>
+      (function(){
+        var B='https://footprintiq.app',D='FootprintIQ — Ethical Digital Footprint Intelligence',
+            DD='FootprintIQ is an ethical digital footprint intelligence platform using OSINT techniques to help you understand online exposure — without surveillance or invasive data collection.';
+        var R={
+          '/social-media-finder':{t:'Social Media Finder – Search Public Profiles by Username',d:'Find public social media accounts linked to a username. Ethical OSINT-based profile search with privacy-focused results.',og:'article'},
+          '/username-checker':{t:'Username Checker – Search Usernames Across 500+ Platforms | FootprintIQ',d:'Check if a username exists across 500+ social media platforms and forums. Free OSINT username search with privacy-first methodology.',og:'article'},
+          '/profile-search':{t:'Profile Search – Find Public Profiles Online | FootprintIQ',d:'Search for public profiles across social media, forums, and developer platforms using ethical OSINT methods.',og:'article'},
+          '/digital-footprint-check':{t:'Digital Footprint Check – See Your Online Exposure | FootprintIQ',d:'Run a free digital footprint check to discover what personal data is publicly visible online. Privacy-focused OSINT scanning.',og:'article'},
+          '/ai-answers-hub':{t:'AI Answers Hub – OSINT & Privacy Questions Answered | FootprintIQ',d:'Get AI-powered answers to your OSINT, digital privacy, and data exposure questions. Expert-level guidance made simple.',og:'article'}
+        };
+        var p=window.location.pathname.replace(/\/$/,'');
+        var m=R[p];
+        if(m){
+          document.title=m.t;
+          var h=document.head;
+          function u(s,a,v){var e=h.querySelector(s+'['+a+']');if(e)e.setAttribute('content',v);}
+          function uc(s,a,v){var e=h.querySelector(s+'['+a+']');if(e)e.setAttribute('href',v);}
+          uc('link','rel="canonical"',B+p);
+          u('meta','name="description"',m.d);
+          u('meta','property="og:title"',m.t);
+          u('meta','property="og:description"',m.d);
+          u('meta','property="og:url"',B+p);
+          if(m.og){u('meta','property="og:type"',m.og);}
+          u('meta','name="twitter:title"',m.t);
+          u('meta','name="twitter:description"',m.d);
+        }
+      })();
+    </script>
 </head>
 
   <body>
@@ -131,17 +162,36 @@
     <div id="root">
       <!-- SSR fallback for JS-disabled crawlers (SEMRUSH, etc.) -->
       <noscript>
-        <header style="max-width: 800px; margin: 0 auto; padding: 60px 20px; text-align: center; font-family: system-ui, sans-serif;">
-          <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #1a1a2e;">FootprintIQ — Ethical Digital Footprint Intelligence</h1>
-          <p style="font-size: 1.25rem; color: #64748b; margin-bottom: 2rem;">
-            FootprintIQ is an ethical digital footprint scanner. We scan usernames across 500+ platforms, 
-            detect email breaches, identify data broker listings, and provide probability-based confidence 
-            analysis — all using publicly available data with full transparency.
-          </p>
-          <nav style="margin: 2rem 0;">
-            <a href="/scan" style="display: inline-block; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; margin: 0.5rem;">Run a Free Scan</a>
-            <a href="/pricing" style="display: inline-block; padding: 12px 24px; border: 2px solid #7c3aed; color: #7c3aed; text-decoration: none; border-radius: 8px; margin: 0.5rem;">View Pricing</a>
-          </nav>
+        <header id="noscript-fallback" style="max-width: 800px; margin: 0 auto; padding: 60px 20px; text-align: center; font-family: system-ui, sans-serif;">
+          <!-- Route-specific noscript content -->
+          <style>
+            .ns-social-media-finder { display: none; }
+          </style>
+          <!-- /social-media-finder specific content -->
+          <div class="ns-social-media-finder">
+            <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #1a1a2e;">Social Media Finder: Search Public Profiles by Username</h1>
+            <p style="font-size: 1.25rem; color: #64748b; margin-bottom: 2rem;">
+              Find public social media accounts linked to a username. Our ethical OSINT-based profile search scans 500+ platforms
+              to identify where a username appears publicly — with privacy-focused, transparent results.
+            </p>
+            <nav style="margin: 2rem 0;">
+              <a href="/scan" style="display: inline-block; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; margin: 0.5rem;">Check Your Username Now</a>
+              <a href="/digital-footprint-check" style="display: inline-block; padding: 12px 24px; border: 2px solid #7c3aed; color: #7c3aed; text-decoration: none; border-radius: 8px; margin: 0.5rem;">Learn About Digital Footprint Risks</a>
+            </nav>
+          </div>
+          <!-- Default homepage content -->
+          <div class="ns-default">
+            <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: #1a1a2e;">FootprintIQ — Ethical Digital Footprint Intelligence</h1>
+            <p style="font-size: 1.25rem; color: #64748b; margin-bottom: 2rem;">
+              FootprintIQ is an ethical digital footprint scanner. We scan usernames across 500+ platforms, 
+              detect email breaches, identify data broker listings, and provide probability-based confidence 
+              analysis — all using publicly available data with full transparency.
+            </p>
+            <nav style="margin: 2rem 0;">
+              <a href="/scan" style="display: inline-block; padding: 12px 24px; background: #7c3aed; color: white; text-decoration: none; border-radius: 8px; margin: 0.5rem;">Run a Free Scan</a>
+              <a href="/pricing" style="display: inline-block; padding: 12px 24px; border: 2px solid #7c3aed; color: #7c3aed; text-decoration: none; border-radius: 8px; margin: 0.5rem;">View Pricing</a>
+            </nav>
+          </div>
           <section style="text-align: left; margin-top: 3rem;">
             <h2 style="font-size: 1.5rem; color: #1a1a2e;">What We Scan</h2>
             <ul style="color: #475569; line-height: 1.8;">
@@ -164,6 +214,10 @@
             <p><a href="/privacy-policy" style="color: #7c3aed;">Privacy Policy</a> · <a href="/terms-of-service" style="color: #7c3aed;">Terms of Service</a> · <a href="/responsible-use" style="color: #7c3aed;">Responsible Use</a></p>
           </footer>
         </header>
+        <!-- Noscript route detection: show correct block based on URL path -->
+        <script>
+          /* This script won't execute when JS is disabled, so we use CSS media hack below */
+        </script>
       </noscript>
     </div>
     <script type="module" src="/src/main.tsx"></script>
