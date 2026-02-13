@@ -282,6 +282,8 @@ const SocialMediaFinder = lazy(() => import("./pages/SocialMediaFinder"));
 const UsernameChecker = lazy(() => import("./pages/UsernameChecker"));
 const ReverseUsernameSearch = lazy(() => import("./pages/ReverseUsernameSearch"));
 const UsernameLookup = lazy(() => import("./pages/UsernameLookup"));
+const AccountFinder = lazy(() => import("./pages/AccountFinder"));
+const FindSocialMediaAccounts = lazy(() => import("./pages/FindSocialMediaAccounts"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -582,6 +584,8 @@ function RouterContent() {
            <Route path="/username-checker" element={<UsernameChecker />} />
             <Route path="/reverse-username-search" element={<ReverseUsernameSearch />} />
             <Route path="/username-lookup" element={<UsernameLookup />} />
+            <Route path="/account-finder" element={<AccountFinder />} />
+            <Route path="/find-social-media-accounts" element={<FindSocialMediaAccounts />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
