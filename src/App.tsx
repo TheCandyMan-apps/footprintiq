@@ -286,6 +286,7 @@ const AccountFinder = lazy(() => import("./pages/AccountFinder"));
 const FindSocialMediaAccounts = lazy(() => import("./pages/FindSocialMediaAccounts"));
 const UsernameReuseRisk = lazy(() => import("./pages/UsernameReuseRisk"));
 const RemovePersonalInformation = lazy(() => import("./pages/RemovePersonalInformation"));
+const CheckMyDigitalFootprint = lazy(() => import("./pages/CheckMyDigitalFootprint"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -589,7 +590,8 @@ function RouterContent() {
             <Route path="/account-finder" element={<AccountFinder />} />
             <Route path="/find-social-media-accounts" element={<FindSocialMediaAccounts />} />
             <Route path="/username-reuse-risk" element={<UsernameReuseRisk />} />
-            <Route path="/remove-personal-information-from-internet" element={<RemovePersonalInformation />} />
+             <Route path="/remove-personal-information-from-internet" element={<RemovePersonalInformation />} />
+             <Route path="/check-my-digital-footprint" element={<CheckMyDigitalFootprint />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
