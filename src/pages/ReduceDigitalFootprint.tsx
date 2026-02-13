@@ -166,7 +166,7 @@ const ReduceDigitalFootprint = () => {
           {/* Hero Section */}
           <header className="mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              How to Reduce Your Digital Footprint
+              Practical Steps to Minimise Your Online Exposure
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
               A practical, ethical guide to lowering your online visibility and managing digital exposure—without fear-mongering or unrealistic promises.

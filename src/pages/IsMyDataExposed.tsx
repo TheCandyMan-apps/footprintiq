@@ -166,7 +166,7 @@ const IsMyDataExposed = () => {
           {/* Hero Section */}
           <header className="mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Is My Personal Data Already Exposed Online?
+              Understanding Personal Data Exposure and What It Means for You
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
               A calm, factual guide to understanding what data exposure really means—and why it's not as alarming as it sounds.

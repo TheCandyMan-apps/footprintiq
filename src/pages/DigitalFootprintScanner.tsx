@@ -229,7 +229,7 @@ const DigitalFootprintScanner = () => {
           {/* Hero Section */}
           <section className="mb-16">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
-              How to Find Your Digital Footprint — Free Digital Footprint Checker
+              Discover Where Your Personal Data Appears Online
             </h1>
             
             {/* Lead-in subtitle with keyword variations */}

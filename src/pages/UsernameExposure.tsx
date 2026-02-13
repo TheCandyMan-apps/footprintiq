@@ -239,7 +239,7 @@ const UsernameExposure = () => {
                 </div>
                 
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-                  Username Footprint Scan: How Accounts Get Linked
+                  How Reusing Usernames Connects Your Online Accounts
                 </h1>
                 
                 <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">

@@ -137,7 +137,7 @@ export default function StayPrivateOnline() {
             {/* Hero Section */}
             <header className="mb-12 text-center">
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-                Is It Possible to Stay Private Online Anymore?
+                Realistic Expectations for Online Privacy in 2026
               </h1>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
                 A realistic guide to understanding what privacy means today, what you can control, and how to think about it calmly.

@@ -300,7 +300,7 @@ const AIIndex = () => {
           {/* Header */}
           <header className="mb-12">
             <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-              AI Answers: Understanding Digital Identity & Exposure
+              Clear Explanations of Digital Identity, Exposure, and Privacy
             </h1>
             <div className="prose prose-lg max-w-none text-muted-foreground space-y-4">
               <p className="text-lg leading-relaxed">

@@ -173,7 +173,7 @@ export default function DataBrokerRemovalChecklist2026() {
           <header className="mb-12">
             <p className="text-sm font-medium text-accent mb-3">2026 Edition</p>
             <h1 className="text-4xl md:text-5xl font-bold leading-tight mb-4">
-              The 2026 Data Broker Removal Checklist
+              A Step-by-Step Workflow for Data Broker Opt-Outs and Privacy Requests
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
               A structured workflow for reducing online exposure across search engines and data brokers.

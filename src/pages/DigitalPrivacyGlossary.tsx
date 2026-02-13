@@ -336,7 +336,7 @@ const DigitalPrivacyGlossary = () => {
                 <span className="text-sm font-medium">Reference Guide</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-                Digital Privacy & Online Exposure Glossary
+                Key Terms for Understanding Online Privacy and Exposure
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 Clear, neutral definitions of key terms related to digital footprints, online exposure, 
