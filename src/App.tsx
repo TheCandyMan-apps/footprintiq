@@ -280,6 +280,7 @@ const PrivacyDataBrokerRemovalGuide = lazy(() => import("./pages/privacy/DataBro
 const DigitalExposureRiskExplained = lazy(() => import("./pages/DigitalExposureRiskExplained"));
 const SocialMediaFinder = lazy(() => import("./pages/SocialMediaFinder"));
 const UsernameChecker = lazy(() => import("./pages/UsernameChecker"));
+const ReverseUsernameSearch = lazy(() => import("./pages/ReverseUsernameSearch"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -578,6 +579,7 @@ function RouterContent() {
            <Route path="/username-exposure" element={<UsernameExposure />} />
            <Route path="/social-media-finder" element={<SocialMediaFinder />} />
            <Route path="/username-checker" element={<UsernameChecker />} />
+           <Route path="/reverse-username-search" element={<ReverseUsernameSearch />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
