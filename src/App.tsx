@@ -278,6 +278,7 @@ const GoogleContentRemoval = lazy(() => import("./pages/privacy/GoogleContentRem
 const PrivacyDataBrokerRemovalGuide = lazy(() => import("./pages/privacy/DataBrokerRemovalGuide"));
 
 const DigitalExposureRiskExplained = lazy(() => import("./pages/DigitalExposureRiskExplained"));
+const SocialMediaFinder = lazy(() => import("./pages/SocialMediaFinder"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -573,7 +574,8 @@ function RouterContent() {
           <Route path="/digital-footprint-check" element={<DigitalFootprintScanner />} />
           <Route path="/online-footprint-scanner" element={<DigitalFootprintScanner />} />
           <Route path="/what-is-a-digital-footprint" element={<WhatIsDigitalFootprintEducational />} />
-          <Route path="/username-exposure" element={<UsernameExposure />} />
+           <Route path="/username-exposure" element={<UsernameExposure />} />
+           <Route path="/social-media-finder" element={<SocialMediaFinder />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
         
           {/* AI Fusion & Predictive Routes */}
