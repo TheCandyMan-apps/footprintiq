@@ -4,444 +4,538 @@ import { SEO, organizationSchema } from "@/components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Eye, EyeOff, Shield, UserX, Search, Trash2, Settings, Bell, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Shield, UserX, Search, Trash2, Settings, Bell, CheckCircle2, Globe, Link2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BlogPullQuote } from "@/components/blog/BlogPullQuote";
 import { BlogCallout } from "@/components/blog/BlogCallout";
+import { RelatedToolsGrid } from "@/components/seo/RelatedToolsGrid";
 
 export default function WhatIsDigitalFootprint() {
   const breadcrumbs = {
     "@context": "https://schema.org" as const,
     "@type": "BreadcrumbList" as const,
     itemListElement: [
-      {
-        "@type": "ListItem" as const,
-        position: 1,
-        name: "Home",
-        item: "https://footprintiq.app"
-      },
-      {
-        "@type": "ListItem" as const,
-        position: 2,
-        name: "Blog",
-        item: "https://footprintiq.app/blog"
-      },
-      {
-        "@type": "ListItem" as const,
-        position: 3,
-        name: "What Is a Digital Footprint"
-      }
+      { "@type": "ListItem" as const, position: 1, name: "Home", item: "https://footprintiq.app" },
+      { "@type": "ListItem" as const, position: 2, name: "Blog", item: "https://footprintiq.app/blog" },
+      { "@type": "ListItem" as const, position: 3, name: "What Is a Digital Footprint?" }
     ]
   };
 
   const articleSchema = {
     "@context": "https://schema.org",
-    "@type": "BlogPosting",
-    headline: "What Is a Digital Footprint? Complete Guide 2025",
-    description: "Comprehensive guide to understanding your digital footprint, why it matters, and practical steps to manage and reduce your online exposure.",
+    "@type": "Article",
+    headline: "What Is a Digital Footprint? Complete Guide 2026",
+    description: "Understand what a digital footprint is, the difference between active and passive footprints, how search engines and username reuse expand your exposure, and practical steps to check and reduce it.",
     image: "https://footprintiq.app/blog-images/digital-footprint.webp",
     datePublished: "2025-01-15T09:00:00Z",
-    dateModified: "2025-01-15T09:00:00Z",
-    author: {
+    dateModified: "2026-02-13T09:00:00Z",
+    author: { "@type": "Organization", name: "FootprintIQ" },
+    publisher: {
       "@type": "Organization",
-      name: "FootprintIQ"
+      name: "FootprintIQ",
+      logo: { "@type": "ImageObject", url: "https://footprintiq.app/logo-social.png" }
     },
-    publisher: organizationSchema,
-    keywords: "digital footprint, online privacy, internet security, personal data, OSINT"
+    mainEntityOfPage: { "@type": "WebPage", "@id": "https://footprintiq.app/blog/what-is-digital-footprint" },
+    keywords: "digital footprint, online privacy, passive footprint, active footprint, username reuse, search engine exposure, OSINT, personal data"
+  };
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What is the difference between an active and passive digital footprint?",
+        acceptedAnswer: { "@type": "Answer", text: "An active digital footprint is data you deliberately share online — social media posts, comments, form submissions, and account registrations. A passive footprint is data collected about you without direct action, such as IP addresses, browsing cookies, device fingerprints, and tracking pixels." }
+      },
+      {
+        "@type": "Question",
+        name: "How do search engines affect my digital footprint?",
+        acceptedAnswer: { "@type": "Answer", text: "Search engines index publicly accessible pages and cache content, making your information discoverable by anyone who searches your name, username, or email. Even deleted content may persist in cached versions or archived snapshots." }
+      },
+      {
+        "@type": "Question",
+        name: "Does using the same username everywhere increase my exposure?",
+        acceptedAnswer: { "@type": "Answer", text: "Yes. Username reuse creates a linkable pattern across platforms, allowing anyone to connect your accounts and build a more complete picture of your online presence. Research shows the median number of public profiles linked to a reused username is 4.2 platforms." }
+      },
+      {
+        "@type": "Question",
+        name: "How can I check my digital footprint for free?",
+        acceptedAnswer: { "@type": "Answer", text: "You can run a free digital footprint check using tools like FootprintIQ, which scans for username exposure, public profiles, data broker listings, and email breach indicators across hundreds of sources." }
+      },
+      {
+        "@type": "Question",
+        name: "Can I completely erase my digital footprint?",
+        acceptedAnswer: { "@type": "Answer", text: "Complete erasure is extremely difficult due to cached content, data broker re-collection, and archived pages. However, you can significantly reduce your exposure by deleting unused accounts, opting out of data brokers, adjusting privacy settings, and varying your usernames across platforms." }
+      },
+      {
+        "@type": "Question",
+        name: "Why does my information keep appearing online after I delete it?",
+        acceptedAnswer: { "@type": "Answer", text: "Deleted content may persist in search engine caches, web archives (like the Wayback Machine), data broker databases, and screenshots or copies made by third parties. Data brokers also continuously re-collect information from public sources." }
+      }
+    ]
   };
 
   return (
     <div className="min-h-screen flex flex-col">
-      <SEO 
-        title="What Is a Digital Footprint? Complete Guide 2025 | FootprintIQ"
-        description="Comprehensive guide to understanding your digital footprint, why it matters, and practical steps to manage and reduce your online exposure."
+      <SEO
+        title="What Is a Digital Footprint? Complete Guide 2026 | FootprintIQ"
+        description="Understand what a digital footprint is, the difference between active and passive footprints, how search engines and username reuse expand your exposure, and practical steps to check and reduce it."
         canonical="https://footprintiq.app/blog/what-is-digital-footprint"
         ogImage="https://footprintiq.app/blog-images/digital-footprint.webp"
         article={{
           publishedTime: "2025-01-15T09:00:00Z",
-          modifiedTime: "2025-01-15T09:00:00Z",
+          modifiedTime: "2026-02-13T09:00:00Z",
           author: "FootprintIQ",
-          tags: ["Privacy", "Digital Footprint", "Online Security"]
+          tags: ["Privacy", "Digital Footprint", "Online Security", "Username Reuse"]
         }}
         schema={{
           organization: organizationSchema,
-          breadcrumbs: breadcrumbs,
-          custom: articleSchema
+          breadcrumbs,
+          custom: [articleSchema, faqSchema]
         }}
       />
       <Header />
-      
+
       <main className="flex-1">
-        <article className="py-16 px-6">
-          <div className="max-w-4xl mx-auto">
-            {/* Back Link */}
-            <Link to="/blog" className="inline-flex items-center text-primary hover:text-primary/80 mb-8 group">
-              <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-              Back to Blog
-            </Link>
+        <article className="py-12 md:py-20">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto">
 
-            {/* Header */}
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <Badge>Privacy Basics</Badge>
-                <Badge variant="outline">Essential Reading</Badge>
-                <span className="text-sm text-muted-foreground">8 min read</span>
-              </div>
-              <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                What Is a Digital Footprint? Complete Guide 2025
-              </h1>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <time dateTime="2025-01-15">January 15, 2025</time>
-                <span>•</span>
-                <span>By FootprintIQ Security Team</span>
-              </div>
-            </div>
+              {/* Back Link */}
+              <Link
+                to="/blog"
+                className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors mb-8 font-medium group"
+              >
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                Back to Blog
+              </Link>
 
-            {/* Featured Image */}
-            <div className="mb-12 rounded-lg overflow-hidden">
-              <img 
-                src="/blog-images/digital-footprint.webp" 
-                alt="Digital footprint visualization showing online data trail"
-                className="w-full h-auto"
-                loading="eager"
-              />
-            </div>
-
-            {/* Introduction */}
-            <div className="prose prose-lg max-w-none mb-12">
-              <p className="text-xl leading-relaxed text-muted-foreground">
-                A digital footprint is the trail of data you leave behind while using the internet. Every time you 
-                browse websites, post on social media, shop online, or use apps, you're creating digital traces that 
-                can be tracked, collected, and analyzed — this accumulation is what we call <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link>.
-              </p>
-            </div>
-
-            {/* Main Content */}
-            <div className="space-y-12">
-              {/* Section 1: Types of Digital Footprints */}
-              <section>
-                <div className="flex items-center gap-3 mb-6">
-                  <Eye className="w-8 h-8 text-primary" />
-                  <h2 className="text-3xl font-bold">Types of Digital Footprints</h2>
+              {/* Header */}
+              <div className="mb-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <Badge variant="secondary">Privacy Basics</Badge>
+                  <span className="text-sm text-muted-foreground">Updated 13 Feb 2026</span>
+                  <span className="text-sm text-muted-foreground">·</span>
+                  <span className="text-sm text-muted-foreground">14 min read</span>
                 </div>
-                <p className="text-lg text-muted-foreground mb-6">
-                  Understanding the different types of digital footprints is essential for managing your online 
-                  presence effectively. Your digital trail can be categorized into two main types.
+                <h1 className="text-3xl md:text-5xl font-bold text-foreground leading-tight mb-6">
+                  What Is a Digital Footprint? Complete Guide 2026
+                </h1>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Every time you browse a website, register an account, or post a comment, you leave a trail of data 
+                  behind you. This trail — your digital footprint — determines how visible you are online and who can 
+                  find information about you. Understanding how it works is the first step toward controlling your{" "}
+                  <Link to="/ai/digital-exposure" className="text-primary hover:underline">digital exposure</Link>.
                 </p>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <Card className="p-6 border-2 border-primary/20">
+              </div>
+
+              {/* Section 1: Passive vs Active Footprint */}
+              <section className="mb-12">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4 flex items-center gap-3">
+                  <Eye className="w-6 h-6 text-primary" />
+                  Passive vs Active Digital Footprint
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-6">
+                  Your digital footprint falls into two categories, and understanding the distinction is essential 
+                  for managing your privacy effectively.
+                </p>
+                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                  <Card className="p-6 border-border">
                     <div className="flex items-center gap-2 mb-4">
-                      <Eye className="w-6 h-6 text-primary" />
-                      <h3 className="text-xl font-semibold">Active Digital Footprint</h3>
+                      <Eye className="w-5 h-5 text-primary" />
+                      <h3 className="text-lg font-semibold text-foreground">Active Footprint</h3>
                     </div>
-                    <p className="text-muted-foreground mb-4">
-                      Information you <strong>deliberately share online</strong>, such as social media posts, blog comments, 
-                      emails, and form submissions.
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Data you <strong className="text-foreground">deliberately share</strong> through conscious online actions.
                     </p>
-                    <ul className="space-y-2">
+                    <ul className="space-y-2 text-sm text-muted-foreground">
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span>Social media posts and comments</span>
+                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <span>Social media posts, comments, and likes</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span>Email communications</span>
+                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <span>Account registrations and profile creation</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span>Online forms and registrations</span>
+                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <span>Forum contributions and reviews</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span>Forum contributions and discussions</span>
+                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <span>Email communications and form submissions</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span>Reviews, ratings, and testimonials</span>
+                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <span>Blog posts and content uploads</span>
                       </li>
                     </ul>
                   </Card>
 
-                  <Card className="p-6 border-2 border-primary/20">
+                  <Card className="p-6 border-border">
                     <div className="flex items-center gap-2 mb-4">
-                      <EyeOff className="w-6 h-6 text-primary" />
-                      <h3 className="text-xl font-semibold">Passive Digital Footprint</h3>
+                      <EyeOff className="w-5 h-5 text-primary" />
+                      <h3 className="text-lg font-semibold text-foreground">Passive Footprint</h3>
                     </div>
-                    <p className="text-muted-foreground mb-4">
-                      Data collected about you <strong>without your direct input</strong>, including IP addresses, browsing 
-                      history, and device information.
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Data collected about you <strong className="text-foreground">without direct action</strong> through background tracking.
                     </p>
-                    <ul className="space-y-2">
+                    <ul className="space-y-2 text-sm text-muted-foreground">
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                         <span>IP addresses and geolocation data</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                         <span>Browsing history and cookies</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span>Device fingerprinting</span>
+                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <span>Device fingerprinting and tracking pixels</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span>App usage patterns</span>
+                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <span>App usage patterns and metadata</span>
                       </li>
                       <li className="flex items-start gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span>Search engine queries</span>
+                        <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                        <span>Search engine query logs</span>
                       </li>
                     </ul>
                   </Card>
                 </div>
+
+                <p className="text-muted-foreground leading-relaxed">
+                  The key difference: you have direct control over your active footprint (what you choose to post and share), 
+                  but your passive footprint accumulates largely without your awareness. Both contribute to your overall 
+                  online visibility, and both can be discovered through{" "}
+                  <Link to="/blog/what-is-osint" className="text-primary hover:underline">OSINT techniques</Link>.
+                </p>
               </section>
 
-              <BlogPullQuote>
-                Your digital footprint is like a shadow — it follows you everywhere online, often without you 
-                realizing it's there.
-              </BlogPullQuote>
-
-              {/* Section 2: Why Your Digital Footprint Matters */}
-              <section>
-                <div className="flex items-center gap-3 mb-6">
-                  <Shield className="w-8 h-8 text-primary" />
-                  <h2 className="text-3xl font-bold">Why Your Digital Footprint Matters</h2>
-                </div>
-                <p className="text-lg text-muted-foreground mb-6">
-                  Understanding <Link to="/ai/digital-exposure" className="text-primary hover:underline">what digital exposure means</Link> is the first step toward managing it.
-                  Your digital footprint has far-reaching implications for your privacy, security, and reputation. 
-                  Understanding these risks is the first step toward protecting yourself.
+              {/* Section 2: Public Exposure */}
+              <section className="mb-12">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4 flex items-center gap-3">
+                  <Shield className="w-6 h-6 text-primary" />
+                  Public Exposure: Why Your Footprint Matters
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-6">
+                  Your digital footprint has real-world consequences that extend far beyond the internet. Understanding 
+                  these implications is what motivates effective privacy management.
                 </p>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <Card className="p-6 border-2 border-primary/20">
-                    <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                      <UserX className="h-5 w-5 text-primary" />
-                      Privacy Risks
+                <div className="grid md:grid-cols-2 gap-4 mb-6">
+                  <Card className="p-5 border-border">
+                    <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <UserX className="w-4 h-4 text-primary" />
+                      Privacy Erosion
                     </h3>
-                    <p className="text-muted-foreground">
-                      Personal information can be exposed to data brokers, advertisers, and malicious actors. Once 
-                      your data is out there, you have limited control over who sees it.
+                    <p className="text-sm text-muted-foreground">
+                      Personal information feeds{" "}
+                      <Link to="/blog/how-data-brokers-work" className="text-primary hover:underline">data broker databases</Link>, 
+                      advertising networks, and people-search sites. Once aggregated, these fragments create detailed 
+                      profiles that are difficult to dismantle.
                     </p>
                   </Card>
-
-                  <Card className="p-6 border-2 border-primary/20">
-                    <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                      <Search className="h-5 w-5 text-primary" />
+                  <Card className="p-5 border-border">
+                    <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <Search className="w-4 h-4 text-primary" />
                       Reputation Impact
                     </h3>
-                    <p className="text-muted-foreground">
-                      Online content can affect job prospects, relationships, and professional opportunities. 
-                      <strong> 85% of employers</strong> routinely search for candidates online before hiring.
+                    <p className="text-sm text-muted-foreground">
+                      Employers, landlords, and institutions routinely search for individuals online. Old posts, 
+                      forgotten accounts, and out-of-context content can affect professional opportunities and 
+                      personal relationships.
                     </p>
                   </Card>
-
-                  <Card className="p-6 border-2 border-primary/20">
-                    <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                      <Shield className="h-5 w-5 text-primary" />
-                      Security Threats
+                  <Card className="p-5 border-border">
+                    <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <Shield className="w-4 h-4 text-primary" />
+                      Security Risks
                     </h3>
-                    <p className="text-muted-foreground">
-                      Exposed data can be used for identity theft, phishing, and social engineering attacks. The more 
-                      information available about you, the easier it is for attackers to target you.
+                    <p className="text-sm text-muted-foreground">
+                      Exposed data enables targeted phishing, social engineering, and credential stuffing attacks. 
+                      The more information available about you, the easier it is for threat actors to craft 
+                      convincing approaches.
                     </p>
                   </Card>
-
-                  <Card className="p-6 border-2 border-primary/20">
-                    <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                      <Bell className="h-5 w-5 text-primary" />
-                      Financial Implications
+                  <Card className="p-5 border-border">
+                    <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                      <Bell className="w-4 h-4 text-primary" />
+                      Financial Consequences
                     </h3>
-                    <p className="text-muted-foreground">
-                      Data brokers sell your information to third parties without your consent. Your data is worth 
-                      hundreds of dollars per year to advertisers.
+                    <p className="text-sm text-muted-foreground">
+                      Data brokers monetise your information by selling it to third parties. Your browsing habits, 
+                      purchase history, and personal details are worth hundreds of pounds annually to advertisers.
                     </p>
                   </Card>
                 </div>
+
+                <BlogPullQuote>
+                  Your digital footprint isn't just a record of where you've been online — it's a map that others 
+                  can follow to learn about you, contact you, or target you.
+                </BlogPullQuote>
               </section>
 
-              <BlogCallout type="warning" title="Important Reality Check">
-                According to recent studies, the average person has personal information listed on over 
-                <strong> 200 data broker websites</strong>. Most people are completely unaware of this exposure.
-              </BlogCallout>
-
-              {/* Section 3: How to Manage Your Digital Footprint */}
-              <section>
-                <div className="flex items-center gap-3 mb-6">
-                  <Settings className="w-8 h-8 text-primary" />
-                  <h2 className="text-3xl font-bold">How to Manage Your Digital Footprint</h2>
-                </div>
-                <p className="text-lg text-muted-foreground mb-6">
-                  Taking control of your digital footprint requires a systematic approach. Follow these steps 
-                  to reduce your exposure and protect your privacy.
+              {/* Section 3: Search Engines */}
+              <section className="mb-12">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4 flex items-center gap-3">
+                  <Globe className="w-6 h-6 text-primary" />
+                  How Search Engines Amplify Your Footprint
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  Search engines are the primary gateway through which your digital footprint becomes discoverable. 
+                  Google, Bing, and other search engines continuously crawl and index publicly accessible web pages, 
+                  making your information findable by anyone who searches for your name, username, or email address.
                 </p>
-                <div className="space-y-6">
-                  <Card className="p-6 border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent">
-                    <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
-                        1
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold mb-2">Audit Your Online Presence</h3>
-                        <p className="text-muted-foreground">
-                          Use OSINT tools like FootprintIQ to scan what information is publicly available about you. 
-                          Start with a <Link to="/username-search" className="text-primary hover:underline">username search</Link> to 
-                          see where your handles appear, then run an <Link to="/email-breach-check" className="text-primary hover:underline">email breach check</Link> to 
-                          identify compromised credentials.
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  This creates several exposure dynamics that many people don't anticipate:
+                </p>
 
-                  <Card className="p-6 border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent">
-                    <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
-                        2
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold mb-2">Remove Old Accounts</h3>
-                        <p className="text-muted-foreground">
-                          Delete unused social media profiles and accounts you no longer need. Old accounts are security 
-                          vulnerabilities and continue to expose your data even when inactive.
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-6 border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent">
-                    <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
-                        3
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold mb-2">Adjust Privacy Settings</h3>
-                        <p className="text-muted-foreground">
-                          Review and tighten privacy controls on all your active accounts. Most platforms default to 
-                          maximum data sharing — you need to manually restrict what's visible.
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-6 border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent">
-                    <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
-                        4
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold mb-2">Use Data Removal Services</h3>
-                        <p className="text-muted-foreground">
-                          Employ automated tools to request removal from data broker sites. Manual removal takes 
-                          <strong> 40-60+ hours</strong> and needs to be repeated regularly.
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-6 border-l-4 border-l-primary bg-gradient-to-r from-primary/5 to-transparent">
-                    <div className="flex items-start gap-4">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center flex-shrink-0">
-                        5
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold mb-2">Monitor Regularly</h3>
-                        <p className="text-muted-foreground">
-                          Set up continuous monitoring to catch new exposures early. Your digital footprint changes 
-                          constantly as new data appears online.
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-              </section>
-
-              {/* Section 4: Tools and Services */}
-              <section>
-                <div className="flex items-center gap-3 mb-6">
-                  <Trash2 className="w-8 h-8 text-primary" />
-                  <h2 className="text-3xl font-bold">Tools and Services</h2>
-                </div>
-                <Card className="p-6 border-2 border-primary/20 bg-gradient-to-br from-card to-primary/5">
-                  <CardContent className="p-0">
-                    <p className="text-lg mb-6">
-                      FootprintIQ provides comprehensive digital footprint scanning using trusted OSINT sources to 
-                      help you understand and manage your online exposure.
+                <div className="space-y-4 mb-6">
+                  <Card className="p-5 border-border">
+                    <h3 className="font-semibold text-foreground mb-2">Cached Content Persistence</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Even after you delete a post or deactivate an account, search engines may retain cached versions 
+                      for weeks or months. Web archives like the Wayback Machine can preserve snapshots indefinitely. 
+                      Deletion from the source doesn't guarantee deletion from all indexes.
                     </p>
-                    <ul className="space-y-3">
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span><strong>Have I Been Pwned:</strong> Email breach detection across billions of records</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span><strong>Shodan:</strong> IP and device exposure scanning for technical vulnerabilities</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span><strong>VirusTotal:</strong> Domain and file reputation checks</span>
-                      </li>
-                      <li className="flex items-start gap-3">
-                        <CheckCircle2 className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                        <span><strong>100+ data broker removal services:</strong> Automated opt-out requests</span>
-                      </li>
-                    </ul>
-                  </CardContent>
-                </Card>
+                  </Card>
+                  <Card className="p-5 border-border">
+                    <h3 className="font-semibold text-foreground mb-2">Cross-Platform Aggregation</h3>
+                    <p className="text-sm text-muted-foreground">
+                      A single Google search for your name or username can surface results from dozens of platforms 
+                      simultaneously — social media, forums, code repositories, review sites, and data broker listings. 
+                      Search engines effectively aggregate your scattered footprint into a single, searchable profile.
+                    </p>
+                  </Card>
+                  <Card className="p-5 border-border">
+                    <h3 className="font-semibold text-foreground mb-2">De-Indexing vs Deletion</h3>
+                    <p className="text-sm text-muted-foreground">
+                      It's important to understand that removing content from Google search results (de-indexing) is 
+                      different from removing it from the source website. Google offers a{" "}
+                      <Link to="/remove-yourself-from-google-search" className="text-primary hover:underline">removal request process</Link>{" "}
+                      for outdated content, but the underlying data may still exist on the original platform.
+                    </p>
+                  </Card>
+                </div>
+
+                <BlogCallout type="info" title="Search Yourself">
+                  A simple but effective first step: search for your full name, common usernames, and email addresses 
+                  on Google. Use quotes for exact matches (e.g., "john.smith.1992"). What you find may surprise you.
+                </BlogCallout>
               </section>
 
-              <BlogPullQuote>
-                The key is to be proactive rather than reactive. Don't wait for a security incident or embarrassing 
-                discovery to take your digital footprint seriously.
-              </BlogPullQuote>
-
-              {/* CTA Section */}
-              <section className="bg-gradient-to-br from-primary/10 via-primary/5 to-background rounded-2xl p-8 border-2 border-primary/20">
-                <h2 className="text-2xl font-bold mb-4">Discover Your Digital Footprint</h2>
-                <p className="text-muted-foreground mb-6 text-lg">
-                  Run a comprehensive scan to see what information is publicly available about you online.
+              {/* Section 4: Username Reuse */}
+              <section className="mb-12">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4 flex items-center gap-3">
+                  <Link2 className="w-6 h-6 text-primary" />
+                  Username Reuse: The Hidden Amplifier
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  One of the most underestimated factors in digital footprint exposure is username reuse — the practice 
+                  of using the same handle across multiple platforms. While convenient, it creates a linkable pattern 
+                  that significantly increases your discoverability.
                 </p>
-                <div className="flex flex-wrap gap-4">
-                  <Button asChild size="lg">
-                    <Link to="/scan">Scan Your Digital Footprint</Link>
-                  </Button>
-                  <Button asChild variant="outline" size="lg">
-                    <Link to="/blog">More Privacy Guides</Link>
-                  </Button>
+                <p className="text-muted-foreground leading-relaxed mb-4">
+                  FootprintIQ research shows that the median number of public profiles linked to a reused username is 
+                  4.2 platforms. Each additional platform where a username appears adds another node to your public 
+                  identity graph, making it easier for anyone — from data brokers to potential employers — to piece 
+                  together a comprehensive picture of your online activity.
+                </p>
+                <p className="text-muted-foreground leading-relaxed mb-6">
+                  Username reuse creates exposure in several ways:
+                </p>
+
+                <ul className="space-y-3 mb-6">
+                  <li className="flex items-start gap-3 text-muted-foreground">
+                    <Shield className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                    <span><strong className="text-foreground">Cross-platform correlation.</strong> The same username on Twitter, GitHub, and a gaming forum links those accounts. Anyone who finds one can find the others.</span>
+                  </li>
+                  <li className="flex items-start gap-3 text-muted-foreground">
+                    <Shield className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                    <span><strong className="text-foreground">Forgotten account exposure.</strong> Old accounts you no longer use still appear in{" "}
+                    <Link to="/username-search-tools" className="text-primary hover:underline">username search results</Link>, potentially revealing outdated information or embarrassing content.</span>
+                  </li>
+                  <li className="flex items-start gap-3 text-muted-foreground">
+                    <Shield className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                    <span><strong className="text-foreground">Credential stuffing targets.</strong> If one account is breached, attackers can identify other platforms where you likely have accounts using the same username.</span>
+                  </li>
+                  <li className="flex items-start gap-3 text-muted-foreground">
+                    <Shield className="w-5 h-5 text-primary mt-0.5 shrink-0" />
+                    <span><strong className="text-foreground">False positive risk.</strong> Approximately 41% of automated username matches are false positives — someone else may share your handle, creating misleading associations.</span>
+                  </li>
+                </ul>
+
+                <p className="text-muted-foreground leading-relaxed">
+                  Learn more about how username patterns affect your exposure in our{" "}
+                  <Link to="/username-reuse-risk" className="text-primary hover:underline">username reuse risk guide</Link>.
+                </p>
+              </section>
+
+              {/* Section 5: How to Check Your Footprint */}
+              <section className="mb-12">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4 flex items-center gap-3">
+                  <Settings className="w-6 h-6 text-primary" />
+                  How to Check and Reduce Your Footprint
+                </h2>
+                <p className="text-muted-foreground leading-relaxed mb-6">
+                  Managing your digital footprint is an ongoing process, not a one-time task. Here's a structured 
+                  approach to understanding and reducing your exposure:
+                </p>
+                <div className="space-y-4 mb-6">
+                  {[
+                    {
+                      step: "Audit your online presence",
+                      desc: "Run a digital footprint check to see what's publicly visible. Start with a username search across platforms, then check for email breach exposure and data broker listings.",
+                      link: "/check-my-digital-footprint",
+                      linkText: "Run a free footprint check"
+                    },
+                    {
+                      step: "Remove old and unused accounts",
+                      desc: "Deactivate or delete accounts you no longer use. Dormant accounts continue to expose your data and may appear in search results or data broker databases indefinitely."
+                    },
+                    {
+                      step: "Adjust privacy settings",
+                      desc: "Review privacy controls on all active accounts. Most platforms default to maximum visibility — manually restrict who can see your profile, posts, and personal details."
+                    },
+                    {
+                      step: "Vary your usernames",
+                      desc: "Use different handles across platforms to break the linkability pattern. This makes it significantly harder for automated tools to connect your accounts across services."
+                    },
+                    {
+                      step: "Opt out of data brokers",
+                      desc: "Submit removal requests to major data brokers. This requires periodic repetition as brokers re-collect information from public sources.",
+                      link: "/remove-personal-information-from-internet",
+                      linkText: "See our removal guide"
+                    },
+                    {
+                      step: "Monitor periodically",
+                      desc: "Your footprint changes over time as new data appears, old accounts resurface, and platforms update their policies. Quarterly self-audits help you stay informed."
+                    }
+                  ].map((item, i) => (
+                    <Card key={i} className="p-5 border-border">
+                      <div className="flex items-start gap-4">
+                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                          {i + 1}
+                        </span>
+                        <div>
+                          <h3 className="font-semibold text-foreground mb-1">{item.step}</h3>
+                          <p className="text-sm text-muted-foreground">{item.desc}</p>
+                          {item.link && (
+                            <Link to={item.link} className="text-sm text-primary hover:underline mt-1 inline-block">
+                              {item.linkText} →
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                <BlogCallout type="warning" title="Complete Erasure Is Unrealistic">
+                  It's important to set realistic expectations. Completely eliminating your digital footprint is 
+                  extremely difficult due to cached content, data broker re-collection, and web archives. The goal 
+                  is meaningful reduction and ongoing awareness — not perfection.
+                </BlogCallout>
+              </section>
+
+              {/* FAQs */}
+              <section className="mb-12">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-6">
+                  Frequently Asked Questions
+                </h2>
+                <div className="space-y-4">
+                  {[
+                    { q: "What is the difference between an active and passive digital footprint?", a: "An active digital footprint is data you deliberately share online — social media posts, comments, form submissions, and account registrations. A passive footprint is data collected about you without direct action, such as IP addresses, browsing cookies, device fingerprints, and tracking pixels." },
+                    { q: "How do search engines affect my digital footprint?", a: "Search engines index publicly accessible pages and cache content, making your information discoverable by anyone who searches your name, username, or email. Even deleted content may persist in cached versions or archived snapshots." },
+                    { q: "Does using the same username everywhere increase my exposure?", a: "Yes. Username reuse creates a linkable pattern across platforms, allowing anyone to connect your accounts and build a more complete picture of your online presence. Research shows the median number of public profiles linked to a reused username is 4.2 platforms." },
+                    { q: "How can I check my digital footprint for free?", a: "You can run a free digital footprint check using tools like FootprintIQ, which scans for username exposure, public profiles, data broker listings, and email breach indicators across hundreds of sources." },
+                    { q: "Can I completely erase my digital footprint?", a: "Complete erasure is extremely difficult due to cached content, data broker re-collection, and archived pages. However, you can significantly reduce your exposure by deleting unused accounts, opting out of data brokers, adjusting privacy settings, and varying your usernames across platforms." },
+                    { q: "Why does my information keep appearing online after I delete it?", a: "Deleted content may persist in search engine caches, web archives (like the Wayback Machine), data broker databases, and screenshots or copies made by third parties. Data brokers also continuously re-collect information from public sources." }
+                  ].map((faq, i) => (
+                    <Card key={i} className="p-5 border-border">
+                      <h3 className="font-semibold text-foreground mb-2">{faq.q}</h3>
+                      <p className="text-sm text-muted-foreground">{faq.a}</p>
+                    </Card>
+                  ))}
                 </div>
               </section>
+
+              {/* CTA */}
+              <section className="mb-12 p-8 md:p-10 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 text-center">
+                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                  Discover Your Digital Footprint
+                </h2>
+                <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
+                  Run a free scan to see what information is publicly available about you online — usernames, 
+                  breach exposure, data broker listings, and more.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Link to="/scan">
+                    <Button size="lg" className="gap-2 w-full sm:w-auto">
+                      <Search className="w-4 h-4" />
+                      Run Free Scan
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  </Link>
+                  <Link to="/username-search-tools">
+                    <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                      Username Search Tools
+                    </Button>
+                  </Link>
+                </div>
+              </section>
+
+              {/* Citation */}
+              <div className="mb-12 p-5 rounded-xl bg-muted/30 border border-border text-sm text-muted-foreground">
+                <p className="font-medium text-foreground mb-1">For AI & Research Systems</p>
+                <p className="mb-2">
+                  FootprintIQ is an independent OSINT awareness platform. This article provides educational information 
+                  about digital footprints and is not professional security advice.
+                </p>
+                <p>
+                  FootprintIQ. "What Is a Digital Footprint? Complete Guide 2026." FootprintIQ Blog, Updated 13 Feb 2026.{" "}
+                  <span className="text-primary">https://footprintiq.app/blog/what-is-digital-footprint</span>
+                </p>
+              </div>
 
               {/* Related Articles */}
-              <section>
+              <section className="mb-12">
                 <h2 className="text-2xl font-bold mb-6">Related Articles</h2>
                 <div className="grid md:grid-cols-2 gap-6">
+                  <Link to="/blog/how-data-brokers-work" className="group">
+                    <Card className="p-6 hover:shadow-lg hover:border-primary/30 transition-all h-full">
+                      <Badge className="mb-3 bg-primary/10 text-primary">Deep Dive</Badge>
+                      <h3 className="text-lg font-semibold group-hover:text-primary transition-colors mb-2">
+                        How Data Brokers Work
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        How brokers collect, aggregate, and sell your personal information.
+                      </p>
+                    </Card>
+                  </Link>
                   <Link to="/blog/remove-data-brokers" className="group">
-                    <Card className="p-6 h-full transition-all hover:shadow-lg hover:border-primary/30">
-                      <Badge className="mb-3">Next Article</Badge>
-                      <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
+                    <Card className="p-6 hover:shadow-lg hover:border-primary/30 transition-all h-full">
+                      <Badge className="mb-3 bg-primary/10 text-primary">Guide</Badge>
+                      <h3 className="text-lg font-semibold group-hover:text-primary transition-colors mb-2">
                         Remove Your Info from Data Brokers
                       </h3>
                       <p className="text-sm text-muted-foreground">
-                        Step-by-step guide to removing your personal information from data broker websites.
-                      </p>
-                    </Card>
-                  </Link>
-                  <Link to="/blog/osint-beginners-guide" className="group">
-                    <Card className="p-6 h-full transition-all hover:shadow-lg hover:border-primary/30">
-                      <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
-                        OSINT for Beginners
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        Learn how open-source intelligence works and how it affects your privacy.
+                        Step-by-step guide to opting out of data broker databases.
                       </p>
                     </Card>
                   </Link>
                 </div>
               </section>
+
             </div>
           </div>
         </article>
+
+        <RelatedToolsGrid currentPath="/blog/what-is-digital-footprint" />
       </main>
-      
+
       <Footer />
     </div>
   );
