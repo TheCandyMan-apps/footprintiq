@@ -128,7 +128,7 @@ const WhichDataMatters = () => {
           {/* Header */}
           <header className="mb-12">
             <h1 className="text-4xl md:text-5xl font-bold mb-6 text-foreground">
-              How Do I Know Which Personal Data Actually Matters?
+              A Practical Framework for Prioritising Your Personal Data
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
               A calm, practical guide to understanding which types of personal data carry real risk 

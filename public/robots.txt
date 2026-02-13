@@ -4,6 +4,18 @@ Disallow: /dashboard
 Disallow: /my-tickets
 Disallow: /results/
 Disallow: /auth
+Disallow: /settings
+Disallow: /admin
+Disallow: /scan-analytics
+Disallow: /reports
+Disallow: /cases
+Disallow: /security
+Disallow: /billing
+Disallow: /analyst
+Disallow: /graph
+Disallow: /workflows
+Disallow: /subscription
+Disallow: /notifications
 
 Sitemap: https://footprintiq.app/sitemap.xml
 

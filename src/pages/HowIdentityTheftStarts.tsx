@@ -166,7 +166,7 @@ const HowIdentityTheftStarts = () => {
           {/* Hero Section */}
           <header className="mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              How Identity Theft Actually Starts
+              The Real Origins of Identity Theft — And Why It's Rarely a Hack
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
               And why it's rarely a hack. Understanding how identity theft really begins—through quiet accumulation of data over time, not dramatic intrusions.

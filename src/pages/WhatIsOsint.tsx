@@ -275,7 +275,7 @@ const WhatIsOsint = () => {
                 </div>
                 
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-                  What Is OSINT? Ethical Open-Source Intelligence Explained
+                  A Clear Guide to Open-Source Intelligence and Ethical Practice
                 </h1>
                 
                 <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">

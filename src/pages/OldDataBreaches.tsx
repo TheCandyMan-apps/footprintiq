@@ -166,7 +166,7 @@ const OldDataBreaches = () => {
           {/* Hero Section */}
           <header className="mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Should I Worry About Old Data Breaches?
+              Understanding the Long-Term Risk of Historical Data Breaches
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
               A calm, practical guide to understanding whether historical breaches still matter—and why most don't cause the problems you might expect.
