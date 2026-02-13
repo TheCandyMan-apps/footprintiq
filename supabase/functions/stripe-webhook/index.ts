@@ -600,8 +600,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
     }, { onConflict: 'user_id' });
 
   if (updateError) {
-    logStep("ERROR: Failed to upsert user_roles", { error: updateError.message, userId: user.id });
-    throw updateError;
+    logStep("ERROR: Failed to upsert user_roles — not throwing to prevent 400", { error: updateError.message, userId: user.id });
+    return;
   }
   
   logStep("Upserted user_roles", { userId: user.id, email, tier });
