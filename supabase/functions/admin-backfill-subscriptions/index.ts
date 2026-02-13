@@ -178,7 +178,7 @@ serve(async (req) => {
           .update({
             stripe_customer_id: customer.id,
             stripe_subscription_id: subscription.id,
-            subscription_tier: "premium",
+            subscription_tier: "pro",
             plan: "pro",
             subscription_expires_at: subscriptionEnd,
             trial_status: "converted",
@@ -204,7 +204,7 @@ serve(async (req) => {
             owner_id: userId,
             stripe_customer_id: customer.id,
             stripe_subscription_id: subscription.id,
-            subscription_tier: "premium",
+            subscription_tier: "pro",
             plan: "pro",
             subscription_expires_at: subscriptionEnd,
             trial_status: "converted",
@@ -237,7 +237,7 @@ serve(async (req) => {
       await supabaseAdmin.from("user_roles").upsert({
         user_id: userId,
         role: "user",
-        subscription_tier: "premium",
+        subscription_tier: "pro",
         subscription_expires_at: subscriptionEnd,
       }, { onConflict: "user_id" });
 
