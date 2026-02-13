@@ -1,11 +1,58 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "npm:stripe@18.5.0";
-import { createClient } from "npm:@supabase/supabase-js@2.57.2";
-import { Resend } from "npm:resend@4.0.0";
-import { checkRateLimit } from "../_shared/rate-limiter.ts";
-import { addSecurityHeaders } from "../_shared/security-headers.ts";
-import { logSecurityEvent } from "../_shared/security-validation.ts";
+import Stripe from "https://esm.sh/stripe@14.21.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { Resend } from "https://esm.sh/resend@4.0.0";
 import { resolvePriceId, getKnownPriceIds } from "../_shared/stripePlans.ts";
+
+// ── Inlined security headers (avoids shared dep chain) ──────────────────────
+function addSecurityHeaders(headers: Record<string, string> = {}): Record<string, string> {
+  return {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    ...headers,
+  };
+}
+
+// ── Inlined rate limiter (avoids pulling in supabase-js twice) ───────────────
+async function checkRateLimit(
+  identifier: string,
+  identifierType: string,
+  endpoint: string,
+  config: { maxRequests: number; windowSeconds: number },
+  supabaseClient: ReturnType<typeof createClient>,
+) {
+  const now = new Date();
+  const { data: result } = await supabaseClient.rpc('check_rate_limit', {
+    p_identifier: identifier,
+    p_identifier_type: identifierType,
+    p_endpoint: endpoint,
+    p_max_requests: config.maxRequests,
+    p_window_seconds: config.windowSeconds,
+  });
+  if (!result || result.length === 0) {
+    return { allowed: true, remaining: config.maxRequests, resetAt: new Date(now.getTime() + config.windowSeconds * 1000) };
+  }
+  const row = result[0];
+  return { allowed: row.allowed, remaining: row.remaining, resetAt: new Date(row.reset_at) };
+}
+
+// ── Inlined security event logger ───────────────────────────────────────────
+async function logSecurityEvent(
+  supabaseClient: ReturnType<typeof createClient>,
+  event: { type: string; severity: string; endpoint: string; message: string; ipAddress?: string; userAgent?: string },
+) {
+  try {
+    await supabaseClient.from("system_errors").insert({
+      error_code: `SECURITY_${event.type.toUpperCase()}`,
+      error_message: event.message,
+      function_name: event.endpoint,
+      severity: event.severity,
+      metadata: { type: event.type, ip_address: event.ipAddress, user_agent: event.userAgent },
+    });
+  } catch (e) { console.error("Failed to log security event:", e); }
+}
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2025-08-27.basil",
@@ -46,7 +93,7 @@ serve(async (req) => {
     const rateLimitResult = await checkRateLimit(ipAddress, 'ip', 'stripe-webhook', {
       maxRequests: 100,
       windowSeconds: 60
-    });
+    }, supabase);
     
     if (!rateLimitResult.allowed) {
       console.warn(`[stripe-webhook] Rate limit exceeded for IP: ${ipAddress}`);
