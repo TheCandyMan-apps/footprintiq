@@ -23,6 +23,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { RelatedToolsGrid } from "@/components/seo/RelatedToolsGrid";
 
 const SocialMediaFinder = () => {
   const faqs = [
@@ -567,64 +568,8 @@ const SocialMediaFinder = () => {
             </div>
           </section>
 
-          {/* Related Resources */}
-          <section className="py-16 md:py-20 bg-muted/30">
-            <div className="container mx-auto px-4">
-              <div className="max-w-4xl mx-auto">
-                <h2 className="text-2xl font-bold text-foreground mb-6">
-                  Related Resources
-                </h2>
-
-                <div className="grid md:grid-cols-3 gap-4">
-                  {[
-                    {
-                      to: "/username-checker",
-                      title: "Username Checker",
-                      desc: "Check if a username exists across hundreds of platforms",
-                    },
-                    {
-                      to: "/reverse-username-search",
-                      title: "Reverse Username Search",
-                      desc: "Trace a username back to linked accounts and profiles",
-                    },
-                    {
-                      to: "/privacy/google-content-removal",
-                      title: "Google Content Removal",
-                      desc: "Learn how to request removal of personal data from Google",
-                    },
-                    {
-                      to: "/ai-answers-hub",
-                      title: "AI Answers Hub",
-                      desc: "Explore OSINT explainers and digital exposure guides",
-                    },
-                    {
-                      to: "/digital-footprint-check",
-                      title: "Digital Footprint Check",
-                      desc: "Comprehensive scanning across hundreds of sources",
-                    },
-                    {
-                      to: "/username-exposure",
-                      title: "Username Exposure",
-                      desc: "How reused usernames connect your accounts",
-                    },
-                  ].map((link) => (
-                    <Link
-                      key={link.to}
-                      to={link.to}
-                      className="p-5 bg-background rounded-xl border border-border/50 hover:border-primary/50 transition-colors group"
-                    >
-                      <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors mb-2">
-                        {link.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {link.desc}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
+          {/* Related Tools & Guides */}
+          <RelatedToolsGrid currentPath="/social-media-finder" />
         </main>
 
         <Footer />
