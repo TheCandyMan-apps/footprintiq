@@ -145,7 +145,7 @@
           if(!el){el=document.createElement('link');el.setAttribute('rel',rel);document.head.appendChild(el);}
           el.setAttribute('href',href);
         }
-        var p=window.location.pathname.replace(/\/$/,'')||'/';
+        var p = (window.location.pathname || '/').replace(/\/+$/,'') || '/';
         var m=R[p];
         if(m){
           var url=B+p;
@@ -159,6 +159,7 @@
           setMeta('og:site_name','FootprintIQ',true);
           setMeta('twitter:title',m.t,false);
           setMeta('twitter:description',m.d,false);
+          setMeta('twitter:card','summary_large_image',false);
         }
       })();
     </script>
