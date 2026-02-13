@@ -21,7 +21,7 @@
  * ═══════════════════════════════════════════════════════════════════════════════
  */
 
-export type SubscriptionTier = 'free' | 'premium' | 'enterprise';
+export type SubscriptionTier = 'free' | 'pro' | 'enterprise';
 export type WorkspacePlan = 'free' | 'pro' | 'business';
 
 export interface PlanResolution {
@@ -48,7 +48,7 @@ const STRIPE_PRICES: Record<string, Omit<PlanResolution, 'known'>> = {
   
   // Pro Monthly - £14.99/mo
   'price_1ShgNPA3ptI9drLW40rbWMjq': {
-    tier: 'premium',
+    tier: 'pro',
     plan: 'pro',
     scanLimit: 100,
     monthlyCredits: 200,
@@ -56,7 +56,7 @@ const STRIPE_PRICES: Record<string, Omit<PlanResolution, 'known'>> = {
   
   // Pro Annual - £140/year (saves £40)
   'price_1Si2vkA3ptI9drLWCQrxU4Dc': {
-    tier: 'premium',
+    tier: 'pro',
     plan: 'pro',
     scanLimit: 100,
     monthlyCredits: 200,
@@ -146,7 +146,7 @@ export function frontendPlanToTier(frontendPlan: string): SubscriptionTier {
   const normalized = frontendPlan.toLowerCase();
   
   if (normalized === 'pro' || normalized === 'pro_annual') {
-    return 'premium';
+    return 'pro';
   }
   
   if (normalized === 'business' || normalized === 'enterprise') {
@@ -164,7 +164,7 @@ export function frontendPlanToTier(frontendPlan: string): SubscriptionTier {
  * Frontend expects: 'pro', 'business'
  */
 export function tierToFrontendPlan(tier: SubscriptionTier): string {
-  if (tier === 'premium') {
+  if (tier === 'pro') {
     return 'pro';
   }
   if (tier === 'enterprise') {
@@ -191,8 +191,8 @@ export function planMatchesTier(
     return true;
   }
   
-  // Tier-level match (premium matches pro/pro_annual, enterprise matches business)
-  if (expectedTier === 'premium' && (actualNormalized === 'pro' || actualNormalized === 'premium')) {
+  // Tier-level match (pro matches pro/pro_annual, enterprise matches business)
+  if (expectedTier === 'pro' && (actualNormalized === 'pro')) {
     return true;
   }
   
