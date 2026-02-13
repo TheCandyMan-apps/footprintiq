@@ -130,6 +130,15 @@ const blogPosts = [{
   featured: false,
   image: "/blog-images/username-security.webp"
 }, {
+  slug: "are-username-search-tools-accurate",
+  title: "Are Username Search Tools Accurate?",
+  excerpt: "An honest, data-driven assessment of username search tool accuracy. Learn why 41% of results are false positives and how confidence scoring improves reliability.",
+  date: "February 13, 2026",
+  readTime: "11 min read",
+  category: "OSINT",
+  featured: false,
+  image: "/blog-images/username-security.webp"
+}, {
   slug: "what-is-osint-risk",
   title: "What is OSINT Risk? Understanding Your Digital Exposure",
   excerpt: "Learn what OSINT risk means for your business, how threat actors use open-source intelligence, and practical steps to reduce your digital attack surface.",
