@@ -27,6 +27,18 @@ const allTools = [
     icon: ArrowRight,
   },
   {
+    to: "/account-finder",
+    title: "Account Finder",
+    desc: "Search public online accounts linked to a username",
+    icon: Search,
+  },
+  {
+    to: "/find-social-media-accounts",
+    title: "Find Social Media Accounts",
+    desc: "Find public social media accounts by username",
+    icon: Globe,
+  },
+  {
     to: "/digital-footprint-check",
     title: "Digital Footprint Check",
     desc: "See what personal data is publicly visible online",
