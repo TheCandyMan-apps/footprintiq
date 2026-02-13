@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/Header";
+import { RelatedToolsGrid } from "@/components/seo/RelatedToolsGrid";
 import { Footer } from "@/components/Footer";
 import { SEO } from "@/components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -480,6 +481,8 @@ const UsernameSearchToolsPage = () => {
             </div>
           </section>
         </section>
+
+        <RelatedToolsGrid currentPath="/username-search-tools" />
       </main>
 
       <Footer />

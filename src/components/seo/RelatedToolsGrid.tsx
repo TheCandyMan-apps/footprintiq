@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Search, Globe, ArrowRight, Fingerprint, Shield, BookOpen } from "lucide-react";
+import { Search, Globe, ArrowRight, Fingerprint, Shield, BookOpen, Trash2 } from "lucide-react";
 
 const allTools = [
   {
@@ -43,6 +43,12 @@ const allTools = [
     title: "Digital Footprint Check",
     desc: "See what personal data is publicly visible online",
     icon: Shield,
+  },
+  {
+    to: "/remove-personal-information-from-internet",
+    title: "Remove Personal Information",
+    desc: "Step-by-step guide to removing your data from the internet",
+    icon: Trash2,
   },
   {
     to: "/ai-answers-hub",
