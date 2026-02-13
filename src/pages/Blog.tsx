@@ -121,6 +121,15 @@ const blogPosts = [{
   featured: true,
   image: "/blog-images/digital-footprint.webp"
 }, {
+  slug: "what-is-username-osint-scan",
+  title: "What Is a Username OSINT Scan?",
+  excerpt: "Learn what a username OSINT scan is, how automated tools check hundreds of platforms, accuracy limitations to watch for, and when to use one ethically.",
+  date: "February 13, 2026",
+  readTime: "10 min read",
+  category: "OSINT",
+  featured: false,
+  image: "/blog-images/username-security.webp"
+}, {
   slug: "what-is-osint-risk",
   title: "What is OSINT Risk? Understanding Your Digital Exposure",
   excerpt: "Learn what OSINT risk means for your business, how threat actors use open-source intelligence, and practical steps to reduce your digital attack surface.",
