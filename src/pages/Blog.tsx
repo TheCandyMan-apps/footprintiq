@@ -139,6 +139,15 @@ const blogPosts = [{
   featured: false,
   image: "/blog-images/username-security.webp"
 }, {
+  slug: "remove-address-from-google",
+  title: "How to Remove Your Address From Google (UK & Global Guide)",
+  excerpt: "Step-by-step guide to removing your home address from Google search results. Covers the Google removal tool, GDPR rights, data broker opt-outs, and what to do when Google refuses.",
+  date: "February 13, 2026",
+  readTime: "12 min read",
+  category: "Privacy",
+  featured: true,
+  image: "/blog-images/digital-footprint.webp"
+}, {
   slug: "what-is-osint-risk",
   title: "What is OSINT Risk? Understanding Your Digital Exposure",
   excerpt: "Learn what OSINT risk means for your business, how threat actors use open-source intelligence, and practical steps to reduce your digital attack surface.",

@@ -94,6 +94,7 @@ const HowDataBrokersWork = lazy(() => import("./pages/blog/HowDataBrokersWork"))
 const HowExposedAmIOnline = lazy(() => import("./pages/blog/HowExposedAmIOnline"));
 const WhatIsUsernameOsintScan = lazy(() => import("./pages/blog/WhatIsUsernameOsintScan"));
 const AreUsernameSearchToolsAccurate = lazy(() => import("./pages/blog/AreUsernameSearchToolsAccurate"));
+const RemoveAddressFromGoogleBlog = lazy(() => import("./pages/blog/RemoveAddressFromGoogle"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -430,6 +431,7 @@ function RouterContent() {
           <Route path="/blog/how-exposed-am-i-online" element={<HowExposedAmIOnline />} />
           <Route path="/blog/what-is-username-osint-scan" element={<WhatIsUsernameOsintScan />} />
           <Route path="/blog/are-username-search-tools-accurate" element={<AreUsernameSearchToolsAccurate />} />
+          <Route path="/blog/remove-address-from-google" element={<RemoveAddressFromGoogleBlog />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/remove-mylife-profile" element={<RemoveMyLifeProfile />} />
           <Route path="/privacy-centre" element={<PrivacyCentrePage />} />
