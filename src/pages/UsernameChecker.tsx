@@ -25,6 +25,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
+import { RelatedToolsGrid } from "@/components/seo/RelatedToolsGrid";
 
 const UsernameChecker = () => {
   const faqs = [
@@ -524,51 +525,8 @@ const UsernameChecker = () => {
             </div>
           </section>
 
-          {/* Related Resources */}
-          <section className="py-16 md:py-20">
-            <div className="container mx-auto px-4">
-              <div className="max-w-4xl mx-auto">
-                <h2 className="text-2xl font-bold text-foreground mb-6">
-                  Related Resources
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    {
-                      to: "/social-media-finder",
-                      title: "Social Media Finder",
-                      desc: "Search for public profiles linked to a username across social platforms",
-                    },
-                    {
-                      to: "/digital-footprint-check",
-                      title: "Digital Footprint Check",
-                      desc: "Discover what personal data is publicly visible about you online",
-                    },
-                    {
-                      to: "/ai-answers-hub",
-                      title: "AI Answers Hub",
-                      desc: "Get answers to OSINT, digital privacy, and data exposure questions",
-                    },
-                    {
-                      to: "/privacy/google-content-removal",
-                      title: "Google Content Removal",
-                      desc: "Learn how to request removal of personal information from Google",
-                    },
-                  ].map((resource) => (
-                    <Link
-                      key={resource.to}
-                      to={resource.to}
-                      className="p-5 rounded-xl bg-card border border-border hover:border-primary/50 transition-colors group"
-                    >
-                      <h3 className="text-foreground font-semibold mb-1 group-hover:text-primary transition-colors">
-                        {resource.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">{resource.desc}</p>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
+          {/* Related Tools & Guides */}
+          <RelatedToolsGrid currentPath="/username-checker" />
         </main>
 
         <Footer />
