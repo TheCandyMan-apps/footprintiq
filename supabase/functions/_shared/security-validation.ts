@@ -3,7 +3,7 @@
  * Prevents SQL injection, XSS, path traversal, and command injection
  */
 
-import { z } from "npm:zod@3.22.4";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 /**
  * Common regex patterns for security validation
