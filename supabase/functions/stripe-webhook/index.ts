@@ -486,8 +486,8 @@ async function handleSubscriptionCheckout(session: Stripe.Checkout.Session) {
       .insert({
         workspace_id: workspaceId,
         delta: resolution.monthlyCredits,
-        reason: 'monthly_subscription',
-        meta: { subscription_id: subscriptionId, tier },
+        reason: 'purchase',
+        meta: { type: 'monthly_subscription', subscription_id: subscriptionId, tier },
       });
     
     if (creditsError) {
@@ -785,8 +785,8 @@ async function handleSubscriptionCancellation(subscription: Stripe.Subscription)
     .eq("user_id", user.id);
 
   if (updateError) {
-    logStep("ERROR: Failed to downgrade user_roles", { error: updateError.message, userId: user.id });
-    throw updateError;
+    logStep("ERROR: Failed to downgrade user_roles — not throwing to prevent 400", { error: updateError.message, userId: user.id });
+    return;
   }
 
   logStep("Downgraded user_roles to free", { userId: user.id, email });

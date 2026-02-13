@@ -15,7 +15,7 @@
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
  * TERMINOLOGY:
- * - tier: Database value in user_roles.subscription_tier ('free' | 'premium' | 'enterprise')
+ * - tier: Database value in user_roles.subscription_tier ('free' | 'pro' | 'enterprise')
  * - plan: Workspace plan name ('free' | 'pro' | 'business')
  * - frontendPlan: What the frontend shows ('pro' | 'business' | 'pro_annual')
  * ═══════════════════════════════════════════════════════════════════════════════
@@ -140,7 +140,7 @@ export function getKnownPriceIds(): string[] {
  * Used for verification after checkout
  * 
  * Frontend sends: 'pro', 'pro_annual', 'business', 'enterprise'
- * Database stores: 'free', 'premium', 'enterprise'
+ * Database stores: 'free', 'pro', 'enterprise'
  */
 export function frontendPlanToTier(frontendPlan: string): SubscriptionTier {
   const normalized = frontendPlan.toLowerCase();
@@ -160,7 +160,7 @@ export function frontendPlanToTier(frontendPlan: string): SubscriptionTier {
  * Normalize database tier to frontend-friendly plan name
  * Used for display and comparison
  * 
- * Database stores: 'premium', 'enterprise'
+ * Database stores: 'pro', 'enterprise'
  * Frontend expects: 'pro', 'business'
  */
 export function tierToFrontendPlan(tier: SubscriptionTier): string {
