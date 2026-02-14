@@ -94,6 +94,24 @@ export function PricingCards() {
                   </div>
                 </div>
               </div>
+
+              {plan.id === 'pro' && (
+                <div className="mt-4 pt-4 border-t border-dashed border-border/50">
+                  <div className="text-[11px] text-muted-foreground/70 uppercase tracking-wider font-semibold mb-1.5">
+                    Enterprise Features
+                    <Badge variant="outline" className="ml-1.5 text-[9px] px-1 py-0 leading-tight align-middle border-muted-foreground/30">
+                      Coming Soon
+                    </Badge>
+                  </div>
+                  <ul className="space-y-0.5 text-[11px] text-muted-foreground/60">
+                    <li>• Team dashboards</li>
+                    <li>• Multi-user access</li>
+                    <li>• API integration</li>
+                    <li>• Threat intel enrichment</li>
+                    <li>• SIEM export</li>
+                  </ul>
+                </div>
+              )}
             </CardContent>
 
             <CardFooter>
