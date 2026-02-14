@@ -1,61 +1,134 @@
 
 
-# SEMrush Issues Fix Plan
+# Softening Pro-Grade Language for Mainstream Users
 
-## Root Cause Analysis
+## The Problem
 
-All 5 SEMrush issues trace back to **one fundamental problem**: SEMrush crawled with **"JS rendering: Disabled"** (visible in the audit header). Since FootprintIQ is a React SPA, without JavaScript, every page returns the same `index.html` shell. This means:
+The SEMrush AI perception reports show that AI models (ChatGPT, Gemini, etc.) describe FootprintIQ as "investigator-grade", "enterprise-grade OSINT platform", and even "overkill" for average users. This deters mainstream consumers who just want to check their privacy.
 
-- Every page shows the **same canonical URL** (`https://footprintiq.app/`) -- causing the "90 incorrect pages" error
-- Every page shows the **same title** ("FootprintIQ -- Ethical Digital Footprint Intelligence") -- causing the "97 duplicate H1/title" warning
-- Every page only renders the **104-word noscript fallback** -- causing "low word count" and "low text-HTML ratio" warnings
-- The **unminified JS** warning is Google's `gtag.js` file loaded via Cloudflare gateway -- this is external and **cannot be fixed**
+The root cause is that the platform's own copy uses specialist language that AI models then amplify. Key offenders across the codebase:
 
-## What We Can Fix (3 of 5 issues)
+- **Hero**: "Digital Exposure Intelligence Platform" (intimidating label)
+- **WhoItsFor**: Lists investigators, compliance teams, OSINT analysts before individuals
+- **WhyChooseUs**: Uses jargon like "Temporal clustering", "Anonymity degradation", "Identifier correlation"
+- **WhatWeDoSection**: "professionals, and investigators" in the subtitle
+- **ForProfessionals**: Prominent homepage section reinforcing enterprise positioning
+- **PlatformCapabilities**: "Identity Risk Scoring", "Dark Web & Breach Signal Detection"
+- **IntelligenceBrief**: "Investigation identified..." language in results
+- **platformDescription.ts**: Canonical descriptions emphasise "OSINT techniques" and "intelligence platform"
+- **FAQ**: Leads with OSINT terminology
 
-### 1. Fix "90 Non-canonical URLs" (Error -- highest priority)
+## Strategy
 
-**The problem:** The pre-JS fallback script in `index.html` only maps ~15 routes with proper canonical/title/description. All other pages (90 of them) fall through to the default canonical of `/`.
+Segment the language into two tracks:
+1. **Homepage and scan flow** -- mainstream-first language (outcomes, not methods)
+2. **Professional content** -- keep technical depth but move it below the fold / behind "For Professionals" links
 
-**The fix:** Expand the `R` route map in the inline `<script>` block (line 128-174 of `index.html`) to include **every public route** in the sitemap. Each entry sets the correct `<title>`, `<meta description>`, and `<link rel="canonical">` before React loads.
+## Changes
 
-This single change fixes all three fixable issues at once:
-- Canonical URL becomes correct per-page
-- Title becomes unique per-page (fixing duplicate H1/title)
-- The `og:title` and `twitter:title` also become unique
+### 1. Hero.tsx -- Soften the positioning label and trust indicators
 
-### 2. Fix "97 Duplicate H1 and Title Tags" (Warning)
+| Before | After |
+|--------|-------|
+| "Digital Exposure Intelligence Platform" | "Online Privacy Scanner" |
+| "ethical digital footprint intelligence platform that helps you understand and strategically reduce your online exposure" | "free privacy tool that shows you what anyone can find about you online -- and how to clean it up" |
+| "Built for individuals and professionals who value transparency over surveillance" | "Used by over 2,000 people to understand their online visibility" |
+| "Public-source intelligence only" | "Free to use" |
+| "Ethical OSINT" | "No sign-up required" |
+| "Transparent exposure analysis" | "Public data only" |
 
-Solved by the same route-map expansion above. Each page will get its own unique `<title>` tag set by the pre-JS script.
+### 2. WhoItsFor.tsx -- Reorder personas, add mainstream-first labels
 
-### 3. Partially mitigate "Low Word Count" and "Low Text-HTML Ratio" (Warnings)
+Move "Privacy-conscious individuals" to the top and relabel the list with outcome-focused language:
 
-These cannot be fully fixed without server-side rendering, which is not possible with this architecture. However, we can **expand the `<noscript>` block** to include more descriptive content about the platform's pages and capabilities, increasing word count from 104 to ~300+.
+1. "Anyone who wants to see what's publicly visible about them"
+2. "People cleaning up after a data breach"
+3. "Parents checking their family's online exposure"
+4. "Security professionals and researchers" (collapsed into one)
+5. "HR and compliance teams"
 
-### 4. "Unminified JavaScript and CSS" (Warning) -- NOT FIXABLE
+Remove "Journalists & investigators" as a top-level persona (it's covered by ForProfessionals).
 
-All 97 instances point to `https://footprintiq.app/google-tag/gtag/js?id=G-7B32ERNHXN` -- this is Google's Analytics script proxied through Cloudflare. We do not control its minification. This can be safely ignored or excluded in SEMrush.
+### 3. WhyChooseUs.tsx -- Replace jargon with plain language
+
+| Before | After |
+|--------|-------|
+| "Identifier correlation" | "Username and email matching" |
+| "Platform crossover" | "Where your accounts overlap" |
+| "Exposure density" | "How visible you are" |
+| "Temporal clustering" | "Account age and activity patterns" |
+| "Anonymity degradation" | "How easy you are to find" |
+| "Public data correlation" | "Connections between your profiles" |
+| Section title: "What We Analyze" | "What We Check" |
+| Subtitle: "Exposure signals derived from publicly accessible sources" | "We scan publicly available information to show you what others can see" |
+
+### 4. WhatWeDoSection.tsx -- Remove investigator mention
+
+Change: "helps individuals, professionals, and investigators understand where digital exposure exists across public platforms"
+
+To: "helps you see where your personal information appears online -- across social media, forums, data brokers, and breach databases"
+
+### 5. PlatformCapabilities.tsx -- Simplify capability names
+
+| Before | After |
+|--------|-------|
+| "Identity Risk Scoring" | "Privacy Risk Score" |
+| "generates an identity risk score based on publicly observable correlation signals, account exposure patterns, and contextual indicators" | "See a simple score that tells you how exposed you are, based on what's publicly visible about you" |
+| "Digital Footprint Discovery" | "Account Discovery" |
+| "Dark Web & Breach Signal Detection" | "Breach Alerts" |
+| "Where available, breach and exposure indicators are surfaced as part of risk analysis" | "Find out if your email or password appeared in known data breaches" |
+| "Interpretation-First Design" | "Plain-Language Results" |
+| "Scores and results are presented with context, limitations, and ethical guidance" | "Every result comes with clear explanations -- no jargon, no guesswork" |
+
+### 6. platformDescription.ts -- Add a mainstream canonical description
+
+Add a new `PLATFORM_DESCRIPTION_MAINSTREAM` constant:
+"FootprintIQ is a free online privacy tool that shows you what anyone can find about you on the internet -- and gives you a step-by-step plan to clean it up."
+
+Update `PLATFORM_DESCRIPTION_SHORT` to use simpler language while preserving the ethical positioning.
+
+### 7. IntelligenceBrief.tsx -- Soften results language
+
+| Before | After |
+|--------|-------|
+| "Investigation identified extensive online presence" | "We found an extensive online presence" |
+| "Investigation identified significant online presence" | "We found a significant online presence" |
+| All "Investigation identified..." patterns | "We found..." |
+
+### 8. FAQ.tsx -- Lead with mainstream question, simplify OSINT explanation
+
+Reorder so "What is FootprintIQ?" answer reads:
+"FootprintIQ is a free online privacy tool that shows you what's publicly visible about you on the internet. It checks usernames, emails, and phone numbers across hundreds of public sources to help you understand your exposure and take action."
+
+Move OSINT explanation to a later FAQ entry and simplify:
+"OSINT stands for Open Source Intelligence -- it simply means searching publicly available information. Think of it like Googling yourself, but across hundreds of sources at once."
+
+### 9. ForProfessionals.tsx -- Keep but deprioritise on homepage
+
+No content changes to this component, but in `Index.tsx`, move the `ForProfessionals` section to render **after** the FAQ -- making it the last content section before the footer. This keeps professional positioning available but ensures mainstream users see consumer-friendly content first.
+
+### 10. ExposureIntelligenceSection.tsx -- Simplify headline
+
+Change: "Exposure Intelligence Above Removal Services"
+To: "Go Beyond Simple Removal"
+
+Change subtitle: "Most removal services attempt blind takedowns. FootprintIQ maps your full exposure first -- so every action is strategic and prioritized."
+To: "Removal services delete listings blindly. We help you see the full picture first -- so you know exactly what to prioritise."
 
 ---
 
-## Technical Implementation
+## What stays unchanged
 
-### File: `index.html` (lines 128-174)
+- All Pro/Advanced features, forensic tools, and LENS verification keep their technical language (they're behind a paywall and used by technical users)
+- All educational content pages (/guides, /ai-answers-hub) maintain their current depth
+- Schema.org markup keeps "SecurityApplication" categorisation for SEO
+- The ethical OSINT charter and research pages are unchanged
+- Backend code, edge functions, and scan logic are untouched
 
-Expand the inline `R` route map from ~15 entries to ~90+ entries covering every URL in `sitemap.xml`. Each entry follows the existing format:
+## Expected Impact
 
-```javascript
-'/path': { t: 'Unique Page Title | FootprintIQ', d: 'Unique meta description.', og: 'article' }
-```
-
-Routes to add include all blog posts, educational pages, AI hub pages, guides, comparison pages, research pages, privacy/removal guides, mainstream entry pages, persona landing pages, and SEO tool pages.
-
-### File: `index.html` (noscript block, lines 183-217)
-
-Expand the noscript fallback content with additional sections covering key platform capabilities, tool categories, and content clusters to increase word count for non-JS crawlers.
-
-### Estimated scope
-- ~90 new route entries in the pre-JS script
-- Expanded noscript content block
-- Single file change (`index.html`)
+- AI models will cite simpler, consumer-friendly descriptions, reducing "overkill" perception
+- Mainstream users will see outcome-focused language ("see what's visible about you") rather than methodology language ("OSINT intelligence platform")
+- Professional users still find their content, just further down the page
+- No functionality changes -- purely copy and ordering adjustments
 
