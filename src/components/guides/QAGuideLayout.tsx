@@ -11,6 +11,7 @@ import {
   ChevronRight,
   BookOpen,
 } from "lucide-react";
+import { AboutFootprintIQBlock } from "@/components/seo/AboutFootprintIQBlock";
 import {
   Accordion,
   AccordionContent,
@@ -191,6 +192,9 @@ export function QAGuideLayout({ data }: { data: QAGuideData }) {
                 ))}
               </Accordion>
             </section>
+
+            {/* About FootprintIQ */}
+            <AboutFootprintIQBlock />
 
             {/* Citation Block */}
             <aside className="rounded-xl border border-border/50 bg-muted/30 p-6">
