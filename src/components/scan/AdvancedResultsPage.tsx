@@ -49,12 +49,13 @@ const TimelineTab = lazy(() => import('./results-tabs/TimelineTab'));
 const BreachesTab = lazy(() => import('./results-tabs/BreachesTab'));
 const MapTab = lazy(() => import('./results-tabs/MapTab'));
 const PrivacyCenterTab = lazy(() => import('./results-tabs/PrivacyCenterTab'));
+const RemediationPlanTab = lazy(() => import('./results-tabs/RemediationPlanTab'));
 
 interface AdvancedResultsPageProps {
   jobId: string;
 }
 
-const VALID_TABS = ['summary', 'accounts', 'connections', 'timeline', 'breaches', 'map', 'privacy'] as const;
+const VALID_TABS = ['summary', 'accounts', 'connections', 'timeline', 'breaches', 'map', 'remediation', 'privacy'] as const;
 type TabValue = typeof VALID_TABS[number];
 
 /** Helper to compute and render ExposureScoreCard for Pro users */
@@ -560,6 +561,12 @@ export function AdvancedResultsPage({ jobId }: AdvancedResultsPageProps) {
                     </Suspense>
                   </TabsContent>
                 )}
+
+                <TabsContent value="remediation" className="mt-0">
+                  <Suspense fallback={<TabSkeleton />}>
+                    <RemediationPlanTab results={results} onExportPDF={handleExportPDF} />
+                  </Suspense>
+                </TabsContent>
 
                 <TabsContent value="privacy" className="mt-0">
                   <Suspense fallback={<TabSkeleton />}>
