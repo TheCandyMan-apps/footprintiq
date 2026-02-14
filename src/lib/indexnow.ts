@@ -110,6 +110,19 @@ export const INDEXNOW_URLS = [
   "/remove-yourself-from-google-search",
   "/privacy/google-content-removal",
   "/privacy/data-broker-removal-guide",
+  // Comparison Cluster
+  "/best-digital-footprint-scanner",
+  "/aura-vs-footprintiq",
+  "/deleteme-vs-footprintiq",
+  "/incogni-vs-footprintiq",
+  "/kanary-vs-footprintiq",
+  // Mainstream Q&A Guides
+  "/guides/check-whats-publicly-visible",
+  "/guides/employers-digital-footprint",
+  "/guides/clean-up-online-presence",
+  "/guides/remove-from-data-brokers",
+  "/guides/monitor-online-exposure",
+  "/guides/what-google-knows-about-you",
 ];
 
 /**
