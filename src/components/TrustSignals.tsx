@@ -1,5 +1,11 @@
-import { Shield } from "lucide-react";
+import { Shield, Users, Globe, ScanSearch } from "lucide-react";
 import scamadviserLogo from "@/assets/scamadviser-logo.jpg";
+
+const stats = [
+  { icon: Users, value: "2,000+", label: "People scanned" },
+  { icon: Globe, value: "350+", label: "Platforms checked" },
+  { icon: ScanSearch, value: "10,000+", label: "Exposures found" },
+];
 
 export const TrustSignals = () => {
   const items = [
@@ -14,7 +20,21 @@ export const TrustSignals = () => {
       <div className="max-w-4xl mx-auto text-center">
         <div className="flex items-center justify-center gap-2 mb-6">
           <Shield className="w-5 h-5 text-primary" />
-          <span className="text-sm font-medium text-primary">Built for Privacy</span>
+          <span className="text-sm font-medium text-primary">Trusted by Real People</span>
+        </div>
+
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-4 mb-8 max-w-md mx-auto">
+          {stats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <div key={stat.label} className="text-center">
+                <Icon className="w-5 h-5 text-primary mx-auto mb-1.5" />
+                <p className="text-2xl font-bold text-foreground">{stat.value}</p>
+                <p className="text-xs text-muted-foreground">{stat.label}</p>
+              </div>
+            );
+          })}
         </div>
         
         <div className="flex flex-wrap justify-center gap-3 mb-8">
