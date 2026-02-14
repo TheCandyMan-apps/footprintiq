@@ -112,6 +112,10 @@ const BestWayToMonitorOnlineExposure = lazy(() => import("./pages/BestWayToMonit
 const HowToRemoveFromDataBrokers = lazy(() => import("./pages/HowToRemoveFromDataBrokers"));
 const DataBrokerOptOutGuide = lazy(() => import("./pages/DataBrokerOptOutGuide"));
 const ContinuousExposureMonitoring = lazy(() => import("./pages/ContinuousExposureMonitoring"));
+const CheckWhatsPubliclyVisiblePage = lazy(() => import("./pages/CheckWhatsPubliclyVisible"));
+const HowEmployersCheckPage = lazy(() => import("./pages/HowEmployersCheck"));
+const CleanUpDigitalFootprintPage = lazy(() => import("./pages/CleanUpDigitalFootprint"));
+const SeeWhatGoogleKnowsPage = lazy(() => import("./pages/SeeWhatGoogleKnows"));
 const BestDigitalFootprintScanner = lazy(() => import("./pages/comparisons/BestDigitalFootprintScanner"));
 const AuraVsFootprintiq = lazy(() => import("./pages/comparisons/AuraVsFootprintiq"));
 const DeletemeVsFootprintiq = lazy(() => import("./pages/comparisons/DeletemeVsFootprintiq"));
@@ -649,6 +653,10 @@ function RouterContent() {
              <Route path="/how-to-remove-yourself-from-data-brokers" element={<HowToRemoveFromDataBrokers />} />
              <Route path="/data-broker-opt-out-guide" element={<DataBrokerOptOutGuide />} />
              <Route path="/continuous-exposure-monitoring-explained" element={<ContinuousExposureMonitoring />} />
+             <Route path="/how-to-check-whats-publicly-visible-about-you" element={<CheckWhatsPubliclyVisiblePage />} />
+             <Route path="/how-employers-check-your-online-presence" element={<HowEmployersCheckPage />} />
+             <Route path="/how-to-clean-up-your-digital-footprint" element={<CleanUpDigitalFootprintPage />} />
+             <Route path="/see-what-google-knows-about-you" element={<SeeWhatGoogleKnowsPage />} />
              <Route path="/best-digital-footprint-scanner" element={<BestDigitalFootprintScanner />} />
              <Route path="/aura-vs-footprintiq" element={<AuraVsFootprintiq />} />
              <Route path="/deleteme-vs-footprintiq" element={<DeletemeVsFootprintiq />} />
