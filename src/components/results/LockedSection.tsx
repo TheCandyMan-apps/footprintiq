@@ -125,17 +125,17 @@ export function LockedSection({
       >
         {/* Header */}
         <CardHeader className="py-2.5 px-3 border-b border-border/20 bg-muted/20">
-          <div className="flex items-center justify-between">
+         <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
               <span className="text-sm font-medium">{title}</span>
               <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4">
-                {lockedContentCount} locked
+                {lockedContentCount} hidden
               </Badge>
             </div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-primary transition-colors">
               <Lock className="h-3 w-3" />
-              <span>Pro</span>
+              <span>Unlock with Pro</span>
             </div>
           </div>
         </CardHeader>

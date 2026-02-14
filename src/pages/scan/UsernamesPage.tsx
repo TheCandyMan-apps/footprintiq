@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { UsernamesProBanner } from '@/components/conversion/UsernamesProBanner';
 
 export default function UsernamesPage() {
   return (
@@ -34,6 +35,9 @@ export default function UsernamesPage() {
             </div>
             <WorkerHealth />
           </div>
+
+          {/* Pro conversion banner */}
+          <UsernamesProBanner />
 
           <Alert className="bg-muted/50">
             <Info className="h-4 w-4" />
