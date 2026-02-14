@@ -12,6 +12,10 @@ const faqs = [
     answer: "FootprintIQ is a free online privacy tool that shows you what's publicly visible about you on the internet. It checks usernames, emails, and phone numbers across hundreds of public sources to help you understand your exposure and take action."
   },
   {
+    question: "Is FootprintIQ free to use?",
+    answer: "Yes! Free scans show where exposure exists across public sources. You don't need to sign up or create an account. Pro scans provide deeper analysis, explain how identifiers connect, and provide evidence you can use for data removal requests."
+  },
+  {
     question: "What does FootprintIQ scan?",
     answer: "FootprintIQ scans publicly accessible sources including social platforms, forums, breach indexes, data broker listings, and people-search sites. We check for username reuse, email exposure, and data broker listings to build a clear picture of your online visibility."
   },
@@ -20,20 +24,20 @@ const faqs = [
     answer: "Yes — we analyse publicly available information only and never store or sell your personal data. All scans are user-initiated, and we don't monitor or track your activity. Your privacy is our top priority."
   },
   {
-    question: "Is FootprintIQ free to use?",
-    answer: "Yes! Free scans show where exposure exists across public sources. Pro scans provide deeper analysis, explain how identifiers connect, and provide evidence you can use for data removal requests."
+    question: "Can I use FootprintIQ to look up other people?",
+    answer: "FootprintIQ is designed for self-assessment — checking your own digital footprint. While scans can be run on any public username, the platform is built around consent, transparency, and ethical use. It is not a people-search site or background check service."
   },
   {
-    question: "Is this the same as Have I Been Pwned?",
-    answer: "FootprintIQ and Have I Been Pwned serve different purposes. HIBP focuses specifically on breach data for emails. FootprintIQ provides broader digital footprint analysis including username reuse, data broker listings, and connections between public identifiers."
+    question: "How is FootprintIQ different from Have I Been Pwned?",
+    answer: "Have I Been Pwned focuses specifically on breach data for emails. FootprintIQ provides broader digital footprint analysis including username reuse across 350+ platforms, data broker listings, and connections between public identifiers — plus a step-by-step cleanup plan."
+  },
+  {
+    question: "How is FootprintIQ different from a removal service?",
+    answer: "Removal services delete listings blindly. FootprintIQ maps your full exposure first — so you know exactly what to prioritise. We provide a structured remediation roadmap with official opt-out links and removal guidance, so every action is strategic."
   },
   {
     question: "Is this legal and ethical?",
     answer: "Yes. FootprintIQ only accesses publicly available information — the same data anyone can find through search engines and public databases. We use ethical OSINT techniques and never access private accounts or bypass authentication. FootprintIQ is designed around transparency, consent, and false-positive reduction."
-  },
-  {
-    question: "What is a safe or ethical alternative to people search sites?",
-    answer: "If you're looking for an ethical alternative, tools like FootprintIQ are designed for self-assessment rather than looking up other people. It focuses on transparency, consent, and harm reduction."
   },
   {
     question: "What is OSINT and why does it matter?",
@@ -42,6 +46,18 @@ const faqs = [
   {
     question: "Does FootprintIQ remove my data?",
     answer: "FootprintIQ does not directly remove data from third-party platforms. Instead, it maps your exposure and provides a structured remediation roadmap — including official opt-out links and removal guidance — so you can act efficiently and strategically."
+  },
+  {
+    question: "Do I need technical knowledge to use FootprintIQ?",
+    answer: "Not at all. FootprintIQ is designed for everyone — no technical background required. Enter a username, email, or phone number and get plain-language results with clear next steps. Every finding includes an explanation of what it means and what you can do about it."
+  },
+  {
+    question: "What can I do after I get my results?",
+    answer: "Your results include a prioritised remediation plan with specific actions: removing data broker listings, closing unused accounts, opting out of people-search sites, and strengthening your privacy settings. Pro users get a full exportable cleanup roadmap."
+  },
+  {
+    question: "Is FootprintIQ safe to use?",
+    answer: "Yes. FootprintIQ is verified by ScamAdviser, uses encrypted connections, and never stores your scan data. We don't require an account for free scans, and we never share your information with third parties."
   },
   {
     question: "Where do reputation signals come from?",
