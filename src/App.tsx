@@ -98,6 +98,7 @@ const RemoveAddressFromGoogleBlog = lazy(() => import("./pages/blog/RemoveAddres
 const RemoveFromDataBrokersUK = lazy(() => import("./pages/blog/RemoveFromDataBrokersUK"));
 const DeleteOldAccounts = lazy(() => import("./pages/blog/DeleteOldAccounts"));
 const WhatIsDigitalFootprintCheck = lazy(() => import("./pages/blog/WhatIsDigitalFootprintCheck"));
+const DigitalExposureReport2026 = lazy(() => import("./pages/blog/DigitalExposureReport2026"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
 const Assistant = lazy(() => import("./pages/Assistant"));
@@ -438,6 +439,7 @@ function RouterContent() {
           <Route path="/blog/remove-from-data-brokers-uk" element={<RemoveFromDataBrokersUK />} />
           <Route path="/blog/delete-old-accounts" element={<DeleteOldAccounts />} />
           <Route path="/blog/what-is-digital-footprint-check" element={<WhatIsDigitalFootprintCheck />} />
+          <Route path="/blog/digital-exposure-report-2026" element={<DigitalExposureReport2026 />} />
           <Route path="/dark-web-monitoring" element={<DarkWebMonitoring />} />
           <Route path="/remove-mylife-profile" element={<RemoveMyLifeProfile />} />
           <Route path="/privacy-centre" element={<PrivacyCentrePage />} />
