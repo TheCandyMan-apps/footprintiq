@@ -284,12 +284,9 @@ export default function RemediationPlanTab({ results, isLocked = false, onUpgrad
     <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2">
-        <h2 className="text-lg font-bold text-foreground">Remediation Plan</h2>
+        <h2 className="text-lg font-bold text-foreground">Your Strategic Remediation Plan</h2>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          FootprintIQ maps and prioritises your exposure so you can remove it efficiently and strategically.
-        </p>
-        <p className="text-xs text-muted-foreground/70 leading-relaxed">
-          We do not directly remove data. Instead, we give you the intelligence to act with precision.
+          FootprintIQ maps and prioritises your exposure so you can reduce it efficiently. We do not directly remove data — we provide the intelligence to act with precision.
         </p>
       </div>
 
@@ -315,12 +312,20 @@ export default function RemediationPlanTab({ results, isLocked = false, onUpgrad
         </Card>
       </div>
 
-      {/* Pro: Export button */}
-      {!isLocked && onExportPDF && (
-        <Button variant="outline" size="sm" onClick={onExportPDF} className="gap-2">
-          <FileDown className="h-4 w-4" />
-          Export Remediation Plan (PDF)
-        </Button>
+      {/* Pro: Export + Progress badge */}
+      {!isLocked && (
+        <div className="flex items-center gap-3 flex-wrap">
+          {onExportPDF && (
+            <Button variant="outline" size="sm" onClick={onExportPDF} className="gap-2">
+              <FileDown className="h-4 w-4" />
+              Export Remediation Plan (PDF)
+            </Button>
+          )}
+          <Badge variant="secondary" className="gap-1.5 py-1 px-3 text-xs">
+            <Target className="h-3 w-3" />
+            Risk Reduction Tracking — Coming Soon
+          </Badge>
+        </div>
       )}
 
       {/* Finding cards */}
@@ -345,12 +350,12 @@ export default function RemediationPlanTab({ results, isLocked = false, onUpgrad
               <h3 className="text-sm font-bold text-foreground">
                 {findings.length - FREE_VISIBLE_LIMIT} more remediation steps available
               </h3>
-              <p className="text-xs text-muted-foreground">
-                Upgrade to unlock your full remediation roadmap with priority sorting and exportable plan.
+               <p className="text-xs text-muted-foreground">
+                Upgrade to unlock your full remediation roadmap.
               </p>
               <Button onClick={onUpgradeClick} className="gap-2 w-full">
                 <Lock className="h-4 w-4" />
-                Upgrade to Unlock Full Remediation Roadmap
+                Upgrade to Unlock Full Exposure Reduction Plan
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
@@ -363,14 +368,14 @@ export default function RemediationPlanTab({ results, isLocked = false, onUpgrad
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-5 text-center space-y-3">
             <h3 className="text-base font-bold text-foreground">
-              Upgrade to Unlock Your Full Remediation Roadmap
+              Upgrade to Unlock Full Exposure Reduction Plan
             </h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Get priority-sorted remediation steps, official opt-out links, effort estimates, and exportable PDF plans.
+              Get priority-sorted remediation steps, official opt-out links, effort estimates, risk reduction tracking, and exportable PDF plans.
             </p>
             <Button onClick={onUpgradeClick} size="lg" className="gap-2">
               <Shield className="h-4 w-4" />
-              Switch to Pro Intelligence
+              Upgrade to Unlock Full Exposure Reduction Plan
               <ArrowRight className="h-4 w-4" />
             </Button>
           </CardContent>
