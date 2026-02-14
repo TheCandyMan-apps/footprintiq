@@ -175,6 +175,15 @@ const blogPosts = [{
   featured: false,
   image: "/blog-images/digital-footprint.webp"
 }, {
+  slug: "digital-exposure-report-2026",
+  title: "The 2026 Digital Exposure & Username Reuse Report",
+  excerpt: "Independent research report analysing digital exposure patterns, username reuse statistics, and false positive rates across 14,000+ anonymised OSINT scans.",
+  date: "February 14, 2026",
+  readTime: "15 min read",
+  category: "Research",
+  featured: true,
+  image: "/blog-images/digital-footprint.webp"
+}, {
   slug: "what-is-osint-risk",
   title: "What is OSINT Risk? Understanding Your Digital Exposure",
   excerpt: "Learn what OSINT risk means for your business, how threat actors use open-source intelligence, and practical steps to reduce your digital attack surface.",
