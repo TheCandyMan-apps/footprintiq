@@ -48,6 +48,10 @@ const faqs = [
     question: "Should I use an automated removal service or do it myself?",
     answer: "DIY removal is free but time-consuming, especially across dozens of brokers. Automated services save time and provide ongoing monitoring, but charge a recurring fee. The best approach depends on how many brokers hold your data and how much time you can dedicate to the process.",
   },
+  {
+    question: "Does FootprintIQ remove my data?",
+    answer: "FootprintIQ does not directly remove data from third-party platforms. Instead, it maps your exposure and provides a structured remediation roadmap — including official opt-out links and removal guidance — so you can act efficiently and strategically.",
+  },
 ];
 
 const faqSchema = {

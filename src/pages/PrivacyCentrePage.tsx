@@ -47,6 +47,11 @@ const faqs = [
     answer:
       "Not always. Data brokers continuously aggregate new records from public sources and may re-list your information over time. FootprintIQ's removal tracker helps you monitor for re-listings so you can submit follow-up requests.",
   },
+  {
+    question: "Does FootprintIQ remove my data?",
+    answer:
+      "FootprintIQ does not directly remove data from third-party platforms. Instead, it maps your exposure and provides a structured remediation roadmap — including official opt-out links and removal guidance — so you can act efficiently and strategically.",
+  },
 ];
 
 const faqJsonLd = {
