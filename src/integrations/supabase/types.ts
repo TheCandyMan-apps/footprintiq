@@ -3798,6 +3798,92 @@ export type Database = {
         }
         Relationships: []
       }
+      exposure_status_history: {
+        Row: {
+          created_at: string
+          finding_id: string
+          id: string
+          new_status: string
+          old_status: string | null
+          platform_name: string
+          score_change: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          finding_id: string
+          id?: string
+          new_status: string
+          old_status?: string | null
+          platform_name: string
+          score_change?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          finding_id?: string
+          id?: string
+          new_status?: string
+          old_status?: string | null
+          platform_name?: string
+          score_change?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exposure_statuses: {
+        Row: {
+          created_at: string
+          finding_id: string
+          id: string
+          notes: string | null
+          platform_name: string
+          previous_status: string | null
+          scan_id: string | null
+          score_after: number | null
+          score_before: number | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          finding_id: string
+          id?: string
+          notes?: string | null
+          platform_name: string
+          previous_status?: string | null
+          scan_id?: string | null
+          score_after?: number | null
+          score_before?: number | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          finding_id?: string
+          id?: string
+          notes?: string | null
+          platform_name?: string
+          previous_status?: string | null
+          scan_id?: string | null
+          score_after?: number | null
+          score_before?: number | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exposure_statuses_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback: {
         Row: {
           confidence_score: number | null
