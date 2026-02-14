@@ -104,6 +104,7 @@ const ExposureMappingBeforeRemoval = lazy(() => import("./pages/blog/ExposureMap
 const PublicVsPrivateDataOsint = lazy(() => import("./pages/blog/PublicVsPrivateDataOsint"));
 const RemoveFromDataBrokersGuide = lazy(() => import("./pages/blog/RemoveFromDataBrokersGuide"));
 const IsFootprintiqDataBroker = lazy(() => import("./pages/blog/IsFootprintiqDataBroker"));
+const AfterHaveIBeenPwned = lazy(() => import("./pages/AfterHaveIBeenPwned"));
 const EthicalOsintCharter = lazy(() => import("./pages/EthicalOsintCharter"));
 const DarkWebMonitoring = lazy(() => import("./pages/DarkWebMonitoring"));
 const Analyst = lazy(() => import("./pages/Analyst"));
@@ -620,7 +621,8 @@ function RouterContent() {
             <Route path="/username-lookup" element={<UsernameLookup />} />
             <Route path="/account-finder" element={<AccountFinder />} />
             <Route path="/find-social-media-accounts" element={<FindSocialMediaAccounts />} />
-            <Route path="/username-reuse-risk" element={<UsernameReuseRisk />} />
+             <Route path="/username-reuse-risk" element={<UsernameReuseRisk />} />
+             <Route path="/after-have-i-been-pwned-what-next" element={<AfterHaveIBeenPwned />} />
              <Route path="/remove-personal-information-from-internet" element={<RemovePersonalInformation />} />
              <Route path="/check-my-digital-footprint" element={<CheckMyDigitalFootprint />} />
           <Route path="/what-is-osint" element={<WhatIsOsint />} />
