@@ -35,6 +35,7 @@ import { parseISO, isValid } from 'date-fns';
 import { LowResultsNotice } from './LowResultsNotice';
 import { ExposureScoreCard } from '@/components/results/ExposureScoreCard';
 import { RemediationNextStepsCard } from '@/components/results/RemediationNextStepsCard';
+import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { calculateExposureScore } from '@/lib/exposureScore';
 import { generateExposureDrivers } from '@/lib/exposureScoreDrivers';
 import { buildRemediationPlan } from '@/lib/remediationPlan';
@@ -107,6 +108,7 @@ function AdvancedExposureScoreSection({ results }: { results: any[] }) {
         plan={plan}
         className="mb-4"
       />
+      <StrategicNextSteps className="mb-4" />
     </>
   );
 }

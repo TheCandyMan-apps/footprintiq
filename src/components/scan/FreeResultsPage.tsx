@@ -88,6 +88,7 @@ import { RemediationNextStepsCard } from '@/components/results/RemediationNextSt
 import { buildRemediationPlan } from '@/lib/remediationPlan';
 import { AccountRow } from './results-tabs/accounts/AccountRow';
 import { ConnectionsPreviewGraph } from './results-tabs/connections/ConnectionsPreviewGraph';
+import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
 import { InlineLensVerification, getLensEligibleIndices } from './results-tabs/accounts/InlineLensVerification';
@@ -922,6 +923,9 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 </CardContent>
               </Card>
             )}
+
+            {/* ===== STRATEGIC NEXT STEPS ===== */}
+            <StrategicNextSteps />
 
             {/* ===== PERSONALIZED PRO VALUE BLOCK ===== */}
             <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
