@@ -57,6 +57,7 @@ import { TourHighlight } from '@/components/tour/TourHighlight';
 import { TOURS } from '@/lib/tour/steps';
 import { useWelcomeEmail } from '@/hooks/useWelcomeEmail';
 import { Play, Network, AlertTriangle, CheckCircle2, Clock, Eye, FileSearch, Zap, Shield, FileStack, TrendingUp, Activity, Users, Target, Webhook, Archive, X, Bookmark, Settings2 } from 'lucide-react';
+import { WelcomeInterstitial } from '@/components/conversion/WelcomeInterstitial';
 import { format } from 'date-fns';
 import { DashboardBarChart, DashboardLineChart } from '@/components/dashboard/DashboardCharts';
 import type { Database } from '@/integrations/supabase/types';
@@ -116,6 +117,7 @@ const Dashboard = () => {
   const [scanSocialLinks, setScanSocialLinks] = useState<Record<string, any[]>>({});
   const [scanFindingStats, setScanFindingStats] = useState<Record<string, { total: number; high: number; medium: number; low: number }>>({});
   const [isSavedViewsOpen, setIsSavedViewsOpen] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
   
   // Dashboard query/filter hook
   const { filters, updateFilters, resetFilters } = useDashboardQuery();
@@ -141,6 +143,17 @@ const Dashboard = () => {
       if (shouldAutoStartTour()) {
         markTourTriggered();
         markOnboardingShown(); // ensure we only ever show once per browser/user
+        
+        // Show welcome interstitial for new free users
+        const tier = (workspace?.subscription_tier || 'free').toLowerCase();
+        if (tier === 'free') {
+          const welcomeKey = `fpiq_welcome_shown_${session.user.id}`;
+          if (!localStorage.getItem(welcomeKey)) {
+            localStorage.setItem(welcomeKey, '1');
+            setShowWelcome(true);
+          }
+        }
+        
         const timer = setTimeout(() => {
           tour.startTour();
         }, getTourAutoStartDelay());
@@ -668,6 +681,7 @@ const Dashboard = () => {
   if (!user) return null;
   return <>
       <InitializeDarkWebDemo />
+      <WelcomeInterstitial isOpen={showWelcome} onClose={() => setShowWelcome(false)} />
       <SEO title="Dashboard — FootprintIQ" description="View your OSINT scans, findings, and entity relationships" canonical="https://footprintiq.app/dashboard" />
       <AnnouncementBar message="💡 Pro Tip: Use AI Analyst to get instant insights from your scan results." link="/ai-analyst" linkText="Try AI Analyst" storageKey="ai-analyst-dashboard-tip" variant="update" />
       <ScrollProgressBar />

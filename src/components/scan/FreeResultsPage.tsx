@@ -95,6 +95,7 @@ import { AccountRow } from './results-tabs/accounts/AccountRow';
 import { ConnectionsPreviewGraph } from './results-tabs/connections/ConnectionsPreviewGraph';
 import { StrategicNextSteps } from '@/components/results/StrategicNextSteps';
 import { LockedTabsPreview } from '@/components/results/LockedTabsPreview';
+import { PostScanInlineUpgrade } from '@/components/conversion/PostScanInlineUpgrade';
 // FreeProComparisonStrip + RemediationPlanTab removed to reduce upsell redundancy
 import { TimelinePreview } from './results-tabs/TimelinePreview';
 import { LensVerificationResult } from '@/hooks/useForensicVerification';
@@ -809,26 +810,26 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                         <div className="flex items-center justify-center gap-2 py-3 px-4 bg-muted/30 border-t border-border/30">
                           <Lock className="h-4 w-4 text-muted-foreground" />
                           <span className="text-sm text-muted-foreground font-medium">
-                            You've seen {Math.min(FREE_PREVIEW_LIMIT, foundProfiles.length)} of {totalProfiles} findings
+                            {hiddenCount} more finding{hiddenCount > 1 ? 's' : ''} hidden — including {Math.ceil(hiddenCount * 0.3)} high-risk exposures
                           </span>
                         </div>
                         
                         {/* Locked Results Block */}
                         <div className="p-4 bg-muted/20 border-t border-border/30 text-center space-y-3">
                           <p className="text-sm font-medium text-foreground">
-                            {hiddenCount} more finding{hiddenCount > 1 ? 's' : ''} available in Pro
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Unlock verification, risk analysis, and full metadata
+                            Pro reveals risk scores, removal steps, and full evidence for every finding
                           </p>
                           <Button 
                             onClick={handleUpgradeClick}
-                            className="gap-2"
+                            className="gap-2 h-12 px-6 text-base"
                           >
                             <Lock className="h-4 w-4" />
-                            Unlock Pro
+                            Unlock All Findings
                             <ArrowRight className="h-4 w-4" />
                           </Button>
+                          <p className="text-[10px] text-muted-foreground/50">
+                            From £14.99/mo · Cancel anytime
+                          </p>
                         </div>
                       </>
                     )}
@@ -999,6 +1000,13 @@ export function FreeResultsPage({ jobId }: FreeResultsPageProps) {
                 <LockedTabsPreview onUpgradeClick={handleUpgradeClick} />
               </CardContent>
             </Card>
+
+            {/* ===== POST-SCAN INLINE UPGRADE (contextual, data-driven CTA) ===== */}
+            <PostScanInlineUpgrade
+              exposureCount={signalsFound}
+              hiddenCount={hiddenCount}
+              highConfidenceCount={highConfidenceCount}
+            />
           </div>
         )}
       </CardContent>
