@@ -29,6 +29,8 @@ const comparisonPages = [
   { to: "/deleteme-vs-footprintiq", label: "DeleteMe vs FootprintIQ" },
   { to: "/incogni-vs-footprintiq", label: "Incogni vs FootprintIQ" },
   { to: "/kanary-vs-footprintiq", label: "Kanary vs FootprintIQ" },
+  { to: "/people-search-vs-footprintiq", label: "People-Search Sites vs FootprintIQ" },
+  { to: "/osint-suites-vs-footprintiq", label: "OSINT Suites vs FootprintIQ" },
 ];
 
 export interface ComparisonRow {
