@@ -68,7 +68,7 @@ const PricingPage = () => {
         "name": "Pro Plan",
         "price": PLANS.pro.priceMonthly.toString(),
         "priceCurrency": "GBP",
-        "description": "For individuals who want ongoing visibility and control."
+        "description": "Full Remediation Intelligence Engine — exposure prioritization, removal pathway mapping, and exportable remediation plans."
       },
       {
         "@type": "Offer",
@@ -157,13 +157,14 @@ const PricingPage = () => {
   ];
 
   const proIncludes: Array<string | { text: string; isLens: boolean }> = [
-    "Multiple scans per month",
-    "Expanded source coverage",
-    "Confidence scoring & false-positive filtering",
+    "Exposure prioritization scoring",
+    "Removal pathway mapping",
+    "Curated opt-out database",
+    "Exportable remediation plan (PDF)",
     { text: "LENS identity verification", isLens: true },
+    "Confidence scoring & false-positive filtering",
     "Labeled connections graph",
-    "Exposure timelines (historical vs active)",
-    "Removal guidance",
+    "Historical tracking & risk trend analysis",
     "Continuous monitoring & alerts",
     "Exportable reports (PDF & CSV)"
   ];
@@ -347,20 +348,20 @@ const PricingPage = () => {
                       <CardTitle className="text-2xl">Pro</CardTitle>
                     </div>
                     <p className="text-xs text-primary font-medium tracking-wide">
-                      Validation • Investigation • Action
+                      Full Remediation Intelligence Engine
                     </p>
                     <div className="pt-2">
                       <span className="text-4xl font-bold">£{PLANS.pro.priceMonthly}</span>
                       <span className="text-muted-foreground">/month</span>
                     </div>
                     <CardDescription className="pt-4">
-                      Designed for people who want clarity, not just more data.
+                      Pro gives you control — not just visibility.
                     </CardDescription>
                     
                     {/* Pro Differentiator */}
                     <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
                       <p className="text-sm font-medium text-primary">
-                        Understand why results exist — not just that they do.
+                        Instead of showing exposure, Pro gives you a strategic plan to reduce it.
                       </p>
                     </div>
                   </CardHeader>
